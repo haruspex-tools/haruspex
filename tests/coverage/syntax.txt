@@ -493,8 +493,8 @@ DefaultLiteral | DEFAULT | modelled | DML | The column's default, in an INSERT o
 MaxLiteral | MAX in a type's length | within CastCall | | |
 IdentifierLiteral | a name where a value goes | within FunctionCall | | |
 ParenthesisExpression | ( expression ) | modelled | Expressions | The expression inside. | SELECT (id) AS a FROM dbo.toy;
-UnaryExpression | -x, +x, ~x | partly unsupported-expression | Decimal arithmetic | A sign keeps a number's type; ~ isn't modelled. | SELECT -id AS a FROM dbo.toy; && SELECT ~id AS a FROM dbo.toy;
-BinaryExpression | x + y, x * y, … | partly unsupported-expression | Decimal arithmetic | Arithmetic and concatenation are typed; the bitwise operators aren't. | SELECT id + 1 AS a FROM dbo.toy; && SELECT id & 1 AS a FROM dbo.toy;
+UnaryExpression | -x, +x, ~x | modelled | Decimal arithmetic | A sign keeps a number's type; ~ an integer's or a bit's. | SELECT -id AS a, ~id AS b FROM dbo.toy;
+BinaryExpression | x + y, x * y, … | modelled | Decimal arithmetic | Arithmetic, concatenation and the bitwise operators are typed. | SELECT id + 1 AS a, id & 1 AS b FROM dbo.toy;
 ScalarSubquery | ( SELECT … ) | modelled | Aggregates and scalar subqueries | Its one column, NULL when it returns no row. | SELECT (SELECT MAX(qty) FROM dbo.box) AS a;
 SearchedCaseExpression | CASE WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | The type of highest precedence over its results; NULL without ELSE. | SELECT CASE WHEN id > 1 THEN 'big' ELSE 'small' END AS a FROM dbo.toy;
 SimpleCaseExpression | CASE x WHEN … | modelled | CASE, IIF, CHOOSE and NULLIF | As searched CASE. | SELECT CASE id WHEN 1 THEN 'one' END AS a FROM dbo.toy;
@@ -543,15 +543,15 @@ BinaryExpressionType.Subtract | - | modelled | Decimal arithmetic | As +. | SELE
 BinaryExpressionType.Multiply | * | modelled | Decimal arithmetic | As +, a decimal of the digits the product needs. | SELECT price * 2 AS a FROM dbo.toy;
 BinaryExpressionType.Divide | / | modelled | Decimal arithmetic | As +; NULL when dividing by zero under the caller's options. | SELECT price / 2 AS a FROM dbo.toy;
 BinaryExpressionType.Modulo | % | modelled | Decimal arithmetic | As /. | SELECT id % 2 AS a FROM dbo.toy;
-BinaryExpressionType.Concat | \|\| | unknown unsupported-expression | | Not modelled yet. | SELECT name \|\| N'!' AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseAnd | & | unknown unsupported-expression | | Not modelled yet. | SELECT id & 1 AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseOr | \| | unknown unsupported-expression | | Not modelled yet. | SELECT id \| 1 AS a FROM dbo.toy;
-BinaryExpressionType.BitwiseXor | ^ | unknown unsupported-expression | | Not modelled yet. | SELECT id ^ 1 AS a FROM dbo.toy;
-BinaryExpressionType.LeftShift | << | unknown unsupported-expression | | Not modelled yet. | SELECT id << 1 AS a FROM dbo.toy;
-BinaryExpressionType.RightShift | >> | unknown unsupported-expression | | Not modelled yet. | SELECT id >> 1 AS a FROM dbo.toy;
+BinaryExpressionType.Concat | \|\| | modelled | Bitwise operators, shifts and the concatenation operator | A varying string as long as both, up to 8000 bytes; NULL when either is, whatever CONCAT_NULL_YIELDS_NULL says. | SELECT name \|\| N'!' AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseAnd | & | modelled | Bitwise operators, shifts and the concatenation operator | The wider integer; a bit beside an integer the integer; a string converted to the other's type. | SELECT id & 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseOr | \| | modelled | Bitwise operators, shifts and the concatenation operator | As &. | SELECT id \| 1 AS a FROM dbo.toy;
+BinaryExpressionType.BitwiseXor | ^ | modelled | Bitwise operators, shifts and the concatenation operator | As &. | SELECT id ^ 1 AS a FROM dbo.toy;
+BinaryExpressionType.LeftShift | << | modelled | Bitwise operators, shifts and the concatenation operator | The left integer's type; never overflows. | SELECT id << 1 AS a FROM dbo.toy;
+BinaryExpressionType.RightShift | >> | modelled | Bitwise operators, shifts and the concatenation operator | As <<. | SELECT id >> 1 AS a FROM dbo.toy;
 UnaryExpressionType.Negative | -x | modelled | Decimal arithmetic | The number's type; a tinyint becomes a smallint; NULL when it overflows under the caller's options. | SELECT -id AS a FROM dbo.toy;
 UnaryExpressionType.Positive | +x | modelled | Decimal arithmetic | The number's type. | SELECT +id AS a FROM dbo.toy;
-UnaryExpressionType.BitwiseNot | ~x | unknown unsupported-expression | | Not modelled yet. | SELECT ~id AS a FROM dbo.toy;
+UnaryExpressionType.BitwiseNot | ~x | modelled | Bitwise operators, shifts and the concatenation operator | Its integer's or bit's type. | SELECT ~id AS a FROM dbo.toy;
 AssignmentKind.Equals | SET @v = x | modelled | The state | The value, converted to the variable's type. | DECLARE @n int; SET @n = 1; SELECT @n AS n;
 AssignmentKind.AddEquals | SET @v += x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n += 1; SELECT @n AS n;
 AssignmentKind.SubtractEquals | SET @v -= x | modelled | The state | The variable keeps its declared type; the value isn't followed, so it may be NULL. | DECLARE @n int = 0; SET @n -= 1; SELECT @n AS n;

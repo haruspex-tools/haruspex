@@ -8,7 +8,7 @@ namespace Haruspex.Tests.Inference;
 /// forms, <c>CONCAT</c>, <c>CONCAT_WS</c>, string <c>+</c>, decimal arithmetic and <c>SUM</c>. Each type and each reason to be
 /// null rests on an observation in the differential tests' <c>ExpressionObservationTests</c>, named where it matters.
 /// </summary>
-public class ExpressionTests
+public partial class ExpressionTests
 {
     private const string Tables = """
         CREATE TABLE dbo.t (

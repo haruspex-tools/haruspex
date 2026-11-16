@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 217 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 153 |
+| Modelled, wholly or in part | 160 |
 | Read, changing no result | 29 |
-| Unknown | 323 |
+| Unknown | 316 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -857,8 +857,8 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `MAX in a type's length` | `MaxLiteral` | part of `CastCall` |  |
 | `a name where a value goes` | `IdentifierLiteral` | part of `FunctionCall` |  |
 | `( expression )` | `ParenthesisExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#expressions) | The expression inside. |
-| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A sign keeps a number's type; ~ isn't modelled. |
-| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Arithmetic and concatenation are typed; the bitwise operators aren't. |
+| `-x, +x, ~x` | `UnaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | A sign keeps a number's type; ~ an integer's or a bit's. |
+| `x + y, x * y, …` | `BinaryExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | Arithmetic, concatenation and the bitwise operators are typed. |
 | `( SELECT … )` | `ScalarSubquery` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | Its one column, NULL when it returns no row. |
 | `CASE WHEN …` | `SearchedCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | The type of highest precedence over its results; NULL without ELSE. |
 | `CASE x WHEN …` | `SimpleCaseExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#case-iif-choose-and-nullif) | As searched CASE. |
@@ -910,15 +910,15 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `*` | `BinaryExpressionType.Multiply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +, a decimal of the digits the product needs. |
 | `/` | `BinaryExpressionType.Divide` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +; NULL when dividing by zero under the caller's options. |
 | `%` | `BinaryExpressionType.Modulo` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As /. |
-| `\|\|` | `BinaryExpressionType.Concat` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `&` | `BinaryExpressionType.BitwiseAnd` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `\|` | `BinaryExpressionType.BitwiseOr` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `^` | `BinaryExpressionType.BitwiseXor` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `<<` | `BinaryExpressionType.LeftShift` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `>>` | `BinaryExpressionType.RightShift` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `\|\|` | `BinaryExpressionType.Concat` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | A varying string as long as both, up to 8000 bytes; NULL when either is, whatever CONCAT_NULL_YIELDS_NULL says. |
+| `&` | `BinaryExpressionType.BitwiseAnd` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | The wider integer; a bit beside an integer the integer; a string converted to the other's type. |
+| `\|` | `BinaryExpressionType.BitwiseOr` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As &. |
+| `^` | `BinaryExpressionType.BitwiseXor` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As &. |
+| `<<` | `BinaryExpressionType.LeftShift` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | The left integer's type; never overflows. |
+| `>>` | `BinaryExpressionType.RightShift` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | As <<. |
 | `-x` | `UnaryExpressionType.Negative` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The number's type; a tinyint becomes a smallint; NULL when it overflows under the caller's options. |
 | `+x` | `UnaryExpressionType.Positive` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The number's type. |
-| `~x` | `UnaryExpressionType.BitwiseNot` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `~x` | `UnaryExpressionType.BitwiseNot` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#bitwise-operators-shifts-and-the-concatenation-operator) | Its integer's or bit's type. |
 | `SET @v = x` | `AssignmentKind.Equals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The value, converted to the variable's type. |
 | `SET @v += x` | `AssignmentKind.AddEquals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The variable keeps its declared type; the value isn't followed, so it may be NULL. |
 | `SET @v -= x` | `AssignmentKind.SubtractEquals` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | The variable keeps its declared type; the value isn't followed, so it may be NULL. |

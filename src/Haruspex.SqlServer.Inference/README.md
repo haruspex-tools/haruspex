@@ -621,6 +621,31 @@ characters the code page has depends on the database's collation. It is a string
   documented one and SqlClient's (observed), and off is deprecated; a procedure that sets it, either way, is unknown, as before (`Walker.IsHarmless`). `+` of a string and a number is
   arithmetic, which may fail, and is not modelled.
 
+### Bitwise operators, shifts and the concatenation operator
+
+`Typing/Bitwise.cs` holds the rules, `Typer.Bitwise.cs` applies them. Each type was observed with
+`sp_describe_first_result_set` over every pair of 25 types (`BitwiseGridTests`, which checks haruspex against the server's
+description, or its refusal, through the whole pipeline), and the values in
+`Bitwise_operators_shifts_and_concatenation_are_null_when_an_operand_is_and_never_overflow`.
+
+| Operator | Operands | Type |
+|---|---|---|
+| `&`, `\|`, `^` | two integers; a `bit` beside an integer or a `bit`; a string beside either | the wider integer; the integer; the integer or `bit` |
+| `<<`, `>>` (SQL Server 2022) | two integers | the left one's |
+| `~` | an integer or a `bit` | its own |
+| `\|\|` (SQL Server 2025) | a string beside a string, a number, a date or time, or a GUID | a varying string, national when either is, max when either is, else as long as both up to 8000 bytes (4000 characters) |
+
+Every other pair the server refuses (402, 8117): a decimal, money, a float, a date or a GUID beside a bitwise operator, two
+strings, a `bit` beside `||`, two values that are not strings beside `||`. So it is unknown, naming the pair. For `||` a value
+that is not a string counts the length of its longest text: `tinyint` 4, `smallint` 6, `int` 12, `bigint` 24, `decimal` and
+`numeric` 41, `money` 40, `float` and `real` 23, a date, a time or a GUID 40, whatever its precision or fractional digits
+(where `CONCAT` counts its own, which isn't modelled beyond `int` and `bit`).
+
+Each is null when an operand is, `||` too with `CONCAT_NULL_YIELDS_NULL` off, where `+` keeps the string. None overflows: a
+shift past the type's width gives 0, a negative one shifts the other way, `>>` fills with zeros, and `||` cuts at 8000 bytes
+without an error. A string beside an integer is converted to the integer's type, which may overflow as a `CAST` may (NULL
+under the caller's options, `arithmetic-overflow`; 244 by default), or fail if it isn't a number (245, an error either way).
+
 ### Decimal arithmetic
 
 Decimal arithmetic is read in full, `%` and the cap at 38 digits included. The rules are Microsoft's, from

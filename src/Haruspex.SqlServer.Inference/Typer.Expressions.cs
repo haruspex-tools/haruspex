@@ -510,8 +510,10 @@ internal sealed partial class Typer
             BinaryExpressionType.Modulo => '%',
             _ => '?',
         };
-        if (op == '?' || Strip(binary.FirstExpression) is NullLiteral || Strip(binary.SecondExpression) is NullLiteral)
+        if (Strip(binary.FirstExpression) is NullLiteral || Strip(binary.SecondExpression) is NullLiteral)
             return NotModelled(binary, "this operator is not modelled yet.");
+        if (op == '?')
+            return BitwiseBinary(binary, scope);
 
         var left = Expression(binary.FirstExpression, scope);
         var right = Expression(binary.SecondExpression, scope);
@@ -558,8 +560,8 @@ internal sealed partial class Typer
     /// </summary>
     private Value Unary(UnaryExpression unary, ReadScope scope)
     {
-        if (unary.UnaryExpressionType is not (UnaryExpressionType.Negative or UnaryExpressionType.Positive))
-            return NotModelled(unary, "this operator is not modelled yet.");
+        if (unary.UnaryExpressionType == UnaryExpressionType.BitwiseNot)
+            return BitwiseNot(unary, scope);
         // A literal signed twice, -(-2147483648), is numeric(38,0) on the server, whichever way the parser splits the signs
         // (observed, A_literals_type_is_its_own_digits_or_characters), and is not modelled.
         if (Strip(unary.Expression) is UnaryExpression && LiteralOf(unary) is not null)
