@@ -25,6 +25,7 @@ public partial class RefinementTests
         Assert.Contains("export const PSchema = z.array(PRowSchema).length(1)\n", one, StringComparison.Ordinal);
         Assert.Contains("export const PSchema = z.array(PRowSchema).max(1)\n", atMostOne, StringComparison.Ordinal);
         Assert.Contains("export const PSchema = z.array(PRowSchema).max(1)\n", mayNotRun, StringComparison.Ordinal);
-        Assert.Contains("export const PSchema = z.array(PRowSchema).max(1)\n", json, StringComparison.Ordinal);
+        // FOR JSON over no rows returns no row, which reads as null, so an array that arrives holds the one row.
+        Assert.Contains("export const PSchema = z.array(PRowSchema).length(1).nullable()\n", json, StringComparison.Ordinal);
     }
 }

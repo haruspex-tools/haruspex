@@ -57,6 +57,6 @@ export const KitRoutesRowSchema = z.object({
 })
 export type KitRoutesRow = z.infer<typeof KitRoutesRowSchema>
 
-/** kit.kit_routes: returns JSON, [] when no rows match. */
-export const KitRoutesSchema = z.array(KitRoutesRowSchema)
+/** kit.kit_routes: returns JSON, null when no rows match. */
+export const KitRoutesSchema = z.array(KitRoutesRowSchema).min(1).nullable()
 export type KitRoutes = z.infer<typeof KitRoutesSchema>

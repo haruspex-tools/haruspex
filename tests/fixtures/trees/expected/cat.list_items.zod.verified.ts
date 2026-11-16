@@ -51,6 +51,6 @@ export const ListItemsRowSchema = z.object({
 })
 export type ListItemsRow = z.infer<typeof ListItemsRowSchema>
 
-/** cat.list_items: returns JSON, [] when no rows match. */
-export const ListItemsSchema = z.array(ListItemsRowSchema)
+/** cat.list_items: returns JSON, null when no rows match. */
+export const ListItemsSchema = z.array(ListItemsRowSchema).min(1).nullable()
 export type ListItems = z.infer<typeof ListItemsSchema>

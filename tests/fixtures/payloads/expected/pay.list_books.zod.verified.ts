@@ -76,6 +76,6 @@ export const ListBooksRowSchema = z.object({
 })
 export type ListBooksRow = z.infer<typeof ListBooksRowSchema>
 
-/** pay.list_books: returns JSON, [] when no rows match. */
-export const ListBooksSchema = z.array(ListBooksRowSchema)
+/** pay.list_books: returns JSON, null when no rows match. */
+export const ListBooksSchema = z.array(ListBooksRowSchema).min(1).nullable()
 export type ListBooks = z.infer<typeof ListBooksSchema>

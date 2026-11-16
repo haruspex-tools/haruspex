@@ -238,3 +238,8 @@ Ozar
 elkjs
 jdkato
 jsdom
+
+# The mssql driver's names: its result sets (recordset, recordsets) and its error code for JSON it can't parse (EJSON)
+EJSON
+recordset
+recordsets

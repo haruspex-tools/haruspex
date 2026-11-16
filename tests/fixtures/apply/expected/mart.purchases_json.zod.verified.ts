@@ -33,6 +33,6 @@ export const PurchasesJsonRowSchema = z.object({
 })
 export type PurchasesJsonRow = z.infer<typeof PurchasesJsonRowSchema>
 
-/** mart.purchases_json: returns JSON, [] when no rows match. */
-export const PurchasesJsonSchema = z.array(PurchasesJsonRowSchema)
+/** mart.purchases_json: returns JSON, null when no rows match. */
+export const PurchasesJsonSchema = z.array(PurchasesJsonRowSchema).min(1).nullable()
 export type PurchasesJson = z.infer<typeof PurchasesJsonSchema>

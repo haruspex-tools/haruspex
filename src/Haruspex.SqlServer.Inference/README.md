@@ -1749,19 +1749,27 @@ README):
   offset: `datetime`, `datetime2`, `smalldatetime`) or `offset` (`datetimeoffset`), and `uuid` (8-4-4-4-12
   hex, not necessarily an RFC 9562 UUID). JSON *text* in a column (`json-text`) is unaffected: it is a
   string to parse.
+- **A rowset under the name of `FOR JSON` or `FOR XML` output is unknown.** SQL Server names the one column of top-level
+  `FOR JSON` output `JSON_F52E2B61-18A1-11d1-B105-00805F49916B` (`XML_…` for `FOR XML`), and the mssql driver takes any result
+  set whose one column has that name, matching case, for that output: it joins the rows into one, in either mode, and with
+  `parseJSON` parses a JSON one (`A_rowset_whose_one_column_is_named_as_for_json_output_is_joined_into_one_row_in_either_mode`,
+  `So_is_one_named_as_for_xml_output`, `The_name_must_match_with_its_case`). So a rowset whose one column is given the name,
+  from a `SELECT` or an `OUTPUT`, doesn't arrive as rows: it is `unsupported-query`, saying why
+  (`A_rowset_whose_one_column_the_driver_takes_for_for_json_or_for_xml_output_is_unknown`).
 - **A result can be absent.** A top-level `FOR JSON` query that matches no rows returns a result set with no
   row in it, not `[]`, `{}` or a NULL (observed, with and without `WITHOUT_ARRAY_WRAPPER` and
   `INCLUDE_NULL_VALUES`), so a JSON result has `mayBeAbsent: true` with the reason `no-rows`. A rowset is always
   present (with no rows, it is an empty result set). **Reader convention:** a reader that finds no row for
-  a result that may be absent yields `[]` when the result's type is an array, and `null` otherwise. Emitters
-  rely on it: a single-object result is nullable, an array result is not.
+  a JSON result that may be absent yields `null`, whatever its type, as the mssql driver does
+  ([decision 0048](../../docs/decisions/0048-an-absent-json-result-reads-as-null.md)). Emitters rely on it: a JSON
+  result that may be absent is nullable.
 - **A result can be missing.** A result returned inside a branch, or after a `RETURN` that may be taken, may not run,
   and then its result set is not there at all, not empty; a result after it arrives in its place (observed). Results
   are listed by position: `results[k]` is everything a successful path can return k-th, a `union` of the whole results when
   paths differ (a rowset is then a union of arrays: every row of one result set comes from one statement). A position some path does not reach
   has `not-run` in `absentBecause`, at each statement that can return it there, and so does every position after it:
   the result sets a client receives are always the first ones listed. **Reader convention:** a reader pads the
-  missing ones as absent, `[]` for a rowset or an array result and `null` otherwise, as for a JSON result with no row.
+  missing ones as absent, `[]` for a rowset and `null` for a JSON result, as for a JSON result with no row.
 - **The IR describes calls that succeed.** A path that ends in an error the caller sees (`THROW`, `RAISERROR` of
   severity 11 or more, observed to fail the call even where the procedure goes on) describes no call that returns,
   and is left out: `IF @x IS NULL THROW …` is a guard, after which the results always run.
@@ -1771,8 +1779,8 @@ README):
   without `GROUP BY` or `HAVING`, or a query with no `FROM` and no filter; `atMostOne` adds `TOP (1)`, `FETCH NEXT 1`, and
   a filter that fixes every column of a primary key or unique constraint with `=` in the key's own type (or `IS NULL`: a
   key holds one NULL at most); `many` claims nothing. A generated client can return one row, or a row or null, rather
-  than a list. Emitters bound an array result by it, except one that may be absent, which reads as `[]` and is only
-  bounded above. A `FOR JSON` query that always returns exactly one row is never absent (observed).
+  than a list. Emitters bound an array result by it: a rowset that may be absent reads as `[]`, so only from above, and a
+  `FOR JSON` array, which reads as `null` when there is no row, from one item up. A `FOR JSON` query that always returns exactly one row is never absent (observed).
 - **`WITHOUT_ARRAY_WRAPPER` is claimed as one object** even where the query is not proved to return at most one row
   (`cardinality` is `many`). The claim is accepted because it cannot be silently wrong: several rows produce
   `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied. Where `cardinality` is

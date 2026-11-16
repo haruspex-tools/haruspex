@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Emit.Zod.Planning;
 using Haruspex.Ir;
@@ -154,32 +155,46 @@ internal static class ZodLowering
     }
 
     /// <summary>
-    /// A result's schema. A result that may be absent (a FOR JSON query that matched no rows returns no row at all) follows
-    /// the reader convention in the IR's README: an array reads as <c>[]</c>, so its schema is unchanged, and anything else
-    /// reads as <c>null</c>.
+    /// A result's schema. A result that may be absent follows the reader convention in the IR's README: a rowset reads as
+    /// <c>[]</c>, so its schema is unchanged, and a JSON result reads as <c>null</c>, whatever its type, because that is
+    /// what the mssql driver hands over for a FOR JSON query that matched no rows
+    /// (<c>docs/decisions/0048-an-absent-json-result-reads-as-null.md</c>).
     /// </summary>
     private static ZodExpression Result(IrResult result, TypeLowering types)
     {
-        var schema = types.Type(result.Type, result.Encoding);
-
-        // A result of rows (a rowset, or FOR JSON's array) has no more rows than its cardinality, and exactly one when it is
-        // one and always there. A result that may be absent reads as [] (the reader convention), so it is only bounded above.
-        // A union of arrays is not bounded, which only claims less.
-        if (result.Type is IrArray)
-        {
-            schema = result.Cardinality switch
-            {
-                IrCardinality.One when !result.MayBeAbsent => schema.Then("length", new Number("1")),
-                IrCardinality.One or IrCardinality.AtMostOne => schema.Then("max", new Number("1")),
-                _ => schema,
-            };
-        }
+        var schema = result.Type is IrArray array ? Rows(array, result, types) : types.Type(result.Type, result.Encoding);
 
         // A rowset reads as no rows when absent, whatever its type (a union of arrays when branches return different rows).
-        return result.MayBeAbsent && result.Encoding == IrEncoding.Json && result.Type is not (IrArray or IrUnknownType)
+        // An unknown JSON result already accepts null.
+        return result.MayBeAbsent && result.Encoding == IrEncoding.Json && result.Type is not IrUnknownType
             ? schema.Then("nullable")
             : schema;
     }
+
+    /// <summary>
+    /// A result of rows, a rowset or FOR JSON's array, bounded by its cardinality: it has no more rows than that, and exactly
+    /// one when it is one and arrives. An absent rowset reads as [], so one that may be absent is only bounded above. FOR
+    /// JSON over no rows returns no row at all, which reads as null, so a JSON array that arrives has an item for each of at
+    /// least one row. Each bound is written once, the tighter of the cardinality's and the array's own (a declared result's
+    /// <c>minItems</c>, say). A union of arrays is not bounded, which only claims less.
+    /// </summary>
+    private static ZodExpression Rows(IrArray array, IrResult result, TypeLowering types)
+    {
+        var json = result.Encoding == IrEncoding.Json;
+        int? fewest = json || (result.Cardinality == IrCardinality.One && !result.MayBeAbsent) ? 1 : null;
+        int? most = result.Cardinality is IrCardinality.One or IrCardinality.AtMostOne ? 1 : null;
+        var min = array.MinItems is { } ownMin && fewest is { } least ? Math.Max(ownMin, least) : array.MinItems ?? fewest;
+        var max = array.MaxItems is { } ownMax && most is { } greatest ? Math.Min(ownMax, greatest) : array.MaxItems ?? most;
+
+        var schema = types.Type(array with { MinItems = null, MaxItems = null }, result.Encoding);
+        if (min is { } exactly && max == exactly)
+            return schema.Then("length", Count(exactly));
+        if (min is { } low)
+            schema = schema.Then("min", Count(low));
+        return max is { } high ? schema.Then("max", Count(high)) : schema;
+    }
+
+    private static Number Count(int count) => new(count.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>
     /// What a result is, and what it reads as when absent: a FOR JSON query that matched no rows, or a statement that did not
@@ -197,6 +212,6 @@ internal static class ZodLowering
             _ => null,
         };
         var what = result.Encoding == IrEncoding.Rowset ? "rows" : "JSON";
-        return when is null ? what : $"{what}, {(result.Encoding == IrEncoding.Rowset || result.Type is IrArray ? "[]" : "null")} {when}";
+        return when is null ? what : $"{what}, {(result.Encoding == IrEncoding.Rowset ? "[]" : "null")} {when}";
     }
 }

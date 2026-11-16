@@ -68,12 +68,14 @@ automatically.
 
 The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtures and compiles it with
 `tsc --noEmit` (strict) against a pinned `zod`, and `tests/emit-lint` lints the same modules with the recommended rules of
-ESLint and typescript-eslint, failing on any warning. Each runs `npm ci` in its folder the first time. The lint has a
+ESLint and typescript-eslint, failing on any warning. Each runs `npm ci` in its folder the first time, and again when its
+`package-lock.json` has changed since. The lint has a
 package of its own because typescript-eslint reads TypeScript through the compiler's JavaScript API, which the TypeScript
 the emit check compiles with no longer has. The example application, `examples/greenhouse`, is compiled the same way
 against the module committed beside it (`ExampleAppTests`). The same package holds
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
-failures, and `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas. CI sets
+failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
+and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
 
 ### Differential tests against SQL Server
@@ -238,7 +240,10 @@ for each function of the catalogue, each observed) and, in Semantics, `BuiltInTy
 catalogue of built-in types, row by row, against the server) and `SchemaFactsTests` (what types, alias types and CHECK constraints
 guarantee, observed in `CheckConstraintObservationTests` on `tests/fixtures/checks`). `OPENJSON` belongs to two families: as
 a source of rows with its `WITH` columns (`SetJoinTests.OpenJson.cs`), and reading JSON a procedure built and traced
-(`JsonTracingTests.OpenJsonAndJsonValue.cs`). `CodeReferenceTests` checks that every name in these tables exists, and
+(`JsonTracingTests.OpenJsonAndJsonValue.cs`). One observation class observes a driver rather than the engine:
+`MssqlDriverObservationTests`, what the mssql driver hands an application for each form of JSON, which
+`MssqlDriverAcceptanceTests` parses with the generated schemas
+([decision 0048](docs/decisions/0048-an-absent-json-result-reads-as-null.md)). `CodeReferenceTests` checks that every name in these tables exists, and
 `ConstructFamilyTests` that every Inference test class and every observation or grid class is named here.
 
 ## Layers
@@ -292,6 +297,8 @@ the maintainer's agreement.
 | `xunit.v3` | Apache-2.0 | tests | The test framework; runs on Microsoft.Testing.Platform (opted into in `global.json`). |
 | `typescript` (npm) | Apache-2.0 | emit-check, examples | Compiles the generated Zod, to prove it type-checks. |
 | `zod` (npm) | MIT | emit-check, examples | The library the generated code targets, pinned so the check is repeatable. |
+| `mssql` (npm) | MIT | emit-check, examples | The SQL Server driver most Node applications call procedures through: the differential tests observe what it hands over and parse that with the generated schemas, and the example application calls it. |
+| `@types/mssql` (npm) | MIT | examples | `mssql`'s type declarations, which it doesn't ship, so that the example application compiles against the driver. |
 | `eslint`, `@eslint/js` (npm) | MIT | emit-lint | Lints the generated Zod with ESLint's recommended rules, as a team that lints its own code would. |
 | `typescript-eslint` (npm) | MIT | emit-lint | The recommended rules for TypeScript, and the parser ESLint needs to read it. |
 | `typescript` 6 (npm) | Apache-2.0 | emit-lint | typescript-eslint's parser, which needs the compiler's JavaScript API (below 6.1). |
@@ -310,6 +317,10 @@ layer for Windows, is under the Microsoft Software License Terms. They allow it 
 and test your applications", which is all the tests do; like DacFx's, they ask anyone who *redistributes* it to
 indemnify Microsoft. So it must never reach anything haruspex ships: the shipped projects under `src/` must
 not reference SqlClient.
+
+`mssql` and `@types/mssql` are development dependencies of the emit check and the example, and nothing in them is shipped.
+The 75 npm packages `mssql` brings (76 with its types) are MIT, BSD-3-Clause, ISC or 0BSD; most are tedious's support for
+signing in with Microsoft Entra ID (`@azure/identity` and its libraries), which the tests never use.
 
 The prose check's packages run only in development and CI, and nothing in them is shipped. Most of the 259 npm
 packages they bring are MIT, ISC, BSD or Apache-2.0; the others are permissive too (MIT-0, CC0, Unlicense,

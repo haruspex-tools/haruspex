@@ -25,6 +25,6 @@ export const SwapTallyJsonRowSchema = z.object({
 })
 export type SwapTallyJsonRow = z.infer<typeof SwapTallyJsonRowSchema>
 
-/** bazaar.swap_tally_json: returns JSON, [] when no rows match. */
-export const SwapTallyJsonSchema = z.array(SwapTallyJsonRowSchema)
+/** bazaar.swap_tally_json: returns JSON, null when no rows match. */
+export const SwapTallyJsonSchema = z.array(SwapTallyJsonRowSchema).min(1).nullable()
 export type SwapTallyJson = z.infer<typeof SwapTallyJsonSchema>
