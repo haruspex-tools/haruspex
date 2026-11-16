@@ -107,6 +107,30 @@ public static class IrJsonReader
         }
     }
 
+    /// <summary>
+    /// The version a file says it is (<c>irVersion</c>), read without the rest of it, so that a program can tell a file of another
+    /// version from one that is broken before it reads either. Null when the text isn't JSON, its root isn't an object, or it has
+    /// no <c>irVersion</c> that is a string.
+    /// </summary>
+    /// <param name="json">The file's text.</param>
+    public static string? VersionOf(string json)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        try
+        {
+            using var parsed = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = MaxDepth });
+            return parsed.RootElement.ValueKind == JsonValueKind.Object
+                && parsed.RootElement.TryGetProperty("irVersion", out var version)
+                && version.ValueKind == JsonValueKind.String
+                    ? version.GetString()
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     private static IrDocument Document(IrJsonObject json)
     {
         // The version first: a file of another version may differ anywhere, so nothing else in it is read.

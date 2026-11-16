@@ -47,6 +47,27 @@ public class DiagnosticMessagesTests
     }
 
     /// <summary>
+    /// A run of <c>haruspex check</c> on a project of <paramref name="sql"/> and the config file of the standard settings and
+    /// <paramref name="more"/>, generated first and then changed by <paramref name="change"/>, as a database change or a hand
+    /// would change it.
+    /// </summary>
+    private static string[] Checked(string[] sql, Action<TempDirectory> change, string more = "")
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/tables.sql", Tables);
+        for (var i = 0; i < sql.Length; i++)
+            folder.File($"db/p{i + 1}.sql", sql[i]);
+        folder.File("haruspex.json", $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        HaruspexCli.Run(["generate"], output, error, folder.Path);
+        change(folder);
+        error.GetStringBuilder().Clear();
+        HaruspexCli.Run(["check"], output, error, folder.Path);
+        return error.ToString().ReplaceLineEndings("\n").Replace(folder.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).TrimEnd('\n').Split('\n');
+    }
+
+    /// <summary>
     /// A run of the CLI on one of the test DACPACs (<c>tests/dacpacs</c>), copied alone into a folder of its own, so that what it
     /// refers to isn't found beside it, selecting <paramref name="include"/>.
     /// </summary>
@@ -218,6 +239,13 @@ public class DiagnosticMessagesTests
             [],
             """{ "source": "atelier.dacpac", "out": "out", "collation": "Latin1_General_100_CI_AS", "schemas": { "studio": { "include": ["list_pots"] } } }""",
             arrange: f => File.Copy(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "atelier", "atelier.dacpac"), Path.Combine(f.Path, "atelier.dacpac")))),
+        (6011, () => Checked([GetBook], f => Directory.Delete(Path.Combine(f.Path, "out"), recursive: true))),
+        (6012, () => Checked([GetBook], f => f.File("out/haruspex.ir.json", "{ \"irVersion\": \"0.9\" }"))),
+        (6013, () => Checked([GetBook], f => f.File("out/haruspex.ir.json", $"{{ \"irVersion\": \"{IrDocument.CurrentVersion}\" }}"))),
+        (6014, () => Checked([GetBook], f => f.File("db/p1.sql", GetBook.Replace("b.note, ", "", StringComparison.Ordinal)))),
+        (6015, () => Checked([GetBook], f => File.AppendAllText(Path.Combine(f.Path, "out", "haruspex.zod.ts"), "// edited\n"))),
+        (6016, () => Checked(["CREATE PROCEDURE lib.p @sql nvarchar(max) AS EXEC sp_executesql @sql;"], _ => { })),
+        (6017, () => Checked(["CREATE PROCEDURE lib.p AS SELECT json_query(b.extra) AS extra FROM lib.book AS b FOR JSON PATH;"], _ => { }, "\"check\": { \"unknowns\": \"fail\" }")),
     ];
 
     /// <summary>

@@ -1,7 +1,7 @@
 # Configuration: `haruspex.json`
 
-A project's settings live in `haruspex.json`. `haruspex generate` looks for it in the working directory and then in
-each folder above it, or uses the file `--config` names. Paths in it are relative to the file. It is JSON with
+A project's settings live in `haruspex.json`. `haruspex generate` and `haruspex check` look for it in the working directory
+and then in each folder above it, or uses the file `--config` names. Paths in it are relative to the file. It is JSON with
 comments and trailing commas, as `tsconfig.json` is. Its JSON Schema is published at
 [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and editors complete and check
 the file as you type.
@@ -20,6 +20,8 @@ otherwise silently do nothing.
   "objects": "strip",                       // or "strict"
 
   "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
+
+  "check": { "unknowns": "report" },        // or "fail"; see "What check fails on"
 
   "naming": {                               // for every schema
     "replace": [{ "pattern": "#$", "with": "Row" }],
@@ -242,6 +244,17 @@ exits as before (the `check` command will fail it).
 
 This is the one deliberate exception to "claim everything it does guarantee": `FOR JSON` produces exactly the known
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
+
+## What check fails on: `check`
+
+`haruspex check` fails when what the module claims would change, when nothing is committed to compare with, and when a selected
+procedure's result sets are unknown and not declared (the CLI's README says each). An unknown value is a note, as in `generate`,
+and doesn't fail it, since the module still checks it at runtime as a value of any shape. For a module that must be typed
+throughout:
+
+```jsonc
+"check": { "unknowns": "fail" }   // any unknown fails the check (HAR6017); "report", the default, notes each
+```
 
 ## The callers' session: `session`
 

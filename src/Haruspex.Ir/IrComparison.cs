@@ -13,7 +13,7 @@ namespace Haruspex.Ir;
 /// absent (only whether there is one is a claim), the sources of facts (<c>from</c>), the package a source was read from and
 /// its hash, an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
 /// the types), and a type's identity and whether it is recursive (both follow from the types). So editing a procedure without
-/// changing what it returns, or rebuilding a DACPAC, changes nothing here.
+/// changing what it returns, or rebuilding a DACPAC, changes nothing here. Why: docs/decisions/0050-check-compares-claims-not-files.md.
 /// </para>
 /// <para>
 /// Objects are matched by id, parameters and fields by name, result sets by position. A reference is followed into the type it

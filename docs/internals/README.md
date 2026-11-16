@@ -105,6 +105,9 @@ with no config file. The blocks after it, up to the next example, show what that
   project as `db/project.sql`, with paths shown from that folder. Words after the mark are the run's arguments; with none,
   the run takes its settings from the config file, or types every procedure to `out` when there is none. A
   `jsonc haruspex-config` block before it is the config file, `haruspex.json`, of the runs after it in the same example.
+- `text haruspex-check`: what `haruspex check` prints when the example before this one has been generated, as if committed,
+  and the project then changed to this one, run the same way and with the same arguments. It can't follow a file's first
+  example, which has nothing before it.
 
 An example may instead be written over one of the vendored corpora, named after the mark (`sql haruspex-example AdventureWorks`):
 it is read beside the corpus's scripts, so it can use the sample's own tables, and only the procedures it defines are inferred.

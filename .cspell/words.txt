@@ -209,6 +209,8 @@ cormen
 oppen
 wadler
 wlaschin
+falleri
+rémy
 
 # A conference and a journal the guide cites papers from
 OOPSLA

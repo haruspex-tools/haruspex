@@ -61,7 +61,23 @@ internal static class HaruspexCli
         }
     }
 
-    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory)
+    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory) =>
+        new("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
+        {
+            Module(
+                "generate",
+                "Infer the result shapes of procedures, and write the IR and a Zod module.",
+                request => Generate.Run(request, output, error),
+                workingDirectory),
+            Module(
+                "check",
+                $"Infer as generate does, write nothing, and fail if {IrFileName} and {ZodFileName} in the output folder claim something else, saying what changed.",
+                request => Check.Run(request, output, error),
+                workingDirectory),
+        };
+
+    /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
+    private static Command Module(string name, string description, Func<RunRequest, int> run, string workingDirectory)
     {
         var directory = new Argument<string?>("source")
         {
@@ -79,29 +95,23 @@ internal static class HaruspexCli
         };
         var outDirectory = new Option<string?>("--out", "-o")
         {
-            Description = $"The folder to write {IrFileName} and {ZodFileName} to. Overrides \"out\" in the config file.",
+            Description = $"The folder of {IrFileName} and {ZodFileName}. Overrides \"out\" in the config file.",
         };
 
-        var generate = new Command("generate", "Infer the result shapes of procedures, and write the IR and a Zod module.")
+        var command = new Command(name, description)
         {
             directory,
             config,
             include,
             outDirectory,
         };
-        generate.SetAction(parsed => Generate.Run(
-            new GenerateRequest(
+        command.SetAction(parsed => run(
+            new RunRequest(
                 parsed.GetValue(directory),
                 parsed.GetValue(config),
                 [.. parsed.GetValue(include) ?? []],
                 parsed.GetValue(outDirectory),
-                workingDirectory),
-            output,
-            error));
-
-        return new RootCommand("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
-        {
-            generate,
-        };
+                workingDirectory)));
+        return command;
     }
 }

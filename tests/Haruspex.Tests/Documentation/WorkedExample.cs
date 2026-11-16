@@ -12,7 +12,9 @@ namespace Haruspex.Tests.Documentation;
 /// example, may show its output: <c>ts haruspex-zod</c> for the Zod module, and <c>json haruspex-ir</c> for the IR, the
 /// whole document or, with a third word, one of its top-level properties (<c>json haruspex-ir unknowns</c>). They may also
 /// show a run of <c>haruspex generate</c>: <c>text haruspex-run</c> for what it prints, with the run's arguments after the
-/// mark if any, and <c>jsonc haruspex-config</c> for the config file of the runs after it, up to the next.
+/// mark if any, and <c>jsonc haruspex-config</c> for the config file of the runs after it, up to the next. And a run of
+/// <c>haruspex check</c>, <c>text haruspex-check</c>: what it prints when the example before is generated and committed, and
+/// the project then changed to this one.
 /// <para>
 /// An example may name one of the vendored corpora after its mark (<c>sql haruspex-example WideWorldImporters</c>): its SQL is
 /// then read beside that corpus's scripts, so that it can use the corpus's own tables, and only the objects it defines are
@@ -33,6 +35,7 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
     public const string IrMark = "haruspex-ir";
     public const string ConfigMark = "haruspex-config";
     public const string RunMark = "haruspex-run";
+    public const string CheckMark = "haruspex-check";
 
     /// <summary>The examples in a Markdown file, and what is wrong with how any is written.</summary>
     public static (IReadOnlyList<WorkedExample> Examples, IReadOnlyList<string> Problems) Read(string file, string markdown)
@@ -40,6 +43,7 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
         var examples = new List<WorkedExample>();
         var problems = new List<string>();
         WorkedExample? current = null;
+        string? previous = null;
         string? config = null;
         foreach (var block in MarkdownText.FencedBlocks(markdown))
         {
@@ -49,10 +53,11 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
             {
                 case ExampleMark:
                     Close(current);
+                    previous = current?.Sql;
                     current = new WorkedExample(file, block.Line, block.Text, []) { Over = block.Words.Skip(2).FirstOrDefault() };
                     config = null;
                     break;
-                case ZodMark or IrMark or ConfigMark or RunMark when current is null:
+                case ZodMark or IrMark or ConfigMark or RunMark or CheckMark when current is null:
                     problems.Add($"{at}: a {mark} block with no {ExampleMark} block before it");
                     break;
                 case ZodMark:
@@ -66,6 +71,12 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
                     break;
                 case RunMark:
                     current = current with { Outputs = [.. current.Outputs, new Output(OutputKind.Run, null, block.Line, block.Text) { Config = config, Arguments = [.. block.Words.Skip(2)] }] };
+                    break;
+                case CheckMark when previous is null:
+                    problems.Add($"{at}: a {mark} block in the first {ExampleMark} block's outputs, with no project before it to have generated");
+                    break;
+                case CheckMark:
+                    current = current with { Outputs = [.. current.Outputs, new Output(OutputKind.Check, null, block.Line, block.Text) { Config = config, Arguments = [.. block.Words.Skip(2)], Before = previous }] };
                     break;
                 default:
                     break;
@@ -109,8 +120,11 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
         /// <summary>For a run, the config file it reads, or null for none.</summary>
         public string? Config { get; init; }
 
-        /// <summary>For a run, its arguments after <c>generate</c>; none means the config file's settings, or every procedure to <c>out</c> without one.</summary>
+        /// <summary>For a run, its arguments after <c>generate</c> or <c>check</c>; none means the config file's settings, or every procedure to <c>out</c> without one.</summary>
         public IReadOnlyList<string> Arguments { get; init; } = [];
+
+        /// <summary>For a check, the project of the example before, generated first, so that its output is what is committed.</summary>
+        public string? Before { get; init; }
     }
 
     /// <summary>The outputs an example can show.</summary>
@@ -119,5 +133,6 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
         Ir,
         Zod,
         Run,
+        Check,
     }
 }
