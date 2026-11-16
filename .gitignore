@@ -13,6 +13,7 @@ node_modules.lock
 tests/emit-check/generated/
 tests/emit-lint/generated/
 tests/emit-check/accept/
+tests/emit-check/quick-start/
 
 # Local runs of the tool
 /out/

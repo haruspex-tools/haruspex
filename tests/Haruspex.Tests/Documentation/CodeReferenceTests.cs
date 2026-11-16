@@ -84,6 +84,7 @@ public partial class CodeReferenceTests
     [InlineData("src/Haruspex.SqlServer.Inference/FunctionSummaries.cs")]
     [InlineData("tests/fixtures/trees")]
     [InlineData("GetCategoryRow")]
+    [InlineData("RecursionLevel")]
     public void A_reference_to_something_that_exists_resolves(string code)
     {
         Assert.True(CodeReferences.IsReference(code));
@@ -100,6 +101,7 @@ public partial class CodeReferenceTests
     [InlineData("FlowStates.cs")]
     [InlineData("src/Haruspex.SqlServer.Inference/FunctionSummary.cs")]
     [InlineData("docs/internals/no-such-chapter")]
+    [InlineData("ComponentDescription")]
     public void A_reference_to_something_that_does_not_exist_is_reported(string code)
     {
         Assert.True(CodeReferences.IsReference(code));

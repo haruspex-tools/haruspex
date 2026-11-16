@@ -250,6 +250,9 @@ dotnet build
 
 ## Quick start
 
+[Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to a schema for one of the sample's
+procedures, and a script that parses rows with it.
+
 The repository's example application has a database project and a config file. From the repository's root:
 
 ```sh

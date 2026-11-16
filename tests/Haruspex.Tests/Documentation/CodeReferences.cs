@@ -169,17 +169,19 @@ internal sealed partial class CodeReferences
         }
 
         // Generated names are real when haruspex generates them: in a committed snapshot (a test's own, or a fixture's
-        // expected output), or in a worked example's output, which WorkedExampleTests holds to what haruspex gives.
+        // expected output), or in a module the documentation shows, which WorkedExampleTests (a worked example's output)
+        // or QuickStartTests (the five-minute start's) holds to what haruspex gives. A name is a schema's or a type's, or a
+        // key of an object the module declares, which is a column's or a JSON key's name as the SQL writes it.
         var modules = Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "tests", "Haruspex.Tests", "Snapshots"), "*.verified.ts")
             .Concat(Fixture.All.SelectMany(f => Directory.EnumerateFiles(f.Expected, "*.verified.ts")))
             .Select(File.ReadAllText)
             .Concat(MarkdownText.Documentation
                 .SelectMany(f => MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, f))))
-                .Where(b => b.Words.Contains(WorkedExample.ZodMark))
+                .Where(b => b.Words.Contains(WorkedExample.ZodMark) || QuickStartTests.IsModule(b))
                 .Select(b => b.Text));
         foreach (var module in modules)
         {
-            foreach (Match m in GeneratedName().Matches(module))
+            foreach (var m in GeneratedName().Matches(module).Concat(GeneratedKey().Matches(module)))
                 generated.Add(m.Groups["name"].Value);
         }
 
@@ -345,4 +347,8 @@ internal sealed partial class CodeReferences
 
     [GeneratedRegex(@"\bexport\s+(?:const|type)\s+(?<name>[A-Za-z_]\w*)")]
     private static partial Regex GeneratedName();
+
+    /// <summary>A key of a generated object, one to a line: <c>  orderDate: z.iso.date(),</c>.</summary>
+    [GeneratedRegex(@"^[ ]+(?<name>[A-Za-z_]\w*): ", RegexOptions.Multiline)]
+    private static partial Regex GeneratedKey();
 }
