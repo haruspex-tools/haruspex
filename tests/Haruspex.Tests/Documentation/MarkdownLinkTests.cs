@@ -79,7 +79,7 @@ public partial class MarkdownLinkTests
     }
 
     /// <summary>The relative link targets in Markdown text, with the line each is on; code, fenced or inline, is skipped.</summary>
-    private static IEnumerable<(int Line, string Target)> Links(string markdown)
+    internal static IEnumerable<(int Line, string Target)> Links(string markdown)
     {
         var lines = markdown.Split('\n');
         var fenced = false;

@@ -11,7 +11,7 @@
       "type": "string"
     },
     "source": {
-      "description": "The folder of .sql files to read, including subfolders, or a .dacpac to read with the packages of its database it refers to, relative to this file. The command line's source argument overrides it.",
+      "description": "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Relative to this file. The command line's source argument overrides it.",
       "type": "string",
       "minLength": 1
     },
@@ -21,7 +21,7 @@
       "items": { "type": "string", "minLength": 1 }
     },
     "collation": {
-      "description": "The database's default collation, which a column without COLLATE takes, for a source that doesn't record it: a folder of .sql files. A .dacpac records its own, which wins. Without either, a value set of such a column is a comment, not an enum.",
+      "description": "The database's default collation, which a column without COLLATE takes, for a source that doesn't record it: a folder of .sql files. A .dacpac records its own and a .sqlproj gives its own, which wins. Without either, a value set of such a column is a comment, not an enum.",
       "type": "string",
       "pattern": "^[A-Za-z0-9_]+$"
     },

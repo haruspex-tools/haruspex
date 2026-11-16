@@ -1,6 +1,6 @@
 # Haruspex.Cli
 
-The `haruspex` command. It composes the layers: it reads a folder of `.sql` files or a DACPAC with
+The `haruspex` command. It composes the layers: it reads a folder of `.sql` files, a `.sqlproj` or a DACPAC with
 [Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
 with [Haruspex.SqlServer.Inference](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
 applies [`haruspex.json`](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md) with
@@ -36,6 +36,9 @@ flowchart LR
 
 ## Example
 
+No package is published yet, so there is no `haruspex` on the `PATH`: until there is, run it from a clone of the repository
+as `dotnet run --project src/Haruspex.Cli -- generate …`, which builds it first. With the command installed:
+
 ```sh
 haruspex generate                                    # settings from haruspex.json, found by walking up
 haruspex generate path/to/database --include 'sales.*' --out src/db
@@ -50,9 +53,18 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 ```
 
 `generate` writes `haruspex.ir.json` and `haruspex.zod.ts` to the output folder. `check` infers the same way, writes nothing,
-and compares with the two files committed there. Both take the same arguments: the source argument (a folder, a `.sqlproj` or
-a `.dacpac`), `--include` and `--out` override the config file for one run, and `--config` names a config file instead of
-searching for one.
+and compares with the two files committed there. Both take:
+
+| Argument or option | What it is |
+|---|---|
+| `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
+| `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
+| `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module ("Several modules", below). |
+| `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run. |
+| `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
+
+Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
+and `haruspex check --help` list the same.
 
 **Several modules.** An application whose plugins each have their own interface to the database has a `haruspex.json`
 for each, and each is a module of its own: its own selection, names, output and committed contract. `--config` may be
@@ -88,10 +100,11 @@ output: how many procedures it typed, how many unknowns there are, and where it 
 ## What it guarantees
 
 - **Every unknown is reported**, as a note with its code, its place in the SQL and its reason, except one only a
-  declaration can resolve (dynamic SQL, a procedure chosen when it runs, one outside the project), which is a warning
+  declaration can resolve (dynamic SQL, a procedure chosen when it runs, one outside the project, one the caller's default
+  schema chooses, one created `WITH ENCRYPTION`), which is a warning
   saying what to declare instead. One fact is said once.
 - **Every problem with a run's settings is reported**, not only the first: a config file that doesn't read, a missing
-  source folder, a missing output folder and a malformed `--include` are all listed in one run. A check that needs what an
+  source folder, no output folder given and a malformed `--include` are all listed in one run. A check that needs what an
   earlier step failed to give is not run, so one mistake doesn't bring others with it; the price is that a problem only a
   later step can see (a pattern that matches no procedure, say) waits until the run gets that far.
 - **No half output.** When the SQL, the command line or the config file has an error, or the module can't be emitted,

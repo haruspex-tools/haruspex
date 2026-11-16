@@ -25,5 +25,7 @@ What to look at:
   key at all, and the type says so (`water_log?`).
 - `garden.list_plants` returns rows, which the mssql driver delivers with `date` columns as `Date`, so `planted` is a
   `Date | null`.
-- `kind` is limited by a CHECK constraint, but under a case-insensitive collation the database would accept `HERB` as
-  `herb`, so the module notes the values rather than claiming an enum.
+- `kind` is limited by a CHECK constraint, but it is an `nvarchar` column, which the database compares under its collation:
+  where `HERB` can pass a check for `herb`, the value that arrives may be either, so the module notes the values rather
+  than claiming an enum. [The configuration](../../docs/configuration.md#the-databases-collation-collation) says when a set
+  becomes an enum, and how to declare one exact.

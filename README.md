@@ -277,7 +277,14 @@ cd haruspex
 dotnet build
 ```
 
+The module it generates imports [Zod 4](https://zod.dev), which the application installs itself. The tests compile every
+generated module with zod 4.6.7 and TypeScript 7.0.2 in strict mode, so those versions are known to work.
+
 ## Quick start
+
+[Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to a schema for one of the sample's
+procedures, and a script that parses rows with it. [The documentation's index](docs/README.md) says what every other page is
+for, with where to start to use haruspex, to judge whether to trust it, or to contribute.
 
 The repository's example application has a database project and a config file. From the repository's root:
 
@@ -321,9 +328,11 @@ haruspex relies on about SQL Server is observed on a real server by a test, and 
 - **Databases other than SQL Server.** For PostgreSQL, pgtyped, sqlc or Kysely with `kysely-codegen`.
 - **Code that builds its SQL at run time.** A typed query builder such as Kysely types it where it is built.
 - **Databases with no project and no DACPAC.** Extract a DACPAC first, with SqlPackage's `/Action:Extract`.
-- **Anyone who needs a supported tool.** This is a personal open-source project with no support commitment.
+- **Anyone who needs a supported tool.** This is a personal open-source project with
+  [no support commitment](SUPPORT.md).
 - **Anyone who won't use code written by AI.** Better to know before you start.
 
 ## Licence
 
-[Apache 2.0](LICENSE). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+[Apache 2.0](LICENSE). Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Report a vulnerability
+privately, as [SECURITY.md](SECURITY.md) says.
