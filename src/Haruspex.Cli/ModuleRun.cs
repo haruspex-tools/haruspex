@@ -118,12 +118,12 @@ internal static class ModuleRun
         {
             return File.Exists(source)
                 ? new Succeeded<string>(source)
-                : Refused<string>(CliCodes.SourceNotFound, $"file not found: {request.Directory ?? source}");
+                : Refused<string>(CliCodes.SourceNotFound, $"file not found: {request.Directory ?? DiagnosticFormatter.PathAsShown(source)}");
         }
 
         return Directory.Exists(source)
             ? new Succeeded<string>(source)
-            : Refused<string>(CliCodes.SourceNotFound, $"directory not found: {request.Directory ?? source}");
+            : Refused<string>(CliCodes.SourceNotFound, $"directory not found: {request.Directory ?? DiagnosticFormatter.PathAsShown(source)}");
     }
 
     private static Outcome<string> Out(RunRequest request, Settings settings) =>

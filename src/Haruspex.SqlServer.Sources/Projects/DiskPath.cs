@@ -87,7 +87,8 @@ internal static class DiskPath
 
     /// <summary>
     /// Where the folder at the full path <paramref name="full"/> really is: every link on its path followed, and each name in the
-    /// case it has on disk, so that two paths naming one folder give one string, compared ordinally.
+    /// case it has on disk, so that two paths naming one folder give one string, compared ordinally; or null when links on it lead
+    /// round in a circle, so that it is nowhere. Where a link leads to nothing, the path is where it leads, which isn't there.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -101,32 +102,72 @@ internal static class DiskPath
     /// <para>
     /// Below the root, each name is found in its folder's listing, so that a path written in another case than the disk's, where
     /// the file system ignores case (Windows, macOS), gives the disk's (<see cref="Named"/>). Each folder is then asked for its
-    /// link: <see cref="FileSystemInfo.ResolveLinkTarget"/> reads a symbolic link on every platform and a junction on Windows,
-    /// and follows a chain of them to its end. The end's own path may run through links, so it is made real in turn.
+    /// link, one link at a time (<see cref="Followed"/>), and where it leads is made real in turn, since that path may run through
+    /// links too. <see cref="FileSystemInfo.ResolveLinkTarget"/> reads a symbolic link on every platform and a junction on
+    /// Windows. Asked for the end of a chain instead, it throws for a link that leads to nothing, and for a junction read through a
+    /// share (<c>\\localhost\C$\…</c>) it gives a path that has lost its <c>\\</c> and so names a folder under the working one (both
+    /// observed, 7w): one link at a time, a junction gives the path it records, and that is all that is read.
+    /// </para>
+    /// <para>
+    /// The root is taken for itself, so a drive that is another folder under a second name (<c>subst</c>, a mapped drive) or a
+    /// share of a local folder isn't known to be that folder. A link from under it back to the folder by its own name is then not
+    /// seen as a loop, and the walk reads what is under the folder twice, which a build reads once: a script is then defined
+    /// twice (HAR1002), never typed wrongly. Telling them apart needs the file system's identity of a folder, which .NET doesn't
+    /// give; a known limit.
     /// </para>
     /// <para>
     /// The platform's own call (<c>realpath</c>, <c>GetFinalPathNameByHandle</c>) would do this in one step, but differently on
     /// each platform and through native code; this is one reading on all three, made of calls .NET already makes portable.
     /// </para>
     /// </remarks>
-    public static string Real(string full)
-    {
-        var root = Path.GetPathRoot(full) ?? "";
-        var real = OperatingSystem.IsWindows() ? root.ToUpperInvariant() : root;
-        foreach (var part in full[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
-            real = Followed(Path.Join(real, Named(real, part)));
-        return real;
-    }
+    public static string? Real(string full) => RealAfter(full, 0);
 
     /// <summary>
     /// Where the entry <paramref name="name"/>, as its folder lists it, of the folder whose real path is <paramref name="folder"/>
     /// really is: <see cref="Real"/> one name further down, for a walk that has the name from the listing already.
     /// </summary>
-    public static string RealEntry(string folder, string name) => Followed(Path.Join(folder, name));
+    public static string? RealEntry(string folder, string name) => Followed(Path.Join(folder, name), 0);
 
-    /// <summary>The real path of where the link at <paramref name="path"/> leads, or <paramref name="path"/> when it is no link.</summary>
-    private static string Followed(string path) =>
-        new DirectoryInfo(path).ResolveLinkTarget(returnFinalTarget: true) is { } target ? Real(target.FullName) : path;
+    /// <summary>
+    /// How many links a path may pass through before it is taken to go round in a circle, as Linux counts them (at most
+    /// 40); Windows allows 63 reparse points on a path.
+    /// </summary>
+    private const int MostLinks = 40;
+
+    /// <summary><see cref="Real"/>, <paramref name="links"/> having been followed to reach <paramref name="full"/>.</summary>
+    private static string? RealAfter(string full, int links)
+    {
+        var root = Path.GetPathRoot(full) ?? "";
+        var real = OperatingSystem.IsWindows() ? root.ToUpperInvariant() : root;
+        foreach (var part in full[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
+        {
+            real = Followed(Path.Join(real, Named(real, part)), links);
+            if (real is null)
+                return null;
+        }
+
+        return real;
+    }
+
+    /// <summary>
+    /// The real path of where the link at <paramref name="path"/> leads, <paramref name="links"/> having been followed to reach it;
+    /// <paramref name="path"/> when it is no link or isn't there.
+    /// </summary>
+    private static string? Followed(string path, int links)
+    {
+        FileSystemInfo? target;
+        try
+        {
+            target = new DirectoryInfo(path).ResolveLinkTarget(returnFinalTarget: false);
+        }
+        catch (IOException)
+        {
+            // Nothing is there to be a link: the path a link led to, which a walk then finds missing.
+            target = null;
+        }
+
+        return target is null ? path : links == MostLinks ? null : RealAfter(target.FullName, links + 1);
+    }
 
     /// <summary>
     /// The name <paramref name="name"/> in <paramref name="folder"/> as it is written on disk: its own when an entry has it exactly

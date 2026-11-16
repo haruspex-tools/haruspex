@@ -17,7 +17,11 @@ internal static class ItemSpecs
     /// <summary>Whether any path or pattern <paramref name="specs"/> lists names the file at <paramref name="path"/>.</summary>
     public static bool AnyNames(string folder, string specs, string path) => Of(specs).Any(spec => Names(folder, spec, path));
 
-    /// <summary>Every file <paramref name="specs"/> names, as full paths: a pattern's files, and a path as written.</summary>
+    /// <summary>
+    /// Every file <paramref name="specs"/> names, as full paths: a pattern's files, and a path as written, as is a pattern a build
+    /// can't expand (<see cref="Glob.Files"/>), which it takes as a file's name.
+    /// </summary>
     public static IEnumerable<string> Files(string folder, string specs) =>
-        Of(specs).SelectMany(spec => Glob.IsPattern(spec) ? Glob.Of(folder, spec).Files() : DiskPath.IsRootedElsewhere(spec) ? [] : [DiskPath.Full(folder, spec)]);
+        Of(specs).SelectMany(spec => Glob.IsPattern(spec) && Glob.Of(folder, spec).Files(out _) is { } files ? files
+            : DiskPath.IsRootedElsewhere(spec) ? [] : [DiskPath.Full(folder, spec)]);
 }

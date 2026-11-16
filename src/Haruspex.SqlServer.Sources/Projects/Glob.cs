@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 
 namespace Haruspex.SqlServer.Sources.Projects;
 
@@ -55,14 +56,26 @@ internal sealed class Glob
         return new Glob(start, new Regex(pattern.Append('$').ToString(), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
     }
 
-    /// <summary>Every file the pattern names, as full paths in ordinal order; none when its folder isn't there.</summary>
-    public IEnumerable<string> Files()
+    /// <summary>
+    /// Every file the pattern names, as full paths in ordinal order, none when its folder isn't there; or null, with why, when a
+    /// build can't expand it, because a folder under it can't be entered: a link to a folder that isn't there, or links that lead
+    /// round in a circle.
+    /// </summary>
+    /// <remarks>
+    /// A build then takes the pattern itself as the item, the name of a file, which isn't there, and stops: a dangling junction
+    /// anywhere under <c>**/*.sql</c> gave <c>SQL72001: File "…\**\*.sql" does not exist</c> (observed on Windows, 7w). Linux lists a
+    /// symbolic link to nothing as no folder at all, so there the walk passes it by, as .NET's listing, which MSBuild uses, does.
+    /// </remarks>
+    public IReadOnlyList<string>? Files(out string? unexpanded)
     {
+        unexpanded = null;
         if (DiskPath.Locate(start, start, out _) is not { } folder || !Directory.Exists(folder))
             return [];
-        return Walk(folder)
+        if (Walk(folder, out unexpanded) is not { } files)
+            return null;
+        return [.. files
             .Where(file => rest.IsMatch(Path.GetRelativePath(folder, file).Replace('\\', '/')))
-            .Order(StringComparer.Ordinal);
+            .Order(StringComparer.Ordinal)];
     }
 
     /// <summary>
@@ -70,16 +83,26 @@ internal sealed class Glob
     /// (<see cref="DiskPath.Real"/>): a link to a folder elsewhere is followed, as a build follows it, and a link back to a folder
     /// already walked (a loop) isn't, where enumerating through it would find each file again and again (a build reads the file
     /// once, observed). A folder's real path is its parent's joined to its listed name, unless it is itself a link, so the path
-    /// above the top is read once.
+    /// above the top is read once. Null, with why, at a folder that can't be entered.
     /// </summary>
-    private static List<string> Walk(string top)
+    private static List<string>? Walk(string top, out string? unexpanded)
     {
+        unexpanded = null;
         var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = true };
         var files = new List<string>();
         var walked = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<(string Path, string Real)>([(top, DiskPath.Real(top))]);
+        var pending = new Stack<(string Path, string? Real)>([(top, DiskPath.Real(top))]);
         while (pending.TryPop(out var folder))
         {
+            if (folder.Real is null || !Directory.Exists(folder.Real))
+            {
+                var shown = DiagnosticFormatter.PathAsShown(folder.Path);
+                unexpanded = folder.Real is null
+                    ? $"{shown} is a link, and the links from it lead round in a circle"
+                    : $"{shown} is a link to {new DirectoryInfo(folder.Path).LinkTarget ?? folder.Real}, which isn't there";
+                return null;
+            }
+
             if (!walked.Add(folder.Real))
                 continue;
             files.AddRange(Directory.EnumerateFiles(folder.Path, "*", options));

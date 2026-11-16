@@ -627,6 +627,51 @@ public partial class SqlProjectReaderTests
         Assert.Equal(["linked", "real"], Procedures(read));
     }
 
+    [Theory]
+    [InlineData(FolderLinkKind.Symbolic)]
+    [InlineData(FolderLinkKind.Junction)]
+    public void A_link_to_a_folder_that_isn_t_there_stops_a_build_on_windows_and_is_passed_over_elsewhere(FolderLinkKind kind)
+    {
+        // Windows lists such a link as a folder, which can't be entered: a build then takes **/*.sql as a file's name and stops
+        // (SQL72001, observed). Linux lists it as no folder, so the walk passes it by. It crashed on Windows before.
+        using var folder = new TempDirectory();
+        folder.File("p/real.sql", Proc("real"));
+        Directory.CreateDirectory(Path.Combine(folder.Path, "p", "sub"));
+        FolderLink.Make(kind, Path.Combine(folder.Path, "p", "sub", "dangling"), Path.Combine(folder.Path, "gone"));
+        var read = Read(folder, Sdk());
+
+        if (OperatingSystem.IsWindows())
+        {
+            var stops = Assert.Single(read.Diagnostics);
+            Assert.Equal(SourceCodes.ScriptNotFound, stops.Code);
+            Assert.Equal(
+                $"p.sqlproj builds **/*.sql, which a build can't expand: {DiagnosticFormatter.PathAsShown(Path.Combine(folder.Path, "p", "sub", "dangling"))} is a link to {Path.Combine(folder.Path, "gone")}, which isn't there, so the build takes the pattern for a file's name, and stops (SQL72001).",
+                stops.Message);
+            Assert.Empty(Procedures(read));
+        }
+        else
+        {
+            Assert.Empty(read.Diagnostics);
+            Assert.Equal(["real"], Procedures(read));
+        }
+    }
+
+    [Fact]
+    public void A_project_read_through_a_share_follows_its_junctions()
+    {
+        // A junction's end, asked for through \\localhost\C$, named a folder under the working one, and the read crashed (7w).
+        using var folder = new TempDirectory();
+        folder.File("p/real.sql", Proc("real"));
+        folder.File("shared/linked.sql", Proc("linked"));
+        FolderLink.Make(FolderLinkKind.Junction, Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
+        var project = folder.File("p/p.sqlproj", Sdk());
+
+        var read = SqlProjectReader.Read(LocalShare.Of(project), [], new PackageCache(Path.Combine(folder.Path, "no-packages")));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(["linked", "real"], Procedures(read));
+    }
+
     [Fact]
     public void A_script_the_default_items_already_hold_included_again_is_said_and_read_once()
     {

@@ -438,11 +438,23 @@ internal sealed class ProjectEvaluator
         {
             var added = new List<ProjectItem>();
             if (!FileTypes.Contains(type))
+            {
                 added.Add(new ProjectItem(type, spec, null, at));
-            else if (Glob.IsPattern(spec))
-                added.AddRange(Glob.Of(Folder, spec).Files().Where(f => !left.Any(x => ItemSpecs.Names(Folder, x, f))).Select(f => new ProjectItem(type, Path.GetRelativePath(Folder, f), f, at)));
-            else if (!left.Any(x => ItemSpecs.Names(Folder, x, DiskPath.Full(Folder, spec))))
-                added.Add(new ProjectItem(type, spec, DiskPath.IsRootedElsewhere(spec) ? null : DiskPath.Full(Folder, spec), at));
+            }
+            else if (!Glob.IsPattern(spec))
+            {
+                if (!left.Any(x => ItemSpecs.Names(Folder, x, DiskPath.Full(Folder, spec))))
+                    added.Add(new ProjectItem(type, spec, DiskPath.IsRootedElsewhere(spec) ? null : DiskPath.Full(Folder, spec), at));
+            }
+            else if (Glob.Of(Folder, spec).Files(out var unexpanded) is { } files)
+            {
+                added.AddRange(files.Where(f => !left.Any(x => ItemSpecs.Names(Folder, x, f))).Select(f => new ProjectItem(type, Path.GetRelativePath(Folder, f), f, at)));
+            }
+            else
+            {
+                // As a build takes a pattern it can't expand: the name of a file.
+                added.Add(new ProjectItem(type, spec, DiskPath.Full(Folder, spec), at) { Unexpanded = unexpanded });
+            }
 
             foreach (var item in added)
             {

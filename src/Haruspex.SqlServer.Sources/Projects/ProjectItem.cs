@@ -22,6 +22,12 @@ internal sealed class ProjectItem(string Type, string Spec, string? FullPath, So
     /// <summary>The element that included it.</summary>
     public SourceLocation At { get; } = At;
 
+    /// <summary>
+    /// Why a build can't expand the pattern it was included by, which it then names as a file's name (<see cref="Glob.Files"/>);
+    /// null for any other item.
+    /// </summary>
+    public string? Unexpanded { get; init; }
+
     /// <summary>Its metadata, by name ignoring case, as MSBuild names metadata.</summary>
     public Dictionary<string, Evaluated> Metadata { get; } = new(StringComparer.OrdinalIgnoreCase);
 }

@@ -33,7 +33,7 @@ public class DiskPathTests
         using var folder = new TempDirectory();
         Directory.CreateDirectory(Path.Combine(folder.Path, "db", "Tables"));
 
-        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path), "db", "Tables"), DiskPath.Real(Path.Combine(folder.Path, "db", "Tables")));
+        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path)!, "db", "Tables"), DiskPath.Real(Path.Combine(folder.Path, "db", "Tables")));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class DiskPathTests
         if (!Directory.Exists(written))
             Assert.Skip("this file system tells case apart, so the folder written in another case isn't there");
 
-        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path), "db", "Tables"), DiskPath.Real(written));
+        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path)!, "db", "Tables"), DiskPath.Real(written));
     }
 
     [Theory]
@@ -58,9 +58,48 @@ public class DiskPathTests
         Directory.CreateDirectory(Path.Combine(folder.Path, "p"));
         FolderLink.Make(kind, Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
 
-        var real = Path.Combine(DiskPath.Real(folder.Path), "shared");
+        var real = Path.Combine(DiskPath.Real(folder.Path)!, "shared");
         Assert.Equal(real, DiskPath.Real(Path.Combine(folder.Path, "p", "elsewhere")));
         Assert.Equal(Path.Combine(real, "inner"), DiskPath.Real(Path.Combine(folder.Path, "p", "elsewhere", "inner")));
+    }
+
+    [Theory]
+    [InlineData(FolderLinkKind.Symbolic)]
+    [InlineData(FolderLinkKind.Junction)]
+    public void A_link_to_a_folder_that_isn_t_there_is_real_where_it_leads(FolderLinkKind kind)
+    {
+        // Asked for the end of the chain, .NET threw for the folder that isn't there (observed on Windows).
+        using var folder = new TempDirectory();
+        Directory.CreateDirectory(Path.Combine(folder.Path, "p"));
+        FolderLink.Make(kind, Path.Combine(folder.Path, "p", "dangling"), Path.Combine(folder.Path, "gone"));
+
+        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path)!, "gone"), DiskPath.Real(Path.Combine(folder.Path, "p", "dangling")));
+    }
+
+    [Theory]
+    [InlineData(FolderLinkKind.Symbolic)]
+    [InlineData(FolderLinkKind.Junction)]
+    public void Links_that_lead_round_in_a_circle_are_nowhere(FolderLinkKind kind)
+    {
+        using var folder = new TempDirectory();
+        FolderLink.Make(kind, Path.Combine(folder.Path, "a"), Path.Combine(folder.Path, "b"));
+        FolderLink.Make(kind, Path.Combine(folder.Path, "b"), Path.Combine(folder.Path, "a"));
+
+        Assert.Null(DiskPath.Real(Path.Combine(folder.Path, "a")));
+    }
+
+    [Fact]
+    public void A_junction_read_through_a_share_is_real_where_it_leads()
+    {
+        // Asked for the end of the chain through \\localhost\C$, .NET gave UNC\localhost\… under the working folder (observed on Windows).
+        using var folder = new TempDirectory();
+        Directory.CreateDirectory(Path.Combine(folder.Path, "shared"));
+        Directory.CreateDirectory(Path.Combine(folder.Path, "p"));
+        FolderLink.Make(FolderLinkKind.Junction, Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
+
+        var shared = LocalShare.Of(folder.Path);
+
+        Assert.Equal(Path.Combine(DiskPath.Real(folder.Path)!, "shared"), DiskPath.Real(Path.Combine(shared, "p", "elsewhere")));
     }
 
     [Fact]

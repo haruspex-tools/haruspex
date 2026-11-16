@@ -211,6 +211,20 @@ public class ConfigCliTests
         Assert.Equal("haruspex: error HAR6002: config file not found: nope.json\n", error);
     }
 
+    [Theory]
+    [InlineData("db/missing.sqlproj", "file")]
+    [InlineData("db/missing", "directory")]
+    public void A_source_the_config_names_that_isn_t_there_is_named_as_haruspex_prints_a_path(string source, string what)
+    {
+        using var dir = new TempDirectory();
+        dir.File("haruspex.json", $$"""{ "source": "{{source}}", "out": "out", "schemas": { "dbo": { "include": ["*"] } } }""");
+
+        var (exitCode, _, error) = Run(dir.Path, "generate");
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal($"haruspex: error HAR6004: {what} not found: {DiagnosticFormatter.PathAsShown(Path.GetFullPath(Path.Combine(dir.Path, source)))}\n", error);
+    }
+
     [Fact]
     public void Out_on_the_command_line_wins_and_the_file_s_out_is_relative_to_it()
     {

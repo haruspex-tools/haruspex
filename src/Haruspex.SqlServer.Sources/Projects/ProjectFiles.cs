@@ -62,7 +62,10 @@ internal static class ProjectFiles
                 continue;
             if (DiskPath.Locate(full, item.Spec, out var problem) is not { } found)
             {
-                diagnostics.Add(SourceCodes.ScriptNotFound.At(item.At, $"{name} builds {item.Spec}, which {problem ?? "isn't there"}."));
+                var why = item.Unexpanded is { } unexpanded
+                    ? $"a build can't expand: {unexpanded}, so the build takes the pattern for a file's name, and stops (SQL72001)"
+                    : problem ?? "isn't there";
+                diagnostics.Add(SourceCodes.ScriptNotFound.At(item.At, $"{name} builds {item.Spec}, which {why}."));
                 continue;
             }
 
@@ -114,7 +117,7 @@ internal static class ProjectFiles
             if (named.Count == 0)
                 continue;
             unsure.UnionWith(named);
-            var which = item.Spec is null ? $"No script of {name} is read" : $"{string.Join(", ", named.Select(p => Path.GetRelativePath(folder, p).Replace('\\', '/')))} {(named.Count == 1 ? "isn't" : "aren't")} read";
+            var which = item.Spec is null ? $"No script of {name} is read" : $"{string.Join(", ", named.Select(p => DiagnosticFormatter.PathAsShown(Path.GetRelativePath(folder, p))))} {(named.Count == 1 ? "isn't" : "aren't")} read";
             var does = (item.Verb == ProjectXml.Update, named.Count == 1) switch
             {
                 (true, true) => "change the settings it starts with",
