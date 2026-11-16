@@ -56,6 +56,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0048](0048-an-absent-json-result-reads-as-null.md) | 16 Nov 2026 | An absent JSON result reads as null, as the mssql driver hands it over |
 | [0050](0050-check-compares-claims-not-files.md) | 16 Nov 2026 | `check` compares claims, not files, and fails when there is nothing to compare |
 | [0051](0051-one-json-schema-document-per-module-every-value-as-json.md) | 16 Nov 2026 | One JSON Schema document per module, every value as JSON writes it |
+| [0052](0052-a-decimal-s-places-are-a-note-not-multiple-of.md) | 16 Nov 2026 | A decimal's places are a note in JSON Schema, not `multipleOf` |
 
 ## Writing a record
 

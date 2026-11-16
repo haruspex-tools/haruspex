@@ -219,7 +219,8 @@ compiled in CI.
 **It types other languages, through JSON Schema.** With `"emit": ["zod", "json-schema"]` in `haruspex.json`, `generate` also
 writes `haruspex.jsonschema.json`, one JSON Schema (draft 2020-12) document from the same IR, so a service in Python, C#, Go or
 anything with a JSON Schema validator checks the same results. Each procedure's results are the definition under its name,
-`#/$defs/GetOrder`, with every value described as `FOR JSON` writes it. It claims what the Zod claims wherever JSON Schema can
+`#/$defs/GetOrder`, with every value described as `FOR JSON` writes it (a rowset's rows as `FOR JSON PATH, INCLUDE_NULL_VALUES`
+would write them). It claims what the Zod claims wherever JSON Schema can
 say it; what it can't, such as a collation's case-insensitive value set, is a note in the description rather than a
 check ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
 

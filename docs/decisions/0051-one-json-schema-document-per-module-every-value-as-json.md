@@ -12,8 +12,11 @@ both. The root schema has no assertions of its own: it is the container, and its
 procedure's schema and what every value is described as.
 
 Every value is described as JSON, as SQL Server's `FOR JSON` writes it: a `FOR JSON` result as the document the mssql driver
-hands over ([decision 0048](0048-an-absent-json-result-reads-as-null.md)), and a rowset as an array of its rows, each an object
-of its columns written as `FOR JSON` would write them (dates, times and GUIDs as strings in fixed formats, every number, a
+hands over ([decision 0048](0048-an-absent-json-result-reads-as-null.md)), and a rowset as an array of its rows, each the object
+`FOR JSON PATH, INCLUDE_NULL_VALUES` writes for it: every column a key, always there, null where the column is null (plain
+`FOR JSON` would leave a null column's key out, which a rowset never does), and each value written as `FOR JSON` writes it, but
+for JSON text: a column holding JSON, the native `json` type included, is the string it holds, as every driver hands it over and
+as the IR claims it (`json-text`), where `FOR JSON` would embed a `json` column (dates, times and GUIDs as strings in fixed formats, every number, a
 `bigint` included, as a JSON number).
 
 **Context.** JSON Schema is the second emitter, from the IR alone. It serves teams in any language with a JSON

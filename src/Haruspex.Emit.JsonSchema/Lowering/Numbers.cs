@@ -18,7 +18,7 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// is weaker, and a note says so.</para>
 /// <para><b>Steps.</b> <c>decimal(p, 0)</c> is <c>integer</c>, exact everywhere. A decimal's places past the point are not
 /// <c>multipleOf</c>: a validator that divides doubles finds 0.07 no multiple of 0.01, and would reject true values. A note says
-/// how many places there are.</para>
+/// how many places there are (<c>docs/decisions/0052-a-decimal-s-places-are-a-note-not-multiple-of.md</c>).</para>
 /// <para><b>Rowsets too.</b> A row is described as <c>FOR JSON</c> writes it (decision 0051), so a <c>bigint</c> is a JSON integer
 /// and a decimal a JSON number, in rowsets and JSON results alike.</para>
 /// </remarks>

@@ -166,7 +166,7 @@ Each fact becomes the most precise keyword JSON Schema has:
 | an array, its items' nullability and length | `items`, `minItems`, `maxItems` |
 | a tuple (`json_array`) | `prefixItems`, `"items": false` and `minItems` |
 | a record (`json_objectagg`) | `additionalProperties` of its values' schema |
-| a union | `anyOf`, each variant once |
+| a union | `anyOf`, each variant once; an object variant refuses the keys only the others have |
 | a named type, recursion | a definition in `$defs`, and `$ref` |
 | JSON text of known content | `contentMediaType` `application/json` and `contentSchema` |
 | a JSON result that may be absent | nullable, as the mssql driver hands it over ([decision 0048](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)) |
@@ -174,7 +174,9 @@ Each fact becomes the most precise keyword JSON Schema has:
 | an unknown | `{}`, which accepts anything, with the IR's sentence for why |
 | the SQL type, where each fact came from, why a value may be null | `description` |
 
-Every value is described as JSON, as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects
+Every value is described as JSON, as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
+`FOR JSON PATH, INCLUDE_NULL_VALUES` writes them (every column a key, null where it is null, and JSON text, a `json` column
+included, the string it holds)
 ([decision 0051](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 So a `bigint` is a JSON integer in a rowset as in a JSON result, and a date a string, whatever a driver makes of them.
 
@@ -197,7 +199,8 @@ what its driver gives against the Zod's rules in its own language. For `FOR JSON
   its note. The Zod module maps such a value to its item before checking it; a JSON Schema validator can't.
 - **Decimal places.** `decimal(7,2)` has at most two places, but `multipleOf: 0.01` would be tested in binary floating point
   by most validators, which find 0.07 no multiple of 0.01, so it is left out and a note says how many places there are. A
-  decimal of no places is `integer`, exact everywhere.
+  decimal of no places is `integer`, exact everywhere
+  ([decision 0052](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0052-a-decimal-s-places-are-a-note-not-multiple-of.md)).
 - **Precision past a double.** The bounds are exact in the file, but a validator that reads numbers as doubles reads a
   `bigint` exactly only up to 2^53, and a wide decimal's bounds as the nearest doubles. An inclusive bound is never crossed by
   rounding; an exclusive one of no known scale is written inclusive, and says so.

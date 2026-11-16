@@ -251,6 +251,27 @@ public class JsonSchemaEmitterTests
     }
 
     [Fact]
+    public void Each_object_variant_of_a_union_refuses_the_keys_only_the_others_have()
+    {
+        var flag = new IrScalar(IrScalarKind.Boolean, null, null);
+        var document = OneResult(IrEncoding.Json, Field("latest", new IrUnion([new IrRef("Badge"), new IrArray(new IrRef("NoBadge"))])));
+        document = document with
+        {
+            Types = new Dictionary<string, IrObjectType>(document.Types)
+            {
+                ["Badge"] = new([Field("sku", flag), Field("shared", flag)]),
+                ["NoBadge"] = new([Field("none", flag), Field("shared", flag)]),
+            },
+        };
+
+        var latest = Definition(Emit(document), "ListBasketsRow")["properties"]!["latest"]!;
+
+        AssertSchema(
+            """{ "anyOf": [{ "$ref": "#/$defs/Badge", "type": "object", "properties": { "none": { "not": {} } } }, { "type": "array", "items": { "$ref": "#/$defs/NoBadge", "type": "object", "properties": { "sku": { "not": {} } } } }] }""",
+            latest);
+    }
+
+    [Fact]
     public void A_nullable_reference_is_any_of_it_and_null()
     {
         var document = OneResult(IrEncoding.Json, new IrField("basket", new IrRef("Basket"), IrPresence.Always, [Column]));

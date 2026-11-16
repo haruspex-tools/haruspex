@@ -248,7 +248,8 @@ alone:
   ([the Zod emitter](../src/Haruspex.Emit.Zod/README.md)).
 - `"json-schema"`: `haruspex.jsonschema.json`, one JSON Schema document (draft 2020-12), for any language with a JSON Schema
   validator. Each procedure's results are the definition under its name in `$defs`, `#/$defs/GetOrder`, the same name the Zod
-  module exports; every value is described as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects
+  module exports; every value is described as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
+  `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them
   ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
   [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 

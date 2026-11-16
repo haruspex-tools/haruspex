@@ -8,9 +8,10 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// Each IR type as a schema: the second stage's work on one type. It decides what each node becomes in JSON Schema; it writes no
 /// text. Named object types are referenced by <c>$ref</c>, so recursion needs nothing more.
 /// </summary>
+/// <param name="types">The document's named types, whose keys a union's object variants are told apart by.</param>
 /// <param name="unknowns">What the document says about each unknown, for the note on its schema.</param>
 /// <param name="declared">The claims the config file made, for the note on the field each is at.</param>
-internal sealed class TypeLowering(UnknownDetails unknowns, DeclaredClaims declared)
+internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, UnknownDetails unknowns, DeclaredClaims declared)
 {
     /// <summary>The schema of a value of <paramref name="type"/> that is not null.</summary>
     /// <param name="place">Where the value is, for an unknown's note; null when the type has no place in the IR (built by hand).</param>
@@ -79,16 +80,55 @@ internal sealed class TypeLowering(UnknownDetails unknowns, DeclaredClaims decla
     }
 
     /// <summary>
-    /// A union: <c>anyOf</c> its variants, each written once. Validation doesn't pick a variant to keep (nothing is stripped, as a
-    /// Zod union's object would be), so their order doesn't matter, and they share the union's place.
+    /// A union: <c>anyOf</c> its variants, each written once, sharing the union's place. Each variant that is an object (or an
+    /// array of one) also refuses the keys only the other variants have, as the Zod emitter's variants do: the IR says a value is
+    /// one variant or another, so an object with keys of two is none of them, and in strip mode, where an object allows keys it
+    /// doesn't list, only the refusal says so. Keys no variant knows are still allowed (or refused, for strict objects), as
+    /// everywhere else.
     /// </summary>
     private Schema Union(IrUnion union, Place? place)
     {
-        var variants = union.Variants.Select(v => Type(v, place)).Distinct().ToList();
+        var keys = union.Variants.Select(ObjectKeys).ToList();
+        var variants = union.Variants
+            .Select((variant, i) => Refusing(Type(variant, place), variant, Theirs(keys[i], keys.Where((_, j) => j != i))))
+            .Distinct()
+            .ToList();
         return variants.Count == 1
             ? variants[0]
             : Schema.Any.With(Keyword.AnyOf, new SchemaValue.List([.. variants.Select(v => new SchemaValue.Nested(v))]));
     }
+
+    /// <summary>The keys the other variants have that <paramref name="mine"/> lacks, in their order; none for a variant that isn't an object.</summary>
+    private static List<string> Theirs(List<string>? mine, IEnumerable<List<string>?> others) =>
+        mine is null
+            ? []
+            : [.. others.OfType<List<string>>().SelectMany(k => k).Where(k => !mine.Contains(k, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>The variant's schema, its object refusing <paramref name="keys"/>: beside its <c>$ref</c>, or its items'.</summary>
+    private static Schema Refusing(Schema schema, IrType variant, List<string> keys)
+    {
+        if (keys.Count == 0)
+            return schema;
+        // The type beside the properties is what the reference says already; a validator in strict mode (Ajv's) wants keywords
+        // of objects to say they apply to one.
+        var refused = new SchemaValue.Properties([.. keys.Select(k => new SchemaProperty(k, Schema.Never))]);
+        Schema Refuse(Schema target) => target.With(Keyword.Type, new SchemaValue.Text("object")).With(Keyword.Properties, refused);
+        return variant switch
+        {
+            IrRef => Refuse(schema),
+            IrArray { Items: IrRef } when schema.Keywords[Keyword.Items] is SchemaValue.Nested items =>
+                schema.With(Keyword.Items, new SchemaValue.Nested(Refuse(items.Schema))),
+            _ => throw new InvalidOperationException("Only an object, or an array of one, has keys to refuse."),
+        };
+    }
+
+    /// <summary>The keys of a variant that is an object, or a plain array of one; null for any other.</summary>
+    private List<string>? ObjectKeys(IrType type) => type switch
+    {
+        IrRef reference when types.TryGetValue(reference.Name, out var target) => [.. target.Fields.Select(f => f.Name)],
+        IrArray { Items: IrRef reference, MinItems: null, MaxItems: null, ItemsNullable: false } => ObjectKeys(reference),
+        _ => null,
+    };
 
     /// <summary>
     /// JSON text: a string, <c>contentMediaType</c> JSON, and <c>contentSchema</c> what it parses to when that is known. The

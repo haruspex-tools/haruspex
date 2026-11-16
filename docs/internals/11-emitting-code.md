@@ -247,9 +247,9 @@ What differs is what each target is:
 
 | | Zod | JSON Schema |
 |---|---|---|
-| What a value is | what the mssql driver hands over: in a rowset, a date is a `Date` and a `bigint` a string | JSON, as `FOR JSON` writes it, rowsets included ([decision 0051](../decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)) |
+| What a value is | what the mssql driver hands over: in a rowset, a date is a `Date` and a `bigint` a string | JSON, as `FOR JSON` writes it, a rowset's rows as `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them ([decision 0051](../decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)) |
 | Order and recursion | declared before use; a getter for a reference back into a cycle | no order; `$ref` |
-| A union | the first variant that accepts, which a stripping object can take wrongly, so variants exclude each other's keys | `anyOf`: validation keeps nothing, so no variant can take another's value |
+| A union | the first variant that accepts, which a stripping object can take wrongly, so variants exclude each other's keys | `anyOf`, each object variant refusing the keys only the others have: validation keeps nothing, so which variant accepts doesn't matter, but an object that allows other keys would otherwise accept a mix of two |
 | Identical shapes | merged, the second name an alias | each name a definition, since a definition costs nothing and a reference is how JSON Schema shares |
 
 The first row is a choice, not a limit. For a `FOR JSON` result both describe the same document. For a rowset, the Zod module
@@ -257,7 +257,7 @@ describes what the mssql driver hands a TypeScript application, because that is 
 Schema describes JSON, because JSON is all a JSON Schema validates. A rowset isn't JSON until something writes it as JSON, and
 each language's driver hands it over in its own types, so the JSON Schema takes the one form that belongs to no driver: the one
 SQL Server itself writes. The tests hold each to its own: `ZodAcceptanceTests` parses rows as the driver delivers them, and
-`JsonSchemaAcceptanceTests` validates the same rows written as `FOR JSON` writes them.
+`JsonSchemaAcceptanceTests` validates the same rows as SQL Server's `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them.
 
 And what each can't say, which its output widens and notes:
 
