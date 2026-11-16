@@ -6,9 +6,10 @@ namespace Haruspex.DifferentialTests.Validation;
 public sealed record ObservedResultSet(IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<object?>> Rows)
 {
     /// <summary>
-    /// Each column's SQL type name as the driver reports it (<c>date</c>, <c>datetime2</c>, <c>decimal</c>), in column order; empty
-    /// when the set was built by hand. Two types can arrive as one .NET type (a <c>date</c> and a <c>datetime2</c> are both a
-    /// <see cref="DateTime"/>), and writing a row as JSON needs to tell them apart.
+    /// Each column's SQL type as it would be written (<c>date</c>, <c>datetime2(3)</c>, <c>decimal(19,2)</c>), in column order, from
+    /// what the driver reports; empty when the set was built by hand. Two types can arrive as one .NET type (a <c>date</c> and a
+    /// <c>datetime2</c> are both a <see cref="DateTime"/>), so having SQL Server write a row as JSON needs each value cast back to
+    /// its own.
     /// </summary>
     public IReadOnlyList<string> ColumnTypes { get; init; } = [];
 }
