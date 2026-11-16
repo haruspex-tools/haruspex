@@ -9,6 +9,7 @@
       "name": "MenuPrices",
       "kind": "procedure",
       "at": "procedures/menu_prices.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

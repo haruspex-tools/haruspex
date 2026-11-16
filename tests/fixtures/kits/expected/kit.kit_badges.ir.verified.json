@@ -9,6 +9,7 @@
       "name": "KitBadges",
       "kind": "procedure",
       "at": "procedures/kit_badges.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@kit_id",

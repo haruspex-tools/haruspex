@@ -9,6 +9,7 @@
       "name": "OrderSummary",
       "kind": "procedure",
       "at": "procedures/order_summary.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@id",

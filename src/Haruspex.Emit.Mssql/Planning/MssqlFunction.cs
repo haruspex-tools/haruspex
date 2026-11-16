@@ -16,6 +16,19 @@ internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableA
     /// </summary>
     public (string Text, string Declaration)? Batch { get; init; }
 
+    /// <summary>Whether a call may end with a return code other than 0, which then comes back as <c>returnValue</c>.</summary>
+    public bool ReturnsCode => Procedure.ReturnsCode;
+
+    /// <summary>
+    /// Whether the function returns its one result set itself, rather than an object naming it: when there is one (or the sets
+    /// can't be listed, and come back as one value), no <c>OUTPUT</c> parameter, and no return code worth handing back
+    /// (<c>docs/decisions/0060-a-call-returns-its-one-result-itself.md</c>).
+    /// </summary>
+    public bool ReturnsResultAlone => Results is null or [_] && !HasOutput && !ReturnsCode;
+
+    /// <summary>Whether the function returns nothing: no result set, no <c>OUTPUT</c> parameter, no return code worth handing back.</summary>
+    public bool ReturnsNothing => Results is [] && !HasOutput && !ReturnsCode;
+
     /// <summary>Whether the procedure has <c>OUTPUT</c> parameters, whose values come back.</summary>
     public bool HasOutput => Bindings.Any(b => b.IsOutput);
 }

@@ -9,6 +9,7 @@
       "name": "PeekParts",
       "kind": "procedure",
       "at": "procedures/peek_parts.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": null
     }

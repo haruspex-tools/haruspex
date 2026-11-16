@@ -188,6 +188,7 @@ The IR says what is known (the parameter's type, and the length a value sent to 
       "name": "SearchProducts",
       "kind": "procedure",
       "at": "example.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@where",

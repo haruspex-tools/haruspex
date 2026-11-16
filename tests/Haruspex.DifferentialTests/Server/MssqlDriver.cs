@@ -96,7 +96,11 @@ internal static class MssqlDriver
     /// What the driver handed over for a call: its result sets, or the error it threw, the check's outcome, and whether the
     /// schema the call names accepted its parameters.
     /// </summary>
-    public sealed record Response(string Name, IReadOnlyList<Recordset> Recordsets, Error? Error, CheckOutcome? Check, bool? Accepted = null);
+    public sealed record Response(string Name, IReadOnlyList<Recordset> Recordsets, Error? Error, CheckOutcome? Check, bool? Accepted = null)
+    {
+        /// <summary>The call's return value as the driver reports it (<c>returnValue</c>); null for an error, or a batch.</summary>
+        public int? ReturnValue { get; init; }
+    }
 
     /// <summary>One result set as the driver hands it over: its columns' names and its rows (an object, or what the driver parsed).</summary>
     public sealed record Recordset(IReadOnlyList<string> Columns, IReadOnlyList<JsonElement> Rows);

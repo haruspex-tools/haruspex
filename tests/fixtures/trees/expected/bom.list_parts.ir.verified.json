@@ -9,6 +9,7 @@
       "name": "ListParts",
       "kind": "procedure",
       "at": "procedures/list_parts.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "JobCard",
       "kind": "procedure",
       "at": "procedures/job_card.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@job_id",

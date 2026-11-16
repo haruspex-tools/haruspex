@@ -111,7 +111,7 @@ function readRows(set: unknown): unknown {
 }
 
 /** Runs the query file queries/basket_card.sql. */
-export async function basketCard(db: Queryable, params: types.BasketCardParams): Promise<{ result: types.BasketCard; returnValue: number }> {
+export async function basketCard(db: Queryable, params: types.BasketCardParams): Promise<types.BasketCard> {
   const p = await checked(BasketCardParamsSchema, params, (issues) => new ParameterError('queries/basket_card.sql', issues))
   const request = db.request()
   request.input('stmt', sql.NVarChar(sql.MAX), '-- A basket and its lines as one JSON document, headed by a label the caller chooses, which nothing in the query types.\n-- @param @label nvarchar(40)\nSELECT\n    @label AS label,\n    b.basket_id,\n    (SELECT l.line_no, l.quantity FROM shop.basket_line AS l WHERE l.basket_id = b.basket_id ORDER BY l.line_no FOR JSON PATH) AS lines\nFROM shop.basket AS b\nWHERE b.basket_id = @basket_id\nFOR JSON PATH, WITHOUT_ARRAY_WRAPPER;\n')
@@ -121,11 +121,11 @@ export async function basketCard(db: Queryable, params: types.BasketCardParams):
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(BasketCardSchema, readJson(sets[0]), (issues) => new ResultError('queries/basket_card.sql', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Runs the query file queries/products_under.sql. */
-export async function productsUnder(db: Queryable, params: types.ProductsUnderParams): Promise<{ result: types.ProductsUnder; returnValue: number }> {
+export async function productsUnder(db: Queryable, params: types.ProductsUnderParams): Promise<types.ProductsUnder> {
   const p = await checked(ProductsUnderParamsSchema, params, (issues) => new ParameterError('queries/products_under.sql', issues))
   const request = db.request()
   request.input('stmt', sql.NVarChar(sql.MAX), '-- Products at or under a price, cheapest first, a page at a time; every status when @status is NULL.\nSELECT p.product_id, p.sku, p.name, p.price\nFROM shop.product AS p\nWHERE p.price <= @max_price AND (p.status = @status OR @status IS NULL)\nORDER BY p.price, p.product_id\nOFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;\n')
@@ -137,11 +137,11 @@ export async function productsUnder(db: Queryable, params: types.ProductsUnderPa
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(ProductsUnderSchema, readRows(sets[0]), (issues) => new ResultError('queries/products_under.sql', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Calls shop.basket_line#. */
-export async function basketLineRow(db: Queryable, params: types.BasketLineRowParams): Promise<{ result: types.BasketLineRow; returnValue: number }> {
+export async function basketLineRow(db: Queryable, params: types.BasketLineRowParams): Promise<types.BasketLineRow> {
   const p = await checked(BasketLineRowParamsSchema, params, (issues) => new ParameterError('shop.basket_line#', issues))
   const request = db.request()
   request.input('basket_id', sql.Int, p.basket_id)
@@ -149,34 +149,34 @@ export async function basketLineRow(db: Queryable, params: types.BasketLineRowPa
   const response = await request.execute('shop.basket_line#')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(BasketLineRowSchema, readJson(sets[0]), (issues) => new ResultError('shop.basket_line#', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Calls shop.get_basket. */
-export async function basket(db: Queryable, params: types.BasketParams): Promise<{ result: types.Basket; returnValue: number }> {
+export async function basket(db: Queryable, params: types.BasketParams): Promise<types.Basket> {
   const p = await checked(BasketParamsSchema, params, (issues) => new ParameterError('shop.get_basket', issues))
   const request = db.request()
   request.input('basket_id', sql.Int, p.basket_id)
   const response = await request.execute('shop.get_basket')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(BasketSchema, readJson(sets[0]), (issues) => new ResultError('shop.get_basket', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Calls shop.list_products. */
-export async function listProducts(db: Queryable): Promise<{ result: types.ListProducts; returnValue: number }> {
+export async function listProducts(db: Queryable): Promise<types.ListProducts> {
   const request = db.request()
   const response = await request.execute('shop.list_products')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(ListProductsSchema, readRows(sets[0]), (issues) => new ResultError('shop.list_products', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Calls shop_admin.report_sales. */
-export async function adminSales(db: Queryable): Promise<{ result: types.AdminSales; returnValue: number }> {
+export async function adminSales(db: Queryable): Promise<types.AdminSales> {
   const request = db.request()
   const response = await request.execute('shop_admin.report_sales')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(AdminSalesSchema, readJson(sets[0]), (issues) => new ResultError('shop_admin.report_sales', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }

@@ -9,6 +9,7 @@
       "name": "JobBoard",
       "kind": "procedure",
       "at": "procedures/job_board.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

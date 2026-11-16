@@ -9,6 +9,7 @@
       "name": "RoundedReadings",
       "kind": "procedure",
       "at": "procedures/rounded_readings.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

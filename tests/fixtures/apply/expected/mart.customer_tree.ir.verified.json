@@ -9,6 +9,7 @@
       "name": "CustomerTree",
       "kind": "procedure",
       "at": "procedures/customer_tree.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "AuthorDocuments",
       "kind": "procedure",
       "at": "procedures/author_documents.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

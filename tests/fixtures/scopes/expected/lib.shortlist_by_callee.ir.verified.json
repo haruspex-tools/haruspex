@@ -9,6 +9,7 @@
       "name": "ShortlistByCallee",
       "kind": "procedure",
       "at": "procedures/shortlist_by_callee.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

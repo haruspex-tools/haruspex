@@ -9,6 +9,7 @@
       "name": "RegionSales",
       "kind": "procedure",
       "at": "procedures/region_sales.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

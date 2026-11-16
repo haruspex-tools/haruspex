@@ -9,6 +9,7 @@
       "name": "CatalogueSummary",
       "kind": "procedure",
       "at": "procedures/catalogue_summary.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

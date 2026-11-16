@@ -9,6 +9,7 @@
       "name": "SalesByMode",
       "kind": "procedure",
       "at": "procedures/sales_by_mode.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@mode",

@@ -79,7 +79,10 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
     /// <summary>Infers one procedure's results, as the outermost call.</summary>
     /// <param name="procedure">The procedure.</param>
     /// <param name="summaries">What its body may ask of the document's other objects.</param>
-    public ProcedureAnalysis Analyse(Procedure procedure, Summaries summaries)
+    public ProcedureAnalysis Analyse(Procedure procedure, Summaries summaries) =>
+        Walk(procedure, summaries) with { ReturnsCode = ReturnCodes.May(procedure) };
+
+    private ProcedureAnalysis Walk(Procedure procedure, Summaries summaries)
     {
         var parameters = Typer.Parameters(model, procedure);
         if (Unwalkable(procedure) is { } why)

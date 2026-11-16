@@ -9,6 +9,7 @@
       "name": "RollupAndHaving",
       "kind": "procedure",
       "at": "procedures/rollup_and_having.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

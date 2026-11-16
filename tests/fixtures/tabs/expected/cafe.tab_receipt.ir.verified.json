@@ -9,6 +9,7 @@
       "name": "TabReceipt",
       "kind": "procedure",
       "at": "procedures/tab_receipt.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@tab_id",

@@ -9,6 +9,7 @@
       "name": "DirtyTab",
       "kind": "procedure",
       "at": "procedures/dirty_tab.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@tab_id",

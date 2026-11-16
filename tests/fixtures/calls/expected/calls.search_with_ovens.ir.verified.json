@@ -9,6 +9,7 @@
       "name": "SearchWithOvens",
       "kind": "procedure",
       "at": "procedures/search_with_ovens.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@product",

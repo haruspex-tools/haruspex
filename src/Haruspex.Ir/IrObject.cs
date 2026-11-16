@@ -31,4 +31,11 @@ public sealed record IrObject(
     /// its name. A query's parameters are declared to the call by their names and their types' <c>sql</c>, as its function sends them.
     /// </summary>
     public string? Text { get; init; }
+
+    /// <summary>
+    /// Whether a call may end with a return code other than 0 (0.22): its body has a <c>RETURN</c> whose value isn't the constant
+    /// 0 or NULL, or can't be read. False when every call ends with 0, as one without such a <c>RETURN</c> does (observed: no
+    /// <c>RETURN</c>, a bare one, <c>RETURN 0</c> and <c>RETURN NULL</c> all give 0), so the code tells a caller nothing.
+    /// </summary>
+    public bool ReturnsCode { get; init; }
 }

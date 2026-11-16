@@ -9,6 +9,7 @@
       "name": "DailyReport",
       "kind": "procedure",
       "at": "procedures/daily_report.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@day",

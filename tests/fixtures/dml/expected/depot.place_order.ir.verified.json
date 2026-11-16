@@ -9,6 +9,7 @@
       "name": "PlaceOrder",
       "kind": "procedure",
       "at": "procedures/place_order.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@part_id",

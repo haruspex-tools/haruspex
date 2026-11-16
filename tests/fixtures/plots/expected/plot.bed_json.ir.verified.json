@@ -9,6 +9,7 @@
       "name": "BedJson",
       "kind": "procedure",
       "at": "later.sql:11:9",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@bed_id",

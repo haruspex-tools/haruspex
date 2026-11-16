@@ -93,6 +93,10 @@ public static class IrComparison
             // What a query sends is part of its contract: an edited file the committed module doesn't run is a change.
             if (was.Text != now.Text)
                 Add(IrChangeKind.TextChanged, []);
+
+            // Whether a code comes back decides the shape of the object's function.
+            if (was.ReturnsCode != now.ReturnsCode)
+                Add(IrChangeKind.ReturnsCodeChanged, [], Flag(was.ReturnsCode), Flag(now.ReturnsCode));
             Parameters(was.Parameters, now.Parameters);
             Results(was.Results, now.Results);
         }

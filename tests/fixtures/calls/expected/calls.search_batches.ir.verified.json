@@ -9,6 +9,7 @@
       "name": "SearchBatches",
       "kind": "procedure",
       "at": "procedures/search_batches.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@product",

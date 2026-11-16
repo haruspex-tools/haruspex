@@ -9,6 +9,7 @@
       "name": "CteColumnList",
       "kind": "procedure",
       "at": "procedures/cte_column_list.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

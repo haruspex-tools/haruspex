@@ -9,6 +9,7 @@
       "name": "RecentNote",
       "kind": "procedure",
       "at": "procedures/recent_note.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

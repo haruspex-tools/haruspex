@@ -9,6 +9,7 @@
       "name": "LoanTotals",
       "kind": "procedure",
       "at": "procedures/loan_totals.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

@@ -164,6 +164,16 @@ public class IrComparisonTests
     }
 
     [Fact]
+    public void A_procedure_that_starts_returning_a_code_is_reported()
+    {
+        var before = Infer(ListOrders);
+        var after = Infer(ListOrders.Replace("FROM shop.orders AS o;", "FROM shop.orders AS o; RETURN 3;", StringComparison.Ordinal));
+
+        Assert.Equal(["shop.list_orders: may now end with a return code other than 0"], Changes(before, after));
+        Assert.Equal(["shop.list_orders: now always ends with the return code 0"], Changes(after, before));
+    }
+
+    [Fact]
     public void Results_that_become_unknown_are_reported_as_one_change()
     {
         var before = Infer(ListOrders);

@@ -22,7 +22,7 @@
 // (an object holding that result set as its `recordset`), which the test takes from the project's README, so that what is
 // proved is the code a reader pastes.
 //
-// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "error", "check", "accepted" }] }.
+// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "returnValue", "error", "check", "accepted" }] }.
 // The connection is given in HARUSPEX_DRIVER_CONFIG, the mssql config as JSON, never on the command line.
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -75,6 +75,7 @@ try {
     }
 
     if (result) {
+      entry.returnValue = result.returnValue ?? null
       entry.recordsets = result.recordsets.map((recordset) => ({ columns: Object.keys(recordset.columns), rows: [...recordset] }))
       if (call.check) {
         const { schema, results, readJson } = call.check

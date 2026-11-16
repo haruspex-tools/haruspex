@@ -9,6 +9,7 @@
       "name": "FullNameReturn",
       "kind": "procedure",
       "at": "procedures/full_name_return.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@loan_id",

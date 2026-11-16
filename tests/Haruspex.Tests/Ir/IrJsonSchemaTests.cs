@@ -50,6 +50,7 @@ public class IrJsonSchemaTests
         (typeof(IrObject), nameof(IrObject.Parameters), "object", "parameters"),
         (typeof(IrObject), nameof(IrObject.Results), "object", "results"),
         (typeof(IrObject), nameof(IrObject.Text), "object", "text"),
+        (typeof(IrObject), nameof(IrObject.ReturnsCode), "object", "returnsCode"),
         (typeof(IrParameter), nameof(IrParameter.Name), "parameter", "name"),
         (typeof(IrParameter), nameof(IrParameter.Type), "parameter", "type"),
         (typeof(IrParameter), nameof(IrParameter.HasDefault), "parameter", "hasDefault"),

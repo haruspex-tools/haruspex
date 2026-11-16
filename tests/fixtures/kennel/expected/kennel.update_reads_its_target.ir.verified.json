@@ -9,6 +9,7 @@
       "name": "UpdateReadsItsTarget",
       "kind": "procedure",
       "at": "procedures/update_reads_its_target.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@owner_id",

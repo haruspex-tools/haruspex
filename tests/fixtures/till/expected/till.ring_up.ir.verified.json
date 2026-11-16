@@ -9,6 +9,7 @@
       "name": "RingUp",
       "kind": "procedure",
       "at": "procedures/ring_up.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@product_id",

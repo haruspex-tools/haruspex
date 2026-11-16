@@ -9,6 +9,7 @@
       "name": "Lenient",
       "kind": "procedure",
       "at": "procedures/lenient.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

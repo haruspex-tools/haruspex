@@ -9,6 +9,7 @@
       "name": "Whoami",
       "kind": "procedure",
       "at": "procedures/whoami.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

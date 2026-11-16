@@ -9,6 +9,7 @@
       "name": "OrdersWithLines",
       "kind": "procedure",
       "at": "procedures/orders_with_lines.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -93,6 +93,13 @@ A path that raises an error to the caller describes no call that returns, so it 
 - A missing table is not caught by a `CATCH` in the same procedure (`A_missing_table_is_not_caught_by_catch_in_the_same_procedure`):
   it fails the call. Treating it as reaching `CATCH` anyway only adds states to the join, which claims less.
 
+**The return code.** A call that succeeds ends with 0 unless a `RETURN` with another value runs: no `RETURN`, a bare one,
+`RETURN 0` and `RETURN NULL` all give 0 (observed in `MssqlDriverObservationTests`). So an object's `returnsCode` is true exactly
+when its body has a `RETURN` whose value isn't the constant 0 or NULL, at any depth and whether or not it is reached, or when the
+body can't be read (`ReturnCodes`); a query file's is false, since the server refuses `RETURN` with a value in its batch. A
+procedure's function hands the code back only when it is true
+([decision 0060](../../docs/decisions/0060-a-call-returns-its-one-result-itself.md)).
+
 ## Parameters
 
 A procedure's parameter is its declared type with that type's facts (`SqlTypes.ToParameterShape`): a length, a decimal's

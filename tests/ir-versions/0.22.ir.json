@@ -9,13 +9,28 @@
       "name": "GetOrder",
       "kind": "procedure",
       "at": "procedures/get_order.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@order_id",
           "type": {
             "kind": "number",
             "format": "int32",
-            "sql": "int"
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "hasDefault": false,
           "output": false

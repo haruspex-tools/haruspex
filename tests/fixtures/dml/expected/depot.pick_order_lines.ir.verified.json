@@ -9,6 +9,7 @@
       "name": "PickOrderLines",
       "kind": "procedure",
       "at": "procedures/pick_order.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@order_id",

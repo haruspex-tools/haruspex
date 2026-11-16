@@ -9,6 +9,7 @@
       "name": "GetAuthor",
       "kind": "procedure",
       "at": "procedures/get_author.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@author_id",

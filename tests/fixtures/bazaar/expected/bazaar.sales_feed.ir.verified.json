@@ -9,6 +9,7 @@
       "name": "SalesFeed",
       "kind": "procedure",
       "at": "procedures/sales_feed.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

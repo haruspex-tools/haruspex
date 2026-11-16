@@ -9,6 +9,7 @@
       "name": "CustomerJobs",
       "kind": "procedure",
       "at": "procedures/customer_jobs.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

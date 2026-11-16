@@ -9,6 +9,7 @@
       "name": "GuestTabList",
       "kind": "procedure",
       "at": "procedures/guest_tab_list.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@guest_id",

@@ -9,6 +9,7 @@
       "name": "GuestsWithOpenTab",
       "kind": "procedure",
       "at": "procedures/guests_with_open_tab.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

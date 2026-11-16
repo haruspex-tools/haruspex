@@ -9,6 +9,7 @@
       "name": "AddNoteBySynonym",
       "kind": "procedure",
       "at": "procedures/add_note_by_synonym.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@note_id",

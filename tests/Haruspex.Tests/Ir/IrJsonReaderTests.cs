@@ -145,11 +145,12 @@ public class IrJsonReaderTests
     [InlineData("0.17")]
     [InlineData("0.19")]
     [InlineData("0.20")]
+    [InlineData("0.21")]
     public void A_file_of_an_older_version_is_refused_though_every_property_in_it_is_one_the_current_version_has(string version)
     {
         // Their claims are not the current version's: 0.17's never null a decimal 0.18 says may lose precision, and 0.19's call
         // a set compared under a known collation what 0.20 may call canonical, and 0.20's may claim the written text of a literal a
-        // deployment replaces (IrDocument.ReadableVersions).
+        // deployment replaces, and 0.21's don't say whether a procedure returns a code (IrDocument.ReadableVersions).
         var e = Refused(json => json["irVersion"] = version);
 
         Assert.Equal("$.irVersion", e.Path);
@@ -164,59 +165,19 @@ public class IrJsonReaderTests
     }
 
     [Fact]
+    public void An_object_that_does_not_say_whether_it_returns_a_code_is_refused()
+    {
+        var e = Refused(json => json["objects"]![0]!.AsObject().Remove("returnsCode"));
+
+        Assert.Equal("$.objects[0].returnsCode is missing.", e.Message);
+    }
+
+    [Fact]
     public void A_procedure_with_text_to_run_is_refused()
     {
         var e = Refused(json => json["objects"]![0]!["text"] = "select 1;");
 
         Assert.Equal("$.objects[0].text is given, but only a query runs text, and this object is a procedure.", e.Message);
-    }
-
-    [Fact]
-    public void A_file_of_0_21_without_a_query_reads_as_the_current_version()
-    {
-        var current = IrSamples.Everything with
-        {
-            Objects = [.. IrSamples.Everything.Objects.Where(o => o.Kind != IrObjectKind.Query)],
-            Types = IrSamples.Everything.Types.Where(t => t.Value.Identity?.Owner != IrTypeOwner.Query).ToDictionary(t => t.Key, t => t.Value, StringComparer.Ordinal),
-            Unknowns = [.. IrSamples.Everything.Unknowns.Where(u => u.Reason != IrUnknownReason.UndecidedParameter)],
-        };
-        var json = JsonNode.Parse(IrJsonWriter.Write(current))!.AsObject();
-        json["irVersion"] = "0.21";
-
-        Assert.Equal(current, IrJsonReader.Read(json.ToJsonString()));
-    }
-
-    [Fact]
-    public void A_file_of_0_21_holding_a_query_is_refused_since_0_21_had_none()
-    {
-        var e = Refused(json => json["irVersion"] = "0.21");
-
-        Assert.Equal("$.objects[2].kind is \"query\", which IR 0.21 did not have.", e.Message);
-    }
-
-    [Fact]
-    public void A_file_of_0_21_with_a_type_a_query_owns_is_refused()
-    {
-        var e = Refused(json =>
-        {
-            json["irVersion"] = "0.21";
-            json["objects"]!.AsArray().RemoveAt(2);
-        });
-
-        Assert.Equal("$.types.FindOrdersRow.identity names a query, which IR 0.21 did not have.", e.Message);
-    }
-
-    [Fact]
-    public void A_file_of_0_21_with_an_undecided_parameter_is_refused()
-    {
-        var e = Refused(json =>
-        {
-            json["irVersion"] = "0.21";
-            json["objects"]!.AsArray().RemoveAt(2);
-            json["types"]!.AsObject().Remove("FindOrdersRow");
-        });
-
-        Assert.Equal("$.unknowns[2].reason is \"undecided-parameter\", which IR 0.21 did not have.", e.Message);
     }
 
     [Fact]
@@ -237,7 +198,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.21 and 0.22 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.22 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

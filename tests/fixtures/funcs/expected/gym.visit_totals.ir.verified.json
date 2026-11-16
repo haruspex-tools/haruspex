@@ -9,6 +9,7 @@
       "name": "VisitTotals",
       "kind": "procedure",
       "at": "procedures/visit_totals.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

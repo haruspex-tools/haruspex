@@ -124,6 +124,26 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
         Assert.Equal(["a", JsonColumn, JsonColumn, "b"], on.Recordsets.Select(s => Assert.Single(s.Columns)));
     }
 
+    [Theory]
+    [InlineData("SELECT 1 AS one;", 0)]
+    [InlineData("SELECT 1 AS one; RETURN;", 0)]
+    [InlineData("SELECT 1 AS one; RETURN 0;", 0)]
+    [InlineData("SELECT 1 AS one; RETURN NULL;", 0)]
+    [InlineData("SELECT 1 AS one; RETURN 7;", 7)]
+    [InlineData("SELECT 1 AS one; IF 1 = 0 RETURN 7;", 0)]
+    public async Task The_return_value_is_0_unless_a_return_with_another_value_runs(string body, int returned)
+    {
+        // So a procedure without a RETURN of another value always ends with 0, and its function hands no code back (decision 0060).
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            [$"CREATE PROCEDURE dbo.obs_driver_return AS {body}"],
+            [new("call", ParseJson: false, Procedure: "dbo.obs_driver_return", Parameters: new Dictionary<string, object?>())],
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(returned, Assert.Single(calls).ReturnValue);
+    }
+
     [Fact]
     public async Task A_procedure_called_by_name_hands_over_the_same()
     {

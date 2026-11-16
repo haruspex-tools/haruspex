@@ -9,6 +9,7 @@
       "name": "StaffMoves",
       "kind": "procedure",
       "at": "procedures/staff_moves.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@assign",

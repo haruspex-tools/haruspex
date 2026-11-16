@@ -9,6 +9,7 @@
       "name": "GuestSpending",
       "kind": "procedure",
       "at": "procedures/guest_spending.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

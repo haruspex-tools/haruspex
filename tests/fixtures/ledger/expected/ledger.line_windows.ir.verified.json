@@ -9,6 +9,7 @@
       "name": "LineWindows",
       "kind": "procedure",
       "at": "procedures/line_windows.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "Picking",
       "kind": "procedure",
       "at": "procedures/picking.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "DerivedAliasNamesATable",
       "kind": "procedure",
       "at": "procedures/derived_alias_names_a_table.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "AuthorStats",
       "kind": "procedure",
       "at": "procedures/author_stats.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

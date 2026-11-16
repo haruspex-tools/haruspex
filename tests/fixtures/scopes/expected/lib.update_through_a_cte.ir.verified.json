@@ -9,6 +9,7 @@
       "name": "UpdateThroughACte",
       "kind": "procedure",
       "at": "procedures/update_through_a_cte.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

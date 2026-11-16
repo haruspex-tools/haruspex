@@ -149,6 +149,10 @@
           "description": "What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.",
           "type": "string"
         },
+        "returnsCode": {
+          "description": "Whether a call may end with a return code other than 0.",
+          "type": "boolean"
+        },
         "parameters": {
           "type": "array",
           "items": {
@@ -175,6 +179,7 @@
         "name",
         "kind",
         "at",
+        "returnsCode",
         "parameters",
         "results"
       ],

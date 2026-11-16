@@ -9,6 +9,7 @@
       "name": "PriceVersions",
       "kind": "procedure",
       "at": "procedures/price_versions.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@product_id",

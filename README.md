@@ -8,7 +8,7 @@ what comes back before returning it. It is pre-release: see [Status and roadmap]
 ```ts
 import { getOrder } from './db/haruspex.mssql'
 
-const { result: order } = await getOrder(pool, { OrderID: 42 })   // the order, typed and checked, or null
+const order = await getOrder(pool, { OrderID: 42 })   // the order, typed and checked, or null
 ```
 
 ## The problem
@@ -28,7 +28,8 @@ and a type for each procedure's parameters and results, and `haruspex.mssql.ts`,
 [mssql](https://www.npmjs.com/package/mssql) driver. A function takes a connection it doesn't own and the parameters by their
 declared names, checks them against their declared types before anything is sent, so a value the database would silently
 cut or round is caught first ([decision 0054](docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)),
-and returns what comes back checked and typed as `{ result, output, returnValue }`.
+and returns what comes back checked and typed: the result itself, or, for a procedure that also has `OUTPUT` parameters or
+return codes, or several result sets, an object naming each.
 
 Queries the application keeps in its own `.sql` files get the same: `"queries": "sql"` in `haruspex.json` types each file
 against the database project, with its parameters' types inferred from how it uses them (`where o.order_id = @order_id` makes
@@ -131,14 +132,14 @@ And its function, after the helpers every module of functions begins with:
 
 ```ts haruspex-mssql
 /** Calls Website.GetOrder. */
-export async function getOrder(db: Queryable, params: types.GetOrderParams): Promise<{ result: types.GetOrder; returnValue: number }> {
+export async function getOrder(db: Queryable, params: types.GetOrderParams): Promise<types.GetOrder> {
   const p = await checked(GetOrderParamsSchema, params, (issues) => new ParameterError('Website.GetOrder', issues))
   const request = db.request()
   request.input('OrderID', sql.Int, p.OrderID)
   const response = await request.execute('Website.GetOrder')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(GetOrderSchema, readJson(sets[0]), (issues) => new ResultError('Website.GetOrder', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 ```
 

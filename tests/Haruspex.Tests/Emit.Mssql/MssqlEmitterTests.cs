@@ -46,7 +46,7 @@ public partial class MssqlEmitterTests
         var ts = Emitted(Procedure("GetOrder", [Parameter("@order_id", Int)], Rows));
 
         Assert.Matches(
-            @"export async function getOrder\(db: Queryable, params: types\.GetOrderParams\): Promise<\{ result: types\.GetOrder; returnValue: number \}> \{\n" +
+            @"export async function getOrder\(db: Queryable, params: types\.GetOrderParams\): Promise<types\.GetOrder> \{\n" +
             @"  const p = await checked\(GetOrderParamsSchema, params, \(issues\) => new ParameterError\('shop\.GetOrder', issues\)\)\n" +
             @"  const request = db\.request\(\)\n" +
             @"  request\.input\('order_id', sql\.Int, p\.order_id\)\n",
@@ -83,7 +83,7 @@ public partial class MssqlEmitterTests
         Assert.Contains("  request.output('total', sql.Int, p.total)\n", ts, StringComparison.Ordinal);
         Assert.Contains("  if (p.count !== undefined) request.output('count', sql.Int, p.count)\n", ts, StringComparison.Ordinal);
         Assert.Contains("  const output = await checked(POutputSchema, response.output, (issues) => new ResultError('shop.P', 'the OUTPUT parameters', issues))\n", ts, StringComparison.Ordinal);
-        Assert.Contains("Promise<{ result: types.P; output: types.POutput; returnValue: number }>", ts, StringComparison.Ordinal);
+        Assert.Contains("Promise<{ result: types.P; output: types.POutput }>", ts, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -129,17 +129,39 @@ public partial class MssqlEmitterTests
     {
         var ts = Emitted(Procedure("P", [], Rows, Json));
 
-        Assert.Contains("Promise<{ result1: types.P[0]; result2: types.P[1]; returnValue: number }>", ts, StringComparison.Ordinal);
+        Assert.Contains("Promise<{ result1: types.P[0]; result2: types.P[1] }>", ts, StringComparison.Ordinal);
         Assert.Contains("  const [result1, result2] = await checked(PSchema, [readRows(sets[0]), readJson(sets[1])], ", ts, StringComparison.Ordinal);
-        Assert.Contains("  return { result1, result2, returnValue: response.returnValue }\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  return { result1, result2 }\n", ts, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void A_procedure_of_no_result_sets_returns_its_return_code_alone()
+    public void One_result_set_with_no_output_and_no_return_code_is_returned_itself()
+    {
+        var ts = Emitted(Procedure("P", [], Rows));
+
+        Assert.Contains("export async function p(db: Queryable): Promise<types.P> {\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  return result\n}\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_return_code_other_than_0_comes_back_named_beside_the_result()
+    {
+        var ts = Emitted(Procedure("P", [], Rows) with { ReturnsCode = true }, Procedure("Q", []) with { ReturnsCode = true });
+
+        Assert.Contains("export async function p(db: Queryable): Promise<{ result: types.P; returnValue: number }> {\n", ts, StringComparison.Ordinal);
+        Assert.Contains("  return { result, returnValue: response.returnValue }\n", ts, StringComparison.Ordinal);
+        Assert.Contains("export async function q(db: Queryable): Promise<{ returnValue: number }> {\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_procedure_of_no_result_sets_no_output_and_no_return_code_returns_nothing()
     {
         var ts = Emitted(Procedure("P", []));
 
-        Assert.Contains("Promise<{ returnValue: number }>", ts, StringComparison.Ordinal);
+        Assert.Contains(
+            "export async function p(db: Queryable): Promise<void> {\n  const request = db.request()\n  await request.execute('shop.P')\n}\n",
+            ts,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("PSchema", ts, StringComparison.Ordinal);
     }
 
@@ -207,7 +229,7 @@ public partial class MssqlEmitterTests
     public void A_function_named_as_its_own_results_type_is_not_refused() =>
 
         // Camel-case naming names the type getOrder too; the types come through their namespace.
-        Assert.Contains("export async function getOrder(db: Queryable): Promise<{ result: types.getOrder; ", Emitted(Procedure("getOrder", [], Rows)), StringComparison.Ordinal);
+        Assert.Contains("export async function getOrder(db: Queryable): Promise<types.getOrder> {", Emitted(Procedure("getOrder", [], Rows)), StringComparison.Ordinal);
 
     [Fact]
     public void Two_procedures_whose_functions_would_share_a_name_are_refused()

@@ -9,6 +9,7 @@
       "name": "Series",
       "kind": "procedure",
       "at": "procedures/series.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@upto",

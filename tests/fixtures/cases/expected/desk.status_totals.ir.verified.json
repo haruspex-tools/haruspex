@@ -9,6 +9,7 @@
       "name": "StatusTotals",
       "kind": "procedure",
       "at": "procedures/status_totals.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@status",

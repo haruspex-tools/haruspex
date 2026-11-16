@@ -9,6 +9,7 @@
       "name": "GetOrder",
       "kind": "procedure",
       "at": "procedures/get_order.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@order_id",

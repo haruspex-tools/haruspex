@@ -9,6 +9,7 @@
       "name": "AliasReusedInside",
       "kind": "procedure",
       "at": "procedures/alias_reused_inside.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

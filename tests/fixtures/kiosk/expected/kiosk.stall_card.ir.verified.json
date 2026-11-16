@@ -9,6 +9,7 @@
       "name": "StallCard",
       "kind": "procedure",
       "at": "procedures/stall_card.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@stall_id",

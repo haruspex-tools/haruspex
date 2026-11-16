@@ -9,6 +9,7 @@
       "name": "BranchStats",
       "kind": "procedure",
       "at": "procedures/branch_stats.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

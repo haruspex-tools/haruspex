@@ -161,25 +161,6 @@ public static class IrJsonReader
         };
         source.End();
         json.End();
-        return version == IrDocument.CurrentVersion ? document : AsOlder(document, version, json);
-    }
-
-    /// <summary>
-    /// A document of an older version the reader still reads (<see cref="IrDocument.ReadableVersions"/>), which must hold only what
-    /// that version could: 0.21 had no query, nor a type a query owns, nor the reason <c>undecided-parameter</c>, so a file labelled
-    /// 0.21 that holds any is refused rather than read as what it claims to be.
-    /// </summary>
-    private static IrDocument AsOlder(IrDocument document, string version, IrJsonObject json)
-    {
-        var query = document.Objects.ToList().FindIndex(o => o.Kind == IrObjectKind.Query);
-        if (query >= 0)
-            throw new IrFormatException($"{json.PathOf("objects")}[{query.ToString(CultureInfo.InvariantCulture)}].kind", $"is \"query\", which IR {version} did not have.");
-        var owned = document.Types.Where(t => t.Value.Identity?.Owner == IrTypeOwner.Query).Select(t => t.Key).Order(StringComparer.Ordinal).FirstOrDefault();
-        if (owned is not null)
-            throw new IrFormatException($"{json.PathOf("types")}{IrPath.Key(owned)}.identity", $"names a query, which IR {version} did not have.");
-        var undecided = document.Unknowns.ToList().FindIndex(u => u.Reason == IrUnknownReason.UndecidedParameter);
-        if (undecided >= 0)
-            throw new IrFormatException($"{json.PathOf("unknowns")}[{undecided.ToString(CultureInfo.InvariantCulture)}].reason", $"is \"undecided-parameter\", which IR {version} did not have.");
         return document;
     }
 
@@ -207,6 +188,7 @@ public static class IrJsonReader
                 : [.. IrJsonObject.Items(results, json.PathOf("results")).Select(r => Result(IrJsonObject.At(r.Item, r.Path)))])
         {
             Text = text,
+            ReturnsCode = json.Boolean("returnsCode"),
         };
         json.End();
         return obj;

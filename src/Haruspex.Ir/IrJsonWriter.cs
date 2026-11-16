@@ -150,6 +150,7 @@ public static class IrJsonWriter
         json.WriteString("at", obj.At);
         if (obj.Text is { } text)
             json.WriteString("text", text);
+        json.WriteBoolean("returnsCode", obj.ReturnsCode);
 
         json.WriteStartArray("parameters");
         foreach (var parameter in obj.Parameters)

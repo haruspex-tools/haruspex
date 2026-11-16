@@ -9,6 +9,7 @@
       "name": "LineFunctions",
       "kind": "procedure",
       "at": "procedures/line_functions.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

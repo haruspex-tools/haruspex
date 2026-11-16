@@ -9,6 +9,7 @@
       "name": "LoansThroughAView",
       "kind": "procedure",
       "at": "procedures/loans_through_a_view.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

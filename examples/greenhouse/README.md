@@ -22,8 +22,8 @@ What to look at:
 
 - `getPlant(pool, { plant_id: 1 })`: a function takes the pool (or a transaction) and the procedure's parameters by their
   declared names, checks them before anything is sent, and checks what comes back with the procedure's schema. It returns
-  `{ result, returnValue }`. The functions belong on the server, which holds the pool and its credentials.
-- `garden.get_plant` returns `FOR JSON`, so its `result` is the document, or `null` when no plant has the id; the pool's
+  the procedure's one result itself, since `garden.get_plant` has no `OUTPUT` parameter and no return code. The functions belong on the server, which holds the pool and its credentials.
+- `garden.get_plant` returns `FOR JSON`, so what `getPlant` returns is the document, or `null` when no plant has the id; the pool's
   `parseJSON` makes no difference to it. A plant never watered has no `water_log` key at all, and the type says so
   (`water_log?`).
 - `queries/thirsty_plants.sql` is a query the application keeps in its own file, and `thirstyPlants` its function, named

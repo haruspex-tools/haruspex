@@ -9,6 +9,7 @@
       "name": "CteEndsWithItsStatement",
       "kind": "procedure",
       "at": "procedures/cte_ends_with_its_statement.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

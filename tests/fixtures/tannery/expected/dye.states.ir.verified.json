@@ -9,6 +9,7 @@
       "name": "States",
       "kind": "procedure",
       "at": "procedures/states.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

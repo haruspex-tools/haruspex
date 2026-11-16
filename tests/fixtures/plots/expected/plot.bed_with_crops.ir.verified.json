@@ -9,6 +9,7 @@
       "name": "BedWithCrops",
       "kind": "procedure",
       "at": "plots.sql:49:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@bed_id",

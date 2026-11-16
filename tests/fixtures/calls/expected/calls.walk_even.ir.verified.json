@@ -9,6 +9,7 @@
       "name": "WalkEven",
       "kind": "procedure",
       "at": "procedures/walk_even.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@n",

@@ -9,6 +9,7 @@
       "name": "VisitMoney",
       "kind": "procedure",
       "at": "procedures/visit_money.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

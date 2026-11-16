@@ -13,6 +13,7 @@
       "name": "MeterCard",
       "kind": "procedure",
       "at": "procedures/meter_card.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@meter_id",

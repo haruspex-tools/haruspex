@@ -9,6 +9,7 @@
       "name": "ShiftTimes",
       "kind": "procedure",
       "at": "procedures/shift_times.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@day",

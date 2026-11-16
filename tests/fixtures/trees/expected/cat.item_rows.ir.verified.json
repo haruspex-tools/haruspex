@@ -9,6 +9,7 @@
       "name": "ItemRows",
       "kind": "procedure",
       "at": "procedures/item_rows.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "GetPurchase",
       "kind": "procedure",
       "at": "procedures/get_purchase.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@purchase_id",

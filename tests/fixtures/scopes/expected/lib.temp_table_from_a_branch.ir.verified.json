@@ -9,6 +9,7 @@
       "name": "TempTableFromABranch",
       "kind": "procedure",
       "at": "procedures/temp_table_from_a_branch.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@pages",

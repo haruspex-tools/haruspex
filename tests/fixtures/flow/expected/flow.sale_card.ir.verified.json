@@ -9,6 +9,7 @@
       "name": "SaleCard",
       "kind": "procedure",
       "at": "procedures/sale_card.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@sale_id",

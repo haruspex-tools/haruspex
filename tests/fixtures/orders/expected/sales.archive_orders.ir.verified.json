@@ -9,6 +9,7 @@
       "name": "ArchiveOrders",
       "kind": "procedure",
       "at": "procedures/archive_orders.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@before",

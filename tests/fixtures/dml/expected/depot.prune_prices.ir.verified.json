@@ -9,6 +9,7 @@
       "name": "PrunePrices",
       "kind": "procedure",
       "at": "procedures/prune_prices.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

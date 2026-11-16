@@ -9,6 +9,7 @@
       "name": "KitRoutes",
       "kind": "procedure",
       "at": "procedures/kit_routes.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@kit_id",

@@ -9,6 +9,7 @@
       "name": "SyncPrices",
       "kind": "procedure",
       "at": "procedures/sync_prices.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

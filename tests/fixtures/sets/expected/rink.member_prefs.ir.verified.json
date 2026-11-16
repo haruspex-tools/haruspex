@@ -9,6 +9,7 @@
       "name": "MemberPrefs",
       "kind": "procedure",
       "at": "procedures/member_prefs.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

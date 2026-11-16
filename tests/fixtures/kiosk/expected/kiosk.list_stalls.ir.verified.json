@@ -9,6 +9,7 @@
       "name": "ListStalls",
       "kind": "procedure",
       "at": "procedures/list_stalls.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

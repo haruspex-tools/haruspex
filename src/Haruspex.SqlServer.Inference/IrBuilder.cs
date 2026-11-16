@@ -66,7 +66,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }
 
-            objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results]) { Text = text });
+            objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results]) { Text = text, ReturnsCode = analysis.ReturnsCode });
         }
 
         return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns]));

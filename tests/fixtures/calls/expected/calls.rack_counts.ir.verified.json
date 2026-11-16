@@ -9,6 +9,7 @@
       "name": "RackCounts",
       "kind": "procedure",
       "at": "procedures/rack_counts.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

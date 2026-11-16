@@ -9,6 +9,7 @@
       "name": "FindProducts",
       "kind": "procedure",
       "at": "procedures/find_products.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@name",

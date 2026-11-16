@@ -9,6 +9,7 @@
       "name": "GetMember",
       "kind": "procedure",
       "at": "procedures/get_member.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

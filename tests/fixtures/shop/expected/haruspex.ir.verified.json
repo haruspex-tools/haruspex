@@ -10,6 +10,7 @@
       "kind": "query",
       "at": "queries/basket_card.sql:1:1",
       "text": "-- A basket and its lines as one JSON document, headed by a label the caller chooses, which nothing in the query types.\n-- @param @label nvarchar(40)\nSELECT\n    @label AS label,\n    b.basket_id,\n    (SELECT l.line_no, l.quantity FROM shop.basket_line AS l WHERE l.basket_id = b.basket_id ORDER BY l.line_no FOR JSON PATH) AS lines\nFROM shop.basket AS b\nWHERE b.basket_id = @basket_id\nFOR JSON PATH, WITHOUT_ARRAY_WRAPPER;\n",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@label",
@@ -75,6 +76,7 @@
       "kind": "query",
       "at": "queries/products_under.sql:1:1",
       "text": "-- Products at or under a price, cheapest first, a page at a time; every status when @status is NULL.\nSELECT p.product_id, p.sku, p.name, p.price\nFROM shop.product AS p\nWHERE p.price <= @max_price AND (p.status = @status OR @status IS NULL)\nORDER BY p.price, p.product_id\nOFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;\n",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@max_price",
@@ -191,6 +193,7 @@
       "name": "BasketLineRow",
       "kind": "procedure",
       "at": "procedures/basket_line#.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@basket_id",
@@ -263,6 +266,7 @@
       "name": "Basket",
       "kind": "procedure",
       "at": "procedures/get_basket.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@basket_id",
@@ -311,6 +315,7 @@
       "name": "ListProducts",
       "kind": "procedure",
       "at": "procedures/list_products.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {
@@ -331,6 +336,7 @@
       "name": "AdminSales",
       "kind": "procedure",
       "at": "procedures/report_sales.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

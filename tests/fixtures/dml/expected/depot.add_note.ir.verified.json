@@ -9,6 +9,7 @@
       "name": "AddNote",
       "kind": "procedure",
       "at": "procedures/add_note.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@note_id",

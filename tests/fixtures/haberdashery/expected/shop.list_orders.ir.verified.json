@@ -9,6 +9,7 @@
       "name": "ListOrders",
       "kind": "procedure",
       "at": "procedures/list_orders.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

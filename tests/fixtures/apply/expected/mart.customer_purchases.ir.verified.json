@@ -9,6 +9,7 @@
       "name": "CustomerPurchases",
       "kind": "procedure",
       "at": "procedures/customer_purchases.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

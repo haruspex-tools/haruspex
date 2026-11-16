@@ -9,6 +9,7 @@
       "name": "CopyAt",
       "kind": "procedure",
       "at": "procedures/copy_at.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@branch_id",

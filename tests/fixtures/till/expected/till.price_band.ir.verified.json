@@ -9,6 +9,7 @@
       "name": "PriceBand",
       "kind": "procedure",
       "at": "procedures/price_band.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@lowest",

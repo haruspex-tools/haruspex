@@ -9,6 +9,7 @@
       "name": "AddLines",
       "kind": "procedure",
       "at": "procedures/add_lines.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@lines",

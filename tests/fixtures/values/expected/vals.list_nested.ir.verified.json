@@ -9,6 +9,7 @@
       "name": "ListNested",
       "kind": "procedure",
       "at": "procedures/list_nested.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

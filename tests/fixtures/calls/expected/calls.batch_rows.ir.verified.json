@@ -9,6 +9,7 @@
       "name": "BatchRows",
       "kind": "procedure",
       "at": "procedures/batch_rows.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@oven",

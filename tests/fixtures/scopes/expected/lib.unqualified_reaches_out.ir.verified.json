@@ -9,6 +9,7 @@
       "name": "UnqualifiedReachesOut",
       "kind": "procedure",
       "at": "procedures/unqualified_reaches_out.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

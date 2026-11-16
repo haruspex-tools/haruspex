@@ -64,6 +64,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0057](0057-parameter-keys-are-their-declared-names.md) | 16 Nov 2026 | Parameter keys are their declared names |
 | [0058](0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md) | 16 Nov 2026 | The functions are a file of their own, named for their driver |
 | [0059](0059-a-query-file-s-parameters-are-typed-from-their-uses.md) | 16 Nov 2026 | A query file's parameters are typed from their uses |
+| [0060](0060-a-call-returns-its-one-result-itself.md) | 16 Nov 2026 | A call returns its one result itself |
 
 ## Writing a record
 

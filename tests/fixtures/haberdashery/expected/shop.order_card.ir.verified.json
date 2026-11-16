@@ -9,6 +9,7 @@
       "name": "OrderCard",
       "kind": "procedure",
       "at": "procedures/order_card.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@id",

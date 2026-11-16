@@ -9,6 +9,7 @@
       "name": "PurchasesJson",
       "kind": "procedure",
       "at": "procedures/purchases_json.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

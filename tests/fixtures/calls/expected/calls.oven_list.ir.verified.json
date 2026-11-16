@@ -9,6 +9,7 @@
       "name": "OvenList",
       "kind": "procedure",
       "at": "procedures/oven_list.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

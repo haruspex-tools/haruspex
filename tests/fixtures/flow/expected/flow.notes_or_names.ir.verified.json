@@ -9,6 +9,7 @@
       "name": "NotesOrNames",
       "kind": "procedure",
       "at": "procedures/notes_or_names.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@notes",

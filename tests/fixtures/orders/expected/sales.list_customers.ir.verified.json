@@ -9,6 +9,7 @@
       "name": "ListCustomers",
       "kind": "procedure",
       "at": "procedures/list_customers.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

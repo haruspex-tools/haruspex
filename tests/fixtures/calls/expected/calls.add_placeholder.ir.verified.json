@@ -9,6 +9,7 @@
       "name": "AddPlaceholder",
       "kind": "procedure",
       "at": "procedures/add_placeholder.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": []
     }

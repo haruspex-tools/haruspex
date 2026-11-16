@@ -9,6 +9,7 @@
       "name": "FillShortlist",
       "kind": "procedure",
       "at": "procedures/fill_shortlist.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": []
     }

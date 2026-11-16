@@ -9,6 +9,7 @@
       "name": "MakePicks",
       "kind": "procedure",
       "at": "procedures/make_picks.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

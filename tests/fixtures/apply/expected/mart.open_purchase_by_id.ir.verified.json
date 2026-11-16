@@ -9,6 +9,7 @@
       "name": "OpenPurchaseById",
       "kind": "procedure",
       "at": "procedures/open_purchase_by_id.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@purchase_id",

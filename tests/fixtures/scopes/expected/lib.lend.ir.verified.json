@@ -9,6 +9,7 @@
       "name": "Lend",
       "kind": "procedure",
       "at": "procedures/lend.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

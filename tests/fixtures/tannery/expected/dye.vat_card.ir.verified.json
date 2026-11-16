@@ -9,6 +9,7 @@
       "name": "VatCard",
       "kind": "procedure",
       "at": "procedures/vat_card.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@vat_id",

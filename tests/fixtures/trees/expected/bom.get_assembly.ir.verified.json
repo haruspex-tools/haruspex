@@ -9,6 +9,7 @@
       "name": "GetAssembly",
       "kind": "procedure",
       "at": "procedures/get_assembly.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@part_id",

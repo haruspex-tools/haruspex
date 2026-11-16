@@ -9,6 +9,7 @@
       "name": "ExactReadings",
       "kind": "procedure",
       "at": "procedures/exact_readings.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

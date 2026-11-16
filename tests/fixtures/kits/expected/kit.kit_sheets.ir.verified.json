@@ -9,6 +9,7 @@
       "name": "KitSheets",
       "kind": "procedure",
       "at": "procedures/kit_sheets.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

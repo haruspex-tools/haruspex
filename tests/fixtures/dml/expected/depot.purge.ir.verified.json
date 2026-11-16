@@ -9,6 +9,7 @@
       "name": "Purge",
       "kind": "procedure",
       "at": "procedures/purge.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

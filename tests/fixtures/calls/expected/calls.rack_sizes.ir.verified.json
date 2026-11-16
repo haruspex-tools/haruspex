@@ -9,6 +9,7 @@
       "name": "RackSizes",
       "kind": "procedure",
       "at": "procedures/rack_sizes.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

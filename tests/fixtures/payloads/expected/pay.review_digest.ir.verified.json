@@ -9,6 +9,7 @@
       "name": "ReviewDigest",
       "kind": "procedure",
       "at": "procedures/review_digest.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

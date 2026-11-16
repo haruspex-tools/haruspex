@@ -9,6 +9,7 @@
       "name": "MaybeThenBatches",
       "kind": "procedure",
       "at": "procedures/maybe_then_batches.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@show",

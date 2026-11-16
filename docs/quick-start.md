@@ -96,7 +96,7 @@ begins with:
 
 ```ts haruspex-start function
 /** Calls dbo.uspGetBillOfMaterials. */
-export async function uspGetBillOfMaterials(db: Queryable, params: types.UspGetBillOfMaterialsParams): Promise<{ result: types.UspGetBillOfMaterials; returnValue: number }> {
+export async function uspGetBillOfMaterials(db: Queryable, params: types.UspGetBillOfMaterialsParams): Promise<types.UspGetBillOfMaterials> {
   const p = await checked(UspGetBillOfMaterialsParamsSchema, params, (issues) => new ParameterError('dbo.uspGetBillOfMaterials', issues))
   const request = db.request()
   request.input('StartProductID', sql.Int, p.StartProductID)
@@ -104,7 +104,7 @@ export async function uspGetBillOfMaterials(db: Queryable, params: types.UspGetB
   const response = await request.execute('dbo.uspGetBillOfMaterials')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(UspGetBillOfMaterialsSchema, readRows(sets[0]), (issues) => new ResultError('dbo.uspGetBillOfMaterials', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 ```
 

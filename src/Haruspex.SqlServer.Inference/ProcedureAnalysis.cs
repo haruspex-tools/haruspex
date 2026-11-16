@@ -12,4 +12,8 @@ internal sealed record ProcedureAnalysis(
     EquatableArray<ParameterShape> Parameters,
     EquatableArray<ResultShape>? Results,
     UnknownShape? ResultsUnknown,
-    EquatableArray<ObjectName> Declared);
+    EquatableArray<ObjectName> Declared)
+{
+    /// <summary>Whether a call may end with a return code other than 0 (<see cref="ReturnCodes"/>).</summary>
+    public bool ReturnsCode { get; init; }
+}

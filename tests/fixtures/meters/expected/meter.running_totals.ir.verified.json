@@ -13,6 +13,7 @@
       "name": "RunningTotals",
       "kind": "procedure",
       "at": "procedures/running_totals.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@meter_id",

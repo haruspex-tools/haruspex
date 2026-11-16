@@ -9,6 +9,7 @@
       "name": "CteHidesATable",
       "kind": "procedure",
       "at": "procedures/cte_hides_a_table.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

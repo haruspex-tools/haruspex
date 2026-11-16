@@ -9,6 +9,7 @@
       "name": "UpdateReturns",
       "kind": "procedure",
       "at": "procedures/update_returns.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

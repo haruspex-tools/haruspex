@@ -9,6 +9,7 @@
       "name": "LastPurchase",
       "kind": "procedure",
       "at": "procedures/last_purchase.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

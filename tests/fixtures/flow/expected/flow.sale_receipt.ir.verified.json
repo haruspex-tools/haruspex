@@ -9,6 +9,7 @@
       "name": "SaleReceipt",
       "kind": "procedure",
       "at": "procedures/sale_receipt.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@sale_id",

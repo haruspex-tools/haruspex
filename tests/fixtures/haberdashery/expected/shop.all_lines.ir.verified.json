@@ -9,6 +9,7 @@
       "name": "AllLines",
       "kind": "procedure",
       "at": "procedures/all_lines.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

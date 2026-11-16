@@ -9,6 +9,7 @@
       "name": "VisitWindows",
       "kind": "procedure",
       "at": "procedures/visit_windows.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

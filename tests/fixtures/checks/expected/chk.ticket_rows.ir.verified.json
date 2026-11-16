@@ -9,6 +9,7 @@
       "name": "TicketRows",
       "kind": "procedure",
       "at": "procedures/ticket_rows.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

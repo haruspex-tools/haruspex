@@ -103,12 +103,13 @@ public static class IrJsonSchema
             ("database", Text("Left out for the same database; otherwise the other database, by name or SQLCMD variable, as the reference names it.")))),
         ("object", RunsText(Closed(
             "A typed object: a procedure of the database, or a query file of the application.",
-            ["id", "name", "kind", "at", "parameters", "results"],
+            ["id", "name", "kind", "at", "returnsCode", "parameters", "results"],
             ("id", Text("Its identity: a procedure's name in the database, or a query file's path relative to its config file's folder.")),
             ("name", Text("The name settled for generated code.")),
             ("kind", Vocabulary<IrObjectKind>(IrWireNames.Of)),
             ("at", Text("Where it is defined, as path:line:column.")),
             ("text", Text("What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.")),
+            ("returnsCode", Flag("Whether a call may end with a return code other than 0.")),
             ("parameters", ArrayOf(Ref("parameter"))),
             ("results", Node(
                 ("description", "Its result sets in order, or null when they cannot be listed."),

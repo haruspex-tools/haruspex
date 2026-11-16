@@ -9,6 +9,7 @@
       "name": "OrgChart",
       "kind": "procedure",
       "at": "procedures/org_chart.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "PicksFromACall",
       "kind": "procedure",
       "at": "procedures/picks_from_a_call.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

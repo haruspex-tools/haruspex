@@ -26,6 +26,7 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.ObjectRenamed => $"renamed from {Before} to {After}",
         IrChangeKind.ObjectKindChanged => $"kind changed from {Before} to {After}",
         IrChangeKind.TextChanged => "the text it runs changed",
+        IrChangeKind.ReturnsCodeChanged => After == "true" ? "may now end with a return code other than 0" : "now always ends with the return code 0",
         IrChangeKind.ParametersReordered or IrChangeKind.FieldsReordered => $"{(Kind == IrChangeKind.FieldsReordered ? "fields" : "parameters")} reordered from {Before} to {After}",
         IrChangeKind.ParameterDefaultChanged => After == "true" ? "now has a default" : "no longer has a default",
         IrChangeKind.ParameterDirectionChanged => After == "true" ? "is now an output parameter" : "is no longer an output parameter",

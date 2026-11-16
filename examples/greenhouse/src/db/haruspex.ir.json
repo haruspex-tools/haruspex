@@ -9,6 +9,7 @@
       "name": "GetPlant",
       "kind": "procedure",
       "at": "procedures/get_plant.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@plant_id",
@@ -57,6 +58,7 @@
       "name": "ListPlants",
       "kind": "procedure",
       "at": "procedures/list_plants.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {
@@ -78,6 +80,7 @@
       "kind": "query",
       "at": "queries/thirsty_plants.sql:1:1",
       "text": "-- The plants not watered since a given time, the longest unwatered first; only those of one kind when @kind is given.\n-- @since is compared with an aggregate, from which its type isn't inferred, so it is declared:\n-- @param @since datetime2(0)\nSELECT p.plant_id, p.name, MAX(w.watered_at) AS last_watered\nFROM garden.plant AS p\nLEFT JOIN garden.water_log AS w ON w.plant_id = p.plant_id\nWHERE p.kind = @kind OR @kind IS NULL\nGROUP BY p.plant_id, p.name\nHAVING MAX(w.watered_at) < @since OR MAX(w.watered_at) IS NULL\nORDER BY MAX(w.watered_at), p.name;\n",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@kind",

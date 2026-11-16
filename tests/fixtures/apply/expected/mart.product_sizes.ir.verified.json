@@ -9,6 +9,7 @@
       "name": "ProductSizes",
       "kind": "procedure",
       "at": "procedures/product_sizes.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

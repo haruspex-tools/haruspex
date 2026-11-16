@@ -9,6 +9,7 @@
       "name": "SiblingSubqueries",
       "kind": "procedure",
       "at": "procedures/sibling_subqueries.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

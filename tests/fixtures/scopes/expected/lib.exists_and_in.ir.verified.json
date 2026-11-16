@@ -9,6 +9,7 @@
       "name": "ExistsAndIn",
       "kind": "procedure",
       "at": "procedures/exists_and_in.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

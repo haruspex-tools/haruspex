@@ -49,7 +49,10 @@ try {
     try {
       const fn = functions[call.function]
       if (typeof fn !== 'function') throw new Error(`no function ${call.function}`)
-      entry.value = plain(call.params == null ? await fn(db) : await fn(db, argument(call.params)))
+      // A function of nothing to hand back returns undefined, which JSON has no form for: written null, as a FOR JSON result over
+      // no rows is.
+      const value = call.params == null ? await fn(db) : await fn(db, argument(call.params))
+      entry.value = value === undefined ? null : plain(value)
     } catch (error) {
       entry.error = {
         name: error.name,

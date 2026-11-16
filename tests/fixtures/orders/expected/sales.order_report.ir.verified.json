@@ -9,6 +9,7 @@
       "name": "OrderReport",
       "kind": "procedure",
       "at": "procedures/order_report.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

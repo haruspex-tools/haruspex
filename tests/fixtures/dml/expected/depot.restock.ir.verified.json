@@ -9,6 +9,7 @@
       "name": "Restock",
       "kind": "procedure",
       "at": "procedures/restock.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

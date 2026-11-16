@@ -9,6 +9,7 @@
       "name": "ReadingRooms",
       "kind": "procedure",
       "at": "procedures/reading_rooms.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

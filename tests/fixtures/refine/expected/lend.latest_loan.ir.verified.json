@@ -9,6 +9,7 @@
       "name": "LatestLoan",
       "kind": "procedure",
       "at": "procedures/latest_loan.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

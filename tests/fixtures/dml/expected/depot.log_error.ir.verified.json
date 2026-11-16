@@ -9,6 +9,7 @@
       "name": "LogError",
       "kind": "procedure",
       "at": "procedures/log_error.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@procedure",

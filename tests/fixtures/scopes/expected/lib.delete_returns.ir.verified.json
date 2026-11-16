@@ -9,6 +9,7 @@
       "name": "DeleteReturns",
       "kind": "procedure",
       "at": "procedures/delete_returns.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

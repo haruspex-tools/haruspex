@@ -9,6 +9,7 @@
       "name": "ApplyValues",
       "kind": "procedure",
       "at": "procedures/apply_values.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

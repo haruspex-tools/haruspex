@@ -9,6 +9,7 @@
       "name": "ApplyReadsItsLeftSide",
       "kind": "procedure",
       "at": "procedures/apply_reads_its_left_side.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

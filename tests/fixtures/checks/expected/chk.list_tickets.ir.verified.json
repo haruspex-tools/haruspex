@@ -9,6 +9,7 @@
       "name": "ListTickets",
       "kind": "procedure",
       "at": "procedures/list_tickets.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

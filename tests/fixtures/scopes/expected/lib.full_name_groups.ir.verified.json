@@ -9,6 +9,7 @@
       "name": "FullNameGroups",
       "kind": "procedure",
       "at": "procedures/full_name_groups.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

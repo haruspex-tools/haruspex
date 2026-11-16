@@ -9,6 +9,7 @@
       "name": "SessionBoard",
       "kind": "procedure",
       "at": "procedures/session_board.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

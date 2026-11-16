@@ -9,6 +9,7 @@
       "name": "Recount",
       "kind": "procedure",
       "at": "procedures/recount.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@n",

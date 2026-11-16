@@ -9,6 +9,7 @@
       "name": "HarvestedArea",
       "kind": "procedure",
       "at": "harvest.sql:16:2",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -33,8 +33,8 @@ public partial class MssqlFunctionTests
             new GeneratedFunctions.Call("every", "stockOf", Params(("sku", null))));
 
         Assert.Equal("char(4)", Assert.IsType<IrScalar>(Assert.Single(module.Objects).Parameters[0].Type).Sql);
-        Assert.Equal("""{"result":[{"sku":"AB12","qty":3}],"returnValue":0}""", JsonSerializer.Serialize(responses[0].Value));
-        Assert.Equal("""{"result":[{"sku":"AB12","qty":3},{"sku":"CD34","qty":0}],"returnValue":0}""", JsonSerializer.Serialize(responses[1].Value));
+        Assert.Equal("""[{"sku":"AB12","qty":3}]""", JsonSerializer.Serialize(responses[0].Value));
+        Assert.Equal("""[{"sku":"AB12","qty":3},{"sku":"CD34","qty":0}]""", JsonSerializer.Serialize(responses[1].Value));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public partial class MssqlFunctionTests
         var response = Assert.Single(await RunQueries(module, new GeneratedFunctions.Call("call", "dateBytes", Params(("since", "2026-11-16")))));
 
         Assert.Null(response.Error);
-        Assert.Equal(3, response.Value!.Value.GetProperty("result")[0].GetProperty("bytes").GetInt32());
+        Assert.Equal(3, response.Value!.Value[0].GetProperty("bytes").GetInt32());
     }
 
     [Fact]
@@ -63,18 +63,18 @@ public partial class MssqlFunctionTests
 
         Assert.Null(response.Error);
         Assert.Equal(["@under int", "@restocked int"], module.Parameters());
-        Assert.Equal("""{"result":[{"sku":"CD34","qty":10}],"returnValue":0}""", JsonSerializer.Serialize(response.Value));
+        Assert.Equal("""[{"sku":"CD34","qty":10}]""", JsonSerializer.Serialize(response.Value));
     }
 
     [Fact]
-    public async Task A_query_file_can_not_return_a_value_so_its_return_code_is_always_zero()
+    public async Task A_query_file_can_not_return_a_value_so_it_hands_back_no_return_code()
     {
-        // A batch run through sp_executesql may RETURN, but not with a value (error 178), so returnValue is sp_executesql's own.
+        // A batch run through sp_executesql may RETURN, but not with a value (error 178), so the code is always 0.
         var module = Queries(("sql/stop.sql", "SELECT 1 AS one; RETURN;"), ("sql/stop_with.sql", "SELECT 1 AS one; RETURN 5;"));
 
         var responses = await RunQueries(module, new GeneratedFunctions.Call("bare", "stop"), new GeneratedFunctions.Call("valued", "stopWith"));
 
-        Assert.Equal(0, responses[0].Value!.Value.GetProperty("returnValue").GetInt32());
+        Assert.Equal("""[{"one":1}]""", JsonSerializer.Serialize(responses[0].Value));
         Assert.Equal(178, responses[1].Error!.Number);
     }
 

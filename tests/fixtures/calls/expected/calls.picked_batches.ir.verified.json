@@ -9,6 +9,7 @@
       "name": "PickedBatches",
       "kind": "procedure",
       "at": "procedures/picked_batches.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

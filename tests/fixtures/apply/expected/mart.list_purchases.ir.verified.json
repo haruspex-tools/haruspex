@@ -9,6 +9,7 @@
       "name": "ListPurchases",
       "kind": "procedure",
       "at": "procedures/list_purchases.sql:4:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

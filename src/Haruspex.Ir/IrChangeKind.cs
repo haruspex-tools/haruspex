@@ -22,6 +22,9 @@ public enum IrChangeKind
     /// <summary>The text a query runs changed, which its generated function sends.</summary>
     TextChanged,
 
+    /// <summary>Whether a call may end with a return code other than 0 changed, which changes what its function returns.</summary>
+    ReturnsCodeChanged,
+
     /// <summary>A parameter only the later document has.</summary>
     ParameterAdded,
 

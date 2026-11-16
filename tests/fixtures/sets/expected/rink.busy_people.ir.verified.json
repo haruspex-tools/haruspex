@@ -9,6 +9,7 @@
       "name": "BusyPeople",
       "kind": "procedure",
       "at": "procedures/busy_people.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

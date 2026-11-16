@@ -108,9 +108,7 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further,
-  except that it may read a 0.21 document as 0.22 when it holds no query, no type a query owns and no `undecided-parameter`, and
-  must refuse one that holds any of them;
+- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
   type, a count that is negative or past 2,147,483,647, a number in a
@@ -148,6 +146,7 @@ object, and a `ref` that names no type.
     "name": "GetOrder",               // the name for generated code, from the config file's naming rules
     "kind": "procedure",
     "at": "procedures/get_order.sql:1:1",
+    "returnsCode": false,             // whether a call may end with a return code other than 0
     "parameters": [{ "name": "@order_id", "type": { … }, "hasDefault": false, "output": false }],
     "results": [{                     // null when they cannot be listed
       "encoding": "json", "type": { "ref": "GetOrderRow" },
@@ -199,7 +198,12 @@ belongs to, with `/` between folders (`queries/get_order_card.sql`); `text` hold
 endings, and only a query has `text`. Its `parameters` are the variables its text uses without declaring, in the order of their
 first use, each `hasDefault` and `output` false; each one's type is what a call declares it as, by its `sql`, and is the
 `undecided-parameter` unknown where the file's uses don't decide it. A query's results are written as a procedure's are, and
-its types' identity names it as `{ "query": "queries/get_order_card.sql", "path": … }`. `at` is a source location, `path:line:column`
+its types' identity names it as `{ "query": "queries/get_order_card.sql", "path": … }`.
+
+`returnsCode` (0.22) says whether a call of the object may end with a return code other than 0: `true` when its body has a
+`RETURN` whose value isn't the constant 0 or NULL, or when the body can't be read; `false` when every call that succeeds ends with
+0, so the code tells a caller nothing, as for a body with no such `RETURN`, and for every query (SQL Server refuses `RETURN` with a
+value in a batch run through `sp_executesql`). `at` is a source location, `path:line:column`
 relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
 
 `source.package` and `source.sha256` (0.19) name the package the source was read from, such as a DACPAC, by its file name
@@ -467,9 +471,10 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 
 **0.22** (16 Nov 2026, query files). The object kind `query`, a file of the application holding one batch, identified by its path,
 with `text`, what it runs; the type owner `query`; and the unknown reason `undecided-parameter`, for a query's parameter whose uses
-don't decide its type ([decision 0059](../../docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)). Only a query
-file gives any of them, and nothing inferred of a procedure changed, so this reader reads 0.21 too, refusing a 0.21 file that holds a
-query, a type one owns or the new reason.
+don't decide its type ([decision 0059](../../docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)); and every
+object's `returnsCode`, whether a call may end with a return code other than 0, which decides the shape of its function
+([decision 0060](../../docs/decisions/0060-a-call-returns-its-one-result-itself.md)). A 0.21 file doesn't say that, so this reader
+reads 0.22 only.
 
 **0.21** (15 Nov 2026, SQLCMD variables in bodies). The unknown reason `sqlcmd-variable`: a literal holding a SQLCMD variable,
 such as `'$(Region)'`, or a key holding one, which a deployment replaces with the variable's value before SQL Server sees the

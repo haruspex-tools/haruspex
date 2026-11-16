@@ -28,22 +28,27 @@ procedure's parameters second, as an object keyed by their declared names withou
 ```ts
 import { getOrder } from './db/haruspex.mssql'
 
-const { result: order, returnValue } = await getOrder(pool, { OrderID: 42 })
+const order = await getOrder(pool, { OrderID: 42 })
 ```
 
 It owns no connection. Pooling, retries, timeouts and transactions stay the application's, which wraps the functions rather
 than being replaced by them. A procedure with no parameters takes the connection alone.
 
-Every function returns one shape, so a procedure can grow without breaking its callers:
+A function returns what its procedure hands back, checked by the procedure's schema
+([decision 0060](decisions/0060-a-call-returns-its-one-result-itself.md)). For a procedure with one result set and nothing else,
+that is the result itself: an array of rows, or a `FOR JSON` document, which is `null` when no rows matched. A procedure that also
+has `OUTPUT` parameters or a return code, or that returns several result sets, gives an object naming each part:
 
 | Key | What it holds |
 |---|---|
-| `result` | The one result set, checked by the procedure's schema: an array of rows, or a `FOR JSON` document, which is `null` when no rows matched. |
+| `result` | The one result set. |
 | `result1`, `result2`, … | Each result set, for a procedure that returns more than one. |
 | `output` | The `OUTPUT` parameters, by their declared names, for a procedure that has any. |
-| `returnValue` | The procedure's return code. |
+| `returnValue` | The procedure's return code, for a procedure whose body has a `RETURN` with a value other than 0 or NULL. Without one, the code is always 0 (observed), so it isn't handed back. |
 
-A procedure that returns no result set has no `result`. A rowset whose statement didn't run, in a branch or after a
+A procedure that returns no result set has no `result`, and one that hands back nothing at all returns nothing. The shape follows
+the procedure: when it gains an `OUTPUT` parameter or a `RETURN` with a value, its function's shape changes, `haruspex check` says
+so, and the compiler finds each call to change. A rowset whose statement didn't run, in a branch or after a
 `RETURN`, is `[]`. A `FOR JSON` result is read the same whether
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
@@ -91,7 +96,7 @@ with several modules tells the errors apart by `name` or `kind`, not `instanceof
 
 ```ts
 try {
-  return (await getOrder(pool, { OrderID: id })).result
+  return await getOrder(pool, { OrderID: id })
 } catch (error) {
   if (error instanceof Error && error.name === 'HaruspexParameterError') return null   // an id the procedure can't take
   throw error
@@ -115,12 +120,12 @@ another, so a procedure two modules select is typed in each, and two modules may
 A query file the config file names in `queries` ([the configuration](configuration.md#query-files-queries)) has a function as a
 procedure has, named for the file by the same rules: `sql/get_order_card.sql` is `getOrderCard`. Procedures and query files share
 the module's names, so one that would take another's is an error naming both ([HAR4303](diagnostics/HAR4303.md),
-[HAR5201](diagnostics/HAR5201.md)). It is called the same way, and returns the same shape:
+[HAR5201](diagnostics/HAR5201.md)). It is called the same way, and returns as a procedure's does:
 
 ```ts
 import { getOrderCard } from './db/haruspex.mssql'
 
-const { result: card } = await getOrderCard(pool, { order_id: 42 })
+const card = await getOrderCard(pool, { order_id: 42 })
 ```
 
 The function sends the file's text, as it is written, through `sp_executesql`, declaring each parameter with the type haruspex
@@ -131,8 +136,9 @@ stops the run until the file declares it ([HAR5202](diagnostics/HAR5202.md)). Ev
 
 What can fail is what a procedure's call can, with a query file's path where a procedure's name would be: a `ParameterError`'s
 and a `ResultError`'s `procedure`, and their messages, name the file (`sql/get_order_card.sql: @order_id: …`). The database's
-error is mssql's `RequestError`. A query file has no `OUTPUT` parameters, and its `returnValue` is always 0: a batch run through
-`sp_executesql` may `RETURN`, but SQL Server refuses `RETURN` with a value there (error 178). The text is part of the module, so
+error is mssql's `RequestError`. A query file has no `OUTPUT` parameters and no return code: a batch run through `sp_executesql` may
+`RETURN`, but SQL Server refuses `RETURN` with a value there (error 178), so the code is always 0, and a query file of one result
+set returns that result itself. The text is part of the module, so
 `haruspex check` fails when a query file has changed since the module was generated.
 
 ## Calling the driver yourself

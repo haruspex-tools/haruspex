@@ -7,7 +7,7 @@ parameters schema, binds each with the driver's type, executes, and checks each 
 their schemas:
 
 ```ts
-const { result } = await getOrder(pool, { order_id: 42 })
+const order = await getOrder(pool, { order_id: 42 })
 ```
 
 The functions are a file of their own (`haruspex.mssql.ts`), which imports the schemas and types from the schema module beside
@@ -53,14 +53,17 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
   `OUTPUT` parameters) and each issue's path. Each error has a stable `name` and `kind`, so code that handles errors from several
   modules tells them apart without importing any
   ([decision 0056](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)).
-- **One shape of return for every procedure**: `result` for one result set, `result1`, `result2` and so on for several,
-  `output` for the `OUTPUT` parameters, and `returnValue`, the return code. A `FOR JSON` result is read as decision 0048 fixes,
-  whether the pool parses JSON or not.
+- **The shape follows what the procedure hands back**
+  ([decision 0060](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0060-a-call-returns-its-one-result-itself.md)):
+  its one result set itself, when it has no `OUTPUT` parameter and no return code worth handing back (the IR's `returnsCode`);
+  otherwise an object of `result`, or `result1`, `result2` and so on for several, `output` for the `OUTPUT` parameters, and
+  `returnValue` when the code may be other than 0; and nothing, when there is nothing to hand back. A `FOR JSON` result is read as
+  decision 0048 fixes, whether the pool parses JSON or not.
 - **A query file's function runs its text through `sp_executesql`**: the text as the IR holds it, and each parameter declared
   by its name and its type's `sql`, so the query runs with the types it was inferred with, and each value is bound beside them
   by name, converted by the server to its declared type. A parameter with no type to declare, or named `@stmt` or `@params`
   (`sp_executesql`'s own), is refused (HAR5202). Its failures name its path where a procedure's would name the procedure, and
-  its `returnValue` is always 0, since the server refuses `RETURN` with a value in such a batch (error 178, observed).
+  it has no return code to hand back, since the server refuses `RETURN` with a value in such a batch (error 178, observed).
 - **It checks through Standard Schema**, the interface Zod, Valibot and ArkType implement, never through Zod's own methods, so
   the functions are the same whichever validator wrote the schemas, by the names `SchemaModuleNames` gives.
 - **It is self-contained.** Its errors and helpers are written into it, so a module needs no package of haruspex's at run time,

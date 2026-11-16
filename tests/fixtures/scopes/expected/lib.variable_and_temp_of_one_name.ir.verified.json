@@ -9,6 +9,7 @@
       "name": "VariableAndTempOfOneName",
       "kind": "procedure",
       "at": "procedures/variable_and_temp_of_one_name.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

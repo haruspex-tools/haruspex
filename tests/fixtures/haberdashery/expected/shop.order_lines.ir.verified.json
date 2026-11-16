@@ -9,6 +9,7 @@
       "name": "OrderLines",
       "kind": "procedure",
       "at": "procedures/order_lines.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@id",

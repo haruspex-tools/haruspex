@@ -9,6 +9,7 @@
       "name": "UnqualifiedTwoLevelsOut",
       "kind": "procedure",
       "at": "procedures/unqualified_two_levels_out.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

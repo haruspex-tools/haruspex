@@ -9,6 +9,7 @@
       "name": "MergeTwoActions",
       "kind": "procedure",
       "at": "procedures/merge_two_actions.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@owner_id",

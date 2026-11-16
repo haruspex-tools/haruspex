@@ -25,13 +25,11 @@ public sealed record IrDocument(
     public const string CurrentVersion = "0.22";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.21. 0.22 added query files (the object kind
-    /// <see cref="IrObjectKind.Query"/>, its <see cref="IrObject.Text"/>, the type owner <see cref="IrTypeOwner.Query"/> and the
-    /// reason <see cref="IrUnknownReason.UndecidedParameter"/>), which only a query file gives; nothing inferred of a procedure
-    /// changed, so every 0.21 file is a 0.22 file with no query in it, and means the same. A file labelled 0.21 that holds a
-    /// query is refused (<c>IrJsonReader</c>).
+    /// The versions a reader reads, as decision 0024 says: the current one only. 0.22 added query files, and
+    /// <see cref="IrObject.ReturnsCode"/>, whether a procedure may end with a code other than 0, which a 0.21 file doesn't say, and
+    /// which decides the shape of the procedure's function; so no 0.21 file means what a 0.22 file of its source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = ["0.21", CurrentVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

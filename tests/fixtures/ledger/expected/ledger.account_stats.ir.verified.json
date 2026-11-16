@@ -9,6 +9,7 @@
       "name": "AccountStats",
       "kind": "procedure",
       "at": "procedures/account_stats.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@account_id",

@@ -9,6 +9,7 @@
       "name": "OpenContacts",
       "kind": "procedure",
       "at": "procedures/open_contacts.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "MemberDates",
       "kind": "procedure",
       "at": "procedures/member_dates.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@offset",

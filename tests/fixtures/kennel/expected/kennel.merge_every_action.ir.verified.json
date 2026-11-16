@@ -9,6 +9,7 @@
       "name": "MergeEveryAction",
       "kind": "procedure",
       "at": "procedures/merge_every_action.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@owner_id",

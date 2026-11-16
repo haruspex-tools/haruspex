@@ -9,6 +9,7 @@
       "name": "ListProducts",
       "kind": "procedure",
       "at": "procedures/list_products.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

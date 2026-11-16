@@ -45,7 +45,10 @@ internal static class IrSamples
                         Cardinality = IrCardinality.AtMostOne,
                     },
                     new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("LineRow")), []),
-                ]),
+                ])
+            {
+                ReturnsCode = true,
+            },
             new IrObject("sales.run_report", "RunReport", IrObjectKind.Procedure, "procedures/run_report.sql:1:1", [], null),
             new IrObject(
                 "sql/find_orders.sql",

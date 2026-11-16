@@ -9,6 +9,7 @@
       "name": "Reach",
       "kind": "procedure",
       "at": "procedures/reach.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@person_id",

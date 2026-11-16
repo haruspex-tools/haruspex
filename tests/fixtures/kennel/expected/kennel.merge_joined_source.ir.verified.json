@@ -9,6 +9,7 @@
       "name": "MergeJoinedSource",
       "kind": "procedure",
       "at": "procedures/merge_joined_source.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@owner_id",

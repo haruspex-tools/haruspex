@@ -9,6 +9,7 @@
       "name": "PartList",
       "kind": "procedure",
       "at": "procedures/part_list.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@with_units",

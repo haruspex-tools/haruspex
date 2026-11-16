@@ -9,6 +9,7 @@
       "name": "BatchFeed",
       "kind": "procedure",
       "at": "procedures/batch_feed.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@oven",

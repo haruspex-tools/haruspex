@@ -9,6 +9,7 @@
       "name": "GetProductTree",
       "kind": "procedure",
       "at": "procedures/GetProductTree.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@ProductID",

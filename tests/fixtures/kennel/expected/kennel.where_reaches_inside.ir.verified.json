@@ -9,6 +9,7 @@
       "name": "WhereReachesInside",
       "kind": "procedure",
       "at": "procedures/where_reaches_inside.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

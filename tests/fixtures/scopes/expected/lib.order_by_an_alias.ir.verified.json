@@ -9,6 +9,7 @@
       "name": "OrderByAnAlias",
       "kind": "procedure",
       "at": "procedures/order_by_an_alias.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

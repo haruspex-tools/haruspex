@@ -9,6 +9,7 @@
       "name": "CurrentPrices",
       "kind": "procedure",
       "at": "procedures/current_prices.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

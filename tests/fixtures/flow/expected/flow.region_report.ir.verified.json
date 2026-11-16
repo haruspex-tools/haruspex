@@ -9,6 +9,7 @@
       "name": "RegionReport",
       "kind": "procedure",
       "at": "procedures/region_report.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@channel",

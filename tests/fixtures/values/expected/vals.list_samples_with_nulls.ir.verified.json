@@ -9,6 +9,7 @@
       "name": "ListSamplesWithNulls",
       "kind": "procedure",
       "at": "procedures/list_samples_with_nulls.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

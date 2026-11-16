@@ -9,6 +9,7 @@
       "name": "SetNamedByItsFirstQuery",
       "kind": "procedure",
       "at": "procedures/set_named_by_its_first_query.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

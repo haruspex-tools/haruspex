@@ -9,6 +9,7 @@
       "name": "ListSamples",
       "kind": "procedure",
       "at": "procedures/list_samples.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@sample_id",

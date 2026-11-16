@@ -9,6 +9,7 @@
       "name": "Lockers",
       "kind": "procedure",
       "at": "procedures/lockers.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

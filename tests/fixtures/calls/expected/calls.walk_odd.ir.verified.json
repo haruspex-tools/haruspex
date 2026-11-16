@@ -9,6 +9,7 @@
       "name": "WalkOdd",
       "kind": "procedure",
       "at": "procedures/walk_odd.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@n",

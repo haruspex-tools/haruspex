@@ -9,6 +9,7 @@
       "name": "ListParcels",
       "kind": "procedure",
       "at": "procedures/list_parcels.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

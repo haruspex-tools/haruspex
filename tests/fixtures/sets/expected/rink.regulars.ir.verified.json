@@ -9,6 +9,7 @@
       "name": "Regulars",
       "kind": "procedure",
       "at": "procedures/regulars.sql:4:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@member_id",

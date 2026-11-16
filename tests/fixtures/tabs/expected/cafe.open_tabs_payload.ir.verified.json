@@ -9,6 +9,7 @@
       "name": "OpenTabsPayload",
       "kind": "procedure",
       "at": "procedures/open_tabs_payload.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

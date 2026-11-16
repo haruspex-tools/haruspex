@@ -9,6 +9,7 @@
       "name": "GetSample",
       "kind": "procedure",
       "at": "procedures/get_sample.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@sample_id",

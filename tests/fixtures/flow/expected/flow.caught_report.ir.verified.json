@@ -9,6 +9,7 @@
       "name": "CaughtReport",
       "kind": "procedure",
       "at": "procedures/caught_report.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@fail_at",

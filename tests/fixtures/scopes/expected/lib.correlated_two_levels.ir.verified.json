@@ -9,6 +9,7 @@
       "name": "CorrelatedTwoLevels",
       "kind": "procedure",
       "at": "procedures/correlated_two_levels.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

@@ -9,6 +9,7 @@
       "name": "CustomerActivity",
       "kind": "procedure",
       "at": "procedures/customer_activity.sql:5:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

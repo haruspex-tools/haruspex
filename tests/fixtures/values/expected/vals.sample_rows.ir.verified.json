@@ -9,6 +9,7 @@
       "name": "SampleRows",
       "kind": "procedure",
       "at": "procedures/sample_rows.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

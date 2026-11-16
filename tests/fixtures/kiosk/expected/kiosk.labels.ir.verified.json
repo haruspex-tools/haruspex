@@ -9,6 +9,7 @@
       "name": "Labels",
       "kind": "procedure",
       "at": "procedures/labels.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

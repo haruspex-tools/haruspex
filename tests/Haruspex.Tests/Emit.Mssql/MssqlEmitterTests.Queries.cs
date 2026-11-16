@@ -23,7 +23,7 @@ public partial class MssqlEmitterTests
 
         Assert.Contains(
             "/** Runs the query file sql/OrdersOf.sql. */\n" +
-            "export async function ordersOf(db: Queryable, params: types.OrdersOfParams): Promise<{ result: types.OrdersOf; returnValue: number }> {\n" +
+            "export async function ordersOf(db: Queryable, params: types.OrdersOfParams): Promise<types.OrdersOf> {\n" +
             "  const p = await checked(OrdersOfParamsSchema, params, (issues) => new ParameterError('sql/OrdersOf.sql', issues))\n" +
             "  const request = db.request()\n" +
             "  request.input('stmt', sql.NVarChar(sql.MAX), 'SELECT o.order_id FROM shop.orders AS o\\nWHERE o.customer_id = @customer_id AND o.note = N\\'it\\'\\'s\\';\\n')\n" +
@@ -38,7 +38,7 @@ public partial class MssqlEmitterTests
     [Fact]
     public void A_query_file_without_parameters_sends_its_text_alone() =>
         Assert.Contains(
-            "export async function listOrders(db: Queryable): Promise<{ result: types.ListOrders; returnValue: number }> {\n" +
+            "export async function listOrders(db: Queryable): Promise<types.ListOrders> {\n" +
             "  const request = db.request()\n" +
             "  request.input('stmt', sql.NVarChar(sql.MAX), 'SELECT 1 AS one;')\n" +
             "  const response = await request.execute('sys.sp_executesql')\n",

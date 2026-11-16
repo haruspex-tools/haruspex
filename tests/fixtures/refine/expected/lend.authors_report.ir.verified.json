@@ -9,6 +9,7 @@
       "name": "AuthorsReport",
       "kind": "procedure",
       "at": "procedures/authors_report.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

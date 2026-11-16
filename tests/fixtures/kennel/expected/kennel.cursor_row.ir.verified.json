@@ -9,6 +9,7 @@
       "name": "CursorRow",
       "kind": "procedure",
       "at": "procedures/cursor_row.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@dog_id",

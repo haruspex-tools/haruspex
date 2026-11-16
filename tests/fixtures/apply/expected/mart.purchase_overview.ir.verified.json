@@ -9,6 +9,7 @@
       "name": "PurchaseOverview",
       "kind": "procedure",
       "at": "procedures/purchase_overview.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

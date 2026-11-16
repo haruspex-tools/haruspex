@@ -9,6 +9,7 @@
       "name": "ListNestedWithNulls",
       "kind": "procedure",
       "at": "procedures/list_nested_with_nulls.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

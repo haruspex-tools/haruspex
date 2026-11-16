@@ -105,27 +105,27 @@ function readRows(set: unknown): unknown {
 }
 
 /** Calls garden.get_plant. */
-export async function getPlant(db: Queryable, params: types.GetPlantParams): Promise<{ result: types.GetPlant; returnValue: number }> {
+export async function getPlant(db: Queryable, params: types.GetPlantParams): Promise<types.GetPlant> {
   const p = await checked(GetPlantParamsSchema, params, (issues) => new ParameterError('garden.get_plant', issues))
   const request = db.request()
   request.input('plant_id', sql.Int, p.plant_id)
   const response = await request.execute('garden.get_plant')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(GetPlantSchema, readJson(sets[0]), (issues) => new ResultError('garden.get_plant', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Calls garden.list_plants. */
-export async function listPlants(db: Queryable): Promise<{ result: types.ListPlants; returnValue: number }> {
+export async function listPlants(db: Queryable): Promise<types.ListPlants> {
   const request = db.request()
   const response = await request.execute('garden.list_plants')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(ListPlantsSchema, readRows(sets[0]), (issues) => new ResultError('garden.list_plants', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }
 
 /** Runs the query file queries/thirsty_plants.sql. */
-export async function thirstyPlants(db: Queryable, params: types.ThirstyPlantsParams): Promise<{ result: types.ThirstyPlants; returnValue: number }> {
+export async function thirstyPlants(db: Queryable, params: types.ThirstyPlantsParams): Promise<types.ThirstyPlants> {
   const p = await checked(ThirstyPlantsParamsSchema, params, (issues) => new ParameterError('queries/thirsty_plants.sql', issues))
   const request = db.request()
   request.input('stmt', sql.NVarChar(sql.MAX), '-- The plants not watered since a given time, the longest unwatered first; only those of one kind when @kind is given.\n-- @since is compared with an aggregate, from which its type isn\'t inferred, so it is declared:\n-- @param @since datetime2(0)\nSELECT p.plant_id, p.name, MAX(w.watered_at) AS last_watered\nFROM garden.plant AS p\nLEFT JOIN garden.water_log AS w ON w.plant_id = p.plant_id\nWHERE p.kind = @kind OR @kind IS NULL\nGROUP BY p.plant_id, p.name\nHAVING MAX(w.watered_at) < @since OR MAX(w.watered_at) IS NULL\nORDER BY MAX(w.watered_at), p.name;\n')
@@ -135,5 +135,5 @@ export async function thirstyPlants(db: Queryable, params: types.ThirstyPlantsPa
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
   const result = await checked(ThirstyPlantsSchema, readRows(sets[0]), (issues) => new ResultError('queries/thirsty_plants.sql', 'the results', issues))
-  return { result, returnValue: response.returnValue }
+  return result
 }

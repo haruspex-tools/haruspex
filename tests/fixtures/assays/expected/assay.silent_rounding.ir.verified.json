@@ -9,6 +9,7 @@
       "name": "SilentRounding",
       "kind": "procedure",
       "at": "procedures/silent_rounding.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

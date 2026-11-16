@@ -9,6 +9,7 @@
       "name": "ReviewsByBook",
       "kind": "procedure",
       "at": "procedures/reviews_by_book.sql:2:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

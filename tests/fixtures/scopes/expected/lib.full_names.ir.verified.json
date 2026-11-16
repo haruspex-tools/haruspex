@@ -9,6 +9,7 @@
       "name": "FullNames",
       "kind": "procedure",
       "at": "procedures/full_names.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

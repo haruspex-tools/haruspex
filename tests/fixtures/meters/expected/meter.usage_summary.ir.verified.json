@@ -13,6 +13,7 @@
       "name": "UsageSummary",
       "kind": "procedure",
       "at": "procedures/usage_summary.sql:1:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

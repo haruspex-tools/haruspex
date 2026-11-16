@@ -9,6 +9,7 @@
       "name": "TabLinesList",
       "kind": "procedure",
       "at": "procedures/tab_lines_list.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@tab_id",

@@ -9,6 +9,7 @@
       "name": "CropsOf",
       "kind": "procedure",
       "at": "later.sql:5:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@bed_id",

@@ -9,6 +9,7 @@
       "name": "MemberByEmail",
       "kind": "procedure",
       "at": "procedures/member_by_email.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@email",

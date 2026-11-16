@@ -9,6 +9,7 @@
       "name": "OverdueMembers",
       "kind": "procedure",
       "at": "procedures/overdue_members.sql:2:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@today",

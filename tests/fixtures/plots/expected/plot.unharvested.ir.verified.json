@@ -9,6 +9,7 @@
       "name": "Unharvested",
       "kind": "procedure",
       "at": "harvest.sql:12:3",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

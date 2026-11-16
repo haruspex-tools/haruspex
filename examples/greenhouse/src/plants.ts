@@ -18,8 +18,7 @@ export function connect(config: sql.config): Promise<sql.ConnectionPool> {
  * `Date`, as the driver delivers it.
  */
 export async function plants(pool: sql.ConnectionPool): Promise<ListPlantsRow[]> {
-  const { result } = await listPlants(pool)
-  return result
+  return await listPlants(pool)
 }
 
 /** The types are the application's own from here on: no haruspex type appears in its code. */
@@ -35,7 +34,8 @@ export function label(plant: ListPlantsRow): string {
 
 export async function report(pool: sql.ConnectionPool): Promise<void> {
   // A procedure's parameters are an object of its declared names, checked before anything is sent.
-  const { result: basil } = await getPlant(pool, { plant_id: 1 })
+  // It has one result set and no OUTPUT parameter or return code, so the function returns the result itself.
+  const basil = await getPlant(pool, { plant_id: 1 })
   // garden.get_plant may find no plant (FOR JSON over no rows), so the compiler insists on the case where it is null.
   if (basil === null) return
   // @ts-expect-error A plant's id is a number: the compiler catches code that treats it as anything else.
@@ -51,8 +51,7 @@ export async function report(pool: sql.ConnectionPool): Promise<void> {
  */
 export async function thirsty(pool: sql.ConnectionPool, since: Date): Promise<ThirstyPlantsRow[]> {
   // A Date from the driver holds the stored clock time in its UTC fields: the string is its ISO form without the Z, to the second.
-  const { result } = await thirstyPlants(pool, { kind: null, since: since.toISOString().slice(0, 19) })
-  return result
+  return await thirstyPlants(pool, { kind: null, since: since.toISOString().slice(0, 19) })
 }
 
 /**
@@ -62,7 +61,7 @@ export async function thirsty(pool: sql.ConnectionPool, since: Date): Promise<Th
  */
 export async function plantOrNothing(pool: sql.ConnectionPool, id: number): Promise<GetPlant> {
   try {
-    return (await getPlant(pool, { plant_id: id })).result
+    return await getPlant(pool, { plant_id: id })
   } catch (error) {
     if (error instanceof Error && error.name === 'HaruspexParameterError') return null
     throw error

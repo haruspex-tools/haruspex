@@ -204,7 +204,10 @@ internal static class MssqlPrinter
         output.Append('\n').Append(function.Batch is null ? "/** Calls " : "/** Runs the query file ").Append(Comment(procedure.Id)).Append(". */\n")
             .Append("export async function ").Append(function.Name).Append("(db: Queryable")
             .Append(function.Bindings.Count > 0 ? ", params: types." + SchemaModuleNames.Parameters(name) + (function.Bindings.All(b => b.OnlyWhenGiven) ? " = {}" : "") : "")
-            .Append("): Promise<{ ").Append(string.Join("; ", fields.Select(f => f.Name + ": " + f.Type))).Append(" }> {\n");
+            .Append("): Promise<").Append(
+                function.ReturnsNothing ? "void"
+                : function.ReturnsResultAlone ? fields[0].Type
+                : "{ " + string.Join("; ", fields.Select(f => f.Name + ": " + f.Type)) + " }").Append("> {\n");
 
         if (function.Bindings.Count > 0)
         {
@@ -225,7 +228,7 @@ internal static class MssqlPrinter
 
         foreach (var binding in function.Bindings)
             output.Append("  ").Append(Bind(binding)).Append('\n');
-        output.Append("  const response = await request.execute(").Append(function.Batch is null ? id : "'sys.sp_executesql'").Append(")\n");
+        output.Append(function.ReturnsNothing ? "  await" : "  const response = await").Append(" request.execute(").Append(function.Batch is null ? id : "'sys.sp_executesql'").Append(")\n");
 
         if (function.Results is not [])
             output.Append("  const sets = response.recordsets as unknown as readonly unknown[]\n");
@@ -252,12 +255,17 @@ internal static class MssqlPrinter
                 .Append(Fail(id, "the OUTPUT parameters")).Append(")\n");
         }
 
-        output.Append("  return { ").Append(string.Join(", ", fields.Select(f => f.Value))).Append(" }\n}\n");
+        if (function.ReturnsResultAlone)
+            output.Append("  return result\n");
+        else if (!function.ReturnsNothing)
+            output.Append("  return { ").Append(string.Join(", ", fields.Select(f => f.Value))).Append(" }\n");
+        output.Append("}\n");
     }
 
     /// <summary>
-    /// What a function returns, in one shape for every procedure: each result set, the <c>OUTPUT</c> parameters, and the return
-    /// code, by name. One result set is <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on, in order.
+    /// What a function hands back, by name: each result set, the <c>OUTPUT</c> parameters, and the return code when one other than
+    /// 0 may come back. One result set is <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on, in order. A function
+    /// with only <c>result</c> returns it itself, and one with none returns nothing (<see cref="MssqlFunction.ReturnsResultAlone"/>).
     /// </summary>
     private static IEnumerable<(string Name, string Type, string Value)> Fields(MssqlFunction function)
     {
@@ -277,7 +285,8 @@ internal static class MssqlPrinter
 
         if (function.HasOutput)
             yield return ("output", "types." + SchemaModuleNames.Output(function.Procedure.Name), "output");
-        yield return ("returnValue", "number", "returnValue: response.returnValue");
+        if (function.ReturnsCode)
+            yield return ("returnValue", "number", "returnValue: response.returnValue");
     }
 
     private static string Result(int index) => "result" + (index + 1).ToString(CultureInfo.InvariantCulture);

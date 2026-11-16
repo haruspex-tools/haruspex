@@ -9,6 +9,7 @@
       "name": "BillOfMaterials",
       "kind": "procedure",
       "at": "procedures/bill_of_materials.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@assembly",

@@ -9,6 +9,7 @@
       "name": "ReferralChain",
       "kind": "procedure",
       "at": "procedures/referral_chain.sql:3:1",
+      "returnsCode": false,
       "parameters": [],
       "results": [
         {

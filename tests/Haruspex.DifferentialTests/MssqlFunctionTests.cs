@@ -132,8 +132,30 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
             new GeneratedFunctions.Call("found", "orderJson", Params(("order_id", 1)), ParseJson: parseJson),
             new GeneratedFunctions.Call("none", "orderJson", Params(("order_id", 9)), ParseJson: parseJson));
 
-        Assert.Equal("""[{"id":1,"name":"tea"},{"id":2,"name":"cup"}]""", JsonSerializer.Serialize(responses[0].Value!.Value.GetProperty("result")));
-        Assert.Equal(JsonValueKind.Null, responses[1].Value!.Value.GetProperty("result").ValueKind);
+        Assert.Equal("""[{"id":1,"name":"tea"},{"id":2,"name":"cup"}]""", JsonSerializer.Serialize(responses[0].Value));
+        Assert.Equal("null", JsonSerializer.Serialize(responses[1].Value));
+    }
+
+    [Fact]
+    public async Task A_function_returns_its_one_result_itself_and_names_its_parts_when_a_code_may_come_back()
+    {
+        // Decision 0060: one result set and nothing else is the result; a RETURN of another value than 0 adds the code beside it;
+        // nothing to hand back is nothing.
+        const string Plain = "CREATE PROCEDURE outlet.plain AS SELECT 1 AS one; RETURN 0;";
+        const string Coded = "CREATE PROCEDURE outlet.coded @fail bit AS SELECT 1 AS one; IF @fail = 1 RETURN 3;";
+        const string Quiet = "CREATE PROCEDURE outlet.quiet AS SET NOCOUNT ON;";
+
+        var responses = await Run(
+            Module(Plain, Coded, Quiet),
+            [Plain, Coded, Quiet],
+            new GeneratedFunctions.Call("plain", "plain"),
+            new GeneratedFunctions.Call("coded", "coded", Params(("fail", true))),
+            new GeneratedFunctions.Call("uncoded", "coded", Params(("fail", false))),
+            new GeneratedFunctions.Call("quiet", "quiet"));
+
+        Assert.Equal(
+            ["""[{"one":1}]""", """{"result":[{"one":1}],"returnValue":3}""", """{"result":[{"one":1}],"returnValue":0}""", "null"],
+            responses.Select(r => JsonSerializer.Serialize(r.Value)));
     }
 
     [Fact]
@@ -143,7 +165,7 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
 
         var response = Assert.Single(await Run(Module(Two), [Two], new GeneratedFunctions.Call("call", "twoSets")));
 
-        Assert.Equal("""{"result1":[{"a":1}],"result2":[{"b":"x"}],"returnValue":0}""", JsonSerializer.Serialize(response.Value));
+        Assert.Equal("""{"result1":[{"a":1}],"result2":[{"b":"x"}]}""", JsonSerializer.Serialize(response.Value));
     }
 
     [Fact]
@@ -156,6 +178,6 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
             [Echo],
             new GeneratedFunctions.Call("call", "echo", Params(("id", new MssqlDriver.BigIntValue("9223372036854775807")), ("at", "2026-11-16T08:30:00.125")))));
 
-        Assert.Equal("""[{"id":"9223372036854775807","at":"2026-11-16T08:30:00.125"}]""", JsonSerializer.Serialize(response.Value!.Value.GetProperty("result")));
+        Assert.Equal("""[{"id":"9223372036854775807","at":"2026-11-16T08:30:00.125"}]""", JsonSerializer.Serialize(response.Value));
     }
 }

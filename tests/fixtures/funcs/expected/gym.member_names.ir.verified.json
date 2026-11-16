@@ -9,6 +9,7 @@
       "name": "MemberNames",
       "kind": "procedure",
       "at": "procedures/member_names.sql:1:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@format",
