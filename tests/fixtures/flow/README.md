@@ -15,3 +15,4 @@ through temporary tables, table variables, control flow and CTEs. No part of it 
 | `flow.notes_or_names` | two branches returning JSON objects of different keys, one left out when null: the Zod union keeps each object's keys whichever branch produced it |
 | `flow.caught_report` | `TRY … CATCH` whose `CATCH` returns a result after an error at any of three points: unions at each position, and later results that may not run |
 | `flow.bill_of_materials` | a bill of materials by a recursive CTE with a column list, read by a second CTE; the quantity's check carried through both |
+| `flow.sale_card` | guards: a `THROW` when the parameter is NULL, and `@@ROWCOUNT = 0` straight after a `SELECT` that may assign nothing, which proves every variable it assigns; a `COUNT_BIG` assigned from an aggregate without `GROUP BY`, even over no rows |

@@ -7,19 +7,37 @@ using Haruspex.SqlServer.Semantics;
 namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
-/// The state of a procedure at a point on its paths: each temporary table, each variable's value, and the result sets
-/// returned so far. Immutable, so a branch can start from the state before it and both branches' states can be joined.
+/// The state of a procedure at a point on its paths: each temporary table, each variable's value, the result sets
+/// returned so far, and what a guard could prove of the variables a SELECT may have assigned. Immutable, so a branch can start from the state before it and both branches' states can be joined.
 /// </summary>
 internal sealed record FlowState
 {
-    private FlowState(EquatableMap<LocalName, TempTable> temps, EquatableMap<LocalName, Value> variables, ResultTrack results, bool readUncommitted, EquatableMap<JsonSlotKey, JsonSlot> json)
+    private FlowState(
+        EquatableMap<LocalName, TempTable> temps,
+        EquatableMap<LocalName, Value> variables,
+        ResultTrack results,
+        bool readUncommitted,
+        EquatableMap<JsonSlotKey, JsonSlot> json,
+        EquatableArray<LocalName> unassigned,
+        EquatableArray<PossibleAssignment> possible)
     {
         Temps = temps;
         Variables = variables;
         Results = results;
         ReadUncommitted = readUncommitted;
         Json = json;
+        Unassigned = unassigned;
+        Possible = possible;
     }
+
+    /// <summary>
+    /// The variables the body declares that no path to here has assigned, so each certainly holds NULL: a must-fact, kept
+    /// where paths meet only when it holds on each. A parameter is the caller's, so never here.
+    /// </summary>
+    public EquatableArray<LocalName> Unassigned { get; }
+
+    /// <summary>What each SELECT that may have read no row assigned if it read one (<see cref="PossibleAssignment"/>).</summary>
+    public EquatableArray<PossibleAssignment> Possible { get; }
 
     /// <summary>
     /// What each variable of type <c>nvarchar(max)</c>, and each such column of a table variable, holds as JSON: see
@@ -45,23 +63,41 @@ internal sealed record FlowState
     public ResultTrack Results { get; }
 
     /// <summary>The state a body starts in: its variables and parameters, no temporary tables, no results.</summary>
-    public static FlowState Start(IEnumerable<KeyValuePair<LocalName, Value>> variables) =>
-        new([], [.. variables], ResultTrack.None, false, []);
+    /// <param name="variables">Each variable's and parameter's value at the start.</param>
+    /// <param name="declared">The variables the body declares, each NULL until assigned.</param>
+    public static FlowState Start(IEnumerable<KeyValuePair<LocalName, Value>> variables, IEnumerable<LocalName>? declared = null) =>
+        new([], [.. variables], ResultTrack.None, false, [], [.. declared ?? []], []);
 
     /// <summary>The table's state; null when the procedure has not touched it, which makes it the caller's.</summary>
     public TempTable? Temp(LocalName name) => Temps.GetValueOrDefault(name);
 
-    public FlowState WithTemp(LocalName name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted, Json);
+    public FlowState WithTemp(LocalName name, TempTable table) => new(Temps.SetItem(name, table), Variables, Results, ReadUncommitted, Json, Unassigned, Possible);
 
-    public FlowState WithTemps(EquatableMap<LocalName, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted, Json);
+    public FlowState WithTemps(EquatableMap<LocalName, TempTable> temps) => new(temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible);
 
-    public FlowState WithVariable(LocalName name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted, Json);
+    public FlowState WithVariable(LocalName name, Value value) => new(Temps, Variables.SetItem(name, value), Results, ReadUncommitted, Json, Unassigned, Possible);
 
-    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted, Json);
+    public FlowState WithResults(ResultTrack results) => new(Temps, Variables, results, ReadUncommitted, Json, Unassigned, Possible);
 
-    public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted, Json);
+    public FlowState WithReadUncommitted(bool readUncommitted) => new(Temps, Variables, Results, readUncommitted, Json, Unassigned, Possible);
 
-    public FlowState WithJson(JsonSlotKey place, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(place, slot));
+    public FlowState WithJson(JsonSlotKey place, JsonSlot slot) => new(Temps, Variables, Results, ReadUncommitted, Json.SetItem(place, slot), Unassigned, Possible);
+
+    /// <summary>
+    /// This state after <paramref name="name"/> is assigned: no longer certainly NULL, and every possible assignment that
+    /// names it ended, since what it holds is no longer the SELECT's.
+    /// </summary>
+    public FlowState Assigned(LocalName name) =>
+        new(Temps, Variables, Results, ReadUncommitted, Json, [.. Unassigned.Where(n => n != name)], [.. Possible.Where(p => !p.Values.ContainsKey(name))]);
+
+    /// <summary>This state with what a SELECT that may have read no row assigned if it read one.</summary>
+    public FlowState WithPossible(PossibleAssignment possible) =>
+        new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, [.. Possible, possible]);
+
+    /// <summary>This state after a statement that resets <c>@@ROWCOUNT</c>: no possible assignment is counted by it any more.</summary>
+    public FlowState Uncounted() => Possible.Any(p => p.Counted)
+        ? new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, [.. Possible.Select(p => p with { Counted = false })])
+        : this;
 
     /// <summary>The state after either of two groups of paths; null stands for no path (every one ended before here).</summary>
     [return: NotNullIfNotNull(nameof(a))]
@@ -91,8 +127,16 @@ internal sealed record FlowState
         foreach (var place in a.Json.Keys.Where(k => !b.Json.ContainsKey(k)))
             json = json.Remove(place);
 
-        // Uncommitted on either path may be uncommitted here.
-        return new FlowState(temps, variables, a.Results.Join(b.Results), a.ReadUncommitted || b.ReadUncommitted, json);
+        // Uncommitted on either path may be uncommitted here. A variable is certainly NULL here only if it is on both paths, and
+        // a SELECT's possible assignment holds only if both paths hold it.
+        return new FlowState(
+            temps,
+            variables,
+            a.Results.Join(b.Results),
+            a.ReadUncommitted || b.ReadUncommitted,
+            json,
+            [.. a.Unassigned.Where(b.Unassigned.Contains)],
+            [.. a.Possible.Where(b.Possible.Contains)]);
     }
 
     public static FlowState? Join(IEnumerable<FlowState?> states, SourceLocation at) =>

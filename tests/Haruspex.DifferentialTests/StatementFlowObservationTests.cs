@@ -9,7 +9,7 @@ namespace Haruspex.DifferentialTests;
 /// SELECT INTO give; and how a recursive CTE's columns are typed. Each test creates what it needs in a write session,
 /// rolled back, alone in the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class StatementFlowObservationTests(SqlServerFixture server)
+public partial class StatementFlowObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call, bool errorsAsMessages = false) =>
         ObservedCall.Run(server, setup, call, errorsAsMessages);

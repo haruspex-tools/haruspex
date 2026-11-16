@@ -4,7 +4,8 @@
   "setups": {
     "no sales": "DELETE FROM flow.sale;",
     "no employees": "DELETE FROM flow.employee;",
-    "no regions": "DELETE FROM flow.region;"
+    "no regions": "DELETE FROM flow.region;",
+    "one sale": "DELETE FROM flow.sale WHERE sale_id <> 12;"
   },
 
   "runs": [
@@ -33,6 +34,10 @@
     { "name": "notes_or_names, names", "procedure": "flow.notes_or_names", "parameters": { "@notes": false } },
     { "name": "notes_or_names, no regions", "procedure": "flow.notes_or_names", "parameters": { "@notes": false }, "setup": "no regions" },
     { "name": "bill_of_materials, two levels", "procedure": "flow.bill_of_materials", "parameters": { "@assembly": 1 } },
-    { "name": "bill_of_materials, a part with no components", "procedure": "flow.bill_of_materials", "parameters": { "@assembly": 6 } }
+    { "name": "bill_of_materials, a part with no components", "procedure": "flow.bill_of_materials", "parameters": { "@assembly": 6 } },
+    { "name": "sale_card, with a note", "procedure": "flow.sale_card", "parameters": { "@sale_id": 13 } },
+    { "name": "sale_card, without a note", "procedure": "flow.sale_card", "parameters": { "@sale_id": 12 } },
+    { "name": "sale_card, no such sale", "procedure": "flow.sale_card", "parameters": { "@sale_id": 99 } },
+    { "name": "sale_card, the only sale on its channel", "procedure": "flow.sale_card", "parameters": { "@sale_id": 12 }, "setup": "one sale" }
   ]
 }

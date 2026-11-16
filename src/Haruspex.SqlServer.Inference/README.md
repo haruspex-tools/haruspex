@@ -180,7 +180,8 @@ the point are joined. Each join claims only what holds on every path:
 | Result sets | per position, everything either path returned there; the numbers of results so far, both |
 | No path (every one ended) | the other side, unchanged |
 
-- **`IF`** joins its two branches (no `ELSE` is a branch that does nothing). Conditions are not read.
+- **`IF`** joins its two branches (no `ELSE` is a branch that does nothing). Each branch starts knowing what its condition
+  proves there ("Guards", below).
 - **`WHILE`** walks its body from the state at its head, which joins the state before the loop with the end of every
   pass and every `CONTINUE`, until a pass changes nothing (at most 20; each join only goes up). It ends at its head or
   at a `BREAK`. A body that returns a result set makes the results unknown (`varying-results`): how many it returns
@@ -189,6 +190,48 @@ the point are joined. Each join claims only what holds on every path:
   the state after the last, since a result set cut short by an error still arrives with the rows sent before it
   (`A_result_cut_short_by_an_error_in_try_still_arrives_with_the_rows_sent_before_it`).
 - **`RETURN`** ends a path successfully; its state joins the end of the procedure.
+
+## Guards
+
+An `IF` whose condition is TRUE takes its first branch, and otherwise (FALSE or UNKNOWN) its `ELSE`, or nothing. So each
+branch starts from the state before the `IF` narrowed by what its condition proves there (`Walker.Narrowed`): a variable or
+parameter the condition could not take that truth value with, were it NULL, is not NULL on that branch. The proof is a
+`CASE` branch's ("CASE, IIF, CHOOSE and NULLIF"), by the three-valued logic of "Refinement", read in a statement's scope, so
+only variables and parameters are proved (`Typer.Proves`). When one branch ends the path, as a **guard** does, the other's
+state is what the rest of the body starts from:
+
+```sql
+if @order_id is null return;        -- or THROW, RAISERROR of severity 11 or more, BEGIN … RETURN END
+select @order_id as order_id;       -- never NULL
+```
+
+`RAISERROR` of severity 10 or below is a message, and the path goes on; one of 11 or more lets the procedure carry on but the
+call fails, so it describes no call that succeeds (`A_null_test_that_returns_or_throws_lets_only_a_value_past_it`). A severity
+in a variable may be 10, so it proves nothing.
+
+The fact lives in the value, so it lasts exactly as long as the value does, with nothing to undo it: an assignment replaces
+the value (`A_guard_proves_nothing_of_another_variable_or_past_a_later_assignment`), and where paths meet it is joined with
+what the other paths hold. So a guard inside a loop holds on its pass only, since the loop's head joins the value the body
+assigns after it (`A_guard_inside_a_loop_holds_only_on_that_pass`), and a `THROW` that a `CATCH` in the procedure swallows
+proves nothing after the `TRY`, since `CATCH` starts from the state before the guard
+(`A_throw_caught_in_the_same_procedure_lets_the_null_past`). `SET @p = COALESCE(@p, 0)` needs no guard: it assigns a value
+never NULL (`A_parameter_set_to_coalesce_with_a_value_last_is_never_null_after_it`).
+
+**A SELECT that may assign nothing.** `SELECT @a = …, @b = … FROM …` over a query that may read no row joins each variable
+with what it held. What it assigns when it reads a row is kept beside the state (`PossibleAssignment`), and a guard that
+proves it read one puts those values back ([decision 0052](../../docs/decisions/0052-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)):
+
+- **`@@ROWCOUNT` tested straight after it**: `if @@rowcount = 0 return` (or `< 1`, `NOT (… > 0)`, an `ELSE` that returns),
+  since every row read assigns every variable listed (`Rowcount_right_after_a_select_that_assigns_counts_its_rows`). Any
+  statement between, an `IF`'s own test included, resets `@@ROWCOUNT`, so then it proves nothing
+  (`Any_statement_between_resets_rowcount_so_the_test_proves_nothing`; `FlowState.Uncounted`).
+- **A variable it assigns that was NULL on every path before it** (`FlowState.Unassigned`: declared, and assigned on no path
+  since), proved not NULL: only the SELECT can have put a value there. A variable that may have held a value proves nothing
+  (`A_variable_null_before_a_select_and_not_after_it_proves_the_select_assigned_them_all`).
+
+Each value put back is the SELECT's, so a column that may be NULL still may be. What the SELECT may have assigned ends when any
+of its variables is assigned again, and where paths meet unless every path keeps it, so a loop's later passes never use what an
+earlier pass knew.
 
 ## Result sets are positional
 

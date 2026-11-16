@@ -21,6 +21,8 @@ In haruspex the fact at a point is a `FlowState`:
 | `FlowState.Json` | what each traced `nvarchar(max)` place holds as JSON | slot by slot (`JsonSlot.Join`) |
 | `FlowState.Results` | the result sets returned so far, by position | position by position, each the set of what any path returned there (`ResultTrack.Join`) |
 | `FlowState.ReadUncommitted` | whether a statement may read uncommitted | either |
+| `FlowState.Unassigned` | the declared variables no path has assigned yet, so certainly NULL | those on both |
+| `FlowState.Possible` | what each `SELECT @v = …` that may read no row assigns if it reads one (`PossibleAssignment`) | those on both |
 
 Like a value, the state is a product of smaller lattices, and `FlowState.Join` joins it part by part. It is immutable, so
 a branch starts from the state before it and the walk keeps both arms' states until they meet. A path that ends
@@ -105,6 +107,64 @@ Immutability is what makes the scoping right without care. A subquery inside a b
 frames, and when it is done, the walk is back to exactly the environment it had, because nothing changed it: it was
 replaced, and the old one restored. The alternatives were lists pushed and popped, which is what there was: two of them,
 one for filters and one for branches, with a lookup of each kind for each, which a reader had to know to combine.
+
+## What a guard proves
+
+A condition also proves something between statements. An `IF` takes its first branch only when its condition is TRUE, and
+its other branch only when it is not, so each branch can start from the state before the `IF` *narrowed* by what its
+condition proves there: the meet of each variable's value with "not NULL", where the condition shows it. The walker asks the
+typer what the condition proves on each branch (`Typer.Proves`, the same `Facts` a `CASE` branch reads in) and narrows the
+variables in the state it walks the branch from (`Walker.Narrowed`). When one branch ends the path, a `RETURN` or a `THROW`,
+the join after the `IF` is the other branch's state alone: that is a **guard**.
+
+```sql haruspex-example
+CREATE TABLE shop.product
+(
+    product_id int          NOT NULL PRIMARY KEY,
+    name       nvarchar(40) NOT NULL,
+    note       nvarchar(60) NULL
+);
+GO
+CREATE PROCEDURE shop.product_label @product_id int
+AS
+IF @product_id IS NULL
+    THROW 50000, N'A product is needed.', 1;
+DECLARE @name nvarchar(40), @note nvarchar(60);
+SELECT @name = p.name, @note = p.note FROM shop.product AS p WHERE p.product_id = @product_id;
+IF @@ROWCOUNT = 0
+    RETURN;
+SELECT @product_id AS product_id, @name AS name, @note AS note;
+```
+
+```ts haruspex-zod
+export const ProductLabelRowSchema = z.object({
+  product_id: z.int32(),
+  name: z.string().max(40),
+  note: z.string().max(60).nullable(),
+})
+export type ProductLabelRow = z.infer<typeof ProductLabelRowSchema>
+
+/** shop.product_label: returns rows, [] when it does not run. */
+export const ProductLabelSchema = z.array(ProductLabelRowSchema).max(1)
+export type ProductLabel = z.infer<typeof ProductLabelSchema>
+```
+
+The fact is kept in the value itself, not beside it, so nothing has to remember to undo it. It holds exactly as long as the
+value: an assignment replaces the value, and a join with a path that didn't pass the guard (a loop's head after another pass,
+a `CATCH` reached from before the guard) joins it away. That is the dataflow analyst's *conditional constant propagation* in
+miniature: the edges out of a branch carry different facts.
+
+A guard can also prove what a statement did. `SELECT @name = …, @note = … FROM … WHERE …` may read no row, and then assigns
+nothing, so after it each variable is joined with what it held before. But every row it reads assigns every variable it
+lists, so a guard that proves it read one proves all of them assigned. The state keeps what the `SELECT` assigns when it
+reads a row, beside the joined values (`FlowState.Possible`), and two guards prove the read: `@@ROWCOUNT` tested straight
+after it, and a test that one of its variables is not NULL when that variable was NULL on every path before it
+(`FlowState.Unassigned`, a fact that holds only if it holds on every path, so its join is an intersection). Each ends when
+anything could change it: an assignment to one of the variables, a statement that resets `@@ROWCOUNT`, or a join with a path
+that does not hold it ([decision 0052](../decisions/0052-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)).
+
+In the example, `@product_id` is never NULL after the `THROW`; `@@ROWCOUNT` straight after the `SELECT` proves it read a row,
+so `@name` holds a product's name, never NULL, and `@note` its note, NULL when the note is.
 
 ## Fixed points
 

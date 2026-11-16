@@ -152,7 +152,7 @@ internal sealed partial class Walker
 
         var tableVariables = declarations.TableVariables.ToDictionary(t => new LocalName(t.Name), typer.TableVariableValues);
         names = NameEnvironment.Empty.WithDeclarations(declarations);
-        var initial = FlowState.Start(start).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
+        var initial = FlowState.Start(start, declarations.Variables.Select(v => v.Name)).WithTemps(context.Temps).WithReadUncommitted(context.ReadUncommitted);
 
         // What each variable and table variable column of nvarchar(max) holds as JSON: nothing yet. A parameter is
         // the caller's, so it is not traced.
@@ -197,6 +197,11 @@ internal sealed partial class Walker
         {
             if (state is null || blocker is not null)
                 break;
+
+            // Every statement resets @@ROWCOUNT but the IF that tests it, which must come straight after the SELECT it counts
+            // (observed: Any_statement_between_resets_rowcount_so_the_test_proves_nothing).
+            if (statement is not IfStatement)
+                state = state.Uncounted();
 
             // Any statement inside TRY may fail before it changes anything (a statement's effects are rolled back with it),
             // and its CATCH then starts from the state before it. Any statement at all may fail with an error that leaves the
@@ -244,7 +249,16 @@ internal sealed partial class Walker
             case BeginEndBlockStatement block:
                 return Walk(block.StatementList.Statements, state);
             case IfStatement branch:
-                return Join(Walk([branch.ThenStatement], state), branch.ElseStatement is null ? Continue(state) : Walk([branch.ElseStatement], state), at);
+            {
+                // Each arm starts knowing what its condition proves: a guard whose arm ends leaves the rest of the body the other's.
+                // The IF's own test resets @@ROWCOUNT, so nothing inside it is counted.
+                var otherwise = Narrowed(state, branch.Predicate, held: false).Uncounted();
+                return Join(
+                    Walk([branch.ThenStatement], Narrowed(state, branch.Predicate, held: true).Uncounted()),
+                    branch.ElseStatement is null ? Continue(otherwise) : Walk([branch.ElseStatement], otherwise),
+                    at);
+            }
+
             case WhileStatement loop:
                 return While(loop, state);
             case BreakStatement:
@@ -407,7 +421,7 @@ internal sealed partial class Walker
             catchEntries.Pop();
         }
 
-        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry) : Outcome.Ends;
+        var caught = FlowState.Join(entries, at) is { } entry ? Walk(attempt.CatchStatements.Statements, entry.Uncounted()) : Outcome.Ends;
         return Join(tried, caught, at);
     }
 
@@ -445,6 +459,7 @@ internal sealed partial class Walker
     {
         if (!variableShapes.TryGetValue(name, out var shape) || !state.Variables.TryGetValue(name, out var old))
             return state;
+        state = state.Assigned(name);
         var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session, expression);
         var assigned = Value.Computed(shape, because, old.IsLiveJson);
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name.Text));
@@ -455,6 +470,36 @@ internal sealed partial class Walker
         }
 
         return state;
+    }
+
+    /// <summary>
+    /// The state on one arm of an <c>IF</c>: each variable its condition proves non-null there (<see cref="Typer.Proves"/>)
+    /// narrowed to its value without NULL. So after <c>IF @x IS NULL RETURN</c>, whose arm ends, the rest of the body has
+    /// <c>@x</c> non-null. The fact lives in the value, so it lasts exactly as long as the value does: an assignment replaces it,
+    /// and where paths meet (the end of the IF, a CATCH, a loop's head) it is joined with what the other paths hold. The guide's
+    /// chapter 6, "What a guard proves", explains it.
+    /// </summary>
+    private FlowState Narrowed(FlowState state, BooleanExpression condition, bool held)
+    {
+        var proved = typer.Proves(condition, held, Reading(state));
+        var narrowed = state;
+
+        // A SELECT proved to have read a row holds what it assigned (PossibleAssignment): by @@ROWCOUNT tested straight after
+        // it, or by a witness, NULL until the SELECT, proved not NULL now.
+        var rows = ProvesRows(condition, held);
+        foreach (var possible in state.Possible.Where(p => (p.Counted && rows) || p.Witnesses.Any(proved.Proved)))
+        {
+            foreach (var (name, value) in possible.Values)
+                narrowed = narrowed.WithVariable(name, value);
+        }
+
+        foreach (var (name, value) in narrowed.Variables)
+        {
+            if (value.Shape is not UnknownShape && value.NullableBecause.Count > 0 && proved.Proved(name))
+                narrowed = narrowed.WithVariable(name, value.WithNullableBecause([]));
+        }
+
+        return narrowed;
     }
 
     // ---- SELECT ---------------------------------------------------------------------------------------------------
@@ -489,15 +534,26 @@ internal sealed partial class Walker
         var entered = typer.Enter(query, at);
         var once = !unknown && typer.Rows(query, entered) == IrCardinality.One;
         var scope = entered.Assigning(query);
+        var before = state;
+        var read = new List<KeyValuePair<LocalName, Value>>();
         foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
         {
             var value = unknown
                 ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
                 : typer.AssignedValue(assignment.AssignmentKind, assignment.Expression, scope, assignment);
-            state = Assign(state, Resolved(assignment.Variable).Name, value, once, At(assignment), unknown ? null : assignment.Expression);
+            var name = Resolved(assignment.Variable).Name;
+            var expression = unknown ? null : assignment.Expression;
+
+            // What the variable holds if the SELECT reads a row, kept for a guard that proves it did.
+            if (!once && Assign(state, name, value, definitely: true, At(assignment), expression).Variables.TryGetValue(name, out var assigned))
+                read.Add(new(name, assigned));
+            state = Assign(state, name, value, once, At(assignment), expression);
         }
 
-        return state;
+        // Its witnesses: the variables it assigns that were NULL on every path before it.
+        return once || read.Count == 0
+            ? state
+            : state.WithPossible(new PossibleAssignment([.. read], [.. read.Select(r => r.Key).Distinct().Where(before.Unassigned.Contains)], Counted: true));
     }
 
     // ---- the results ----------------------------------------------------------------------------------------------
