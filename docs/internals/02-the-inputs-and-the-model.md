@@ -239,7 +239,10 @@ things true at once. Nothing read is a guess, since what a doubt reaches isn't r
 
 A project is read as `Debug`, as `dotnet build` builds it, and evaluated again as `Release` to find what differs by
 configuration, which is reported. Paths are matched ignoring case, as on Windows, where these projects are written and
-built. The projects of the same database it refers to are read from their own files, transitively, each with its own scripts'
+built. A wildcard's folders are walked as a build walks them, following a link to a folder elsewhere, and each folder is
+entered once by where it really is (`DiskPath.Real`: every link followed, each name in its case on disk), so a link back up
+the tree is no loop. The real path is read from the root down, and a root is never asked for a link, which Windows can't
+answer for a drive's root. The projects of the same database it refers to are read from their own files, transitively, each with its own scripts'
 settings, into the one model, as a DACPAC's packages are; locations are relative to the given project's folder, so a
 referenced project's script is `../press/pressing.sql:8:1`, a file a person can open.
 

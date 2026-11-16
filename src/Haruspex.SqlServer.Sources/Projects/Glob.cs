@@ -66,35 +66,28 @@ internal sealed class Glob
     }
 
     /// <summary>
-    /// Every file under <paramref name="top"/>, hidden ones included, each folder entered once by where it really is: a link to a
-    /// folder elsewhere is followed, as a build follows it, and a link back to a folder already walked (a loop) isn't, where
-    /// enumerating through it would find each file again and again (a build reads the file once, observed).
+    /// Every file under <paramref name="top"/>, hidden ones included, each folder entered once by where it really is
+    /// (<see cref="DiskPath.Real"/>): a link to a folder elsewhere is followed, as a build follows it, and a link back to a folder
+    /// already walked (a loop) isn't, where enumerating through it would find each file again and again (a build reads the file
+    /// once, observed). A folder's real path is its parent's joined to its listed name, unless it is itself a link, so the path
+    /// above the top is read once.
     /// </summary>
     private static List<string> Walk(string top)
     {
         var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = true };
         var files = new List<string>();
         var walked = new HashSet<string>(StringComparer.Ordinal);
-        var pending = new Stack<string>([top]);
+        var pending = new Stack<(string Path, string Real)>([(top, DiskPath.Real(top))]);
         while (pending.TryPop(out var folder))
         {
-            if (!walked.Add(Real(folder)))
+            if (!walked.Add(folder.Real))
                 continue;
-            files.AddRange(Directory.EnumerateFiles(folder, "*", options));
-            foreach (var inner in Directory.EnumerateDirectories(folder, "*", options))
-                pending.Push(inner);
+            files.AddRange(Directory.EnumerateFiles(folder.Path, "*", options));
+            foreach (var inner in Directory.EnumerateDirectories(folder.Path, "*", options))
+                pending.Push((inner, DiskPath.RealEntry(folder.Real, Path.GetFileName(inner))));
         }
 
         return files;
-    }
-
-    /// <summary>Where a folder really is, every link on its path followed.</summary>
-    private static string Real(string folder)
-    {
-        var info = new DirectoryInfo(folder);
-        var real = info.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? info.FullName;
-        var parent = Path.GetDirectoryName(real);
-        return parent is null || parent == real ? real : Path.Join(Real(parent), Path.GetFileName(real));
     }
 
     /// <summary>Whether the file at <paramref name="path"/>, full, is one the pattern names.</summary>

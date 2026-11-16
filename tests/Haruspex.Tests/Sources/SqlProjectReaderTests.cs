@@ -611,16 +611,16 @@ public partial class SqlProjectReaderTests
         Assert.DoesNotContain("..", error.ToString(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void A_link_that_loops_back_is_walked_once_and_a_link_to_a_folder_elsewhere_is_read()
+    [Theory]
+    [InlineData(FolderLinkKind.Symbolic)]
+    [InlineData(FolderLinkKind.Junction)]
+    public void A_link_that_loops_back_is_walked_once_and_a_link_to_a_folder_elsewhere_is_read(FolderLinkKind kind)
     {
-        if (OperatingSystem.IsWindows())
-            return;
         using var folder = new TempDirectory();
         folder.File("p/real.sql", Proc("real"));
         folder.File("shared/linked.sql", Proc("linked"));
-        Directory.CreateSymbolicLink(Path.Combine(folder.Path, "p", "loop"), Path.Combine(folder.Path, "p"));
-        Directory.CreateSymbolicLink(Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
+        FolderLink.Make(kind, Path.Combine(folder.Path, "p", "loop"), Path.Combine(folder.Path, "p"));
+        FolderLink.Make(kind, Path.Combine(folder.Path, "p", "elsewhere"), Path.Combine(folder.Path, "shared"));
         var read = Read(folder, Sdk());
 
         Assert.Empty(read.Diagnostics);

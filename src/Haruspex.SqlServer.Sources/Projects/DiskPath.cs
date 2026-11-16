@@ -86,6 +86,62 @@ internal static class DiskPath
     }
 
     /// <summary>
+    /// Where the folder at the full path <paramref name="full"/> really is: every link on its path followed, and each name in the
+    /// case it has on disk, so that two paths naming one folder give one string, compared ordinally.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The path is read from its root down, as <see cref="Locate"/> reads one, rather than by asking the folder for its link and
+    /// then each folder above it in turn, which is how it was first written. That asked the root too, and Windows can't read a
+    /// link at a drive's root (<c>C:\</c>) or a share's (<c>\\server\share</c>): .NET reads one through <c>FindFirstFile</c>, which
+    /// opens no root, so every project read on Windows failed with <c>DirectoryNotFoundException</c> (7w, the first Windows run).
+    /// A root is no link, so it is taken as written, without touching the disk; on Windows in capitals, since its drive letter,
+    /// server and share are named in any case.
+    /// </para>
+    /// <para>
+    /// Below the root, each name is found in its folder's listing, so that a path written in another case than the disk's, where
+    /// the file system ignores case (Windows, macOS), gives the disk's (<see cref="Named"/>). Each folder is then asked for its
+    /// link: <see cref="FileSystemInfo.ResolveLinkTarget"/> reads a symbolic link on every platform and a junction on Windows,
+    /// and follows a chain of them to its end. The end's own path may run through links, so it is made real in turn.
+    /// </para>
+    /// <para>
+    /// The platform's own call (<c>realpath</c>, <c>GetFinalPathNameByHandle</c>) would do this in one step, but differently on
+    /// each platform and through native code; this is one reading on all three, made of calls .NET already makes portable.
+    /// </para>
+    /// </remarks>
+    public static string Real(string full)
+    {
+        var root = Path.GetPathRoot(full) ?? "";
+        var real = OperatingSystem.IsWindows() ? root.ToUpperInvariant() : root;
+        foreach (var part in full[root.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries))
+            real = Followed(Path.Join(real, Named(real, part)));
+        return real;
+    }
+
+    /// <summary>
+    /// Where the entry <paramref name="name"/>, as its folder lists it, of the folder whose real path is <paramref name="folder"/>
+    /// really is: <see cref="Real"/> one name further down, for a walk that has the name from the listing already.
+    /// </summary>
+    public static string RealEntry(string folder, string name) => Followed(Path.Join(folder, name));
+
+    /// <summary>The real path of where the link at <paramref name="path"/> leads, or <paramref name="path"/> when it is no link.</summary>
+    private static string Followed(string path) =>
+        new DirectoryInfo(path).ResolveLinkTarget(returnFinalTarget: true) is { } target ? Real(target.FullName) : path;
+
+    /// <summary>
+    /// The name <paramref name="name"/> in <paramref name="folder"/> as it is written on disk: its own when an entry has it exactly
+    /// (always, where the file system tells case apart), otherwise the one entry's that differs only in case; as given when no
+    /// entry has it or several do.
+    /// </summary>
+    private static string Named(string folder, string name)
+    {
+        if (!CaseIgnored)
+            return name;
+        var alike = Alike(folder, name);
+        return alike.Count == 1 ? Path.GetFileName(alike[0]) : name;
+    }
+
+    /// <summary>
     /// The entries of <paramref name="folder"/> whose name is <paramref name="name"/> ignoring case, as they are written on disk. The
     /// name is the pattern the folder is searched with, which Windows looks up rather than lists, unless it holds a wildcard.
     /// </summary>
