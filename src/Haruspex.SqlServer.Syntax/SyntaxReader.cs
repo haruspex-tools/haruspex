@@ -159,15 +159,11 @@ public static class SyntaxReader
 
         // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table
         // (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
-        // CREATE UNIQUE INDEX and ALTER TABLE … ADD CONSTRAINT are not read here, which only claims less.
+        // CREATE UNIQUE INDEX is not read, which only claims less; ALTER TABLE … ADD CONSTRAINT is read by the folder's reader.
         var keys = definition.ColumnDefinitions
             .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
                 u.ConstraintIdentifier?.Value, [c.ColumnIdentifier.Value], u.IsPrimaryKey, span.At(u))))
-            .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
-                u.ConstraintIdentifier?.Value,
-                [.. u.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
-                u.IsPrimaryKey,
-                span.At(u))))
+            .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => Key(u, span)))
             .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => new UniqueKey(
                 i.Name?.Value,
                 [.. i.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
@@ -176,6 +172,20 @@ public static class SyntaxReader
             .ToList();
 
         return new Table(name, span, [.. columns], [.. primaryKey], [.. checks], [.. keys]) { IsGraph = isGraph };
+    }
+
+    /// <summary>A primary key or unique constraint declared on a table, of a <c>CREATE TABLE</c> or an <c>ALTER TABLE … ADD</c>.</summary>
+    /// <param name="key">The constraint.</param>
+    /// <param name="span">Where the statement that declares it is.</param>
+    public static UniqueKey Key(UniqueConstraintDefinition key, SourceSpan span)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(span);
+        return new UniqueKey(
+            key.ConstraintIdentifier?.Value,
+            [.. key.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
+            key.IsPrimaryKey,
+            span.At(key));
     }
 
     /// <summary>

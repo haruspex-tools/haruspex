@@ -128,7 +128,7 @@ internal sealed partial class Typer
     /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). Live JSON is not modelled: whether a CASE
     /// over it nests as JSON depends on whether the server folds it to one branch (observed:
     /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
-    /// text are JSON text of their join, and under json_query, where folding does not matter, so are any.
+    /// text are JSON text of their join, and where folding does not matter (under json_query, or assigned), so are any.
     /// </summary>
     private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also, ReadScope scope)
     {
@@ -144,12 +144,12 @@ internal sealed partial class Typer
         if (given.FirstOrDefault(r => r.Value.Shape is UnknownShape) is { Value: { } unknown })
             return unknown;
 
-        // Under json_query whether the server folds it no longer matters: json_query makes either result JSON, so what it holds
+        // Under json_query, or assigned, whether the server folds it no longer matters (ReadScope.FoldingMoot), so what it holds
         // is the join of its results' JSON, literals parsed. Elsewhere, JSON text in every result is JSON text.
-        var underJsonQuery = ReferenceEquals(at, scope.JsonQueryArgument);
-        if (given.Any(r => r.Value.IsLiveJson) && !underJsonQuery)
+        var foldingMoot = ReferenceEquals(at, scope.FoldingMoot);
+        if (given.Any(r => r.Value.IsLiveJson) && !foldingMoot)
             return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
-        if (underJsonQuery || given.Any(r => r.Value.Shape is JsonTextShape))
+        if (foldingMoot || given.Any(r => r.Value.Shape is JsonTextShape))
         {
             var (json, content) = JsonContent(given.Select(r => (r.Expression, r.Value)));
             if (json)
@@ -370,7 +370,7 @@ internal sealed partial class Typer
     /// </summary>
     private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, EquatableArray<IrNullReason> because, ReadScope scope)
     {
-        if (!ReferenceEquals(coalesce, scope.JsonQueryArgument) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
+        if (!ReferenceEquals(coalesce, scope.FoldingMoot) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
             return NotModelled(coalesce, "whether COALESCE over this JSON nests as JSON depends on whether the server folds it.");
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)

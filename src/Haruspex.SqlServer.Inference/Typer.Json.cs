@@ -23,7 +23,7 @@ internal sealed partial class Typer
     /// <summary>
     /// What <c>json_query</c>'s argument holds: a literal that is a JSON document its exact shape, as JSON text never null; a
     /// literal that is not, an unknown saying why (it is an error, 13609, observed); anything else its value, a CASE, IIF,
-    /// CHOOSE or COALESCE read as JSON (<see cref="ReadScope.JsonQueryArgument"/>).
+    /// CHOOSE or COALESCE read as JSON (<see cref="ReadScope.FoldingMoot"/>).
     /// </summary>
     internal Value JsonQueryArgument(ScalarExpression argument, ReadScope scope)
     {
@@ -33,7 +33,7 @@ internal sealed partial class Typer
             return parsed is UnknownShape unknown ? Value.Unknown(unknown) : new Value(new JsonTextShape(parsed), []);
         }
 
-        return Expression(argument, scope.UnderJsonQuery(Strip(argument)));
+        return Expression(argument, scope.FoldingMootAt(Strip(argument)));
     }
 
     /// <summary>

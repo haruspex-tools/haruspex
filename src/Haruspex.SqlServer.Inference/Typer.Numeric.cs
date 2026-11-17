@@ -181,15 +181,37 @@ internal sealed partial class Typer
         Typed(ScalarType.Of(BuiltInType.Float), With(n, overflow && n.Type.Type == BuiltInType.Float, domain && !(bitInDomain && n.Type.IsBit)), n.Call);
 
     // DEGREES and RADIANS keep an integer's type, int below bigint, and give a float of a float, a real or a bit; DEGREES of an
-    // int, a bigint or a float may overflow. A decimal or money widens its places, which is not modelled (observed:
-    // Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow).
+    // int, a bigint or a float may overflow (observed: Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow).
+    // A decimal or numeric of scale s gives its own type of precision 38 and scale s or 18, whichever is more, and money and
+    // smallmoney give money (observed: Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow).
+    // The value is computed through float and rounded to the result's places, which no option makes an error, NUMERIC_ROUNDABORT
+    // included, so only overflow can make it NULL: see AngleMayOverflow.
     private Value Angle(NumberCall n, bool degrees)
     {
-        if (n.Type.IsDecimal || n.Type.IsMoney)
-            return NotModelled(n.Call, "DEGREES and RADIANS of a decimal or money are not modelled.");
+        if (n.Type.IsDecimal)
+        {
+            var widened = n.Type with { Precision = 38, Scale = Math.Max(n.Type.Scale, 18) };
+            return Typed(widened, With(n, AngleMayOverflow(n.Type, widened, degrees)), n.Call);
+        }
+
+        if (n.Type.IsMoney)
+            return Typed(ScalarType.Of(BuiltInType.Money), With(n, degrees && n.Type.Type == BuiltInType.Money), n.Call);
         var result = n.Type.IsApproximate || n.Type.IsBit ? ScalarType.Of(BuiltInType.Float)
             : n.Type.Type == BuiltInType.BigInt ? ScalarType.Of(BuiltInType.BigInt) : ScalarType.Of(BuiltInType.Int);
         return Typed(result, With(n, degrees && n.Type.Type.IsAnyOf(BuiltInType.Int, BuiltInType.BigInt, BuiltInType.Float)), n.Call);
+    }
+
+    /// <summary>
+    /// Whether DEGREES or RADIANS of a decimal may overflow the type it widens to: DEGREES multiplies by about 57.3, which can need
+    /// two integer digits more than the argument has, and RADIANS divides by it, which needs at least one fewer; the widened scale
+    /// leaves the result 38 less its scale. So DEGREES overflows decimal(19,0) and not decimal(18,0), RADIANS decimal(22,0) and
+    /// not decimal(21,0) (observed). Money's end overflows under DEGREES; smallmoney's doesn't reach money's.
+    /// </summary>
+    private static bool AngleMayOverflow(ScalarType argument, ScalarType widened, bool degrees)
+    {
+        var integerDigits = argument.Precision - argument.Scale;
+        var room = widened.Precision - widened.Scale;
+        return degrees ? room < integerDigits + 2 : room < integerDigits - 1;
     }
 
     /// <summary>

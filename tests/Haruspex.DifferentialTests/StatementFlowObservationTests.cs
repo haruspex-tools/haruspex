@@ -268,6 +268,35 @@ public partial class StatementFlowObservationTests(SqlServerFixture server)
         // temporary table as into a permanent one.
         Assert.Equal("a,b: 1,x", (await Run([], "CREATE TABLE #obs_copy WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a, 'x' AS b; SELECT * FROM #obs_copy;")).ToString());
         Assert.Equal(156, await Fails([], "CREATE TABLE #obs_copy AS SELECT 1 AS a;"));
+
+        // Its WITH takes a distribution, ROUND_ROBIN or HASH; another option, such as HEAP, is refused (102), and so is a list of the columns'
+        // names, which would need their types (173). It runs in a procedure as in a batch.
+        Assert.Null(await Fails([], "CREATE TABLE #obs_copy WITH (DISTRIBUTION = HASH(a)) AS SELECT 1 AS a;"));
+        Assert.Equal(102, await Fails([], "CREATE TABLE #obs_copy WITH (HEAP) AS SELECT 1 AS a;"));
+        Assert.Equal(173, await Fails([], "CREATE TABLE #obs_copy (x) WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a;"));
+        Assert.Equal("a: 1", (await Run(["CREATE PROCEDURE dbo.obs_copy AS CREATE TABLE #c WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT 1 AS a; SELECT a FROM #c;"], "EXEC dbo.obs_copy;")).ToString());
+    }
+
+    [Theory]
+    [InlineData("o.id, o.n, o.s, o.n + 1 AS n1, ISNULL(o.n, 0) AS nn, CAST(o.id AS bigint) AS idb, o.s + 'x' AS sx", "dbo.obs_made AS o", "")]
+    [InlineData("*", "dbo.obs_made", "")]
+    [InlineData("(o.id) AS id, o.n", "dbo.obs_made AS o", "")]
+    [InlineData("a.id, b.n", "dbo.obs_made AS a JOIN dbo.obs_made AS b ON b.id = a.id", "")]
+    [InlineData("o.id, o.n", "dbo.obs_made AS o", "UNION ALL SELECT o.id, o.n FROM dbo.obs_made AS o")]
+    public async Task A_temporary_table_made_from_a_query_has_the_columns_select_into_makes(string list, string from, string rest)
+    {
+        // Each column's type, nullability and IDENTITY, as SELECT … INTO gives them from the same query: an identity column read
+        // unchanged keeps IDENTITY, not through a join or a set operation, and an expression is nullable as SELECT … INTO says.
+        const string Table = "CREATE TABLE dbo.obs_made (id int IDENTITY NOT NULL PRIMARY KEY, n int NULL, s varchar(5) NOT NULL); INSERT INTO dbo.obs_made (n, s) VALUES (1, 'a'), (NULL, 'bb');";
+        static string Columns(string table) =>
+            $"SELECT c.name, type_name(c.system_type_id) AS type, c.max_length, c.precision, c.scale, c.is_nullable, c.is_identity FROM tempdb.sys.columns AS c WHERE c.object_id = object_id('tempdb..{table}') ORDER BY c.column_id;";
+
+        var made = await Run([Table], $"CREATE TABLE #made WITH (DISTRIBUTION = ROUND_ROBIN) AS SELECT {list} FROM {from} {rest}; {Columns("#made")}");
+        var into = await Run([Table], $"SELECT {list} INTO #into FROM {from} {rest}; {Columns("#into")}");
+
+        Assert.Null(made.Error);
+        Assert.NotEmpty(made.Sets);
+        Assert.Equal(into.ToString(), made.ToString());
     }
 
     [Fact]

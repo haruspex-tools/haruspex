@@ -9,7 +9,8 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="IsPrimaryKey">Whether it is the primary key.</param>
 /// <param name="At">Where it is declared.</param>
 /// <param name="DisabledAt">
-/// Where a statement may disable its index (<c>ALTER INDEX … DISABLE</c>), so that rows written meanwhile need not be
-/// unique; null when none does. Which runs last depends on the order of the scripts, which the source does not say.
+/// Where a statement may disable its index (<c>ALTER INDEX … DISABLE</c>) or drop it (<c>ALTER TABLE … DROP CONSTRAINT</c>,
+/// <c>DROP INDEX</c>), so that rows written meanwhile need not be unique; null when none does. Which runs last depends on the
+/// order of the scripts, which the source does not say.
 /// </param>
 public sealed record UniqueKey(string? Name, EquatableArray<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null);

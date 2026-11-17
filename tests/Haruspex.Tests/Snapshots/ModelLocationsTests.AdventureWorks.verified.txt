@@ -586,7 +586,78 @@ function dbo.ufnGetPurchaseOrderStatusText at instawdb.sql:5570:1
 function dbo.ufnGetSalesOrderStatusText at instawdb.sql:5590:1
 function dbo.ufnGetStock at instawdb.sql:5532:1
 function dbo.ufnLeadingZeros at instawdb.sql:346:1
+key HumanResources.Department PK_Department_DepartmentID (DepartmentID) at instawdb.sql:2833:5
+key HumanResources.Employee PK_Employee_BusinessEntityID (BusinessEntityID) at instawdb.sql:2855:5
+key HumanResources.EmployeeDepartmentHistory PK_EmployeeDepartmentHistory_BusinessEntityID_StartDate_DepartmentID (BusinessEntityID, StartDate, DepartmentID, ShiftID) at instawdb.sql:2862:5
+key HumanResources.EmployeePayHistory PK_EmployeePayHistory_BusinessEntityID_RateChangeDate (BusinessEntityID, RateChangeDate) at instawdb.sql:2872:5
+key HumanResources.JobCandidate PK_JobCandidate_JobCandidateID (JobCandidateID) at instawdb.sql:2887:5
+key HumanResources.Shift PK_Shift_ShiftID (ShiftID) at instawdb.sql:3144:5
+key Person.Address PK_Address_AddressID (AddressID) at instawdb.sql:2716:5
+key Person.AddressType PK_AddressType_AddressTypeID (AddressTypeID) at instawdb.sql:2723:5
+key Person.BusinessEntity PK_BusinessEntity_BusinessEntityID (BusinessEntityID) at instawdb.sql:2744:5
+key Person.BusinessEntityAddress PK_BusinessEntityAddress_BusinessEntityID_AddressID_AddressTypeID (BusinessEntityID, AddressID, AddressTypeID) at instawdb.sql:2751:5
+key Person.BusinessEntityContact PK_BusinessEntityContact_BusinessEntityID_PersonID_ContactTypeID (BusinessEntityID, PersonID, ContactTypeID) at instawdb.sql:2760:5
+key Person.ContactType PK_ContactType_ContactTypeID (ContactTypeID) at instawdb.sql:2769:5
+key Person.CountryRegion PK_CountryRegion_CountryRegionCode (CountryRegionCode) at instawdb.sql:2784:5
+key Person.EmailAddress PK_EmailAddress_BusinessEntityID_EmailAddressID (BusinessEntityID, EmailAddressID) at instawdb.sql:2847:5
+key Person.Password PK_Password_BusinessEntityID (BusinessEntityID) at instawdb.sql:2901:5
+key Person.Person PK_Person_BusinessEntityID (BusinessEntityID) at instawdb.sql:2908:5
+key Person.PersonPhone PK_PersonPhone_BusinessEntityID_PhoneNumber_PhoneNumberTypeID (BusinessEntityID, PhoneNumber, PhoneNumberTypeID) at instawdb.sql:2923:5
+key Person.PhoneNumberType PK_PhoneNumberType_PhoneNumberTypeID (PhoneNumberTypeID) at instawdb.sql:2932:5
+key Person.StateProvince PK_StateProvince_StateProvinceID (StateProvinceID) at instawdb.sql:3181:5
+key Production.BillOfMaterials PK_BillOfMaterials_BillOfMaterialsID (BillOfMaterialsID) at instawdb.sql:2737:5
+key Production.Culture PK_Culture_CultureID (CultureID) at instawdb.sql:2798:5
+key Production.Document PK_Document_DocumentNode (DocumentNode) at instawdb.sql:2840:5
 key Production.Document unnamed (rowguid) at instawdb.sql:1132:52
+key Production.Illustration PK_Illustration_IllustrationID (IllustrationID) at instawdb.sql:2880:5
+key Production.Location PK_Location_LocationID (LocationID) at instawdb.sql:2894:5
+key Production.Product PK_Product_ProductID (ProductID) at instawdb.sql:2939:5
+key Production.ProductCategory PK_ProductCategory_ProductCategoryID (ProductCategoryID) at instawdb.sql:2946:5
+key Production.ProductCostHistory PK_ProductCostHistory_ProductID_StartDate (ProductID, StartDate) at instawdb.sql:2953:5
+key Production.ProductDescription PK_ProductDescription_ProductDescriptionID (ProductDescriptionID) at instawdb.sql:2961:5
+key Production.ProductDocument PK_ProductDocument_ProductID_DocumentNode (ProductID, DocumentNode) at instawdb.sql:2968:5
+key Production.ProductInventory PK_ProductInventory_ProductID_LocationID (ProductID, LocationID) at instawdb.sql:2976:5
+key Production.ProductListPriceHistory PK_ProductListPriceHistory_ProductID_StartDate (ProductID, StartDate) at instawdb.sql:2984:5
+key Production.ProductModel PK_ProductModel_ProductModelID (ProductModelID) at instawdb.sql:2992:5
+key Production.ProductModelIllustration PK_ProductModelIllustration_ProductModelID_IllustrationID (ProductModelID, IllustrationID) at instawdb.sql:2999:5
+key Production.ProductModelProductDescriptionCulture PK_ProductModelProductDescriptionCulture_ProductModelID_ProductDescriptionID_CultureID (ProductModelID, ProductDescriptionID, CultureID) at instawdb.sql:3007:5
+key Production.ProductPhoto PK_ProductPhoto_ProductPhotoID (ProductPhotoID) at instawdb.sql:3016:5
+key Production.ProductProductPhoto PK_ProductProductPhoto_ProductID_ProductPhotoID (ProductID, ProductPhotoID) at instawdb.sql:3023:5
+key Production.ProductReview PK_ProductReview_ProductReviewID (ProductReviewID) at instawdb.sql:3031:5
+key Production.ProductSubcategory PK_ProductSubcategory_ProductSubcategoryID (ProductSubcategoryID) at instawdb.sql:3038:5
+key Production.ScrapReason PK_ScrapReason_ScrapReasonID (ScrapReasonID) at instawdb.sql:3137:5
+key Production.TransactionHistory PK_TransactionHistory_TransactionID (TransactionID) at instawdb.sql:3195:5
+key Production.TransactionHistoryArchive PK_TransactionHistoryArchive_TransactionID (TransactionID) at instawdb.sql:3202:5
+key Production.UnitMeasure PK_UnitMeasure_UnitMeasureCode (UnitMeasureCode) at instawdb.sql:3209:5
+key Production.WorkOrder PK_WorkOrder_WorkOrderID (WorkOrderID) at instawdb.sql:3223:5
+key Production.WorkOrderRouting PK_WorkOrderRouting_WorkOrderID_ProductID_OperationSequence (WorkOrderID, ProductID, OperationSequence) at instawdb.sql:3230:5
+key Purchasing.ProductVendor PK_ProductVendor_ProductID_BusinessEntityID (ProductID, BusinessEntityID) at instawdb.sql:3045:5
+key Purchasing.PurchaseOrderDetail PK_PurchaseOrderDetail_PurchaseOrderID_PurchaseOrderDetailID (PurchaseOrderID, PurchaseOrderDetailID) at instawdb.sql:3053:5
+key Purchasing.PurchaseOrderHeader PK_PurchaseOrderHeader_PurchaseOrderID (PurchaseOrderID) at instawdb.sql:3061:5
+key Purchasing.ShipMethod PK_ShipMethod_ShipMethodID (ShipMethodID) at instawdb.sql:3151:5
+key Purchasing.Vendor PK_Vendor_BusinessEntityID (BusinessEntityID) at instawdb.sql:3216:5
+key Sales.CountryRegionCurrency PK_CountryRegionCurrency_CountryRegionCode_CurrencyCode (CountryRegionCode, CurrencyCode) at instawdb.sql:2776:5
+key Sales.CreditCard PK_CreditCard_CreditCardID (CreditCardID) at instawdb.sql:2791:5
+key Sales.Currency PK_Currency_CurrencyCode (CurrencyCode) at instawdb.sql:2805:5
+key Sales.CurrencyRate PK_CurrencyRate_CurrencyRateID (CurrencyRateID) at instawdb.sql:2812:5
+key Sales.Customer PK_Customer_CustomerID (CustomerID) at instawdb.sql:2819:5
+key Sales.PersonCreditCard PK_PersonCreditCard_BusinessEntityID_CreditCardID (BusinessEntityID, CreditCardID) at instawdb.sql:2915:5
+key Sales.SalesOrderDetail PK_SalesOrderDetail_SalesOrderID_SalesOrderDetailID (SalesOrderID, SalesOrderDetailID) at instawdb.sql:3068:5
+key Sales.SalesOrderHeader PK_SalesOrderHeader_SalesOrderID (SalesOrderID) at instawdb.sql:3076:5
+key Sales.SalesOrderHeaderSalesReason PK_SalesOrderHeaderSalesReason_SalesOrderID_SalesReasonID (SalesOrderID, SalesReasonID) at instawdb.sql:3083:5
+key Sales.SalesPerson PK_SalesPerson_BusinessEntityID (BusinessEntityID) at instawdb.sql:3091:5
+key Sales.SalesPersonQuotaHistory PK_SalesPersonQuotaHistory_BusinessEntityID_QuotaDate (BusinessEntityID, QuotaDate) at instawdb.sql:3098:5
+key Sales.SalesReason PK_SalesReason_SalesReasonID (SalesReasonID) at instawdb.sql:3107:5
+key Sales.SalesTaxRate PK_SalesTaxRate_SalesTaxRateID (SalesTaxRateID) at instawdb.sql:3114:5
+key Sales.SalesTerritory PK_SalesTerritory_TerritoryID (TerritoryID) at instawdb.sql:3121:5
+key Sales.SalesTerritoryHistory PK_SalesTerritoryHistory_BusinessEntityID_StartDate_TerritoryID (BusinessEntityID, StartDate, TerritoryID) at instawdb.sql:3128:5
+key Sales.ShoppingCartItem PK_ShoppingCartItem_ShoppingCartItemID (ShoppingCartItemID) at instawdb.sql:3158:5
+key Sales.SpecialOffer PK_SpecialOffer_SpecialOfferID (SpecialOfferID) at instawdb.sql:3165:5
+key Sales.SpecialOfferProduct PK_SpecialOfferProduct_SpecialOfferID_ProductID (SpecialOfferID, ProductID) at instawdb.sql:3172:5
+key Sales.Store PK_Store_BusinessEntityID (BusinessEntityID) at instawdb.sql:3188:5
+key dbo.AWBuildVersion PK_AWBuildVersion_SystemInformationID (SystemInformationID) at instawdb.sql:2730:5
+key dbo.DatabaseLog PK_DatabaseLog_DatabaseLogID (DatabaseLogID) at instawdb.sql:2826:5
+key dbo.ErrorLog PK_ErrorLog_ErrorLogID (ErrorLogID) at instawdb.sql:237:5
 named function dbo.ufnGetAccountingEndDate
 named function dbo.ufnGetAccountingStartDate
 named function dbo.ufnGetContactInformation

@@ -87,6 +87,73 @@ public partial class RefinementTests
     }
 
     [Theory]
+    [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT pk_k PRIMARY KEY CLUSTERED (code);", IrCardinality.AtMostOne)]
+    [InlineData("ALTER TABLE [dbo].[k] WITH CHECK ADD CONSTRAINT [pk_k] PRIMARY KEY CLUSTERED ([code] ASC);", IrCardinality.AtMostOne)]
+    [InlineData("ALTER TABLE dbo.k WITH NOCHECK ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.AtMostOne)]
+    [InlineData("ALTER TABLE dbo.k ADD UNIQUE CLUSTERED (code), CONSTRAINT ck_k_id CHECK (id > 0);", IrCardinality.AtMostOne)]
+    [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT pk_k PRIMARY KEY (id, code);", IrCardinality.Many)]
+    [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);\nGO\nALTER INDEX uq_k_code ON dbo.k DISABLE;", IrCardinality.Many)]
+    [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code), CONSTRAINT uq_k_code_too UNIQUE (missing);", IrCardinality.AtMostOne)]
+    [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT uq_k_missing UNIQUE (missing);", IrCardinality.Many)]
+    [InlineData("ALTER TABLE dbo.other ADD CONSTRAINT uq_other_code UNIQUE (code);", IrCardinality.Many)]
+    [InlineData("ALTER TABLE k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.setup AS ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
+    public void A_key_added_by_alter_table_with_its_schema_is_a_key(string alter, IrCardinality expected)
+    {
+        // A_key_added_by_alter_table_is_enforced_as_one_the_table_declares: as a key in CREATE TABLE, WITH NOCHECK or not, and an
+        // index disable undoes it. Without its schema the name may be another table's; in a body or under IF it may never run.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL);\nGO\nCREATE TABLE dbo.other (id int NOT NULL, code int NOT NULL);"),
+            ("alter.sql", alter),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS SELECT k.id FROM dbo.k AS k WHERE k.code = @x;"));
+
+        Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
+    }
+
+    [Theory]
+    [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT IF EXISTS uq_k_code;", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP uq_k_other;", IrCardinality.AtMostOne)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP COLUMN other;", IrCardinality.AtMostOne)]
+    [InlineData("IF 1 = 1 ALTER TABLE k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT uq_k_other;", IrCardinality.AtMostOne)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.other DROP CONSTRAINT uq_k_code;", IrCardinality.AtMostOne)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX uq_k_code ON dbo.k;", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX dbo.k.uq_k_code;", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX uq_k_other ON dbo.k;", IrCardinality.AtMostOne)]
+    public void A_key_a_statement_anywhere_may_drop_is_no_key(string drop, IrCardinality expected)
+    {
+        // A_dropped_key_holds_no_longer_and_its_primary_keys_columns_stay_not_null: as for ALTER INDEX … DISABLE, wherever it is,
+        // since whether it runs isn't knowable, and by the same naming rule. The key is added by ALTER TABLE (K7) or declared.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL, other int NOT NULL CONSTRAINT uq_k_other UNIQUE);\nGO\nCREATE TABLE dbo.other (id int NOT NULL);"),
+            ("alter.sql", "ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);"),
+            ("drop.sql", drop),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS SELECT k.id FROM dbo.k AS k WHERE k.code = @x;"));
+
+        Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
+    }
+
+    [Fact]
+    public void A_primary_key_added_by_alter_table_makes_its_column_never_null()
+    {
+        // A_key_added_by_alter_table_is_enforced_as_one_the_table_declares: SQL Server refuses a primary key over a nullable
+        // column, so a column declared without NOT NULL that one covers is never null; the key is the table's primary key.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int, code int NULL);"),
+            ("alter.sql", "ALTER TABLE dbo.k ADD CONSTRAINT pk_k PRIMARY KEY (id);"),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS SELECT k.id, k.code FROM dbo.k AS k WHERE k.id = @x;"));
+
+        var result = doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single();
+        Assert.Equal(IrCardinality.AtMostOne, result.Cardinality);
+        var fields = Assert.Single(doc.Types).Value.Fields;
+        Assert.False(fields.Single(f => f.Name == "id").Nullable);
+        Assert.True(fields.Single(f => f.Name == "code").Nullable);
+    }
+
+    [Theory]
     [InlineData("ALTER INDEX uq_t_code ON dbo.t DISABLE;", IrCardinality.Many, IrCardinality.AtMostOne)]
     [InlineData("ALTER INDEX ALL ON dbo.t DISABLE;", IrCardinality.Many, IrCardinality.Many)]
     [InlineData("ALTER INDEX ix_other ON dbo.u DISABLE;", IrCardinality.AtMostOne, IrCardinality.AtMostOne)]

@@ -7,7 +7,7 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// Reads one parsed script into what the folder's scripts declare: each definition it makes, each statement that changes
-/// one later, and each statement that may disable a constraint. It applies nothing; the passes after every script is read
+/// one later, and each statement that may disable or drop a constraint. It applies nothing; the passes after every script is read
 /// (<see cref="DefinitionsInEffect"/>, <see cref="ConstraintTrust"/>) settle what the model says.
 /// </summary>
 /// <remarks>
@@ -40,7 +40,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     {
         ArgumentNullException.ThrowIfNull(script);
         ReadEnforcement(script);
-        ReadIndexDisables(script);
+        ReadKeyDisables(script);
         foreach (var statement in script.Batches.SelectMany(b => b.Statements))
             Read(statement);
     }
@@ -168,16 +168,24 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// An <c>ALTER TABLE</c>: one that only tightens the table adds the foreign keys it declares, if any; any other changes the
-    /// table in a way the model doesn't apply, and is recorded, with the foreign keys a column it adds declares.
+    /// An <c>ALTER TABLE</c>: one that only tightens the table adds the foreign keys it declares, if any, and the primary key and
+    /// unique constraints, when it names the table with its schema (<see cref="AddedKey"/>); any other changes the table in a way
+    /// the model doesn't apply, and is recorded, with the foreign keys a column it adds declares.
     /// </summary>
     private void ReadAlterTable(AlterTableStatement statement)
     {
         var name = SyntaxReader.Name(statement.SchemaObjectName);
         if (!OnlyTightens(statement))
             into.TableChanges.TryAdd(name, Changed(name, RedefiningStatement.AlterTable, statement));
-        if (statement is AlterTableAddTableElementStatement add)
-            ReadCascadingKeys(name, add.Definition);
+        if (statement is not AlterTableAddTableElementStatement add)
+            return;
+        ReadCascadingKeys(name, add.Definition);
+        if (add.Definition.ColumnDefinitions.Count == 0 && statement.SchemaObjectName.SchemaIdentifier is not null)
+        {
+            var span = SyntaxReader.Span(file, statement);
+            foreach (var key in add.Definition.TableConstraints.OfType<UniqueConstraintDefinition>())
+                into.AddedKeys.Add(new AddedKey(name, SyntaxReader.Key(key, span)));
+        }
     }
 
     /// <summary>
@@ -185,8 +193,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// constraint (a primary key can only add NOT NULL), checking or disabling constraints, rebuilding, and
     /// switching triggers or change tracking. Ignoring them can only leave a column more nullable than it is.
     /// Disabling a CHECK constraint does matter to what values a column holds; that is recorded on the constraint
-    /// (<see cref="ConstraintTrust"/>), not as a redefinition of the table. A CHECK added this way is not read, which only
-    /// claims less.
+    /// (<see cref="ConstraintTrust"/>), not as a redefinition of the table. A primary key or unique constraint added this way
+    /// is read (<see cref="AddedKey"/>); a CHECK is not, which only claims less.
     /// </summary>
     private static bool OnlyTightens(AlterTableStatement statement) => statement switch
     {
@@ -244,13 +252,43 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// Every <c>ALTER INDEX … DISABLE</c> in the script, at any depth, as for NOCHECK: whether a statement in a body or under IF
-    /// runs is not knowable. A disabled unique index enforces nothing, so rows written meanwhile may share a key.
+    /// Every statement in the script that may stop a key being enforced (<see cref="KeyDisable"/>), at any depth, as for
+    /// NOCHECK: <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, since whether a
+    /// statement in a body or under IF runs is not knowable. A disabled key enforces nothing and a dropped one is gone, so rows
+    /// written meanwhile may share a key. A top-level <c>DROP CONSTRAINT</c> also changes the table (<see cref="OnlyTightens"/>).
     /// </summary>
-    private void ReadIndexDisables(TSqlScript script)
+    private void ReadKeyDisables(TSqlScript script)
     {
         foreach (var alter in Everywhere<AlterIndexStatement>(script).Where(a => a.AlterIndexType == AlterIndexType.Disable))
-            into.IndexDisables.Add(new IndexDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
+            into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
+        foreach (var drop in Everywhere<AlterTableDropTableElementStatement>(script))
+        {
+            // DROP name, without CONSTRAINT, drops a constraint too (the keyword is optional; observed), and ScriptDom gives it no
+            // type. A column, index or period is named as one.
+            foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType is TableElementType.Constraint or TableElementType.NotSpecified))
+                into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(drop.SchemaObjectName), drop.SchemaObjectName.SchemaIdentifier is not null, element.Name.Value, At(drop)));
+        }
+
+        foreach (var drop in Everywhere<DropIndexStatement>(script))
+        {
+            foreach (var clause in drop.DropIndexClauses)
+            {
+                switch (clause)
+                {
+                    case DropIndexClause on:
+                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(on.Object), on.Object.SchemaIdentifier is not null, on.Index.Value, At(drop)));
+                        break;
+                    case BackwardsCompatibleDropIndexClause old:
+                        // DROP INDEX table.index, or schema.table.index: the index is the name's last part.
+                        var table = new SchemaObjectName();
+                        if (old.Index.SchemaIdentifier is { } schema)
+                            table.Identifiers.Add(schema);
+                        table.Identifiers.Add(old.Index.BaseIdentifier);
+                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(table), old.Index.SchemaIdentifier is not null, old.Index.ChildIdentifier.Value, At(drop)));
+                        break;
+                }
+            }
+        }
     }
 
     /// <summary>Every fragment of a kind in the script, at any depth, in the order they are written.</summary>

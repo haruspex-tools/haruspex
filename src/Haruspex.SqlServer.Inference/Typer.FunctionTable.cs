@@ -60,6 +60,7 @@ internal sealed partial class Typer
     private const string Trigonometry = "The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options";
 
     private const string Angles = "Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow";
+    private const string DecimalAngles = "Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow";
 
     private const string Extremes = "Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails";
 
@@ -184,8 +185,8 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Acos, (1, 1), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true, bitInDomain: true))),
         Typing(ScalarFunctions.Atan, (1, 1), "float", [], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: false))),
         Typing(ScalarFunctions.Atn2, (2, 2), "float", [DomainError], [Trigonometry], (a, e, s) => a.Numeric(Call(e), s, n => a.Trigonometric(n, domain: true))),
-        Typing(ScalarFunctions.Degrees, (1, 1), "int, bigint or float, as the argument", [ArithmeticOverflow], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: true))),
-        Typing(ScalarFunctions.Radians, (1, 1), "int, bigint or float, as the argument", [], [Angles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: false))),
+        Typing(ScalarFunctions.Degrees, (1, 1), "int, bigint or float, as the argument; decimal(38, s or 18) of a decimal; money of money", [ArithmeticOverflow], [Angles, DecimalAngles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: true))),
+        Typing(ScalarFunctions.Radians, (1, 1), "int, bigint or float, as the argument; decimal(38, s or 18) of a decimal; money of money", [ArithmeticOverflow], [Angles, DecimalAngles], (a, e, s) => a.Numeric(Call(e), s, n => a.Angle(n, degrees: false))),
         Typing(ScalarFunctions.Pi, (0, 0), "float, never null", [], [Trigonometry], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Float), [], e)),
 
         // ---- conversions and choices ----
@@ -194,7 +195,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.TryCast, null, "the target type", [FailedConversion, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails", LostPrecisionUnderTry], (a, e, s) => a.Cast(((TryCastCall)e).DataType, ((TryCastCall)e).Parameter, e, s, attempt: true)),
         Typing(ScalarFunctions.TryConvert, null, "the target type, whatever the style", [FailedConversion, IrNullRule.PrecisionLoss, IrNullRule.NullLiteral], ["Try_cast_and_try_convert_are_null_when_the_conversion_fails", LostPrecisionUnderTry], (a, e, s) => a.Cast(((TryConvertCall)e).DataType, ((TryConvertCall)e).Parameter, e, s, styled: ((TryConvertCall)e).Style is not null, attempt: true)),
         Typing(ScalarFunctions.IsNull, (2, 2), "the first argument's type", [ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short", Coalescing, LostPrecision], (a, e, s) => a.IsNull(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),
-        Typing(ScalarFunctions.Coalesce, null, "the type of highest precedence over its arguments", [ArithmeticOverflow, IrNullRule.ReadTwice, IrNullRule.NullLiteral], [Coalescing, "Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot"], (a, e, s) => a.Coalesce((CoalesceExpression)e, s)),
+        Typing(ScalarFunctions.Coalesce, null, "the type of highest precedence over its arguments", [ArithmeticOverflow, IrNullRule.ReadTwice, IrNullRule.NullLiteral], [Coalescing, "Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot", "Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them"], (a, e, s) => a.Coalesce((CoalesceExpression)e, s)),
         Typing(ScalarFunctions.NullIf, null, "the first argument's type", [NullWhenEqual], ["Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it"], (a, e, s) => a.NullIf((NullIfExpression)e, s)),
         Typing(ScalarFunctions.Iif, null, "the type of highest precedence over its results", [ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, LostPrecision], (a, e, s) => a.Iif((IIfCall)e, s)),
         Typing(ScalarFunctions.Choose, (2, null), "the type of highest precedence over its results", [OutOfRange, ArithmeticOverflow, IrNullRule.PrecisionLoss], [Choices, "Case_without_else_choose_out_of_range_and_nullif_of_equal_values_are_null", LostPrecision], (a, e, s) => a.Choose(Call(e), s), otherForms: OtherForms.ExpressionNotModelled),

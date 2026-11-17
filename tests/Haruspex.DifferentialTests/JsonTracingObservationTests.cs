@@ -85,6 +85,47 @@ public class JsonTracingObservationTests(SqlServerFixture server)
             await Select("""SELECT json_object('a': ISNULL((SELECT 1 AS q WHERE 1 = 0 FOR JSON PATH), '[1]'), 'b': ISNULL((SELECT 1 AS q WHERE 1 = 0 FOR JSON PATH), '{"k":"x"}'), 'c': ISNULL((SELECT 1 AS q WHERE 1 = 0 FOR JSON PATH), '[1]x')) AS j;"""));
     }
 
+    [Fact]
+    public async Task Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them()
+    {
+        // Nested in FOR JSON, whether the server folds them matters: folded to its constant first argument, COALESCE (and a CASE
+        // whose condition is constant) nests that argument's JSON; not folded, it nests escaped text.
+        const string Declared = "DECLARE @p nvarchar(max) = N'[1]';";
+        Assert.Equal(
+            """j: [{"a":[1],"b":"[1]","c":[1],"d":"[1]"}]""",
+            await Select($"""
+                {Declared}
+                SELECT (SELECT COALESCE(json_query(N'[1]'), '[]') AS a, COALESCE(json_query(@p), '[]') AS b,
+                               CASE WHEN 1 = 1 THEN json_query(N'[1]') ELSE '[]' END AS c,
+                               CASE WHEN @p IS NOT NULL THEN json_query(@p) ELSE '[]' END AS d
+                        FOR JSON PATH) AS j;
+                """));
+
+        // Assigned to a variable, both are the same text: the JSON of the argument or result taken.
+        Assert.Equal(
+            "a,b,c,d: [1],[1],[1],[1]",
+            await Select($"""
+                {Declared}
+                DECLARE @a nvarchar(max) = COALESCE(json_query(N'[1]'), '[]'), @b nvarchar(max) = COALESCE(json_query(@p), '[]'),
+                        @c nvarchar(max), @d nvarchar(max);
+                SET @c = CASE WHEN 1 = 1 THEN json_query(N'[1]') ELSE '[]' END;
+                SELECT @d = CASE WHEN @p IS NOT NULL THEN json_query(@p) ELSE '[]' END;
+                SELECT @a AS a, @b AS b, @c AS c, @d AS d;
+                """));
+
+        // The idiom: an aggregate's array, or json_array() when the subquery finds no rows (NULL), as text; json_query makes it JSON.
+        Assert.Equal(
+            """a,b: [1,2],[] | j: [{"a":[1,2],"b":[]}]""",
+            await Select("""
+                DECLARE @c TABLE (id int NOT NULL, region int NOT NULL);
+                INSERT @c VALUES (1, 1), (2, 1);
+                DECLARE @a nvarchar(max) = COALESCE((SELECT json_arrayagg(c.id) FROM @c AS c WHERE c.region = 1), json_array()),
+                        @b nvarchar(max) = COALESCE((SELECT json_arrayagg(c.id) FROM @c AS c WHERE c.region = 2), json_array());
+                SELECT @a AS a, @b AS b;
+                SELECT (SELECT json_query(@a) AS a, json_query(@b) AS b FOR JSON PATH) AS j;
+                """));
+    }
+
     // ---- variables and tables -----------------------------------------------------------------------------------------
 
     [Fact]

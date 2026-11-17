@@ -20,6 +20,12 @@ namespace Haruspex.DifferentialTests;
 /// numbers, bigint as a string, dates and times as Date, uniqueidentifier as a string. They are read here with
 /// SqlClient and converted, so a decimal reaches Zod as the nearest double to its exact value, which is what
 /// tedious computes for precision up to 15 (the emitter checks bounds only there; see Facets.cs in the emitter).
+/// <para>
+/// Each output goes through two modules: the default one, whose objects strip keys they don't know, and the same IR emitted
+/// with <see cref="ZodObjects.Strict"/>. Strict accepts only what the default accepts and refuses a key it doesn't list, so a
+/// key the schema names wrongly fails here, even inside JSON text, which the default module's check of dropped keys can't
+/// see into (<c>accept.mjs</c>). <see cref="A_key_named_wrongly_fails_the_strict_zod"/> shows it does.
+/// </para>
 /// </remarks>
 public class ZodAcceptanceTests(SqlServerFixture server)
 {
@@ -29,20 +35,61 @@ public class ZodAcceptanceTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task The_generated_zod_accepts_every_output(string fixture)
     {
+        var (accepted, output, why) = await Accept(fixture, Fixture.Named(fixture).Ir);
+        Assert.True(accepted, $"The generated Zod rejected real output ({why}):\n{output}");
+    }
+
+    /// <summary>
+    /// A plant: every key <c>FOR JSON</c> leaves out when null, named wrongly. The fixture's runs write such a key under its real
+    /// name inside JSON text, a rowset column, where the default module's check of dropped keys can't see; the strict module
+    /// refuses it, and is the only one that does.
+    /// </summary>
+    [Fact]
+    public async Task A_key_named_wrongly_fails_the_strict_zod()
+    {
+        var document = Fixture.Named(Planted).Ir;
+        var misnamed = document with
+        {
+            Types = document.Types.ToDictionary(
+                t => t.Key,
+                t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f.Presence == IrPresence.OmittedWhenNull ? f with { Name = f.Name + "_" } : f)] },
+                StringComparer.Ordinal),
+        };
+        Assert.NotEqual(document.Types, misnamed.Types);
+
+        var (accepted, output, _) = await Accept(Planted, misnamed);
+        Assert.False(accepted, "The strict Zod accepted output whose keys it names wrongly.");
+        var rejections = output.Split('\n').Where(l => l.Contains(" rejected the output", StringComparison.Ordinal) || l.Contains(" dropped ", StringComparison.Ordinal)).ToList();
+        Assert.NotEmpty(rejections);
+        Assert.All(rejections, l => Assert.Contains("(strict) rejected the output", l, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The fixture the plant is made in: <c>meter.meter_card</c> returns JSON text holding a key left out when null. Planted in
+    /// every fixture (16 Nov 2026), the strict module refused more runs than the default one in six, and in this one the
+    /// default refused none.
+    /// </summary>
+    private const string Planted = "meters";
+
+    /// <summary>Runs every output of a fixture's runs through the Zod emitted for <paramref name="document"/>, strip and strict.</summary>
+    private async Task<(bool Accepted, string Output, string? Why)> Accept(string fixture, IrDocument document)
+    {
         server.Require();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
-        var document = Fixture.Named(fixture).Ir;
         var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
             await File.WriteAllTextAsync(Path.Combine(folder, $"{fixture}.zod.ts"), ZodEmitter.Emit(document).Expected(), TestContext.Current.CancellationToken);
+            var strict = ZodEmitter.Emit(document, new ZodOptions { Objects = ZodObjects.Strict }).Expected();
+            await File.WriteAllTextAsync(Path.Combine(folder, $"{fixture}.strict.zod.ts"), strict, TestContext.Current.CancellationToken);
             using (var cases = File.Create(Path.Combine(folder, "cases.json")))
             using (var json = new Utf8JsonWriter(cases))
             {
                 json.WriteStartObject();
                 json.WriteString("module", $"{fixture}.zod.ts");
+                json.WriteString("strictModule", $"{fixture}.strict.zod.ts");
                 json.WriteStartArray("cases");
                 foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
                 {
@@ -75,9 +122,8 @@ public class ZodAcceptanceTests(SqlServerFixture server)
             }
 
             EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
-            Assert.True(
-                EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
-                $"The generated Zod rejected real output ({why}):\n{output}");
+            var accepted = EmitCheckPackage.TryRun("node", [Path.Combine("src", "accept.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why);
+            return (accepted, output, why);
         }
         finally
         {

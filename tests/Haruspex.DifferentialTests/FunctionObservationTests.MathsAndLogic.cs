@@ -40,6 +40,43 @@ public partial class FunctionObservationTests
     }
 
     [Fact]
+    public async Task Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow()
+    {
+        // A decimal or numeric of scale s gives its own type of precision 38 and scale s or 18, whichever is more; money and
+        // smallmoney give money.
+        const string Columns = """
+            (SELECT CAST(1 AS decimal(5,2)) AS d5, CAST(1 AS decimal(38,0)) AS d38, CAST(0.5 AS decimal(38,20)) AS d20,
+                    CAST(0.5 AS decimal(38,38)) AS d38s, CAST(1 AS numeric(9,4)) AS n9, CAST(1 AS money) AS m, CAST(1 AS smallmoney) AS sm) AS t
+            """;
+        Assert.Equal(
+            "a decimal(38,18), b decimal(38,18), c decimal(38,18), d decimal(38,20), e decimal(38,38), f decimal(38,38), g numeric(38,18), h money, k money",
+            await Describe($"SELECT DEGREES(d5) AS a, RADIANS(d5) AS b, DEGREES(d38) AS c, RADIANS(d20) AS d, DEGREES(d38s) AS e, RADIANS(d38s) AS f, DEGREES(n9) AS g, RADIANS(m) AS h, DEGREES(sm) AS k FROM {Columns}"));
+
+        // Computed through float and rounded to the result's places, which no option makes an error: not NUMERIC_ROUNDABORT.
+        Assert.Equal("a,b,c: 57.295779513082322865,0.017453292519943295,57.2958", await Select("SELECT DEGREES(CAST(1 AS decimal(5,2))) AS a, RADIANS(CAST(1 AS decimal(5,2))) AS b, DEGREES(CAST(1 AS money)) AS c;"));
+        Assert.Equal(
+            "a,b,c: 57.295779513082322865,0.017453292519943295,0.0175",
+            (await Run([], "SET NUMERIC_ROUNDABORT ON; SELECT DEGREES(CAST(1 AS decimal(5,2))) AS a, RADIANS(CAST(1 AS decimal(5,2))) AS b, RADIANS(CAST(1 AS money)) AS c;")).ToString());
+
+        // DEGREES multiplies by about 57.3, so it overflows when the result keeps fewer integer digits than the argument's and
+        // two more: decimal(19,0) (8115), not decimal(18,0); decimal(37,20), not decimal(36,20); decimal(38,38); money near its
+        // end, not smallmoney. NULL under the caller's options.
+        Assert.Equal(" ! 8115", (await Run([], "SELECT DEGREES(CAST(9999999999999999999 AS decimal(19,0))) AS v;")).ToString());
+        Assert.Null((await Run([], "SELECT DEGREES(CAST(999999999999999999 AS decimal(18,0))) AS v;")).Error);
+        Assert.Equal(" ! 8115", (await Run([], "SELECT DEGREES(CAST(0.9 AS decimal(38,38))) AS v;")).ToString());
+        Assert.Equal(" ! 8115", (await Run([], "SELECT DEGREES(CAST(100000000000000 AS money)) AS v;")).ToString());
+        Assert.Null((await Run([], "SELECT DEGREES(CAST(214748.3647 AS smallmoney)) AS v;")).Error);
+        Assert.Equal("v: null", (await Run([], "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT DEGREES(CAST(9999999999999999999 AS decimal(19,0))) AS v;")).ToString());
+        Assert.Equal(" ! 8115", (await Run([], "SELECT DEGREES(CAST(99999999999999999.99999999999999999999 AS decimal(37,20))) AS v;")).ToString());
+        Assert.Null((await Run([], "SELECT DEGREES(CAST(9999999999999999.99999999999999999999 AS decimal(36,20))) AS v;")).Error);
+
+        // RADIANS divides by it, but the result's scale of 18 leaves 20 integer digits, so it overflows when those are fewer than
+        // the argument's less one: decimal(22,0), not decimal(21,0). Of money, never.
+        Assert.Equal(" ! 8115", (await Run([], "SELECT RADIANS(CAST(9999999999999999999999 AS decimal(22,0))) AS v;")).ToString());
+        Assert.Null((await Run([], "SELECT RADIANS(CAST(999999999999999999999 AS decimal(21,0))) AS a, RADIANS(CAST(922337203685477.5807 AS money)) AS b;")).Error);
+    }
+
+    [Fact]
     public async Task Greatest_and_least_skip_nulls_and_cap_a_max_string_at_8000_bytes_which_a_longer_value_fails()
     {
         // Values of one kind: their type, strings as long as the longest and varying, max at 8000 bytes; nvarchar if any is.

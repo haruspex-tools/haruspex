@@ -476,4 +476,17 @@ public class JsonSchemaEmitterTests
 
         AssertSchema("""{ "enum": [1.50, 2] }""", Value(Decimal(5, 2, values: set)));
     }
+
+    [Fact]
+    public void A_result_the_config_declares_may_be_absent_names_the_declaration_as_its_reason()
+    {
+        var declared = new IrResult(IrEncoding.Json, new IrArray(new IrScalar(IrScalarKind.Boolean, null, "bit")), [new IrNullReason(IrNullRule.Declared, "shop.list_baskets")]);
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("shop.list_baskets", "ListBaskets", IrObjectKind.Procedure, "p.sql:1:1", [], [declared])],
+            new Dictionary<string, IrObjectType>(),
+            []);
+
+        Assert.StartsWith("Returns JSON, null when absent, as the config file declares.", Description(Definition(Emit(document), "ListBaskets")), StringComparison.Ordinal);
+    }
 }

@@ -193,7 +193,10 @@ always its declaration: nothing a statement does changes what its columns may ho
   constraint withdraws them. A write never changes a declared column: the engine refuses a null where `NOT NULL` is
   declared, and converts every value to the declared type. A column of an alias type is unknown, because tempdb does
   not have the database's alias types (`A_temporary_table_cannot_use_the_databases_alias_types_but_a_table_variable_can`).
-- **Made by `SELECT … INTO`**: each column holds what the select gave it, with its facets and origins (a column read
+- **Made by `SELECT … INTO`**, or by `CREATE TABLE #t WITH (DISTRIBUTION = …) AS SELECT`, which SQL Server 2025 takes with a
+  `WITH` naming a distribution (`ROUND_ROBIN` or `HASH`; without one it is a syntax error) and which makes the same columns from
+  the same query, types, nullability and `IDENTITY` (`A_temporary_table_made_from_a_query_has_the_columns_select_into_makes`;
+  `Walker.MadeFrom` reads both): each column holds what the select gave it, with its facets and origins (a column read
   unchanged keeps `nullable-column` at its base column, and its CHECK's facets). SQL Server decides such a column's
   nullability by its own reading of the select, which haruspex does not reproduce
   (`Select_into_a_column_from_a_not_null_column_refuses_null_but_others_take_it`; a column from a variable takes null
@@ -210,10 +213,9 @@ always its declaration: nothing a statement does changes what its columns may ho
   (`A_temporary_table_a_procedure_creates_hides_the_callers_of_the_same_name`). A procedure that creates one name
   twice, even after a drop or in two branches, is refused when it is created (error 2714,
   `A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it`), so re-creation never runs; it is
-  modelled as the new table all the same. One created without a column list is unknown (`unsupported-source`): made from
-  a query, `CREATE TABLE #t WITH (…) AS SELECT`, it has the query's columns
-  (`A_temporary_table_made_from_a_query_has_the_columns_the_query_gives`), which aren't read from it yet; `AS EDGE` fails when it runs
-  (`A_temporary_table_cannot_be_a_graph_table`).
+  modelled as the new table all the same. One made from a query (`AS SELECT`) is read as `SELECT … INTO` above; `AS EDGE`,
+  which lists no columns either, fails when it runs (`A_temporary_table_cannot_be_a_graph_table`), and is unknown
+  (`unsupported-source`).
 - `ROLLBACK` undoes what was done to temporary tables in the transaction (`A_rollback_undoes_a_temporary_tables_creation`),
   which the caller may have begun, so after one every temporary table the procedure touched is unknown.
 - Writes to permanent tables, `OUTPUT`, `WITH` before a write, and cursors are read too (below, "DML", "Triggers" and
@@ -949,8 +951,14 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   (`The_trigonometric_functions_and_pi_are_float_and_null_only_outside_their_domain_under_the_callers_options`).
 - **`DEGREES`** and **`RADIANS`**: an integer's type, `int` below `bigint`; `float` of a `float`, a `real` or a `bit`.
   `DEGREES` of an `int`, a `bigint` or a `float` may overflow (8115); `RADIANS` of an integer truncates (`RADIANS(100)` is 1).
-  Of a `decimal` or `money` they widen the places (`decimal(38,18)`), which is not modelled
-  (`Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow`).
+  (`Degrees_and_radians_keep_an_integers_type_or_a_floats_and_degrees_may_overflow`). Of a `decimal` or `numeric` of scale s,
+  its own type of precision 38 and scale s or 18, whichever is more (`decimal(5,2)` gives `decimal(38,18)`, `decimal(38,20)`
+  gives `decimal(38,20)`); of `money` or `smallmoney`, `money`. The value is computed through `float` and rounded to the
+  result's places, which no option makes an error, `NUMERIC_ROUNDABORT` included, so the widening is never `precision-loss`.
+  A decimal result keeps 38 less its scale integer digits, so `DEGREES`, which multiplies by about 57.3, overflows where those
+  are fewer than the argument's and two more (`decimal(19,0)`, not `decimal(18,0)`), and `RADIANS`, which divides, where
+  they are fewer than the argument's less one (`decimal(22,0)`, not `decimal(21,0)`); `DEGREES` of `money` may overflow, of
+  `smallmoney` not (`Degrees_and_radians_of_a_decimal_widen_it_to_38_digits_and_of_money_give_money_and_either_may_overflow`).
 
 ## CASE, IIF, CHOOSE and NULLIF
 
@@ -1022,8 +1030,12 @@ observed in each position before it was typed (`CaseObservationTests`):
   (`Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not`, the subquery reading its outer
   row, as real ones do: one that does not may be read once and spooled). One exception: `COALESCE` whose first argument is a
   constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`), so a COALESCE
-  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled. A FOR JSON subquery is never
-  folded, even one without FROM.
+  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled where it nests. A FOR JSON
+  subquery is never folded, even one without FROM. Where the folding doesn't matter, it is modelled: under `JSON_QUERY`, and as
+  the value assigned to a variable or a column, which holds the same text whether or not the server folds it
+  (`Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them`), so
+  `DECLARE @ids nvarchar(max) = COALESCE((SELECT json_arrayagg(…) …), json_array())` holds the aggregate's array or the empty
+  one ("JSON built here, traced" below).
 - **`ISNULL` keeps its first argument's JSON**: over live JSON it nests as JSON, and its fallback is written into the JSON as
   it is, unchecked (`Isnull_writes_its_fallback_into_the_json_as_it_is`): `'[]'` the empty array (so the array may have no
   items), `'{}'` the empty object (a union), any other literal that is a JSON document its exact shape
@@ -1159,7 +1171,9 @@ query's own sources: an aggregate of only an enclosing query's columns is that q
 subquery an aggregate query.
 
 **Keys.** A source is fixed when every column of one of its enforced keys (`SchemaRules.EnforcedKeys`: the primary key,
-unique constraints and unfiltered unique indexes of its definition, less any an `ALTER INDEX … DISABLE` anywhere may have
+unique constraints and unfiltered unique indexes of its definition, and the primary key and unique constraints an
+`ALTER TABLE … ADD CONSTRAINT` adds, which are enforced as the definition's are
+(`A_key_added_by_alter_table_is_enforced_as_one_the_table_declares`), less any an `ALTER INDEX … DISABLE` anywhere may have
 disabled: a filtered unique index allows duplicates outside its filter, `A_filtered_unique_index_allows_duplicates_outside_its_filter`,
 and a disabled one allows them, `A_disabled_unique_index_allows_duplicates`) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
 column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
@@ -1588,6 +1602,10 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).
+  So does one assigned to a variable or a column: folded or not, the text it is given is the same
+  (`Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them`). Only the
+  expression assigned itself: nested in a `FOR JSON` or a constructor on its way, its folding still decides how it nests.
+  `ReadScope.FoldingMoot` marks the expression where folding doesn't matter.
   Elsewhere a `CASE` whose results are all JSON text is JSON text of the join; one with a live result is unknown, as before.
   `ISNULL` over live JSON writes any literal fallback that is a JSON document as JSON (one that is not, `'[1]x'`, makes text
   that is not JSON, so it is not modelled).
@@ -2137,7 +2155,7 @@ For the IR:
   array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
   the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
   (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: under
-  `json_query`, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
+  `json_query` or assigned to a variable or column, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
   literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'` ("JSON built here, traced" below).
 
 ### Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON

@@ -27,7 +27,7 @@ internal sealed class ReadScope
         Facts facts,
         QuerySpecification? query,
         ImmutableList<QuerySpecification?> aggregating,
-        TSqlFragment? jsonQueryArgument,
+        TSqlFragment? foldingMoot,
         OutputReading? output,
         bool fetched)
     {
@@ -38,7 +38,7 @@ internal sealed class ReadScope
         Facts = facts;
         Query = query;
         Aggregating = aggregating;
-        JsonQueryArgument = jsonQueryArgument;
+        FoldingMoot = foldingMoot;
         Output = output;
         Fetched = fetched;
     }
@@ -65,10 +65,13 @@ internal sealed class ReadScope
     public ImmutableList<QuerySpecification?> Aggregating { get; }
 
     /// <summary>
-    /// The expression <c>json_query</c> is reading, while it is read: a CASE, IIF, CHOOSE or COALESCE there holds JSON whether or
-    /// not the server folds it to one result, so its results' JSON is joined.
+    /// The expression being read where whether the server folds a CASE, IIF, CHOOSE or COALESCE to one result does not matter, so
+    /// its results' JSON is joined: <c>json_query</c>'s argument, which makes either result JSON, and a value assigned, which a
+    /// variable or column holds as the same text either way (observed:
+    /// Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them). Only the
+    /// expression itself: nested in FOR JSON or a constructor, its folding decides whether it is JSON or escaped text.
     /// </summary>
-    public TSqlFragment? JsonQueryArgument { get; }
+    public TSqlFragment? FoldingMoot { get; }
 
     /// <summary>What reading a write's <c>OUTPUT</c> knows of the write; null outside one.</summary>
     public OutputReading? Output { get; }
@@ -91,48 +94,48 @@ internal sealed class ReadScope
         Facts.None,
         query: null,
         aggregating: [],
-        jsonQueryArgument: null,
+        foldingMoot: null,
         output: null,
         fetched: false);
 
     /// <summary>The same values, state and facts in another bound scope: a nested query's, or the one its arguments are read in.</summary>
-    public ReadScope In(QueryScope bound) => new(bound, State, Sources, Named, Facts, Query, Aggregating, JsonQueryArgument, Output, Fetched);
+    public ReadScope In(QueryScope bound) => new(bound, State, Sources, Named, Facts, Query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope with what a source's relation holds attached.</summary>
     public ReadScope Attached(BoundSource source, LocalRelationValues values) =>
-        new(Bound, State, Sources.SetItem(source, values), Named, Facts, Query, Aggregating, JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources.SetItem(source, values), Named, Facts, Query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope with what a CTE or a pseudo-table holds, for the rest of the statement.</summary>
     public ReadScope Naming(RelationSymbol relation, LocalRelationValues values) =>
-        new(Bound, State, Sources, Named.SetItem(relation, values), Facts, Query, Aggregating, JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources, Named.SetItem(relation, values), Facts, Query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope reading <paramref name="query"/>'s select list, with what its filters prove added.</summary>
     public ReadScope Selecting(QuerySpecification query, Facts.Found filters) =>
-        new(Bound, State, Sources, Named, Facts.With(filters), query, Aggregating, JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources, Named, Facts.With(filters), query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope reading <paramref name="query"/>'s assignments (<c>SELECT @v = …</c>), whose filters prove nothing kept.</summary>
     public ReadScope Assigning(QuerySpecification query) =>
-        new(Bound, State, Sources, Named, Facts, query, Aggregating, JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources, Named, Facts, query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope reading a branch, with what its conditions prove added.</summary>
     public ReadScope Branching(Facts.Found conditions) =>
-        new(Bound, State, Sources, Named, Facts.With(conditions), Query, Aggregating, JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources, Named, Facts.With(conditions), Query, Aggregating, FoldingMoot, Output, Fetched);
 
     /// <summary>This scope reading an aggregate's arguments, of the query whose select list is being read.</summary>
     public ReadScope InAggregate() =>
-        new(Bound, State, Sources, Named, Facts, Query, Aggregating.Add(Query), JsonQueryArgument, Output, Fetched);
+        new(Bound, State, Sources, Named, Facts, Query, Aggregating.Add(Query), FoldingMoot, Output, Fetched);
 
-    /// <summary>This scope reading <paramref name="argument"/> as <c>json_query</c>'s argument.</summary>
-    public ReadScope UnderJsonQuery(TSqlFragment argument) =>
-        new(Bound, State, Sources, Named, Facts, Query, Aggregating, argument, Output, Fetched);
+    /// <summary>This scope reading <paramref name="expression"/> where whether the server folds it does not matter (<see cref="FoldingMoot"/>).</summary>
+    public ReadScope FoldingMootAt(TSqlFragment expression) =>
+        new(Bound, State, Sources, Named, Facts, Query, Aggregating, expression, Output, Fetched);
 
     /// <summary>This scope reading a write's <c>OUTPUT</c>, which knows what <paramref name="output"/> says of the write.</summary>
     public ReadScope Outputting(OutputReading output) =>
-        new(Bound, State, Sources, Named, Facts, Query, Aggregating, JsonQueryArgument, output, Fetched);
+        new(Bound, State, Sources, Named, Facts, Query, Aggregating, FoldingMoot, output, Fetched);
 
     /// <summary>This scope reading a cursor's query where a <c>FETCH</c> reads its row.</summary>
     public ReadScope Fetching() =>
-        new(Bound, State, Sources, Named, Facts, Query, Aggregating, JsonQueryArgument, Output, fetched: true);
+        new(Bound, State, Sources, Named, Facts, Query, Aggregating, FoldingMoot, Output, fetched: true);
 
     /// <summary>What a source's relation holds; the source's values were attached when its query's scope was entered.</summary>
     public LocalRelationValues Of(BoundSource source) =>

@@ -38,9 +38,10 @@ public partial class StatementFlowObservationTests
 
         await using var guard = await scratch.OpenAsync(token);
         await using var deleter = await scratch.OpenAsync(token);
+        var session = await ScratchDatabase.SessionOfAsync(guard, token);
         await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
         var reading = call.ExecuteScalarAsync(token);
-        await Task.Delay(TimeSpan.FromMilliseconds(400), token);
+        await ScratchDatabase.InItsWaitforAsync(deleter, session, reading, token);
 
         var clock = Stopwatch.StartNew();
         await using (var delete = new SqlCommand("DELETE FROM dbo.obs_order WHERE order_id = 1;", deleter))
@@ -136,10 +137,13 @@ public partial class StatementFlowObservationTests
             """, token);
 
         await using var guard = await scratch.OpenAsync(token);
+        await using var inserter = await scratch.OpenAsync(token);
+        var session = await ScratchDatabase.SessionOfAsync(guard, token);
         await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
         var reading = call.ExecuteReaderAsync(token);
-        await Task.Delay(TimeSpan.FromMilliseconds(400), token);
-        await scratch.ExecuteAsync("INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", token);
+        await ScratchDatabase.InItsWaitforAsync(inserter, session, reading, token);
+        await using (var insert = new SqlCommand("INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", inserter))
+            await insert.ExecuteNonQueryAsync(token);
 
         await using var reader = await reading;
         if (!await reader.ReadAsync(token))

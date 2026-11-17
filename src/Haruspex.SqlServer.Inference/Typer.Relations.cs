@@ -62,10 +62,13 @@ internal sealed partial class Typer
         return scope.State.Json.TryGetValue(new VariableSlot(name), out var slot) ? slot.Read(value) : value;
     }
 
-    /// <summary>The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old.</summary>
+    /// <summary>
+    /// The value an assignment writes: the expression, unless a compound one (<c>+=</c>) combines it with the old. A CASE or
+    /// COALESCE over JSON assigned is the same text whether or not the server folds it (<see cref="ReadScope.FoldingMoot"/>).
+    /// </summary>
     internal Value AssignedValue(AssignmentKind kind, ScalarExpression expression, ReadScope scope, TSqlFragment at) =>
         kind == AssignmentKind.Equals
-            ? Expression(expression, scope)
+            ? Expression(expression, scope.FoldingMootAt(Strip(expression)))
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The compound assignment {Text(at)} is not modelled yet.", At(at)));
 
     /// <summary>

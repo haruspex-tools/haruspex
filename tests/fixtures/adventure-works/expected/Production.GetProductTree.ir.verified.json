@@ -49,7 +49,7 @@
               "at": "procedures/GetProductTree.sql:6:1"
             }
           ],
-          "cardinality": "many"
+          "cardinality": "atMostOne"
         }
       ]
     }

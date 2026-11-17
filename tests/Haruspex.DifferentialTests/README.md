@@ -132,6 +132,12 @@ IR into schemas that accept what SQL Server returns. JSON results are handed ove
 a string, dates as `Date`). A JSON result with no row is handed over as `null`, an array as much as an object, as the
 driver does. It needs Node, like the emit check, and `HARUSPEX_REQUIRE_NODE=1` makes its absence a failure.
 
+Each output also goes through the same IR emitted with strict objects (`ZodObjects.Strict`), which accepts only what the default
+module does and refuses a key it doesn't list. The check of dropped keys can't see inside JSON text, whose content a
+refinement parses and throws away, so without it a key the schema names wrongly there, left out when null, would pass.
+`A_key_named_wrongly_fails_the_strict_zod` plants such names in the `meters` fixture and shows only the strict module
+refuses them. `JsonSchemaAcceptanceTests` validates its strict document for the same reason.
+
 The driver itself is called too, through `tests/emit-check/src/driver.mjs` with the mssql version that package pins.
 `MssqlDriverObservationTests` records what it hands an application for each form of JSON, with its `parseJSON` option on and
 off, and `MssqlDriverAcceptanceTests` creates procedures returning each form, then parses what an application reads from the

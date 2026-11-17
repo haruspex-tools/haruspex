@@ -89,7 +89,9 @@ SELECT p.product_id FROM shop.product AS p;
 
 The same rule covers a function altered or dropped, a view defined twice, and a table changed by `ALTER TABLE` in a way that
 could change a column. An `ALTER TABLE` that can only tighten a table (adding a constraint, checking one, rebuilding) is no
-doubt, since ignoring it can only leave a column more nullable than it is (`ScriptReader.OnlyTightens`).
+doubt, since ignoring it can only leave a column more nullable than it is (`ScriptReader.OnlyTightens`). The primary keys and
+unique constraints it adds are read as the table's own (`AddedKey`), since the server enforces them as it does those the table
+declares; the CHECK constraints it adds are not.
 
 A CHECK constraint and a unique key are only claims while SQL Server trusts them. `ALTER TABLE … NOCHECK CONSTRAINT` and
 `ALTER INDEX … DISABLE` stop the server checking rows, and rows written meanwhile stay after a plain re-enable. So

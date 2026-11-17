@@ -2529,12 +2529,12 @@ DEGREES(ti) -> int number/int32 {[-2147483648 2147483647]}
 DEGREES(si) -> int number/int32 {[-2147483648 2147483647]}
 DEGREES(i) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DEGREES(bi) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
-DEGREES(d52) -> unknown unsupported-expression: DEGREES(d52): DEGREES and RADIANS of a decimal or money are not modelled.
-DEGREES(d380) -> unknown unsupported-expression: DEGREES(d380): DEGREES and RADIANS of a decimal or money are not modelled.
-DEGREES(d3838) -> unknown unsupported-expression: DEGREES(d3838): DEGREES and RADIANS of a decimal or money are not modelled.
-DEGREES(n102) -> unknown unsupported-expression: DEGREES(n102): DEGREES and RADIANS of a decimal or money are not modelled.
-DEGREES(m) -> unknown unsupported-expression: DEGREES(m): DEGREES and RADIANS of a decimal or money are not modelled.
-DEGREES(sm) -> unknown unsupported-expression: DEGREES(sm): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(d52) -> decimal(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+DEGREES(d380) -> decimal(38,18) number/decimal null:arithmetic-overflow {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+DEGREES(d3838) -> decimal(38,38) number/decimal null:arithmetic-overflow {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+DEGREES(n102) -> numeric(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+DEGREES(m) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+DEGREES(sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 DEGREES(f) -> float number/float null:arithmetic-overflow
 DEGREES(r) -> float number/float
 DEGREES(f24) -> float number/float
@@ -2559,22 +2559,22 @@ DEGREES(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelle
 DEGREES(j) -> unknown (no unknown recorded)
 DEGREES(1) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
 DEGREES(12345) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
-DEGREES(2.50) -> unknown unsupported-expression: DEGREES(2.50): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES(2.50) -> numeric(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
 DEGREES('ab') -> unknown unsupported-expression: DEGREES('ab'): an argument of this type is not modelled.
 DEGREES(N'ab') -> unknown unsupported-expression: DEGREES(N'ab'): an argument of this type is not modelled.
 DEGREES(1e0) -> float number/float null:arithmetic-overflow
-DEGREES($1) -> unknown unsupported-expression: DEGREES($1): DEGREES and RADIANS of a decimal or money are not modelled.
+DEGREES($1) -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 RADIANS(bt) -> float number/float
 RADIANS(ti) -> int number/int32 {[-2147483648 2147483647]}
 RADIANS(si) -> int number/int32 {[-2147483648 2147483647]}
 RADIANS(i) -> int number/int32 {[-2147483648 2147483647]}
 RADIANS(bi) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-RADIANS(d52) -> unknown unsupported-expression: RADIANS(d52): DEGREES and RADIANS of a decimal or money are not modelled.
-RADIANS(d380) -> unknown unsupported-expression: RADIANS(d380): DEGREES and RADIANS of a decimal or money are not modelled.
-RADIANS(d3838) -> unknown unsupported-expression: RADIANS(d3838): DEGREES and RADIANS of a decimal or money are not modelled.
-RADIANS(n102) -> unknown unsupported-expression: RADIANS(n102): DEGREES and RADIANS of a decimal or money are not modelled.
-RADIANS(m) -> unknown unsupported-expression: RADIANS(m): DEGREES and RADIANS of a decimal or money are not modelled.
-RADIANS(sm) -> unknown unsupported-expression: RADIANS(sm): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(d52) -> decimal(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+RADIANS(d380) -> decimal(38,18) number/decimal null:arithmetic-overflow {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+RADIANS(d3838) -> decimal(38,38) number/decimal {digits=38,38 [-0.99999999999999999999999999999999999999 0.99999999999999999999999999999999999999]}
+RADIANS(n102) -> numeric(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
+RADIANS(m) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
+RADIANS(sm) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 RADIANS(f) -> float number/float
 RADIANS(r) -> float number/float
 RADIANS(f24) -> float number/float
@@ -2599,11 +2599,11 @@ RADIANS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelle
 RADIANS(j) -> unknown (no unknown recorded)
 RADIANS(1) -> int number/int32 {[-2147483648 2147483647]}
 RADIANS(12345) -> int number/int32 {[-2147483648 2147483647]}
-RADIANS(2.50) -> unknown unsupported-expression: RADIANS(2.50): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS(2.50) -> numeric(38,18) number/decimal {digits=38,18 [-99999999999999999999.999999999999999999 99999999999999999999.999999999999999999]}
 RADIANS('ab') -> unknown unsupported-expression: RADIANS('ab'): an argument of this type is not modelled.
 RADIANS(N'ab') -> unknown unsupported-expression: RADIANS(N'ab'): an argument of this type is not modelled.
 RADIANS(1e0) -> float number/float
-RADIANS($1) -> unknown unsupported-expression: RADIANS($1): DEGREES and RADIANS of a decimal or money are not modelled.
+RADIANS($1) -> money number/decimal {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
 PI() -> float number/float
 GREATEST(bt, bt) -> bit boolean
 GREATEST(ti, ti) -> tinyint number/uint8 {[0 255]}
