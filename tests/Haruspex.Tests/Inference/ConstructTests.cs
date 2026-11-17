@@ -185,7 +185,7 @@ public class ConstructTests
     // ---- sources and joins --------------------------------------------------------------------------
 
     [Theory]
-    [InlineData("STRING_SPLIT(N'a,b', N',') AS s")]
+    [InlineData("REGEXP_SPLIT_TO_TABLE(N'a,b', N',') AS s")]
     [InlineData("otherdb.dbo.t AS s")]
     [InlineData("otherdb.dbo.f(1) AS s")]
     public void A_source_not_modelled_makes_its_columns_unknown(string from) =>

@@ -1,7 +1,3 @@
-using System.Globalization;
-using Haruspex.DifferentialTests.Server;
-using Microsoft.Data.SqlClient;
-
 namespace Haruspex.DifferentialTests;
 
 // The scalar regular-expression functions of SQL Server 2025: REGEXP_REPLACE, REGEXP_SUBSTR, REGEXP_INSTR and REGEXP_COUNT, and
@@ -151,19 +147,5 @@ public partial class FunctionObservationTests
         Assert.Equal(
             "a int, b varchar(10), c varchar(8000), d int",
             await Describe($"SELECT REGEXP_INSTR(s, 'x', 1, 1, 0, 'ic', 0) AS a, REGEXP_SUBSTR(s, 'x', 1, 1, '', 0) AS b, REGEXP_REPLACE(s, 'x', 'y', 1, 0, 'mi') AS c, REGEXP_COUNT(s, 'x', 1, '') AS d FROM {Row}"));
-    }
-
-    /// <summary>Whether a query runs in the scratch database: <c>ok</c>, or the number of the error it gives.</summary>
-    private static async Task<string> Outcome(ScratchDatabase scratch, string query, CancellationToken token)
-    {
-        try
-        {
-            await scratch.ExecuteAsync(query, token);
-            return "ok";
-        }
-        catch (SqlException error)
-        {
-            return error.Number.ToString(CultureInfo.InvariantCulture);
-        }
     }
 }

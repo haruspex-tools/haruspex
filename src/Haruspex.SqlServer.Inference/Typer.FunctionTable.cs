@@ -272,6 +272,7 @@ internal sealed partial class Typer
 
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
+        Typing(RowsetFunctions.StringSplit, (2, 3), "value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1", [], ["String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked", "String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there"], null, readsOnlyItsArguments: false),
         Typing(RowsetFunctions.OpenJson, null, "its WITH columns as declared, or key, value and type", [], ["Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short", "Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types"], null, readsOnlyItsArguments: false),
     ];
 
@@ -339,13 +340,14 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// An int a function gives only within a range the engine fixes: its least and greatest values are those, in place of int's
-    /// own, from the engine (<see cref="IrFactSourceKind.Engine"/>, named by the function). The function table applies it,
+    /// An integer a function gives only within a range the engine fixes: its least and greatest values are those, in place of its
+    /// type's own, from the engine (<see cref="IrFactSourceKind.Engine"/>, named by the function). The function table applies it,
     /// beside the rule it states: ASCII's byte, 0 to 255, whatever the character or collation, since it reads the string as
     /// varchar (observed: Ascii_is_a_byte_from_0_to_255_whatever_the_character_or_collation); ISDATE's and ISJSON's 0 or 1
-    /// (Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null).
+    /// (Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null); REGEXP_INSTR's and REGEXP_COUNT's from 0; and STRING_SPLIT's
+    /// ordinal, a bigint from 1.
     /// </summary>
-    private static Value Within(Value value, int least, int greatest, string function)
+    private static Value Within(Value value, long least, long greatest, string function)
     {
         if (value.Shape is not ScalarShape scalar)
             return value;

@@ -250,4 +250,47 @@ internal sealed partial class Typer
             return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: its arguments must be of one integer type, or decimals.", at));
         return new LocalRelationValues(["value"], [Typed(type, [], reference)], null);
     }
+
+    // ---- STRING_SPLIT -----------------------------------------------------------------------------------------------------
+
+    /// <summary>The least compatibility level that has <c>STRING_SPLIT</c>.</summary>
+    private const int StringSplitLevel = 130;
+
+    /// <summary>
+    /// <c>STRING_SPLIT(s, separator [, 1])</c> in FROM: <c>value</c>, s's type made varying, of its length, max staying max,
+    /// <c>nvarchar</c> if the separator is; never null, since a NULL string gives no rows and an empty piece is <c>''</c>. With
+    /// the literal 1, <c>ordinal</c> too, a bigint from 1. A NULL separator, or one longer than a character, is an error (observed:
+    /// String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked). Below compatibility level
+    /// 130 SQL Server doesn't find it (observed: String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there), so it
+    /// is unknown in a project known to be below; at a level not known it is typed, since wherever it runs it gives these
+    /// columns (<c>docs/decisions/0067-a-function-a-compatibility-level-lacks-is-unknown-only-at-a-level-known-to-lack-it.md</c>).
+    /// </summary>
+    /// <param name="symbol">The call, bound.</param>
+    /// <param name="scope">The scope its arguments are read in.</param>
+    private LocalRelationValues StringSplit(SplitCall symbol, ReadScope scope)
+    {
+        var reference = symbol.Syntax;
+        var at = At(reference);
+        if (model.Settings?.CompatibilityLevel is < StringSplitLevel and var level)
+        {
+            return LocalRelationValues.Unknown(Unsupported(
+                IrUnknownReason.UnsupportedSource,
+                $"STRING_SPLIT needs compatibility level {StringSplitLevel}; at the project's, {level}, SQL Server doesn't find it (208).",
+                at));
+        }
+
+        if (reference.Parameters.Count is not (2 or 3) || symbol.Columns is not { } columns)
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: SQL Server reads a string, a separator, and 0 or 1 written as it is.", at));
+
+        var (values, unknown) = Arguments(reference.Parameters.Take(2), scope);
+        if (unknown is not null)
+            return LocalRelationValues.Unknown((UnknownShape)unknown.Shape);
+        if (StringOf(values[0]) is not { } text || StringOf(values[1]) is not { } separator)
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: STRING_SPLIT of a value that is not a string is not modelled.", at));
+
+        var value = Typed(ScalarType.CharacterString(text.IsNational || separator.IsNational, varying: true, text.IsMax ? -1 : text.Length), [], reference);
+        return columns.Count == 1
+            ? new LocalRelationValues(columns, [value], null)
+            : new LocalRelationValues(columns, [value, Within(Typed(ScalarType.Of(BuiltInType.BigInt), [], reference), 1, long.MaxValue, "STRING_SPLIT")], null);
+    }
 }

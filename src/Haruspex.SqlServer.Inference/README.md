@@ -1828,6 +1828,20 @@ its arguments' one integer type, or of the type `COALESCE` gives decimals all na
 `numeric`) included, is an error (5373), and is not modelled. A NULL argument, or a step the wrong way, gives no rows
 (`Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument`). Many rows.
 
+### `STRING_SPLIT`
+
+In `FROM`, a join or `APPLY` it is a relation (`Typer.StringSplit`, bound as `GENERATE_SERIES` is) of `value`: the string's
+type made varying, of its length (`char(5)` gives `varchar(5)`), max staying max, `nvarchar` if the separator is; never null,
+since a NULL string gives no rows and an empty piece is `''`. With the literal 1 as its third argument it has `ordinal` too, a
+`bigint` from 1 (`min` 1 `from` `{ "engine": "STRING_SPLIT" }`); with 0 or NULL, or without it, it hasn't. Any other third
+argument is an error (8748 for one that isn't a literal, 4199 for another literal), and so is a NULL separator or one longer
+than a character (214); a string that isn't a string is refused (8116) and not modelled
+(`String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked`). Many rows. It needs
+compatibility level 130 (208 below it), so in a project whose level is known to be below it is unknown (`unsupported-source`),
+and at a level not known it is typed, since a statement that can't find it fails rather than giving other columns
+(`String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there`;
+[decision 0067](../../docs/decisions/0067-a-function-a-compatibility-level-lacks-is-unknown-only-at-a-level-known-to-lack-it.md)).
+
 ## Window functions
 
 `Typer.Windows.cs` reads them. A window is computed for each row the query returns, after grouping, so its
@@ -2252,6 +2266,8 @@ and `SUM`"). For the IR:
 - The date functions never have `arithmetic-overflow`: their overflows are errors under any session options. Ranking
   functions are never null; `COUNT` over a window keeps `count-overflow` as `COUNT` does.
 - `GENERATE_SERIES` is a table source of one column, `value`, never null, of its arguments' type.
+- `STRING_SPLIT` is a table source of `value`, never null, of its string's type, and `ordinal`, a `bigint` from 1, when asked
+  for; unknown in a project whose compatibility level is known to be below 130.
 
 ### Decimal arithmetic, `AVG` and the numeric functions
 

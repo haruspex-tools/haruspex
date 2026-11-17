@@ -53,6 +53,7 @@ internal sealed partial class Typer
         TableFunctionCall call => TableFunction(call, scope.In(call.Arguments)),
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),
+        SplitCall split => StringSplit(split, scope.In(split.Arguments)),
         TemporaryTable temporary => Temporary(temporary.Local, scope.State),
         TableVariable variable => AsWritten(variable.Local, TableVariableValues(variable.Declaration), scope.State),
     };

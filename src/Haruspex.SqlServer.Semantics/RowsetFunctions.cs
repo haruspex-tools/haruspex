@@ -9,6 +9,9 @@ public static class RowsetFunctions
     /// <summary><c>OPENJSON</c>.</summary>
     public static readonly BuiltInFunction OpenJson = new("openjson", FunctionForm.Rowset);
 
+    /// <summary><c>STRING_SPLIT</c>.</summary>
+    public static readonly BuiltInFunction StringSplit = new("string_split", FunctionForm.Rowset);
+
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [GenerateSeries, OpenJson];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [GenerateSeries, OpenJson, StringSplit];
 }

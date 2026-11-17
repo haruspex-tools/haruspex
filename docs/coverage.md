@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 127 |
-| Not in it, and unknown where they are called | 211 |
+| In the catalogue | 128 |
+| Not in it, and unknown where they are called | 210 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 162 |
@@ -402,7 +402,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Relational operators
 
-2 of 8 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/relational-operators-transact-sql?view=sql-server-ver17).
+3 of 8 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/relational-operators-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -413,7 +413,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `OPENXML` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 | `OPENJSON` | `rowset.openjson` | its WITH columns as declared, or key, value and type |  | [Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs), [Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs) |
 | `PREDICT` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
-| `STRING_SPLIT` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
+| `STRING_SPLIT` | `rowset.string_split` | value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1 |  | [String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked](../tests/Haruspex.DifferentialTests/FunctionObservationTests.StringSplit.cs), [String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there](../tests/Haruspex.DifferentialTests/FunctionObservationTests.StringSplit.cs) |
 
 ### Replication functions
 
@@ -805,7 +805,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `CROSS APPLY` | `UnqualifiedJoinType.CrossApply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#apply) | Both sides' columns as they are. |
 | `OUTER APPLY` | `UnqualifiedJoinType.OuterApply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#apply) | The right side's columns may be NULL. |
 | `table-valued function` | `SchemaObjectFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#table-valued-functions) | A function of the project's returns its declared or inferred columns. |
-| `STRING_SPLIT, GENERATE_SERIES` | `GlobalFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#generate_series) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | GENERATE_SERIES gives value, of its arguments' type; STRING_SPLIT isn't modelled. |
+| `GENERATE_SERIES, STRING_SPLIT, REGEXP_SPLIT_TO_TABLE` | `GlobalFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#generate_series) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | GENERATE_SERIES gives value, of its arguments' type; STRING_SPLIT value, of its string's type, and ordinal with 1; REGEXP_MATCHES and REGEXP_SPLIT_TO_TABLE aren't modelled. |
 | `OPENJSON` | `OpenJsonTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#openjson) | Its WITH columns as declared, or key, value and type. |
 | `( DELETE … OUTPUT ) AS t` | `DataModificationTableReference` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | The nested write fires its own table's triggers, which aren't followed, so the INSERT it stands in ends what haruspex can list. |
 | `PIVOT` | `PivotedTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |

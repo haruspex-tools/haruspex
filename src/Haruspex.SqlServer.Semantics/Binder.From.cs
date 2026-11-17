@@ -167,7 +167,7 @@ public sealed partial class Binder
 
     /// <summary>
     /// The relation a derived table or a rowset in FROM is, with the alias its columns are qualified by: a derived table, a
-    /// table-valued function's call, a VALUES list, OPENJSON or GENERATE_SERIES. Each reads the enclosing query's scope, or an
+    /// table-valued function's call, a VALUES list, OPENJSON, GENERATE_SERIES or STRING_SPLIT. Each reads the enclosing query's scope, or an
     /// APPLY's left input's, never the sources beside it. Null for any other reference.
     /// </summary>
     private (string? Alias, RelationSymbol Relation)? Relation(Adding adding, TableReference reference)
@@ -209,6 +209,10 @@ public sealed partial class Binder
             case GlobalFunctionTableReference { Name.Value: var function } series
                 when BuiltInFunctions.Named(function, FunctionForm.Rowset) == RowsetFunctions.GenerateSeries:
                 return (series.Alias?.Value, new SeriesCall(series, QueryScope.Empty(adding.Outer, adding.Names)));
+
+            case GlobalFunctionTableReference { Name.Value: var function } split
+                when BuiltInFunctions.Named(function, FunctionForm.Rowset) == RowsetFunctions.StringSplit:
+                return (split.Alias?.Value, new SplitCall(split, QueryScope.Empty(adding.Outer, adding.Names), SplitCall.ColumnsOf(split)));
             default:
                 return null;
         }

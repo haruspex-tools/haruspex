@@ -1,4 +1,6 @@
+using System.Globalization;
 using Haruspex.DifferentialTests.Server;
+using Microsoft.Data.SqlClient;
 
 namespace Haruspex.DifferentialTests;
 
@@ -24,6 +26,20 @@ public partial class FunctionObservationTests(SqlServerFixture server)
         """;
 
     private async Task<string> Select(string query) => (await Run([Rows], query)).ToString();
+
+    /// <summary>Whether a query runs in a database of a test's own: <c>ok</c>, or the number of the error it gives.</summary>
+    private static async Task<string> Outcome(ScratchDatabase scratch, string query, CancellationToken token)
+    {
+        try
+        {
+            await scratch.ExecuteAsync(query, token);
+            return "ok";
+        }
+        catch (SqlException error)
+        {
+            return error.Number.ToString(CultureInfo.InvariantCulture);
+        }
+    }
 
     [Fact]
     public async Task A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow()
