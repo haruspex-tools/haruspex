@@ -5,7 +5,7 @@ someone chose each fixture to test one thing. A corpus is the other half: a body
 own reasons, run through haruspex unchanged, to measure coverage. The corpora come in two kinds:
 
 - **Vendored**: two of Microsoft's sample databases, copied into this folder, so that they are read on every build with no
-  network. The guide's worked examples and the project's README rest on them: the README's two examples are written over their
+  network. The guide's worked examples and the project's README rest on them: the README's examples are written over their
   tables, inferred over the whole sample by `WorkedExampleTests`, and run on SQL Server through the fixtures
   `wide-world-importers` and `adventure-works`, which copy the tables they read (`ShowcaseTests`). [The corpus figures](../../docs/corpus-figures.md)
   are what haruspex makes of them.

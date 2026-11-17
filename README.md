@@ -31,15 +31,14 @@ cut or round is caught first ([decision 0054](docs/decisions/0054-a-parameter-is
 and returns what comes back checked and typed: the result itself, or, for a procedure that also has `OUTPUT` parameters or
 return codes, or several result sets, an object naming each.
 
-Queries the application keeps in its own `.sql` files get the same: `"queries": "sql"` in `haruspex.json` types each file
-against the database project, with its parameters' types inferred from how it uses them (`where o.order_id = @order_id` makes
-`@order_id` the column's type), and gives it a function named for the file, which sends it through `sp_executesql`.
+Queries the application keeps in its own `.sql` files get the same: a function each, named for its file, with its parameters'
+types inferred from how the query uses them ([an example](#a-query-file-over-the-same-tables)).
 
 The functions belong on the server, since they take the connection and its credentials; the schemas and types, in their own
 file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes and
 `serverOnly` for Next.js.
 
-## Two examples on Microsoft's samples
+## Examples on Microsoft's sample databases
 
 Each example is written for this page over the real tables of a Microsoft sample kept in
 [`tests/corpus`](tests/corpus/README.md). A test fails if the code shown differs from what haruspex writes, and the
@@ -141,6 +140,64 @@ export async function getOrder(db: Queryable, params: types.GetOrderParams): Pro
   const result = await checked(GetOrderSchema, readJson(sets[0]), (issues) => new ResultError('Website.GetOrder', 'the results', issues))
   return result
 }
+```
+
+### A query file over the same tables
+
+An application's own query, kept in `sql/getOrderLines.sql` and named in `haruspex.json` by `"queries": "sql"`:
+
+```sql haruspex-query WideWorldImporters sql/getOrderLines.sql
+SELECT ol.OrderLineID AS id,
+       ol.Description AS description,
+       ol.Quantity AS quantity,
+       si.Brand AS brand
+FROM Sales.OrderLines AS ol
+JOIN Warehouse.StockItems AS si ON si.StockItemID = ol.StockItemID
+WHERE ol.OrderID = @OrderID
+ORDER BY ol.OrderLineID;
+```
+
+```ts haruspex-zod
+export const GetOrderLinesRowSchema = z.object({
+  id: z.int32(),
+  description: z.string().max(100),
+  quantity: z.int32(),
+  brand: z.string().max(50).nullable(),
+})
+export type GetOrderLinesRow = z.infer<typeof GetOrderLinesRowSchema>
+
+/** sql/getOrderLines.sql: its parameters, checked before anything is sent. */
+export const GetOrderLinesParamsSchema = z.strictObject({
+  OrderID: z.int32().nullable(),
+})
+export type GetOrderLinesParams = z.infer<typeof GetOrderLinesParamsSchema>
+
+/** sql/getOrderLines.sql: returns rows. */
+export const GetOrderLinesSchema = z.array(GetOrderLinesRowSchema)
+export type GetOrderLines = z.infer<typeof GetOrderLinesSchema>
+```
+
+`@OrderID` is declared nowhere: compared with `ol.OrderID`, it takes that column's type, `int`. `brand` is nullable here
+rather than optional: a row holds a NULL as `null`, where `FOR JSON` leaves the key out. The function sends the file's text through
+`sp_executesql`, declaring the parameter as it was typed:
+
+```ts haruspex-mssql
+/** Runs the query file sql/getOrderLines.sql. */
+export async function getOrderLines(db: Queryable, params: types.GetOrderLinesParams): Promise<types.GetOrderLines> {
+  const p = await checked(GetOrderLinesParamsSchema, params, (issues) => new ParameterError('sql/getOrderLines.sql', issues))
+  const request = db.request()
+  request.input('stmt', sql.NVarChar(sql.MAX), 'SELECT ol.OrderLineID AS id,\n       ol.Description AS description,\n       ol.Quantity AS quantity,\n       si.Brand AS brand\nFROM Sales.OrderLines AS ol\nJOIN Warehouse.StockItems AS si ON si.StockItemID = ol.StockItemID\nWHERE ol.OrderID = @OrderID\nORDER BY ol.OrderLineID;\n')
+  request.input('params', sql.NVarChar(sql.MAX), '@OrderID int')
+  request.input('OrderID', sql.Int, p.OrderID)
+  const response = await request.execute('sys.sp_executesql')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  const result = await checked(GetOrderLinesSchema, readRows(sets[0]), (issues) => new ResultError('sql/getOrderLines.sql', 'the results', issues))
+  return result
+}
+```
+
+```ts
+const lines = await getOrderLines(pool, { OrderID: 42 })   // the order's lines, typed and checked
 ```
 
 ### A bill of materials as a tree, from AdventureWorks
@@ -263,8 +320,7 @@ On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 **Pre-release.** The command line, the generated code and the IR (the record of what haruspex inferred) will change without
 notice. Don't depend on it yet.
 
-Available now, as well as procedures: **query files**, queries kept in the application's own `.sql` files, typed against the
-database project as procedures are, each with a function, its parameters' types inferred from how the query uses them
+Available now, as well as procedures: **query files**, queries kept in the application's own `.sql` files
 ([the configuration](docs/configuration.md#query-files-queries)).
 
 Next: **packages**, rather than building from source.

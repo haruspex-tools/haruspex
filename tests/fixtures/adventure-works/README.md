@@ -1,7 +1,7 @@
 # Fixture: adventure-works
 
 A scalar function that calls itself to build a tree with `FOR JSON PATH`, over real tables: a product's bill of materials, to
-any depth. It is the second example in [the project's README](../../../README.md#two-examples-on-microsofts-samples), and holds that example to
+any depth. It is the last example in [the project's README](../../../README.md#examples-on-microsofts-sample-databases), and holds that example to
 a real server.
 
 Unlike the other fixtures, its tables are not invented. They are two of the tables of Microsoft's AdventureWorks sample,

@@ -183,6 +183,6 @@ after it. Data that breaks a claim fails at the boundary, loudly, rather than so
   compiled in CI.
 - **Your own database:** put a `haruspex.json` beside its project, as [the configuration reference](configuration.md) shows,
   and run `generate` from that folder, as [the command line](../src/Haruspex.Cli/README.md) says.
-- **A `FOR JSON` procedure:** the README's [two examples](../README.md#two-examples-on-microsofts-samples) show nested objects,
-  arrays and a recursive tree, and the function for one of them.
+- **A `FOR JSON` procedure:** the README's [examples](../README.md#examples-on-microsofts-sample-databases) show nested objects,
+  arrays and a recursive tree, the function for one of them, and a query file.
 - **Everything else:** [the documentation's index](README.md) says what each page is for.

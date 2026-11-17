@@ -115,6 +115,12 @@ An example may instead be written over one of the vendored corpora, named after 
 it is read beside the corpus's scripts, so it can use the sample's own tables, and only the procedures it defines are inferred.
 The project's README shows haruspex this way, and `ShowcaseTests` holds each such example to a fixture that runs it on SQL Server.
 
+A query file is shown with `sql haruspex-query`, a corpus and the file's path after the mark
+(`sql haruspex-query WideWorldImporters sql/getOrderLines.sql`): the block is the file, typed against the corpus alone as
+`"queries"` in a config file would type it, from the folder the path starts in. Its outputs are shown as above, but for runs and
+checks, whose project is a database; `ShowcaseTests` holds it to the file of the same path in a fixture, which the fixture's runs
+call through its function.
+
 When an example's output changes, the test prints what haruspex now gives. Read it as a claim about SQL Server, as you would
 a snapshot, before pasting it in: the example teaches whatever it shows.
 

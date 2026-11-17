@@ -66,7 +66,7 @@ A few words have a fixed meaning everywhere in the documentation.
 
 | Page | What it is for |
 |---|---|
-| [README](../README.md) | What haruspex is, what an application gets from it, two examples on Microsoft's samples, its other uses, what it guarantees, its status and roadmap, how to install and run it, and who it is not for. |
+| [README](../README.md) | What haruspex is, what an application gets from it, examples on Microsoft's samples (two procedures and a query file), its other uses, what it guarantees, its status and roadmap, how to install and run it, and who it is not for. |
 | [Five minutes with AdventureWorks](quick-start.md) | A first run, from a fresh clone, that a test runs as written. |
 | [The database module](database-module.md) | The generated functions: calling a procedure, what comes back, the parameters' checks, the three failures and where they run; and reading results with the schemas alone. |
 | [The command line](../src/Haruspex.Cli/README.md) | `haruspex generate` and `haruspex check`: their arguments and options, several modules at once, what they print, and their exit codes. |
