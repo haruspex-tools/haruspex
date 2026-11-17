@@ -51,18 +51,10 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
         var instead = char.ToUpperInvariant(otherwise[0]) + otherwise[1..] + ".";
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(reserved);
-        var text = name;
-        foreach (var rule in Replace)
+        if (Replaced(name, out var slow) is not { } text)
         {
-            try
-            {
-                text = rule.Pattern.Replace(text, rule.With);
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                error = $"the replacement /{rule.Pattern}/ took too long on it.";
-                return null;
-            }
+            error = $"the replacement /{slow?.Pattern}/ took too long on it.";
+            return null;
         }
 
         string result;
@@ -96,6 +88,30 @@ public sealed record NamingRules(EquatableArray<NamingReplacement> Replace, Nami
 
         error = null;
         return result;
+    }
+
+    /// <summary>A name with every <c>replace</c> rule applied in turn, before the prefix and the case style; or null, when a rule took too long on it.</summary>
+    public string? Replaced(string name) => Replaced(name, out _);
+
+    private string? Replaced(string name, out NamingReplacement? slow)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        var text = name;
+        foreach (var rule in Replace)
+        {
+            try
+            {
+                text = rule.Pattern.Replace(text, rule.With);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                slow = rule;
+                return null;
+            }
+        }
+
+        slow = null;
+        return text;
     }
 
     /// <summary>

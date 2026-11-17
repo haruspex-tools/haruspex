@@ -293,7 +293,7 @@ HAR4302
 haruspex.json:1:87: error HAR4302: naming: the recursive function lib.tree#'s type cannot be named: "case": "preserve" gives 'tree#', which is not a valid identifier (an ASCII letter, _ or $, then letters, digits, _ or $). Add a replacement, or give it a name in "procedures". Change the naming rules so that they name it.
 
 HAR4303
-haruspex.json:1:46: error HAR4303: schemas.lib: "GetBook" would name both the procedure lib.get_book and the procedure lib.get_book#. Generated names must not clash: add a naming "replace" rule that tells their names apart (such as { "pattern": "#$", "with": "Row" }), or give one of them its own name with a "name" override in "procedures".
+haruspex.json:1:46: error HAR4303: schemas.lib: "GetBook" would name both the procedure lib.get_book and the procedure lib.get_book#. Generated names must not clash: add a naming "replace" rule for where their names differ (nothing against "#"), such as { "pattern": "#", "with": "_hash_" } with a word of your own for "hash", or give one of them its own name with a "name" override in "procedures".
 
 HAR4304
 haruspex.json:1:119: warning HAR4304: procedures["lib.get_book"].name: the name "GetBook" is what the naming rules give lib.get_book already. Remove it.

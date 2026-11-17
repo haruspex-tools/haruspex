@@ -307,22 +307,41 @@ internal sealed class NameSettler(
 
         var sameSchema = !IsQuery(first.Owner) && !IsQuery(second.Owner)
             && TrySplit(first.Owner, out var a, out _) && TrySplit(second.Owner, out var b, out _) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-        var ways = IsQuery(first.Owner) || IsQuery(second.Owner) ? Ways(first, second) : SqlNames(first, second, sameSchema);
+        var ways = IsQuery(first.Owner) || IsQuery(second.Owner) ? Ways(first, second)
+            : sameSchema && !first.IsType && !second.IsType ? Replacing(first.Owner, second.Owner)
+            : SqlNames(first, second, sameSchema);
         var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
         problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)second.At ?? (DiagnosticLocation?)first.At ?? config.Location,
             $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
     }
 
-    /// <summary>The ways to part two names from SQL: a prefix for two schemas, a replacement rule within one, or an override.</summary>
+    /// <summary>
+    /// The ways to part two names from SQL that aren't two procedures of one schema: a prefix for two schemas, and an override.
+    /// A type's name is built on its procedure's, so no rule is built from it (<see cref="Replacing"/>).
+    /// </summary>
     private static List<string> SqlNames(Holder first, Holder second, bool sameSchema) =>
     [
-        sameSchema
-            ? "add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" })"
-            : "give one of their schemas a \"prefix\" in \"schemas\"",
+        .. sameSchema ? Array.Empty<string>() : ["give one of their schemas a \"prefix\" in \"schemas\""],
         first.IsType || second.IsType
             ? "give one its own name with an override in \"procedures\" (\"name\" for a procedure, \"paths\": { \"<path>\": { \"name\": … } } for a type in its results)"
             : "give one of them its own name with a \"name\" override in \"procedures\"",
     ];
+
+    /// <summary>
+    /// The ways to part two procedures of one schema: the naming <c>replace</c> rule built from where their names differ, checked
+    /// to part them, and an override; or the override alone, saying why no single rule can (<see cref="ReplacementHint"/>). A
+    /// rule goes after the schema's own, when it has some, which is where it was checked.
+    /// </summary>
+    private List<string> Replacing(string first, string second)
+    {
+        const string Override = "give one of them its own name with a \"name\" override in \"procedures\"";
+        TrySplit(first, out var schema, out var one);
+        TrySplit(second, out _, out var other);
+        if (ReplacementHint.For(config.NamingFor(schema), config.Reserved, one, other, out var whyNot) is not { } suggestion)
+            return [$"{Override} ({whyNot})"];
+        var to = config.Schema(schema)?.Naming?.Replace is { Count: > 0 } ? $"add a \"replace\" rule to the \"naming\" of schemas.{schema}" : "add a naming \"replace\" rule";
+        return [$"{to} for where their names differ {suggestion.Where}, such as {suggestion.Rule} with a word of your own for \"{suggestion.Word}\"", Override];
+    }
 
     /// <summary>
     /// The ways to part a query file's name from another's: a query file is named by its file, which is renamed, and a procedure

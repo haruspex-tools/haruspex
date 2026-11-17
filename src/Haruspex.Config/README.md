@@ -65,6 +65,12 @@ read. Inference keys each type by its identity (the object and the path that own
 `identity`), and leaves each procedure's name as its id; this layer replaces both. Inference settling names itself would mean
 breaking clashes with numbers, which would make names depend on which other objects exist.
 
+**Why a clash's hint is built and checked.** A clash is an error the reader resolves in the config, so its hint must work.
+For two procedures of one schema, `ReplacementHint` builds the `replace` rule from where the two names differ, after the
+rules already written (`order$lines` against `order#lines`: `{ "pattern": "#", "with": "_hash_" }`), runs the rules with it
+added to check that it parts them, and otherwise says why no single rule can. A fixed example rule matched neither name of
+the clash a real application met.
+
 **Why overrides come before naming.** A path override is written in terms of the shape, which doesn't depend on names,
 and a `name` override must be known before the types under it are named, since their names build on it.
 

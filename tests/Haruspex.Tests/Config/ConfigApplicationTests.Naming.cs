@@ -79,8 +79,53 @@ public partial class ConfigApplicationTests
 
         Assert.IsType<Failed<IrDocument>>(run.Applied);
         Assert.Equal(
-            "haruspex.json: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\".",
+            "haruspex.json: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule for where their names differ (nothing against \"#\"), such as { \"pattern\": \"#\", \"with\": \"_hash_\" } with a word of your own for \"hash\", or give one of them its own name with a \"name\" override in \"procedures\".",
             run.Error);
+    }
+
+    [Theory]
+    [InlineData("order$lines", "order#lines", "(\"#\" against \"$\")", "{ \"pattern\": \"#\", \"with\": \"_hash_\" }")]
+    [InlineData("order_lines", "order__lines", "(\"__\" against \"_\")", "{ \"pattern\": \"__\", \"with\": \"_underscore_underscore_\" }")]
+    [InlineData("order-lines", "order lines", "(\" \" against \"-\")", "{ \"pattern\": \" \", \"with\": \"_space_\" }")]
+    [InlineData("order$lines", "order^lines", "(\"$\" against \"^\")", "{ \"pattern\": \"\\\\$\", \"with\": \"_dollar_\" }")]
+    public void A_clash_s_hint_is_a_rule_built_from_where_the_names_differ_and_the_rule_resolves_it(string one, string other, string where, string rule)
+    {
+        // Two names one case style makes the same, which differ only in characters it drops. The rule the hint suggests
+        // replaces the one side's characters with a word, and applied to the config it removes the clash.
+        var procedures = $"CREATE PROCEDURE [dbo].[{one}] AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[{other}] AS SELECT 2 AS a;\nGO\n";
+
+        var error = Apply(procedures, "{}").Error;
+        Assert.Contains($"add a naming \"replace\" rule for where their names differ {where}, such as {rule} with a word of your own for ", error, StringComparison.Ordinal);
+
+        var suggested = System.Text.RegularExpressions.Regex.Match(error, @"such as (\{ ""pattern"": "".*?"", ""with"": "".*?"" \})").Groups[1].Value;
+        var resolved = Apply(procedures, $$"""{ "naming": { "replace": [{{suggested}}] } }""");
+        Assert.Empty(resolved.Problems);
+        Assert.Equal(2, resolved.Document.Objects.Select(o => o.Name).Distinct().Count());
+    }
+
+    [Fact]
+    public void A_clash_s_hint_goes_to_the_schema_s_own_rules_when_it_has_some_and_resolves_it_there()
+    {
+        // A rule added after the schema's own runs on what they leave: here "order lines" against "order#lines".
+        const string Procedures = "CREATE PROCEDURE [dbo].[order$lines] AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[order#lines] AS SELECT 2 AS a;\nGO\n";
+        const string Own = """{ "pattern": "\\$", "with": " " }""";
+
+        var error = Apply(Procedures, $$"""{ "schemas": { "dbo": { "include": ["*"], "naming": { "replace": [{{Own}}] } } } }""").Error;
+        Assert.Contains("add a \"replace\" rule to the \"naming\" of schemas.dbo for where their names differ (\"#\" against \" \"), such as { \"pattern\": \"#\", \"with\": \"_hash_\" }", error, StringComparison.Ordinal);
+
+        var resolved = Apply(Procedures, $$"""{ "schemas": { "dbo": { "include": ["*"], "naming": { "replace": [{{Own}}, { "pattern": "#", "with": "_hash_" }] } } } }""");
+        Assert.Equal(["OrderHashLines", "OrderLines"], resolved.Document.Objects.Select(o => o.Name));
+    }
+
+    [Theory]
+    [InlineData("""{ "naming": { "replace": [{ "pattern": "#$", "with": "" }] } }""", "their names are both \"person\" once the \"replace\" rules have run, so no further rule tells them apart")]
+    [InlineData("""{ "naming": { "replace": [{ "pattern": "^p(.*)#$", "with": "P$1" }] } }""", "no \"replace\" rule tells \"person\" from \"Person\" without rewriting letters or digits")]
+    public void A_clash_no_single_rule_can_resolve_says_so_and_suggests_none(string config, string why)
+    {
+        var error = Apply("CREATE PROCEDURE dbo.person AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[person#] AS SELECT 2 AS a;\nGO\n", config).Error;
+
+        Assert.EndsWith($"Generated names must not clash: give one of them its own name with a \"name\" override in \"procedures\" ({why}).", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("such as", error, StringComparison.Ordinal);
     }
 
     [Fact]
