@@ -1,0 +1,46 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "haruspex",
+          "version": "0.0.0-test",
+          "informationUri": "https://github.com/sharpblue/haruspex",
+          "rules": [
+            {
+              "id": "HAR6004",
+              "shortDescription": {
+                "text": "The source isn't there"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6004.md",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": false,
+          "exitCode": 2
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "HAR6004",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "directory not found: b/db"
+          },
+          "properties": {
+            "module": "b/haruspex.json"
+          }
+        }
+      ]
+    }
+  ]
+}

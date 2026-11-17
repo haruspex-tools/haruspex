@@ -1,0 +1,51 @@
+{
+  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "version": 1,
+  "command": "generate",
+  "exitCode": 2,
+  "refused": [],
+  "modules": [
+    {
+      "config": "a/haruspex.json",
+      "out": "a/out",
+      "exitCode": 0,
+      "typed": {
+        "procedures": 1,
+        "queryFiles": 0
+      },
+      "written": [
+        "a/out/haruspex.ir.json",
+        "a/out/haruspex.zod.ts"
+      ],
+      "unknowns": {
+        "count": 0,
+        "byReason": []
+      },
+      "sinceLastRun": {
+        "compared": false,
+        "why": "there was no earlier output"
+      },
+      "diagnostics": []
+    },
+    {
+      "config": "b/haruspex.json",
+      "out": null,
+      "exitCode": 2,
+      "typed": null,
+      "written": [],
+      "unknowns": null,
+      "sinceLastRun": null,
+      "diagnostics": [
+        {
+          "code": "HAR6004",
+          "severity": "error",
+          "message": "directory not found: b/db",
+          "file": null,
+          "line": null,
+          "column": null,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6004.md"
+        }
+      ]
+    }
+  ]
+}

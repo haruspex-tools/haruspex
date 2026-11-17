@@ -1,0 +1,29 @@
+{
+  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "version": 1,
+  "command": "generate",
+  "exitCode": 1,
+  "refused": [],
+  "modules": [
+    {
+      "config": null,
+      "out": null,
+      "exitCode": 1,
+      "typed": null,
+      "written": [],
+      "unknowns": null,
+      "sinceLastRun": null,
+      "diagnostics": [
+        {
+          "code": "HAR1001",
+          "severity": "error",
+          "message": "Incorrect syntax near 'FROM'.",
+          "file": "db/broken.sql",
+          "line": 1,
+          "column": 42,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR1001.md"
+        }
+      ]
+    }
+  ]
+}

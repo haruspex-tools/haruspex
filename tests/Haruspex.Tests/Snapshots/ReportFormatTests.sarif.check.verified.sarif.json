@@ -1,0 +1,218 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "haruspex",
+          "version": "0.0.0-test",
+          "informationUri": "https://github.com/sharpblue/haruspex",
+          "rules": [
+            {
+              "id": "HAR2009",
+              "shortDescription": {
+                "text": "A column that can't be found or is ambiguous"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2009.md",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "HAR2013",
+              "shortDescription": {
+                "text": "JSON whose shape isn't visible"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md",
+              "defaultConfiguration": {
+                "level": "note"
+              }
+            },
+            {
+              "id": "HAR4204",
+              "shortDescription": {
+                "text": "Result sets only a declaration can give"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR4204.md",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "HAR6014",
+              "shortDescription": {
+                "text": "What the module claims would change"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "HAR6016",
+              "shortDescription": {
+                "text": "A selected procedure's result sets are unknown"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6016.md",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "exitCode": 1
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "HAR4204",
+          "ruleIndex": 2,
+          "level": "warning",
+          "message": {
+            "text": "kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "haruspex.json"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR2009",
+          "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "kennel.get_dog results[0][].nickname: The table kennel.dog has no column nickname."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 26
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR2013",
+          "ruleIndex": 1,
+          "level": "note",
+          "message": {
+            "text": "kennel.list_dogs results[0][].notes: json_query(d.notes) reads JSON that is not built here, so its shape is unknown."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 26
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR6016",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "kennel.find_dogs: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or leave the procedure out of the selection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR6014",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "kennel.get_dog results[0][].name: became non-null"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 4,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR6014",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "kennel.list_dogs results[0][].name: became non-null"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "HAR6014",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "kennel.list_dogs results[0][].name: presence changed from omittedWhenNull to always"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/procedures.sql"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

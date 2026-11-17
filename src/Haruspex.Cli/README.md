@@ -71,6 +71,7 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 | `--verbose`, `-v` | Also list every note: each unknown, grouped by the procedure or query file it is in. |
 | `--quiet`, `-q` | Print errors only. |
 | `--color` | `auto` (the default: colour on a terminal, unless `NO_COLOR` is set), `always` or `never`. |
+| `--format` | `text` (the default), `json` for a tool, `sarif` for code scanning, or `github` for annotations in GitHub Actions (the default when `GITHUB_ACTIONS` is `true`). |
 
 Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
 and `haruspex check --help` list the same.

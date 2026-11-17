@@ -1,0 +1,56 @@
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "haruspex",
+          "version": "0.0.0-test",
+          "informationUri": "https://github.com/sharpblue/haruspex",
+          "rules": [
+            {
+              "id": "HAR1001",
+              "shortDescription": {
+                "text": "The SQL doesn't parse"
+              },
+              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR1001.md",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "exitCode": 1
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "HAR1001",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Incorrect syntax near 'FROM'."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "db/broken.sql"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 42
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

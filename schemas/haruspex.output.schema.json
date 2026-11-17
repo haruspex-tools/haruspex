@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "title": "What haruspex generate or haruspex check reports with --format json",
+  "description": "One document on standard output for a whole run. Version 1. A field may be added without a new version; one is removed, renamed or given another meaning only with a new version, so a tool checks \"version\". Paths are relative to the working directory when they are below it, with / between names on every platform. docs/command-line.md describes each field.",
+  "type": "object",
+  "required": ["version", "command", "exitCode", "refused", "modules"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "description": "This schema's address.", "type": "string" },
+    "version": { "description": "The version of this format.", "const": 1 },
+    "command": { "description": "The command that ran.", "enum": ["generate", "check"] },
+    "exitCode": { "description": "The run's exit code, as the process exits with: 0 success, 1 failed, 2 a usage error, 3 an internal fault.", "type": "integer", "minimum": 0 },
+    "refused": {
+      "description": "Why no module ran: options that can't go together, --all finding nothing, two modules sharing an output folder. Empty when the modules ran.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "modules": {
+      "description": "Each module's report, in the order they ran: one, or one for each config file --config names or --all finds.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/module" }
+    }
+  },
+  "$defs": {
+    "module": {
+      "type": "object",
+      "required": ["config", "out", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics"],
+      "additionalProperties": false,
+      "properties": {
+        "config": { "description": "The config file --config named or --all found; null when the run looked for one.", "type": ["string", "null"] },
+        "out": { "description": "The output folder, once settled; null when the run failed before.", "type": ["string", "null"] },
+        "exitCode": { "description": "The module's exit code.", "type": "integer", "minimum": 0 },
+        "typed": {
+          "description": "What the module types; null when the run failed before inferring.",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["procedures", "queryFiles"],
+              "additionalProperties": false,
+              "properties": {
+                "procedures": { "type": "integer", "minimum": 0 },
+                "queryFiles": { "type": "integer", "minimum": 0 }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "written": {
+          "description": "The files generate wrote, the IR first; empty for check and for a run that wrote nothing.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unknowns": {
+          "description": "The module's unknowns, counted by reason, most first; null when there is no module.",
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["count", "byReason"],
+              "additionalProperties": false,
+              "properties": {
+                "count": { "type": "integer", "minimum": 0 },
+                "byReason": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["reason", "code", "count"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "reason": { "description": "The reason, as the IR names it.", "type": "string" },
+                      "code": { "description": "The code of the note it is reported with; null for one only a declaration can resolve, reported as a warning instead.", "type": ["string", "null"], "pattern": "^HAR[0-9]{4}$" },
+                      "count": { "type": "integer", "minimum": 1 }
+                    }
+                  }
+                }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "sinceLastRun": {
+          "description": "For generate, what changed since the output folder was last written; null for check and for a run that wrote nothing.",
+          "oneOf": [
+            { "$ref": "#/$defs/compared" },
+            { "$ref": "#/$defs/notCompared" },
+            { "type": "null" }
+          ]
+        },
+        "diagnostics": {
+          "description": "Everything the run found, in the order it found it: errors, warnings and every note, whatever --verbose or --quiet ask of the text.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      }
+    },
+    "compared": {
+      "type": "object",
+      "required": ["compared", "changes", "newUnknowns", "resolvedUnknowns", "unchangedUnknowns", "rewritten"],
+      "additionalProperties": false,
+      "properties": {
+        "compared": { "const": true },
+        "changes": {
+          "description": "Each change of claim, as check reports it.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "object", "path", "before", "after", "text"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "description": "How the claim changed, such as became-nullable or values-added.", "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" },
+              "object": { "description": "The object's id; empty for a claim of the whole document.", "type": "string" },
+              "path": { "description": "Where in the object, in the IR's path syntax; empty for the object itself.", "type": "string" },
+              "before": { "description": "The claim before, in words, when the kind needs it.", "type": ["string", "null"] },
+              "after": { "description": "The claim after, in words, when the kind needs it.", "type": ["string", "null"] },
+              "text": { "description": "The change as the text report writes it.", "type": "string" }
+            }
+          }
+        },
+        "newUnknowns": { "type": "array", "items": { "$ref": "#/$defs/unknown" } },
+        "resolvedUnknowns": { "type": "array", "items": { "$ref": "#/$defs/unknown" } },
+        "unchangedUnknowns": { "type": "integer", "minimum": 0 },
+        "rewritten": {
+          "description": "The emitted files whose text changed though no claim did, or that the last run didn't write.",
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "notCompared": {
+      "type": "object",
+      "required": ["compared", "why"],
+      "additionalProperties": false,
+      "properties": {
+        "compared": { "const": false },
+        "why": { "description": "Why there was nothing to compare with, as the text report says it.", "type": "string" }
+      }
+    },
+    "unknown": {
+      "type": "object",
+      "required": ["object", "path", "reason", "code"],
+      "additionalProperties": false,
+      "properties": {
+        "object": { "type": "string" },
+        "path": { "type": "string" },
+        "reason": { "type": "string" },
+        "code": { "type": ["string", "null"], "pattern": "^HAR[0-9]{4}$" }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["code", "severity", "message", "file", "line", "column", "help"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "pattern": "^HAR[0-9]{4}$" },
+        "severity": { "enum": ["error", "warning", "note"] },
+        "message": { "description": "What is wrong and what to do; for a value in a JSON document, its path first, as the text report writes it.", "type": "string" },
+        "file": { "description": "The file it is in; null when it has no place.", "type": ["string", "null"] },
+        "line": { "description": "The line, from 1; null when it has none.", "type": ["integer", "null"], "minimum": 1 },
+        "column": { "description": "The column, from 1; null when it has none.", "type": ["integer", "null"], "minimum": 1 },
+        "help": { "description": "The code's page.", "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

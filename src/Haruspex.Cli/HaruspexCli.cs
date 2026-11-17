@@ -97,6 +97,40 @@ internal static class HaruspexCli
                 new Streams(output, error, workingDirectory, terminal)),
         };
 
+    /// <summary>Writes the run's report in <paramref name="format"/>.</summary>
+    private static void Report(RunReport report, OutputFormat format, OutputSettings settings, Streams streams)
+    {
+        // In GitHub Actions, files are named from the repository's root, which is how GitHub finds them; the run may be in a
+        // folder below it.
+        var root = streams.Terminal.Variable("GITHUB_WORKSPACE") ?? streams.WorkingDirectory;
+        switch (format)
+        {
+            case OutputFormat.Json:
+                new JsonReport(streams.WorkingDirectory).Write(report, streams.Output);
+                break;
+            case OutputFormat.Sarif:
+                new SarifReport(root, streams.Terminal.Version).Write(report, streams.Output);
+                break;
+            case OutputFormat.GitHub:
+                new TextReport(settings.Detail, settings.Output, settings.Error, streams.WorkingDirectory).Write(report, streams.Output, streams.Error);
+                new GitHubAnnotations(root, settings.Detail).Write(report, streams.Output);
+                break;
+            case OutputFormat.Text:
+                new TextReport(settings.Detail, settings.Output, settings.Error, streams.WorkingDirectory).Write(report, streams.Output, streams.Error);
+                break;
+        }
+    }
+
+    /// <summary>What <c>--format</c> names; when it names none, annotations in GitHub Actions and text anywhere else.</summary>
+    private static OutputFormat Format(string? named, Terminal terminal) => named switch
+    {
+        "json" => OutputFormat.Json,
+        "sarif" => OutputFormat.Sarif,
+        "github" => OutputFormat.GitHub,
+        "text" => OutputFormat.Text,
+        _ => terminal.Variable("GITHUB_ACTIONS") == "true" ? OutputFormat.GitHub : OutputFormat.Text,
+    };
+
     /// <summary>What the colour option names.</summary>
     private static ColourChoice Colour(string? named) => named switch
     {
@@ -160,6 +194,11 @@ internal static class HaruspexCli
             DefaultValueFactory = _ => "auto",
         };
         colour.AcceptOnlyFromAmong("auto", "always", "never");
+        var format = new Option<string?>("--format")
+        {
+            Description = "Who reads the report: text (the default), json for a tool, sarif for code scanning, or github for annotations in GitHub Actions (the default there).",
+        };
+        format.AcceptOnlyFromAmong("text", "json", "sarif", "github");
 
         var made = new Command(name, description)
         {
@@ -171,6 +210,7 @@ internal static class HaruspexCli
             verbose,
             quiet,
             colour,
+            format,
         };
         made.Validators.Add(result =>
         {
@@ -191,7 +231,7 @@ internal static class HaruspexCli
             RunReport report;
             using (var progress = Progress.On(streams.Error, settings, streams.Terminal))
                 report = ModuleSet.Run(command, request, module => run(module, progress));
-            new TextReport(settings.Detail, settings.Output, settings.Error, workingDirectory).Write(report, streams.Output, streams.Error);
+            Report(report, Format(parsed.GetValue(format), streams.Terminal), settings, streams);
             return report.ExitCode;
         });
         return made;

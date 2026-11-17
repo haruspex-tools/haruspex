@@ -1,0 +1,105 @@
+{
+  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "version": 1,
+  "command": "check",
+  "exitCode": 1,
+  "refused": [],
+  "modules": [
+    {
+      "config": null,
+      "out": "src/db",
+      "exitCode": 1,
+      "typed": {
+        "procedures": 4,
+        "queryFiles": 0
+      },
+      "written": [],
+      "unknowns": {
+        "count": 3,
+        "byReason": [
+          {
+            "reason": "dynamic-sql",
+            "code": null,
+            "count": 1
+          },
+          {
+            "reason": "json-shape-unknown",
+            "code": "HAR2013",
+            "count": 1
+          },
+          {
+            "reason": "unresolved-column",
+            "code": "HAR2009",
+            "count": 1
+          }
+        ]
+      },
+      "sinceLastRun": null,
+      "diagnostics": [
+        {
+          "code": "HAR4204",
+          "severity": "warning",
+          "message": "kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.",
+          "file": "haruspex.json",
+          "line": null,
+          "column": null,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR4204.md"
+        },
+        {
+          "code": "HAR2009",
+          "severity": "note",
+          "message": "kennel.get_dog results[0][].nickname: The table kennel.dog has no column nickname.",
+          "file": "db/procedures.sql",
+          "line": 5,
+          "column": 26,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2009.md"
+        },
+        {
+          "code": "HAR2013",
+          "severity": "note",
+          "message": "kennel.list_dogs results[0][].notes: json_query(d.notes) reads JSON that is not built here, so its shape is unknown.",
+          "file": "db/procedures.sql",
+          "line": 2,
+          "column": 26,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md"
+        },
+        {
+          "code": "HAR6016",
+          "severity": "error",
+          "message": "kennel.find_dogs: its result sets are unknown, and check passes a selected procedure only when they are known or declared. Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or leave the procedure out of the selection.",
+          "file": "db/procedures.sql",
+          "line": 7,
+          "column": 1,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6016.md"
+        },
+        {
+          "code": "HAR6014",
+          "severity": "error",
+          "message": "kennel.get_dog results[0][].name: became non-null",
+          "file": "db/procedures.sql",
+          "line": 4,
+          "column": 1,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md"
+        },
+        {
+          "code": "HAR6014",
+          "severity": "error",
+          "message": "kennel.list_dogs results[0][].name: became non-null",
+          "file": "db/procedures.sql",
+          "line": 1,
+          "column": 1,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md"
+        },
+        {
+          "code": "HAR6014",
+          "severity": "error",
+          "message": "kennel.list_dogs results[0][].name: presence changed from omittedWhenNull to always",
+          "file": "db/procedures.sql",
+          "line": 1,
+          "column": 1,
+          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md"
+        }
+      ]
+    }
+  ]
+}
