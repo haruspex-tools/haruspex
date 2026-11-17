@@ -120,7 +120,8 @@ subpatterns
 # Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes, NETSDK1022;
 # msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura, kysely, pgtyped,
 # sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit; mklink: the Windows
-# command that makes a junction; realpath: the POSIX call that reads a path as it is on disk)
+# command that makes a junction; realpath: the POSIX call that reads a path as it is on disk; libc: the C library, as npm's
+# package.json field names it)
 codegen
 dacfx
 dacpac
@@ -153,6 +154,7 @@ pgtyped
 scriban
 mklink
 realpath
+libc
 
 # Words of the subject that the dictionary lacks
 bigints

@@ -285,6 +285,7 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `tests/emit-lint` | A small npm package that lints the generated Zod. |
 | `examples` | Small applications that use what haruspex generates, compiled by the tests and in CI ([greenhouse](examples/greenhouse/README.md)). |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
+| `packaging/npm` | The npm packages: the launcher of the `haruspex` command, and the script that packs it and each platform's binary into tarballs ([its README](packaging/npm/README.md)). |
 
 Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics` and
 `Collections` because their types are in those layers' public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API

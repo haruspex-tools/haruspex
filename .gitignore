@@ -1,6 +1,8 @@
 # Build output
 bin/
 obj/
+# except the npm package's command, which npm's convention puts in a bin folder
+!packaging/npm/haruspex/bin/
 artifacts/
 TestResults/
 
