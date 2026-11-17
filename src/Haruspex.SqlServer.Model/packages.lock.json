@@ -14,7 +14,7 @@
       "haruspex.diagnostics": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       }
     }

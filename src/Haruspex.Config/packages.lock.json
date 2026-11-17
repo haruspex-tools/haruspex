@@ -8,20 +8,20 @@
       "haruspex.diagnostics": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       },
       "haruspex.ir": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       },
       "haruspex.sqlserver.model": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.Collections": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },

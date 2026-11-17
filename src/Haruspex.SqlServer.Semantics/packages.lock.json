@@ -14,22 +14,22 @@
       "haruspex.diagnostics": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       },
       "haruspex.sqlserver.model": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.Collections": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
       "haruspex.sqlserver.syntax": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       }
