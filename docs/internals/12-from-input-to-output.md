@@ -173,6 +173,7 @@ First output in generated, so nothing to compare with.
 Unknowns by reason (--verbose lists each):
   1  HAR2013  JSON whose shape isn't visible
   1  results only a declaration can give, as the warnings say
+What each code means: https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md
 haruspex.json: warning HAR4204: lib.find_books: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (project.sql:11:1) Declare them in haruspex.json under procedures["lib.find_books"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
 ```
 

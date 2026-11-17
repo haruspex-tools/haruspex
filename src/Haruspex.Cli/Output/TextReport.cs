@@ -147,12 +147,20 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
 
             foreach (var resolved in compared.Resolved)
                 yield return $"  {outputStyle.Removed("-")} {resolved.Object} {resolved.Path}: {Reason(resolved.Reason)}";
+            if (compared.New.Select(u => u.Unknown).Concat(compared.Resolved).Any(u => InferenceCodes.Of(u.Reason) is not null) && Pages() is { } pages)
+                yield return pages;
         }
         else if (compared.Unchanged > 0)
         {
             yield return $"{Counted(compared.Unchanged, "unknown")}, as before{listed}.";
         }
     }
+
+    /// <summary>
+    /// Where each code's page is, said once under a list of codes when the codes aren't links themselves: in a log, a pipe, or a
+    /// terminal not known to show links. Null when they are links.
+    /// </summary>
+    private string? Pages() => outputStyle.Links ? null : outputStyle.Faint($"What each code means: {DiagnosticPages.Index}");
 
     /// <summary>A change's mark: <c>+</c> for what a reader receives that it didn't, <c>-</c> for what it no longer does, <c>~</c> for the rest.</summary>
     private string Marked(IrChangeKind kind) => kind switch
@@ -192,6 +200,9 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
                 ? $"  {number}  results only a declaration can give, as the warnings say"
                 : $"  {number}  {outputStyle.Link(outputStyle.Note(code.ToString()), DiagnosticPages.Of(code))}  {code.Title}";
         }
+
+        if (reasons.Any(r => r.Code is not null) && Pages() is { } pages)
+            yield return pages;
     }
 
     /// <summary>The line that closes a module that failed, saying what follows from it; null when the errors say it all.</summary>

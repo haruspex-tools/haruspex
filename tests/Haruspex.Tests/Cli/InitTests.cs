@@ -156,4 +156,18 @@ public class InitTests
         Assert.Contains("\"schemas\": {},", Config(folder), StringComparison.Ordinal);
         Assert.Contains("where no procedure was found, so it selects none yet.", output, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_config_file_that_can_t_be_written_is_1_as_any_output_is()
+    {
+        // A folder where the file would go: no file is there to keep, and the file can't be written, on every platform and as root.
+        using var folder = new TempDirectory();
+        folder.File("db/p.sql", Procedure);
+        Directory.CreateDirectory(Path.Combine(folder.Path, "haruspex.json"));
+
+        var (exitCode, _, error) = Run(folder);
+
+        Assert.Equal(1, exitCode);
+        Assert.StartsWith("haruspex: error HAR6008: cannot write haruspex.json: ", error, StringComparison.Ordinal);
+    }
 }

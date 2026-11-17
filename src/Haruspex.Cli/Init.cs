@@ -25,7 +25,7 @@ internal static class Init
     private static readonly HashSet<string> SystemPackages = new(StringComparer.OrdinalIgnoreCase) { "master.dacpac", "msdb.dacpac", "model.dacpac", "tempdb.dacpac" };
 
     /// <summary>Runs the command: <paramref name="source"/>, if given, rather than what it finds.</summary>
-    /// <returns>The exit code: 0, or 2 when it writes nothing.</returns>
+    /// <returns>The exit code: 0; 2 when it finds a config file, no database or more than one; 1 when it can't write.</returns>
     public static int Run(string? source, TextWriter output, TextWriter error, string workingDirectory)
     {
         var config = Path.Join(workingDirectory, HaruspexConfig.FileName);
@@ -53,7 +53,9 @@ internal static class Init
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return Refused(error, CliCodes.CannotWrite.At(null, $"cannot write {HaruspexConfig.FileName}: {e.Message}"));
+            // As for any output that can't be written: the command line was right, so 1, not 2 (ModuleRun.ExitCode).
+            error.WriteLine(CliCodes.CannotWrite.At(null, $"cannot write {HaruspexConfig.FileName}: {e.Message}"));
+            return HaruspexCli.ExitCodes.Failed;
         }
 
         output.WriteLine(schemas.Count == 0
