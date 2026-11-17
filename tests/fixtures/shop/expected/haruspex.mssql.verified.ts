@@ -73,8 +73,8 @@ function where(issue: Issue, sets = false): string {
   const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
   const set = path[0]
   const inSet = sets && typeof set === 'number'
-  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${key}]` : `.${String(key)}`)).join('').replace(/^\./, '')
-  return inSet ? `result set ${set + 1}` + (at === '' ? '' : `, ${at}`) : at
+  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+  return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
 }
 
 /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
@@ -128,7 +128,7 @@ export async function basketCard(db: Queryable, params: types.BasketCardParams):
   request.input('basket_id', sql.Int, p.basket_id)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length > 1) throw new ResultError('queries/basket_card.sql', 'the results', [{ message: `Expected at most one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('queries/basket_card.sql', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketCardSchema, readJson(sets[0]), (issues) => new ResultError('queries/basket_card.sql', 'the results', issues))
   return result
 }
@@ -145,7 +145,7 @@ export async function productsUnder(db: Queryable, params: types.ProductsUnderPa
   request.input('take', sql.BigInt, p.take)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length !== 1) throw new ResultError('queries/products_under.sql', 'the results', [{ message: `Expected exactly one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('queries/products_under.sql', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(ProductsUnderSchema, readRows(sets[0]), (issues) => new ResultError('queries/products_under.sql', 'the results', issues))
   return result
 }
@@ -158,7 +158,7 @@ export async function basketLineRow(db: Queryable, params: types.BasketLineRowPa
   request.input('line_no', sql.Int, p.line_no)
   const response = await request.execute('shop.basket_line#')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length > 1) throw new ResultError('shop.basket_line#', 'the results', [{ message: `Expected at most one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('shop.basket_line#', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketLineRowSchema, readJson(sets[0]), (issues) => new ResultError('shop.basket_line#', 'the results', issues))
   return result
 }
@@ -170,7 +170,7 @@ export async function basket(db: Queryable, params: types.BasketParams): Promise
   request.input('basket_id', sql.Int, p.basket_id)
   const response = await request.execute('shop.get_basket')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length > 1) throw new ResultError('shop.get_basket', 'the results', [{ message: `Expected at most one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('shop.get_basket', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketSchema, readJson(sets[0]), (issues) => new ResultError('shop.get_basket', 'the results', issues))
   return result
 }
@@ -180,7 +180,7 @@ export async function listProducts(db: Queryable): Promise<types.ListProducts> {
   const request = db.request()
   const response = await request.execute('shop.list_products')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length !== 1) throw new ResultError('shop.list_products', 'the results', [{ message: `Expected exactly one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('shop.list_products', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(ListProductsSchema, readRows(sets[0]), (issues) => new ResultError('shop.list_products', 'the results', issues))
   return result
 }
@@ -190,7 +190,7 @@ export async function adminSales(db: Queryable): Promise<types.AdminSales> {
   const request = db.request()
   const response = await request.execute('shop_admin.report_sales')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length > 1) throw new ResultError('shop_admin.report_sales', 'the results', [{ message: `Expected at most one result set, received ${sets.length}` }])
+  if (sets.length !== 1) throw new ResultError('shop_admin.report_sales', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(AdminSalesSchema, readJson(sets[0]), (issues) => new ResultError('shop_admin.report_sales', 'the results', issues))
   return result
 }

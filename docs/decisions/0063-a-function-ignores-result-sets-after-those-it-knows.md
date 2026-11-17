@@ -27,8 +27,10 @@ of any number of rows: a set the IR says always arrives could vanish unnoticed.
   contract whichever way the application deploys, which no setting should hide.
 
 **Reason.** The types stay exact; only the reaction to something unexpected changes, as for keys. A set the procedure always
-returns is counted only up to the first that may not run, or may be absent for any other reason: those after it may be missing
-(the IR's reader convention pads them), so the count checks less rather than ever failing a call the IR allows.
+returns is counted up to the first whose statement may not run (`not-run`): it and those after it may be missing, and the IR's
+reader convention pads them. A `FOR JSON` set absent only because no rows matched (`no-rows`) still arrives, as one row of empty
+text (observed through mssql), so it counts. Any other reason, such as the config file's declaration, which doesn't say why,
+stops the count, so the count checks less rather than ever failing a call the IR allows.
 
 **In the code:** `MssqlOptions.RefusesExtraResultSets`, set by the CLI from `"objects"`; `MssqlFunction.SetsAlwaysReturned`;
 the check `MssqlPrinter` writes after each call.

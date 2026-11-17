@@ -67,8 +67,8 @@ function where(issue: Issue, sets = false): string {
   const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
   const set = path[0]
   const inSet = sets && typeof set === 'number'
-  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${key}]` : `.${String(key)}`)).join('').replace(/^\./, '')
-  return inSet ? `result set ${set + 1}` + (at === '' ? '' : `, ${at}`) : at
+  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+  return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
 }
 
 /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
@@ -119,6 +119,7 @@ export async function getPlant(db: Queryable, params: types.GetPlantParams): Pro
   request.input('plant_id', sql.Int, p.plant_id)
   const response = await request.execute('garden.get_plant')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('garden.get_plant', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(GetPlantSchema, readJson(sets[0]), (issues) => new ResultError('garden.get_plant', 'the results', issues))
   return result
 }
@@ -128,7 +129,7 @@ export async function listPlants(db: Queryable): Promise<types.ListPlants> {
   const request = db.request()
   const response = await request.execute('garden.list_plants')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length < 1) throw new ResultError('garden.list_plants', 'the results', [{ message: `Expected at least one result set, received ${sets.length}` }])
+  if (sets.length < 1) throw new ResultError('garden.list_plants', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(ListPlantsSchema, readRows(sets[0]), (issues) => new ResultError('garden.list_plants', 'the results', issues))
   return result
 }
@@ -143,7 +144,7 @@ export async function thirstyPlants(db: Queryable, params: types.ThirstyPlantsPa
   request.input('since', sql.VarChar(sql.MAX), p.since)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
-  if (sets.length < 1) throw new ResultError('queries/thirsty_plants.sql', 'the results', [{ message: `Expected at least one result set, received ${sets.length}` }])
+  if (sets.length < 1) throw new ResultError('queries/thirsty_plants.sql', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(ThirstyPlantsSchema, readRows(sets[0]), (issues) => new ResultError('queries/thirsty_plants.sql', 'the results', issues))
   return result
 }

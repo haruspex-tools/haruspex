@@ -17,8 +17,11 @@ on the Zod module's helpers. The tests then held the files to the recommended ru
   (`reportUnusedDisableDirectives`) then reports the header itself. Teams that don't want to lint generated files already
   list them in their config's `ignores`.
 - *Leave them to the team's ignore list.* Teams that lint everything they commit, as the trial's did, meet the errors first.
-- *The type-checked sets* (`strict-type-checked`). They need the project's types, and the lint package installs neither Zod
-  nor mssql, so every value from them would read as an error. Not ruled out; it would need those packages beside the lint.
+- *The type-checked sets* (`strict-type-checked`, `stylistic-type-checked`) in the tests. They need the project's types, and the
+  lint package installs neither Zod nor mssql, so every value from them would read as an error; adding them would add both to
+  it. Run by hand on 17 Nov 2026, with zod 4.6.7 and mssql 12.7.14 beside the lint, every fixture's modules pass them but for
+  the shop fixture's import of `@shop/types`, which only the emit check's `tsconfig.json` maps. Template literals in the
+  helpers wrap each number in `String(…)` for `restrict-template-expressions`.
 
 **Reason.** Each change makes the output no worse to read: a function property says the same as a method, and the return
 types are short (`z.ZodString`, `string`, `(value: unknown) => unknown`). Under `strictFunctionTypes` a property's

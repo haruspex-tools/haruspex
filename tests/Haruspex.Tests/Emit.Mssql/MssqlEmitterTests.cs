@@ -177,10 +177,21 @@ public partial class MssqlEmitterTests
         var ts = Emitted(Procedure("P", [], Rows, Rows, NotRun));
 
         Assert.Contains(
-            "  if (sets.length < 2) throw new ResultError('shop.P', 'the results', [{ message: `Expected at least 2 result sets, received ${sets.length}` }])\n",
+            "  if (sets.length < 2) throw new ResultError('shop.P', 'the results', [{ message: `Expected at least 2 result sets, received ${String(sets.length)}` }])\n",
             ts,
             StringComparison.Ordinal);
         Assert.DoesNotContain("sets.length >", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_for_json_set_absent_only_when_no_rows_match_still_counts_as_arriving()
+    {
+        // FOR JSON over no rows still sends its set, one row of empty text (observed); only a statement that doesn't run leaves
+        // a set out. So both sets below always arrive.
+        var noRows = new IrResult(IrEncoding.Json, Int, [new IrNullReason(IrNullRule.NoRows, "p.sql:2:1")]);
+
+        Assert.Contains("  if (sets.length < 2) throw ", Emitted(Procedure("P", [], noRows, Rows)), StringComparison.Ordinal);
+        Assert.Contains("  if (sets.length !== 2) throw ", Strict(Procedure("P", [], noRows, Rows)), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -203,7 +214,7 @@ public partial class MssqlEmitterTests
         var ts = Strict(Procedure("P", [], sets));
 
         Assert.Contains(
-            $"  if ({condition}) throw new ResultError('shop.P', 'the results', [{{ message: `{expected}, received ${{sets.length}}` }}])\n",
+            $"  if ({condition}) throw new ResultError('shop.P', 'the results', [{{ message: `{expected}, received ${{String(sets.length)}}` }}])\n",
             ts,
             StringComparison.Ordinal);
     }

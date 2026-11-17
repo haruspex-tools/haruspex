@@ -80,8 +80,8 @@ internal static class MssqlPrinter
           const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
           const set = path[0]
           const inSet = sets && typeof set === 'number'
-          const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${key}]` : `.${String(key)}`)).join('').replace(/^\./, '')
-          return inSet ? `result set ${set + 1}` + (at === '' ? '' : `, ${at}`) : at
+          const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+          return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
         }
 
         """;
@@ -244,7 +244,7 @@ internal static class MssqlPrinter
         if (counted is var (condition, expected))
         {
             output.Append("  if (").Append(condition).Append(") throw new ResultError(").Append(id).Append(", 'the results', [{ message: `")
-                .Append(expected).Append(", received ${sets.length}` }])\n");
+                .Append(expected).Append(", received ${String(sets.length)}` }])\n");
         }
 
         switch (function.Results)

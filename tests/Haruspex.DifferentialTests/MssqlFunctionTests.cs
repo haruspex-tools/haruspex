@@ -192,6 +192,20 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
     }
 
     [Theory]
+    [InlineData(false, "outlet.json_then_rows, the results: Expected at least 2 result sets, received 1")]
+    [InlineData(true, "outlet.json_then_rows, the results: Expected exactly 2 result sets, received 1")]
+    public async Task A_missing_set_after_a_for_json_set_that_matched_no_rows_fails(bool strict, string expected)
+    {
+        // FOR JSON over no rows still sends a set, so the rowset after it always arrives: dropped, the call fails.
+        const string Generated = "CREATE PROCEDURE outlet.json_then_rows AS SELECT v.id FROM (VALUES (1)) AS v(id) WHERE v.id > 1 FOR JSON PATH; SELECT N'x' AS b;";
+        const string Deployed = "CREATE PROCEDURE outlet.json_then_rows AS SELECT v.id FROM (VALUES (1)) AS v(id) WHERE v.id > 1 FOR JSON PATH;";
+
+        var response = Assert.Single(await Run(strict, Module(Generated), [Deployed], new GeneratedFunctions.Call("call", "jsonThenRows")));
+
+        Assert.Equal(expected, response.Error!.Message);
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task A_for_json_result_reads_the_same_whether_the_pool_parses_json_or_not(bool parseJson)
