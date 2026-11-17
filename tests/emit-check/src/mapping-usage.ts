@@ -3,6 +3,7 @@
 // fail differs from a case above it that compiles in one respect only, so the error it expects can only be that one.
 import type { Exhaustive } from '../generated/haruspex.mapping'
 import type { ListCustomersRow } from '../generated/orders.zod'
+import type { AuthorStatsRow } from '../generated/payloads.zod'
 import type { ComponentsNode, GetAssemblyRow } from '../generated/trees.zod'
 import type { GetKitRow } from '../generated/kits.zod'
 
@@ -81,3 +82,26 @@ export type MissingVariantKey = Exhaustive<GetKitRow, {
   parts: { sku: 'used'; qty: 'used'; colour: 'used' }
   either: { name: 'used'; price: 'used'; parts: { sku: 'used'; qty: 'used'; colour: 'used' } }
 }>
+
+// A record's keys are data, not shape: it is accounted for by its values, 'used' for a value with no keys of its own.
+type Stats = Exhaustive<AuthorStatsRow, { authorId: 'used'; bookIds: 'used'; prices: 'used' }>
+
+export const stats = (row: AuthorStatsRow): Stats => row
+export const dearest = ({ prices }: Stats): number => Math.max(0, ...Object.values(prices))
+
+// And by the values' own account when they are objects, here a record no fixture returns.
+interface Shelf { label: string; books: Record<string, { title: string; copies: number }> }
+
+export const shelf = (row: Shelf): Exhaustive<Shelf, { label: 'used'; books: { title: 'used'; copies: 'ignored: stock is counted elsewhere' } }> => row
+
+// @ts-expect-error A record's values are objects, so each of their keys is accounted for.
+export type ShelfMissingKey = Exhaustive<Shelf, { label: 'used'; books: { title: 'used' } }>
+
+// @ts-expect-error One decision for a key, not a choice of several: a union would let a reason be left out.
+export type SeveralReasons = Exhaustive<ListCustomersRow, { id: 'used'; name: 'used'; email: 'used'; region: 'ignored: ' | 'ignored: x'; createdAt: 'used' }>
+
+// @ts-expect-error Nor used and ignored at once.
+export type UsedOrIgnored = Exhaustive<ListCustomersRow, { id: 'used'; name: 'used'; email: 'used'; region: 'used' | 'ignored: maybe'; createdAt: 'used' }>
+
+// @ts-expect-error A reason of spaces alone isn't one.
+export type BlankReason = Exhaustive<ListCustomersRow, { id: 'used'; name: 'used'; email: 'used'; region: 'ignored:   '; createdAt: 'used' }>

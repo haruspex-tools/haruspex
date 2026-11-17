@@ -18,7 +18,9 @@ type PlantRow = Exhaustive<GetPlantRow, {
 ```
 
 The account is refused, as a compile error at the account, when it leaves a key out at any depth, names a key the row doesn't
-have, marks a key that holds objects `'used'` whole, or ignores a key with no reason. An object type that holds itself has an
+have, marks a key that holds objects `'used'` whole, ignores a key with no reason (or only spaces), or gives a key a union of
+decisions (`'used' | 'ignored: maybe'`), which would let either rule be dodged. A record, whose keys are data, is accounted for
+by its values: `'used'` when they are values, their own account when they are objects. An object type that holds itself has an
 account that does too (`interface NodeAccount { …; children: NodeAccount }`), and a union of objects has an entry for every
 key of every variant. A `Date` is a value, not an object with keys. The file is types only, the same for every module, and needs
 `"zod"` beside it.
@@ -27,7 +29,9 @@ key of every variant. A `Date` is a value, not an object with keys. The file is 
 that is empty to the application, a figure that is money, a name the application prefers. Those decisions are made in a
 mapper, written by hand. When the procedure gains a column, the regenerated row has a key the mapper has never decided about,
 and a mapper that builds its object from the keys it names compiles as before: the column is dropped without anyone choosing
-to drop it. A trial in a real application wanted the compiler to stop there, at any depth, in the one place that must decide.
+to drop it. A trial in a real application wanted the compiler to stop there, at any depth, in the one place that must decide. The stop
+comes when the module is regenerated, not when the database changes: until then the schema drops the new key (or, under
+`"objects": "strict"`, refuses it at run time), and what notices the module is out of date is `haruspex check` in CI.
 
 **Alternatives.**
 - *A function the mapper calls*, such as `exhaustive(row, { … })`, checking at runtime. It costs at every call, and a check
@@ -49,7 +53,8 @@ to drop it. A trial in a real application wanted the compiler to stop there, at 
 
 **What it can't check.** Whether a key marked `'used'` is read: the compiler sees the type a function takes, not what its
 body does. A mapper that takes its keys by destructuring lets typescript-eslint's rule against unused variables find a key named and
-never read.
+never read. Nor whether a key became optional or nullable: its entry is still `'used'`, and the mapper's body stops compiling
+only where it relies on the value.
 
 **Reason.** The decision about a new column is made where the application's types are made, and the build can't pass until
 it is. It costs nothing at runtime, and nothing in an application that doesn't ask for it.
