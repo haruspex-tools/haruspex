@@ -374,7 +374,25 @@ npm install --save-optional ./vendor/haruspex/haruspex.tools-linux-x64-0.0.0-pre
 
 Then `npx haruspex generate` and `npx haruspex check` run it, and so does a package script (`"db": "haruspex generate"`). The
 package holds the JSON Schema of `haruspex.json`, so the config file can name it as
-`"$schema": "./node_modules/haruspex/haruspex.schema.json"`. The Linux binaries need glibc 2.34 or later.
+`"$schema": "./node_modules/haruspex/haruspex.schema.json"`. The Linux binaries need glibc 2.34 or later, and the Linux x64
+binary a processor with x86-64-v3 (AVX2 and the rest: Intel's since Haswell, AMD's since Excavator, though not every low-end
+Pentium or Celeron).
+
+pnpm installs the tarballs the same way (`pnpm add`). Yarn 1 can't: it looks for every optional dependency on the registry,
+where none is published yet. Yarn 4 can when `package.json` names every platform's tarball in `resolutions` before the command
+is added:
+
+```jsonc
+"resolutions": {
+  "@haruspex.tools/linux-x64": "file:./vendor/haruspex/haruspex.tools-linux-x64-0.0.0-preview-<commit>.tgz",
+  "@haruspex.tools/linux-arm64": "file:./vendor/haruspex/haruspex.tools-linux-arm64-0.0.0-preview-<commit>.tgz",
+  "@haruspex.tools/darwin-arm64": "file:./vendor/haruspex/haruspex.tools-darwin-arm64-0.0.0-preview-<commit>.tgz",
+  "@haruspex.tools/darwin-x64": "file:./vendor/haruspex/haruspex.tools-darwin-x64-0.0.0-preview-<commit>.tgz",
+  "@haruspex.tools/win32-x64": "file:./vendor/haruspex/haruspex.tools-win32-x64-0.0.0-preview-<commit>.tgz"
+}
+```
+
+and then `yarn add -D ./vendor/haruspex/haruspex-0.0.0-preview-<commit>.tgz`, with either of its linkers.
 
 The application installs [Zod 4](https://zod.dev) and [mssql](https://www.npmjs.com/package/mssql) itself. The tests compile
 every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScript 7.0.2.

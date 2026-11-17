@@ -121,7 +121,7 @@ subpatterns
 # msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura, kysely, pgtyped,
 # sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit; mklink: the Windows
 # command that makes a junction; realpath: the POSIX call that reads a path as it is on disk; libc: the C library, as npm's
-# package.json field names it)
+# package.json field names it; readelf: the binutils tool that reads an ELF binary's notes)
 codegen
 dacfx
 dacpac
@@ -155,6 +155,7 @@ scriban
 mklink
 realpath
 libc
+readelf
 
 # Words of the subject that the dictionary lacks
 bigints

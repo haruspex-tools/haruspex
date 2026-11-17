@@ -25,7 +25,10 @@ is the same version as itself, and runs it with the arguments as given, its stan
 passed back. `lib/launcher.js` holds the table of platforms, which the pack script reads too, so there is one list.
 
 The Linux binaries need glibc 2.34 or later (the newest symbol version the x64 binary uses): Ubuntu 22.04, Debian 12 and RHEL 9
-have it, and an older distribution fails when the binary starts. There is no binary for musl (Alpine) or for Windows on arm64
+have it, and an older distribution fails when the binary starts. The Linux x64 binary also needs a processor with x86-64-v3
+(AVX2 and the rest): `readelf -n` lists it among the ISA levels the binary needs, and the loader refuses it on a processor
+without it, with exit code 127 ("CPU ISA level is lower than required"). The Windows and macOS x64 binaries are compiled with
+the same compiler defaults, but their requirement hasn't been measured. There is no binary for musl (Alpine) or for Windows on arm64
 yet; on those the launcher says so and lists the platforms there are.
 
 ### What it borrows
@@ -71,8 +74,8 @@ node packaging/npm/pack.mjs --binaries binaries --out artifacts/npm --commit <th
 `--commit` defaults to the commit checked out. Without every platform's binary the script refuses, unless `--only` names the
 platforms to pack, as npm names them (`--only darwin-arm64,win32-x64`). The main package lists every platform whichever are
 packed. Run it on Linux or macOS: npm on Windows packs every file as not executable, so there the script packs only the
-Windows binary. It needs Node and npm, and nothing else (Node 20.11 or later for its tests). `node --test packaging/npm/test/`
-runs its tests, which `NpmPackagingTests` runs with the rest.
+Windows binary. It needs Node and npm, and nothing else. `node --test 'packaging/npm/test/*.test.mjs'` runs its tests, which
+`NpmPackagingTests` runs with the rest; they need Node 21 or later, the first whose `--test` expands a glob itself.
 
 ## Names and publishing
 
