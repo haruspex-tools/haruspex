@@ -17,6 +17,8 @@ Each layer does one thing, and only the last is written by hand:
 3. **A thin step, written by hand on the generated type, turns it into the application's type.** Database names and shapes
    stop here: nothing past it sees a column's name, an absent key or a number that might be anything.
 
+A result passes through each in turn, and only the application's types go further:
+
 ```mermaid
 flowchart LR
     db["the database"] --> fn["generated function: calls"]
@@ -26,7 +28,8 @@ flowchart LR
 ```
 
 The step takes the generated type as its input, so the compiler checks it against what the schema claims. When the database
-changes and the module is regenerated, the step stops compiling where it no longer fits, and nowhere else.
+changes and the module is regenerated, a step that reads a key the row lost, or a value whose type changed, stops compiling
+there. A key the row gained stops it only with an account of every key ([below](#a-mapper-that-accounts-for-every-key)).
 
 ## The example
 
