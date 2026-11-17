@@ -399,6 +399,25 @@ every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScri
 
 ## Quick start
 
+`haruspex init` finds the database's files and writes a starter `haruspex.json`; `haruspex generate` writes the module. Run
+again after a change to the database, it says what changed, and nothing else (an invented kennel database, after a column
+was made nullable and a procedure added):
+
+```text
+$ haruspex generate
+haruspex: 3 procedures, 1 unknown. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
+4 changes since the last run:
+  + kennel.count_dogs: added
+  ~ kennel.get_dog results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: presence changed from always to omittedWhenNull
+1 unknown, as before (--verbose lists them).
+```
+
+When nothing changed, that is one line: `haruspex: nothing changed since the last run: 3 procedures, 1 unknown`. In CI,
+`haruspex check` fails when the committed module would change, with annotations in GitHub Actions; [the command
+line](docs/command-line.md) has the rest.
+
 [Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to the schemas and the function for one of
 the sample's procedures. [The example application](examples/greenhouse/README.md) calls its procedures through the
 functions haruspex wrote for it, and [the configuration](docs/configuration.md) shows a `haruspex.json` for your own

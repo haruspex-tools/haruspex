@@ -66,6 +66,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0059](0059-a-query-file-s-parameters-are-typed-from-their-uses.md) | 16 Nov 2026 | A query file's parameters are typed from their uses |
 | [0060](0060-a-call-returns-its-one-result-itself.md) | 16 Nov 2026 | A call returns its one result itself |
 | [0061](0061-the-npm-packages-are-haruspex-and-a-scope-per-platform.md) | 17 Nov 2026 | The npm packages are `haruspex` and a scope per platform |
+| [0062](0062-the-command-line-s-output-is-designed.md) | 17 Nov 2026 | The command line's output is designed for a command run many times a day |
 
 ## Writing a record
 

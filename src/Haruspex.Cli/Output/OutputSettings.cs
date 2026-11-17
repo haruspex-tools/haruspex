@@ -5,7 +5,8 @@ namespace Haruspex.Cli.Output;
 /// <summary>
 /// How a run's report is written, settled once from the command line and the terminal: how much it says, whether each stream is
 /// coloured and its codes linked, and whether a progress line is shown. Every rule that reads the environment is here, so each
-/// is tested by giving a <see cref="Terminal"/>. Each rule's doc says the convention it follows.
+/// is tested by giving a <see cref="Terminal"/>. Each rule's doc says the convention it follows; docs/command-line.md, "Colour,
+/// links and progress", says them for the reader.
 /// </summary>
 /// <param name="detail">How much a text report says.</param>
 /// <param name="output">How standard output is styled.</param>

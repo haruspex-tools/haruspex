@@ -4,7 +4,8 @@ A project's settings live in `haruspex.json`. `haruspex generate` and `haruspex 
 and then in each folder above it, or use the files `--config` names, or every one below a folder with `--all`: each file is a
 module of its own. Paths in it are relative to the file. It is JSON with comments and trailing commas, as `tsconfig.json` is.
 Its JSON Schema is published at [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and
-editors complete and check the file as you type.
+editors complete and check the file as you type. `haruspex init` writes a starter file, naming it
+([the command line](command-line.md#init)).
 
 **An unknown key is an error**, with its path and line. It is never ignored, because a misspelt setting would
 otherwise silently do nothing.
@@ -416,8 +417,10 @@ on nothing but that procedure.
 
 ## Errors
 
-Every problem is written to standard error as a compiler writes one, so editors and CI can jump to it, with its code, whose
-page in [the list of diagnostics](diagnostics/README.md) says what it means and what to do:
+Every error and warning is written to standard error as a compiler writes one, so editors and CI can jump to it, with its
+code, whose page in [the list of diagnostics](diagnostics/README.md) says what it means and what to do. (Notes, one for each
+unknown, are counted rather than listed unless `--verbose` asks; [the command line](command-line.md) says what each run prints,
+and how to have the same as JSON, SARIF or GitHub annotations.)
 
 ```text
 haruspex.json:14:9: error HAR4104: procedures["sales.get_order"].paths["lines[].skew"]: the path results[0].lines[].skew does not exist: the object at results[0].lines[] has no key "skew". Its keys are "sku", "quantity".

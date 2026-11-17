@@ -11,7 +11,10 @@ output of [Haruspex.Emit.Zod](https://github.com/sharpblue/haruspex/blob/main/sr
 
 `HaruspexCli` parses the command line, and `ModuleSet` runs the command once for each module it covers. `ModuleRun` runs the steps both commands share, each returning an outcome, up to the
 module in memory (`EmittedModule`); `Generate` writes it, and `Check` compares it with what is committed, claim by claim
-(`IrComparison`, in the IR's layer). `SqlProject` composes the layers that read and infer.
+(`IrComparison`, in the IR's layer). `SqlProject` composes the layers that read and infer. Neither command prints: each gives
+back a `ModuleReport` of what it found and did, and a report in `Output/` prints it in the format asked for (`TextReport`,
+`JsonReport`, `SarifReport`, `GitHubAnnotations`), as `OutputSettings` settles from the terminal. `Init` writes a starter
+config file.
 
 ```mermaid
 flowchart LR
@@ -113,7 +116,8 @@ checks every module in the repository:
 
 Pin the two actions by commit too, as haruspex's own workflow does.
 
-Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
+What each run prints, mode by mode, with the options for colour and the formats for tools and CI (`--format json`, `sarif`,
+`github`), is [the command line's page](../../docs/command-line.md). Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
 the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)
 says what it means and what to do:
 
@@ -167,7 +171,7 @@ shown from it.
 |---|---|
 | 0 | Success, with or without warnings and notes |
 | 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, or it can't be compared with what is committed |
-| 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write |
+| 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write; or `init` wrote nothing, finding a config file, no database or more than one |
 | 3 | A fault in haruspex itself |
 
 ## What it deliberately doesn't do

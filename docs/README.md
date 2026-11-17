@@ -16,8 +16,9 @@ is, what it does today and what it can't see; read it first whichever path you t
    through a generated module, as a team would commit it.
 4. [The configuration reference](configuration.md): `haruspex.json`, which says which procedures to type, what to write, how
    to name the generated code, and how to correct or declare what can't be inferred.
-5. [The command line](../src/Haruspex.Cli/README.md), for `generate` and `check`, their options, several modules at once,
-   what they print and their exit codes; and [the diagnostics](diagnostics/README.md), when it reports a problem: each code
+5. [The command line](command-line.md), for `init`, `generate` and `check`: what each prints, their options, the formats for
+   tools and CI, the environment variables they read and their exit codes; [the CLI's README](../src/Haruspex.Cli/README.md)
+   for several modules at once and what a run guarantees; and [the diagnostics](diagnostics/README.md), when it reports a problem: each code
    has a page saying what it means and what to do.
 6. [What haruspex models](coverage.md), to see before you start whether your procedures use something it reads as unknown.
 

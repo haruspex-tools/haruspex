@@ -91,7 +91,7 @@ internal static class HaruspexCli
               haruspex check --all                                   in CI: fail if a committed module would change
 
             Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
-            More: https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Cli/README.md
+            More: https://github.com/sharpblue/haruspex/blob/main/docs/command-line.md
             """)
         {
             InitCommand(new Streams(output, error, workingDirectory, terminal)),
