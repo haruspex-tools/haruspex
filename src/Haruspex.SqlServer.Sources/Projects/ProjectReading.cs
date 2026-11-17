@@ -185,7 +185,7 @@ internal sealed class ProjectReading
         {
             var which = reference.Database is null ? "of its own database" : $"the database {reference.Database}";
             var looked = places.Count == 0 ? "" : $": looked for at {string.Join(", ", places.Select(DiagnosticFormatter.PathAsShown))}";
-            diagnostics.Add(SourceCodes.ReferenceNotFound.At(reference.At, $"{referrer} refers to {reference.Described}, {which}, which isn't found{looked}. {Remedy(reference)}"));
+            diagnostics.Add(SourceCodes.ReferenceNotFound.At(reference.At, $"{referrer} refers to {reference.Described}, {which}, which isn't found{looked}. {Remedy(reference)}", reference.FileName));
         }
 
         return package;
@@ -223,7 +223,8 @@ internal sealed class ProjectReading
         {
             diagnostics.Add(SourceCodes.PartNotRead.At(
                 at,
-                $"The target {name}{(count > 1 ? $", which {count} projects import or define," : "")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen."));
+                $"The target {name}{(count > 1 ? $", which {count} projects import or define," : "")} runs during a build, and what it does isn't read: a script it adds or takes out, or a setting it changes, is not seen.",
+                name));
         }
 
         foreach (var (reference, problem, referrers) in missing.Values)
@@ -231,7 +232,8 @@ internal sealed class ProjectReading
             var which = reference.Database is null ? "of the same database" : $"of the database {reference.Database}";
             diagnostics.Add(SourceCodes.ProjectNotFound.At(
                 reference.At,
-                $"{string.Join(", ", referrers)} {(referrers.Count == 1 ? "refers" : "refer")} to {reference.Described}, {which}, which {problem ?? "isn't found"}: what it defines is missing."));
+                $"{string.Join(", ", referrers)} {(referrers.Count == 1 ? "refers" : "refer")} to {reference.Described}, {which}, which {problem ?? "isn't found"}: what it defines is missing.",
+                reference.FileName));
         }
     }
 

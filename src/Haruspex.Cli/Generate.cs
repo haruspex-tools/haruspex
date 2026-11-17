@@ -25,19 +25,26 @@ internal static class Generate
         });
         return run switch
         {
-            Succeeded<(Written Written, SinceLastRun Since)> { Value: var value } =>
-                new ModuleReport(CommandName.Generate, request, [.. run.Diagnostics, .. value.Written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
-                {
-                    Out = value.Written.Module.Out,
-                    Document = value.Written.Module.Document,
-                    Written = value.Written.Paths,
-                    Unknowns = value.Written.Unknowns,
-                    Since = value.Since,
-                },
+            Succeeded<(Written Written, SinceLastRun Since)> { Value: var value } => Reported(request, run.Diagnostics, value.Written, value.Since),
             Failed<(Written Written, SinceLastRun Since)> failed => new ModuleReport(CommandName.Generate, request, failed.Diagnostics, ModuleRun.ExitCode(failed.Diagnostics))
             {
                 Out = (emitted as Succeeded<EmittedModule>)?.Value.Out,
             },
+        };
+    }
+
+    /// <summary>The report of a module written: what the run found, but for the warnings the config file acknowledges, which are set aside.</summary>
+    private static ModuleReport Reported(RunRequest request, EquatableArray<Diagnostic> found, Written written, SinceLastRun since)
+    {
+        var (kept, acknowledged) = Acknowledgements.Apply(found, written.Module.Config, sayUnused: request.Include.Count == 0);
+        return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
+        {
+            Out = written.Module.Out,
+            Document = written.Module.Document,
+            Written = written.Paths,
+            Unknowns = written.Unknowns,
+            Since = since,
+            Acknowledged = acknowledged,
         };
     }
 

@@ -179,8 +179,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },

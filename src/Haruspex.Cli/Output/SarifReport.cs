@@ -23,8 +23,9 @@ internal sealed class SarifReport(string root, string version)
     /// <summary>Writes the log of <paramref name="run"/> to <paramref name="output"/>, ending with a line break.</summary>
     public void Write(RunReport run, TextWriter output)
     {
-        var found = run.Refused.Select(d => (Module: (string?)null, Diagnostic: d))
-            .Concat(run.Modules.SelectMany(m => m.Diagnostics.Select(d => (Module: run.Several ? m.Config : null, Diagnostic: d))))
+        var found = run.Refused.Select(d => (Module: (string?)null, Diagnostic: d, Why: (string?)null))
+            .Concat(run.Modules.SelectMany(m => m.Diagnostics.Select(d => (Module: run.Several ? m.Config : null, Diagnostic: d, Why: (string?)null))))
+            .Concat(run.Modules.SelectMany(m => m.Acknowledged.Select(a => (Module: run.Several ? m.Config : null, Diagnostic: a.Warning, Why: (string?)a.By.Why))))
             .ToList();
         var rules = found.Select(f => f.Diagnostic.Code).Distinct().OrderBy(c => c.Number).ToList();
 
@@ -44,8 +45,8 @@ internal sealed class SarifReport(string root, string version)
             json.WriteEndObject();
             json.WriteEndArray();
             json.WriteStartArray("results");
-            foreach (var (module, diagnostic) in found)
-                Result(json, diagnostic, rules.IndexOf(diagnostic.Code), module);
+            foreach (var (module, diagnostic, why) in found)
+                Result(json, diagnostic, rules.IndexOf(diagnostic.Code), module, why);
             json.WriteEndArray();
             json.WriteEndObject();
             json.WriteEndArray();
@@ -90,7 +91,11 @@ internal sealed class SarifReport(string root, string version)
         json.WriteEndObject();
     }
 
-    private void Result(Utf8JsonWriter json, Diagnostic diagnostic, int rule, string? module)
+    /// <summary>
+    /// A result; a warning the config file acknowledges is one with an external suppression, SARIF's word for a result reviewed and
+    /// accepted in a file beside the code, with why as its justification, so a viewer shows it as suppressed.
+    /// </summary>
+    private void Result(Utf8JsonWriter json, Diagnostic diagnostic, int rule, string? module, string? why)
     {
         json.WriteStartObject();
         json.WriteString("ruleId", diagnostic.Code.ToString());
@@ -117,6 +122,16 @@ internal sealed class SarifReport(string root, string version)
             }
 
             json.WriteEndObject();
+            json.WriteEndObject();
+            json.WriteEndArray();
+        }
+
+        if (why is not null)
+        {
+            json.WriteStartArray("suppressions");
+            json.WriteStartObject();
+            json.WriteString("kind", "external");
+            json.WriteString("justification", why);
             json.WriteEndObject();
             json.WriteEndArray();
         }

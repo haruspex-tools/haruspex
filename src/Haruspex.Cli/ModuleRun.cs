@@ -101,7 +101,9 @@ internal static class ModuleRun
             return new Succeeded<Settings>(new Settings(HaruspexConfig.None(request.WorkingDirectory, reserved), null));
         if (!File.Exists(path))
             return Refused<Settings>(CliCodes.ConfigNotFound, $"config file not found: {request.Config}");
-        return ConfigReader.Read(path, reserved).Select(config => new Settings(config, path));
+        return ConfigReader.Read(path, reserved).Then<Settings>(config => Acknowledgements.Refused(config).ToList() is { Count: > 0 } refused
+            ? new Failed<Settings>([.. refused])
+            : new Succeeded<Settings>(new Settings(config, path)));
     }
 
     /// <summary>

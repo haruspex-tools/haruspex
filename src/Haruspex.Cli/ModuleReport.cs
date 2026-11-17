@@ -46,6 +46,9 @@ internal sealed class ModuleReport(CommandName command, RunRequest request, Equa
     /// <summary>What changed since <c>generate</c> last wrote the module; null for <c>check</c>, and for a run that wrote nothing.</summary>
     public SinceLastRun? Since { get; init; }
 
+    /// <summary>The warnings the config file acknowledges, set aside from <see cref="Diagnostics"/>: counted, and listed with <c>--verbose</c>.</summary>
+    public EquatableArray<AcknowledgedWarning> Acknowledged { get; init; } = [];
+
     /// <summary>Whether the module succeeded.</summary>
     public bool Succeeded => ExitCode == HaruspexCli.ExitCodes.Success;
 }

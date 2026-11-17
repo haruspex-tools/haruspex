@@ -9,6 +9,15 @@ namespace Haruspex.Diagnostics;
 /// <param name="At">Where, when it has a place.</param>
 public sealed record Diagnostic(DiagnosticCode Code, string Message, DiagnosticLocation? At)
 {
+    /// <summary>
+    /// What the problem is about, by the name a config file gives to acknowledge it, for a warning a user may have read and
+    /// decided to live with: a package's file name (<c>master.dacpac</c>), a project's, a build target's, an object's. Null for a
+    /// problem that can't be acknowledged, which is most: an error must be fixed, and a warning about the config file is fixed
+    /// there. Acknowledging is by code and subject together, never by code alone, so one warning read is not every warning of
+    /// its kind (docs/decisions/0063-a-warning-is-acknowledged-by-its-code-and-subject.md).
+    /// </summary>
+    public string? Subject { get; init; }
+
     /// <summary>How serious it is: its code's severity.</summary>
     public DiagnosticSeverity Severity => Code.Severity;
 

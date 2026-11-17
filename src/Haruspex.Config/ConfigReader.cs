@@ -147,6 +147,9 @@ public static class ConfigReader
                     case "check":
                         config = config with { CheckUnknowns = Check(member.Value, path) };
                         break;
+                    case "acknowledge":
+                        config = config with { Acknowledged = [.. Acknowledge(member.Value, path)] };
+                        break;
                     case "serverOnly":
                         if (member.Value is JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False } serverOnly)
                         {
@@ -160,7 +163,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check");
+                        Unknown(member, path, "$schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
                         break;
                 }
             }
@@ -248,6 +251,74 @@ public static class ConfigReader
                 "json-schema" => Emitter.JsonSchema,
                 _ => Emitter.Mssql,
             };
+        }
+
+        /// <summary>
+        /// The warnings acknowledged: each an object with its <c>code</c> (a warning's, <c>HAR</c> and four digits), its
+        /// <c>subject</c> and <c>why</c>, all three required, so a warning is never acknowledged by its code alone, nor without a
+        /// reason; and each once.
+        /// </summary>
+        private List<Acknowledgement> Acknowledge(JsonValue value, string path)
+        {
+            var acknowledged = new List<Acknowledgement>();
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of warnings acknowledged, each { \"code\", \"subject\", \"why\" }.");
+                return acknowledged;
+            }
+
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                var itemPath = Index(path, i);
+                if (Object(array.Items[i], itemPath) is not { } entry)
+                    continue;
+                string? code = null, subject = null, why = null;
+                foreach (var member in entry.Members)
+                {
+                    var memberPath = Child(itemPath, member.Name);
+                    switch (member.Name)
+                    {
+                        case "code":
+                            code = NonEmpty(member.Value, memberPath);
+                            if (code is not null && !(code.Length == 7 && code.StartsWith("HAR", StringComparison.Ordinal) && code[3..].All(char.IsAsciiDigit)))
+                            {
+                                Report(ConfigCodes.WrongKind, member.Value, memberPath, $"is \"{code}\", which is no diagnostic's code: a code is HAR and four digits, such as HAR1008.");
+                                code = null;
+                            }
+
+                            break;
+                        case "subject":
+                            subject = NonEmpty(member.Value, memberPath);
+                            break;
+                        case "why":
+                            why = NonEmpty(member.Value, memberPath);
+                            break;
+                        default:
+                            Unknown(member, memberPath, "code, subject, why");
+                            break;
+                    }
+                }
+
+                var at = new JsonLocation(file, itemPath, array.Items[i].Line, array.Items[i].Column);
+                var missing = new[] { ("code", code), ("subject", subject), ("why", why) }.Where(m => m.Item2 is null && !entry.Members.Any(e => e.Name == m.Item1)).Select(m => $"\"{m.Item1}\"").ToList();
+                if (missing.Count > 0)
+                {
+                    Problems.Add(ConfigCodes.WrongKind.At(at, $"an acknowledgement needs {string.Join(" and ", missing)}: a warning is acknowledged by its code and its subject together, never by its code alone, and says why."));
+                    continue;
+                }
+
+                if (code is null || subject is null || why is null)
+                    continue;
+                if (acknowledged.FirstOrDefault(a => a.Code == code && a.Subject == subject) is { } earlier)
+                {
+                    Problems.Add(ConfigCodes.WrongKind.At(at, $"acknowledges {code} for \"{subject}\" again; it is acknowledged at line {earlier.At.Line}."));
+                    continue;
+                }
+
+                acknowledged.Add(new Acknowledgement(code, subject, why, at));
+            }
+
+            return acknowledged;
         }
 
         /// <summary>What <c>haruspex check</c> does beyond comparing: today, whether an unknown fails it.</summary>

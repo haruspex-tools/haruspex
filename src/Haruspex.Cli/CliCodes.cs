@@ -86,6 +86,12 @@ internal static class CliCodes
     /// <summary><c>init</c> finds more than one project file, or more than one DACPAC, and can't tell which is the application's.</summary>
     public static DiagnosticCode SourceAmbiguous { get; } = new(6023, DiagnosticSeverity.Error, "More than one database to read");
 
+    /// <summary>The config file acknowledges a code that can't be acknowledged: an error, or a warning that names no subject.</summary>
+    public static DiagnosticCode NotAcknowledgeable { get; } = new(6024, DiagnosticSeverity.Error, "A code that can't be acknowledged");
+
+    /// <summary>An entry of the config file's <c>acknowledge</c> that matched no warning in the run.</summary>
+    public static DiagnosticCode AcknowledgesNothing { get; } = new(6025, DiagnosticSeverity.Warning, "An acknowledgement that matches no warning");
+
     /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from the files in the output folder, or can't be compared with it, or is
     /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.

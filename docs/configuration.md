@@ -27,6 +27,10 @@ otherwise silently do nothing.
 
   "check": { "unknowns": "report" },        // or "fail"; see "What check fails on"
 
+  "acknowledge": [                          // warnings read and lived with; see "Warnings acknowledged"
+    { "code": "HAR1008", "subject": "StampBuildInfo", "why": "it stamps the build's number and adds no scripts" }
+  ],
+
   "naming": {                               // for every schema
     "replace": [{ "pattern": "#$", "with": "Row" }],
     "case": "pascal"                        // or "camel", "preserve"
@@ -345,6 +349,37 @@ throughout:
 ```
 
 `unknowns` is `"report"`, the default, or `"fail"`.
+
+## Warnings acknowledged: `acknowledge`
+
+Some warnings say something about the source that a team has read and decided to live with: a build target that only stamps
+a version, a reference to a package a build machine doesn't have. Said on every run, they teach the team to skip warnings,
+and the next one, which matters, is skipped with them. `acknowledge` names each such warning by its `code` and its `subject`
+together, never by its code alone, with `why`:
+
+```jsonc
+"acknowledge": [
+  { "code": "HAR1008", "subject": "RunTestsBeforeDeploy", "why": "it runs the tests and adds no scripts" },
+  { "code": "HAR1003", "subject": "master.dacpac", "why": "no procedure reads a system view" }
+]
+```
+
+An acknowledged warning is counted rather than said (`haruspex: nothing changed since the last run: 4 procedures, no
+unknowns. 2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each, with its `why`, and `--format json` and
+`sarif` hold them apart, SARIF as suppressed results. Every other warning of the same code is still said. The subject is
+the name the warning gives:
+
+| Code | Subject |
+|---|---|
+| [HAR1003](diagnostics/HAR1003.md), a referenced DACPAC isn't found | its file name, such as `master.dacpac` |
+| [HAR1007](diagnostics/HAR1007.md), a referenced project isn't found | its file name, such as `Shared.sqlproj` |
+| [HAR1008](diagnostics/HAR1008.md), part of a project file isn't read | the name of the build target that isn't read; the other parts can't be acknowledged |
+| [HAR2101](diagnostics/HAR2101.md), a write to an object the project doesn't define | the object, as the warning names it |
+
+No other code can be acknowledged: an error must be fixed, and a warning about the config file is fixed in it (HAR6024). An
+entry that matches no warning in a run is said, as a warning (HAR6025), so that one left behind after its cause is gone doesn't
+hide the next warning of that subject; a run whose `--include` narrows the selection doesn't say it, since the warning may be
+about a procedure the run left out.
 
 ## The callers' session: `session`
 

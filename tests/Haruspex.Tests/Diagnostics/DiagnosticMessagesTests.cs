@@ -288,6 +288,8 @@ public class DiagnosticMessagesTests
             f.File("a/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
             f.File("b/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
         })),
+        (6024, () => Config("\"acknowledge\": [{ \"code\": \"HAR1001\", \"subject\": \"db/p1.sql\", \"why\": \"it parses on the server\" }]")),
+        (6025, () => Config("\"acknowledge\": [{ \"code\": \"HAR2101\", \"subject\": \"lib.audit\", \"why\": \"it has no triggers\" }]")),
         (6021, () => Init(f => f.File("haruspex.json", "{}"))),
         (6022, () => Init(_ => { })),
         (6023, () => Init(f =>

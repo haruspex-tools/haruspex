@@ -99,7 +99,8 @@
           "column": 1,
           "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md"
         }
-      ]
+      ],
+      "acknowledged": []
     }
   ]
 }

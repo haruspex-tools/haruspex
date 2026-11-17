@@ -25,7 +25,7 @@
   "$defs": {
     "module": {
       "type": "object",
-      "required": ["config", "out", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics"],
+      "required": ["config", "out", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics", "acknowledged"],
       "additionalProperties": false,
       "properties": {
         "config": { "description": "The config file --config named or --all found; null when the run looked for one.", "type": ["string", "null"] },
@@ -87,9 +87,22 @@
           ]
         },
         "diagnostics": {
-          "description": "Everything the run found, in the order it found it: errors, warnings and every note, whatever --verbose or --quiet ask of the text.",
+          "description": "Everything the run found, in the order it found it: errors, warnings and every note, whatever --verbose or --quiet ask of the text; but for the warnings the config file acknowledges.",
           "type": "array",
           "items": { "$ref": "#/$defs/diagnostic" }
+        },
+        "acknowledged": {
+          "description": "The warnings the config file's \"acknowledge\" names, each with its subject and why.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "allOf": [{ "$ref": "#/$defs/diagnostic" }],
+            "required": ["subject", "why"],
+            "properties": {
+              "subject": { "type": "string" },
+              "why": { "type": "string" }
+            }
+          }
         }
       }
     },
@@ -150,6 +163,7 @@
       "type": "object",
       "required": ["code", "severity", "message", "file", "line", "column", "help"],
       "additionalProperties": false,
+      "$comment": "An acknowledged warning has subject and why besides; they are named here so that additionalProperties allows them.",
       "properties": {
         "code": { "type": "string", "pattern": "^HAR[0-9]{4}$" },
         "severity": { "enum": ["error", "warning", "note"] },
@@ -157,7 +171,9 @@
         "file": { "description": "The file it is in; null when it has no place.", "type": ["string", "null"] },
         "line": { "description": "The line, from 1; null when it has none.", "type": ["integer", "null"], "minimum": 1 },
         "column": { "description": "The column, from 1; null when it has none.", "type": ["integer", "null"], "minimum": 1 },
-        "help": { "description": "The code's page.", "type": "string", "format": "uri" }
+        "help": { "description": "The code's page.", "type": "string", "format": "uri" },
+        "subject": { "description": "For an acknowledged warning, what it is about, as the config file names it.", "type": "string" },
+        "why": { "description": "For an acknowledged warning, why it is lived with.", "type": "string" }
       }
     }
   }

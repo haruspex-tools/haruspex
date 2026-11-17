@@ -53,6 +53,9 @@ public sealed record HaruspexConfig
     /// </summary>
     public SessionOptions Session { get; init; } = SessionOptions.NotKnown;
 
+    /// <summary>The warnings the file acknowledges (<c>acknowledge</c>), each by its code and subject, in the order written.</summary>
+    public EquatableArray<Acknowledgement> Acknowledged { get; init; } = [];
+
     /// <summary>What <c>haruspex check</c> does about unknowns in the module (<c>check.unknowns</c>).</summary>
     public CheckUnknowns CheckUnknowns { get; init; } = CheckUnknowns.Report;
 

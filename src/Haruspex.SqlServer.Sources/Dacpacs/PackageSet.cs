@@ -132,7 +132,8 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
         var places = string.Join(", ", ReferenceFinder.Shown(reference, referrer.Path, Folders));
         diagnostics.Add(SourceCodes.ReferenceNotFound.At(
             new FileLocation(referrer.Path),
-            $"{referrer.Name} refers to {reference.LogicalName}, {which}, which isn't found: looked for at {places}. Put it beside {referrer.Name}, or name its folder in \"references\" in the config file."));
+            $"{referrer.Name} refers to {reference.LogicalName}, {which}, which isn't found: looked for at {places}. Put it beside {referrer.Name}, or name its folder in \"references\" in the config file.",
+            reference.LogicalName));
         return null;
     }
 }

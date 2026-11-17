@@ -25,7 +25,8 @@
         "compared": false,
         "why": "there was no earlier output"
       },
-      "diagnostics": []
+      "diagnostics": [],
+      "acknowledged": []
     },
     {
       "config": "b/haruspex.json",
@@ -45,7 +46,8 @@
           "column": null,
           "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6004.md"
         }
-      ]
+      ],
+      "acknowledged": []
     }
   ]
 }

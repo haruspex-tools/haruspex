@@ -177,3 +177,5 @@ reason.
 | [HAR6021](HAR6021.md) | error | A config file is already there |
 | [HAR6022](HAR6022.md) | error | No database is found to read |
 | [HAR6023](HAR6023.md) | error | More than one database to read |
+| [HAR6024](HAR6024.md) | error | A code that can't be acknowledged |
+| [HAR6025](HAR6025.md) | warning | An acknowledgement that matches no warning |

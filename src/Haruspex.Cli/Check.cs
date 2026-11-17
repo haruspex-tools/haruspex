@@ -25,12 +25,14 @@ internal static class Check
         var unknowns = ModuleRun.Notes(module.Document, module.Project);
         progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
         var compared = Compared(module);
-        Diagnostic[] found = [.. emitted.Diagnostics, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared];
+        var (kept, acknowledged) = Acknowledgements.Apply(emitted.Diagnostics, module.Config, sayUnused: request.Include.Count == 0);
+        Diagnostic[] found = [.. kept, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared];
         return new ModuleReport(CommandName.Check, request, [.. found], compared.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(compared))
         {
             Out = module.Out,
             Document = module.Document,
             Unknowns = unknowns,
+            Acknowledged = acknowledged,
         };
     }
 

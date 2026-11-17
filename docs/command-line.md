@@ -87,6 +87,10 @@ db/procedures.sql:5:26: note HAR2009: kennel.get_dog results[0][].nickname: The 
 
 **`--quiet`** prints errors only, and nothing at all when the run succeeds.
 
+**Warnings acknowledged.** A warning the config file's `acknowledge` names, by its code and subject, is counted rather than
+said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each with why
+([the configuration](configuration.md#warnings-acknowledged-acknowledge)).
+
 ## Options
 
 `generate` and `check` take the same options:
@@ -158,7 +162,8 @@ no module ran, when none did) and `modules`, one for each module in the order th
 | `written` | The files `generate` wrote, the IR first. |
 | `unknowns` | Their `count`, and `byReason`: each reason as the IR names it, the code of its note, and how many. |
 | `sinceLastRun` | For `generate`: `compared` false with `why`, or true with the `changes` (each with its `kind`, such as `became-nullable`, `object`, `path`, `before`, `after` and the `text` the report prints), `newUnknowns`, `resolvedUnknowns`, `unchangedUnknowns` and `rewritten`. Null for `check`. |
-| `diagnostics` | Everything the run found, notes included: each `code`, `severity`, `message`, `file`, `line`, `column` (null where there is none) and `help`, the code's page. |
+| `acknowledged` | The warnings the config file's `acknowledge` names, each as a diagnostic with its `subject` and `why`. |
+| `diagnostics` | Everything else the run found, notes included: each `code`, `severity`, `message`, `file`, `line`, `column` (null where there is none) and `help`, the code's page. |
 
 **SARIF.** One run of the tool `haruspex`, with its version; a rule for each code the run reported, with its title, its page
 as `helpUri` and its severity as the default level; and a result for each diagnostic, at its file, line and column. A file is

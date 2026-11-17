@@ -87,6 +87,36 @@
         }
       }
     },
+    "acknowledge": {
+      "description": "Warnings read and to be lived with, each named by its code and its subject together, never by its code alone, and with why. An acknowledged warning is counted rather than said on each run (--verbose lists it); an entry that matches no warning in a run is a warning itself. Only warnings about the source that name a subject can be acknowledged: HAR1003, HAR1007, HAR1008 and HAR2101.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "subject",
+          "why"
+        ],
+        "properties": {
+          "code": {
+            "description": "The warning's code, such as \"HAR1008\".",
+            "type": "string",
+            "pattern": "^HAR[0-9]{4}$"
+          },
+          "subject": {
+            "description": "What the warning is about, as it names it: a DACPAC's or project's file name (\"master.dacpac\"), a build target's name, or for HAR2101 the object written to.",
+            "type": "string",
+            "minLength": 1
+          },
+          "why": {
+            "description": "Why the warning is lived with, for the next reader of the file.",
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "session": {
       "description": "The SET options the callers' connections set: the driver's at login, or what the application sets after. Each is true for ON or false for OFF; leave out one that isn't known, which claims only what holds whatever it is. A database's defaults apply only to a connection that sets nothing, and current drivers set these at login, so declare the driver's, not the database's.",
       "type": "object",

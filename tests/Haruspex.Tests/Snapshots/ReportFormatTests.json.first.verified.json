@@ -69,7 +69,8 @@
           "column": 26,
           "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md"
         }
-      ]
+      ],
+      "acknowledged": []
     }
   ]
 }

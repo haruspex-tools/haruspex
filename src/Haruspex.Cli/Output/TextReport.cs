@@ -50,6 +50,13 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         foreach (var diagnostic in module.Diagnostics.Where(d => !unknownNotes.Contains(d) && Shows(d)))
             error.WriteLine(Line(diagnostic));
 
+        // An acknowledged warning is said only when asked for, with why it is lived with.
+        if (detail == OutputDetail.Verbose)
+        {
+            foreach (var acknowledged in module.Acknowledged)
+                error.WriteLine($"{Line(acknowledged.Warning)} (acknowledged: {acknowledged.By.Why})");
+        }
+
         // The unknowns' notes are the subject of a check that fails on unknowns, so it says them without being asked.
         if (detail == OutputDetail.Verbose || module.Diagnostics.Any(d => d.Code == CliCodes.UnknownsFail))
             Notes(module, error);
@@ -92,10 +99,13 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
 
         // A check that passes is one line: it runs in CI and before a commit, where its reader wants the verdict. So is a
         // generate that changed nothing, which is most runs of a command run many times a day.
+        var acknowledged = module.Acknowledged.Count == 0
+            ? ""
+            : $" {Counted(module.Acknowledged.Count, "warning")} acknowledged{(detail == OutputDetail.Verbose ? "" : " (--verbose lists them)")}.";
         if (module.Command == CommandName.Check)
-            return $"haruspex: {counted}{listed}. {Shown(module.Out ?? "")} is up to date.";
+            return $"haruspex: {counted}{listed}. {Shown(module.Out ?? "")} is up to date.{acknowledged}";
         if (module.Since is SinceLastRun.Compared { Nothing: true })
-            return $"haruspex: nothing changed since the last run: {counted}{listed}.";
+            return $"haruspex: nothing changed since the last run: {counted}{listed}.{acknowledged}";
 
         var lines = new List<string> { $"haruspex: {counted}. Wrote {EnglishList.Of([.. module.Written.Select(Shown)])}." };
         switch (module.Since)
@@ -113,6 +123,8 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
                 break;
         }
 
+        if (acknowledged.Length > 0)
+            lines.Add(acknowledged.TrimStart());
         return string.Join(Environment.NewLine, lines);
     }
 

@@ -46,6 +46,12 @@ public sealed record DiagnosticCode
     /// <param name="message">What is wrong, and what to do about it.</param>
     public Diagnostic At(DiagnosticLocation? at, string message) => new(this, message, at);
 
+    /// <summary>A problem of this kind about <paramref name="subject"/>, which a config file may acknowledge it by (<see cref="Diagnostic.Subject"/>).</summary>
+    /// <param name="at">Where, or null when it has no place.</param>
+    /// <param name="message">What is wrong, and what to do about it.</param>
+    /// <param name="subject">What it is about: a package's or project's file name, a target's name, an object's.</param>
+    public Diagnostic At(DiagnosticLocation? at, string message, string subject) => new(this, message, at) { Subject = subject };
+
     /// <summary>The code as it is written, <c>HAR1001</c>.</summary>
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"HAR{Number:D4}");
 }

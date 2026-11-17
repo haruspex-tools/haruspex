@@ -110,7 +110,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -393,4 +393,10 @@ haruspex: error HAR6022: found no .sqlproj, .dacpac or .sql file in the working 
 
 HAR6023
 haruspex: error HAR6023: found 2 project files, Audit/Audit.sqlproj and Sales/Sales.sqlproj, and can't tell which is the application's. Name one: haruspex init Audit/Audit.sqlproj.
+
+HAR6024
+haruspex.json:1:93: error HAR6024: acknowledge[0]: HAR1001 can't be acknowledged: only a warning about the source that names its subject can be, and those are HAR1003, HAR1007, HAR1008, HAR2101. Fix what HAR1001 says instead.
+
+HAR6025
+haruspex.json:1:93: warning HAR6025: acknowledge[0]: acknowledges HAR2101 for "lib.audit", but this run gave no such warning. Remove the entry, or correct its code or its subject: HAR2101's subject is the name the warning gives.
 

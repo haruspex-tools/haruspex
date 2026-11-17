@@ -89,6 +89,10 @@ internal sealed class JsonReport(string workingDirectory)
         foreach (var diagnostic in module.Diagnostics)
             Diagnostic(json, diagnostic);
         json.WriteEndArray();
+        json.WriteStartArray("acknowledged");
+        foreach (var acknowledged in module.Acknowledged)
+            Diagnostic(json, acknowledged.Warning, acknowledged.By.Why);
+        json.WriteEndArray();
         json.WriteEndObject();
     }
 
@@ -188,7 +192,10 @@ internal sealed class JsonReport(string workingDirectory)
             json.WriteString("code", code.ToString());
     }
 
-    private void Diagnostic(Utf8JsonWriter json, Diagnostic diagnostic)
+    /// <param name="json">The writer.</param>
+    /// <param name="diagnostic">The diagnostic.</param>
+    /// <param name="why">For a warning the config file acknowledges, why; null otherwise, and then not written.</param>
+    private void Diagnostic(Utf8JsonWriter json, Diagnostic diagnostic, string? why = null)
     {
         var (_, _, text) = DiagnosticFormatter.Parts(diagnostic);
         var (held, line, column) = Place.Of(diagnostic);
@@ -201,6 +208,12 @@ internal sealed class JsonReport(string workingDirectory)
         WriteNumberOrNull(json, "line", line);
         WriteNumberOrNull(json, "column", column);
         json.WriteString("help", DiagnosticPages.Of(diagnostic.Code));
+        if (why is not null)
+        {
+            json.WriteString("subject", diagnostic.Subject);
+            json.WriteString("why", why);
+        }
+
         json.WriteEndObject();
     }
 
