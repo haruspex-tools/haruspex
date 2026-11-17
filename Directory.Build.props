@@ -19,9 +19,12 @@
          unpackable. -->
     <IsPackable>false</IsPackable>
 
-    <!-- Pre-release: nothing is stable yet. The IR has its own version (IrDocument.CurrentVersion). -->
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>dev</VersionSuffix>
+    <!-- Pre-release: nothing is stable yet. The IR has its own version (IrDocument.CurrentVersion). A preview's version is
+         0.0.0-preview-<the commit's first eight hex digits>, as its npm packages' is (packaging/npm/version.mjs): the target
+         HaruspexPreviewVersion, below, adds the commit, and the SDK then appends the whole commit after a +, so the binary's
+         version names the package it ships in. Built outside a git checkout, it is 0.0.0-preview. -->
+    <VersionPrefix>0.0.0</VersionPrefix>
+    <VersionSuffix>preview</VersionSuffix>
     <Authors>Richard Baker</Authors>
     <Copyright>Copyright 2026 Richard Baker</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -40,4 +43,16 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)analysers/Haruspex.Analysers/Haruspex.Analysers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
+
+  <!-- The commit in a preview's version, so the binary says the same version as the npm package it ships in. The commit is the
+       one the SDK reads from git (SourceRevisionId); it appends the whole of it after a +, which the pack script checks. A
+       target, not a property, because the commit is known only once the build has asked git for it. -->
+  <Target Name="HaruspexPreviewVersion"
+          AfterTargets="InitializeSourceControlInformation"
+          BeforeTargets="AddSourceRevisionToInformationalVersion"
+          Condition="'$(VersionSuffix)' == 'preview' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(SourceRevisionId)', '^[0-9a-f]{40}$'))">
+    <PropertyGroup>
+      <InformationalVersion>$(VersionPrefix)-preview-$(SourceRevisionId.Substring(0, 8))</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 </Project>

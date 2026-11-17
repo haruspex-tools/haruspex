@@ -26,9 +26,14 @@ test("only a full commit hash makes a version", () => {
   }
 });
 
-test("a binary is built from the commit its version string names", () => {
-  const bytes = Buffer.from(`\0\0..10.0.15+8e0f8ed2312954727f8919d7d1c2f78b483b4ee7\0\0.0.1.0-dev+${commit}\0`);
+test("a binary is built from the commit its version string names, at the packages' version", () => {
+  const bytes = Buffer.from(`\0\0..10.0.15+8e0f8ed2312954727f8919d7d1c2f78b483b4ee7\0\0${previewVersion(commit)}+${commit}\0`);
   assert.equal(builtFrom(bytes, commit), true);
   assert.equal(builtFrom(bytes, "8e0f8ed2312954727f8919d7d1c2f78b483b4ee8"), false);
   assert.equal(builtFrom(Buffer.from(commit), commit), false, "the hash alone, without the + of a version, is not enough");
+});
+
+test("a binary whose version isn't the packages' is refused, though it names the commit", () => {
+  // What the binary said before its version was the preview's: --version and the package disagreed.
+  assert.equal(builtFrom(Buffer.from(`\0 0.1.0-dev+${commit}\0`), commit), false);
 });

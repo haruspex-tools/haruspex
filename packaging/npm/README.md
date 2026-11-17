@@ -55,9 +55,12 @@ The layout is esbuild's and Biome's, which solved this first:
 ## The version
 
 A preview's packages share one version, `0.0.0-preview-<commit>`, the first eight hex digits of the commit the binaries were
-built from: `0.0.0-preview-250ced9c`. The pack script checks that commit against each binary, whose informational version
-(`--version`) ends in `+<commit>`, so a tarball can't say it holds a commit it doesn't. 0.0.0 sorts below any release. Releases
-will carry haruspex's own version.
+built from: `0.0.0-preview-250ced9c`. The binary carries the same version: the build makes its informational version
+`0.0.0-preview-<commit>+<the whole commit>` (`Directory.Build.props`), which `--version` prints, so a user who quotes it quotes
+the package's version, with the commit after the `+`. The pack script looks for exactly that string in each binary and refuses
+one built from another commit or stamped with another version, so a tarball can't say it holds what it doesn't. Built outside
+a git checkout, the binary's version is `0.0.0-preview`. 0.0.0 sorts below any release. Releases will carry haruspex's own
+version, set in the same two places.
 
 ## Making the tarballs
 

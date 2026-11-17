@@ -8,6 +8,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { pack } from "../pack.mjs";
 import { mainManifest, platformManifest } from "../packages.mjs";
+import { previewVersion } from "../version.mjs";
 
 const require = createRequire(import.meta.url);
 const { platforms } = require("../haruspex/lib/launcher.js");
@@ -22,8 +23,9 @@ function binaries(name, builtFrom = commit, rids = platforms.map((p) => p.rid)) 
   const folder = path.join(root, name);
   for (const p of platforms.filter((q) => rids.includes(q.rid))) {
     fs.mkdirSync(path.join(folder, `haruspex-${p.rid}`), { recursive: true });
-    // The binaries' own version string ends in +<commit> (InformationalVersion); a dependency's names another commit.
-    const bytes = `stand-in for ${p.rid}\0 2.0.14+0427b9abbead3fa64c6655eb4290c537397131fa\0 0.1.0-dev+${builtFrom}\0`;
+    // The binaries' own version string is the packages' version and +<commit> (InformationalVersion); a dependency's names
+    // another commit.
+    const bytes = `stand-in for ${p.rid}\0 2.0.14+0427b9abbead3fa64c6655eb4290c537397131fa\0 ${previewVersion(builtFrom)}+${builtFrom}\0`;
     fs.writeFileSync(path.join(folder, `haruspex-${p.rid}`, p.binary), bytes, { mode: 0o644 });
   }
   return folder;

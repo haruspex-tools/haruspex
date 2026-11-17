@@ -13,10 +13,12 @@ export function previewVersion(commit) {
 }
 
 /**
- * Whether a binary was built from a commit. The build stamps haruspex's informational version, `<version>+<commit>`, into
- * the binary as text, so the commit appears after a `+`. The runtime's and libraries' versions are stamped the same way,
- * each with its own repository's commit, which never matches haruspex's.
+ * Whether a binary was built from a commit, and so says the version its packages carry. The build stamps haruspex's
+ * informational version into the binary as text: the preview's version, then a `+` and the whole commit
+ * (`0.0.0-preview-250ced9c+250ced9c…`, Directory.Build.props). So the binary's `--version` and the packages' version agree,
+ * and a binary stamped with any other version, or another commit, is refused. The runtime's and libraries' versions are
+ * stamped the same way, each with its own repository's commit, which never matches haruspex's.
  */
 export function builtFrom(bytes, commit) {
-  return bytes.includes(Buffer.from(`+${commit}`, "latin1"));
+  return bytes.includes(Buffer.from(`${previewVersion(commit)}+${commit}`, "latin1"));
 }
