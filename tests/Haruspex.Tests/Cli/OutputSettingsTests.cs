@@ -64,4 +64,15 @@ public class OutputSettingsTests
 
         Assert.Equal((false, true), (settings.Output.Colour, settings.Error.Colour));
     }
+
+    [Fact]
+    public void A_console_that_can_t_show_escapes_is_not_coloured_unless_asked()
+    {
+        var console = new Terminal { OutputIsTerminal = true, ErrorIsTerminal = true, OutputShowsEscapes = false, ErrorShowsEscapes = true };
+
+        var auto = OutputSettings.Settle(OutputDetail.Normal, ColourChoice.Auto, console);
+        var always = OutputSettings.Settle(OutputDetail.Normal, ColourChoice.Always, console);
+
+        Assert.Equal((false, true, true), (auto.Output.Colour, auto.Error.Colour, always.Output.Colour));
+    }
 }

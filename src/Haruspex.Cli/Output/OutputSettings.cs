@@ -32,15 +32,16 @@ internal sealed class OutputSettings(OutputDetail detail, TextStyle output, Text
         ArgumentNullException.ThrowIfNull(terminal);
         return new OutputSettings(
             detail,
-            Style(colour, terminal.OutputIsTerminal, terminal),
-            Style(colour, terminal.ErrorIsTerminal, terminal),
+            Style(colour, terminal.OutputIsTerminal, terminal.OutputShowsEscapes, terminal),
+            Style(colour, terminal.ErrorIsTerminal, terminal.ErrorShowsEscapes, terminal),
             ShowsProgress(detail, terminal));
     }
 
     /// <summary>How a stream is styled: colour as <see cref="Coloured"/> settles it, and links only with colour, as <see cref="Linked"/> settles them.</summary>
-    private static TextStyle Style(ColourChoice colour, bool isTerminal, Terminal terminal)
+    private static TextStyle Style(ColourChoice colour, bool isTerminal, bool showsEscapes, Terminal terminal)
     {
-        var coloured = Coloured(colour, isTerminal, terminal);
+        // A Windows console that can't show escape sequences would print them as text: no colour there unless asked for.
+        var coloured = Coloured(colour, isTerminal, terminal) && (showsEscapes || colour == ColourChoice.Always);
         return new TextStyle(coloured, coloured && Linked(isTerminal, terminal));
     }
 

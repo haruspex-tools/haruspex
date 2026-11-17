@@ -17,6 +17,15 @@ internal sealed class Terminal
     /// <summary>Whether standard error is a terminal.</summary>
     public bool ErrorIsTerminal { get; init; }
 
+    /// <summary>
+    /// Whether standard output, when a terminal, shows escape sequences (colour, links) rather than printing them: always
+    /// elsewhere, and on Windows when its console's processing of them is on or could be turned on (<see cref="Output.WindowsConsole"/>).
+    /// </summary>
+    public bool OutputShowsEscapes { get; init; } = true;
+
+    /// <summary>Whether standard error, when a terminal, shows escape sequences (<see cref="OutputShowsEscapes"/>).</summary>
+    public bool ErrorShowsEscapes { get; init; } = true;
+
     /// <summary>How many columns the terminal has, which a progress line keeps within; 80 when not known.</summary>
     public int Width { get; init; } = 80;
 
@@ -56,10 +65,14 @@ internal sealed class Terminal
                 variables[key] = value;
         }
 
+        var outputIsTerminal = !Console.IsOutputRedirected;
+        var errorIsTerminal = !Console.IsErrorRedirected;
         return new Terminal
         {
-            OutputIsTerminal = !Console.IsOutputRedirected,
-            ErrorIsTerminal = !Console.IsErrorRedirected,
+            OutputIsTerminal = outputIsTerminal,
+            ErrorIsTerminal = errorIsTerminal,
+            OutputShowsEscapes = !OperatingSystem.IsWindows() || !outputIsTerminal || Output.WindowsConsole.ShowsEscapes(Output.WindowsConsole.Output),
+            ErrorShowsEscapes = !OperatingSystem.IsWindows() || !errorIsTerminal || Output.WindowsConsole.ShowsEscapes(Output.WindowsConsole.Error),
             Width = Columns(),
             Environment = variables,
         };

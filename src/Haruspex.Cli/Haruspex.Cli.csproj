@@ -8,6 +8,8 @@
          the executable, where it has a runtime meaning; the libraries run under their host's culture, and leaving it off
          them keeps the analysers' culture rules (CA1305, CA1308 and the like) checking them. -->
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The marshalling LibraryImport generates for WindowsConsole's out parameter uses a pointer, which needs unsafe code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- A native binary, compiled ahead of time, when the build asks with -p:HaruspexNativeAot=true (CI's AOT job, one per
          platform). Asked for here rather than with -p:PublishAot=true, which would reach every project, the analysers'
          netstandard2.0 one included, which can't be compiled so. Off otherwise, so an ordinary restore needs no AOT
