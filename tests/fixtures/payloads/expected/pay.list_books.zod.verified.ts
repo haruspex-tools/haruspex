@@ -7,7 +7,7 @@
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType) =>
+const jsonText = (content: () => z.ZodType): z.ZodString =>
   z.string().refine((text) => {
     try {
       return content().safeParse(JSON.parse(text)).success
@@ -77,5 +77,5 @@ export const ListBooksRowSchema = z.object({
 export type ListBooksRow = z.infer<typeof ListBooksRowSchema>
 
 /** pay.list_books: returns JSON, null when no rows match. */
-export const ListBooksSchema = z.array(ListBooksRowSchema).min(1).nullable()
+export const ListBooksSchema = z.array(ListBooksRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListBooks = z.infer<typeof ListBooksSchema>

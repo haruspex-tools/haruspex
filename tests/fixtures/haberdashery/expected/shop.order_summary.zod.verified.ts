@@ -7,7 +7,7 @@
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType) =>
+const jsonText = (content: () => z.ZodType): z.ZodString =>
   z.string().refine((text) => {
     try {
       return content().safeParse(JSON.parse(text)).success
@@ -46,5 +46,5 @@ export const OrderSummaryParamsSchema = z.strictObject({
 export type OrderSummaryParams = z.infer<typeof OrderSummaryParamsSchema>
 
 /** shop.order_summary: returns 2 result sets: rows; rows. */
-export const OrderSummarySchema = z.tuple([z.array(OrderSummaryResult1RowSchema).length(1), z.array(OrderSummaryResult2RowSchema)])
+export const OrderSummarySchema = z.tuple([z.array(OrderSummaryResult1RowSchema).length(1, { error: "Expected exactly one row" }), z.array(OrderSummaryResult2RowSchema)])
 export type OrderSummary = z.infer<typeof OrderSummarySchema>

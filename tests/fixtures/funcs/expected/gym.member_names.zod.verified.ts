@@ -57,5 +57,5 @@ export const MemberNamesParamsSchema = z.strictObject({
 export type MemberNamesParams = z.infer<typeof MemberNamesParamsSchema>
 
 /** gym.member_names: returns 2 result sets: rows; JSON, null when no rows match. */
-export const MemberNamesSchema = z.tuple([z.array(MemberNamesResult1RowSchema), z.array(MemberNamesResult2RowSchema).min(1).nullable()])
+export const MemberNamesSchema = z.tuple([z.array(MemberNamesResult1RowSchema), z.array(MemberNamesResult2RowSchema).min(1, { error: "Expected at least one row" }).nullable()])
 export type MemberNames = z.infer<typeof MemberNamesSchema>

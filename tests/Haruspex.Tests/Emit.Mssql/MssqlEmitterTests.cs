@@ -165,6 +165,69 @@ public partial class MssqlEmitterTests
         Assert.DoesNotContain("PSchema", ts, StringComparison.Ordinal);
     }
 
+    private static readonly IrResult NotRun = new(IrEncoding.Rowset, new IrArray(Int), [new IrNullReason(IrNullRule.NotRun, "p.sql:2:1")]);
+
+    private static string Strict(params IrObject[] objects) => MssqlEmitter.Emit(Document(objects), new MssqlOptions { RefusesExtraResultSets = true }).Expected();
+
+    [Fact]
+    public void Fewer_result_sets_than_every_call_returns_fail_and_more_are_ignored_by_default()
+    {
+        // Two sets every call returns, then one that may not run: fewer than two is a database out of step; a third, or a
+        // fourth the function doesn't know, is read past (decision 0063).
+        var ts = Emitted(Procedure("P", [], Rows, Rows, NotRun));
+
+        Assert.Contains(
+            "  if (sets.length < 2) throw new ResultError('shop.P', 'the results', [{ message: `Expected at least 2 result sets, received ${String(sets.length)}` }])\n",
+            ts,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("sets.length >", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_for_json_set_absent_only_when_no_rows_match_still_counts_as_arriving()
+    {
+        // FOR JSON over no rows still sends its set, one row of empty text (observed); only a statement that doesn't run leaves
+        // a set out. So both sets below always arrive.
+        var noRows = new IrResult(IrEncoding.Json, Int, [new IrNullReason(IrNullRule.NoRows, "p.sql:2:1")]);
+
+        Assert.Contains("  if (sets.length < 2) throw ", Emitted(Procedure("P", [], noRows, Rows)), StringComparison.Ordinal);
+        Assert.Contains("  if (sets.length !== 2) throw ", Strict(Procedure("P", [], noRows, Rows)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_function_whose_sets_may_all_be_missing_checks_no_count_by_default()
+    {
+        Assert.DoesNotContain("sets.length", Emitted(Procedure("P", [], NotRun)), StringComparison.Ordinal);
+        Assert.DoesNotContain("sets.length", Emitted(Procedure("P", [])), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("rows, rows", "sets.length !== 2", "Expected exactly 2 result sets")]
+    [InlineData("rows, not run", "sets.length < 1 || sets.length > 2", "Expected between 1 and 2 result sets")]
+    [InlineData("not run", "sets.length > 1", "Expected at most one result set")]
+    [InlineData("rows", "sets.length !== 1", "Expected exactly one result set")]
+    [InlineData("", "sets.length > 0", "Expected no result sets")]
+    public void Under_strict_objects_a_result_set_the_function_does_not_know_fails(string results, string condition, string expected)
+    {
+        IrResult[] sets = [.. results.Split(", ", StringSplitOptions.RemoveEmptyEntries).Select(r => r == "rows" ? Rows : NotRun)];
+
+        var ts = Strict(Procedure("P", [], sets));
+
+        Assert.Contains(
+            $"  if ({condition}) throw new ResultError('shop.P', 'the results', [{{ message: `{expected}, received ${{String(sets.length)}}` }}])\n",
+            ts,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Under_strict_objects_a_procedure_of_no_result_sets_still_reads_the_response()
+    {
+        Assert.Contains(
+            "  const response = await request.execute('shop.P')\n  const sets = response.recordsets as unknown as readonly unknown[]\n  if (sets.length > 0) ",
+            Strict(Procedure("P", [])),
+            StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Results_that_cannot_be_listed_are_handed_over_as_they_arrive_through_their_schema()
     {

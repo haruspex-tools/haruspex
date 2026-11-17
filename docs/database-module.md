@@ -49,7 +49,10 @@ has `OUTPUT` parameters or a return code, or that returns several result sets, g
 A procedure that returns no result set has no `result`, and one that hands back nothing at all returns nothing. The shape follows
 the procedure: when it gains an `OUTPUT` parameter or a `RETURN` with a value, its function's shape changes, `haruspex check` says
 so, and the compiler finds each call to change. A rowset whose statement didn't run, in a branch or after a
-`RETURN`, is `[]`. A `FOR JSON` result is read the same whether
+`RETURN`, is `[]`. A result set after those the procedure lists, which a database deployed ahead of the application may
+return, is ignored, as a key a result's type doesn't list is, unless `"objects": "strict"` asks to refuse both; a set the
+procedure always returns that doesn't arrive fails the call either way
+([decision 0063](decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)). A `FOR JSON` result is read the same whether
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
 
@@ -88,8 +91,10 @@ A function fails in one of three ways, each thrown
 - **The database raised an error.** mssql's own `RequestError`, passed through unchanged, with its `number`, `state`,
   `class`, `procName` and `lineNumber`, so existing handling of the driver's errors keeps working.
 - **What came back broke the contract.** A `ResultError`, whose `name` is `'HaruspexResultError'` and `kind` is `'result'`, naming
-  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. The database and the application
-  are deployed out of step, which no retry fixes: it calls for a deployment, not a second attempt.
+  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. In a procedure of several result
+  sets the path starts with the set, counted from 1, and a set's count of rows is said in rows:
+  `sales.order_sheet, the results: result set 2: Expected exactly one row`. The database and the application are deployed out
+  of step, which no retry fixes: it calls for a deployment, not a second attempt.
 
 Connection failures and timeouts are the driver's, untouched. Each module writes its own error classes, so an application
 with several modules tells the errors apart by `name` or `kind`, not `instanceof`:
@@ -103,12 +108,85 @@ try {
 }
 ```
 
+## Testing with a double
+
+A function takes anything with `request()`, so a test can hand it a double rather than a pool. The double's `request()`
+returns an object with `input()` and `output()`, whose results the function ignores, and `execute()`, which the function
+calls for a procedure and for a query file alike (a query file runs through `sp_executesql`). What `execute()` resolves to
+is what the function reads, and it must have all three of the driver's fields:
+
+- `recordsets`: every result set, in order, each an array of rows (or, for a `FOR JSON` result, the one row the driver
+  makes of it). The function reads the sets from here, never from `recordset`, the first set alone, which hand-written
+  doubles often give instead: with only `recordset`, every call fails before any schema is applied;
+- `output`: the `OUTPUT` parameters, by their declared names, `{}` when there are none;
+- `returnValue`: the return code, 0 unless the test is about another.
+
+Typing the result as the driver's `IProcedureResult` makes the compiler ask for each. A double for a procedure with an `OUTPUT`
+parameter, as a test in this repository runs it against a generated function:
+
+```ts
+import type sql from 'mssql'
+import type { Queryable } from './db/haruspex.mssql'
+
+/** A connection whose every call returns these result sets, OUTPUT parameters and return code. */
+export function returning(sets: object[][], output: Record<string, unknown> = {}, returnValue = 0): Queryable {
+  const result: sql.IProcedureResult<object> = {
+    recordsets: sets as sql.IRecordSet<object>[],
+    recordset: sets[0] as sql.IRecordSet<object>,
+    output,
+    returnValue,
+    rowsAffected: sets.map((rows) => rows.length),
+  }
+  const request = { input: (): void => undefined, output: (): void => undefined, execute: async () => result }
+  return { request: () => request as unknown as sql.Request }
+}
+
+const sale = await ringUp(returning([[{ basket_id: '7', discount: 0, gift: false, token: null, weight: null, ratio: null }]], { sale_id: 12 }), {
+  product_id: 1,
+  quantity: 2,
+  basket_id: 7,
+})
+// { result: [{ basket_id: '7', … }], output: { sale_id: 12 } }
+```
+
+What the double returns is still checked by the procedure's schemas, so a double that drifts from the database fails the
+way the database would, with a `ResultError`.
+
 ## Where the functions run
 
 On the server. They take a connection, and a connection holds the database's credentials. In a Next.js application they are
 for route handlers, server actions and server components; the types and schemas, in their own file, may go anywhere.
 `"serverOnly": true` in `haruspex.json` starts the functions' file with `import 'server-only'`, so that a build fails where
 browser code imports it. It is off by default, since haruspex assumes no framework.
+
+**In tests.** With `"serverOnly": true`, a test that imports the functions' file, itself or through the code under test,
+imports `server-only` too, and a test runner resolves it as Node does: `Cannot find package 'server-only'` when it isn't
+installed, and when it is, the package's own error, `This module cannot be imported from a Client Component module`, since
+it is empty only under the `react-server` condition, which Next.js sets for server code. So the tests need one of these
+(both checked with Vitest 5.1):
+
+- `server-only` installed (`npm install --save-dev server-only`) and resolved under the `react-server` condition, beside
+  Vite's own conditions for server code. The condition then applies to every package the tests import, so a package with a
+  `react-server` build, React among them, resolves to that build:
+
+  ```ts
+  // vitest.config.ts
+  import { defaultServerConditions } from 'vite'
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ ssr: { resolve: { conditions: [...defaultServerConditions, 'react-server'] } } })
+  ```
+
+- or `server-only`, installed or not, resolved to an empty module of the application's own (`export {}`), which changes
+  nothing else:
+
+  ```ts
+  // vitest.config.ts
+  import { fileURLToPath } from 'node:url'
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ resolve: { alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) } } })
+  ```
 
 An application whose plugins or sub-applications each need their own interface to the database gives each its own
 `haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
@@ -174,5 +252,7 @@ Either way, a `FOR JSON` result with no rows is `null`, a list as much as one ob
 whose statement didn't run, in a branch or after a `RETURN`, isn't sent at all, so `result.recordset` is then `undefined`:
 that is what `?.` and `?? null` are for, and a schema whose summary says "when it does not run" needs them. Rows from a plain
 `SELECT` are `result.recordset`, or `[]` when it didn't run. A procedure with several result sets has one schema, a tuple:
-it parses an array holding each of `result.recordsets`, read as above. A test runs both reads against a real server, through
+it parses an array holding each of `result.recordsets`, read as above, and only those the procedure lists: the tuple refuses
+any more, so an application that reads the sets itself takes as many as the tuple has, as the functions do, to survive a set
+added after them. A test runs both reads against a real server, through
 the driver, in each mode (`MssqlDriverAcceptanceTests`).

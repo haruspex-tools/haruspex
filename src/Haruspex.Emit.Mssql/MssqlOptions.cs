@@ -19,6 +19,15 @@ public sealed record MssqlOptions
     public bool ServerOnly { get; init; }
 
     /// <summary>
+    /// Whether a function refuses a result set after those its procedure lists, as <c>"objects": "strict"</c> asks. Off by
+    /// default: a function reads the sets it knows and ignores any after them, so a deployed application survives its database
+    /// gaining a trailing set, as it survives a result gaining a key
+    /// (<c>docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md</c>). A set every call returns that is
+    /// missing fails either way.
+    /// </summary>
+    public bool RefusesExtraResultSets { get; init; }
+
+    /// <summary>
     /// The words the target language keeps for itself, which no function may be named: TypeScript's, which the CLI hands over
     /// from the Zod emitter, as it hands them to the config's naming. Nothing is reserved by default.
     /// </summary>

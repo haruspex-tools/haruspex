@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType) =>
+const jsonText = (content: () => z.ZodType): z.ZodString =>
   z.string().refine((text) => {
     try {
       return content().safeParse(JSON.parse(text)).success
@@ -25,5 +25,5 @@ export const OpenTabsPayloadRowSchema = z.object({
 export type OpenTabsPayloadRow = z.infer<typeof OpenTabsPayloadRowSchema>
 
 /** cafe.open_tabs_payload: returns rows. */
-export const OpenTabsPayloadSchema = z.array(OpenTabsPayloadRowSchema).length(1)
+export const OpenTabsPayloadSchema = z.array(OpenTabsPayloadRowSchema).length(1, { error: "Expected exactly one row" })
 export type OpenTabsPayload = z.infer<typeof OpenTabsPayloadSchema>

@@ -120,5 +120,5 @@ export const AdminSalesRowSchema = z.strictObject({
 export type AdminSalesRow = z.infer<typeof AdminSalesRowSchema>
 
 /** shop_admin.report_sales: returns JSON, null when no rows match. */
-export const AdminSalesSchema = z.array(AdminSalesRowSchema).min(1).nullable()
+export const AdminSalesSchema = z.array(AdminSalesRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type AdminSales = z.infer<typeof AdminSalesSchema>

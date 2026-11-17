@@ -14,7 +14,7 @@ public sealed record Diagnostic(DiagnosticCode Code, string Message, DiagnosticL
     /// decided to live with: a package's file name (<c>master.dacpac</c>), a project's, a build target's, an object's. Null for a
     /// problem that can't be acknowledged, which is most: an error must be fixed, and a warning about the config file is fixed
     /// there. Acknowledging is by code and subject together, never by code alone, so one warning read is not every warning of
-    /// its kind (docs/decisions/0063-a-warning-is-acknowledged-by-its-code-and-subject.md).
+    /// its kind (docs/decisions/0065-a-warning-is-acknowledged-by-its-code-and-subject.md).
     /// </summary>
     public string? Subject { get; init; }
 

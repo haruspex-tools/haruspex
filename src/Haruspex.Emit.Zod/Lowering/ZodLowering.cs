@@ -183,15 +183,32 @@ internal static class ZodLowering
     /// A result of rows, a rowset or FOR JSON's array, bounded as the result says it is read (<see cref="IrResult.FewestItems"/>
     /// and <see cref="IrResult.MostItems"/>), each bound written once.
     /// </summary>
+    /// <remarks>
+    /// Each bound carries its own message, in rows: Zod's counts an array's items ("expected array to have exactly 1 items"),
+    /// which is how a result-set failure first read to a team that met one. A FOR JSON array's items are its rows too, one
+    /// object each.
+    /// </remarks>
     private static ZodExpression Rows(IrArray array, IrResult result, TypeLowering types)
     {
         var schema = types.Type(array with { MinItems = null, MaxItems = null }, result.Encoding);
         if (result.FewestItems is { } exactly && result.MostItems == exactly)
-            return schema.Then("length", Count(exactly));
+            return schema.Then("length", Count(exactly), Expected("exactly", exactly));
         if (result.FewestItems is { } low)
-            schema = schema.Then("min", Count(low));
-        return result.MostItems is { } high ? schema.Then("max", Count(high)) : schema;
+            schema = schema.Then("min", Count(low), Expected("at least", low));
+        return result.MostItems is { } high ? schema.Then("max", Count(high), Expected("at most", high)) : schema;
     }
 
     private static Number Count(int count) => new(count.ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>A bound's message: "Expected exactly one row", "Expected at most 5 rows", "Expected no rows".</summary>
+    private static ObjectLiteral Expected(string how, int count)
+    {
+        var rows = count switch
+        {
+            0 => "no rows",
+            1 => how + " one row",
+            _ => how + " " + count.ToString(CultureInfo.InvariantCulture) + " rows",
+        };
+        return new ObjectLiteral([new ZodProperty("error", new Text("Expected " + rows))]);
+    }
 }

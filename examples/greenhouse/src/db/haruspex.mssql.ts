@@ -13,13 +13,13 @@ import {
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
 export interface Queryable {
-  request(): sql.Request
+  request: () => sql.Request
 }
 
 /** One problem a schema found, as Standard Schema reports it: a message, and where in the value. */
 export interface Issue {
   readonly message: string
-  readonly path?: ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined
+  readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined
 }
 
 /**
@@ -50,25 +50,33 @@ export class ResultError extends Error {
   readonly part: string
   readonly issues: readonly Issue[]
 
-  constructor(procedure: string, part: string, issues: readonly Issue[]) {
-    super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue) ? `${where(issue)}: ` : '') + issue.message).join('; ')}`)
+  /** sets: whether the value checked was several result sets, so that an issue's first index is its set. */
+  constructor(procedure: string, part: string, issues: readonly Issue[], sets = false) {
+    super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue, sets) ? `${where(issue, sets)}: ` : '') + issue.message).join('; ')}`)
     this.procedure = procedure
     this.part = part
     this.issues = issues
   }
 }
 
-/** Where in a value an issue is, as dotted keys. */
-function where(issue: Issue): string {
-  return (issue.path ?? []).map((segment) => String(typeof segment === 'object' ? segment.key : segment)).join('.')
+/**
+ * Where in a value an issue is, as JavaScript reads a path: each index in brackets and each key after a dot, as in
+ * [0].label. In several result sets the first index is the set, named as people count them, from 1: result set 2, [0].label.
+ */
+function where(issue: Issue, sets = false): string {
+  const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
+  const set = path[0]
+  const inSet = sets && typeof set === 'number'
+  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+  return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
 }
 
 /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
 interface Checks<T> {
   readonly '~standard': {
-    validate(
+    readonly validate: (
       value: unknown,
-    ):
+    ) =>
       | { readonly value: T; readonly issues?: undefined }
       | { readonly issues: readonly Issue[] }
       | Promise<{ readonly value: T; readonly issues?: undefined } | { readonly issues: readonly Issue[] }>
@@ -111,6 +119,7 @@ export async function getPlant(db: Queryable, params: types.GetPlantParams): Pro
   request.input('plant_id', sql.Int, p.plant_id)
   const response = await request.execute('garden.get_plant')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('garden.get_plant', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(GetPlantSchema, readJson(sets[0]), (issues) => new ResultError('garden.get_plant', 'the results', issues))
   return result
 }
@@ -120,6 +129,7 @@ export async function listPlants(db: Queryable): Promise<types.ListPlants> {
   const request = db.request()
   const response = await request.execute('garden.list_plants')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('garden.list_plants', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(ListPlantsSchema, readRows(sets[0]), (issues) => new ResultError('garden.list_plants', 'the results', issues))
   return result
 }
@@ -134,6 +144,7 @@ export async function thirstyPlants(db: Queryable, params: types.ThirstyPlantsPa
   request.input('since', sql.VarChar(sql.MAX), p.since)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('queries/thirsty_plants.sql', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(ThirstyPlantsSchema, readRows(sets[0]), (issues) => new ResultError('queries/thirsty_plants.sql', 'the results', issues))
   return result
 }

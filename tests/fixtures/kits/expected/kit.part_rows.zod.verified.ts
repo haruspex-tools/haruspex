@@ -46,5 +46,5 @@ export const PartRowsParamsSchema = z.strictObject({
 export type PartRowsParams = z.infer<typeof PartRowsParamsSchema>
 
 /** kit.part_rows: returns 4 result sets: rows; JSON, null when no rows match; rows; JSON, null when no rows match. */
-export const PartRowsSchema = z.tuple([z.array(PartRowsResult1RowSchema), z.array(PartRowsResult2RowSchema).min(1).nullable(), z.array(PartRowsResult3RowSchema), z.array(PartRowsResult4RowSchema).min(1).nullable()])
+export const PartRowsSchema = z.tuple([z.array(PartRowsResult1RowSchema), z.array(PartRowsResult2RowSchema).min(1, { error: "Expected at least one row" }).nullable(), z.array(PartRowsResult3RowSchema), z.array(PartRowsResult4RowSchema).min(1, { error: "Expected at least one row" }).nullable()])
 export type PartRows = z.infer<typeof PartRowsSchema>

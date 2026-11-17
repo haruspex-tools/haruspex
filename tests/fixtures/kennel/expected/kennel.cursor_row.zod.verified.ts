@@ -20,5 +20,5 @@ export const CursorRowParamsSchema = z.strictObject({
 export type CursorRowParams = z.infer<typeof CursorRowParamsSchema>
 
 /** kennel.cursor_row: returns rows. */
-export const CursorRowSchema = z.array(CursorRowRowSchema).length(1)
+export const CursorRowSchema = z.array(CursorRowRowSchema).length(1, { error: "Expected exactly one row" })
 export type CursorRow = z.infer<typeof CursorRowSchema>

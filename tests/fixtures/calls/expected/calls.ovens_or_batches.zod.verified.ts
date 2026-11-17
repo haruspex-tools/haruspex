@@ -28,5 +28,5 @@ export const OvensOrBatchesParamsSchema = z.strictObject({
 export type OvensOrBatchesParams = z.infer<typeof OvensOrBatchesParamsSchema>
 
 /** calls.ovens_or_batches: returns 2 result sets: rows; rows, [] when it does not run. */
-export const OvensOrBatchesSchema = z.tuple([z.union([z.array(OvensOrBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional(), weight_g: z.never().optional() })), z.array(OvensOrBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional(), rack_count: z.never().optional() }))]), z.array(OvensOrBatchesResult1RowSchema).max(1)])
+export const OvensOrBatchesSchema = z.tuple([z.union([z.array(OvensOrBatchesResult1RowSchema.extend({ batch_id: z.never().optional(), product: z.never().optional(), weight_g: z.never().optional() })), z.array(OvensOrBatchesResult1Row2Schema.extend({ oven_id: z.never().optional(), label: z.never().optional(), rack_count: z.never().optional() }))]), z.array(OvensOrBatchesResult1RowSchema).max(1, { error: "Expected at most one row" })])
 export type OvensOrBatches = z.infer<typeof OvensOrBatchesSchema>

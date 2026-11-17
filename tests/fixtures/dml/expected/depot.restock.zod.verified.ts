@@ -10,5 +10,5 @@ export const RestockRowSchema = z.object({
 export type RestockRow = z.infer<typeof RestockRowSchema>
 
 /** depot.restock: returns rows. */
-export const RestockSchema = z.array(RestockRowSchema).length(1)
+export const RestockSchema = z.array(RestockRowSchema).length(1, { error: "Expected exactly one row" })
 export type Restock = z.infer<typeof RestockSchema>

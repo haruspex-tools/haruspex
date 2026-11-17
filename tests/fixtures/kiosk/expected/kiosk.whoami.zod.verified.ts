@@ -21,5 +21,5 @@ export const WhoamiRowSchema = z.object({
 export type WhoamiRow = z.infer<typeof WhoamiRowSchema>
 
 /** kiosk.whoami: returns rows. */
-export const WhoamiSchema = z.array(WhoamiRowSchema).length(1)
+export const WhoamiSchema = z.array(WhoamiRowSchema).length(1, { error: "Expected exactly one row" })
 export type Whoami = z.infer<typeof WhoamiSchema>

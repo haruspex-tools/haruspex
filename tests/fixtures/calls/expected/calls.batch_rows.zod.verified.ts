@@ -23,5 +23,5 @@ export const BatchRowsParamsSchema = z.strictObject({
 export type BatchRowsParams = z.infer<typeof BatchRowsParamsSchema>
 
 /** calls.batch_rows: returns 2 result sets: rows; rows. */
-export const BatchRowsSchema = z.tuple([z.array(BatchRowsResult1RowSchema), z.array(BatchRowsResult2RowSchema).max(1)])
+export const BatchRowsSchema = z.tuple([z.array(BatchRowsResult1RowSchema), z.array(BatchRowsResult2RowSchema).max(1, { error: "Expected at most one row" })])
 export type BatchRows = z.infer<typeof BatchRowsSchema>

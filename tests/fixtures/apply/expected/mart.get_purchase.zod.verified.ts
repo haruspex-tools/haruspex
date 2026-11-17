@@ -28,5 +28,5 @@ export const GetPurchaseParamsSchema = z.strictObject({
 export type GetPurchaseParams = z.infer<typeof GetPurchaseParamsSchema>
 
 /** mart.get_purchase: returns rows. */
-export const GetPurchaseSchema = z.array(GetPurchaseRowSchema).max(1)
+export const GetPurchaseSchema = z.array(GetPurchaseRowSchema).max(1, { error: "Expected at most one row" })
 export type GetPurchase = z.infer<typeof GetPurchaseSchema>

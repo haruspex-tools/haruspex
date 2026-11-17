@@ -35,5 +35,5 @@ export const CancelOrderParamsSchema = z.strictObject({
 export type CancelOrderParams = z.infer<typeof CancelOrderParamsSchema>
 
 /** depot.cancel_order: returns 2 result sets: rows; rows. */
-export const CancelOrderSchema = z.tuple([z.array(CancelOrderResult1RowSchema), z.array(CancelOrderResult2RowSchema).length(1)])
+export const CancelOrderSchema = z.tuple([z.array(CancelOrderResult1RowSchema), z.array(CancelOrderResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type CancelOrder = z.infer<typeof CancelOrderSchema>

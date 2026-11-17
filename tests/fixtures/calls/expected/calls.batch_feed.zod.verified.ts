@@ -21,5 +21,5 @@ export const BatchFeedParamsSchema = z.strictObject({
 export type BatchFeedParams = z.infer<typeof BatchFeedParamsSchema>
 
 /** calls.batch_feed: returns 2 result sets: JSON, null when no rows match; JSON, null when no rows match. */
-export const BatchFeedSchema = z.tuple([z.array(BatchFeedResult1RowSchema).min(1).nullable(), z.array(BatchFeedResult2RowSchema).min(1).nullable()])
+export const BatchFeedSchema = z.tuple([z.array(BatchFeedResult1RowSchema).min(1, { error: "Expected at least one row" }).nullable(), z.array(BatchFeedResult2RowSchema).min(1, { error: "Expected at least one row" }).nullable()])
 export type BatchFeed = z.infer<typeof BatchFeedSchema>

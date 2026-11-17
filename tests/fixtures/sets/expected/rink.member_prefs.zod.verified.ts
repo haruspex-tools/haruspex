@@ -32,5 +32,5 @@ export const MemberPrefsResult3RowSchema = z.object({
 export type MemberPrefsResult3Row = z.infer<typeof MemberPrefsResult3RowSchema>
 
 /** rink.member_prefs: returns 3 result sets: rows; JSON, null when no rows match; rows. */
-export const MemberPrefsSchema = z.tuple([z.array(MemberPrefsResult1RowSchema), z.array(MemberPrefsResult2RowSchema).min(1).nullable(), z.array(MemberPrefsResult3RowSchema)])
+export const MemberPrefsSchema = z.tuple([z.array(MemberPrefsResult1RowSchema), z.array(MemberPrefsResult2RowSchema).min(1, { error: "Expected at least one row" }).nullable(), z.array(MemberPrefsResult3RowSchema)])
 export type MemberPrefs = z.infer<typeof MemberPrefsSchema>

@@ -12,5 +12,5 @@ export const OrgChartRowSchema = z.object({
 export type OrgChartRow = z.infer<typeof OrgChartRowSchema>
 
 /** flow.org_chart: returns JSON, null when no rows match. */
-export const OrgChartSchema = z.array(OrgChartRowSchema).min(1).nullable()
+export const OrgChartSchema = z.array(OrgChartRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type OrgChart = z.infer<typeof OrgChartSchema>

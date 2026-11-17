@@ -29,6 +29,16 @@ internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableA
     /// <summary>Whether the function returns nothing: no result set, no <c>OUTPUT</c> parameter, no return code worth handing back.</summary>
     public bool ReturnsNothing => Results is [] && !HasOutput && !ReturnsCode;
 
+    /// <summary>
+    /// How many result sets every call returns: those listed before the first that may be missing. A set whose statement may
+    /// not run, and every one after it, may be missing from what arrives (the IR's reader convention pads them); one before it
+    /// can't be, so a call that returns fewer is a database out of step. A <c>FOR JSON</c> result absent only because no rows
+    /// matched still arrives, as a set of one row of empty text (observed), so it counts. Any other reason to be absent, such as
+    /// the config file's declaration, which doesn't say why, stops the count, which only checks less.
+    /// </summary>
+    public int SetsAlwaysReturned =>
+        Procedure.Results is { } results ? results.TakeWhile(r => r.AbsentBecause.All(reason => reason.Rule == IrNullRule.NoRows)).Count() : 0;
+
     /// <summary>Whether the procedure has <c>OUTPUT</c> parameters, whose values come back.</summary>
     public bool HasOutput => Bindings.Any(b => b.IsOutput);
 }

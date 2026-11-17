@@ -68,7 +68,8 @@ What a value looks like depends on how it arrives, and the module follows what a
   alias of the first, so code that imports either keeps working. A check the schema already makes is not repeated:
   `z.int32()` rather than an `int`'s own bounds, and a union without a variant another one already accepts.
 - **It passes a linter.** A number a double can't hold is written as the double JavaScript reads it as, which is the check
-  it always was, and the tests lint every fixture's module with the recommended rules of ESLint and typescript-eslint.
+  it always was, and the tests lint every fixture's module with ESLint's recommended rules and typescript-eslint's strict and stylistic sets, so
+  every helper states its return type.
 
 **A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
 declared before its results' schema, whatever the `objects` setting: a key it doesn't know is an error

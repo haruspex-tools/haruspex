@@ -45,5 +45,5 @@ export const AccountStatsParamsSchema = z.strictObject({
 export type AccountStatsParams = z.infer<typeof AccountStatsParamsSchema>
 
 /** ledger.account_stats: returns 2 result sets: rows; rows. */
-export const AccountStatsSchema = z.tuple([z.array(AccountStatsResult1RowSchema), z.array(AccountStatsResult2RowSchema).length(1)])
+export const AccountStatsSchema = z.tuple([z.array(AccountStatsResult1RowSchema), z.array(AccountStatsResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type AccountStats = z.infer<typeof AccountStatsSchema>

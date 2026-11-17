@@ -460,7 +460,7 @@ public partial class CliTests
 
         Assert.Equal(2, exitCode);
         Assert.Equal(
-            "haruspex: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule that tells their names apart (such as { \"pattern\": \"#$\", \"with\": \"Row\" }), or give one of them its own name with a \"name\" override in \"procedures\". These settings go in a haruspex.json beside the project, which it doesn't have yet.\n",
+            "haruspex: error HAR4303: \"Person\" would name both the procedure dbo.person and the procedure dbo.person#. Generated names must not clash: add a naming \"replace\" rule for where their names differ (nothing against \"#\"), such as { \"pattern\": \"#\", \"with\": \"_hash_\" } with a word of your own for \"hash\", or give one of them its own name with a \"name\" override in \"procedures\". These settings go in a haruspex.json beside the project, which it doesn't have yet.\n",
             error.ReplaceLineEndings("\n"));
         Assert.Empty(Directory.EnumerateFileSystemEntries(outDir.Path));
     }

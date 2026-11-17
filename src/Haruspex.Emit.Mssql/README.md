@@ -50,7 +50,8 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
   ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)).
 - **The database's error is the driver's own**, a `RequestError` with its number, state, class, procedure and line, passed
   through unchanged. **A result that breaks its schema** is a `ResultError` naming the procedure, the part (the results, or the
-  `OUTPUT` parameters) and each issue's path. Each error has a stable `name` and `kind`, so code that handles errors from several
+  `OUTPUT` parameters) and each issue's path, as JavaScript reads it (`[0].label`); of several result sets, the set comes
+  first, counted from 1 (`result set 2, [0].label`). Each error has a stable `name` and `kind`, so code that handles errors from several
   modules tells them apart without importing any
   ([decision 0056](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)).
 - **The shape follows what the procedure hands back**
@@ -59,6 +60,11 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
   otherwise an object of `result`, or `result1`, `result2` and so on for several, `output` for the `OUTPUT` parameters, and
   `returnValue` when the code may be other than 0; and nothing, when there is nothing to hand back. A `FOR JSON` result is read as
   decision 0048 fixes, whether the pool parses JSON or not.
+- **It reads the result sets its procedure lists, and ignores any after them**, so a database deployed ahead of the
+  application with a trailing set more doesn't break it; `MssqlOptions.RefusesExtraResultSets`, which `"objects": "strict"`
+  sets, refuses them. A set every call returns that doesn't arrive is a `ResultError` either way, since read as `[]` it would
+  pass
+  ([decision 0063](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)).
 - **A query file's function runs its text through `sp_executesql`**: the text as the IR holds it, and each parameter declared
   by its name and its type's `sql`, so the query runs with the types it was inferred with, and each value is bound beside them
   by name, converted by the server to its declared type. A parameter with no type to declare, or named `@stmt` or `@params`
@@ -68,6 +74,22 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
   the functions are the same whichever validator wrote the schemas, by the names `SchemaModuleNames` gives.
 - **It is self-contained.** Its errors and helpers are written into it, so a module needs no package of haruspex's at run time,
   and several modules in one application share nothing.
+
+## Testing with a double
+
+A double that stands in for the connection gives `request()`, whose object has `input()`, `output()` and `execute()`. The
+functions call `execute()` for a procedure and a query file alike, and read three fields of what it resolves to: `recordsets`,
+every result set in order; `output`, the `OUTPUT` parameters by name (`{}` when there are none); and `returnValue`, the
+return code (0). A double that gives only `recordset`, the first set, fails every call:
+
+```ts
+const result = { recordsets: [[{ order_id: 42 }]], output: {}, returnValue: 0 }
+const db = { request: () => ({ input() {}, output() {}, execute: async () => result }) } as unknown as Queryable
+```
+
+[The database module's page](https://github.com/sharpblue/haruspex/blob/main/docs/database-module.md#testing-with-a-double)
+has a whole example, typed as the driver's `IProcedureResult` so that the compiler asks for each field, which a test runs
+against a generated function.
 
 ## What it deliberately doesn't do
 

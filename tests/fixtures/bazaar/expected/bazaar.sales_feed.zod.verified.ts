@@ -9,7 +9,7 @@
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType) =>
+const jsonText = (content: () => z.ZodType): z.ZodString =>
   z.string().refine((text) => {
     try {
       return content().safeParse(JSON.parse(text)).success
@@ -50,5 +50,5 @@ export const SalesFeedResult2RowSchema = z.object({
 export type SalesFeedResult2Row = z.infer<typeof SalesFeedResult2RowSchema>
 
 /** bazaar.sales_feed: returns 2 result sets: rows; rows. */
-export const SalesFeedSchema = z.tuple([z.array(SalesFeedResult1RowSchema), z.array(SalesFeedResult2RowSchema).length(1)])
+export const SalesFeedSchema = z.tuple([z.array(SalesFeedResult1RowSchema), z.array(SalesFeedResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type SalesFeed = z.infer<typeof SalesFeedSchema>

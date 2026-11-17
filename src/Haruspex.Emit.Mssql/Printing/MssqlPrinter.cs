@@ -26,13 +26,13 @@ internal static class MssqlPrinter
 
         /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
         export interface Queryable {
-          request(): sql.Request
+          request: () => sql.Request
         }
 
         /** One problem a schema found, as Standard Schema reports it: a message, and where in the value. */
         export interface Issue {
           readonly message: string
-          readonly path?: ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined
+          readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined
         }
 
         /**
@@ -63,17 +63,25 @@ internal static class MssqlPrinter
           readonly part: string
           readonly issues: readonly Issue[]
 
-          constructor(procedure: string, part: string, issues: readonly Issue[]) {
-            super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue) ? `${where(issue)}: ` : '') + issue.message).join('; ')}`)
+          /** sets: whether the value checked was several result sets, so that an issue's first index is its set. */
+          constructor(procedure: string, part: string, issues: readonly Issue[], sets = false) {
+            super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue, sets) ? `${where(issue, sets)}: ` : '') + issue.message).join('; ')}`)
             this.procedure = procedure
             this.part = part
             this.issues = issues
           }
         }
 
-        /** Where in a value an issue is, as dotted keys. */
-        function where(issue: Issue): string {
-          return (issue.path ?? []).map((segment) => String(typeof segment === 'object' ? segment.key : segment)).join('.')
+        /**
+         * Where in a value an issue is, as JavaScript reads a path: each index in brackets and each key after a dot, as in
+         * [0].label. In several result sets the first index is the set, named as people count them, from 1: result set 2, [0].label.
+         */
+        function where(issue: Issue, sets = false): string {
+          const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
+          const set = path[0]
+          const inSet = sets && typeof set === 'number'
+          const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+          return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
         }
 
         """;
@@ -84,9 +92,9 @@ internal static class MssqlPrinter
         /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
         interface Checks<T> {
           readonly '~standard': {
-            validate(
+            readonly validate: (
               value: unknown,
-            ):
+            ) =>
               | { readonly value: T; readonly issues?: undefined }
               | { readonly issues: readonly Issue[] }
               | Promise<{ readonly value: T; readonly issues?: undefined } | { readonly issues: readonly Issue[] }>
@@ -157,7 +165,7 @@ internal static class MssqlPrinter
         if (functions.Any(f => f.Results?.Contains(IrEncoding.Rowset) == true))
             output.Append(RowsReading);
         foreach (var function in functions)
-            Function(output, function);
+            Function(output, function, options.RefusesExtraResultSets);
         return output.ToString();
     }
 
@@ -194,7 +202,7 @@ internal static class MssqlPrinter
     /// driver's own error, a <c>RequestError</c>, passes through as it is. When every parameter may be left out, so may the
     /// parameters' object.
     /// </summary>
-    private static void Function(StringBuilder output, MssqlFunction function)
+    private static void Function(StringBuilder output, MssqlFunction function, bool refusesExtraSets)
     {
         var procedure = function.Procedure;
         var id = Quoted(procedure.Id);
@@ -228,10 +236,17 @@ internal static class MssqlPrinter
 
         foreach (var binding in function.Bindings)
             output.Append("  ").Append(Bind(binding)).Append('\n');
-        output.Append(function.ReturnsNothing ? "  await" : "  const response = await").Append(" request.execute(").Append(function.Batch is null ? id : "'sys.sp_executesql'").Append(")\n");
+        var counted = SetCount(function, refusesExtraSets);
+        output.Append(function.ReturnsNothing && counted is null ? "  await" : "  const response = await").Append(" request.execute(").Append(function.Batch is null ? id : "'sys.sp_executesql'").Append(")\n");
 
-        if (function.Results is not [])
+        if (function.Results is not [] || counted is not null)
             output.Append("  const sets = response.recordsets as unknown as readonly unknown[]\n");
+        if (counted is var (condition, expected))
+        {
+            output.Append("  if (").Append(condition).Append(") throw new ResultError(").Append(id).Append(", 'the results', [{ message: `")
+                .Append(expected).Append(", received ${String(sets.length)}` }])\n");
+        }
+
         switch (function.Results)
         {
             case null:
@@ -245,7 +260,7 @@ internal static class MssqlPrinter
             case var many:
                 output.Append("  const [").Append(string.Join(", ", many.Select((_, i) => Result(i)))).Append("] = await checked(")
                     .Append(SchemaModuleNames.ResultsSchema(name)).Append(", [").Append(string.Join(", ", many.Select(Read))).Append("], ")
-                    .Append(Fail(id, "the results")).Append(")\n");
+                    .Append(Fail(id, "the results", sets: true)).Append(")\n");
                 break;
         }
 
@@ -289,13 +304,48 @@ internal static class MssqlPrinter
             yield return ("returnValue", "number", "returnValue: response.returnValue");
     }
 
+    /// <summary>
+    /// The check on how many result sets arrived, as a condition that fails and what was expected; or null, when any number
+    /// will do. Fewer than every call returns (<see cref="MssqlFunction.SetsAlwaysReturned"/>) always fails: a set the IR says
+    /// arrives, read as <c>[]</c>, would pass a schema of any number of rows. More than the procedure lists fails only when
+    /// <paramref name="refusesExtraSets"/>; otherwise the function reads the sets it knows and ignores any after them
+    /// (<c>docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md</c>). Results that can't be listed are
+    /// handed over as they arrive, and not counted.
+    /// </summary>
+    private static (string Condition, string Expected)? SetCount(MssqlFunction function, bool refusesExtraSets)
+    {
+        if (function.Results is not { } results)
+            return null;
+        var fewest = function.SetsAlwaysReturned;
+        int? most = refusesExtraSets ? results.Count : null;
+        return (fewest, most) switch
+        {
+            (0, null) => null,
+            (var low, null) => ($"sets.length < {Count(low)}", $"Expected at least {Sets(low)}"),
+            (0, 0) => ("sets.length > 0", "Expected no result sets"),
+            (0, var high) => ($"sets.length > {Count(high.Value)}", $"Expected at most {Sets(high.Value)}"),
+            (var low, var high) when low == high => ($"sets.length !== {Count(low)}", $"Expected exactly {Sets(low)}"),
+            (var low, var high) => ($"sets.length < {Count(low)} || sets.length > {Count(high.Value)}", $"Expected between {Count(low)} and {Count(high.Value)} result sets"),
+        };
+    }
+
+    private static string Count(int count) => count.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>A number of result sets in words: "one result set", "2 result sets".</summary>
+    private static string Sets(int count) => count == 1 ? "one result set" : Count(count) + " result sets";
+
     private static string Result(int index) => "result" + (index + 1).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>How the result set at <paramref name="index"/> is read, by its encoding.</summary>
     private static string Read(IrEncoding encoding, int index) =>
         (encoding == IrEncoding.Json ? "readJson" : "readRows") + "(sets[" + index.ToString(CultureInfo.InvariantCulture) + "])";
 
-    private static string Fail(string id, string part) => "(issues) => new ResultError(" + id + ", " + Quoted(part) + ", issues)";
+    /// <summary>
+    /// The failure a check of <paramref name="part"/> throws; with <paramref name="sets"/>, of several result sets, whose
+    /// message names each issue's set by its place.
+    /// </summary>
+    private static string Fail(string id, string part, bool sets = false) =>
+        "(issues) => new ResultError(" + id + ", " + Quoted(part) + ", issues" + (sets ? ", true" : "") + ")";
 
     /// <summary>
     /// How one parameter is bound: <c>input</c>, or <c>output</c> so that its value comes back; only when given, for one the

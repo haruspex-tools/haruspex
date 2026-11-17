@@ -19,13 +19,13 @@ import {
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
 export interface Queryable {
-  request(): sql.Request
+  request: () => sql.Request
 }
 
 /** One problem a schema found, as Standard Schema reports it: a message, and where in the value. */
 export interface Issue {
   readonly message: string
-  readonly path?: ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined
+  readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined
 }
 
 /**
@@ -56,25 +56,33 @@ export class ResultError extends Error {
   readonly part: string
   readonly issues: readonly Issue[]
 
-  constructor(procedure: string, part: string, issues: readonly Issue[]) {
-    super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue) ? `${where(issue)}: ` : '') + issue.message).join('; ')}`)
+  /** sets: whether the value checked was several result sets, so that an issue's first index is its set. */
+  constructor(procedure: string, part: string, issues: readonly Issue[], sets = false) {
+    super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue, sets) ? `${where(issue, sets)}: ` : '') + issue.message).join('; ')}`)
     this.procedure = procedure
     this.part = part
     this.issues = issues
   }
 }
 
-/** Where in a value an issue is, as dotted keys. */
-function where(issue: Issue): string {
-  return (issue.path ?? []).map((segment) => String(typeof segment === 'object' ? segment.key : segment)).join('.')
+/**
+ * Where in a value an issue is, as JavaScript reads a path: each index in brackets and each key after a dot, as in
+ * [0].label. In several result sets the first index is the set, named as people count them, from 1: result set 2, [0].label.
+ */
+function where(issue: Issue, sets = false): string {
+  const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
+  const set = path[0]
+  const inSet = sets && typeof set === 'number'
+  const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${String(key)}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+  return inSet ? `result set ${String(set + 1)}` + (at === '' ? '' : `, ${at}`) : at
 }
 
 /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
 interface Checks<T> {
   readonly '~standard': {
-    validate(
+    readonly validate: (
       value: unknown,
-    ):
+    ) =>
       | { readonly value: T; readonly issues?: undefined }
       | { readonly issues: readonly Issue[] }
       | Promise<{ readonly value: T; readonly issues?: undefined } | { readonly issues: readonly Issue[] }>
@@ -120,6 +128,7 @@ export async function basketCard(db: Queryable, params: types.BasketCardParams):
   request.input('basket_id', sql.Int, p.basket_id)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('queries/basket_card.sql', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketCardSchema, readJson(sets[0]), (issues) => new ResultError('queries/basket_card.sql', 'the results', issues))
   return result
 }
@@ -136,6 +145,7 @@ export async function productsUnder(db: Queryable, params: types.ProductsUnderPa
   request.input('take', sql.BigInt, p.take)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('queries/products_under.sql', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(ProductsUnderSchema, readRows(sets[0]), (issues) => new ResultError('queries/products_under.sql', 'the results', issues))
   return result
 }
@@ -148,6 +158,7 @@ export async function basketLineRow(db: Queryable, params: types.BasketLineRowPa
   request.input('line_no', sql.Int, p.line_no)
   const response = await request.execute('shop.basket_line#')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('shop.basket_line#', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketLineRowSchema, readJson(sets[0]), (issues) => new ResultError('shop.basket_line#', 'the results', issues))
   return result
 }
@@ -159,6 +170,7 @@ export async function basket(db: Queryable, params: types.BasketParams): Promise
   request.input('basket_id', sql.Int, p.basket_id)
   const response = await request.execute('shop.get_basket')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('shop.get_basket', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(BasketSchema, readJson(sets[0]), (issues) => new ResultError('shop.get_basket', 'the results', issues))
   return result
 }
@@ -168,6 +180,7 @@ export async function listProducts(db: Queryable): Promise<types.ListProducts> {
   const request = db.request()
   const response = await request.execute('shop.list_products')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('shop.list_products', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(ListProductsSchema, readRows(sets[0]), (issues) => new ResultError('shop.list_products', 'the results', issues))
   return result
 }
@@ -177,6 +190,7 @@ export async function adminSales(db: Queryable): Promise<types.AdminSales> {
   const request = db.request()
   const response = await request.execute('shop_admin.report_sales')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('shop_admin.report_sales', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
   const result = await checked(AdminSalesSchema, readJson(sets[0]), (issues) => new ResultError('shop_admin.report_sales', 'the results', issues))
   return result
 }

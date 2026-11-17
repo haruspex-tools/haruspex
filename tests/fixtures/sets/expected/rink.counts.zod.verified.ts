@@ -28,5 +28,5 @@ export const CountsResult3RowSchema = z.object({
 export type CountsResult3Row = z.infer<typeof CountsResult3RowSchema>
 
 /** rink.counts: returns 3 result sets: rows; rows; rows. */
-export const CountsSchema = z.tuple([z.array(CountsResult1RowSchema).length(1), z.array(CountsResult2RowSchema), z.array(CountsResult3RowSchema)])
+export const CountsSchema = z.tuple([z.array(CountsResult1RowSchema).length(1, { error: "Expected exactly one row" }), z.array(CountsResult2RowSchema), z.array(CountsResult3RowSchema)])
 export type Counts = z.infer<typeof CountsSchema>

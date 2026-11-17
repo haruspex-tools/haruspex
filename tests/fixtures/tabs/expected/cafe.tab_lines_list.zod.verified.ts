@@ -32,5 +32,5 @@ export const TabLinesListParamsSchema = z.strictObject({
 export type TabLinesListParams = z.infer<typeof TabLinesListParamsSchema>
 
 /** cafe.tab_lines_list: returns 2 result sets: rows; rows. */
-export const TabLinesListSchema = z.tuple([z.array(TabLinesListResult1RowSchema), z.array(TabLinesListResult2RowSchema).max(1)])
+export const TabLinesListSchema = z.tuple([z.array(TabLinesListResult1RowSchema), z.array(TabLinesListResult2RowSchema).max(1, { error: "Expected at most one row" })])
 export type TabLinesList = z.infer<typeof TabLinesListSchema>

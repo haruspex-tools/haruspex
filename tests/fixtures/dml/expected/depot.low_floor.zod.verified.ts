@@ -15,5 +15,5 @@ export const LowFloorParamsSchema = z.strictObject({
 export type LowFloorParams = z.infer<typeof LowFloorParamsSchema>
 
 /** depot.low_floor: returns rows. */
-export const LowFloorSchema = z.array(LowFloorRowSchema).length(1)
+export const LowFloorSchema = z.array(LowFloorRowSchema).length(1, { error: "Expected exactly one row" })
 export type LowFloor = z.infer<typeof LowFloorSchema>

@@ -238,7 +238,7 @@ public class DiagnosticMessagesTests
         (4302, () => Config("\"naming\": { \"case\": \"preserve\" }",
             "CREATE FUNCTION lib.[tree#](@id int) RETURNS nvarchar(max) AS BEGIN RETURN (SELECT b.id, json_query(lib.[tree#](b.id)) AS children FROM lib.book AS b WHERE b.id > @id FOR JSON PATH); END",
             "CREATE PROCEDURE lib.GetBook AS SELECT b.id, json_query(lib.[tree#](b.id)) AS children FROM lib.book AS b FOR JSON PATH;")),
-        (4303, () => Cli([GetBook, "CREATE PROCEDURE lib.[get_book#] AS SELECT b.id FROM lib.book AS b;"], $"{{ {Plain}, \"naming\": {{ \"replace\": [{{ \"pattern\": \"#$\", \"with\": \"\" }}] }} }}")),
+        (4303, () => Cli([GetBook, "CREATE PROCEDURE lib.[get_book#] AS SELECT b.id FROM lib.book AS b;"], $"{{ {Plain} }}")),
         (4304, () => Config("\"procedures\": { \"lib.get_book\": { \"name\": \"GetBook\" } }")),
 
         (5001, () => Emitted(Document(new() { ["string"] = Row(Number) }, Rows("s.p", "string")))),

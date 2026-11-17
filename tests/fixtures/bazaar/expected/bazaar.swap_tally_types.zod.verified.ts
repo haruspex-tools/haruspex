@@ -41,5 +41,5 @@ export const SwapTallyTypesResult2RowSchema = z.object({
 export type SwapTallyTypesResult2Row = z.infer<typeof SwapTallyTypesResult2RowSchema>
 
 /** bazaar.swap_tally_types: returns 2 result sets: rows; rows. */
-export const SwapTallyTypesSchema = z.tuple([z.array(SwapTallyTypesResult1RowSchema), z.array(SwapTallyTypesResult2RowSchema).length(1)])
+export const SwapTallyTypesSchema = z.tuple([z.array(SwapTallyTypesResult1RowSchema), z.array(SwapTallyTypesResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type SwapTallyTypes = z.infer<typeof SwapTallyTypesSchema>

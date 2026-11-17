@@ -25,7 +25,7 @@ internal static class ZodPrinter
     private const string JsonTextHelper = $$"""
 
         // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-        const {{ZodModule.JsonTextHelperName}} = (content: () => {{ZodModule.ZodName}}.ZodType) =>
+        const {{ZodModule.JsonTextHelperName}} = (content: () => {{ZodModule.ZodName}}.ZodType): {{ZodModule.ZodName}}.ZodString =>
           {{ZodModule.ZodName}}.string().refine((text) => {
             try {
               return content().safeParse(JSON.parse(text)).success
@@ -46,8 +46,8 @@ internal static class ZodPrinter
         // A value set's canonical form, by a fold the IR gives for a column's collation: drop the characters it ignores, put each
         // class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the item whose canonical form
         // it has; any other value is left as it is, for the enum to refuse.
-        type Fold = { ignored: string; classes: Record<string, string> }
-        const canonicalForm = (fold: Fold, value: string) => {
+        interface Fold { ignored: string; classes: Record<string, string> }
+        const canonicalForm = (fold: Fold, value: string): string => {
           let form = ''
           for (let i = 0; i < value.length; i++) {
             const unit = value.charAt(i)
@@ -56,7 +56,7 @@ internal static class ZodPrinter
           }
           return form.replace(/ +$/, '')
         }
-        const canonicalOf = (fold: Fold, items: readonly string[]) => {
+        const canonicalOf = (fold: Fold, items: readonly string[]): ((value: unknown) => unknown) => {
           const byForm = new Map<string, string>()
           for (const item of items) {
             const form = canonicalForm(fold, item)

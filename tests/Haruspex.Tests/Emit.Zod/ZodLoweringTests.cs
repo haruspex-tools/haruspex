@@ -134,54 +134,58 @@ public class ZodLoweringTests
         var declaration = Procedure(Lower(Document([], new IrResult(IrEncoding.Json, Flag, [NoRows]), new IrResult(IrEncoding.Json, new IrArray(Flag), [NoRows]))));
 
         Assert.Equal("s.p: returns 2 result sets: JSON, null when no rows match; JSON, null when no rows match.", declaration.Summary);
-        Assert.Equal(Z("tuple", new ArrayLiteral([Z("boolean").Then("nullable"), Z("array", Z("boolean")).Then("min", new Number("1")).Then("nullable")])), declaration.Schema);
+        Assert.Equal(Z("tuple", new ArrayLiteral([Z("boolean").Then("nullable"), Bounded("min", 1, "Expected at least one row").Then("nullable")])), declaration.Schema);
     }
 
     [Fact]
     public void An_absent_json_array_reads_as_null_as_the_mssql_driver_hands_it_over() =>
         Assert.Equal(
-            new ZodDeclaration("P", "s.p: returns JSON, null when no rows match.", Z("array", Z("boolean")).Then("min", new Number("1")).Then("nullable")),
+            new ZodDeclaration("P", "s.p: returns JSON, null when no rows match.", Bounded("min", 1, "Expected at least one row").Then("nullable")),
             Procedure(Lower(Document([], new IrResult(IrEncoding.Json, new IrArray(Flag), [NoRows])))));
 
     [Theory]
-    [InlineData(IrCardinality.One, false, "length", false)]
-    [InlineData(IrCardinality.One, true, "length", true)]
-    [InlineData(IrCardinality.AtMostOne, false, "length", false)]
-    [InlineData(IrCardinality.AtMostOne, true, "length", true)]
-    [InlineData(IrCardinality.Many, false, "min", false)]
-    [InlineData(IrCardinality.Many, true, "min", true)]
-    public void A_json_array_that_arrives_has_between_one_item_and_its_cardinality(IrCardinality cardinality, bool mayBeAbsent, string check, bool nullable)
+    [InlineData(IrCardinality.One, false, "length", "Expected exactly one row", false)]
+    [InlineData(IrCardinality.One, true, "length", "Expected exactly one row", true)]
+    [InlineData(IrCardinality.AtMostOne, false, "length", "Expected exactly one row", false)]
+    [InlineData(IrCardinality.AtMostOne, true, "length", "Expected exactly one row", true)]
+    [InlineData(IrCardinality.Many, false, "min", "Expected at least one row", false)]
+    [InlineData(IrCardinality.Many, true, "min", "Expected at least one row", true)]
+    public void A_json_array_that_arrives_has_between_one_item_and_its_cardinality(IrCardinality cardinality, bool mayBeAbsent, string check, string expected, bool nullable)
     {
         // FOR JSON over no rows returns no row, which reads as null, so an array that arrives has an item for each of at least
         // one row.
         var result = new IrResult(IrEncoding.Json, new IrArray(Flag), mayBeAbsent ? [NoRows] : []) { Cardinality = cardinality };
-        var bounded = Z("array", Z("boolean")).Then(check, new Number("1"));
+        var bounded = Bounded(check, 1, expected);
 
         Assert.Equal(nullable ? bounded.Then("nullable") : bounded, Procedure(Lower(Document([], result))).Schema);
     }
 
     [Theory]
-    [InlineData(0, null, "min", 1)]
-    [InlineData(2, null, "min", 2)]
-    [InlineData(1, 1, "length", 1)]
-    public void A_json_array_bounded_by_itself_and_by_its_cardinality_has_each_bound_written_once(int ownMin, int? ownMax, string check, int bound)
+    [InlineData(0, null, "min", 1, "Expected at least one row")]
+    [InlineData(2, null, "min", 2, "Expected at least 2 rows")]
+    [InlineData(1, 1, "length", 1, "Expected exactly one row")]
+    public void A_json_array_bounded_by_itself_and_by_its_cardinality_has_each_bound_written_once(int ownMin, int? ownMax, string check, int bound, string expected)
     {
         // A declared result's minItems, as the config's JSON Schema gives it.
         var result = new IrResult(IrEncoding.Json, new IrArray(Flag) { MinItems = ownMin, MaxItems = ownMax }, []);
 
-        Assert.Equal(Z("array", Z("boolean")).Then(check, new Number(bound.ToString(CultureInfo.InvariantCulture))), Procedure(Lower(Document([], result))).Schema);
+        Assert.Equal(Bounded(check, bound, expected), Procedure(Lower(Document([], result))).Schema);
     }
 
     [Theory]
-    [InlineData(IrCardinality.One, false, "length")]
-    [InlineData(IrCardinality.One, true, "max")]
-    [InlineData(IrCardinality.AtMostOne, false, "max")]
-    public void A_result_of_rows_is_bounded_by_its_cardinality(IrCardinality cardinality, bool mayBeAbsent, string check)
+    [InlineData(IrCardinality.One, false, "length", "Expected exactly one row")]
+    [InlineData(IrCardinality.One, true, "max", "Expected at most one row")]
+    [InlineData(IrCardinality.AtMostOne, false, "max", "Expected at most one row")]
+    public void A_result_of_rows_is_bounded_by_its_cardinality_in_rows(IrCardinality cardinality, bool mayBeAbsent, string check, string expected)
     {
         var result = new IrResult(IrEncoding.Rowset, new IrArray(Flag), mayBeAbsent ? [NoRows] : []) { Cardinality = cardinality };
 
-        Assert.Equal(Z("array", Z("boolean")).Then(check, new Number("1")), Procedure(Lower(Document([], result))).Schema);
+        Assert.Equal(Bounded(check, 1, expected), Procedure(Lower(Document([], result))).Schema);
     }
+
+    /// <summary>An array of booleans with one bound on its rows, and the bound's message.</summary>
+    private static ZodExpression Bounded(string check, int count, string expected) =>
+        Z("array", Z("boolean")).Then(check, new Number(count.ToString(CultureInfo.InvariantCulture)), new ObjectLiteral([new ZodProperty("error", new Text(expected))]));
 
     [Fact]
     public void A_result_of_many_rows_claims_no_count() =>

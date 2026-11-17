@@ -41,5 +41,5 @@ export const OverlapsParamsSchema = z.strictObject({
 export type OverlapsParams = z.infer<typeof OverlapsParamsSchema>
 
 /** rink.overlaps: returns 4 result sets: rows; rows; rows; rows. */
-export const OverlapsSchema = z.tuple([z.array(OverlapsResult1RowSchema), z.array(OverlapsResult2RowSchema), z.array(OverlapsResult3RowSchema), z.array(OverlapsResult4RowSchema).max(1)])
+export const OverlapsSchema = z.tuple([z.array(OverlapsResult1RowSchema), z.array(OverlapsResult2RowSchema), z.array(OverlapsResult3RowSchema), z.array(OverlapsResult4RowSchema).max(1, { error: "Expected at most one row" })])
 export type Overlaps = z.infer<typeof OverlapsSchema>

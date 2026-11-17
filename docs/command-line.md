@@ -5,7 +5,7 @@ what changed since the last run, and `check` fails in CI when the module in the 
 times a day, so by default it says what it did and what needs attention, and counts the rest. Everything else is a flag away.
 This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. How
 a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the output is designed so is
-[decision 0062](decisions/0062-the-command-line-s-output-is-designed.md).
+[decision 0064](decisions/0064-the-command-line-s-output-is-designed.md).
 
 ```sh
 haruspex init                                           # find the database below here, write haruspex.json

@@ -23,5 +23,5 @@ export const SaleCardParamsSchema = z.strictObject({
 export type SaleCardParams = z.infer<typeof SaleCardParamsSchema>
 
 /** flow.sale_card: returns rows, [] when it does not run. */
-export const SaleCardSchema = z.array(SaleCardRowSchema).max(1)
+export const SaleCardSchema = z.array(SaleCardRowSchema).max(1, { error: "Expected at most one row" })
 export type SaleCard = z.infer<typeof SaleCardSchema>

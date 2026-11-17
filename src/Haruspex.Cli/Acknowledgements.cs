@@ -11,7 +11,7 @@ namespace Haruspex.Cli;
 /// subject is set aside, to be counted rather than said, and an entry that matches nothing is said, so that one left behind
 /// after its cause is fixed doesn't hide the next warning of that subject. Only warnings that carry a subject can be
 /// acknowledged: those about the source a user may have read and decided to live with. An error must be fixed, and a warning
-/// about the config file is fixed there. Why: docs/decisions/0063-a-warning-is-acknowledged-by-its-code-and-subject.md.
+/// about the config file is fixed there. Why: docs/decisions/0065-a-warning-is-acknowledged-by-its-code-and-subject.md.
 /// </summary>
 internal static class Acknowledgements
 {

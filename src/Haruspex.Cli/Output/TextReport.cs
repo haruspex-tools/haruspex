@@ -9,7 +9,7 @@ namespace Haruspex.Cli.Output;
 /// A run's report as text, for a person: the summary on standard output, then the errors and warnings in full on standard
 /// error, as compilers write them. The command is run many times a day, so by default it says what it did and what needs
 /// attention, and counts the rest: each note is a flag away (<c>--verbose</c>). What it prints, mode by mode:
-/// docs/command-line.md; why: docs/decisions/0062-the-command-line-s-output-is-designed.md.
+/// docs/command-line.md; why: docs/decisions/0064-the-command-line-s-output-is-designed.md.
 /// </summary>
 /// <param name="detail">How much to say.</param>
 /// <param name="outputStyle">How standard output is styled.</param>
