@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 121 |
-| Not in it, and unknown where they are called | 217 |
+| In the catalogue | 123 |
+| Not in it, and unknown where they are called | 215 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 161 |
@@ -329,13 +329,13 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Metadata functions
 
-0 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
+2 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `SERVERPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `DB_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `DB_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `DB_NAME` | `scalar.db_name` | nvarchar(128), never null without an id | `out-of-range`, `arithmetic-overflow` | [Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Names.cs) |
 | `DATABASEPROPERTYEX` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `ORIGINAL_DB_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APP_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -345,7 +345,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `OBJECT_SCHEMA_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SCHEMA_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SCHEMA_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `PARSENAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `PARSENAME` | `scalar.parsename` | nvarchar(128) | `out-of-range`, `arithmetic-overflow` | [Parsename_is_nvarchar_128_and_null_for_a_part_it_cannot_find_or_a_name_it_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Names.cs) |
 | `@@PROCID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `OBJECT_DEFINITION` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `OBJECTPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |

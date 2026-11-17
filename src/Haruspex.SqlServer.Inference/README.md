@@ -1644,7 +1644,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs` and `Typer.Extremes.cs` hold their typing
+says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs` and `Typer.Extremes.cs` hold their typing
 methods, with the numeric ones in `Typer.Numeric.cs`. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
@@ -1760,6 +1760,23 @@ sweep's grid.
   (`int`): NULL only when an argument is
   (`Translate_is_8000_bytes_unless_its_string_is_max_and_soundex_and_difference_are_fixed`).
 
+### Names
+
+**`PARSENAME`** and **`DB_NAME`** (`Typer.Names.cs`) give a name, `nvarchar(128)` (a `sysname`), whatever they are given.
+Observed in `FunctionObservationTests.Names.cs`.
+
+- **`PARSENAME(name, part)`** of a string and an integer: always `out-of-range`, since it is NULL for a part the name doesn't
+  have or outside 1 to 4, and for a name it can't read (an empty part, more than four parts, a part past 128 characters, a
+  bracket not closed), which no type rules out. The part is converted to `int`, so a wider one may overflow
+  (`Parsename_is_nvarchar_128_and_null_for_a_part_it_cannot_find_or_a_name_it_cannot_read`).
+- **`DB_NAME()`** names the database the call runs in, so it is never null, to a user granted nothing too. **`DB_NAME(id)`**
+  of an integer is `out-of-range`: NULL for an id that names no database or one the caller isn't allowed to see (model and
+  msdb, to a user granted nothing), which depends on the server and the caller, not the project. The id is converted to
+  `int`, so a wider one may overflow
+  (`Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see`). The other
+  functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, `USER_NAME`, …) are not modelled: whether
+  each can be NULL depends on the caller's login and rights.
+
 ### `STRING_AGG`
 
 `varchar(8000)` for a `varchar` or `char`, `nvarchar(4000)` for an `nvarchar` or anything that is not a string, max over max.
@@ -1846,7 +1863,7 @@ constructs this front end gives each reason for:
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
 | `no-branch-matched` | `CASE` without `ELSE` |
 | `null-literal` | a `NULL` literal, bare, converted, or a result of `CASE`, `IIF` or `CHOOSE`; a JSON `null` in a JSON literal |
-| `out-of-range` | `CHOOSE` with an index that may be out of range; a string function given a code, position, count or length it can't use (`CHAR`, `ASCII`, `STUFF`, `QUOTENAME`, …) |
+| `out-of-range` | `CHOOSE` with an index that may be out of range; a string function given a code, position, count or length it can't use (`CHAR`, `ASCII`, `STUFF`, `QUOTENAME`, …); `PARSENAME` given a part the name doesn't have, `DB_NAME` an id of no database the caller can see |
 | `read-twice` | `COALESCE` whose argument holding a subquery or a call is read a second time |
 | `null-when-equal` | `NULLIF` |
 | `json-null-or-absent` | a column `OPENJSON` reads, `JSON_VALUE` |

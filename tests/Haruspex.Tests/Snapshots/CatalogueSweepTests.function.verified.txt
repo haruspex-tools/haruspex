@@ -3806,6 +3806,127 @@ DIFFERENCE('ab', 'a') -> int number/int32 {[-2147483648 2147483647]}
 DIFFERENCE(N'ab', 'a') -> int number/int32 {[-2147483648 2147483647]}
 DIFFERENCE(1e0, 'a') -> unknown unsupported-expression: DIFFERENCE(1e0, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 DIFFERENCE($1, 'a') -> unknown unsupported-expression: DIFFERENCE($1, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
+PARSENAME(bt, 1) -> unknown unsupported-expression: PARSENAME(bt, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(ti, 1) -> unknown unsupported-expression: PARSENAME(ti, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(si, 1) -> unknown unsupported-expression: PARSENAME(si, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(i, 1) -> unknown unsupported-expression: PARSENAME(i, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(bi, 1) -> unknown unsupported-expression: PARSENAME(bi, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(d52, 1) -> unknown unsupported-expression: PARSENAME(d52, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(d380, 1) -> unknown unsupported-expression: PARSENAME(d380, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(d3838, 1) -> unknown unsupported-expression: PARSENAME(d3838, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(n102, 1) -> unknown unsupported-expression: PARSENAME(n102, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(m, 1) -> unknown unsupported-expression: PARSENAME(m, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(sm, 1) -> unknown unsupported-expression: PARSENAME(sm, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(f, 1) -> unknown unsupported-expression: PARSENAME(f, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(r, 1) -> unknown unsupported-expression: PARSENAME(r, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(f24, 1) -> unknown unsupported-expression: PARSENAME(f24, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(f25, 1) -> unknown unsupported-expression: PARSENAME(f25, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(c3, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(v10, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(vx, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(nc3, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(nv10, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(nvx, 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(dt, 1) -> unknown unsupported-expression: PARSENAME(dt, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(tm3, 1) -> unknown unsupported-expression: PARSENAME(tm3, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(dtm, 1) -> unknown unsupported-expression: PARSENAME(dtm, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(dt23, 1) -> unknown unsupported-expression: PARSENAME(dt23, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(sdt, 1) -> unknown unsupported-expression: PARSENAME(sdt, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(dto3, 1) -> unknown unsupported-expression: PARSENAME(dto3, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(u, 1) -> unknown unsupported-expression: PARSENAME(u, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+PARSENAME(vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+PARSENAME(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PARSENAME(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+PARSENAME(j, 1) -> unknown (no unknown recorded)
+PARSENAME(1, 1) -> unknown unsupported-expression: PARSENAME(1, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(12345, 1) -> unknown unsupported-expression: PARSENAME(12345, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME(2.50, 1) -> unknown unsupported-expression: PARSENAME(2.50, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('ab', 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(N'ab', 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME(1e0, 1) -> unknown unsupported-expression: PARSENAME(1e0, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME($1, 1) -> unknown unsupported-expression: PARSENAME($1, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', bt) -> unknown unsupported-expression: PARSENAME('a.b', bt): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', ti) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME('a.b', si) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME('a.b', i) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME('a.b', bi) -> nvarchar(128) string null:out-of-range,arithmetic-overflow {length<=128}
+PARSENAME('a.b', d52) -> unknown unsupported-expression: PARSENAME('a.b', d52): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', d380) -> unknown unsupported-expression: PARSENAME('a.b', d380): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', d3838) -> unknown unsupported-expression: PARSENAME('a.b', d3838): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', n102) -> unknown unsupported-expression: PARSENAME('a.b', n102): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', m) -> unknown unsupported-expression: PARSENAME('a.b', m): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', sm) -> unknown unsupported-expression: PARSENAME('a.b', sm): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', f) -> unknown unsupported-expression: PARSENAME('a.b', f): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', r) -> unknown unsupported-expression: PARSENAME('a.b', r): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', f24) -> unknown unsupported-expression: PARSENAME('a.b', f24): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', f25) -> unknown unsupported-expression: PARSENAME('a.b', f25): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', c3) -> unknown unsupported-expression: PARSENAME('a.b', c3): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', v10) -> unknown unsupported-expression: PARSENAME('a.b', v10): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', vx) -> unknown unsupported-expression: PARSENAME('a.b', vx): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', nc3) -> unknown unsupported-expression: PARSENAME('a.b', nc3): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', nv10) -> unknown unsupported-expression: PARSENAME('a.b', nv10): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', nvx) -> unknown unsupported-expression: PARSENAME('a.b', nvx): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', dt) -> unknown unsupported-expression: PARSENAME('a.b', dt): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', tm3) -> unknown unsupported-expression: PARSENAME('a.b', tm3): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', dtm) -> unknown unsupported-expression: PARSENAME('a.b', dtm): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', dt23) -> unknown unsupported-expression: PARSENAME('a.b', dt23): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', sdt) -> unknown unsupported-expression: PARSENAME('a.b', sdt): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', dto3) -> unknown unsupported-expression: PARSENAME('a.b', dto3): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', u) -> unknown unsupported-expression: PARSENAME('a.b', u): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+PARSENAME('a.b', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+PARSENAME('a.b', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PARSENAME('a.b', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+PARSENAME('a.b', j) -> unknown (no unknown recorded)
+PARSENAME('a.b', 1) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME('a.b', 12345) -> nvarchar(128) string null:out-of-range {length<=128}
+PARSENAME('a.b', 2.50) -> unknown unsupported-expression: PARSENAME('a.b', 2.50): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', 'ab') -> unknown unsupported-expression: PARSENAME('a.b', 'ab'): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', N'ab') -> unknown unsupported-expression: PARSENAME('a.b', N'ab'): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', 1e0) -> unknown unsupported-expression: PARSENAME('a.b', 1e0): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+PARSENAME('a.b', $1) -> unknown unsupported-expression: PARSENAME('a.b', $1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
+DB_NAME() -> nvarchar(128) string {length<=128}
+DB_NAME(bt) -> unknown unsupported-expression: DB_NAME(bt): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(ti) -> nvarchar(128) string null:out-of-range {length<=128}
+DB_NAME(si) -> nvarchar(128) string null:out-of-range {length<=128}
+DB_NAME(i) -> nvarchar(128) string null:out-of-range {length<=128}
+DB_NAME(bi) -> nvarchar(128) string null:out-of-range,arithmetic-overflow {length<=128}
+DB_NAME(d52) -> unknown unsupported-expression: DB_NAME(d52): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(d380) -> unknown unsupported-expression: DB_NAME(d380): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(d3838) -> unknown unsupported-expression: DB_NAME(d3838): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(n102) -> unknown unsupported-expression: DB_NAME(n102): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(m) -> unknown unsupported-expression: DB_NAME(m): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(sm) -> unknown unsupported-expression: DB_NAME(sm): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(f) -> unknown unsupported-expression: DB_NAME(f): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(r) -> unknown unsupported-expression: DB_NAME(r): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(f24) -> unknown unsupported-expression: DB_NAME(f24): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(f25) -> unknown unsupported-expression: DB_NAME(f25): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(c3) -> unknown unsupported-expression: DB_NAME(c3): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(v10) -> unknown unsupported-expression: DB_NAME(v10): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(vx) -> unknown unsupported-expression: DB_NAME(vx): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(nc3) -> unknown unsupported-expression: DB_NAME(nc3): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(nv10) -> unknown unsupported-expression: DB_NAME(nv10): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(nvx) -> unknown unsupported-expression: DB_NAME(nvx): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(dt) -> unknown unsupported-expression: DB_NAME(dt): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(tm3) -> unknown unsupported-expression: DB_NAME(tm3): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(dtm) -> unknown unsupported-expression: DB_NAME(dtm): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(dt23) -> unknown unsupported-expression: DB_NAME(dt23): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(sdt) -> unknown unsupported-expression: DB_NAME(sdt): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(dto3) -> unknown unsupported-expression: DB_NAME(dto3): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(u) -> unknown unsupported-expression: DB_NAME(u): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+DB_NAME(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+DB_NAME(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DB_NAME(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+DB_NAME(j) -> unknown (no unknown recorded)
+DB_NAME(1) -> nvarchar(128) string null:out-of-range {length<=128}
+DB_NAME(12345) -> nvarchar(128) string null:out-of-range {length<=128}
+DB_NAME(2.50) -> unknown unsupported-expression: DB_NAME(2.50): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME('ab') -> unknown unsupported-expression: DB_NAME('ab'): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(N'ab') -> unknown unsupported-expression: DB_NAME(N'ab'): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME(1e0) -> unknown unsupported-expression: DB_NAME(1e0): DB_NAME of a value that is not an integer is not modelled.
+DB_NAME($1) -> unknown unsupported-expression: DB_NAME($1): DB_NAME of a value that is not an integer is not modelled.
 CONCAT(bt, 'x') -> varchar(2) string {length<=2}
 CONCAT(ti, 'x') -> unknown unsupported-expression: CONCAT(ti, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(si, 'x') -> unknown unsupported-expression: CONCAT(si, 'x'): an argument whose length as a string is not modelled yet.

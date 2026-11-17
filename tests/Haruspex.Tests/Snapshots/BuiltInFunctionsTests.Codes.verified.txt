@@ -92,6 +92,8 @@ scalar.json_object
 scalar.json_array
 scalar.isjson
 scalar.newid
+scalar.parsename
+scalar.db_name
 aggregate.count
 aggregate.count_big
 aggregate.sum

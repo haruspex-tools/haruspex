@@ -61,6 +61,7 @@ internal static class CatalogueSweep
         "STUFF({0}, 2, 5, N'xyz')", "STUFF({0}, id, 1, 'x')", "QUOTENAME({0})", "QUOTENAME({0}, '`')", "CHARINDEX('a', 'abc', {0})", "SUBSTRING('abc', {0}, 1)", "SUBSTRING('abc', 1, {0})",
         "LEFT('abc', {0})", "RIGHT('abc', {0})", "STR({0})", "STR({0}, 5, 2)", "TRANSLATE({0}, 'a', 'b')",
         "SOUNDEX({0})", "DIFFERENCE({0}, 'a')",
+        "PARSENAME({0}, 1)", "PARSENAME('a.b', {0})", "DB_NAME()", "DB_NAME({0})",
         "CONCAT({0}, 'x')", "CONCAT_WS(',', {0}, 'x')", "CHOOSE(id, {0}, {0})", "IIF(id > 1, {0}, {0})", "NULLIF({0}, {0})",
         "COALESCE({0}, NULL)", "TRY_CAST({0} AS int)", "CONVERT(varchar(30), {0}, 1)", "TRY_CONVERT(int, {0})",
         "JSON_OBJECT('k': {0})", "JSON_ARRAY({0})",

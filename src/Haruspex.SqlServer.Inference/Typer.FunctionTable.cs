@@ -212,6 +212,12 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.IsJson, (1, 2), "int, 0 or 1", [], [Tests, ZeroOrOne], (a, e, s) => Within(a.IsJson(Call(e), s), 0, 1, "ISJSON")),
         Typing(ScalarFunctions.NewId, (0, 0), "uniqueidentifier, never null", [], [Tests], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.UniqueIdentifier), [], e), readsOnlyItsArguments: false),
 
+        // ---- names ----
+        Typing(ScalarFunctions.ParseName, (2, 2), "nvarchar(128)", [OutOfRange, ArithmeticOverflow], ["Parsename_is_nvarchar_128_and_null_for_a_part_it_cannot_find_or_a_name_it_cannot_read"], (a, e, s) => a.ParseName(Call(e), s)),
+
+        // Without an id it names the database the call runs in, which the arguments don't say: it reads more than them.
+        Typing(ScalarFunctions.DbName, (0, 1), "nvarchar(128), never null without an id", [OutOfRange, ArithmeticOverflow], ["Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see"], (a, e, s) => a.DbName(Call(e), s), readsOnlyItsArguments: false),
+
         // ---- aggregates ----
         AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),
         AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), s, big: true)),
