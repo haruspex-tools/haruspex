@@ -290,8 +290,8 @@ public class CheckTests
             Assert.StartsWith("generated/haruspex.zod.ts: error HAR6013: this file can't be read: ", error.ReplaceLineEndings("\n"), StringComparison.Ordinal);
 
             // Elsewhere generate says it can't compare and why, naming the file it couldn't read; on Windows, where a file held so
-            // can't be replaced either, it says it can't write that file.
-            Assert.Contains(OperatingSystem.IsWindows() ? "haruspex.zod.ts" : "Nothing to compare with: the earlier haruspex.zod.ts can't be read (", output + problems, StringComparison.Ordinal);
+            // can't be replaced either, it can't write the folder, and says so.
+            Assert.Contains(OperatingSystem.IsWindows() ? "error HAR6008: cannot write to generated: " : "Nothing to compare with: the earlier haruspex.zod.ts can't be read (", output + problems, StringComparison.Ordinal);
         }
 
         using var copy = Generated();
