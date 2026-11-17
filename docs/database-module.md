@@ -182,9 +182,10 @@ it is empty only under the `react-server` condition, which Next.js sets for serv
 
   ```ts
   // vitest.config.ts
+  import { fileURLToPath } from 'node:url'
   import { defineConfig } from 'vitest/config'
 
-  export default defineConfig({ resolve: { alias: { 'server-only': new URL('./test/empty.ts', import.meta.url).pathname } } })
+  export default defineConfig({ resolve: { alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) } } })
   ```
 
 An application whose plugins or sub-applications each need their own interface to the database gives each its own
