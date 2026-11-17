@@ -161,15 +161,15 @@
       "haruspex": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Config": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.Emit.JsonSchema": "[0.1.0-dev, )",
-          "Haruspex.Emit.Mssql": "[0.1.0-dev, )",
-          "Haruspex.Emit.Zod": "[0.1.0-dev, )",
-          "Haruspex.Ir": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Inference": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Sources": "[0.1.0-dev, )",
+          "Haruspex.Config": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.Emit.JsonSchema": "[0.0.0-preview, )",
+          "Haruspex.Emit.Mssql": "[0.0.0-preview, )",
+          "Haruspex.Emit.Zod": "[0.0.0-preview, )",
+          "Haruspex.Ir": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Inference": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Sources": "[0.0.0-preview, )",
           "System.CommandLine": "[2.0.14, )"
         }
       },
@@ -179,87 +179,87 @@
       "haruspex.config": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Ir": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )"
+          "Haruspex.Ir": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )"
         }
       },
       "haruspex.diagnostics": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       },
       "haruspex.emit.jsonschema": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.Ir": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.Ir": "[0.0.0-preview, )"
         }
       },
       "haruspex.emit.mssql": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.Ir": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.Ir": "[0.0.0-preview, )"
         }
       },
       "haruspex.emit.zod": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.Ir": "[0.1.0-dev, )"
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.Ir": "[0.0.0-preview, )"
         }
       },
       "haruspex.ir": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )"
+          "Haruspex.Collections": "[0.0.0-preview, )"
         }
       },
       "haruspex.sqlserver.inference": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.Ir": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Semantics": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Syntax": "[0.1.0-dev, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.Ir": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Semantics": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Syntax": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
       "haruspex.sqlserver.model": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Collections": "[0.1.0-dev, )",
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
+          "Haruspex.Collections": "[0.0.0-preview, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
       "haruspex.sqlserver.semantics": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Syntax": "[0.1.0-dev, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Syntax": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
       "haruspex.sqlserver.sources": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Syntax": "[0.1.0-dev, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Syntax": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
       "haruspex.sqlserver.syntax": {
         "type": "Project",
         "dependencies": {
-          "Haruspex.Diagnostics": "[0.1.0-dev, )",
-          "Haruspex.SqlServer.Model": "[0.1.0-dev, )",
+          "Haruspex.Diagnostics": "[0.0.0-preview, )",
+          "Haruspex.SqlServer.Model": "[0.0.0-preview, )",
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       },
