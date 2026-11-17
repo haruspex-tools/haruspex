@@ -65,10 +65,12 @@ internal static class InferQuery
     /// The module of the query files that <paramref name="queries"/> selects (a folder, file or pattern, as in <c>queries</c>)
     /// in <paramref name="folder"/>, read against the scripts in <paramref name="database"/>, as <c>haruspex generate</c> makes it
     /// with a config file in <paramref name="folder"/> naming them: so each query's id, and the path its function's errors and
-    /// comments name, is relative to <paramref name="folder"/>. Only the query files are inferred. The test fails on any problem,
-    /// or with <paramref name="warningsAllowed"/> on any error: a vendored corpus warns of constructs it uses that haruspex doesn't read.
+    /// comments name, is relative to <paramref name="folder"/>. Only the query files are inferred, or with
+    /// <paramref name="withProcedures"/> every procedure too, as a config file that selects them all would. The test fails on any
+    /// problem, or with <paramref name="warningsAllowed"/> on any error: a vendored corpus warns of constructs it uses that haruspex
+    /// doesn't read.
     /// </summary>
-    public static IrDocument Module(string folder, string database, string queries, bool warningsAllowed = false)
+    public static IrDocument Module(string folder, string database, string queries, bool warningsAllowed = false, bool withProcedures = false)
     {
         var text = "{ \"queries\": " + System.Text.Json.JsonSerializer.Serialize(queries) + " }";
         var config = ConfigReader.Read(System.Text.Encoding.UTF8.GetBytes(text), Path.Combine(folder, HaruspexConfig.FileName), folder, new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved)).Expected();
@@ -76,7 +78,7 @@ internal static class InferQuery
         var project = SqlProject.Load(database);
         var problems = project.Diagnostics.Where(d => d.IsError || !warningsAllowed).ToList();
         Assert.True(problems.Count == 0, string.Join("\n", problems));
-        return project.WithQueries(folder, files).Infer([], config).Expected();
+        return project.WithQueries(folder, files).Infer(withProcedures ? project.Procedures : [], config).Expected();
     }
 
     /// <summary>The query's one object.</summary>

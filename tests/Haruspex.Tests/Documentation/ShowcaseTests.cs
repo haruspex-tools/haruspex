@@ -16,7 +16,8 @@ namespace Haruspex.Tests.Documentation;
 /// function the README shows beside the Zod is called on the server too, as every fixture's procedures are
 /// (<c>GeneratedFunctionTests</c>). A query file in the showcase is a file of the same fixture, in its <c>sql/</c> folder, typed
 /// against the fixture's tables to the Zod and the function the README shows, and called on the server through that function
-/// by the fixture's runs.
+/// by the fixture's runs. And each call the README shows, in a <c>ts haruspex-call</c> block, is compiled strictly against the
+/// module its fixture generates, so a call that names a parameter or a function wrongly fails as it would in an application.
 /// </summary>
 public partial class ShowcaseTests
 {
@@ -33,6 +34,19 @@ public partial class ShowcaseTests
     public static TheoryData<int> Examples { get; } = [.. Showcase.Where(e => e.Query is null).Select(e => e.Line)];
 
     public static TheoryData<int> Queries { get; } = [.. Showcase.Where(e => e.Query is not null).Select(e => e.Line)];
+
+    /// <summary>The mark of a block holding a call of the showcase's functions, which imports them from <see cref="FunctionsModule"/>.</summary>
+    private const string CallMark = "haruspex-call";
+
+    /// <summary>Where a call block imports the functions from: the module's functions' file, as an application's <c>db</c> folder holds it.</summary>
+    private const string FunctionsModule = "./db/haruspex.mssql";
+
+    private static readonly List<MarkdownText.FencedBlock> Calls =
+    [
+        .. MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, Readme))).Where(b => b.Words is ["ts", CallMark, ..]),
+    ];
+
+    public static TheoryData<int> CallLines { get; } = [.. Calls.Select(c => c.Line)];
 
     [Fact]
     public void The_readme_shows_an_example_over_each_vendored_sample() =>
@@ -102,6 +116,71 @@ public partial class ShowcaseTests
         Assert.True(problems.Count == 0, string.Join("\n\n", problems));
     }
 
+    [Fact]
+    public void The_readme_s_call_of_a_procedure_and_of_a_query_file_are_compiled()
+    {
+        var called = Calls.SelectMany(c => Imported(c.Text)).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains(Showcase, e => e.Query is null && e.Outputs.Any(o => o.Kind == WorkedExample.OutputKind.Mssql && Defines(o.Text, called)));
+        Assert.Contains(Showcase, e => e.Query is not null && e.Outputs.Any(o => o.Kind == WorkedExample.OutputKind.Mssql && Defines(o.Text, called)));
+    }
+
+    /// <summary>
+    /// The call compiles with the emit check's <c>tsc</c> and its strict settings, against the Zod and the functions generated
+    /// for every procedure and query file of the one showcase fixture that defines what it imports, with <c>pool</c> an mssql
+    /// <c>ConnectionPool</c>: so a misspelt key, a missing one or a value of the wrong type fails, as the parameters' type says.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(CallLines))]
+    public void Each_call_the_readme_shows_compiles_against_its_fixture_s_module(int line)
+    {
+        var call = Calls.Single(c => c.Line == line);
+        var imported = Imported(call.Text);
+        Assert.True(imported.Count > 0, $"The call at {Readme}:{At(line)} imports nothing from '{FunctionsModule}'.");
+        var document = Assert.Single(
+            Showcase.Select(e => e.Query is null ? FixtureOf(e) : QueryOf(e).Fixture).Distinct().Select(Module),
+            m => imported.All(name => m.Objects.Any(o => MssqlEmitter.FunctionName(o.Name) == name)));
+
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the README's calls were not compiled");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(folder, "db"));
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "db", "haruspex.zod.ts"), ZodEmitter.Emit(document).Expected());
+            File.WriteAllText(Path.Combine(folder, "db", "haruspex.mssql.ts"), Functions(document));
+            File.WriteAllText(Path.Combine(folder, "call.ts"), "import type sql from 'mssql'\ndeclare const pool: sql.ConnectionPool\n" + call.Text + "\n");
+            File.WriteAllText(Path.Combine(folder, "tsconfig.json"), "{ \"extends\": \"../../tsconfig.json\", \"include\": [\"**/*.ts\"] }");
+
+            Assert.True(
+                EmitCheckPackage.TryRun("node", [Path.Combine("..", "..", "node_modules", "typescript", "bin", "tsc"), "--noEmit", "-p", "."], folder, out var output, out var why),
+                $"tsc rejected the call at {Readme}:{At(line)} ({why}):\n{output}");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// What the fixture's application would generate: every procedure, and its query files as <c>"queries": "sql"</c> would type
+    /// them, in one module.
+    /// </summary>
+    private static IrDocument Module(Fixture fixture) =>
+        fixture.Queries is null ? fixture.Ir : InferQuery.Module(fixture.Folder, fixture.Database, Fixture.QueryFolder, withProcedures: true);
+
+    /// <summary>The names a call block imports from <see cref="FunctionsModule"/>.</summary>
+    private static List<string> Imported(string call) =>
+    [
+        .. ImportLine().Matches(call)
+            .Where(m => m.Groups["from"].Value == FunctionsModule)
+            .SelectMany(m => m.Groups["names"].Value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)),
+    ];
+
+    /// <summary>Whether a functions block shown defines one of <paramref name="names"/>.</summary>
+    private static bool Defines(string functions, IReadOnlySet<string> names) =>
+        names.Any(n => functions.Contains($"export async function {n}(", StringComparison.Ordinal));
+
     /// <summary>The fixture holding the query example's file at its path, and that file.</summary>
     private static (Fixture Fixture, string File) QueryOf(WorkedExample example) =>
         Fixture.All
@@ -138,7 +217,12 @@ public partial class ShowcaseTests
 
     private static string Text(string text) => text.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
 
-    private static string At(WorkedExample example) => example.Line.ToString(CultureInfo.InvariantCulture);
+    private static string At(WorkedExample example) => At(example.Line);
+
+    private static string At(int line) => line.ToString(CultureInfo.InvariantCulture);
+
+    [GeneratedRegex(@"^import \{(?<names>[^}]*)\} from '(?<from>[^']+)'", RegexOptions.Multiline)]
+    private static partial Regex ImportLine();
 
     [GeneratedRegex(@"^[ \t]*GO[ \t]*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
     private static partial Regex GoLine();

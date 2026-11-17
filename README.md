@@ -5,7 +5,7 @@ and infers what each stored procedure takes and returns, `FOR JSON` documents in
 [Zod](https://zod.dev) schemas and types, and a function for each procedure that checks what goes in before calling it and
 what comes back before returning it. It is pre-release: see [Status and roadmap](#status-and-roadmap).
 
-```ts
+```ts haruspex-call
 import { getOrder } from './db/haruspex.mssql'
 
 const order = await getOrder(pool, { OrderID: 42 })   // the order, typed and checked, or null
@@ -196,7 +196,9 @@ export async function getOrderLines(db: Queryable, params: types.GetOrderLinesPa
 }
 ```
 
-```ts
+```ts haruspex-call
+import { getOrderLines } from './db/haruspex.mssql'
+
 const lines = await getOrderLines(pool, { OrderID: 42 })   // the order's lines, typed and checked
 ```
 
