@@ -7,7 +7,7 @@ namespace Haruspex.Tests.Fixtures;
 /// <summary>
 /// Compiles the Zod generated from every procedure of every fixture, and the functions that use it, with <c>tsc --noEmit</c>
 /// (strict, see its <c>tsconfig.json</c>), against the zod, mssql and TypeScript versions pinned in
-/// <c>tests/emit-check/package-lock.json</c>, and lints them with the recommended rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
+/// <c>tests/emit-check/package-lock.json</c>, and lints them with the rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
 /// changes.
@@ -32,13 +32,14 @@ public class EmitCheckTests
     }
 
     /// <summary>
-    /// Lints the same modules with the recommended rules of ESLint and typescript-eslint, any warning failing, as a team that
-    /// lints its own code would lint the files it commits. A separate package (<c>tests/emit-lint</c>), because
+    /// Lints the same modules with ESLint's recommended rules, typescript-eslint's strict and stylistic sets, and the two rules
+    /// a team's own config commonly adds (<c>method-signature-style</c>, <c>explicit-function-return-type</c>), any warning
+    /// failing, as a team that lints its own code would lint the files it commits (decision 0062). A separate package (<c>tests/emit-lint</c>), because
     /// typescript-eslint reads TypeScript through the compiler's JavaScript API, which the TypeScript the emit check compiles
     /// with no longer has.
     /// </summary>
     [Fact]
-    public void Generated_zod_passes_the_recommended_lint_rules()
+    public void Generated_modules_pass_typescript_eslint_s_strict_and_stylistic_rules()
     {
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitLint, "the generated Zod was not checked by the linter");
         WriteGenerated(RepositoryPaths.EmitLint);

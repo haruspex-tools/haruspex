@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType) =>
+const jsonText = (content: () => z.ZodType): z.ZodString =>
   z.string().refine((text) => {
     try {
       return content().safeParse(JSON.parse(text)).success

@@ -71,9 +71,10 @@ and commit the updated lock files with the change. Dependency updates are read b
 automatically.
 
 The emit-check test (`tests/emit-check`) writes the Zod generated from the fixtures and compiles it with
-`tsc --noEmit` (strict) against a pinned `zod`, and `tests/emit-lint` lints the same modules with the recommended rules of
-ESLint and typescript-eslint, failing on any warning. Each runs `npm ci` in its folder the first time, and again when its
-`package-lock.json` has changed since. The lint has a
+`tsc --noEmit` (strict) against a pinned `zod`, and `tests/emit-lint` lints the same modules with ESLint's recommended rules
+and typescript-eslint's strict and stylistic sets, failing on any warning
+([decision 0062](docs/decisions/0062-generated-files-pass-typescript-eslint-s-strict-rules-with-no-disable-header.md)). Each
+runs `npm ci` in its folder the first time, and again when its `package-lock.json` has changed since. The lint has a
 package of its own because typescript-eslint reads TypeScript through the compiler's JavaScript API, which the TypeScript
 the emit check compiles with no longer has. The example application, `examples/greenhouse`, is compiled the same way
 against the module committed beside it (`ExampleAppTests`). The same package holds
@@ -311,7 +312,7 @@ the maintainer's agreement.
 | `mssql` (npm) | MIT | emit-check, examples | The SQL Server driver most Node applications call procedures through: the differential tests observe what it hands over, parse that with the generated schemas, and call every fixture's procedures through the generated functions over it, and the example application calls it. |
 | `@types/mssql` (npm) | MIT | emit-check, examples | `mssql`'s type declarations, which it doesn't ship, so that the generated functions and the example application compile against the driver. |
 | `eslint`, `@eslint/js` (npm) | MIT | emit-lint | Lints the generated Zod with ESLint's recommended rules, as a team that lints its own code would. |
-| `typescript-eslint` (npm) | MIT | emit-lint | The recommended rules for TypeScript, and the parser ESLint needs to read it. |
+| `typescript-eslint` (npm) | MIT | emit-lint | The strict and stylistic rules for TypeScript, and the parser ESLint needs to read it. |
 | `typescript` 6 (npm) | Apache-2.0 | emit-lint | typescript-eslint's parser, which needs the compiler's JavaScript API (below 6.1). |
 | `cspell` (npm) | MIT | prose check | Spelling in British English across Markdown, C# and the workflows, identifiers included. |
 | `mermaid` (npm) | MIT | prose check | Mermaid's own parser, to prove every diagram in the Markdown parses. |

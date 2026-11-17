@@ -245,8 +245,9 @@ the server must declare. Each module writes its own error classes and helpers, o
 since a linter reports one nothing calls, and only TypeScript a type stripper erases, so Node runs it as it is
 ([decision 0058](../decisions/0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md)).
 
-**The tools agree.** The tests compile every fixture's module with `tsc` under `strict`, and lint it with the recommended rules
-of ESLint and typescript-eslint, any warning failing (`EmitCheckTests`); and the example application, which imports a
+**The tools agree.** The tests compile every fixture's module with `tsc` under `strict`, and lint it with ESLint's recommended rules
+and typescript-eslint's strict and stylistic sets, any warning failing (`EmitCheckTests`,
+[decision 0062](../decisions/0062-generated-files-pass-typescript-eslint-s-strict-rules-with-no-disable-header.md)); and the example application, which imports a
 generated module and uses its schemas and types as a team would, is compiled in CI (`ExampleAppTests`).
 
 ## Two targets from one IR

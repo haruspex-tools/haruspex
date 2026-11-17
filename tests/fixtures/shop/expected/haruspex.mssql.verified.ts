@@ -19,13 +19,13 @@ import {
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
 export interface Queryable {
-  request(): sql.Request
+  request: () => sql.Request
 }
 
 /** One problem a schema found, as Standard Schema reports it: a message, and where in the value. */
 export interface Issue {
   readonly message: string
-  readonly path?: ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined
+  readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined
 }
 
 /**
@@ -72,9 +72,9 @@ function where(issue: Issue): string {
 /** A schema as Standard Schema describes it, which Zod, Valibot and ArkType all implement. */
 interface Checks<T> {
   readonly '~standard': {
-    validate(
+    readonly validate: (
       value: unknown,
-    ):
+    ) =>
       | { readonly value: T; readonly issues?: undefined }
       | { readonly issues: readonly Issue[] }
       | Promise<{ readonly value: T; readonly issues?: undefined } | { readonly issues: readonly Issue[] }>
