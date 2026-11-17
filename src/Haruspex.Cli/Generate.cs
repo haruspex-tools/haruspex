@@ -174,13 +174,4 @@ internal static class Generate
             // A temporary file left behind is untidy, not wrong: the outputs are each whole, which is what the write promises.
         }
     }
-
-    /// <summary>How many objects a module types, as its summary line says: the procedures, and the query files when there are any.</summary>
-    internal static string Counted(IrDocument document)
-    {
-        var procedures = document.Objects.Count(o => o.Kind == IrObjectKind.Procedure);
-        var queries = document.Objects.Count - procedures;
-        var counted = $"{procedures} {(procedures == 1 ? "procedure" : "procedures")}";
-        return queries == 0 ? counted : $"{counted}, {queries} query {(queries == 1 ? "file" : "files")}";
-    }
 }

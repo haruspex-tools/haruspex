@@ -118,9 +118,9 @@ checks every module in the repository:
 Pin the two actions by commit too, as haruspex's own workflow does.
 
 What each run prints, mode by mode, with the options for colour and the formats for tools and CI (`--format json`, `sarif`,
-`github`), is [the command line's page](../../docs/command-line.md). Everything it finds goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
+`github`), is [the command line's page](../../docs/command-line.md). Each error and warning goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
 the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)
-says what it means and what to do:
+says what it means and what to do; so does each note, one for each unknown, with `--verbose`:
 
 ```text
 db/procedures/get_order.sql:7:5: error HAR1001: Incorrect syntax near 'FROM'.

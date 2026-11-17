@@ -149,17 +149,19 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             yield return "No claim changed since the last run.";
         }
 
+        // An unknown's mark is coloured by what it means, not by + and -: a new unknown is the regression (yellow, a
+        // warning's colour), one resolved the gain (green).
         if (compared.New.Count > 0 || compared.Resolved.Count > 0)
         {
             yield return outputStyle.Strong($"Unknowns: {compared.New.Count} new, {compared.Resolved.Count} resolved, {compared.Unchanged} as before{listed}.");
             foreach (var added in compared.New)
             {
                 var place = added.Note is { } note ? $" ({DiagnosticFormatter.Parts(Relative(note)).Place})" : "";
-                yield return $"  {outputStyle.Added("+")} {Visible.Of($"{added.Unknown.Object} {added.Unknown.Path}")}: {Reason(added.Unknown.Reason)}{Visible.Of(place)}";
+                yield return $"  {outputStyle.Changed("+")} {Visible.Of($"{added.Unknown.Object} {added.Unknown.Path}")}: {Reason(added.Unknown.Reason)}{Visible.Of(place)}";
             }
 
             foreach (var resolved in compared.Resolved)
-                yield return $"  {outputStyle.Removed("-")} {Visible.Of($"{resolved.Object} {resolved.Path}")}: {Reason(resolved.Reason)}";
+                yield return $"  {outputStyle.Added("-")} {Visible.Of($"{resolved.Object} {resolved.Path}")}: {Reason(resolved.Reason)}";
             if (compared.New.Select(u => u.Unknown).Concat(compared.Resolved).Any(u => InferenceCodes.Of(u.Reason) is not null) && Pages() is { } pages)
                 yield return pages;
         }

@@ -27,6 +27,12 @@ internal sealed class Progress : IDisposable
     private int drawn;
     private bool shown;
 
+    /// <summary>
+    /// Whether the line is done with: the clock's timer is stopped on dispose, but a tick already running may be waiting on the
+    /// lock, and must not draw the line again once it has been cleared.
+    /// </summary>
+    private bool disposed;
+
     private Progress(TextWriter? error, Terminal terminal)
     {
         this.error = error;
@@ -49,7 +55,7 @@ internal sealed class Progress : IDisposable
         lock (gate)
         {
             step = what;
-            if (shown)
+            if (shown && !disposed)
                 Draw();
         }
     }
@@ -60,6 +66,7 @@ internal sealed class Progress : IDisposable
         timer?.Dispose();
         lock (gate)
         {
+            disposed = true;
             if (shown && error is not null)
             {
                 error.Write($"\r{new string(' ', drawn)}\r");
@@ -74,7 +81,7 @@ internal sealed class Progress : IDisposable
     {
         lock (gate)
         {
-            if (step.Length == 0)
+            if (step.Length == 0 || disposed)
                 return;
             shown = true;
             Draw();

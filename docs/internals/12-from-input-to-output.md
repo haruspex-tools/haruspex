@@ -86,15 +86,21 @@ together; on a failure it doesn't run the next step, and carries the failure, wi
 The functional literature calls it *monadic bind*. `ModuleRun.Emitted` and `Generate.Run` are the railway written down:
 
 ```csharp
-public static Outcome<EmittedModule> Emitted(RunRequest request) =>
+public static Outcome<EmittedModule> Emitted(RunRequest request, Progress progress) =>
     Settle(request)
-        .Then(ReadProject)
+        .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
         .Then(Select)
-        .Then(Infer)
+        .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
         .Then(Emit);
 
-var emitted = ModuleRun.Emitted(request);
-var run = emitted.Then(Write);
+var emitted = ModuleRun.Emitted(request, progress);
+var run = emitted.Then(module =>
+{
+    // Read before it is written over: what the folder held is what this run is compared with.
+    progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
+    var earlier = EarlierOutput.Read(module);
+    return Write(module).Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
+});
 ```
 
 At the end, `Generate.Run` turns the outcome into a `ModuleReport`: everything found, in the order it was found, and the exit
