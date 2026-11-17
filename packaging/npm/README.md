@@ -3,7 +3,7 @@
 The haruspex command is a .NET program, compiled ahead of time to one native binary per platform (Native AOT, in CI's native job). Its
 users are mostly TypeScript teams, who already have Node and npm, so its main way in is npm: `npm install haruspex`, then
 `npx haruspex generate` or a package script, with no .NET runtime and nothing to compile. This folder builds those packages.
-Nothing is published yet: the script below makes tarballs, which npm installs from the file.
+Nothing is published yet: CI and the script below make tarballs, which npm installs from the file.
 
 ## The layout
 
@@ -57,8 +57,10 @@ will carry haruspex's own version.
 
 ## Making the tarballs
 
-To make them, download the native artifacts of a CI run into a folder (the `gh` CLI lays them out as the script expects, a
-folder per platform), then:
+CI makes them on every run (the `npm-pack` job in [the workflow](../../.github/workflows/ci.yml)), from the binaries its native
+jobs built, and keeps them as the artifact `haruspex-npm` for 30 days; the `npm-install` jobs install them into an empty
+project on each platform and run `npx haruspex --version` and `npx haruspex generate`. To make them locally, download the
+native artifacts of a CI run into a folder (the `gh` CLI lays them out as the script expects, a folder per platform), then:
 
 ```sh
 gh run download <run id> --pattern 'haruspex-*-*' --dir binaries      # the native artifacts, not haruspex-npm

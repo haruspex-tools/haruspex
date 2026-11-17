@@ -108,6 +108,13 @@ jobs:
             rid: win-x64
           - os: macos-latest
             rid: osx-arm64
+          # Each platform the npm packages ship a binary for is built on its own machine, since Native AOT doesn't compile
+          # for another OS and needs a sysroot for another CPU. Arm64 Linux runners serve private repositories since
+          # January 2026; macos-15-intel is the last Intel macOS image, supported until autumn 2027.
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+          - os: macos-15-intel
+            rid: osx-x64
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     env:
@@ -151,6 +158,103 @@ jobs:
             publish/haruspex.exe
           if-no-files-found: error
           retention-days: 30
+
+  npm-pack:
+    name: Pack the npm tarballs
+    # The npm packages (packaging/npm/README.md) made from the binaries the native jobs built, kept as one artifact, so a
+    # private application can install haruspex from the files. Not a release: nothing is published.
+    needs: native
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      # Every native artifact (haruspex-<rid>), each into a folder of its own name, as the pack script reads them.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: haruspex-*-*
+          path: binaries
+
+      # The version comes from the commit checked out, which the script checks each binary was built from.
+      - run: node packaging/npm/pack.mjs --binaries binaries --out npm
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: haruspex-npm
+          path: npm/*.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+  npm-install:
+    name: Install the npm tarballs (${{ matrix.platform }})
+    # The tarballs installed as an application would install them, into an empty project outside the checkout, and the
+    # command run through npx: a launcher that can't find its binary, or a package without one, fails here.
+    needs: npm-pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+          - os: macos-latest
+            platform: darwin-arm64
+          - os: macos-15-intel
+            platform: darwin-x64
+          - os: windows-latest
+            platform: win32-x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # For the fixture the command runs on.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: haruspex-npm
+          path: ${{ runner.temp }}/npm
+
+      # The main package and this platform's, as the README's Install section says. Offline, so npm never asks the
+      # registry for the other platform packages, which aren't published; it skips them, since they are optional. These
+      # are this run's own tarballs, so zizmor's concern (a package from outside a lockfile) doesn't arise. Paths are
+      # relative because Windows' are written with backslashes, which bash would read as escapes in a glob.
+      - name: Install into an empty project
+        working-directory: ${{ runner.temp }}
+        run: | # zizmor: ignore[adhoc-packages]
+          mkdir app
+          cd app
+          npm init -y > /dev/null
+          npm install --offline --ignore-scripts --no-audit --no-fund ../npm/haruspex-0.0.0-*.tgz "../npm/haruspex-$PLATFORM-"*.tgz
+          ls "node_modules/@haruspex"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
+      # --no: run the command installed in the project, never one fetched from the registry; and -- before it, or npx reads
+      # --version as its own. The version ends in the commit the binary was built from, which must be this run's.
+      - name: Run the command
+        working-directory: ${{ runner.temp }}/app
+        run: |
+          npx --no -- haruspex --version | tee version.txt
+          grep -q "+$GITHUB_SHA" version.txt
+          npx --no -- haruspex generate "$GITHUB_WORKSPACE/tests/fixtures/orders/database" --include 'sales.*' --out db
+          test -s db/haruspex.ir.json
+          test -s db/haruspex.zod.ts
 
   workflows:
     name: Lint the workflows
