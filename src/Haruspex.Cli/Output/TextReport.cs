@@ -54,7 +54,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (detail == OutputDetail.Verbose)
         {
             foreach (var acknowledged in module.Acknowledged)
-                error.WriteLine($"{Line(acknowledged.Warning)} (acknowledged: {acknowledged.By.Why})");
+                error.WriteLine($"{Line(acknowledged.Warning)} (acknowledged: {Visible.Of(acknowledged.By.Why)})");
         }
 
         // The unknowns' notes are the subject of a check that fails on unknowns, so it says them without being asked.
@@ -82,7 +82,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         var notes = module.Unknowns.Where(u => u.Note is not null).Select(u => (u.Unknown.Object, Note: u.Note ?? throw new InvalidOperationException()));
         foreach (var group in notes.GroupBy(n => n.Object).OrderBy(g => g.Key, StringComparer.Ordinal))
         {
-            error.WriteLine(errorStyle.Strong($"{group.Key} ({Counted(group.Count(), "unknown")})"));
+            error.WriteLine(errorStyle.Strong($"{Visible.Of(group.Key)} ({Counted(group.Count(), "unknown")})"));
             foreach (var (_, note) in group)
                 error.WriteLine(Line(note));
         }
@@ -138,7 +138,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         {
             yield return outputStyle.Strong($"{Counted(compared.Claims.Count, "change")} since the last run:");
             foreach (var change in compared.Claims)
-                yield return $"  {Marked(change.Kind)} {change}";
+                yield return $"  {Marked(change.Kind)} {Visible.Of(change.ToString())}";
         }
         else if (compared.Rewritten.Count > 0)
         {
@@ -155,11 +155,11 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             foreach (var added in compared.New)
             {
                 var place = added.Note is { } note ? $" ({DiagnosticFormatter.Parts(Relative(note)).Place})" : "";
-                yield return $"  {outputStyle.Added("+")} {added.Unknown.Object} {added.Unknown.Path}: {Reason(added.Unknown.Reason)}{place}";
+                yield return $"  {outputStyle.Added("+")} {Visible.Of($"{added.Unknown.Object} {added.Unknown.Path}")}: {Reason(added.Unknown.Reason)}{Visible.Of(place)}";
             }
 
             foreach (var resolved in compared.Resolved)
-                yield return $"  {outputStyle.Removed("-")} {resolved.Object} {resolved.Path}: {Reason(resolved.Reason)}";
+                yield return $"  {outputStyle.Removed("-")} {Visible.Of($"{resolved.Object} {resolved.Path}")}: {Reason(resolved.Reason)}";
             if (compared.New.Select(u => u.Unknown).Concat(compared.Resolved).Any(u => InferenceCodes.Of(u.Reason) is not null) && Pages() is { } pages)
                 yield return pages;
         }
@@ -245,7 +245,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             DiagnosticSeverity.Warning => errorStyle.Warning(word),
             DiagnosticSeverity.Note => errorStyle.Note(word),
         };
-        return $"{place}: {styled} {code}: {text}";
+        return $"{Visible.Of(place)}: {styled} {code}: {Visible.Of(text)}";
     }
 
     /// <summary>The diagnostic with its file shown from the working directory (<see cref="Shown"/>).</summary>
@@ -261,7 +261,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     /// A path as the report shows it: from the working directory when it is below it, which is shorter and what a developer
     /// typed; whole otherwise. With <c>/</c> on every platform (<see cref="DiagnosticFormatter.PathAsShown"/>).
     /// </summary>
-    public string Shown(string path) => DisplayPath.From(workingDirectory, path);
+    public string Shown(string path) => Visible.Of(DisplayPath.From(workingDirectory, path));
 
     /// <summary>What a module types: its procedures, and its query files when there are any.</summary>
     internal static string Typed(IrDocument document)

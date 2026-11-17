@@ -213,6 +213,22 @@ public class OutputTests
         Assert.DoesNotContain("BytePositionInLine", printed, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_control_character_in_the_sql_is_escaped_so_no_line_of_the_text_is_another_s()
+    {
+        // A bracketed identifier may hold a line break; printed raw, its second line would be a GitHub workflow command.
+        using var folder = Kennel("CREATE PROCEDURE kennel.get_dog AS\nSELECT d.[nick\n::error::boom\u001b[31m] FROM kennel.dog AS d;");
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        HaruspexCli.Run(["generate", "--verbose"], output, error, folder.Path, new Terminal { Environment = new Dictionary<string, string> { ["GITHUB_ACTIONS"] = "true" } });
+
+        var lines = (output.ToString() + error).Split('\n');
+        Assert.DoesNotContain(lines, line => line.StartsWith("::error::boom", StringComparison.Ordinal));
+        Assert.DoesNotContain("\u001b", error.ToString(), StringComparison.Ordinal);
+        Assert.Contains(@"has no column nick\n::error::boom\x1B[31m.", error.ToString(), StringComparison.Ordinal);
+    }
+
     private const string FindDogsWarning = "haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n";
 
     /// <summary>The kennel without the procedure whose results only a declaration can give, which a check doesn't pass.</summary>

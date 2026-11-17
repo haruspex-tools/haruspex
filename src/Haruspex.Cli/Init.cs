@@ -58,9 +58,12 @@ internal static class Init
             return HaruspexCli.ExitCodes.Failed;
         }
 
+        // Names from the files found are printed as the text report prints them, control characters escaped.
+        var shownSchemas = schemas.Select(Visible.Of).ToList();
+        shown = Visible.Of(shown);
         output.WriteLine(schemas.Count == 0
             ? $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown}, where no procedure was found, so it selects none yet. Add a schema's \"include\", or \"queries\" for the application's query files, then run haruspex generate."
-            : $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown} and types every procedure in {EnglishList.Of(schemas)}, written to {@out}.");
+            : $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown} and types every procedure in {EnglishList.Of(shownSchemas)}, written to {@out}.");
         if (schemas.Count > 0)
             output.WriteLine("Next, run haruspex generate. Then narrow each schema's \"include\" to the procedures the application calls.");
         return HaruspexCli.ExitCodes.Success;
