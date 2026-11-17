@@ -70,6 +70,7 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
 | `--verbose`, `-v` | Also list every note: each unknown, grouped by the procedure or query file it is in. |
 | `--quiet`, `-q` | Print errors only. |
+| `--color` | `auto` (the default: colour on a terminal, unless `NO_COLOR` is set), `always` or `never`. |
 
 Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
 and `haruspex check --help` list the same.

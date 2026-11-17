@@ -1,3 +1,4 @@
+using Haruspex.Cli.Output;
 using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
@@ -22,12 +23,29 @@ namespace Haruspex.Cli;
 internal static class ModuleRun
 {
     /// <summary>The module the request would write, in memory, or why there is none.</summary>
-    public static Outcome<EmittedModule> Emitted(RunRequest request) =>
+    /// <param name="request">What the run is asked.</param>
+    /// <param name="progress">Where to say which step the run is at, for a run long enough to show it.</param>
+    public static Outcome<EmittedModule> Emitted(RunRequest request, Progress progress) =>
         Settle(request)
-            .Then(ReadProject)
+            .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
             .Then(Select)
-            .Then(Infer)
+            .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
             .Then(Emit);
+
+    /// <summary>The value, once <paramref name="what"/> has been said as the run's step.</summary>
+    private static Succeeded<T> Said<T>(Progress progress, string what, T value)
+    {
+        progress.Step(what);
+        return new Succeeded<T>(value);
+    }
+
+    /// <summary>The step of inference, with what it infers: <c>inferring 12 procedures and 3 query files</c>.</summary>
+    private static string Inferring(Selection selection)
+    {
+        var queries = selection.Loaded.Project.Queries.Count;
+        var procedures = TextReport.Counted(selection.Procedures.Count, "procedure");
+        return queries == 0 ? $"inferring {procedures}" : $"inferring {procedures} and {TextReport.Counted(queries, "query file")}";
+    }
 
     /// <summary>The config file and what it says; the defaults when there is none.</summary>
     private sealed record Settings(HaruspexConfig Config, string? Path);

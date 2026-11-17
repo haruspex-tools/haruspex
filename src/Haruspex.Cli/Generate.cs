@@ -1,3 +1,4 @@
+using Haruspex.Cli.Output;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -11,13 +12,14 @@ namespace Haruspex.Cli;
 /// </summary>
 internal static class Generate
 {
-    /// <summary>Runs the command over one module.</summary>
-    public static ModuleReport Run(RunRequest request)
+    /// <summary>Runs the command over one module, saying each step to <paramref name="progress"/>.</summary>
+    public static ModuleReport Run(RunRequest request, Progress progress)
     {
-        var emitted = ModuleRun.Emitted(request);
+        var emitted = ModuleRun.Emitted(request, progress);
         var run = emitted.Then(module =>
         {
             // Read before it is written over: what the folder held is what this run is compared with.
+            progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
             var earlier = EarlierOutput.Read(module);
             return Write(module).Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
         });

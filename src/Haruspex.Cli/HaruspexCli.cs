@@ -97,6 +97,14 @@ internal static class HaruspexCli
                 new Streams(output, error, workingDirectory, terminal)),
         };
 
+    /// <summary>What the colour option names.</summary>
+    private static ColourChoice Colour(string? named) => named switch
+    {
+        "always" => ColourChoice.Always,
+        "never" => ColourChoice.Never,
+        _ => ColourChoice.Auto,
+    };
+
     /// <summary>Where a command writes, where it runs from, and what it knows of the terminal.</summary>
     private sealed class Streams(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal)
     {
@@ -110,7 +118,7 @@ internal static class HaruspexCli
     }
 
     /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
-    private static Command Module(string name, string description, CommandName command, Func<RunRequest, ModuleReport> run, Streams streams)
+    private static Command Module(string name, string description, CommandName command, Func<RunRequest, Progress, ModuleReport> run, Streams streams)
     {
         var workingDirectory = streams.WorkingDirectory;
         var directory = new Argument<string?>("source")
@@ -146,6 +154,12 @@ internal static class HaruspexCli
         {
             Description = "Print errors only.",
         };
+        var colour = new Option<string>("--color")
+        {
+            Description = "Colour: auto (on a terminal, unless NO_COLOR is set), always or never.",
+            DefaultValueFactory = _ => "auto",
+        };
+        colour.AcceptOnlyFromAmong("auto", "always", "never");
 
         var made = new Command(name, description)
         {
@@ -156,6 +170,7 @@ internal static class HaruspexCli
             outDirectory,
             verbose,
             quiet,
+            colour,
         };
         made.Validators.Add(result =>
         {
@@ -172,8 +187,11 @@ internal static class HaruspexCli
                 parsed.GetValue(outDirectory),
                 workingDirectory);
             var detail = parsed.GetValue(quiet) ? OutputDetail.Quiet : parsed.GetValue(verbose) ? OutputDetail.Verbose : OutputDetail.Normal;
-            var report = ModuleSet.Run(command, request, run);
-            new TextReport(detail, TextStyle.Plain, TextStyle.Plain, workingDirectory).Write(report, streams.Output, streams.Error);
+            var settings = OutputSettings.Settle(detail, Colour(parsed.GetValue(colour)), streams.Terminal);
+            RunReport report;
+            using (var progress = Progress.On(streams.Error, settings, streams.Terminal))
+                report = ModuleSet.Run(command, request, module => run(module, progress));
+            new TextReport(settings.Detail, settings.Output, settings.Error, workingDirectory).Write(report, streams.Output, streams.Error);
             return report.ExitCode;
         });
         return made;

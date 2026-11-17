@@ -123,7 +123,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     {
         if (compared.Claims.Count > 0)
         {
-            yield return $"{Counted(compared.Claims.Count, "change")} since the last run:";
+            yield return outputStyle.Strong($"{Counted(compared.Claims.Count, "change")} since the last run:");
             foreach (var change in compared.Claims)
                 yield return $"  {Marked(change.Kind)} {change}";
         }
@@ -138,7 +138,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
 
         if (compared.New.Count > 0 || compared.Resolved.Count > 0)
         {
-            yield return $"Unknowns: {compared.New.Count} new, {compared.Resolved.Count} resolved, {compared.Unchanged} as before{listed}.";
+            yield return outputStyle.Strong($"Unknowns: {compared.New.Count} new, {compared.Resolved.Count} resolved, {compared.Unchanged} as before{listed}.");
             foreach (var added in compared.New)
             {
                 var place = added.Note is { } note ? $" ({DiagnosticFormatter.Parts(Relative(note)).Place})" : "";
@@ -184,7 +184,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             .ThenBy(r => r.Code?.Number ?? int.MaxValue)
             .ToList();
         var width = reasons.Max(r => r.Count).ToString(CultureInfo.InvariantCulture).Length;
-        yield return detail == OutputDetail.Verbose ? "Unknowns by reason:" : "Unknowns by reason (--verbose lists each):";
+        yield return outputStyle.Strong(detail == OutputDetail.Verbose ? "Unknowns by reason:" : "Unknowns by reason (--verbose lists each):");
         foreach (var (code, count) in reasons)
         {
             var number = count.ToString(CultureInfo.InvariantCulture).PadLeft(width);

@@ -1,3 +1,4 @@
+using Haruspex.Cli.Output;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -13,15 +14,16 @@ namespace Haruspex.Cli;
 /// </summary>
 internal static class Check
 {
-    /// <summary>Runs the command over one module.</summary>
-    public static ModuleReport Run(RunRequest request)
+    /// <summary>Runs the command over one module, saying each step to <paramref name="progress"/>.</summary>
+    public static ModuleReport Run(RunRequest request, Progress progress)
     {
-        var emitted = ModuleRun.Emitted(request);
+        var emitted = ModuleRun.Emitted(request, progress);
         if (emitted is not Succeeded<EmittedModule> { Value: var module })
             return new ModuleReport(CommandName.Check, request, emitted.Diagnostics, ModuleRun.ExitCode(emitted.Diagnostics));
 
         // Each unknown is noted before the comparison, so a failed check says them too.
         var unknowns = ModuleRun.Notes(module.Document, module.Project);
+        progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
         var compared = Compared(module);
         Diagnostic[] found = [.. emitted.Diagnostics, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared];
         return new ModuleReport(CommandName.Check, request, [.. found], compared.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(compared))

@@ -153,6 +153,54 @@ public class OutputTests
         Assert.Contains("\nUnknowns by reason (--verbose lists each):\n", printed, StringComparison.Ordinal);
     }
 
+    /// <summary>A terminal that shows colour and links, whose clock never moves, so no progress line is drawn.</summary>
+    private static Terminal Colourful(params string[] variables) => new()
+    {
+        OutputIsTerminal = true,
+        ErrorIsTerminal = true,
+        Clock = new ManualClock(),
+        Environment = variables.Append("TERM_PROGRAM=WezTerm").Select(v => v.Split('=', 2)).ToDictionary(p => p[0], p => p[1]),
+    };
+
+    [Fact]
+    public void On_a_terminal_severities_are_coloured_and_codes_link_to_their_pages()
+    {
+        using var folder = Kennel();
+        Printed(folder, null, "generate");
+        folder.File("db/tables.sql", Tables.Replace("name nvarchar(50) NOT NULL", "name nvarchar(50) NULL", StringComparison.Ordinal));
+
+        // The escape character shown as ␛, so the snapshot can be read.
+        var printed = Printed(folder, Colourful(), "generate", "--verbose").Replace("\e", "␛", StringComparison.Ordinal);
+
+        Snapshot.Match(printed, $"{nameof(OutputTests)}.Colour", "txt");
+    }
+
+    [Theory]
+    [InlineData("--color=never")]
+    [InlineData("NO_COLOR=1")]
+    public void Colour_asked_off_is_the_same_bytes_as_off_a_terminal(string off)
+    {
+        using var folder = Kennel();
+        using var plain = Kennel();
+
+        var coloured = off.StartsWith("--", StringComparison.Ordinal)
+            ? Printed(folder, Colourful(), "generate", "--verbose", off)
+            : Printed(folder, Colourful(off), "generate", "--verbose");
+
+        Assert.Equal(Printed(plain, null, "generate", "--verbose"), coloured);
+    }
+
+    [Fact]
+    public void Colour_asked_for_always_colours_a_pipe_but_makes_no_link()
+    {
+        using var folder = Kennel();
+
+        var printed = Printed(folder, null, "generate", "--color", "always");
+
+        Assert.Contains("\e[1;33m" + "warning\e[0m HAR4204", printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("\e]8;;", printed, StringComparison.Ordinal);
+    }
+
     private const string FindDogsWarning = "haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n";
 
     /// <summary>The kennel without the procedure whose results only a declaration can give, which a check doesn't pass.</summary>
