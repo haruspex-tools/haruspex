@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.21",
+  "irVersion": "0.22",
   "source": {
     "dialect": "tsql"
   },
@@ -9,6 +9,7 @@
       "name": "CoalesceIntoVariable",
       "kind": "procedure",
       "at": "procedures/coalesce_into_variable.sql:3:1",
+      "returnsCode": false,
       "parameters": [
         {
           "name": "@owner_id",
