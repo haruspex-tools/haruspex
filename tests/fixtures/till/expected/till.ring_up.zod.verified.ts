@@ -30,7 +30,7 @@ export const RingUpParamsSchema = z.strictObject({
 export type RingUpParams = z.infer<typeof RingUpParamsSchema>
 
 /** till.ring_up: returns rows. */
-export const RingUpSchema = z.array(RingUpRowSchema).length(1)
+export const RingUpSchema = z.array(RingUpRowSchema).length(1, { error: "Expected exactly one row" })
 export type RingUp = z.infer<typeof RingUpSchema>
 
 /** till.ring_up: what its OUTPUT parameters hold when it ends. */

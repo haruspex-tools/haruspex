@@ -37,5 +37,5 @@ export const RegularsParamsSchema = z.strictObject({
 export type RegularsParams = z.infer<typeof RegularsParamsSchema>
 
 /** rink.regulars: returns 4 result sets: rows; rows; rows; rows. */
-export const RegularsSchema = z.tuple([z.array(RegularsResult1RowSchema), z.array(RegularsResult2RowSchema), z.array(RegularsResult3RowSchema), z.array(RegularsResult4RowSchema).max(1)])
+export const RegularsSchema = z.tuple([z.array(RegularsResult1RowSchema), z.array(RegularsResult2RowSchema), z.array(RegularsResult3RowSchema), z.array(RegularsResult4RowSchema).max(1, { error: "Expected at most one row" })])
 export type Regulars = z.infer<typeof RegularsSchema>

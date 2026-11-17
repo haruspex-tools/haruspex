@@ -39,5 +39,5 @@ export const RegionReportParamsSchema = z.strictObject({
 export type RegionReportParams = z.infer<typeof RegionReportParamsSchema>
 
 /** flow.region_report: returns JSON, null when no rows match. */
-export const RegionReportSchema = z.array(RegionReportRowSchema).min(1).nullable()
+export const RegionReportSchema = z.array(RegionReportRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type RegionReport = z.infer<typeof RegionReportSchema>

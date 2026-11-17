@@ -24,5 +24,5 @@ export const ShiftTimesParamsSchema = z.strictObject({
 export type ShiftTimesParams = z.infer<typeof ShiftTimesParamsSchema>
 
 /** till.shift_times: returns rows. */
-export const ShiftTimesSchema = z.array(ShiftTimesRowSchema).length(1)
+export const ShiftTimesSchema = z.array(ShiftTimesRowSchema).length(1, { error: "Expected exactly one row" })
 export type ShiftTimes = z.infer<typeof ShiftTimesSchema>

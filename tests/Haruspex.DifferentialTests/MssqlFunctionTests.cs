@@ -113,6 +113,31 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
 
         Assert.Equal(("HaruspexResultError", "result", "outlet.order_count", "the results"), (error.Name, error.Kind, error.Procedure, error.Part));
         Assert.Equal("0.one", string.Join(".", Assert.Single(error.Issues).Path));
+        Assert.StartsWith("outlet.order_count, the results: [0].one: ", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_failure_in_one_of_several_result_sets_names_the_set_and_a_row_count_in_words()
+    {
+        // The second set is one row (an aggregate without GROUP BY); the deployed procedure leaves it out, or returns a null
+        // the first set's column can't hold. The message names the set as a person counts them, and the count in rows.
+        const string Generated = "CREATE PROCEDURE outlet.order_sheet @fail int AS SELECT CAST(1 AS int) AS a; SELECT COUNT_BIG(*) AS n;";
+        const string Deployed = """
+            CREATE PROCEDURE outlet.order_sheet @fail int AS
+            IF @fail = 1 SELECT CAST(1 AS int) AS a;
+            IF @fail = 2 SELECT CAST(NULL AS int) AS a;
+            IF @fail = 2 SELECT COUNT_BIG(*) AS n;
+            """;
+
+        var responses = await Run(
+            Module(Generated),
+            [Deployed],
+            new GeneratedFunctions.Call("missing", "orderSheet", Params(("fail", 1))),
+            new GeneratedFunctions.Call("null", "orderSheet", Params(("fail", 2))));
+
+        Assert.Equal("outlet.order_sheet, the results: result set 2: Expected exactly one row", responses[0].Error!.Message);
+        Assert.StartsWith("outlet.order_sheet, the results: result set 1, [0].a: ", responses[1].Error!.Message, StringComparison.Ordinal);
+        Assert.Equal(["0", "0", "a"], Assert.Single(responses[1].Error!.Issues).Path);
     }
 
     [Theory]

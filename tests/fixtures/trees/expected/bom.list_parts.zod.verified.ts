@@ -47,5 +47,5 @@ export const ListPartsRowSchema = z.object({
 export type ListPartsRow = z.infer<typeof ListPartsRowSchema>
 
 /** bom.list_parts: returns JSON, null when no rows match. */
-export const ListPartsSchema = z.array(ListPartsRowSchema).min(1).nullable()
+export const ListPartsSchema = z.array(ListPartsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListParts = z.infer<typeof ListPartsSchema>

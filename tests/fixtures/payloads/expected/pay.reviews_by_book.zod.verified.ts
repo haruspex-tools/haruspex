@@ -18,5 +18,5 @@ export const ReviewsByBookRowSchema = z.object({
 export type ReviewsByBookRow = z.infer<typeof ReviewsByBookRowSchema>
 
 /** pay.reviews_by_book: returns JSON, null when no rows match. */
-export const ReviewsByBookSchema = z.array(ReviewsByBookRowSchema).min(1).nullable()
+export const ReviewsByBookSchema = z.array(ReviewsByBookRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ReviewsByBook = z.infer<typeof ReviewsByBookSchema>

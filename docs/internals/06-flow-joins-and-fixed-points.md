@@ -74,7 +74,7 @@ export const RestockNoteParamsSchema = z.strictObject({
 export type RestockNoteParams = z.infer<typeof RestockNoteParamsSchema>
 
 /** shop.restock_note: returns rows. */
-export const RestockNoteSchema = z.array(RestockNoteRowSchema).length(1)
+export const RestockNoteSchema = z.array(RestockNoteRowSchema).length(1, { error: "Expected exactly one row" })
 export type RestockNote = z.infer<typeof RestockNoteSchema>
 ```
 
@@ -160,7 +160,7 @@ export const ProductLabelParamsSchema = z.strictObject({
 export type ProductLabelParams = z.infer<typeof ProductLabelParamsSchema>
 
 /** shop.product_label: returns rows, [] when it does not run. */
-export const ProductLabelSchema = z.array(ProductLabelRowSchema).max(1)
+export const ProductLabelSchema = z.array(ProductLabelRowSchema).max(1, { error: "Expected at most one row" })
 export type ProductLabel = z.infer<typeof ProductLabelSchema>
 ```
 
@@ -248,7 +248,7 @@ export const OrderCardParamsSchema = z.strictObject({
 export type OrderCardParams = z.infer<typeof OrderCardParamsSchema>
 
 /** shop.order_card: returns rows, [] when it does not run. */
-export const OrderCardSchema = z.array(OrderCardRowSchema).max(1)
+export const OrderCardSchema = z.array(OrderCardRowSchema).max(1, { error: "Expected at most one row" })
 export type OrderCard = z.infer<typeof OrderCardSchema>
 ```
 

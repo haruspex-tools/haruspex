@@ -48,5 +48,5 @@ export const ListNestedWithNullsRowSchema = z.object({
 export type ListNestedWithNullsRow = z.infer<typeof ListNestedWithNullsRowSchema>
 
 /** vals.list_nested_with_nulls: returns JSON, null when no rows match. */
-export const ListNestedWithNullsSchema = z.array(ListNestedWithNullsRowSchema).min(1).nullable()
+export const ListNestedWithNullsSchema = z.array(ListNestedWithNullsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListNestedWithNulls = z.infer<typeof ListNestedWithNullsSchema>

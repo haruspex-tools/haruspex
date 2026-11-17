@@ -21,5 +21,5 @@ export const CatalogueSummaryResult2RowSchema = z.object({
 export type CatalogueSummaryResult2Row = z.infer<typeof CatalogueSummaryResult2RowSchema>
 
 /** lend.catalogue_summary: returns 2 result sets: rows; JSON. */
-export const CatalogueSummarySchema = z.tuple([z.array(CatalogueSummaryResult1RowSchema).length(1), CatalogueSummaryResult2RowSchema])
+export const CatalogueSummarySchema = z.tuple([z.array(CatalogueSummaryResult1RowSchema).length(1, { error: "Expected exactly one row" }), CatalogueSummaryResult2RowSchema])
 export type CatalogueSummary = z.infer<typeof CatalogueSummarySchema>

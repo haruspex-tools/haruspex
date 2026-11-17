@@ -25,5 +25,5 @@ export const CoalesceIntoVariableParamsSchema = z.strictObject({
 export type CoalesceIntoVariableParams = z.infer<typeof CoalesceIntoVariableParamsSchema>
 
 /** kennel.coalesce_into_variable: returns rows. */
-export const CoalesceIntoVariableSchema = z.array(CoalesceIntoVariableRowSchema).length(1)
+export const CoalesceIntoVariableSchema = z.array(CoalesceIntoVariableRowSchema).length(1, { error: "Expected exactly one row" })
 export type CoalesceIntoVariable = z.infer<typeof CoalesceIntoVariableSchema>

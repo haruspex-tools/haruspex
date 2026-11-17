@@ -48,5 +48,5 @@ export const ListNestedRowSchema = z.object({
 export type ListNestedRow = z.infer<typeof ListNestedRowSchema>
 
 /** vals.list_nested: returns JSON, null when no rows match. */
-export const ListNestedSchema = z.array(ListNestedRowSchema).min(1).nullable()
+export const ListNestedSchema = z.array(ListNestedRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListNested = z.infer<typeof ListNestedSchema>

@@ -23,5 +23,5 @@ export const MemberByEmailParamsSchema = z.strictObject({
 export type MemberByEmailParams = z.infer<typeof MemberByEmailParamsSchema>
 
 /** lend.member_by_email: returns rows. */
-export const MemberByEmailSchema = z.array(MemberByEmailRowSchema).max(1)
+export const MemberByEmailSchema = z.array(MemberByEmailRowSchema).max(1, { error: "Expected at most one row" })
 export type MemberByEmail = z.infer<typeof MemberByEmailSchema>

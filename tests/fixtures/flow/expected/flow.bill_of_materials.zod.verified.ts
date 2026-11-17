@@ -33,5 +33,5 @@ export const BillOfMaterialsParamsSchema = z.strictObject({
 export type BillOfMaterialsParams = z.infer<typeof BillOfMaterialsParamsSchema>
 
 /** flow.bill_of_materials: returns JSON, null when no rows match. */
-export const BillOfMaterialsSchema = z.array(BillOfMaterialsRowSchema).min(1).nullable()
+export const BillOfMaterialsSchema = z.array(BillOfMaterialsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type BillOfMaterials = z.infer<typeof BillOfMaterialsSchema>

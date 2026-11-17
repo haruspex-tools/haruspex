@@ -176,7 +176,7 @@ export const CategoryTreeRowSchema = z.object({
 export type CategoryTreeRow = z.infer<typeof CategoryTreeRowSchema>
 
 /** shop.category_tree: returns JSON, null when no rows match. */
-export const CategoryTreeSchema = z.array(CategoryTreeRowSchema).min(1).nullable()
+export const CategoryTreeSchema = z.array(CategoryTreeRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type CategoryTree = z.infer<typeof CategoryTreeSchema>
 ```
 
@@ -307,7 +307,7 @@ export const ProductHeaderParamsSchema = z.strictObject({
 export type ProductHeaderParams = z.infer<typeof ProductHeaderParamsSchema>
 
 /** shop.product_header: returns rows. */
-export const ProductHeaderSchema = z.array(ProductHeaderRowSchema).max(1)
+export const ProductHeaderSchema = z.array(ProductHeaderRowSchema).max(1, { error: "Expected at most one row" })
 export type ProductHeader = z.infer<typeof ProductHeaderSchema>
 
 /** The same shape as ProductHeaderRow. */
@@ -328,7 +328,7 @@ export const ProductPageParamsSchema = z.strictObject({
 export type ProductPageParams = z.infer<typeof ProductPageParamsSchema>
 
 /** shop.product_page: returns 2 result sets: rows; rows, [] when it does not run. */
-export const ProductPageSchema = z.tuple([z.array(ProductHeaderRowSchema).max(1), z.array(ProductPageResult2RowSchema)])
+export const ProductPageSchema = z.tuple([z.array(ProductHeaderRowSchema).max(1, { error: "Expected at most one row" }), z.array(ProductPageResult2RowSchema)])
 export type ProductPage = z.infer<typeof ProductPageSchema>
 ```
 

@@ -37,5 +37,5 @@ export const VisitTotalsParamsSchema = z.strictObject({
 export type VisitTotalsParams = z.infer<typeof VisitTotalsParamsSchema>
 
 /** gym.visit_totals: returns 2 result sets: rows; rows. */
-export const VisitTotalsSchema = z.tuple([z.array(VisitTotalsResult1RowSchema), z.array(VisitTotalsResult2RowSchema).length(1)])
+export const VisitTotalsSchema = z.tuple([z.array(VisitTotalsResult1RowSchema), z.array(VisitTotalsResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type VisitTotals = z.infer<typeof VisitTotalsSchema>

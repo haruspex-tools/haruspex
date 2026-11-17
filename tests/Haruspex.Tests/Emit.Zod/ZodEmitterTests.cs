@@ -120,8 +120,24 @@ public class ZodEmitterTests
     {
         var ts = ZodEmitter.Emit(Absent(new IrArray(new IrRef("PRow")))).Expected();
 
-        Assert.Contains("export const PSchema = z.array(PRowSchema).min(1).nullable()\n", ts, StringComparison.Ordinal);
+        Assert.Contains("export const PSchema = z.array(PRowSchema).min(1, { error: \"Expected at least one row\" }).nullable()\n", ts, StringComparison.Ordinal);
         Assert.Contains("null when no rows match", ts, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(2, 2, ".length(2, { error: \"Expected exactly 2 rows\" })")]
+    [InlineData(2, 5, ".min(2, { error: \"Expected at least 2 rows\" }).max(5, { error: \"Expected at most 5 rows\" })")]
+    [InlineData(null, 0, ".max(0, { error: \"Expected no rows\" })")]
+    public void A_result_s_bounds_on_its_rows_say_what_was_expected_in_rows(int? fewest, int most, string bounds)
+    {
+        // Zod's own words count an array's items ("expected array to have exactly 1 items"); a result's array is its rows.
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("PRow")) { MinItems = fewest, MaxItems = most }, [])])],
+            new Dictionary<string, IrObjectType> { ["PRow"] = new([Field("v", new IrScalar(IrScalarKind.String, null, "nvarchar(10)"))]) },
+            []);
+
+        Assert.Contains("export const PSchema = z.array(PRowSchema)" + bounds + "\n", ZodEmitter.Emit(document).Expected(), StringComparison.Ordinal);
     }
 
     [Theory]

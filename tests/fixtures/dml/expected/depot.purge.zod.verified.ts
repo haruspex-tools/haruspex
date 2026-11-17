@@ -8,5 +8,5 @@ export const PurgeRowSchema = z.object({
 export type PurgeRow = z.infer<typeof PurgeRowSchema>
 
 /** depot.purge: returns rows. */
-export const PurgeSchema = z.array(PurgeRowSchema).length(1)
+export const PurgeSchema = z.array(PurgeRowSchema).length(1, { error: "Expected exactly one row" })
 export type Purge = z.infer<typeof PurgeSchema>

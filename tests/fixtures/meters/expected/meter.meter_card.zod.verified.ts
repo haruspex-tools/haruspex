@@ -45,5 +45,5 @@ export const MeterCardParamsSchema = z.strictObject({
 export type MeterCardParams = z.infer<typeof MeterCardParamsSchema>
 
 /** meter.meter_card: returns rows. */
-export const MeterCardSchema = z.array(MeterCardRowSchema).length(1)
+export const MeterCardSchema = z.array(MeterCardRowSchema).length(1, { error: "Expected exactly one row" })
 export type MeterCard = z.infer<typeof MeterCardSchema>

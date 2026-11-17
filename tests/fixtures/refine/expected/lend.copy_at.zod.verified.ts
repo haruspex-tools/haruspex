@@ -24,5 +24,5 @@ export const CopyAtParamsSchema = z.strictObject({
 export type CopyAtParams = z.infer<typeof CopyAtParamsSchema>
 
 /** lend.copy_at: returns rows. */
-export const CopyAtSchema = z.array(CopyAtRowSchema).max(1)
+export const CopyAtSchema = z.array(CopyAtRowSchema).max(1, { error: "Expected at most one row" })
 export type CopyAt = z.infer<typeof CopyAtSchema>

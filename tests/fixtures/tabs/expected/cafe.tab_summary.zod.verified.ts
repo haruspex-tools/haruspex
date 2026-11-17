@@ -37,5 +37,5 @@ export const TabSummaryParamsSchema = z.strictObject({
 export type TabSummaryParams = z.infer<typeof TabSummaryParamsSchema>
 
 /** cafe.tab_summary: returns rows. */
-export const TabSummarySchema = z.array(TabSummaryRowSchema).max(1)
+export const TabSummarySchema = z.array(TabSummaryRowSchema).max(1, { error: "Expected at most one row" })
 export type TabSummary = z.infer<typeof TabSummarySchema>

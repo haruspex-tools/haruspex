@@ -132,7 +132,7 @@ export const SalePriceParamsSchema = z.strictObject({
 export type SalePriceParams = z.infer<typeof SalePriceParamsSchema>
 
 /** shop.sale_price: returns rows. */
-export const SalePriceSchema = z.array(SalePriceRowSchema).max(1)
+export const SalePriceSchema = z.array(SalePriceRowSchema).max(1, { error: "Expected at most one row" })
 export type SalePrice = z.infer<typeof SalePriceSchema>
 ```
 

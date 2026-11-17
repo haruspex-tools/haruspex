@@ -16,5 +16,5 @@ export const OpenPurchaseByIdParamsSchema = z.strictObject({
 export type OpenPurchaseByIdParams = z.infer<typeof OpenPurchaseByIdParamsSchema>
 
 /** mart.open_purchase_by_id: returns rows. */
-export const OpenPurchaseByIdSchema = z.array(OpenPurchaseByIdRowSchema).max(1)
+export const OpenPurchaseByIdSchema = z.array(OpenPurchaseByIdRowSchema).max(1, { error: "Expected at most one row" })
 export type OpenPurchaseById = z.infer<typeof OpenPurchaseByIdSchema>

@@ -177,7 +177,7 @@ public class ConstructTests
 
         Assert.Equal(["PResult1Row", "PResult2Row"], doc.Types.Keys.Order(StringComparer.Ordinal));
         Assert.Contains(
-            "export const PSchema = z.tuple([z.array(PResult1RowSchema), z.array(PResult2RowSchema).min(1).nullable()])\n",
+            "export const PSchema = z.tuple([z.array(PResult1RowSchema), z.array(PResult2RowSchema).min(1, { error: \"Expected at least one row\" }).nullable()])\n",
             ZodEmitter.Emit(doc).Expected(),
             StringComparison.Ordinal);
     }

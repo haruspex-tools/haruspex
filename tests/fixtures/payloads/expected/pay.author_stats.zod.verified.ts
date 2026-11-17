@@ -10,5 +10,5 @@ export const AuthorStatsRowSchema = z.object({
 export type AuthorStatsRow = z.infer<typeof AuthorStatsRowSchema>
 
 /** pay.author_stats: returns JSON, null when no rows match. */
-export const AuthorStatsSchema = z.array(AuthorStatsRowSchema).min(1).nullable()
+export const AuthorStatsSchema = z.array(AuthorStatsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type AuthorStats = z.infer<typeof AuthorStatsSchema>

@@ -88,8 +88,10 @@ A function fails in one of three ways, each thrown
 - **The database raised an error.** mssql's own `RequestError`, passed through unchanged, with its `number`, `state`,
   `class`, `procName` and `lineNumber`, so existing handling of the driver's errors keeps working.
 - **What came back broke the contract.** A `ResultError`, whose `name` is `'HaruspexResultError'` and `kind` is `'result'`, naming
-  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. The database and the application
-  are deployed out of step, which no retry fixes: it calls for a deployment, not a second attempt.
+  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. In a procedure of several result
+  sets the path starts with the set, counted from 1, and a set's count of rows is said in rows:
+  `sales.order_sheet, the results: result set 2: Expected exactly one row`. The database and the application are deployed out
+  of step, which no retry fixes: it calls for a deployment, not a second attempt.
 
 Connection failures and timeouts are the driver's, untouched. Each module writes its own error classes, so an application
 with several modules tells the errors apart by `name` or `kind`, not `instanceof`:

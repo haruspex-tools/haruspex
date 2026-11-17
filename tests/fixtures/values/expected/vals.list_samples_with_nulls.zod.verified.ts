@@ -51,5 +51,5 @@ export const ListSamplesWithNullsRowSchema = z.object({
 export type ListSamplesWithNullsRow = z.infer<typeof ListSamplesWithNullsRowSchema>
 
 /** vals.list_samples_with_nulls: returns JSON, null when no rows match. */
-export const ListSamplesWithNullsSchema = z.array(ListSamplesWithNullsRowSchema).min(1).nullable()
+export const ListSamplesWithNullsSchema = z.array(ListSamplesWithNullsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListSamplesWithNulls = z.infer<typeof ListSamplesWithNullsSchema>

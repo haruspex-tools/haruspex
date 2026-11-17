@@ -21,5 +21,5 @@ export const ReviewDigestRowSchema = z.object({
 export type ReviewDigestRow = z.infer<typeof ReviewDigestRowSchema>
 
 /** pay.review_digest: returns rows. */
-export const ReviewDigestSchema = z.array(ReviewDigestRowSchema).length(1)
+export const ReviewDigestSchema = z.array(ReviewDigestRowSchema).length(1, { error: "Expected exactly one row" })
 export type ReviewDigest = z.infer<typeof ReviewDigestSchema>

@@ -50,5 +50,5 @@ export const SalesFeedResult2RowSchema = z.object({
 export type SalesFeedResult2Row = z.infer<typeof SalesFeedResult2RowSchema>
 
 /** bazaar.sales_feed: returns 2 result sets: rows; rows. */
-export const SalesFeedSchema = z.tuple([z.array(SalesFeedResult1RowSchema), z.array(SalesFeedResult2RowSchema).length(1)])
+export const SalesFeedSchema = z.tuple([z.array(SalesFeedResult1RowSchema), z.array(SalesFeedResult2RowSchema).length(1, { error: "Expected exactly one row" })])
 export type SalesFeed = z.infer<typeof SalesFeedSchema>

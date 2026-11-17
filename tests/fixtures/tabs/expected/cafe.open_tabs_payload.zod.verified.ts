@@ -25,5 +25,5 @@ export const OpenTabsPayloadRowSchema = z.object({
 export type OpenTabsPayloadRow = z.infer<typeof OpenTabsPayloadRowSchema>
 
 /** cafe.open_tabs_payload: returns rows. */
-export const OpenTabsPayloadSchema = z.array(OpenTabsPayloadRowSchema).length(1)
+export const OpenTabsPayloadSchema = z.array(OpenTabsPayloadRowSchema).length(1, { error: "Expected exactly one row" })
 export type OpenTabsPayload = z.infer<typeof OpenTabsPayloadSchema>

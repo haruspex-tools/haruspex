@@ -63,17 +63,25 @@ internal static class MssqlPrinter
           readonly part: string
           readonly issues: readonly Issue[]
 
-          constructor(procedure: string, part: string, issues: readonly Issue[]) {
-            super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue) ? `${where(issue)}: ` : '') + issue.message).join('; ')}`)
+          /** sets: whether the value checked was several result sets, so that an issue's first index is its set. */
+          constructor(procedure: string, part: string, issues: readonly Issue[], sets = false) {
+            super(`${procedure}, ${part}: ${issues.map((issue) => (where(issue, sets) ? `${where(issue, sets)}: ` : '') + issue.message).join('; ')}`)
             this.procedure = procedure
             this.part = part
             this.issues = issues
           }
         }
 
-        /** Where in a value an issue is, as dotted keys. */
-        function where(issue: Issue): string {
-          return (issue.path ?? []).map((segment) => String(typeof segment === 'object' ? segment.key : segment)).join('.')
+        /**
+         * Where in a value an issue is, as JavaScript reads a path: each index in brackets and each key after a dot, as in
+         * [0].label. In several result sets the first index is the set, named as people count them, from 1: result set 2, [0].label.
+         */
+        function where(issue: Issue, sets = false): string {
+          const path = (issue.path ?? []).map((segment) => (typeof segment === 'object' ? segment.key : segment))
+          const set = path[0]
+          const inSet = sets && typeof set === 'number'
+          const at = (inSet ? path.slice(1) : path).map((key) => (typeof key === 'number' ? `[${key}]` : `.${String(key)}`)).join('').replace(/^\./, '')
+          return inSet ? `result set ${set + 1}` + (at === '' ? '' : `, ${at}`) : at
         }
 
         """;
@@ -245,7 +253,7 @@ internal static class MssqlPrinter
             case var many:
                 output.Append("  const [").Append(string.Join(", ", many.Select((_, i) => Result(i)))).Append("] = await checked(")
                     .Append(SchemaModuleNames.ResultsSchema(name)).Append(", [").Append(string.Join(", ", many.Select(Read))).Append("], ")
-                    .Append(Fail(id, "the results")).Append(")\n");
+                    .Append(Fail(id, "the results", sets: true)).Append(")\n");
                 break;
         }
 
@@ -295,7 +303,12 @@ internal static class MssqlPrinter
     private static string Read(IrEncoding encoding, int index) =>
         (encoding == IrEncoding.Json ? "readJson" : "readRows") + "(sets[" + index.ToString(CultureInfo.InvariantCulture) + "])";
 
-    private static string Fail(string id, string part) => "(issues) => new ResultError(" + id + ", " + Quoted(part) + ", issues)";
+    /// <summary>
+    /// The failure a check of <paramref name="part"/> throws; with <paramref name="sets"/>, of several result sets, whose
+    /// message names each issue's set by its place.
+    /// </summary>
+    private static string Fail(string id, string part, bool sets = false) =>
+        "(issues) => new ResultError(" + id + ", " + Quoted(part) + ", issues" + (sets ? ", true" : "") + ")";
 
     /// <summary>
     /// How one parameter is bound: <c>input</c>, or <c>output</c> so that its value comes back; only when given, for one the

@@ -23,5 +23,5 @@ export const CustomerTreeRowSchema = z.object({
 export type CustomerTreeRow = z.infer<typeof CustomerTreeRowSchema>
 
 /** mart.customer_tree: returns JSON, null when no rows match. */
-export const CustomerTreeSchema = z.array(CustomerTreeRowSchema).min(1).nullable()
+export const CustomerTreeSchema = z.array(CustomerTreeRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type CustomerTree = z.infer<typeof CustomerTreeSchema>

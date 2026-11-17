@@ -17,5 +17,5 @@ export const LatestLoanParamsSchema = z.strictObject({
 export type LatestLoanParams = z.infer<typeof LatestLoanParamsSchema>
 
 /** lend.latest_loan: returns rows. */
-export const LatestLoanSchema = z.array(LatestLoanRowSchema).max(1)
+export const LatestLoanSchema = z.array(LatestLoanRowSchema).max(1, { error: "Expected at most one row" })
 export type LatestLoan = z.infer<typeof LatestLoanSchema>

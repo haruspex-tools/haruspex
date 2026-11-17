@@ -57,5 +57,5 @@ export const ListSamplesParamsSchema = z.strictObject({
 export type ListSamplesParams = z.infer<typeof ListSamplesParamsSchema>
 
 /** vals.list_samples: returns JSON, null when no rows match. */
-export const ListSamplesSchema = z.array(ListSamplesRowSchema).min(1).nullable()
+export const ListSamplesSchema = z.array(ListSamplesRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListSamples = z.infer<typeof ListSamplesSchema>

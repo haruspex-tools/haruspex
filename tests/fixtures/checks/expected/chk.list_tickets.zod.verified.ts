@@ -82,5 +82,5 @@ export const ListTicketsRowSchema = z.object({
 export type ListTicketsRow = z.infer<typeof ListTicketsRowSchema>
 
 /** chk.list_tickets: returns JSON, null when no rows match. */
-export const ListTicketsSchema = z.array(ListTicketsRowSchema).min(1).nullable()
+export const ListTicketsSchema = z.array(ListTicketsRowSchema).min(1, { error: "Expected at least one row" }).nullable()
 export type ListTickets = z.infer<typeof ListTicketsSchema>
