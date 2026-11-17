@@ -12,7 +12,7 @@ runtime is needed. Linux needs glibc.
 
 ```sh
 npx haruspex generate     # settings from haruspex.json, found by walking up
-npx haruspex check        # in CI: fail if the committed module would change
+npx haruspex check        # in CI: fail if the module in the output folder would change
 ```
 
 The JSON Schema of `haruspex.json` is in this package, so an editor can check the file with no network:

@@ -22,12 +22,12 @@ result sets can't be listed and the config file doesn't declare them; and, when 
 (`"check": { "unknowns": "fail" }`), when the module has an unknown. An unknown is otherwise a note, as in `generate`.
 
 **When there is nothing to compare with, it fails too**, with exit code 1 and a code of its own:
-- **A committed file is missing** (HAR6011): the IR, the module or both. The message names each and says to run `generate`
+- **A file is missing from the output folder** (HAR6011): the IR, the module or both. The message names each and says to run `generate`
   and commit what it writes.
-- **The committed IR is of another version** (HAR6012): the reader refuses it ([decision 0024](0024-an-ir-reader-refuses-other-versions.md)),
+- **The IR in the output folder is of another version** (HAR6012): the reader refuses it ([decision 0024](0024-an-ir-reader-refuses-other-versions.md)),
   so no claim can be compared. The message names both versions and says to run `generate` with this version and read the
   diff of the module before committing it.
-- **The committed IR can't be read** (HAR6013): not JSON, or not an IR document, with where the reader stopped.
+- **The IR in the output folder can't be read** (HAR6013): not JSON, or not an IR document, with where the reader stopped.
 
 **Context.** `check` exists for CI: a database change that would change what an application compiles against should fail
 the build before it is deployed, and say what changed in terms a developer can act on. The committed IR and module are the

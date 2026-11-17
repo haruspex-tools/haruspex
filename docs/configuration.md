@@ -318,7 +318,7 @@ must not. In a Next.js application they are for route handlers, server actions a
 starts `haruspex.mssql.ts` with `import 'server-only'`, so that a build fails where client code imports it (install the
 `server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework.
 
-`emit` lists at least one, each once. `check` compares each file it names with what is committed, and fails when one is
+`emit` lists at least one, each once. `check` compares each file it names with the one in the output folder, and fails when one is
 missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.
 
 ## Results policy: `objects`
@@ -335,7 +335,7 @@ keys, so strict is the accurate schema, and strip is the default for deployment 
 
 ## What check fails on: `check`
 
-`haruspex check` fails when what the module claims would change, when nothing is committed to compare with, and when a selected
+`haruspex check` fails when what the module claims would change, when the output folder holds nothing to compare with, and when a selected
 procedure's result sets are unknown and not declared (the CLI's README says each). An unknown value is a note, as in `generate`,
 and doesn't fail it, since the module still checks it at runtime as a value of any shape. For a module that must be typed
 throughout:

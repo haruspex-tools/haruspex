@@ -74,7 +74,7 @@
       "$ref": "#/$defs/naming"
     },
     "check": {
-      "description": "What haruspex check does beyond comparing the module with what is committed.",
+      "description": "What haruspex check does beyond comparing the module with the files in the output folder.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

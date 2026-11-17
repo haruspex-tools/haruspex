@@ -1,7 +1,7 @@
 # The command line
 
 The command `haruspex` has three subcommands. `init` writes a starter config file, `generate` writes the module and says
-what changed since the last run, and `check` fails in CI when the committed module would change. The command is run many
+what changed since the last run, and `check` fails in CI when the module in the output folder (in CI, the committed one) would change. The command is run many
 times a day, so by default it says what it did and what needs attention, and counts the rest. Everything else is a flag away.
 This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. How
 a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the output is designed so is
@@ -11,7 +11,7 @@ a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the
 haruspex init                                           # find the database below here, write haruspex.json
 haruspex generate                                       # write the module, and say what changed
 haruspex generate db --include 'sales.*' --out src/db   # without a config file
-haruspex check --all                                    # in CI: fail if a committed module would change
+haruspex check --all                                    # in CI: fail if a module in its output folder would change
 ```
 
 ## What a run prints
@@ -73,7 +73,7 @@ db/broken.sql:1:42: error HAR1001: Incorrect syntax near 'FROM'.
 haruspex: 1 error; nothing was written.
 ```
 
-**`check`** says the same, but writes nothing and compares with what is committed. When it passes it is one line:
+**`check`** says the same, but writes nothing and compares with the files in the output folder: in CI, the ones committed. When it passes it is one line:
 `haruspex: 3 procedures, 2 unknowns (--verbose lists them). src/db is up to date.` When it fails, each change is an error at
 its procedure (HAR6014), and the closing line says what to do. A check that fails on unknowns
 (`"check": { "unknowns": "fail" }`) lists them without being asked.

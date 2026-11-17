@@ -7,7 +7,7 @@ namespace Haruspex.Cli;
 
 /// <summary>
 /// <c>haruspex check</c>: the module the shared steps give (<see cref="ModuleRun"/>), each unknown in it noted, then compared
-/// with what is committed in the output folder, claim by claim (<see cref="IrComparison"/>) and as text, without writing
+/// with the files in the output folder (in CI, the ones committed), claim by claim (<see cref="IrComparison"/>) and as text, without writing
 /// anything. It fails when a claim would change, when there is nothing to compare with, and when the module leaves what the
 /// config file selected unknown: results that can't be listed, or, if the file says so, any value. Why it compares claims and
 /// not files, and why it fails when nothing is committed: docs/decisions/0050-check-compares-claims-not-files.md.
@@ -35,7 +35,7 @@ internal static class Check
     }
 
     /// <summary>
-    /// What would fail the check: the module incomplete, and its differences from what is committed. The two don't depend on each
+    /// What would fail the check: the module incomplete, and its differences from the files in the output folder. The two don't depend on each
     /// other, so each is said whatever the other finds.
     /// </summary>
     private static List<Diagnostic> Compared(EmittedModule module) => [.. Incomplete(module), .. Differences(module)];
@@ -63,7 +63,7 @@ internal static class Check
     }
 
     /// <summary>
-    /// The module's differences from what is committed: each change of claim at its procedure; otherwise each emitted file whose
+    /// The module's differences from the files in the output folder: each change of claim at its procedure; otherwise each emitted file whose
     /// text differs, line endings aside (git may convert them on checkout). Nothing to compare with is one error saying why.
     /// </summary>
     private static IEnumerable<Diagnostic> Differences(EmittedModule module) => Committed(module) switch
@@ -72,7 +72,7 @@ internal static class Check
         Succeeded<(IrDocument Ir, IReadOnlyList<string> Files)> { Value: var committed } => Differences(module, committed.Ir, committed.Files),
     };
 
-    /// <param name="files">The committed text of each of the module's files, in <see cref="EmittedModule.Files"/>' order.</param>
+    /// <param name="files">The text in the output folder of each of the module's files, in <see cref="EmittedModule.Files"/>' order.</param>
     private static IEnumerable<Diagnostic> Differences(EmittedModule module, IrDocument committed, IReadOnlyList<string> files)
     {
         var changes = IrComparison.Compare(committed, module.Document);
@@ -88,7 +88,7 @@ internal static class Check
         ];
     }
 
-    /// <summary>The first line where the committed module and the one haruspex writes differ, each cut short and quoted; null when none does.</summary>
+    /// <summary>The first line where the module in the output folder and the one haruspex writes differ, each cut short and quoted; null when none does.</summary>
     private static (int Number, string Committed, string Now)? FirstDifference(string committed, string now)
     {
         // Each module ends with a line break, which ends its last line rather than beginning one more.
@@ -116,7 +116,7 @@ internal static class Check
     private const int LineShown = 100;
 
     /// <summary>
-    /// The committed IR and each of the module's files, in their order; or why there are none to compare with: missing, of another
+    /// The IR in the output folder and each of the module's files, in their order; or why there are none to compare with: missing, of another
     /// version, or not readable as IR.
     /// </summary>
     private static Outcome<(IrDocument Ir, IReadOnlyList<string> Files)> Committed(EmittedModule module)
@@ -148,7 +148,7 @@ internal static class Check
         };
     }
 
-    /// <summary>The object a change is in: the module's, or the committed one's for an object the module no longer has; null for the document's own.</summary>
+    /// <summary>The object a change is in: the module's, or the earlier one's for an object the module no longer has; null for the document's own.</summary>
     private static IrObject? Object(IrChange change, IrDocument committed, IrDocument document) =>
         document.Objects.FirstOrDefault(o => o.Id == change.Object) ?? committed.Objects.FirstOrDefault(o => o.Id == change.Object);
 

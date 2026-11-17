@@ -18,7 +18,7 @@ namespace Haruspex.Cli;
 /// outcome, and they are composed with <see cref="Outcome{T}.Then{TNext}"/>, so a step runs only on the value of the one
 /// before, and a failure carries everything found so far to the end, where it is reported
 /// (docs/decisions/0037-steps-return-outcomes.md). <see cref="Generate"/> writes what they give, and <see cref="Check"/>
-/// compares it with what is committed; the guide's chapter docs/internals/12-from-input-to-output.md follows a run through them.
+/// compares it with the files in the output folder; the guide's chapter docs/internals/12-from-input-to-output.md follows a run through them.
 /// </summary>
 internal static class ModuleRun
 {

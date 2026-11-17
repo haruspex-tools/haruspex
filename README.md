@@ -288,7 +288,8 @@ from its alias type `Name`, and `unit` is exactly three characters because `ncha
   ([how to read each kind of result](docs/database-module.md#calling-the-driver-yourself)).
 - **Other languages**: `"json-schema"` in `emit` writes the same claims as one JSON Schema document, for any language with a
   validator ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
-- **Drift caught in CI**: `haruspex check` fails a build when a change to the SQL would change what a committed module says,
+- **Drift caught in CI**: `haruspex check` fails a build when a change to the SQL would change what the module in the output folder (in CI,
+  the committed one) says,
   naming each change (`shop.list_orders results[0][].note: became nullable`).
 - **Several modules**: plugins or sub-applications each have a `haruspex.json` of their own, sharing nothing, and
   `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy).
@@ -415,7 +416,7 @@ haruspex: 3 procedures, 1 unknown. Wrote src/db/haruspex.ir.json and src/db/haru
 ```
 
 When nothing changed, that is one line: `haruspex: nothing changed since the last run: 3 procedures, 1 unknown`. In CI,
-`haruspex check` fails when the committed module would change, with annotations in GitHub Actions; [the command
+`haruspex check` fails when the module in the output folder, the one committed, would change, with annotations in GitHub Actions; [the command
 line](docs/command-line.md) has the rest.
 
 [Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to the schemas and the function for one of

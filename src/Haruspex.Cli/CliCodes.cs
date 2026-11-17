@@ -44,20 +44,20 @@ internal static class CliCodes
     /// </summary>
     public static DiagnosticCode CollationOverruled { get; } = new(6010, DiagnosticSeverity.Warning, "A collation the package records otherwise");
 
-    /// <summary><c>check</c> finds no committed IR, module or both in the output folder, so there is nothing to compare with.</summary>
-    public static DiagnosticCode NothingCommitted { get; } = new(6011, DiagnosticSeverity.Error, "Nothing committed to check against");
+    /// <summary><c>check</c> finds no IR, module or both in the output folder, so there is nothing to compare with.</summary>
+    public static DiagnosticCode NothingCommitted { get; } = new(6011, DiagnosticSeverity.Error, "Nothing in the output folder to check against");
 
-    /// <summary>The committed IR is of a version this haruspex doesn't read, so no claim can be compared.</summary>
-    public static DiagnosticCode CommittedOtherVersion { get; } = new(6012, DiagnosticSeverity.Error, "The committed IR is of another version");
+    /// <summary>The IR in the output folder is of a version this haruspex doesn't read, so no claim can be compared.</summary>
+    public static DiagnosticCode CommittedOtherVersion { get; } = new(6012, DiagnosticSeverity.Error, "The IR in the output folder is of another version");
 
-    /// <summary>The committed IR can't be read: not JSON, or not an IR document.</summary>
-    public static DiagnosticCode CommittedUnreadable { get; } = new(6013, DiagnosticSeverity.Error, "The committed IR can't be read");
+    /// <summary>The IR in the output folder can't be read: not JSON, or not an IR document.</summary>
+    public static DiagnosticCode CommittedUnreadable { get; } = new(6013, DiagnosticSeverity.Error, "The IR in the output folder can't be read");
 
     /// <summary>What the module claims would change: one diagnostic per change, at the procedure.</summary>
     public static DiagnosticCode ClaimChanged { get; } = new(6014, DiagnosticSeverity.Error, "What the module claims would change");
 
-    /// <summary>The committed module isn't what haruspex writes, though the IR claims the same.</summary>
-    public static DiagnosticCode ModuleDiffers { get; } = new(6015, DiagnosticSeverity.Error, "The committed module isn't what haruspex writes");
+    /// <summary>The module in the output folder isn't what haruspex writes, though the IR claims the same.</summary>
+    public static DiagnosticCode ModuleDiffers { get; } = new(6015, DiagnosticSeverity.Error, "The module in the output folder isn't what haruspex writes");
 
     /// <summary>A selected procedure's result sets are unknown and not declared, which <c>check</c> doesn't pass.</summary>
     public static DiagnosticCode ResultsUnknown { get; } = new(6016, DiagnosticSeverity.Error, "A selected procedure's result sets are unknown");
@@ -87,7 +87,7 @@ internal static class CliCodes
     public static DiagnosticCode SourceAmbiguous { get; } = new(6023, DiagnosticSeverity.Error, "More than one database to read");
 
     /// <summary>
-    /// The codes with which <c>check</c> fails: what it found differs from what is committed, or can't be compared with it, or is
+    /// The codes with which <c>check</c> fails: what it found differs from the files in the output folder, or can't be compared with it, or is
     /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.
     /// </summary>
     public static IReadOnlySet<DiagnosticCode> CheckFailures { get; } = new HashSet<DiagnosticCode>

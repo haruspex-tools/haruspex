@@ -4,7 +4,7 @@ namespace Haruspex.Cli;
 
 /// <summary>
 /// What a module's output folder holds before a run touches it: the IR, read or why it can't be, and each emitted file's text.
-/// <see cref="Check"/> compares the module with it, as what is committed; <see cref="Generate"/> reads it before writing over it,
+/// <see cref="Check"/> compares the module with it (in CI, what is committed); <see cref="Generate"/> reads it before writing over it,
 /// to say what changed since the last run. One reader, so the two commands agree on what the folder held.
 /// </summary>
 internal sealed class EarlierOutput

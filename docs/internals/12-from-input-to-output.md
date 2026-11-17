@@ -24,7 +24,7 @@ flowchart LR
     write --> noted["note the unknowns"]
     noted --> report["report"]
     emit -. "check" .-> checkNoted["note the unknowns"]
-    checkNoted -.-> compare["compare with what is committed"]
+    checkNoted -.-> compare["compare with the output folder"]
     compare -.-> report
 ```
 
@@ -42,8 +42,8 @@ flowchart LR
   gives back a `ModuleReport`, which says what the run found and did, and a report, such as `TextReport`, decides what to
   print of it.
 
-`haruspex check` takes the dotted path after **Emit**: it notes the unknowns, then compares the module with what is committed
-instead of writing it ("Checking without writing", below).
+`haruspex check` takes the dotted path after **Emit**: it notes the unknowns, then compares the module with the files in the output
+folder, which in CI are the ones committed, instead of writing it ("Checking without writing", below).
 
 Each step can fail because of its input: a config file that isn't JSON, a folder that isn't there, a pattern that
 matches nothing, two generated names that clash. What matters is how a step says so.
@@ -291,7 +291,7 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 ```text haruspex-check
 db/project.sql:7:1: error HAR6014: lib.list_books results[0][].title: became nullable
 db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost"
-haruspex: 2 changes from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
 
 Two changes, each where an application reading `list_books` will meet it, and nothing about the comment. The exit code is 1,

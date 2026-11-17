@@ -164,11 +164,11 @@ reason.
 | [HAR6008](HAR6008.md) | error | The output can't be written |
 | [HAR6009](HAR6009.md) | warning | References with a folder of scripts |
 | [HAR6010](HAR6010.md) | warning | A collation the package records otherwise |
-| [HAR6011](HAR6011.md) | error | Nothing committed to check against |
-| [HAR6012](HAR6012.md) | error | The committed IR is of another version |
-| [HAR6013](HAR6013.md) | error | The committed IR can't be read |
+| [HAR6011](HAR6011.md) | error | Nothing in the output folder to check against |
+| [HAR6012](HAR6012.md) | error | The IR in the output folder is of another version |
+| [HAR6013](HAR6013.md) | error | The IR in the output folder can't be read |
 | [HAR6014](HAR6014.md) | error | What the module claims would change |
-| [HAR6015](HAR6015.md) | error | The committed module isn't what haruspex writes |
+| [HAR6015](HAR6015.md) | error | The module in the output folder isn't what haruspex writes |
 | [HAR6016](HAR6016.md) | error | A selected procedure's result sets are unknown |
 | [HAR6017](HAR6017.md) | error | Unknowns the config file fails |
 | [HAR6018](HAR6018.md) | error | No config file below the folder |

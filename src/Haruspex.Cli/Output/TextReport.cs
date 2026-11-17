@@ -207,14 +207,14 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     }
 
     /// <summary>The line that closes a module that failed, saying what follows from it; null when the errors say it all.</summary>
-    private static string? Closing(ModuleReport module)
+    private string? Closing(ModuleReport module)
     {
         if (module.Command == CommandName.Check)
         {
             var changes = module.Diagnostics.Count(d => d.Code == CliCodes.ClaimChanged);
             return changes == 0
                 ? null
-                : $"haruspex: {Counted(changes, "change")} from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.";
+                : $"haruspex: {Counted(changes, "change")} from the module in {Shown(module.Out ?? "")}. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.";
         }
 
         var sql = module.Diagnostics.Count(d => d.IsError && d.At is SourceLocation);
