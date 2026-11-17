@@ -1,6 +1,7 @@
 using System.Globalization;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Inference;
 
 namespace Haruspex.Cli.Output;
 
@@ -80,25 +81,93 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     }
 
     /// <summary>
-    /// What a module that succeeded says: what it typed and, for <c>generate</c>, where it wrote; then its unknowns, counted by
-    /// reason, each reason's code linking its page.
+    /// What a module that succeeded says: what it typed and, for <c>generate</c>, where it wrote, then what changed since the last
+    /// run; when it can't say that, why, and its unknowns, counted by reason, each reason's code linking its page.
     /// </summary>
     private string Summary(ModuleReport module, IrDocument document)
     {
-        var lines = new List<string>();
         var counted = $"{Typed(document)}, {Unknowns(document.Unknowns.Count)}";
+        var listed = document.Unknowns.Count > 0 && detail != OutputDetail.Verbose ? " (--verbose lists them)" : "";
+
+        // A check that passes is one line: it runs in CI and before a commit, where its reader wants the verdict. So is a
+        // generate that changed nothing, which is most runs of a command run many times a day.
         if (module.Command == CommandName.Check)
-        {
-            // A check that passes is one line: it is run in CI and before a commit, where its reader wants the verdict.
-            var listed = document.Unknowns.Count > 0 && detail != OutputDetail.Verbose ? " (--verbose lists them)" : "";
             return $"haruspex: {counted}{listed}. {Shown(module.Out ?? "")} is up to date.";
+        if (module.Since is SinceLastRun.Compared { Nothing: true })
+            return $"haruspex: nothing changed since the last run: {counted}{listed}.";
+
+        var lines = new List<string> { $"haruspex: {counted}. Wrote {EnglishList.Of([.. module.Written.Select(Shown)])}." };
+        switch (module.Since)
+        {
+            case SinceLastRun.Compared compared:
+                lines.AddRange(Changes(compared, listed));
+                break;
+            case SinceLastRun.NotCompared { Why: var why }:
+                lines.Add($"Nothing to compare with: {why}.");
+                lines.AddRange(ByReason(module));
+                break;
+            default:
+                lines.Add($"First output in {Shown(module.Out ?? "")}, so nothing to compare with.");
+                lines.AddRange(ByReason(module));
+                break;
         }
 
-        lines.Add($"haruspex: {counted}. Wrote {EnglishList.Of([.. module.Written.Select(Shown)])}.");
-        if (document.Unknowns.Count > 0)
-            lines.AddRange(ByReason(module));
         return string.Join(Environment.NewLine, lines);
     }
+
+    /// <summary>
+    /// What changed since the last run: each change of claim, marked as added, removed or changed, then the unknowns that are new
+    /// or resolved, and a count of those that aren't.
+    /// </summary>
+    private IEnumerable<string> Changes(SinceLastRun.Compared compared, string listed)
+    {
+        if (compared.Claims.Count > 0)
+        {
+            yield return $"{Counted(compared.Claims.Count, "change")} since the last run:";
+            foreach (var change in compared.Claims)
+                yield return $"  {Marked(change.Kind)} {change}";
+        }
+        else if (compared.Rewritten.Count > 0)
+        {
+            yield return $"No claim changed since the last run, but the text of {EnglishList.Of([.. compared.Rewritten])} did: a comment written from a reason, or the output of another version.";
+        }
+        else
+        {
+            yield return "No claim changed since the last run.";
+        }
+
+        if (compared.New.Count > 0 || compared.Resolved.Count > 0)
+        {
+            yield return $"Unknowns: {compared.New.Count} new, {compared.Resolved.Count} resolved, {compared.Unchanged} as before{listed}.";
+            foreach (var added in compared.New)
+            {
+                var place = added.Note is { } note ? $" ({DiagnosticFormatter.Parts(Relative(note)).Place})" : "";
+                yield return $"  {outputStyle.Added("+")} {added.Unknown.Object} {added.Unknown.Path}: {Reason(added.Unknown.Reason)}{place}";
+            }
+
+            foreach (var resolved in compared.Resolved)
+                yield return $"  {outputStyle.Removed("-")} {resolved.Object} {resolved.Path}: {Reason(resolved.Reason)}";
+        }
+        else if (compared.Unchanged > 0)
+        {
+            yield return $"{Counted(compared.Unchanged, "unknown")}, as before{listed}.";
+        }
+    }
+
+    /// <summary>A change's mark: <c>+</c> for what a reader receives that it didn't, <c>-</c> for what it no longer does, <c>~</c> for the rest.</summary>
+    private string Marked(IrChangeKind kind) => kind switch
+    {
+        IrChangeKind.ObjectAdded or IrChangeKind.ParameterAdded or IrChangeKind.ResultAdded or IrChangeKind.FieldAdded
+            or IrChangeKind.ValuesAdded or IrChangeKind.ValueSetAdded => outputStyle.Added("+"),
+        IrChangeKind.ObjectRemoved or IrChangeKind.ParameterRemoved or IrChangeKind.ResultRemoved or IrChangeKind.FieldRemoved
+            or IrChangeKind.ValuesRemoved or IrChangeKind.ValueSetRemoved => outputStyle.Removed("-"),
+        _ => outputStyle.Changed("~"),
+    };
+
+    /// <summary>An unknown's reason as the report names it: its code, linked, and what the code means.</summary>
+    private string Reason(IrUnknownReason reason) => InferenceCodes.Of(reason) is { } code
+        ? $"{outputStyle.Link(outputStyle.Note(code.ToString()), DiagnosticPages.Of(code))} {code.Title}"
+        : "results only a declaration can give";
 
     /// <summary>
     /// The unknowns by reason, most first: the count, the code (a link to its page where the terminal shows links) and what the
@@ -106,6 +175,8 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     /// </summary>
     private IEnumerable<string> ByReason(ModuleReport module)
     {
+        if (module.Unknowns.Count == 0)
+            yield break;
         var reasons = module.Unknowns
             .GroupBy(u => u.Note?.Code)
             .Select(g => (Code: g.Key, Count: g.Count()))

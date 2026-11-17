@@ -169,13 +169,15 @@ With the pattern corrected, the run succeeds:
 
 ```text haruspex-run
 haruspex: 2 procedures, 2 unknowns. Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
+First output in generated, so nothing to compare with.
 Unknowns by reason (--verbose lists each):
   1  HAR2013  JSON whose shape isn't visible
   1  results only a declaration can give, as the warnings say
 haruspex.json: warning HAR4204: lib.find_books: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (project.sql:11:1) Declare them in haruspex.json under procedures["lib.find_books"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
 ```
 
-A success can still say things. It says first what it did, then what needs attention. `lib.find_books` runs dynamic SQL, so
+A success can still say things. It says first what it did, then what changed since the last run (this is the first, so it
+says so and gives the whole summary), then what needs attention. `lib.find_books` runs dynamic SQL, so
 its result sets are unknown and only a declaration can give them: that is a warning, in full, with what to declare. The
 `extra` key of `lib.list_books` is unknown too, which the summary counts under its reason's code. Its note, with the reason
 and where it is, is one flag away: `--verbose` lists every unknown, grouped by the procedure it is in. A command run many
@@ -264,6 +266,7 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 
 ```text haruspex-run
 haruspex: 1 procedure, no unknowns. Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
+First output in generated, so nothing to compare with.
 ```
 
 Then a stocktake changes the table: a book may have lost its title, and a book may be lost. A comment is added above it too,

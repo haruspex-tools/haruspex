@@ -117,7 +117,10 @@ db/procedures/list_orders.sql:12:9: note HAR2013: sales.list_orders results[0][]
 An error stops the run. A warning, such as a call whose results only a declaration in the config file could give, and a
 note, one for each unknown in the output with where it is and why, don't. A run that succeeds first prints its summary to
 standard output: how many procedures it typed (and query files, when there are any), how many unknowns there are, and where it
-wrote, then the unknowns counted by reason. Errors and warnings follow in full. Notes are counted, not listed: `--verbose` lists
+wrote. `generate` reads the IR it is about to write over, and says what changed since the last run, as `check` compares claims:
+each change, then the unknowns that are new or resolved. When nothing changed, that is the one line it prints. A first run, or
+an earlier IR of another version or one that doesn't read, says why it can't compare and counts the unknowns by reason instead.
+Errors and warnings follow in full. Notes are counted, not listed: `--verbose` lists
 each, grouped by the procedure or query file it is in, and `--quiet` prints errors only. Paths below the working directory are
 shown from it.
 

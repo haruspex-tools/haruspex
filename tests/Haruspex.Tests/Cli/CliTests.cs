@@ -338,7 +338,7 @@ public partial class CliTests
         var (exitCode, output, error) = RunIn(folder.Path, "generate");
 
         Assert.True(exitCode == 0, error);
-        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json"], Files(Path.Combine(folder.Path, "out")));
 
         // The emitter's own output for the IR written, with the config file's objects.
@@ -355,10 +355,11 @@ public partial class CliTests
 
         var (exitCode, output, error) = RunIn(folder.Path, "generate");
         var first = Files(Path.Combine(folder.Path, "out")).ToDictionary(f => f, f => File.ReadAllText(Path.Combine(folder.Path, "out", f)));
-        Assert.Equal(0, RunIn(folder.Path, "generate").ExitCode);
+        var (exitCodeAgain, outputAgain, _) = RunIn(folder.Path, "generate");
 
         Assert.True(exitCode == 0, error);
-        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal((0, "haruspex: nothing changed since the last run: 1 procedure, no unknowns.\n"), (exitCodeAgain, outputAgain));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
         Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
     }

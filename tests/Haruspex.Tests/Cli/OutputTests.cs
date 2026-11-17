@@ -98,6 +98,63 @@ public class OutputTests
             Printed(folder, null, "check"));
     }
 
+    [Fact]
+    public void A_second_run_that_changes_nothing_says_so_in_one_line()
+    {
+        using var folder = Kennel();
+        Printed(folder, null, "generate");
+
+        Assert.Equal(
+            "exit code 0\n--- standard output\nharuspex: nothing changed since the last run: 4 procedures, 3 unknowns (--verbose lists them).\n--- standard error\n" + FindDogsWarning,
+            Printed(folder, null, "generate"));
+    }
+
+    [Fact]
+    public void A_second_run_says_what_changed_since_the_last()
+    {
+        using var folder = Kennel();
+        Printed(folder, null, "generate");
+
+        // A database change: name may now be null, count_dogs goes, walk_dogs arrives with an unknown of its own, and get_dog
+        // reads a column that exists, so its unknown is resolved.
+        folder.File("db/tables.sql", Tables.Replace("name nvarchar(50) NOT NULL", "name nvarchar(50) NULL", StringComparison.Ordinal));
+        folder.File("db/procedures.sql", Procedures
+            .Replace("d.nickname", "d.notes", StringComparison.Ordinal)
+            .Replace("CREATE PROCEDURE kennel.count_dogs AS\nSELECT count(*) AS dogs FROM kennel.dog AS d;", "CREATE PROCEDURE kennel.walk_dogs AS\nSELECT w.walker FROM kennel.walk AS w;", StringComparison.Ordinal));
+
+        Snapshot.Match(Printed(folder, null, "generate"), $"{nameof(OutputTests)}.Changed", "txt");
+    }
+
+    [Fact]
+    public void A_module_whose_text_alone_changed_says_which_file()
+    {
+        using var folder = Kennel(Known);
+        Printed(folder, null, "generate");
+        File.AppendAllText(Path.Combine(folder.Path, "src", "db", HaruspexCli.ZodFileName), "// edited by hand\n");
+
+        Assert.Contains(
+            "\nNo claim changed since the last run, but the text of haruspex.zod.ts did: a comment written from a reason, or the output of another version.\n2 unknowns, as before (--verbose lists them).\n",
+            Printed(folder, null, "generate"),
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{ "irVersion": "0.21" }""", "Nothing to compare with: the earlier haruspex.ir.json is IR 0.21, and this haruspex writes IR ")]
+    [InlineData("not JSON", "Nothing to compare with: the earlier haruspex.ir.json can't be read as IR (")]
+    public void An_earlier_ir_that_can_t_be_compared_says_why_and_gives_the_whole_summary(string earlier, string said)
+    {
+        using var folder = Kennel(Known);
+        folder.File("src/db/haruspex.ir.json", earlier);
+
+        var printed = Printed(folder, null, "generate");
+
+        Assert.StartsWith("exit code 0\n", printed, StringComparison.Ordinal);
+        Assert.Contains("\n" + said, printed, StringComparison.Ordinal);
+        Assert.Contains("\nUnknowns by reason (--verbose lists each):\n", printed, StringComparison.Ordinal);
+    }
+
+    private const string FindDogsWarning = "haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n";
+
     /// <summary>The kennel without the procedure whose results only a declaration can give, which a check doesn't pass.</summary>
     private static string Known => Procedures[..Procedures.IndexOf("CREATE PROCEDURE kennel.find_dogs", StringComparison.Ordinal)] +
         Procedures[Procedures.IndexOf("CREATE PROCEDURE kennel.count_dogs", StringComparison.Ordinal)..];

@@ -15,17 +15,24 @@ internal static class Generate
     public static ModuleReport Run(RunRequest request)
     {
         var emitted = ModuleRun.Emitted(request);
-        var run = emitted.Then(Write);
+        var run = emitted.Then(module =>
+        {
+            // Read before it is written over: what the folder held is what this run is compared with.
+            var earlier = EarlierOutput.Read(module);
+            return Write(module).Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
+        });
         return run switch
         {
-            Succeeded<Written> { Value: var written } => new ModuleReport(CommandName.Generate, request, [.. run.Diagnostics, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
-            {
-                Out = written.Module.Out,
-                Document = written.Module.Document,
-                Written = written.Paths,
-                Unknowns = written.Unknowns,
-            },
-            Failed<Written> failed => new ModuleReport(CommandName.Generate, request, failed.Diagnostics, ModuleRun.ExitCode(failed.Diagnostics))
+            Succeeded<(Written Written, SinceLastRun Since)> { Value: var value } =>
+                new ModuleReport(CommandName.Generate, request, [.. run.Diagnostics, .. value.Written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
+                {
+                    Out = value.Written.Module.Out,
+                    Document = value.Written.Module.Document,
+                    Written = value.Written.Paths,
+                    Unknowns = value.Written.Unknowns,
+                    Since = value.Since,
+                },
+            Failed<(Written Written, SinceLastRun Since)> failed => new ModuleReport(CommandName.Generate, request, failed.Diagnostics, ModuleRun.ExitCode(failed.Diagnostics))
             {
                 Out = (emitted as Succeeded<EmittedModule>)?.Value.Out,
             },

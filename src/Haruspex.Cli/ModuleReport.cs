@@ -43,6 +43,9 @@ internal sealed class ModuleReport(CommandName command, RunRequest request, Equa
     /// <summary>Each unknown in the module, with its note (also among <see cref="Diagnostics"/>); empty when there is no module.</summary>
     public EquatableArray<NotedUnknown> Unknowns { get; init; } = [];
 
+    /// <summary>What changed since <c>generate</c> last wrote the module; null for <c>check</c>, and for a run that wrote nothing.</summary>
+    public SinceLastRun? Since { get; init; }
+
     /// <summary>Whether the module succeeded.</summary>
     public bool Succeeded => ExitCode == HaruspexCli.ExitCodes.Success;
 }

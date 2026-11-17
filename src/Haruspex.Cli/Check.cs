@@ -119,7 +119,10 @@ internal static class Check
     /// </summary>
     private static Outcome<(IrDocument Ir, IReadOnlyList<string> Files)> Committed(EmittedModule module)
     {
-        var missing = module.Files.Select(module.PathOf).Prepend(module.IrPath).Where(path => !File.Exists(path)).ToList();
+        var earlier = EarlierOutput.Read(module);
+        var missing = module.Files.Select(module.PathOf).Where((_, i) => earlier.Files[i] is null).ToList();
+        if (earlier.Ir is EarlierIr.Absent)
+            missing.Insert(0, module.IrPath);
         if (missing.Count > 0)
         {
             return ModuleRun.Refused<(IrDocument, IReadOnlyList<string>)>(CliCodes.NothingCommitted,
@@ -127,27 +130,20 @@ internal static class Check
         }
 
         var at = new FileLocation(module.IrPath);
-        try
+        var emitted = EnglishList.Of([.. module.Files.Select(f => DiagnosticFormatter.PathAsShown(module.PathOf(f)))]);
+        return earlier.Ir switch
         {
-            var text = File.ReadAllText(module.IrPath);
-            if (IrJsonReader.VersionOf(text) is { } version && !IrDocument.ReadableVersions.Contains(version, StringComparer.Ordinal))
-            {
-                var emitted = EnglishList.Of([.. module.Files.Select(f => DiagnosticFormatter.PathAsShown(module.PathOf(f)))]);
-                var commit = module.Files.Count == 1 ? "both" : "them all";
-                return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedOtherVersion.At(at,
-                    $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {commit}.")]);
-            }
+            EarlierIr.Readable { Document: var document } => new Succeeded<(IrDocument, IReadOnlyList<string>)>((document, [.. earlier.Files.OfType<string>()])),
+            EarlierIr.OtherVersion { Version: var version } => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedOtherVersion.At(at,
+                $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {(module.Files.Count == 1 ? "both" : "them all")}.")]),
+            EarlierIr.Unreadable unreadable => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, unreadable.AsIr
+                ? $"this file can't be read as IR: {unreadable.Problem} Run haruspex generate to write it again."
+                : $"this file can't be read: {unreadable.Problem}")]),
 
-            return new Succeeded<(IrDocument, IReadOnlyList<string>)>((IrJsonReader.Read(text), [.. module.Files.Select(f => File.ReadAllText(module.PathOf(f)))]));
-        }
-        catch (IrFormatException e)
-        {
-            return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read as IR: {e.Message} Run haruspex generate to write it again.")]);
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            return new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, $"this file can't be read: {e.Message}")]);
-        }
+            // An absent IR is reported as missing above. The arm is a discard because the analyser that checks a switch over a
+            // closed hierarchy covers each case doesn't look at this assembly (EarlierIr).
+            _ => throw new InvalidOperationException($"No IR to compare with: {earlier.Ir}."),
+        };
     }
 
     /// <summary>The object a change is in: the module's, or the committed one's for an object the module no longer has; null for the document's own.</summary>

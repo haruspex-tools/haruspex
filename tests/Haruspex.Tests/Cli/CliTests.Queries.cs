@@ -39,7 +39,7 @@ public partial class CliTests
         var (exitCode, output, error) = RunIn(folder.Path, "generate");
 
         Assert.Equal((0, ""), (exitCode, error));
-        Assert.Equal("haruspex: 1 procedure, 2 query files, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.zod.ts.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, 2 query files, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.zod.ts.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal(
             [("shop.get_order", "GetOrder", IrObjectKind.Procedure), ("sql/list_orders_of.sql", "ListOrdersOf", IrObjectKind.Query), ("sql/notes/orderNote.sql", "OrderNote", IrObjectKind.Query)],
             Written(folder).Objects.Select(o => (o.Id, o.Name, o.Kind)));

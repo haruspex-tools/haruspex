@@ -1,6 +1,7 @@
 exit code 0
 --- standard output
 haruspex: 4 procedures, 3 unknowns. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
+First output in src/db, so nothing to compare with.
 Unknowns by reason:
   1  HAR2009  A column that can't be found or is ambiguous
   1  HAR2013  JSON whose shape isn't visible

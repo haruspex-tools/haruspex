@@ -1,0 +1,16 @@
+exit code 0
+--- standard output
+haruspex: 4 procedures, 3 unknowns. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
+7 changes since the last run:
+  - kennel.count_dogs: removed
+  - kennel.get_dog results[0][].nickname: removed (unknown (unresolved-column), nullable)
+  + kennel.get_dog results[0][].notes: added (string, nvarchar(max), nullable)
+  ~ kennel.get_dog results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: presence changed from always to omittedWhenNull
+  + kennel.walk_dogs: added
+Unknowns: 1 new, 1 resolved, 2 as before (--verbose lists them).
+  + kennel.walk_dogs results[0][].walker: HAR2008 A table the project doesn't define (db/procedures.sql:12:8)
+  - kennel.get_dog results[0][].nickname: HAR2009 A column that can't be found or is ambiguous
+--- standard error
+haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures["kennel.find_dogs"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.

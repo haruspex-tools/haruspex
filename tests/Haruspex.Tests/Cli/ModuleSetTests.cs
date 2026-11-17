@@ -59,7 +59,9 @@ public class ModuleSetTests
         Assert.Equal(
             """
             haruspex: 1 procedure, no unknowns. Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.
+            First output in plugins/orders/generated, so nothing to compare with.
             haruspex: 1 procedure, no unknowns. Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.
+            First output in plugins/returns/generated, so nothing to compare with.
             haruspex: 2 modules, none failed.
 
             """,
@@ -81,7 +83,9 @@ public class ModuleSetTests
         Assert.Equal(
             [
                 "haruspex: 1 procedure, no unknowns. Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.",
+                "First output in plugins/orders/generated, so nothing to compare with.",
                 "haruspex: 1 procedure, no unknowns. Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.",
+                "First output in plugins/returns/generated, so nothing to compare with.",
                 "haruspex: 2 modules, none failed.",
             ],
             output.TrimEnd('\n').Split('\n'));
