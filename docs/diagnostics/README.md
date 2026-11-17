@@ -174,3 +174,6 @@ reason.
 | [HAR6018](HAR6018.md) | error | No config file below the folder |
 | [HAR6019](HAR6019.md) | error | Options that can't go together |
 | [HAR6020](HAR6020.md) | error | Two modules write to one folder |
+| [HAR6021](HAR6021.md) | error | A config file is already there |
+| [HAR6022](HAR6022.md) | error | No database is found to read |
+| [HAR6023](HAR6023.md) | error | More than one database to read |

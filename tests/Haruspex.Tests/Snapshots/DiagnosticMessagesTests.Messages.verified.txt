@@ -385,3 +385,12 @@ haruspex: error HAR6019: a source, --include and --out are for one module; with 
 HAR6020
 haruspex: error HAR6020: a/haruspex.json and b/haruspex.json both write to out, so one module would overwrite the other's. Give each module its own "out".
 
+HAR6021
+haruspex.json: error HAR6021: a config file is already here, and init doesn't write over one. Edit it, or remove it to start again.
+
+HAR6022
+haruspex: error HAR6022: found no .sqlproj, .dacpac or .sql file in the working directory or the four folders below it. Run it beside the database's files, or name them: haruspex init path/to/Sales.sqlproj.
+
+HAR6023
+haruspex: error HAR6023: found 2 project files, Audit/Audit.sqlproj and Sales/Sales.sqlproj, and can't tell which is the application's. Name one: haruspex init Audit/Audit.sqlproj.
+

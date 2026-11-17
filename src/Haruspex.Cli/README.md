@@ -44,6 +44,7 @@ No package is published yet, so there is no `haruspex` on the `PATH`: until ther
 as `dotnet run --project src/Haruspex.Cli -- generate …`, which builds it first. With the command installed:
 
 ```sh
+haruspex init                                        # find the database below here, write a starter haruspex.json
 haruspex generate                                    # settings from haruspex.json, found by walking up
 haruspex generate path/to/database --include 'sales.*' --out src/db
 haruspex generate bin/Release/Sales.dacpac --include 'sales.*' --out src/db   # a DACPAC and the packages it refers to
@@ -55,6 +56,12 @@ haruspex check                                       # in CI: fail if the commit
 haruspex check --all                                 # every haruspex.json below the working directory, each a module
 haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.json
 ```
+
+`init` looks below the working directory for the database's files, a `.sqlproj` first, then a `.dacpac` (in `bin` too, where a
+build writes one, leaving out the system databases' packages beside it), then the folder holding every `.sql` file, and writes
+a `haruspex.json` that reads it, types every procedure of each schema that has one, and writes to `src/db` (or `generated`
+when there is no `src` folder). It never writes over a config file, and when it finds two of a kind it names them and asks
+for one: `haruspex init Sales/Sales.sqlproj`.
 
 `generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`
 (the default), `haruspex.jsonschema.json` and `haruspex.mssql.ts`, the database module's functions

@@ -77,6 +77,15 @@ internal static class CliCodes
     /// <summary>Two modules of one run write to the same output folder.</summary>
     public static DiagnosticCode SharedOut { get; } = new(6020, DiagnosticSeverity.Error, "Two modules write to one folder");
 
+    /// <summary><c>init</c> finds a config file already in the working directory, which it doesn't write over.</summary>
+    public static DiagnosticCode ConfigExists { get; } = new(6021, DiagnosticSeverity.Error, "A config file is already there");
+
+    /// <summary><c>init</c> finds no project file, DACPAC or <c>.sql</c> file near the working directory.</summary>
+    public static DiagnosticCode NoSourceFound { get; } = new(6022, DiagnosticSeverity.Error, "No database is found to read");
+
+    /// <summary><c>init</c> finds more than one project file, or more than one DACPAC, and can't tell which is the application's.</summary>
+    public static DiagnosticCode SourceAmbiguous { get; } = new(6023, DiagnosticSeverity.Error, "More than one database to read");
+
     /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from what is committed, or can't be compared with it, or is
     /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.

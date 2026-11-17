@@ -49,6 +49,17 @@ public class DiagnosticMessagesTests
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
+    /// <summary>A run of <c>haruspex init</c> in an empty folder arranged by <paramref name="arrange"/>.</summary>
+    private static string[] Init(Action<TempDirectory> arrange)
+    {
+        using var folder = new TempDirectory();
+        arrange(folder);
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        HaruspexCli.Run(["init"], output, error, folder.Path);
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
+    }
+
     /// <summary>
     /// A run of <c>haruspex check</c> on a project of <paramref name="sql"/> and the config file of the standard settings and
     /// <paramref name="more"/>, generated first and then changed by <paramref name="change"/>, as a database change or a hand
@@ -276,6 +287,13 @@ public class DiagnosticMessagesTests
         {
             f.File("a/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
             f.File("b/haruspex.json", "{ \"source\": \"../db\", \"out\": \"../out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } } }");
+        })),
+        (6021, () => Init(f => f.File("haruspex.json", "{}"))),
+        (6022, () => Init(_ => { })),
+        (6023, () => Init(f =>
+        {
+            f.File("Sales/Sales.sqlproj", "<Project />");
+            f.File("Audit/Audit.sqlproj", "<Project />");
         })),
         (6017, () => Checked(["CREATE PROCEDURE lib.p AS SELECT json_query(b.extra) AS extra FROM lib.book AS b FOR JSON PATH;"], _ => { }, "\"check\": { \"unknowns\": \"fail\" }")),
     ];

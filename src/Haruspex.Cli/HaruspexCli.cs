@@ -81,21 +81,49 @@ internal static class HaruspexCli
     }
 
     private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal) =>
-        new("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
+        new("""
+            haruspex types the results of SQL Server procedures and query files for TypeScript, from the database's own files.
+
+            Examples:
+              haruspex init                                          write a starter haruspex.json
+              haruspex generate                                      write the module, and say what changed
+              haruspex generate db --include 'sales.*' --out src/db  without a config file
+              haruspex check --all                                   in CI: fail if a committed module would change
+
+            Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
+            More: https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Cli/README.md
+            """)
         {
+            InitCommand(new Streams(output, error, workingDirectory, terminal)),
             Module(
                 "generate",
-                "Infer the result shapes of procedures, and write the IR and what the config file's \"emit\" names: a Zod module by default, a JSON Schema document too or instead.",
+                "Infer the shapes, write the module to the output folder, and say what changed since the last run.",
                 CommandName.Generate,
                 Generate.Run,
                 new Streams(output, error, workingDirectory, terminal)),
             Module(
                 "check",
-                $"Infer as generate does, write nothing, and fail if {IrFileName} and the files emitted beside it in the output folder claim something else, saying what changed.",
+                "Infer as generate does, write nothing, and fail (exit code 1) if the committed module would change.",
                 CommandName.Check,
                 Check.Run,
                 new Streams(output, error, workingDirectory, terminal)),
         };
+
+    /// <summary><c>haruspex init</c>, which writes a starter config file.</summary>
+    private static Command InitCommand(Streams streams)
+    {
+        var source = new Argument<string?>("source")
+        {
+            Description = "The .sqlproj, .dacpac or folder of .sql files to read. By default, the one found below the working directory.",
+            Arity = ArgumentArity.ZeroOrOne,
+        };
+        var init = new Command("init", "Find the database's files below here and write a starter haruspex.json. Never writes over one.")
+        {
+            source,
+        };
+        init.SetAction(parsed => Init.Run(parsed.GetValue(source), streams.Output, streams.Error, streams.WorkingDirectory));
+        return init;
+    }
 
     /// <summary>Writes the run's report in <paramref name="format"/>.</summary>
     private static void Report(RunReport report, OutputFormat format, OutputSettings settings, Streams streams)
@@ -157,32 +185,36 @@ internal static class HaruspexCli
         var workingDirectory = streams.WorkingDirectory;
         var directory = new Argument<string?>("source")
         {
-            Description = "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Overrides \"source\" in the config file.",
+            Description = "A folder of .sql files, a .sqlproj or a .dacpac. Overrides \"source\" in the config file.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         var config = new Option<string[]>("--config", "-c")
         {
-            Description = $"The config file. By default, {HaruspexConfig.FileName} in the working directory or the nearest folder above it. Repeat for more modules, each run and reported apart.",
+            Description = $"The config file; by default, {HaruspexConfig.FileName} here or in the nearest folder above. Repeat for more modules.",
+            HelpName = "file",
             Arity = ArgumentArity.OneOrMore,
         };
         var all = new Option<string?>("--all", "-a")
         {
-            Description = $"Every {HaruspexConfig.FileName} below the folder given, or below the working directory, each a module run and reported apart. Folders whose name starts with a dot, node_modules, and another repository or worktree nested below (a folder with .git) are left out.",
+            Description = $"Every {HaruspexConfig.FileName} below the folder (by default, the working directory), each a module.",
+            HelpName = "folder",
             Arity = ArgumentArity.ZeroOrOne,
         };
         var include = new Option<string[]>("--include", "-i")
         {
-            Description = "Procedures to type, as schema.name; * and ? match within a part. Repeat for more. Overrides the config file's schema includes for this run.",
+            Description = "Procedures to type, as schema.name, with * and ? as wildcards. Repeat for more. Overrides the config file's.",
+            HelpName = "pattern",
             Arity = ArgumentArity.OneOrMore,
         };
         var outDirectory = new Option<string?>("--out", "-o")
         {
-            Description = $"The folder of {IrFileName} and the files emitted beside it. Overrides \"out\" in the config file.",
+            Description = "The output folder. Overrides \"out\" in the config file.",
+            HelpName = "folder",
         };
 
         var verbose = new Option<bool>("--verbose", "-v")
         {
-            Description = "Also list every note: each unknown, grouped by the procedure or query file it is in.",
+            Description = "Also list every note: each unknown, by procedure.",
         };
         var quiet = new Option<bool>("--quiet", "-q")
         {
@@ -190,13 +222,13 @@ internal static class HaruspexCli
         };
         var colour = new Option<string>("--color")
         {
-            Description = "Colour: auto (on a terminal, unless NO_COLOR is set), always or never.",
+            Description = "Colour on a terminal (auto, unless NO_COLOR is set), always or never.",
             DefaultValueFactory = _ => "auto",
         };
         colour.AcceptOnlyFromAmong("auto", "always", "never");
         var format = new Option<string?>("--format")
         {
-            Description = "Who reads the report: text (the default), json for a tool, sarif for code scanning, or github for annotations in GitHub Actions (the default there).",
+            Description = "text; json for tools; sarif for code scanning; github, the default in GitHub Actions, for annotations.",
         };
         format.AcceptOnlyFromAmong("text", "json", "sarif", "github");
 
