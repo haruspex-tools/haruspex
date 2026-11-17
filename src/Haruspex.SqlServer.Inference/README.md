@@ -1644,7 +1644,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs` and `Typer.Extremes.cs` hold their typing
+says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs`, `Typer.RegularExpressions.cs` and `Typer.Extremes.cs` hold their typing
 methods, with the numeric ones in `Typer.Numeric.cs`. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
@@ -1784,6 +1784,34 @@ Observed in `FunctionObservationTests.Names.cs`.
   functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, `USER_NAME`, …) are not modelled: whether
   each can be NULL depends on the caller's login and rights.
 
+### Regular expressions
+
+SQL Server 2025's scalar regular-expression functions (`Typer.RegularExpressions.cs`), observed in
+`FunctionObservationTests.RegularExpressions.cs`. **`REGEXP_REPLACE`**, **`REGEXP_SUBSTR`**, **`REGEXP_INSTR`** and
+**`REGEXP_COUNT`** are there at every compatibility level from 100, so no level is checked; **`REGEXP_LIKE`** needs 170 (195
+below it) and is a predicate, which filters rows and chooses branches and proves nothing about a column. Each checks its
+arguments when the procedure is created (8116): the string searched and a replacement may be any string, a pattern any string
+but max, flags only `char` or `varchar` and not max, and a start, an occurrence, a return option or a group only a `smallint`,
+an `int` or a `bigint`, which is converted to `int` and so may overflow (`arithmetic-overflow`). A literal it can check is
+refused too (19301, 19303): a start or an occurrence below 1, `REGEXP_REPLACE`'s occurrence or a group below 0, a return
+option other than 0 or 1, a flag other than `c`, `i`, `s` and `m`. A call it refuses, or one of a type it isn't observed to
+read, is not modelled. A literal pattern it can't read is refused as well, which isn't checked: nothing typed of a procedure
+the server never creates is a claim
+(`The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read`).
+A pattern it can't read at run time, or a start or occurrence out of range, is an error, never NULL.
+
+- **`REGEXP_REPLACE(s, pattern [, replacement [, start [, occurrence [, flags]]]])`**: `varchar(8000)` or `nvarchar(4000)` as `s`
+  is, max when `s` or the replacement is, whatever the pattern is; a longer result is cut short, not an error, in UTF-8 too.
+  NULL when any argument is. Of a fixed-length string the server describes `char(8000)` or `nchar(4000)`, a length the value
+  doesn't have until it is stored, so that is not modelled
+  (`Regexp_replace_is_8000_bytes_or_max_of_its_strings_kind_and_cuts_a_longer_result_short`).
+- **`REGEXP_SUBSTR(s, pattern [, start [, occurrence [, flags [, group]]]])`**: `s`'s type made varying, of its length, max
+  staying max; always `out-of-range`, since it is NULL when nothing matches, for a start past the end, and for an occurrence
+  or a group past those there are (`Regexp_substr_is_its_strings_length_varying_and_null_when_nothing_matches`).
+- **`REGEXP_INSTR`** and **`REGEXP_COUNT`**: `int`, over max too, from 0 (`min` 0 `from` the function), 0 when nothing matches;
+  NULL when an argument is. A NULL return option is taken as the default, which is not modelled: its reasons are kept
+  (`Regexp_instr_and_regexp_count_are_int_from_0_and_null_only_for_a_null_argument`).
+
 ### `STRING_AGG`
 
 `varchar(8000)` for a `varchar` or `char`, `nvarchar(4000)` for an `nvarchar` or anything that is not a string, max over max.
@@ -1870,7 +1898,7 @@ constructs this front end gives each reason for:
 | `missing-for-action` | a column of a `MERGE`'s `OUTPUT` that some of its actions don't set |
 | `no-branch-matched` | `CASE` without `ELSE` |
 | `null-literal` | a `NULL` literal, bare, converted, or a result of `CASE`, `IIF` or `CHOOSE`; a JSON `null` in a JSON literal |
-| `out-of-range` | `CHOOSE` with an index that may be out of range; a string function given a code, position, count or length it can't use (`CHAR`, `ASCII`, `STUFF`, `QUOTENAME`, …); `PARSENAME` given a part the name doesn't have, `DB_NAME` an id of no database the caller can see |
+| `out-of-range` | `CHOOSE` with an index that may be out of range; a string function given a code, position, count or length it can't use (`CHAR`, `ASCII`, `STUFF`, `QUOTENAME`, …); `PARSENAME` given a part the name doesn't have, `DB_NAME` an id of no database the caller can see; `REGEXP_SUBSTR` given an occurrence or group past the matches |
 | `read-twice` | `COALESCE` whose argument holding a subquery or a call is read a second time |
 | `null-when-equal` | `NULLIF` |
 | `json-null-or-absent` | a column `OPENJSON` reads, `JSON_VALUE` |

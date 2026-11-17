@@ -68,6 +68,10 @@ internal sealed partial class Typer
 
     private const string ZeroOrOne = "Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null";
 
+    private const string Expressions = "The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read";
+
+    private const string Matches = "Regexp_instr_and_regexp_count_are_int_from_0_and_null_only_for_a_null_argument";
+
     private const string Choices = "Case_iif_and_choose_take_the_type_of_highest_precedence_over_their_results";
 
     private const string Coalescing = "Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments";
@@ -218,6 +222,12 @@ internal sealed partial class Typer
 
         // Without an id it names the database the call runs in, which the arguments don't say: it reads more than them.
         Typing(ScalarFunctions.DbName, (0, 1), "nvarchar(128), never null without an id", [OutOfRange, ArithmeticOverflow], ["Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see"], (a, e, s) => a.DbName(Call(e), s), readsOnlyItsArguments: false),
+
+        // ---- regular expressions ----
+        Typing(ScalarFunctions.RegexpReplace, (2, 6), "varchar(8000) or nvarchar(4000) as the string is, max when it is", [ArithmeticOverflow], [Expressions, "Regexp_replace_is_8000_bytes_or_max_of_its_strings_kind_and_cuts_a_longer_result_short"], (a, e, s) => a.RegexpReplace(Call(e), s)),
+        Typing(ScalarFunctions.RegexpSubstr, (2, 6), "the string's length, varying", [OutOfRange, ArithmeticOverflow], [Expressions, "Regexp_substr_is_its_strings_length_varying_and_null_when_nothing_matches"], (a, e, s) => a.RegexpSubstr(Call(e), s)),
+        Typing(ScalarFunctions.RegexpInstr, (2, 7), "int, from 0", [ArithmeticOverflow], [Expressions, Matches], (a, e, s) => Within(a.RegexpPosition(Call(e), s, ScalarFunctions.RegexpInstr), 0, int.MaxValue, "REGEXP_INSTR")),
+        Typing(ScalarFunctions.RegexpCount, (2, 4), "int, from 0", [ArithmeticOverflow], [Expressions, Matches], (a, e, s) => Within(a.RegexpPosition(Call(e), s, ScalarFunctions.RegexpCount), 0, int.MaxValue, "REGEXP_COUNT")),
 
         // ---- aggregates ----
         AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),

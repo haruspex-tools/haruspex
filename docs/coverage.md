@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 123 |
-| Not in it, and unknown where they are called | 215 |
+| In the catalogue | 127 |
+| Not in it, and unknown where they are called | 211 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 162 |
@@ -388,15 +388,15 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Regular expressions
 
-0 of 7 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/relational-databases/regular-expressions/overview?view=sql-server-ver17).
+4 of 7 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/relational-databases/regular-expressions/overview?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `REGEXP_LIKE` | | not modelled, and no unknown where it is read as a condition: `SELECT id AS e FROM dbo.toy WHERE REGEXP_LIKE(name, '^b');` | | |
-| `REGEXP_REPLACE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `REGEXP_SUBSTR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `REGEXP_INSTR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `REGEXP_COUNT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `REGEXP_REPLACE` | `scalar.regexp_replace` | varchar(8000) or nvarchar(4000) as the string is, max when it is | `arithmetic-overflow` | [The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs), [Regexp_replace_is_8000_bytes_or_max_of_its_strings_kind_and_cuts_a_longer_result_short](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs) |
+| `REGEXP_SUBSTR` | `scalar.regexp_substr` | the string's length, varying | `out-of-range`, `arithmetic-overflow` | [The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs), [Regexp_substr_is_its_strings_length_varying_and_null_when_nothing_matches](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs) |
+| `REGEXP_INSTR` | `scalar.regexp_instr` | int, from 0 | `arithmetic-overflow` | [The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs), [Regexp_instr_and_regexp_count_are_int_from_0_and_null_only_for_a_null_argument](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs) |
+| `REGEXP_COUNT` | `scalar.regexp_count` | int, from 0 | `arithmetic-overflow` | [The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs), [Regexp_instr_and_regexp_count_are_int_from_0_and_null_only_for_a_null_argument](../tests/Haruspex.DifferentialTests/FunctionObservationTests.RegularExpressions.cs) |
 | `REGEXP_MATCHES` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 | `REGEXP_SPLIT_TO_TABLE` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 

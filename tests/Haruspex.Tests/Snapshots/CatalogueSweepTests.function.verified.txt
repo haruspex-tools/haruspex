@@ -4007,6 +4007,326 @@ DB_NAME('ab') -> unknown unsupported-expression: DB_NAME('ab'): DB_NAME of a val
 DB_NAME(N'ab') -> unknown unsupported-expression: DB_NAME(N'ab'): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME(1e0) -> unknown unsupported-expression: DB_NAME(1e0): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME($1) -> unknown unsupported-expression: DB_NAME($1): DB_NAME of a value that is not an integer is not modelled.
+REGEXP_REPLACE(bt, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(bt, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(ti, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(ti, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(si, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(si, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(i, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(i, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(bi, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(bi, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(d52, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(d52, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(d380, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(d380, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(d3838, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(d3838, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(n102, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(n102, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(m, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(m, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(sm, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(sm, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(f, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(f, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(r, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(r, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(f24, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(f24, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(f25, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(f25, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(c3, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(c3, 'a', 'bb'): REGEXP_REPLACE of a fixed-length string is described as char(8000) or nchar(4000), which its value is not until it is stored.
+REGEXP_REPLACE(v10, 'a', 'bb') -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE(vx, 'a', 'bb') -> varchar(max) string
+REGEXP_REPLACE(nc3, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(nc3, 'a', 'bb'): REGEXP_REPLACE of a fixed-length string is described as char(8000) or nchar(4000), which its value is not until it is stored.
+REGEXP_REPLACE(nv10, 'a', 'bb') -> nvarchar(4000) string {length<=4000}
+REGEXP_REPLACE(nvx, 'a', 'bb') -> nvarchar(max) string
+REGEXP_REPLACE(dt, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(dt, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(tm3, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(tm3, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(dtm, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(dtm, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(dt23, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(dt23, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(sdt, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(sdt, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(dto3, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(dto3, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(u, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(u, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(bin4, 'a', 'bb') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_REPLACE(vb10, 'a', 'bb') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_REPLACE(x, 'a', 'bb') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_REPLACE(sv, 'a', 'bb') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_REPLACE(j, 'a', 'bb') -> unknown (no unknown recorded)
+REGEXP_REPLACE(1, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(1, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(12345, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(12345, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE(2.50, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(2.50, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE('ab', 'a', 'bb') -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE(N'ab', 'a', 'bb') -> nvarchar(4000) string {length<=4000}
+REGEXP_REPLACE(1e0, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(1e0, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE($1, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE($1, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_REPLACE('abc', 'b', 'x', bt) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', bt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', ti) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', ti): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', si) -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE('abc', 'b', 'x', i) -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE('abc', 'b', 'x', bi) -> varchar(8000) string null:arithmetic-overflow {length<=8000}
+REGEXP_REPLACE('abc', 'b', 'x', d52) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', d52): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', d380) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', d380): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', d3838) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', d3838): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', n102) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', n102): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', m) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', m): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', sm) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', sm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', f) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', f): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', r) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', r): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', f24) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', f24): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', f25) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', f25): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', c3) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', c3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', v10) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', v10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', vx) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', vx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', nc3) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', nc3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', nv10) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', nv10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', nvx) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', nvx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', dt) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', dt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', tm3) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', tm3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', dtm) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', dtm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', dt23) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', dt23): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', sdt) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', sdt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', dto3) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', dto3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', u) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_REPLACE('abc', 'b', 'x', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_REPLACE('abc', 'b', 'x', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_REPLACE('abc', 'b', 'x', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_REPLACE('abc', 'b', 'x', j) -> unknown (no unknown recorded)
+REGEXP_REPLACE('abc', 'b', 'x', 1) -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE('abc', 'b', 'x', 12345) -> varchar(8000) string {length<=8000}
+REGEXP_REPLACE('abc', 'b', 'x', 2.50) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', 2.50): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', 'ab') -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', 'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', N'ab') -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', N'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', 1e0) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', 1e0): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_REPLACE('abc', 'b', 'x', $1) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', $1): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_SUBSTR(bt, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(bt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(ti, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(ti, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(si, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(si, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(i, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(i, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(bi, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(bi, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(d52, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(d52, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(d380, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(d380, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(d3838, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(d3838, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(n102, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(n102, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(m, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(m, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(sm, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(sm, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(f, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(f, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(r, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(r, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(f24, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(f24, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(f25, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(f25, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(c3, '.') -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR(v10, '.') -> varchar(10) string null:out-of-range {length<=10}
+REGEXP_SUBSTR(vx, '.') -> varchar(max) string null:out-of-range
+REGEXP_SUBSTR(nc3, '.') -> nvarchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR(nv10, '.') -> nvarchar(10) string null:out-of-range {length<=10}
+REGEXP_SUBSTR(nvx, '.') -> nvarchar(max) string null:out-of-range
+REGEXP_SUBSTR(dt, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(dt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(tm3, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(tm3, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(dtm, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(dtm, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(dt23, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(dt23, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(sdt, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(sdt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(dto3, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(dto3, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(u, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(u, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(bin4, '.') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_SUBSTR(vb10, '.') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_SUBSTR(x, '.') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_SUBSTR(sv, '.') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_SUBSTR(j, '.') -> unknown (no unknown recorded)
+REGEXP_SUBSTR(1, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(1, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(12345, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(12345, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR(2.50, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(2.50, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR('ab', '.') -> varchar(2) string null:out-of-range {length<=2}
+REGEXP_SUBSTR(N'ab', '.') -> nvarchar(2) string null:out-of-range {length<=2}
+REGEXP_SUBSTR(1e0, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(1e0, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR($1, '.') -> unknown unsupported-expression: REGEXP_SUBSTR($1, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_SUBSTR('abc', bt) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', bt): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', ti) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', ti): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', si) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', si): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', i) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', i): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', bi) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', bi): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', d52) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', d52): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', d380) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', d380): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', d3838) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', d3838): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', n102) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', n102): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', m) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', m): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', sm) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', sm): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', f) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', f): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', r) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', r): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', f24) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', f24): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', f25) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', f25): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', c3) -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', v10) -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', vx) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', vx): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', nc3) -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', nv10) -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', nvx) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', nvx): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', dt) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', dt): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', tm3) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', tm3): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', dtm) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', dtm): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', dt23) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', dt23): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', sdt) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', sdt): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', dto3) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', dto3): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', u) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', u): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_SUBSTR('abc', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_SUBSTR('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_SUBSTR('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_SUBSTR('abc', j) -> unknown (no unknown recorded)
+REGEXP_SUBSTR('abc', 1) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', 1): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', 12345) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', 12345): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', 2.50) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', 2.50): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', 'ab') -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', N'ab') -> varchar(3) string null:out-of-range {length<=3}
+REGEXP_SUBSTR('abc', 1e0) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', 1e0): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_SUBSTR('abc', $1) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', $1): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
+REGEXP_INSTR(bt, 'a') -> unknown unsupported-expression: REGEXP_INSTR(bt, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(ti, 'a') -> unknown unsupported-expression: REGEXP_INSTR(ti, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(si, 'a') -> unknown unsupported-expression: REGEXP_INSTR(si, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(i, 'a') -> unknown unsupported-expression: REGEXP_INSTR(i, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(bi, 'a') -> unknown unsupported-expression: REGEXP_INSTR(bi, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(d52, 'a') -> unknown unsupported-expression: REGEXP_INSTR(d52, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(d380, 'a') -> unknown unsupported-expression: REGEXP_INSTR(d380, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(d3838, 'a') -> unknown unsupported-expression: REGEXP_INSTR(d3838, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(n102, 'a') -> unknown unsupported-expression: REGEXP_INSTR(n102, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(m, 'a') -> unknown unsupported-expression: REGEXP_INSTR(m, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(sm, 'a') -> unknown unsupported-expression: REGEXP_INSTR(sm, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(f, 'a') -> unknown unsupported-expression: REGEXP_INSTR(f, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(r, 'a') -> unknown unsupported-expression: REGEXP_INSTR(r, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(f24, 'a') -> unknown unsupported-expression: REGEXP_INSTR(f24, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(f25, 'a') -> unknown unsupported-expression: REGEXP_INSTR(f25, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(c3, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(v10, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(vx, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(nc3, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(nv10, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(nvx, 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(dt, 'a') -> unknown unsupported-expression: REGEXP_INSTR(dt, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(tm3, 'a') -> unknown unsupported-expression: REGEXP_INSTR(tm3, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(dtm, 'a') -> unknown unsupported-expression: REGEXP_INSTR(dtm, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(dt23, 'a') -> unknown unsupported-expression: REGEXP_INSTR(dt23, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(sdt, 'a') -> unknown unsupported-expression: REGEXP_INSTR(sdt, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(dto3, 'a') -> unknown unsupported-expression: REGEXP_INSTR(dto3, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(u, 'a') -> unknown unsupported-expression: REGEXP_INSTR(u, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(bin4, 'a') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_INSTR(vb10, 'a') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_INSTR(x, 'a') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_INSTR(sv, 'a') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_INSTR(j, 'a') -> unknown (no unknown recorded)
+REGEXP_INSTR(1, 'a') -> unknown unsupported-expression: REGEXP_INSTR(1, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(12345, 'a') -> unknown unsupported-expression: REGEXP_INSTR(12345, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR(2.50, 'a') -> unknown unsupported-expression: REGEXP_INSTR(2.50, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR('ab', 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(N'ab', 'a') -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR(1e0, 'a') -> unknown unsupported-expression: REGEXP_INSTR(1e0, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR($1, 'a') -> unknown unsupported-expression: REGEXP_INSTR($1, 'a'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_INSTR('abc', 'b', 1, 1, bt) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, bt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, ti) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, ti): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, si) -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR('abc', 'b', 1, 1, i) -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR('abc', 'b', 1, 1, bi) -> int number/int32 null:arithmetic-overflow {[0 2147483647]}
+REGEXP_INSTR('abc', 'b', 1, 1, d52) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, d52): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, d380) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, d380): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, d3838) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, d3838): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, n102) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, n102): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, m) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, m): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, sm) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, sm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, f) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, f): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, r) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, r): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, f24) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, f24): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, f25) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, f25): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, c3) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, c3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, v10) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, v10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, vx) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, vx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, nc3) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, nc3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, nv10) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, nv10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, nvx) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, nvx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, dt) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, dt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, tm3) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, tm3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, dtm) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, dtm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, dt23) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, dt23): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, sdt) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, sdt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, dto3) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, dto3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, u) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_INSTR('abc', 'b', 1, 1, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_INSTR('abc', 'b', 1, 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_INSTR('abc', 'b', 1, 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_INSTR('abc', 'b', 1, 1, j) -> unknown (no unknown recorded)
+REGEXP_INSTR('abc', 'b', 1, 1, 1) -> int number/int32 {[0 2147483647]}
+REGEXP_INSTR('abc', 'b', 1, 1, 12345) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, 12345): SQL Server refuses a return option other than 0 or 1.
+REGEXP_INSTR('abc', 'b', 1, 1, 2.50) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, 2.50): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, 'ab') -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, 'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, N'ab') -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, N'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, 1e0) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, 1e0): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_INSTR('abc', 'b', 1, 1, $1) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, $1): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT(bt, '.') -> unknown unsupported-expression: REGEXP_COUNT(bt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(ti, '.') -> unknown unsupported-expression: REGEXP_COUNT(ti, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(si, '.') -> unknown unsupported-expression: REGEXP_COUNT(si, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(i, '.') -> unknown unsupported-expression: REGEXP_COUNT(i, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(bi, '.') -> unknown unsupported-expression: REGEXP_COUNT(bi, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(d52, '.') -> unknown unsupported-expression: REGEXP_COUNT(d52, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(d380, '.') -> unknown unsupported-expression: REGEXP_COUNT(d380, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(d3838, '.') -> unknown unsupported-expression: REGEXP_COUNT(d3838, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(n102, '.') -> unknown unsupported-expression: REGEXP_COUNT(n102, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(m, '.') -> unknown unsupported-expression: REGEXP_COUNT(m, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(sm, '.') -> unknown unsupported-expression: REGEXP_COUNT(sm, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(f, '.') -> unknown unsupported-expression: REGEXP_COUNT(f, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(r, '.') -> unknown unsupported-expression: REGEXP_COUNT(r, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(f24, '.') -> unknown unsupported-expression: REGEXP_COUNT(f24, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(f25, '.') -> unknown unsupported-expression: REGEXP_COUNT(f25, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(c3, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(v10, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(vx, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(nc3, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(nv10, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(nvx, '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(dt, '.') -> unknown unsupported-expression: REGEXP_COUNT(dt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(tm3, '.') -> unknown unsupported-expression: REGEXP_COUNT(tm3, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(dtm, '.') -> unknown unsupported-expression: REGEXP_COUNT(dtm, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(dt23, '.') -> unknown unsupported-expression: REGEXP_COUNT(dt23, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(sdt, '.') -> unknown unsupported-expression: REGEXP_COUNT(sdt, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(dto3, '.') -> unknown unsupported-expression: REGEXP_COUNT(dto3, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(u, '.') -> unknown unsupported-expression: REGEXP_COUNT(u, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(bin4, '.') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_COUNT(vb10, '.') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_COUNT(x, '.') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_COUNT(sv, '.') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_COUNT(j, '.') -> unknown (no unknown recorded)
+REGEXP_COUNT(1, '.') -> unknown unsupported-expression: REGEXP_COUNT(1, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(12345, '.') -> unknown unsupported-expression: REGEXP_COUNT(12345, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT(2.50, '.') -> unknown unsupported-expression: REGEXP_COUNT(2.50, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT('ab', '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(N'ab', '.') -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT(1e0, '.') -> unknown unsupported-expression: REGEXP_COUNT(1e0, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT($1, '.') -> unknown unsupported-expression: REGEXP_COUNT($1, '.'): a regular-expression function of a value that is not a string is not modelled.
+REGEXP_COUNT('abc', 'b', bt) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', bt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', ti) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', ti): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', si) -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT('abc', 'b', i) -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT('abc', 'b', bi) -> int number/int32 null:arithmetic-overflow {[0 2147483647]}
+REGEXP_COUNT('abc', 'b', d52) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', d52): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', d380) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', d380): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', d3838) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', d3838): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', n102) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', n102): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', m) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', m): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', sm) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', sm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', f) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', f): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', r) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', r): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', f24) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', f24): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', f25) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', f25): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', c3) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', c3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', v10) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', v10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', vx) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', vx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', nc3) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', nc3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', nv10) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', nv10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', nvx) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', nvx): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', dt) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', dt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', tm3) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', tm3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', dtm) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', dtm): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', dt23) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', dt23): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', sdt) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', sdt): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', dto3) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', dto3): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', u) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+REGEXP_COUNT('abc', 'b', vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+REGEXP_COUNT('abc', 'b', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_COUNT('abc', 'b', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+REGEXP_COUNT('abc', 'b', j) -> unknown (no unknown recorded)
+REGEXP_COUNT('abc', 'b', 1) -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT('abc', 'b', 12345) -> int number/int32 {[0 2147483647]}
+REGEXP_COUNT('abc', 'b', 2.50) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', 2.50): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', 'ab') -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', 'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', N'ab') -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', N'ab'): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', 1e0) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', 1e0): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
+REGEXP_COUNT('abc', 'b', $1) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', $1): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 CONCAT(bt, 'x') -> varchar(2) string {length<=2}
 CONCAT(ti, 'x') -> unknown unsupported-expression: CONCAT(ti, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(si, 'x') -> unknown unsupported-expression: CONCAT(si, 'x'): an argument whose length as a string is not modelled yet.

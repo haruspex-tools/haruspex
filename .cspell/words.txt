@@ -36,6 +36,7 @@ getutcdate
 hashbytes
 hierarchyid
 holdlock
+instr
 isdate
 isjson
 isnull

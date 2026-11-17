@@ -62,6 +62,8 @@ internal static class CatalogueSweep
         "LEFT('abc', {0})", "RIGHT('abc', {0})", "STR({0})", "STR({0}, 5, 2)", "TRANSLATE({0}, 'a', 'b')",
         "SOUNDEX({0})", "DIFFERENCE({0}, 'a')",
         "PARSENAME({0}, 1)", "PARSENAME('a.b', {0})", "DB_NAME()", "DB_NAME({0})",
+        "REGEXP_REPLACE({0}, 'a', 'bb')", "REGEXP_REPLACE('abc', 'b', 'x', {0})", "REGEXP_SUBSTR({0}, '.')", "REGEXP_SUBSTR('abc', {0})",
+        "REGEXP_INSTR({0}, 'a')", "REGEXP_INSTR('abc', 'b', 1, 1, {0})", "REGEXP_COUNT({0}, '.')", "REGEXP_COUNT('abc', 'b', {0})",
         "CONCAT({0}, 'x')", "CONCAT_WS(',', {0}, 'x')", "CHOOSE(id, {0}, {0})", "IIF(id > 1, {0}, {0})", "NULLIF({0}, {0})",
         "COALESCE({0}, NULL)", "TRY_CAST({0} AS int)", "CONVERT(varchar(30), {0}, 1)", "TRY_CONVERT(int, {0})",
         "JSON_OBJECT('k': {0})", "JSON_ARRAY({0})",
