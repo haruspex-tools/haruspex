@@ -64,7 +64,7 @@ public class AcknowledgementTests
         var (exitCode, output, error) = Run(folder, "check");
 
         Assert.Equal((0, ""), (exitCode, error));
-        Assert.Equal("haruspex: 1 procedure, no unknowns. out is up to date. 2 warnings acknowledged (--verbose lists them).\n", output);
+        Assert.Equal("haruspex: 1 procedure, no unknowns; 2 warnings acknowledged (--verbose lists them). out is up to date.\n", output);
     }
 
     [Fact]

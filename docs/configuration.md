@@ -365,7 +365,7 @@ together, never by its code alone, with `why`:
 ```
 
 An acknowledged warning is counted rather than said (`haruspex: nothing changed since the last run: 4 procedures, no
-unknowns. 2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each, with its `why`, and `--format json` and
+unknowns; 2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each, with its `why`, and `--format json` and
 `sarif` hold them apart, SARIF as suppressed results. Every other warning of the same code is still said. The subject is
 the name the warning gives:
 

@@ -103,9 +103,9 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             ? ""
             : $" {Counted(module.Acknowledged.Count, "warning")} acknowledged{(detail == OutputDetail.Verbose ? "" : " (--verbose lists them)")}.";
         if (module.Command == CommandName.Check)
-            return $"haruspex: {counted}{listed}. {Shown(module.Out ?? "")} is up to date.{acknowledged}";
+            return $"haruspex: {OneLine(module, counted)}. {Shown(module.Out ?? "")} is up to date.";
         if (module.Since is SinceLastRun.Compared { Nothing: true })
-            return $"haruspex: nothing changed since the last run: {counted}{listed}.{acknowledged}";
+            return $"haruspex: nothing changed since the last run: {OneLine(module, counted)}.";
 
         var lines = new List<string> { $"haruspex: {counted}. Wrote {EnglishList.Of([.. module.Written.Select(Shown)])}." };
         switch (module.Since)
@@ -126,6 +126,17 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (acknowledged.Length > 0)
             lines.Add(acknowledged.TrimStart());
         return string.Join('\n', lines);
+    }
+
+    /// <summary>
+    /// What a one-line summary counts: what the module types and its unknowns, then the warnings acknowledged, and one pointer
+    /// to <c>--verbose</c>, which lists both.
+    /// </summary>
+    private string OneLine(ModuleReport module, string counted)
+    {
+        var acknowledged = module.Acknowledged.Count == 0 ? "" : $"; {Counted(module.Acknowledged.Count, "warning")} acknowledged";
+        var listable = module.Document?.Unknowns.Count > 0 || module.Acknowledged.Count > 0;
+        return $"{counted}{acknowledged}{(listable && detail != OutputDetail.Verbose ? " (--verbose lists them)" : "")}";
     }
 
     /// <summary>
