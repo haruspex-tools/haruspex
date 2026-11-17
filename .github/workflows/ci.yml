@@ -241,7 +241,7 @@ jobs:
           cd app
           npm init -y > /dev/null
           npm install --offline --ignore-scripts --no-audit --no-fund ../npm/haruspex-0.0.0-*.tgz "../npm/haruspex.tools-$PLATFORM-"*.tgz
-          ls "node_modules/@haruspex"
+          ls "node_modules/@haruspex.tools"
         env:
           PLATFORM: ${{ matrix.platform }}
 
