@@ -99,7 +99,7 @@ internal static class HaruspexCli
               haruspex init                                          write a starter haruspex.json
               haruspex generate                                      write the module, and say what changed
               haruspex generate db --include 'sales.*' --out src/db  without a config file
-              haruspex check --all                                   in CI: fail if a committed module would change
+              haruspex check --all                                   in CI: fail if a module in its output folder would change
 
             Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
             More: https://github.com/sharpblue/haruspex/blob/main/docs/command-line.md
@@ -114,7 +114,7 @@ internal static class HaruspexCli
                 new Streams(output, error, workingDirectory, terminal)),
             Module(
                 "check",
-                "Infer as generate does, write nothing, and fail (exit code 1) if the committed module would change.",
+                "Infer as generate does, write nothing, and fail (exit code 1) if the module in the output folder would change.",
                 CommandName.Check,
                 Check.Run,
                 new Streams(output, error, workingDirectory, terminal)),
