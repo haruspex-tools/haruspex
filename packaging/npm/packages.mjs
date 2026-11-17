@@ -71,7 +71,7 @@ export function stageMain(folder, version) {
 export function stagePlatform(folder, platform, version, binary) {
   const target = path.join(folder, platform.binary);
   fs.copyFileSync(binary, target);
-  // A CI artifact loses the executable bit; npm keeps the bit a file has when it packs it (and on Windows sets it).
+  // A CI artifact loses the executable bit, and npm packs the mode a file has (except on Windows, where pack.mjs refuses).
   fs.chmodSync(target, 0o755);
   fs.copyFileSync(path.join(repository, "LICENSE"), path.join(folder, "LICENSE"));
   fs.writeFileSync(

@@ -70,8 +70,9 @@ node packaging/npm/pack.mjs --binaries binaries --out artifacts/npm --commit <th
 
 `--commit` defaults to the commit checked out. Without every platform's binary the script refuses, unless `--only` names the
 platforms to pack, as npm names them (`--only darwin-arm64,win32-x64`). The main package lists every platform whichever are
-packed. It needs Node and npm, and nothing else (Node 20.11 or later for its tests). `node --test packaging/npm/test/` runs
-its tests, which `NpmPackagingTests` runs with the rest.
+packed. Run it on Linux or macOS: npm on Windows packs every file as not executable, so there the script packs only the
+Windows binary. It needs Node and npm, and nothing else (Node 20.11 or later for its tests). `node --test packaging/npm/test/`
+runs its tests, which `NpmPackagingTests` runs with the rest.
 
 ## Names and publishing
 

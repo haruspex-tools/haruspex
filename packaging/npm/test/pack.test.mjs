@@ -31,9 +31,13 @@ function binaries(name, builtFrom = commit, rids = platforms.map((p) => p.rid)) 
 
 let packed;
 
+// npm on Windows can't mark a file executable, so there the script packs only the Windows binary (as it refuses the rest).
+const packable = process.platform === "win32" ? platforms.filter((p) => p.os === "win32") : platforms;
+
 before(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), "haruspex-pack-"));
-  packed = pack({ binaries: binaries("all"), out: path.join(root, "out"), commit });
+  const only = process.platform === "win32" ? packable.map((p) => `${p.os}-${p.cpu}`) : undefined;
+  packed = pack({ binaries: binaries("all"), out: path.join(root, "out"), commit, only });
 });
 
 after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -63,7 +67,7 @@ test("packs one tarball per platform and the main package, named by the version"
   const names = packed.map((p) => path.basename(p.tarball)).sort();
   assert.deepEqual(names, [
     `haruspex-${version}.tgz`,
-    ...platforms.map((p) => `haruspex-${p.os}-${p.cpu}-${version}.tgz`).sort(),
+    ...packable.map((p) => `haruspex-${p.os}-${p.cpu}-${version}.tgz`),
   ].sort());
   for (const p of packed) assert.ok(fs.existsSync(p.tarball), p.tarball);
 });
@@ -82,20 +86,35 @@ test("the main package holds the launcher, the config schema, the licence and a 
   assert.ok(main.files.find((f) => f.path === "haruspex.schema.json").size === Buffer.byteLength(schema));
 });
 
-test("each platform package holds its binary, executable, with the licence and a readme", () => {
-  for (const platform of platforms) {
+test("each platform package holds its binary, with the licence and a readme", () => {
+  for (const platform of packable) {
     const p = packed.find((q) => q.name === platform.packageName);
     assert.deepEqual(p.files.map((f) => f.path).sort(), ["LICENSE", "README.md", platform.binary, "package.json"].sort());
-    // npm reports the mode it wrote into the tarball; on Windows it writes 0755 for every file it packs.
-    const mode = p.files.find((f) => f.path === platform.binary).mode;
-    assert.equal(mode & 0o111, 0o111, `${platform.binary} in ${p.name} is mode ${mode.toString(8)}`);
   }
+});
+
+test("a binary for Linux or macOS is packed executable", (t) => {
+  if (process.platform === "win32") return t.skip("npm on Windows packs no file executable, so the script packs none there");
+  for (const platform of platforms.filter((p) => p.os !== "win32")) {
+    // The mode npm reports is the one it wrote into the tarball, which npm keeps when it installs the package.
+    const mode = packed.find((q) => q.name === platform.packageName).files.find((f) => f.path === platform.binary).mode;
+    assert.equal(mode & 0o111, 0o111, `${platform.binary} in ${platform.packageName} is mode ${mode.toString(8)}`);
+  }
+});
+
+test("on Windows, refuses to pack a binary for Linux or macOS", () => {
+  // npm there writes every file as mode 644, and such a binary would install unable to run.
+  assert.throws(
+    () => pack({ binaries: binaries("all"), out: path.join(root, "out-windows"), commit, host: "win32" }),
+    (error) => /executable/.test(error.message) && error.message.includes("--only win32-x64"),
+  );
+  assert.equal(fs.existsSync(path.join(root, "out-windows")), false);
 });
 
 test("refuses a binary built from another commit, naming it", () => {
   const other = "1111111111111111111111111111111111111111";
   assert.throws(
-    () => pack({ binaries: binaries("other", other), out: path.join(root, "out-other"), commit }),
+    () => pack({ binaries: binaries("other", other), out: path.join(root, "out-other"), commit, host: "linux" }),
     (error) => error.message.includes("haruspex-linux-x64") && error.message.includes(commit),
   );
   assert.equal(fs.existsSync(path.join(root, "out-other")), false, "nothing is written when a binary is refused");
@@ -104,11 +123,11 @@ test("refuses a binary built from another commit, naming it", () => {
 test("refuses a missing platform unless it is left out by name", () => {
   const some = binaries("some", commit, ["osx-arm64", "win-x64"]);
   assert.throws(
-    () => pack({ binaries: some, out: path.join(root, "out-some"), commit }),
+    () => pack({ binaries: some, out: path.join(root, "out-some"), commit, host: "linux" }),
     (error) => error.message.includes("linux-x64") && error.message.includes("--only"),
   );
-  const only = pack({ binaries: some, out: path.join(root, "out-only"), commit, only: ["darwin-arm64", "win32-x64"] });
-  assert.deepEqual(only.map((p) => p.name).sort(), ["@haruspex/darwin-arm64", "@haruspex/win32-x64", "haruspex"]);
+  const only = pack({ binaries: some, out: path.join(root, "out-only"), commit, only: ["win32-x64"] });
+  assert.deepEqual(only.map((p) => p.name).sort(), ["@haruspex/win32-x64", "haruspex"]);
 });
 
 test("refuses a platform name it doesn't know", () => {

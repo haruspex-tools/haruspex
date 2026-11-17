@@ -27,12 +27,14 @@ function choose(only) {
 
 /** Runs `npm pack` in a staged package's folder and returns npm's report of the tarball it wrote there. */
 function npmPack(folder) {
-  // npm is a script on Windows (npm.cmd), which only a shell can start; the arguments are constants, so no quoting matters.
-  const result = spawnSync("npm", ["pack", "--json", "--ignore-scripts"], {
-    cwd: folder,
-    encoding: "utf8",
-    shell: process.platform === "win32",
-  });
+  // npm is a script on Windows (npm.cmd), which only a shell can start, so there it is given as one command line; its words
+  // are constants, so nothing needs quoting.
+  const command = ["npm", "pack", "--json", "--ignore-scripts"];
+  const options = { cwd: folder, encoding: "utf8" };
+  const result =
+    process.platform === "win32"
+      ? spawnSync(command.join(" "), { ...options, shell: true })
+      : spawnSync(command[0], command.slice(1), options);
   if (result.status !== 0) throw new Error(`npm pack failed in ${folder}:\n${result.stderr}${result.error ?? ""}`);
   const [report] = JSON.parse(result.stdout);
   return report;
@@ -41,11 +43,21 @@ function npmPack(folder) {
 /**
  * Packs the main package and one package per platform, at the version the commit gives, into `out`. Every binary must be
  * there and built from that commit, or nothing is written. Returns, for each package, its name, its tarball's path and
- * the files npm put in it.
+ * the files npm put in it. `host` is the platform the script runs on, given by the tests.
  */
-export function pack({ binaries, out, commit, only }) {
+export function pack({ binaries, out, commit, only, host = process.platform }) {
   const version = previewVersion(commit);
   const chosen = choose(only);
+
+  // npm on Windows writes every file into a tarball as mode 644, so a binary for Linux or macOS packed there would install
+  // without the executable bit and could not run.
+  const needExecutable = chosen.filter((p) => p.os !== "win32");
+  if (host === "win32" && needExecutable.length > 0) {
+    throw new Error(
+      `npm on Windows can't mark a file executable, so ${needExecutable.map(npmName).join(", ")} would not run once ` +
+        "installed. Pack them on Linux or macOS, as CI does, or pack the Windows binary alone with --only win32-x64.",
+    );
+  }
 
   const found = chosen.map((p) => ({ platform: p, binary: path.join(binaries, `haruspex-${p.rid}`, p.binary) }));
   const missing = found.filter((f) => !fs.existsSync(f.binary));
