@@ -93,16 +93,27 @@ test("exits as a shell does when the binary is killed by a signal", () => {
   assert.equal(launcher.launch(h), 128 + os.constants.signals.SIGTERM);
 });
 
+const notFound = () => {
+  throw Object.assign(new Error("Cannot find module"), { code: "MODULE_NOT_FOUND" });
+};
+
 test("says which package is missing and why it may be", () => {
-  const h = host({
-    resolve: () => {
-      throw Object.assign(new Error("Cannot find module"), { code: "MODULE_NOT_FOUND" });
-    },
-  });
+  const h = host({ readVersion: notFound, resolve: notFound });
   assert.equal(launcher.launch(h), 1);
   const text = h.errors.join("");
   assert.match(text, /@haruspex\.tools\/darwin-arm64/);
   assert.match(text, /optional dependencies/);
+  assert.equal(h.spawned.length, 0);
+});
+
+test("tells a package without its binary from a package that isn't there", () => {
+  const h = host({ resolve: notFound });
+  assert.equal(launcher.launch(h), 1);
+  const text = h.errors.join("");
+  assert.match(text, /@haruspex\.tools\/darwin-arm64 is installed/);
+  assert.match(text, /no haruspex\b/);
+  assert.doesNotMatch(text, /optional dependencies/);
+  assert.match(text, /[Ii]nstall .* again/);
   assert.equal(h.spawned.length, 0);
 });
 
@@ -116,9 +127,18 @@ test("refuses a platform package of another version", () => {
 });
 
 test("says why the binary could not be started", () => {
-  const h = host({ spawn: () => ({ error: Object.assign(new Error("spawn EACCES"), { code: "EACCES" }) }) });
+  const h = host({ spawn: () => ({ error: Object.assign(new Error("spawn ENOEXEC"), { code: "ENOEXEC" }) }) });
   assert.equal(launcher.launch(h), 1);
-  assert.match(h.errors.join(""), /EACCES/);
+  assert.match(h.errors.join(""), /ENOEXEC/);
+});
+
+test("says to install again when the binary has lost its permission to run", () => {
+  const h = host({ spawn: () => ({ error: Object.assign(new Error("spawnSync /x EACCES"), { code: "EACCES" }) }) });
+  assert.equal(launcher.launch(h), 1);
+  const text = h.errors.join("");
+  assert.match(text, /EACCES/);
+  assert.match(text, /executable/);
+  assert.match(text, /[Ii]nstall .* again/);
 });
 
 test("refuses an unsupported platform without starting anything", () => {

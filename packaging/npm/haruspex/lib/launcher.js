@@ -40,8 +40,13 @@ function choosePlatform({ platform, arch, glibc }) {
 
 /** What the launcher needs to know about the machine it runs on. */
 function currentHost() {
-  // Node reports the glibc version it runs with, and none under musl; the same check Node's own tools use.
-  const header = process.platform === "linux" ? process.report.getReport().header : {};
+  // Node reports the glibc version it runs with, and none under musl; the same check Node's own tools use. The report
+  // would also list the network interfaces, which takes time and isn't needed, so it leaves them out (as detect-libc does).
+  let header = {};
+  if (process.platform === "linux") {
+    process.report.excludeNetwork = true;
+    header = process.report.getReport().header;
+  }
   return { platform: process.platform, arch: process.arch, glibc: header.glibcVersionRuntime };
 }
 
@@ -59,19 +64,28 @@ function launch(host) {
   if (!chosen.platform) return fail(chosen.problem);
   const { packageName, binary } = chosen.platform;
 
-  let file;
+  const rethrowUnlessMissing = (error) => {
+    if (error?.code !== "MODULE_NOT_FOUND") throw error;
+  };
+  // The package first, then the binary in it, so that a package without its binary isn't reported as not installed.
   let version;
   try {
-    file = host.resolve(`${packageName}/${binary}`);
     version = host.readVersion(packageName);
   } catch (error) {
-    if (error?.code !== "MODULE_NOT_FOUND") throw error;
+    rethrowUnlessMissing(error);
     return fail(
       `the package ${packageName}, which holds the binary for this machine, is not installed. npm installs it as one ` +
         "of haruspex's optional dependencies, so it is missing when optional dependencies were left out " +
         "(--omit=optional or --no-optional), or when node_modules was installed on another platform and copied here. " +
         "Install again on this machine, with optional dependencies.",
     );
+  }
+  let file;
+  try {
+    file = host.resolve(`${packageName}/${binary}`);
+  } catch (error) {
+    rethrowUnlessMissing(error);
+    return fail(`${packageName} is installed, but holds no ${binary}. Install haruspex again so that npm unpacks it in full.`);
   }
 
   // The launcher and the binary are released together; a binary of another version would be run under this one's name.
@@ -83,6 +97,13 @@ function launch(host) {
   }
 
   const result = host.spawn(file, host.args);
+  if (result.error?.code === "EACCES") {
+    // The tarballs carry the executable bit, so a binary without it was changed after it was installed.
+    return fail(
+      `could not start ${file}: ${result.error.message}. The file is not executable. Install haruspex again so that ` +
+        "npm unpacks it as packed.",
+    );
+  }
   if (result.error) return fail(`could not start ${file}: ${result.error.message}`);
   // A process killed by a signal has no status; a shell reports 128 plus the signal's number, and so does this.
   if (result.signal) return 128 + (os.constants.signals[result.signal] ?? 0);
