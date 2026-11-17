@@ -23,6 +23,12 @@ namespace Haruspex.Tests.Documentation;
 /// then read beside that corpus's scripts, so that it can use the corpus's own tables, and only the objects it defines are
 /// inferred. That is how the project's README shows haruspex on real tables, kept true by the same test.
 /// </para>
+/// <para>
+/// A block whose info string is <c>sql haruspex-query</c>, followed by a corpus and a path
+/// (<c>sql haruspex-query WideWorldImporters sql/getOrderLines.sql</c>), is a query file instead: the application's own SQL,
+/// at that path beside the config file, typed against the corpus as <c>"queries"</c> in <c>haruspex.json</c> types it, alone.
+/// Its outputs are shown as a procedure example's are, but for runs and checks, whose project is a database.
+/// </para>
 /// </remarks>
 /// <param name="File">The Markdown file, relative to the repository root.</param>
 /// <param name="Line">The line of the example's opening fence.</param>
@@ -33,7 +39,14 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
     /// <summary>The vendored corpus the example is read beside, by its name, or null for an example that stands alone.</summary>
     public string? Over { get; init; }
 
+    /// <summary>
+    /// For a query file, its path relative to the config file's folder, which names its function and appears in what is
+    /// generated; null for a database project.
+    /// </summary>
+    public string? Query { get; init; }
+
     public const string ExampleMark = "haruspex-example";
+    public const string QueryMark = "haruspex-query";
     public const string ZodMark = "haruspex-zod";
     public const string IrMark = "haruspex-ir";
     public const string JsonSchemaMark = "haruspex-jsonschema";
@@ -58,9 +71,22 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
             {
                 case ExampleMark:
                     Close(current);
-                    previous = current?.Sql;
+                    previous = current is { Query: null } ? current.Sql : null;
                     current = new WorkedExample(file, block.Line, block.Text, []) { Over = block.Words.Skip(2).FirstOrDefault() };
                     config = null;
+                    break;
+                case QueryMark:
+                    Close(current);
+                    previous = null;
+                    config = null;
+                    current = block.Words.Count == 4
+                        ? new WorkedExample(file, block.Line, block.Text, []) { Over = block.Words[2], Query = block.Words[3] }
+                        : null;
+                    if (current is null)
+                        problems.Add($"{at}: a {QueryMark} block names a corpus and the file's path after its mark, and nothing else (sql {QueryMark} WideWorldImporters sql/q.sql)");
+                    break;
+                case RunMark or CheckMark when current?.Query is not null:
+                    problems.Add($"{at}: a {mark} block after a {QueryMark} block, whose file is not a database project to generate");
                     break;
                 case ZodMark or IrMark or JsonSchemaMark or MssqlMark or ConfigMark or RunMark or CheckMark when current is null:
                     problems.Add($"{at}: a {mark} block with no {ExampleMark} block before it");

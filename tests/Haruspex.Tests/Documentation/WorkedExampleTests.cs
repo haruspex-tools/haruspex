@@ -105,6 +105,45 @@ public class WorkedExampleTests
     }
 
     [Fact]
+    public void A_query_example_names_its_corpus_and_its_file_s_path_and_takes_no_run_or_check()
+    {
+        const string markdown = """
+            ```sql haruspex-query WideWorldImporters sql/getOrderLines.sql
+            SELECT ol.Quantity FROM Sales.OrderLines AS ol WHERE ol.OrderID = @OrderID;
+            ```
+
+            ```ts haruspex-zod
+            ```
+
+            ```text haruspex-run
+            ```
+
+            ```sql haruspex-query WideWorldImporters
+            SELECT 1 AS one;
+            ```
+
+            ```sql haruspex-example
+            CREATE TABLE dbo.t (id int NOT NULL);
+            ```
+
+            ```text haruspex-check
+            ```
+            """;
+        var (examples, problems) = WorkedExample.Read("README.md", markdown);
+
+        var query = examples[0];
+        Assert.Equal(("WideWorldImporters", "sql/getOrderLines.sql", WorkedExample.OutputKind.Zod), (query.Over, query.Query, Assert.Single(query.Outputs).Kind));
+        Assert.Equal(
+            [
+                "README.md:8: a haruspex-run block after a haruspex-query block, whose file is not a database project to generate",
+                "README.md:11: a haruspex-query block names a corpus and the file's path after its mark, and nothing else (sql haruspex-query WideWorldImporters sql/q.sql)",
+                "README.md:19: a haruspex-check block in the first haruspex-example block's outputs, with no project before it to have generated",
+                "README.md:15: a haruspex-example block with no output block after it",
+            ],
+            problems);
+    }
+
+    [Fact]
     public void An_example_is_paired_with_the_output_blocks_after_it()
     {
         const string markdown = """
@@ -280,8 +319,12 @@ public class WorkedExampleTests
     /// The example's project, read and inferred as the CLI does with no config file: every procedure of an example that stands
     /// alone, or, beside a corpus, the procedures the example defines.
     /// </summary>
-    private static IrDocument Infer(WorkedExample example) =>
-        example.Over is { } over ? InferOver(over, example.Sql) : InferProcedure.Infer("*.*", ("example.sql", example.Sql));
+    private static IrDocument Infer(WorkedExample example) => example switch
+    {
+        { Over: { } over, Query: { } path } => InferQueryOver(over, path, example.Sql),
+        { Over: { } over } => InferOver(over, example.Sql),
+        _ => InferProcedure.Infer("*.*", ("example.sql", example.Sql)),
+    };
 
     /// <summary>
     /// The example read in one folder with the scripts of the corpus named <paramref name="over"/>, as the corpus figures read
@@ -290,21 +333,40 @@ public class WorkedExampleTests
     /// </summary>
     private static IrDocument InferOver(string over, string sql)
     {
-        var corpus = SampleCorpus.All.Single(c => c.Name == over);
         using var folder = new TempDirectory();
-        foreach (var script in corpus.Scripts)
-        {
-            var copy = Path.Combine(folder.Path, script);
-            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            File.Copy(Path.Combine(corpus.ProjectFolder, script), copy);
-        }
-
+        CopyCorpus(over, folder.Path);
         var example = folder.File("example.sql", sql);
         var defined = SqlScriptFolder.Read(Path.GetDirectoryName(example)!, ["example.sql"]).Model.Procedures.Select(p => p.Name).ToList();
         var project = SqlProject.Load(folder.Path);
         var errors = project.Diagnostics.Where(d => d.IsError).ToList();
         Assert.True(errors.Count == 0, string.Join("\n", errors));
         return project.Infer(defined).Expected();
+    }
+
+    /// <summary>
+    /// The query file <paramref name="sql"/>, at <paramref name="path"/> in a folder whose <c>db</c> holds the scripts of the corpus
+    /// named <paramref name="over"/>, typed against the whole corpus as a config file in that folder naming it in <c>queries</c>
+    /// types it, and alone.
+    /// </summary>
+    private static IrDocument InferQueryOver(string over, string path, string sql)
+    {
+        using var folder = new TempDirectory();
+        CopyCorpus(over, Path.Combine(folder.Path, "db"));
+        // A fenced block ends before its last line break, and a saved file keeps it; the function sends the file's text as it is.
+        folder.File(path, sql + "\n");
+        return InferQuery.Module(folder.Path, Path.Combine(folder.Path, "db"), path, warningsAllowed: true);
+    }
+
+    /// <summary>Copies the scripts of the corpus named <paramref name="over"/> into <paramref name="folder"/>, keeping their paths.</summary>
+    private static void CopyCorpus(string over, string folder)
+    {
+        var corpus = SampleCorpus.All.Single(c => c.Name == over);
+        foreach (var script in corpus.Scripts)
+        {
+            var copy = Path.Combine(folder, script);
+            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+            File.Copy(Path.Combine(corpus.ProjectFolder, script), copy);
+        }
     }
 
     /// <summary>The database module's functions, written as <c>haruspex generate</c> writes them beside the Zod module.</summary>

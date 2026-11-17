@@ -5,6 +5,10 @@
   "runs": [
     { "name": "GetOrder, with lines", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 1 } },
     { "name": "GetOrder, with no lines", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 2 } },
-    { "name": "GetOrder, no such order", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 999 } }
+    { "name": "GetOrder, no such order", "procedure": "Website.GetOrder", "parameters": { "@OrderID": 999 } },
+
+    // The README's query file, through its generated function: a line with a brand and one without, then no lines.
+    { "name": "getOrderLines, with lines", "query": "sql/getOrderLines.sql", "parameters": { "@OrderID": 1 } },
+    { "name": "getOrderLines, no lines", "query": "sql/getOrderLines.sql", "parameters": { "@OrderID": 2 } }
   ]
 }

@@ -20,6 +20,7 @@ this way is in [the guide's chapter *Observing the engine*](../../docs/internals
 | `expected/` | What haruspex must produce: the reviewed snapshots. | the snapshot tests |
 | `seed.sql` | The rows inserted after the schema is deployed, chosen to reach every case the IR allows. | the differential tests |
 | `runs.json` | The calls the differential tests make, with their arguments. | the differential tests |
+| `sql/` | Query files, when the fixture has any: the application's own SQL, typed against `database/` as `"queries": "sql"` in a config file in the fixture's folder would type it, so each query's id is its path from there (`sql/getOrderLines.sql`). Only a deployed fixture may have them, and each must be run. | the differential tests, which call each through its generated function |
 
 The schema has a folder of its own so that haruspex reads exactly the database: the seed is SQL too, and haruspex reads
 every `.sql` file under the folder it is given. So the command line names `database/`:
@@ -73,7 +74,7 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 |---|---|
 | `seedReachesEveryEdge` | When `true`, the seed must reach every edge the IR claims: each bound, each full length, each value of a set (`The_seed_reaches_every_edge_the_ir_claims`). For the fixtures about scalar facts. Absent means `false`. |
 | `setups` | Named SQL to run before a call. A run with a setup writes, so it runs alone, in a session that is rolled back. `writes` (`SET NOCOUNT ON;`) changes nothing: it is how a run of a procedure that writes asks for that session. |
-| `runs` | Each call: a `name` unique in the file (the test shows it after the fixture's name, as in `orders: get_order, no such order`), the `procedure`, its `parameters` and a `setup`. |
+| `runs` | Each call: a `name` unique in the file (the test shows it after the fixture's name, as in `orders: get_order, no such order`), the `procedure`, its `parameters` and a `setup`. Or a call of a query file: its `name`, the `query` by its path, and its `parameters`, with no setup. |
 | `notRun` | Procedures deliberately not run, each with the reason (`Every_procedure_is_run_or_excluded_with_a_reason`). |
 
 **A parameter's type comes from the procedure.** The file gives each argument as JSON: a number, a string, `true` or
@@ -81,6 +82,12 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 `"…+05:30"`) and a GUID as a string. The reader converts it to what the procedure declares (`tinyint`, `bigint`,
 `date` and the rest), as an `EXEC` would, so the call sends the declared type without the file repeating it. A key, setup,
 procedure or parameter the reader doesn't know fails every run, rather than being ignored.
+
+**A query file's arguments are as its function takes them.** A query's parameter types are inferred, not declared in the
+database, so the reader has nothing to convert to: each value is given in the form the function's parameters' schema takes
+(a date as its ISO 8601 string), and passed to the generated function as it is (`GeneratedFunctionTests`). A run of a query file
+calls only that function, which checks what comes back with the query's schema; the procedures' check of every value against
+the IR, and of the seed's coverage, doesn't reach query files yet.
 
 ## Adding a fixture
 

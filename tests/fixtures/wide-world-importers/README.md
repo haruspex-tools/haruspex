@@ -10,11 +10,13 @@ script says where it comes from and what was left out to deploy it alone: defaul
 not here, indexes and descriptions. None of those changes what a query returns, and a test holds that: the README's example is
 inferred over the whole sample, and this fixture's snapshot must match it (`ShowcaseTests`).
 
-The procedure, `Website.GetOrder`, and the seed are the project's own; the rows are invented.
+The procedure, `Website.GetOrder`, the query file, `sql/getOrderLines.sql`, and the seed are the project's own; the rows are
+invented.
 
 | Object | Covers |
 |---|---|
 | `Website.GetOrder` | one order or none (`WITHOUT_ARRAY_WRAPPER` over a primary key); a nested object from a join; lines as an array, absent for an order with none; nullable columns left out of the JSON |
+| `sql/getOrderLines.sql` | a query file over the same tables: its parameter's type inferred from the column it is compared with; a nullable column as `null` in a row; an order with no lines. Its runs in `runs.json` call it through its generated function (`GeneratedFunctionTests`) |
 
 `Sales` is also the `orders` fixture's schema, and both deploy into one database, so `schemas.sql` creates it only when it
 isn't there.

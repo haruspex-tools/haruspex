@@ -19,6 +19,7 @@ internal sealed class Fixture
 {
     private readonly Lazy<SqlProject> project;
     private readonly Lazy<IrDocument> ir;
+    private readonly Lazy<IrDocument?> queryIr;
 
     /// <summary>The suffix of a committed IR snapshot, beside which is the Zod snapshot generated from it.</summary>
     private const string IrSnapshot = ".ir.verified.json";
@@ -32,6 +33,7 @@ internal sealed class Fixture
         Name = Path.GetFileName(folder);
         project = new(() => SqlProject.Load(Database, configRead?.OrDefault()?.Collation));
         ir = new(InferEveryProcedure);
+        queryIr = new(() => Queries is null ? null : InferQuery.Module(Folder, Database, QueryFolder));
         configRead = Config is { } config ? ConfigReader.Read(config) : null;
         IsProject = configRead?.OrDefault()?.Source is not null;
     }
@@ -67,6 +69,15 @@ internal sealed class Fixture
     public IEnumerable<(string Ir, string JsonSchema)> JsonSchemaSnapshots =>
         Snapshots.Select(s => (s.Ir, s.Ir[..^IrSnapshot.Length] + ".jsonschema.verified.json"));
 
+    /// <summary>
+    /// The folder of a deployed fixture's query files, relative to the fixture's folder: the application's own SQL, typed against
+    /// its database as <c>"queries": "sql"</c> in a config file there would type it.
+    /// </summary>
+    public const string QueryFolder = "sql";
+
+    /// <summary>The fixture's query files (<see cref="QueryFolder"/>), or null when it has none.</summary>
+    public string? Queries => Directory.Exists(Path.Combine(Folder, QueryFolder)) ? Path.Combine(Folder, QueryFolder) : null;
+
     /// <summary>The fixture's <c>haruspex.json</c>, or null when it has none.</summary>
     public string? Config => File.Exists(Path.Combine(Folder, HaruspexConfig.FileName)) ? Path.Combine(Folder, HaruspexConfig.FileName) : null;
 
@@ -93,6 +104,13 @@ internal sealed class Fixture
     /// results inference can't see, such as those of dynamic SQL). Fails when the database has diagnostics.
     /// </summary>
     public IrDocument Ir => ir.Value;
+
+    /// <summary>
+    /// The module of the fixture's query files, inferred once, with no procedure, so that a query's id and the path its function
+    /// names are relative to the fixture's folder (<c>sql/getOrderLines.sql</c>), as an application's are to its config file; null
+    /// when it has none. Fails when the database or a query file has a problem.
+    /// </summary>
+    public IrDocument? QueryIr => queryIr.Value;
 
     /// <summary>The fixture with this name.</summary>
     public static Fixture Named(string name) =>
@@ -133,6 +151,9 @@ internal sealed class Fixture
             missing.Add("seed.sql");
         if (!IsProject && Runs is null)
             missing.Add("runs.json");
+        // A query file is held to the server by its runs, so only a deployed fixture may have one; a project names its own.
+        if (Queries is not null && Seed is null)
+            throw new InvalidOperationException($"The fixture {Name} has query files in {QueryFolder}/ but isn't deployed, so they would never run.");
         if (IsProject && (Seed is not null || Runs is not null))
             throw new InvalidOperationException($"The fixture {Name} is a project for the CLI (its config file names a source), so it is not deployed: it has no seed.sql or runs.json.");
 

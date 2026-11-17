@@ -22,6 +22,9 @@ public static class Runs
     /// <summary>Every run, fixture by fixture, in the order of each file.</summary>
     public static IReadOnlyList<ProcedureRun> All { get; } = [.. Files.SelectMany(f => f.File.Runs)];
 
+    /// <summary>Every run of a fixture's query file, fixture by fixture, in the order of each file.</summary>
+    public static IReadOnlyList<QueryRun> Queries { get; } = [.. Files.SelectMany(f => f.File.QueryRuns)];
+
     /// <summary>Fixture procedures deliberately not run, each with the reason.</summary>
     public static IReadOnlyDictionary<string, string> NotRun { get; } =
         Files.SelectMany(f => f.File.NotRun).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);

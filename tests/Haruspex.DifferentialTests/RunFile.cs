@@ -6,13 +6,14 @@ using Haruspex.SqlServer.Sources;
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// A fixture's <c>runs.json</c>: the calls the differential tests make, the procedures they leave out with the reason, and
-/// whether the seed must reach every edge. The keys are described in <c>tests/fixtures/README.md</c>.
+/// A fixture's <c>runs.json</c>: the calls the differential tests make, of its procedures and its query files, the procedures
+/// they leave out with the reason, and whether the seed must reach every edge. The keys are described in <c>tests/fixtures/README.md</c>.
 /// </summary>
 /// <param name="SeedReachesEveryEdge">Whether the seed must reach every bound, full length and value of a set the IR claims.</param>
 /// <param name="Runs">The calls, in the order the file lists them.</param>
 /// <param name="NotRun">Procedures deliberately not run, each with the reason.</param>
-internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun)
+/// <param name="QueryRuns">The calls of the fixture's query files, in the order the file lists them among its runs.</param>
+internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun, IReadOnlyList<QueryRun> QueryRuns)
 {
     // The file allows comments and trailing commas, as haruspex.json and tsconfig.json do, so a run can say why it is there.
     private static readonly JsonDocumentOptions Options = new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
@@ -32,8 +33,15 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
         var model = SqlScriptFolder.Read(fixture.Database).Model;
 
         var runs = new List<ProcedureRun>();
+        var queryRuns = new List<QueryRun>();
         foreach (var run in root.GetProperty("runs").EnumerateArray())
         {
+            if (run.TryGetProperty("query", out _))
+            {
+                queryRuns.Add(ReadQueryRun(fixture, run, path));
+                continue;
+            }
+
             Known(run, path, "name", "procedure", "parameters", "setup");
             var name = run.GetProperty("name").GetString()!;
             var procedure = run.GetProperty("procedure").GetString()!;
@@ -64,7 +72,32 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             ? n.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
             : [];
         var edges = root.TryGetProperty("seedReachesEveryEdge", out var e) && e.GetBoolean();
-        return new RunFile(edges, runs, notRun);
+        return new RunFile(edges, runs, notRun, queryRuns);
+    }
+
+    /// <summary>
+    /// A run of a query file, which names the file by its path in the fixture's folder and its parameters by the names the file
+    /// uses. It has no setup: every run of a query file only reads.
+    /// </summary>
+    private static QueryRun ReadQueryRun(Fixture fixture, JsonElement run, string path)
+    {
+        Known(run, path, "name", "query", "parameters");
+        var name = run.GetProperty("name").GetString()!;
+        var id = run.GetProperty("query").GetString()!;
+        var query = fixture.QueryIr?.Objects.SingleOrDefault(o => o.Id == id)
+            ?? throw new InvalidOperationException($"{path}: {name} names the query file {id}, which the fixture's {Fixture.QueryFolder}/ doesn't hold.");
+        var parameters = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        if (run.TryGetProperty("parameters", out var given))
+        {
+            foreach (var parameter in given.EnumerateObject())
+            {
+                if (!query.Parameters.Any(p => p.Name == parameter.Name))
+                    throw new InvalidOperationException($"{path}: {id} has no parameter {parameter.Name}.");
+                parameters[parameter.Name] = parameter.Value.Clone();
+            }
+        }
+
+        return new QueryRun($"{fixture.Name}: {name}", fixture.Name, id, parameters);
     }
 
     private static void Known(JsonElement element, string path, params string[] keys)

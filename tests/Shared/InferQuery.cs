@@ -58,12 +58,25 @@ internal static class InferQuery
         dir.File("db/schema.sql", schema);
         foreach (var (path, sql) in queries)
             dir.File(path, sql);
-        dir.File(HaruspexConfig.FileName, "{ \"source\": \"db\", \"out\": \"out\", \"queries\": \"sql\" }");
-        var config = ConfigReader.Read(Path.Combine(dir.Path, HaruspexConfig.FileName), new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved)).Expected();
+        return Module(dir.Path, Path.Combine(dir.Path, "db"), "sql");
+    }
+
+    /// <summary>
+    /// The module of the query files that <paramref name="queries"/> selects (a folder, file or pattern, as in <c>queries</c>)
+    /// in <paramref name="folder"/>, read against the scripts in <paramref name="database"/>, as <c>haruspex generate</c> makes it
+    /// with a config file in <paramref name="folder"/> naming them: so each query's id, and the path its function's errors and
+    /// comments name, is relative to <paramref name="folder"/>. Only the query files are inferred. The test fails on any problem,
+    /// or with <paramref name="warningsAllowed"/> on any error: a vendored corpus warns of constructs it uses that haruspex doesn't read.
+    /// </summary>
+    public static IrDocument Module(string folder, string database, string queries, bool warningsAllowed = false)
+    {
+        var text = "{ \"queries\": " + System.Text.Json.JsonSerializer.Serialize(queries) + " }";
+        var config = ConfigReader.Read(System.Text.Encoding.UTF8.GetBytes(text), Path.Combine(folder, HaruspexConfig.FileName), folder, new ReservedWords(TypeScriptNames.Language, TypeScriptNames.IsReserved)).Expected();
         var files = QuerySelection.Select(config).Expected().Select(f => QueryFileReader.Read(f.Path, f.Relative).Expected()).ToList();
-        var project = SqlProject.Load(Path.Combine(dir.Path, "db"));
-        Assert.True(project.Diagnostics.Count == 0, string.Join("\n", project.Diagnostics));
-        return project.WithQueries(dir.Path, files).Infer([], config).Expected();
+        var project = SqlProject.Load(database);
+        var problems = project.Diagnostics.Where(d => d.IsError || !warningsAllowed).ToList();
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+        return project.WithQueries(folder, files).Infer([], config).Expected();
     }
 
     /// <summary>The query's one object.</summary>

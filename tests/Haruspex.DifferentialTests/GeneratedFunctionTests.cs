@@ -41,6 +41,44 @@ public class GeneratedFunctionTests(SqlServerFixture server)
         Assert.True(failed.Count == 0, string.Join("\n", failed));
     }
 
+    /// <summary>The deployed fixtures that hold query files.</summary>
+    public static TheoryData<string> QueryFixtures { get; } = [.. Runs.Fixtures.Where(f => Fixture.Named(f).QueryIr is not null)];
+
+    /// <summary>
+    /// Every run of a fixture's query file calls its function, which sends the file's text through <c>sp_executesql</c> and
+    /// checks what comes back with the query's schema: a <c>ResultError</c> is a claim the server broke. The runs only read, so
+    /// a fixture's are made in one transaction.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(QueryFixtures))]
+    public async Task Every_run_of_a_query_file_returns_through_its_generated_function(string fixture)
+    {
+        var document = Fixture.Named(fixture).QueryIr!;
+        var calls = Runs.Queries
+            .Where(r => r.Fixture == fixture)
+            .Select(r => new GeneratedFunctions.Call(
+                r.Name,
+                MssqlEmitter.FunctionName(document.Objects.Single(o => o.Id == r.Query).Name),
+                r.Parameters.ToDictionary(p => p.Key.TrimStart('@'), p => (object?)p.Value)))
+            .ToList();
+
+        var responses = await GeneratedFunctions.RunAsync(server, document, [], calls, TestContext.Current.CancellationToken);
+
+        var failed = responses.Where(r => r.Error is not null).Select(r => $"{r.Name}: {r.Error!.Name}: {r.Error.Message}").ToList();
+        Assert.True(failed.Count == 0, string.Join("\n", failed));
+    }
+
+    [Theory]
+    [MemberData(nameof(QueryFixtures))]
+    public void Every_query_file_of_a_fixture_is_run(string fixture)
+    {
+        var run = Runs.Queries.Where(r => r.Fixture == fixture).Select(r => r.Query).ToHashSet(StringComparer.Ordinal);
+
+        var notRun = Fixture.Named(fixture).QueryIr!.Objects.Select(o => o.Id).Where(q => !run.Contains(q)).ToList();
+
+        Assert.True(notRun.Count == 0, "No run in runs.json calls these query files: " + string.Join(", ", notRun));
+    }
+
     private static GeneratedFunctions.Call Call(IrObject procedure, ProcedureRun run) =>
         new(
             run.Name,
