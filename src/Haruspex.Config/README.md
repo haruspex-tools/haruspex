@@ -66,9 +66,10 @@ read. Inference keys each type by its identity (the object and the path that own
 breaking clashes with numbers, which would make names depend on which other objects exist.
 
 **Why a clash's hint is built and checked.** A clash is an error the reader resolves in the config, so its hint must work.
-For two procedures of one schema, `ReplacementHint` builds the `replace` rule from where the two names differ, after the
-rules already written (`order$lines` against `order#lines`: `{ "pattern": "#", "with": "_hash_" }`), runs the rules with it
-added to check that it parts them, and otherwise says why no single rule can. A fixed example rule matched neither name of
+For procedures of one schema, the clash names every one that would take the name, and `ReplacementHint` builds the `replace`
+rule from the runs of separators in their names, after the rules already written (`order$lines` against `order#lines`:
+`{ "pattern": "#", "with": "_hash_" }`). It suggests a rule only once the rules with it added part them all and give no other
+name of the module one it didn't have before, and otherwise says why no single rule can. A fixed example rule matched neither name of
 the clash a real application met.
 
 **Why overrides come before naming.** A path override is written in terms of the shape, which doesn't depend on names,

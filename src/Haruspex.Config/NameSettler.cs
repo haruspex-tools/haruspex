@@ -69,11 +69,15 @@ internal sealed class NameSettler(
 
     private readonly HashSet<string> reportedClashes = new(StringComparer.Ordinal);
 
+    /// <summary>Every object's id, procedures and query files, for a clash to find each that would take its name.</summary>
+    private readonly List<string> ids = [];
+
     /// <summary>The document with every name settled, or null when a name could not be (the problems say why).</summary>
     public IrDocument? Settle(IrDocument document, IReadOnlyList<IrResult>?[] results)
     {
         var errors = problems.Count(p => p.IsError);
         queries.UnionWith(document.Objects.Where(o => o.Kind == IrObjectKind.Query).Select(o => o.Id));
+        ids.AddRange(document.Objects.Select(o => o.Id).Order(StringComparer.Ordinal));
         var objects = new List<IrObject>();
         var ordered = document.Objects.Select((o, i) => (Object: o, Results: results[i])).OrderBy(o => o.Object.Id, StringComparer.Ordinal).ToList();
         var settledNames = new List<(IrObject Object, IReadOnlyList<IrResult>? Results, string Name)>();
@@ -305,15 +309,32 @@ internal sealed class NameSettler(
         if (!reportedClashes.Add(name))
             return;
 
+        var schema = TrySplit(first.Owner, out var a, out _) ? a : "";
         var sameSchema = !IsQuery(first.Owner) && !IsQuery(second.Owner)
-            && TrySplit(first.Owner, out var a, out _) && TrySplit(second.Owner, out var b, out _) && string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            && TrySplit(second.Owner, out var b, out _) && string.Equals(schema, b, StringComparison.OrdinalIgnoreCase);
+
+        // Two procedures of one schema: every procedure of it that would take the name is named, since a third would still
+        // clash once two were parted.
+        var procedures = sameSchema && !first.IsType && !second.IsType ? Alike(name, schema) : null;
         var ways = IsQuery(first.Owner) || IsQuery(second.Owner) ? Ways(first, second)
-            : sameSchema && !first.IsType && !second.IsType ? Replacing(first.Owner, second.Owner)
+            : procedures is not null ? Replacing(schema, procedures)
             : SqlNames(first, second, sameSchema);
+        var named = procedures is { Count: > 2 }
+            ? "would name " + string.Join(", ", procedures.SkipLast(1).Select(Described)) + " and " + Described(procedures[^1])
+            : $"would name both {first.Description} and {second.Description}";
         var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
         problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)second.At ?? (DiagnosticLocation?)first.At ?? config.Location,
-            $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
+            $"\"{name}\" {named}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
     }
+
+    /// <summary>A procedure's or query file's name, given or generated, without reporting anything about it; null when it has none.</summary>
+    private string? NameOf(string id) => procedureNames.TryGetValue(id, out var given) ? given.Name : Generated(id, out _);
+
+    private bool InSchema(string id, string schema) =>
+        !IsQuery(id) && TrySplit(id, out var its, out _) && string.Equals(its, schema, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Every procedure of <paramref name="schema"/> that would take <paramref name="name"/>, by id.</summary>
+    private List<string> Alike(string name, string schema) => [.. ids.Where(id => InSchema(id, schema) && NameOf(id) == name)];
 
     /// <summary>
     /// The ways to part two names from SQL that aren't two procedures of one schema: a prefix for two schemas, and an override.
@@ -332,16 +353,29 @@ internal sealed class NameSettler(
     /// to part them, and an override; or the override alone, saying why no single rule can (<see cref="ReplacementHint"/>). A
     /// rule goes after the schema's own, when it has some, which is where it was checked.
     /// </summary>
-    private List<string> Replacing(string first, string second)
+    private List<string> Replacing(string schema, List<string> procedures)
     {
         const string Override = "give one of them its own name with a \"name\" override in \"procedures\"";
-        TrySplit(first, out var schema, out var one);
-        TrySplit(second, out _, out var other);
-        if (ReplacementHint.For(config.NamingFor(schema), config.Reserved, one, other, out var whyNot) is not { } suggestion)
+
+        // What the rules name, and so what a rule renames: the schema's procedures without a name override. The rest keep
+        // their names, which a rule must not give one of these.
+        bool ByRules(string id) => InSchema(id, schema) && !procedureNames.ContainsKey(id);
+        var clashing = procedures.Where(ByRules).ToList();
+        if (clashing.Count == 0)
+            return [Override];
+        var taken = ids.Where(id => !ByRules(id)).Select(NameOf).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        if (ReplacementHint.For(config.NamingFor(schema), config.Reserved, [.. clashing.Select(Within)], [.. ids.Where(id => ByRules(id) && !clashing.Contains(id)).Select(Within)], taken, out var whyNot)
+            is not { } suggestion)
+        {
             return [$"{Override} ({whyNot})"];
+        }
+
         var to = config.Schema(schema)?.Naming?.Replace is { Count: > 0 } ? $"add a \"replace\" rule to the \"naming\" of schemas.{schema}" : "add a naming \"replace\" rule";
-        return [$"{to} for where their names differ {suggestion.Where}, such as {suggestion.Rule} with a word of your own for \"{suggestion.Word}\"", Override];
+        return [$"{to} for {suggestion.Where}, such as {suggestion.Rule} with a word of your own for \"{suggestion.Word}\"", Override];
     }
+
+    /// <summary>A procedure's name within its schema.</summary>
+    private static string Within(string id) => TrySplit(id, out _, out var name) ? name : id;
 
     /// <summary>
     /// The ways to part a query file's name from another's: a query file is named by its file, which is renamed, and a procedure

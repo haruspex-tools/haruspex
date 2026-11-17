@@ -84,34 +84,48 @@ public partial class ConfigApplicationTests
     }
 
     [Theory]
-    [InlineData("order$lines", "order#lines", "(\"#\" against \"$\")", "{ \"pattern\": \"#\", \"with\": \"_hash_\" }")]
-    [InlineData("order_lines", "order__lines", "(\"__\" against \"_\")", "{ \"pattern\": \"__\", \"with\": \"_underscore_underscore_\" }")]
-    [InlineData("order-lines", "order lines", "(\" \" against \"-\")", "{ \"pattern\": \" \", \"with\": \"_space_\" }")]
-    [InlineData("order$lines", "order^lines", "(\"$\" against \"^\")", "{ \"pattern\": \"\\\\$\", \"with\": \"_dollar_\" }")]
-    public void A_clash_s_hint_is_a_rule_built_from_where_the_names_differ_and_the_rule_resolves_it(string one, string other, string where, string rule)
+    [InlineData("order$lines|order#lines", "where their names differ (\"#\" against \"$\")", "{ \"pattern\": \"#\", \"with\": \"_hash_\" }")]
+    [InlineData("order_lines|order__lines", "where their names differ (\"__\" against \"_\")", "{ \"pattern\": \"__\", \"with\": \"_underscore_underscore_\" }")]
+    [InlineData("order-lines|order lines", "where their names differ (\" \" against \"-\")", "{ \"pattern\": \" \", \"with\": \"_space_\" }")]
+    [InlineData("order$lines|order^lines", "where their names differ (\"$\" against \"^\")", "{ \"pattern\": \"\\\\$\", \"with\": \"_dollar_\" }")]
+    [InlineData("x$y#z|x#y$z", "the \"#\" in their names", "{ \"pattern\": \"#\", \"with\": \"_hash_\" }")]
+    [InlineData("order$line$item|order#line#item", "the \"#\" in their names", "{ \"pattern\": \"#\", \"with\": \"_hash_\" }")]
+    [InlineData("a#b|a$b|a_hash_b", "where their names differ (\"#\" against \"$\")", "{ \"pattern\": \"#\", \"with\": \"_hash2_\" }")]
+    public void A_clash_s_hint_is_a_rule_built_from_the_names_and_the_rule_resolves_it(string names, string where, string rule)
     {
-        // Two names one case style makes the same, which differ only in characters it drops. The rule the hint suggests
-        // replaces the one side's characters with a word, and applied to the config it removes the clash.
-        var procedures = $"CREATE PROCEDURE [dbo].[{one}] AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[{other}] AS SELECT 2 AS a;\nGO\n";
+        // Names one case style makes the same, which differ only in characters it drops. The rule the hint suggests replaces a
+        // run of them with a word, and applied to the config it removes the clash. Where they differ in several places, a rule
+        // for a run both have still parts them; where the word would make another procedure's name (a_hash_b), it is numbered.
+        var procedures = string.Concat(names.Split('|').Select((n, i) => $"CREATE PROCEDURE [dbo].[{n}] AS SELECT {i} AS a;\nGO\n"));
 
         var error = Apply(procedures, "{}").Error;
-        Assert.Contains($"add a naming \"replace\" rule for where their names differ {where}, such as {rule} with a word of your own for ", error, StringComparison.Ordinal);
+        Assert.Contains($"add a naming \"replace\" rule for {where}, such as {rule} with a word of your own for ", error, StringComparison.Ordinal);
 
         var suggested = System.Text.RegularExpressions.Regex.Match(error, @"such as (\{ ""pattern"": "".*?"", ""with"": "".*?"" \})").Groups[1].Value;
         var resolved = Apply(procedures, $$"""{ "naming": { "replace": [{{suggested}}] } }""");
         Assert.Empty(resolved.Problems);
-        Assert.Equal(2, resolved.Document.Objects.Select(o => o.Name).Distinct().Count());
+        Assert.Equal(names.Split('|').Length, resolved.Document.Objects.Select(o => o.Name).Distinct().Count());
+    }
+
+    [Fact]
+    public void A_clash_of_three_procedures_names_each_and_suggests_no_rule_that_parts_only_two()
+    {
+        // A rule for any one of the three characters leaves the other two clashing.
+        var error = Apply("CREATE PROCEDURE [dbo].[ord$lines] AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[ord#lines] AS SELECT 2 AS a;\nGO\nCREATE PROCEDURE [dbo].[ord%lines] AS SELECT 3 AS a;\nGO\n", "{}").Error;
+
+        Assert.Contains("\"OrdLines\" would name the procedure dbo.ord#lines, the procedure dbo.ord$lines and the procedure dbo.ord%lines.", error, StringComparison.Ordinal);
+        Assert.EndsWith("give one of them its own name with a \"name\" override in \"procedures\" (no single \"replace\" rule tells \"ord#lines\", \"ord$lines\" and \"ord%lines\" apart without another name clashing).", error, StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_clash_s_hint_goes_to_the_schema_s_own_rules_when_it_has_some_and_resolves_it_there()
     {
-        // A rule added after the schema's own runs on what they leave: here "order lines" against "order#lines".
+        // A rule added after the schema's own runs on what they leave: here "order-lines" against "order#lines".
         const string Procedures = "CREATE PROCEDURE [dbo].[order$lines] AS SELECT 1 AS a;\nGO\nCREATE PROCEDURE [dbo].[order#lines] AS SELECT 2 AS a;\nGO\n";
-        const string Own = """{ "pattern": "\\$", "with": " " }""";
+        const string Own = """{ "pattern": "\\$", "with": "-" }""";
 
         var error = Apply(Procedures, $$"""{ "schemas": { "dbo": { "include": ["*"], "naming": { "replace": [{{Own}}] } } } }""").Error;
-        Assert.Contains("add a \"replace\" rule to the \"naming\" of schemas.dbo for where their names differ (\"#\" against \" \"), such as { \"pattern\": \"#\", \"with\": \"_hash_\" }", error, StringComparison.Ordinal);
+        Assert.Contains("add a \"replace\" rule to the \"naming\" of schemas.dbo for where their names differ (\"#\" against \"-\"), such as { \"pattern\": \"#\", \"with\": \"_hash_\" }", error, StringComparison.Ordinal);
 
         var resolved = Apply(Procedures, $$"""{ "schemas": { "dbo": { "include": ["*"], "naming": { "replace": [{{Own}}, { "pattern": "#", "with": "_hash_" }] } } } }""");
         Assert.Equal(["OrderHashLines", "OrderLines"], resolved.Document.Objects.Select(o => o.Name));
