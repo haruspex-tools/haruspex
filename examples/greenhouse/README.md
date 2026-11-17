@@ -37,8 +37,8 @@ What to look at:
   `Date | null`.
 - `src/watering.ts` is the step where the database's shape becomes the application's
   ([the application's own types](../../docs/layers.md)): `toPlant` turns the row `getPlant` returns into a `Plant` whose
-  `history` is never absent and whose amounts are `Litres`, and the type it takes accounts for every key of the row, so a
-  column the procedure gains is a compile error there.
+  `history` is never absent and whose amounts are `Litres`, and the type it takes accounts for every key of the row, so once the
+  module is regenerated, a column the procedure gains is a compile error there.
 - `kind` is limited by a CHECK constraint, but it is an `nvarchar` column, which the database compares under its collation:
   where `HERB` can pass a check for `herb`, the value that arrives may be either, so the module notes the values rather
   than claiming an enum. [The configuration](../../docs/configuration.md#the-databases-collation-collation) says when a set

@@ -308,8 +308,8 @@ alone:
   parameters, run it through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
   the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
 - `"mapping"`: `haruspex.mapping.ts`, TypeScript types with which the application's own mapper accounts for every key of a
-  generated row, using it or ignoring it with a reason, so that a key the row gains, at any depth, is a compile error in the
-  mapper ([the layers](layers.md#a-mapper-that-accounts-for-every-key),
+  generated row, using it or ignoring it with a reason, so that once the module is regenerated, a key the row gains, at any
+  depth, is a compile error in the mapper ([the layers](layers.md#a-mapper-that-accounts-for-every-key),
   [decision 0066](decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)). It is types only, the same for every
   module, and works on the types `haruspex.zod.ts` declares, so `"mapping"` needs `"zod"` beside it.
 

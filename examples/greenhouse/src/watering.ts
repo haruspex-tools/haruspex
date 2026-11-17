@@ -22,7 +22,7 @@ export interface Plant {
   readonly history: readonly Watering[]
 }
 
-/** What toPlant does with each key of garden.get_plant's row. A key the procedure gains stops the build here. */
+/** What toPlant does with each key of garden.get_plant's row; once the module is regenerated, a key the procedure gains stops the build here. */
 type PlantRow = Exhaustive<GetPlantRow, {
   id: 'used'
   name: 'used'
