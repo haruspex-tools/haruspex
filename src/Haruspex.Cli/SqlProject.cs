@@ -130,6 +130,22 @@ internal sealed class SqlProject
     public string FolderOf(string file) => folderOf(file);
 
     /// <summary>
+    /// Where a null reason points, as a place in the SQL: the reason's own place (<c>path:line:column</c>), or, for a column
+    /// declared nullable (<c>schema.table.column</c>), where the project declares that column. Null for anything else, such as
+    /// a column of a table the project doesn't define.
+    /// </summary>
+    /// <param name="at">The reason's <c>at</c>.</param>
+    public SourceLocation? PlaceOf(string at)
+    {
+        ArgumentNullException.ThrowIfNull(at);
+        if (SourceLocation.TryParse(at, out var place))
+            return place;
+        return model.Tables
+            .SelectMany(t => t.Columns.Select(c => (Name: $"{t.Name}.{c.Name}", c.At)))
+            .FirstOrDefault(c => c.Name.Equals(at, StringComparison.OrdinalIgnoreCase)).At;
+    }
+
+    /// <summary>
     /// The IR's source record with the package and its references, by file name and SHA-256: the IR knows nothing of DACPACs,
     /// so the composition, which knows both, says what was read.
     /// </summary>

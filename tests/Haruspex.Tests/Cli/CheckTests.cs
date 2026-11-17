@@ -297,4 +297,18 @@ public class CheckTests
         using var copy = Generated();
         Assert.Equal(0, Run(copy, "check").ExitCode);
     }
+
+    [Fact]
+    public void A_value_made_nullable_by_an_outer_join_is_placed_at_the_table_on_its_optional_side()
+    {
+        const string Lines = "CREATE TABLE shop.lines (order_id int NOT NULL, sku varchar(10) NOT NULL);";
+        const string Joined = "CREATE PROCEDURE shop.list_skus AS\nSELECT o.order_id, l.sku\nFROM shop.orders AS o\nJOIN shop.lines AS l ON l.order_id = o.order_id;";
+        using var folder = Generated(Joined, Tables + "\nGO\n" + Lines);
+        folder.File("db/procedures.sql", Joined.Replace("JOIN shop.lines", "LEFT JOIN shop.lines", StringComparison.Ordinal));
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("db/procedures.sql:4:11: error HAR6014: shop.list_skus results[0][].sku: became nullable", error, StringComparison.Ordinal);
+    }
 }

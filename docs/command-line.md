@@ -75,7 +75,8 @@ haruspex: 1 error; nothing was written.
 
 **`check`** says the same, but writes nothing and compares with the files in the output folder: in CI, the ones committed. When it passes it is one line:
 `haruspex: 3 procedures, 2 unknowns (--verbose lists them). src/db is up to date.` When it fails, each change is an error at
-its procedure (HAR6014), and the closing line says what to do. A check that fails on unknowns
+its procedure (HAR6014), or, for a value that became nullable, at its new reason's place (the column declared nullable, the
+outer join), and the closing line says what to do. A check that fails on unknowns
 (`"check": { "unknowns": "fail" }`) lists them without being asked.
 
 **`--verbose`** adds every note to the default, each unknown grouped under the procedure or query file it is in:

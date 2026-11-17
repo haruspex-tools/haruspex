@@ -295,12 +295,14 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 ```
 
 ```text haruspex-check
-db/project.sql:7:1: error HAR6014: lib.list_books results[0][].title: became nullable
+db/project.sql:4:5: error HAR6014: lib.list_books results[0][].title: became nullable
 db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost"
 haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
 
-Two changes, each where an application reading `list_books` will meet it, and nothing about the comment. The exit code is 1,
+Two changes, each where an application reading `list_books` will meet it, and nothing about the comment. A value that became
+nullable is placed where its new reason is, here the column's declaration in the table; a change the IR records no place for,
+such as a value set that grew, is placed at the procedure. The exit code is 1,
 which fails the build. If the change is meant, `generate` writes the new module and the applications that compile against it
 see the change in their own build; if not, the SQL goes back. That is consumer-driven contract testing, as Pact does for HTTP
 services: the committed module is the contract, and the database's build checks that it still holds.

@@ -194,7 +194,7 @@ public static class IrComparison
                 case IrRecord record:
                     var values = (IrRecord)now;
                     IrPathSegment[] inside = [.. path, new IrPathValues()];
-                    Nullability(inside, record.ValuesNullable, values.ValuesNullable);
+                    Nullability(inside, record.ValuesNullableBecause, values.ValuesNullableBecause);
                     Type(inside, record.Values, values.Values);
                     break;
                 case IrUnion union:
@@ -290,7 +290,7 @@ public static class IrComparison
             IrPathSegment[] items = [.. path, new IrPathItems()];
             if ((was.MinItems, was.MaxItems) != (now.MinItems, now.MaxItems))
                 Add(IrChangeKind.ItemsBoundsChanged, path, IrClaimText.Items(was.MinItems, was.MaxItems), IrClaimText.Items(now.MinItems, now.MaxItems));
-            Nullability(items, was.ItemsNullable, now.ItemsNullable);
+            Nullability(items, was.ItemsNullableBecause, now.ItemsNullableBecause);
             Type(items, was.Items, now.Items);
         }
 
@@ -305,7 +305,7 @@ public static class IrComparison
             for (var i = 0; i < was.Items.Count; i++)
             {
                 IrPathSegment[] element = [.. path, new IrPathIndex(i)];
-                Nullability(element, was.Items[i].Nullable, now.Items[i].Nullable);
+                Nullability(element, was.Items[i].NullableBecause, now.Items[i].NullableBecause);
                 Type(element, was.Items[i].Type, now.Items[i].Type);
             }
         }
@@ -339,7 +339,7 @@ public static class IrComparison
 
             void Field(IrPathSegment[] field, IrField before, IrField after)
             {
-                Nullability(field, before.Nullable, after.Nullable);
+                Nullability(field, before.NullableBecause, after.NullableBecause);
                 if (before.Presence != after.Presence)
                     Add(IrChangeKind.PresenceChanged, field, IrWireNames.Of(before.Presence), IrWireNames.Of(after.Presence));
                 Type(field, before.Type, after.Type);
@@ -377,10 +377,13 @@ public static class IrComparison
                 compare([.. path, new IrPathKey(name(member))], member, later[name(member)]);
         }
 
-        private void Nullability(IrPathSegment[] path, bool was, bool now)
+        /// <summary>A value that became nullable, with the reasons it now may be; or one that became non-null.</summary>
+        private void Nullability(IrPathSegment[] path, EquatableArray<IrNullReason> was, EquatableArray<IrNullReason> now)
         {
-            if (was != now)
-                Add(now ? IrChangeKind.BecameNullable : IrChangeKind.BecameNonNull, path);
+            if (was.Count == 0 && now.Count > 0)
+                changes.Add(new IrChange(IrChangeKind.BecameNullable, id, IrPath.Render(path)) { NullableBecause = now });
+            else if (was.Count > 0 && now.Count == 0)
+                Add(IrChangeKind.BecameNonNull, path);
         }
 
         private void Add(IrChangeKind kind, IrPathSegment[] path, string? before = null, string? after = null) =>

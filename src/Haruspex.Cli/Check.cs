@@ -79,7 +79,7 @@ internal static class Check
     {
         var changes = IrComparison.Compare(committed, module.Document);
         if (changes.Count > 0)
-            return changes.Select(change => At(module, Object(change, committed, module.Document), CliCodes.ClaimChanged, change.ToString()));
+            return changes.Select(change => Placed(module, change, Object(change, committed, module.Document)));
 
         return
         [
@@ -159,6 +159,16 @@ internal static class Check
     /// <summary>The object a change is in: the module's, or the earlier one's for an object the module no longer has; null for the document's own.</summary>
     private static IrObject? Object(IrChange change, IrDocument committed, IrDocument document) =>
         document.Objects.FirstOrDefault(o => o.Id == change.Object) ?? committed.Objects.FirstOrDefault(o => o.Id == change.Object);
+
+    /// <summary>
+    /// A change of claim, at the place in the SQL it comes from when the IR says: for a value that became nullable, the first of
+    /// its reasons that has a place (the column declared nullable, the outer join, the expression that may give null).
+    /// Otherwise at its object, since the IR records no place for a field's own definition, nor for a value that is gone.
+    /// </summary>
+    private static Diagnostic Placed(EmittedModule module, IrChange change, IrObject? obj) =>
+        change.NullableBecause.Select(r => module.Project.PlaceOf(r.At)).FirstOrDefault(at => at is not null) is { } reason
+            ? ModuleRun.Rooted(CliCodes.ClaimChanged.At(reason, change.ToString()), module.Project)
+            : At(module, obj, CliCodes.ClaimChanged, change.ToString());
 
     /// <summary>A diagnostic at the object's place in the SQL, under the folder it was read from; with no place when there is none.</summary>
     private static Diagnostic At(EmittedModule module, IrObject? obj, DiagnosticCode code, string message) =>

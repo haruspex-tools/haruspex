@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Ir;
 
 /// <summary>
@@ -16,6 +18,13 @@ namespace Haruspex.Ir;
 /// <param name="After">The claim in the later document, in words, when the kind needs it; null otherwise.</param>
 public readonly record struct IrChange(IrChangeKind Kind, string Object, string Path, string? Before = null, string? After = null)
 {
+    /// <summary>
+    /// For a value that became nullable, the reasons the later document gives it, each with its place: where in the source the
+    /// change comes from, which a report can point at rather than at the object. Empty for every other kind of change, whose
+    /// place the IR doesn't record (a field's own definition has no location).
+    /// </summary>
+    public EquatableArray<IrNullReason> NullableBecause { get; init; } = [];
+
     /// <summary>What changed, as a phrase that follows the place: <c>became nullable</c>, <c>type changed from string to number</c>.</summary>
     public string Description => Kind switch
     {

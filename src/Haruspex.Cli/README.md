@@ -96,10 +96,11 @@ naming its config file, and the run ends with one line saying which failed; its 
 source, `--include` and `--out` are one module's, so they can't be given with several, and two modules may not share an
 `out`. With one config file, nothing is added to what a run prints.
 
-A check that fails says what changed, one line for each change, at the procedure it is in:
+A check that fails says what changed, one line for each change, at the procedure it is in, or, for a value that became
+nullable, where its new reason is (here the column's declaration):
 
 ```text
-db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].customer: became nullable
+db/tables.sql:3:5: error HAR6014: shop.list_orders results[0][].customer: became nullable
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
 haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```

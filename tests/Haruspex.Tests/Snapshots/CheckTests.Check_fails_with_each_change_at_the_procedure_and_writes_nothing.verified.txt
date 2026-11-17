@@ -1,3 +1,3 @@
-db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].customer: became nullable
+db/tables.sql:3:5: error HAR6014: shop.list_orders results[0][].customer: became nullable
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
 haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
