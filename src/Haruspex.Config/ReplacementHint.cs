@@ -177,7 +177,10 @@ internal static class ReplacementHint
 
     private static string Quoted(string text) => "\"" + text + "\"";
 
-    private static string Json(string text) => JsonSerializer.Serialize(text, JsonOptions);
-
-    private static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    /// <summary>
+    /// <paramref name="text"/> as a JSON string, to copy into the config file: escaped as JSON needs, and other characters as they
+    /// are (the relaxed encoder), as <c>JsonSerializer</c> wrote it with that encoder. <c>JsonEncodedText</c> needs no reflection,
+    /// which <c>JsonSerializer</c> does without a source-generated context, and Native AOT refuses (NativeAotTests).
+    /// </summary>
+    internal static string Json(string text) => $"\"{JsonEncodedText.Encode(text, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}\"";
 }
