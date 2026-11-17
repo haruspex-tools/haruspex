@@ -201,6 +201,18 @@ public class OutputTests
         Assert.DoesNotContain("\e]8;;", printed, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void An_earlier_ir_that_isn_t_json_is_said_by_where_the_parser_stopped_and_no_more()
+    {
+        using var folder = Kennel(Known);
+        folder.File("src/db/haruspex.ir.json", "{ \"irVersion\": ");
+
+        var printed = Printed(folder, null, "generate");
+
+        Assert.Contains("\nNothing to compare with: the earlier haruspex.ir.json can't be read as IR ($ is not JSON at line 1", printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("BytePositionInLine", printed, StringComparison.Ordinal);
+    }
+
     private const string FindDogsWarning = "haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n";
 
     /// <summary>The kennel without the procedure whose results only a declaration can give, which a check doesn't pass.</summary>

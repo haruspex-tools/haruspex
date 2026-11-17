@@ -50,8 +50,8 @@ internal static class CliCodes
     /// <summary>The IR in the output folder is of a version this haruspex doesn't read, so no claim can be compared.</summary>
     public static DiagnosticCode CommittedOtherVersion { get; } = new(6012, DiagnosticSeverity.Error, "The IR in the output folder is of another version");
 
-    /// <summary>The IR in the output folder can't be read: not JSON, or not an IR document.</summary>
-    public static DiagnosticCode CommittedUnreadable { get; } = new(6013, DiagnosticSeverity.Error, "The IR in the output folder can't be read");
+    /// <summary>A file in the output folder can't be read: the IR isn't JSON, or isn't an IR document, or a file can't be read at all.</summary>
+    public static DiagnosticCode CommittedUnreadable { get; } = new(6013, DiagnosticSeverity.Error, "A file in the output folder can't be read");
 
     /// <summary>What the module claims would change: one diagnostic per change, at the procedure.</summary>
     public static DiagnosticCode ClaimChanged { get; } = new(6014, DiagnosticSeverity.Error, "What the module claims would change");

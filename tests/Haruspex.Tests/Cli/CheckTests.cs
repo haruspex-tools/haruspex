@@ -273,4 +273,28 @@ public class CheckTests
         Assert.Equal(1, Run(folder, "check", "db", "--include", "shop.list_*", "--out", "elsewhere").ExitCode);
         Assert.Equal(2, Run(folder, "check", "db", "--include", "a.b.c").ExitCode);
     }
+
+    [Fact]
+    public void A_file_in_the_output_folder_that_can_t_be_read_fails_the_check_naming_that_file()
+    {
+        using var folder = Generated();
+        var module = Path.Combine(folder.Path, "generated", "haruspex.zod.ts");
+
+        // Held open with no sharing, the file is there but can't be read, on every platform and whoever runs the test.
+        using (new FileStream(module, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            var (exitCode, _, error) = Run(folder, "check");
+            var (_, output, problems) = Run(folder, "generate");
+
+            Assert.Equal(1, exitCode);
+            Assert.StartsWith("generated/haruspex.zod.ts: error HAR6013: this file can't be read: ", error.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+
+            // Elsewhere generate says it can't compare and why, naming the file it couldn't read; on Windows, where a file held so
+            // can't be replaced either, it says it can't write that file.
+            Assert.Contains(OperatingSystem.IsWindows() ? "haruspex.zod.ts" : "Nothing to compare with: the earlier haruspex.zod.ts can't be read (", output + problems, StringComparison.Ordinal);
+        }
+
+        using var copy = Generated();
+        Assert.Equal(0, Run(copy, "check").ExitCode);
+    }
 }

@@ -61,6 +61,8 @@ internal abstract class SinceLastRun
     public static SinceLastRun Of(EarlierOutput earlier, EmittedModule module, EquatableArray<NotedUnknown> unknowns)
     {
         var name = Path.GetFileName(module.IrPath);
+        if (earlier.Unreadable.FirstOrDefault() is { Key: { } file, Value: var problem })
+            return new NotCompared($"the earlier {Path.GetFileName(file)} can't be read ({problem.TrimEnd('.')})");
         return earlier.Ir switch
         {
             EarlierIr.Absent => new FirstRun(),

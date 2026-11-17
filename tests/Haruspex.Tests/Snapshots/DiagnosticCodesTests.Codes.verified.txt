@@ -126,7 +126,7 @@ HAR6009 W References with a folder of scripts [Haruspex.Cli.CliCodes.ReferencesU
 HAR6010 W A collation the package records otherwise [Haruspex.Cli.CliCodes.CollationOverruled]
 HAR6011 E Nothing in the output folder to check against [Haruspex.Cli.CliCodes.NothingCommitted]
 HAR6012 E The IR in the output folder is of another version [Haruspex.Cli.CliCodes.CommittedOtherVersion]
-HAR6013 E The IR in the output folder can't be read [Haruspex.Cli.CliCodes.CommittedUnreadable]
+HAR6013 E A file in the output folder can't be read [Haruspex.Cli.CliCodes.CommittedUnreadable]
 HAR6014 E What the module claims would change [Haruspex.Cli.CliCodes.ClaimChanged]
 HAR6015 E The module in the output folder isn't what haruspex writes [Haruspex.Cli.CliCodes.ModuleDiffers]
 HAR6016 E A selected procedure's result sets are unknown [Haruspex.Cli.CliCodes.ResultsUnknown]

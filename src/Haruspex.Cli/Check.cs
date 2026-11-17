@@ -124,6 +124,12 @@ internal static class Check
     private static Outcome<(IrDocument Ir, IReadOnlyList<string> Files)> Committed(EmittedModule module)
     {
         var earlier = EarlierOutput.Read(module);
+        if (earlier.Unreadable.Count > 0)
+        {
+            return new Failed<(IrDocument, IReadOnlyList<string>)>([.. earlier.Unreadable.Select(u =>
+                CliCodes.CommittedUnreadable.At(new FileLocation(u.Key), $"this file can't be read: {u.Value}"))]);
+        }
+
         var missing = module.Files.Select(module.PathOf).Where((_, i) => earlier.Files[i] is null).ToList();
         if (earlier.Ir is EarlierIr.Absent)
             missing.Insert(0, module.IrPath);
