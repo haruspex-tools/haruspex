@@ -39,7 +39,7 @@ public partial class CliTests
         var (exitCode, output, error) = RunIn(folder.Path, "generate");
 
         Assert.Equal((0, ""), (exitCode, error));
-        Assert.Equal("haruspex: 1 procedure, 2 query files, 0 unknown(s). Wrote out/haruspex.ir.json and out/haruspex.zod.ts.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, 2 query files, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.zod.ts.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal(
             [("shop.get_order", "GetOrder", IrObjectKind.Procedure), ("sql/list_orders_of.sql", "ListOrdersOf", IrObjectKind.Query), ("sql/notes/orderNote.sql", "OrderNote", IrObjectKind.Query)],
             Written(folder).Objects.Select(o => (o.Id, o.Name, o.Kind)));
@@ -89,7 +89,7 @@ public partial class CliTests
 
         Assert.Equal(1, exitCode);
         Assert.Equal(
-            "sql/broken.sql:1:1: error HAR1014: sql/broken.sql isn't one batch: GO splits it into 2 batches; GO is no part of SQL, but a client's separator, and a query file is run as one batch.\nharuspex: 1 error(s); nothing was written.\n",
+            "sql/broken.sql:1:1: error HAR1014: sql/broken.sql isn't one batch: GO splits it into 2 batches; GO is no part of SQL, but a client's separator, and a query file is run as one batch.\nharuspex: 1 error; nothing was written.\n",
             CliOutput.Shown(error, folder.Path));
         Assert.False(Directory.Exists(Path.Combine(folder.Path, "out")));
     }
@@ -99,11 +99,11 @@ public partial class CliTests
     {
         using var folder = Shop("\"queries\": \"sql\"", ("sql/label.sql", "SELECT @label AS label;"));
 
-        var (exitCode, _, error) = RunIn(folder.Path, "generate");
+        var (exitCode, _, error) = RunIn(folder.Path, "generate", "--verbose");
 
         Assert.Equal(0, exitCode);
         Assert.StartsWith(
-            "sql/label.sql:1:8: note HAR2024: sql/label.sql parameters.@label: No use of @label decides its type:",
+            "sql/label.sql (2 unknowns)\nsql/label.sql:1:8: note HAR2024: sql/label.sql parameters.@label: No use of @label decides its type:",
             CliOutput.Shown(error, folder.Path),
             StringComparison.Ordinal);
     }

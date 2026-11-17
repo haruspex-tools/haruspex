@@ -1,0 +1,5 @@
+exit code 1
+--- standard output
+--- standard error
+db/procedures.sql:14:42: error HAR1001: Incorrect syntax near 'FROM'.
+haruspex: 1 error; nothing was written.

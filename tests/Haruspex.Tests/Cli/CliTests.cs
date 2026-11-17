@@ -37,7 +37,7 @@ public partial class CliTests
         var (exitCode, output, error) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.All(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'), line => Assert.Contains(": note HAR", line, StringComparison.Ordinal));
+        Assert.Equal("", error);
         Assert.Contains("6 procedures", output, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.ir.json")));
         Snapshot.Match(
@@ -103,10 +103,10 @@ public partial class CliTests
         TestPackage.Write(Path.Combine(dir.Path, "app", "app.dacpac"), TestPackage.Procedure("dbo", "p", "SELECT v.id FROM dbo.v AS v;"), references: new TestPackage.Reference("lib.dacpac"));
         dir.File("haruspex.json", """{ "source": "app/app.dacpac", "references": ["shared"], "out": "out", "schemas": { "dbo": { "include": ["*"] } } }""");
 
-        var (exitCode, _, error) = RunIn(dir.Path, "generate");
+        var (exitCode, _, error) = RunIn(dir.Path, "generate", "--verbose");
 
         Assert.Equal(0, exitCode);
-        Assert.Contains(DiagnosticFormatter.PathAsShown(Path.Join(dir.Path, "shared", "lib.dacpac/[dbo].[v]:2:")), error, StringComparison.Ordinal);
+        Assert.Contains("\nshared/lib.dacpac/[dbo].[v]:2:", error, StringComparison.Ordinal);
         Assert.DoesNotContain(Path.Join(dir.Path, "app", "lib.dacpac"), error, StringComparison.Ordinal);
     }
 
@@ -257,11 +257,13 @@ public partial class CliTests
         source.File("tables.sql", "CREATE TABLE dbo.t (id int NOT NULL);");
         source.File("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT t.id, t.nope AS gone FROM dbo.t AS t;\n");
 
-        var (exitCode, output, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path);
+        var (exitCode, output, error) = Run("generate", source.Path, "--include", "*.*", "--out", outDir.Path, "--verbose");
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("1 unknown(s)", output, StringComparison.Ordinal);
-        var note = Assert.Single(error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+        Assert.Contains("1 unknown.", output, StringComparison.Ordinal);
+        var lines = error.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n');
+        Assert.Equal(["dbo.p (1 unknown)", lines[1]], lines);
+        var note = lines[1];
         Assert.StartsWith($"{DiagnosticFormatter.PathAsShown(Path.Join(source.Path, "p.sql"))}:2:", note, StringComparison.Ordinal);
         Assert.Contains(": note HAR2009: dbo.p results[0][].gone: ", note, StringComparison.Ordinal);
     }
@@ -336,7 +338,7 @@ public partial class CliTests
         var (exitCode, output, error) = RunIn(folder.Path, "generate");
 
         Assert.True(exitCode == 0, error);
-        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json"], Files(Path.Combine(folder.Path, "out")));
 
         // The emitter's own output for the IR written, with the config file's objects.
@@ -356,7 +358,7 @@ public partial class CliTests
         Assert.Equal(0, RunIn(folder.Path, "generate").ExitCode);
 
         Assert.True(exitCode == 0, error);
-        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
         Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
     }

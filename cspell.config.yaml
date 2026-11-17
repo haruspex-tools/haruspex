@@ -279,6 +279,10 @@ ignoreRegExpList:
   - /\bInitialize\b(?=\(AnalysisContext)/g
   # actionlint's option for coloured output (.github/workflows/ci.yml).
   - /(?<=\s)-color\b/g
+  # The conventions for coloured output a command line follows (docs/command-line.md): the variables NO_COLOR (no-color.org)
+  # and FORCE_COLOR, and the option --color, spelt as other tools spell it so that a developer types what they know.
+  - /\b(?:NO|FORCE)_COLOR\b/g
+  - /--color\b/g
 
 overrides:
   # The style guide's examples of identifiers that keep their own spelling (`Color`, `normalize`), in backticks.

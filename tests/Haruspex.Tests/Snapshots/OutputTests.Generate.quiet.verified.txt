@@ -1,0 +1,3 @@
+exit code 0
+--- standard output
+--- standard error

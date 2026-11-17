@@ -13,28 +13,30 @@ namespace Haruspex.Cli;
 /// </summary>
 internal static class Check
 {
-    /// <summary>Runs the command, writing diagnostics to <paramref name="error"/> and the summary to <paramref name="output"/>.</summary>
-    /// <returns>The exit code (<see cref="HaruspexCli.ExitCodes"/>).</returns>
-    public static int Run(RunRequest request, TextWriter output, TextWriter error)
+    /// <summary>Runs the command over one module.</summary>
+    public static ModuleReport Run(RunRequest request)
     {
-        var run = ModuleRun.Emitted(request)
-            .Then(Noted)
-            .Then(Compared);
-        return Report(run, output, error);
-    }
+        var emitted = ModuleRun.Emitted(request);
+        if (emitted is not Succeeded<EmittedModule> { Value: var module })
+            return new ModuleReport(CommandName.Check, request, emitted.Diagnostics, ModuleRun.ExitCode(emitted.Diagnostics));
 
-    /// <summary>Each unknown, as a note (<see cref="ModuleRun.Notes"/>): said before the comparison, so a failed check says them too.</summary>
-    private static Succeeded<EmittedModule> Noted(EmittedModule module) => new(module, [.. ModuleRun.Notes(module.Document, module.Project)]);
+        // Each unknown is noted before the comparison, so a failed check says them too.
+        var unknowns = ModuleRun.Notes(module.Document, module.Project);
+        var compared = Compared(module);
+        Diagnostic[] found = [.. emitted.Diagnostics, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared];
+        return new ModuleReport(CommandName.Check, request, [.. found], compared.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(compared))
+        {
+            Out = module.Out,
+            Document = module.Document,
+            Unknowns = unknowns,
+        };
+    }
 
     /// <summary>
     /// What would fail the check: the module incomplete, and its differences from what is committed. The two don't depend on each
     /// other, so each is said whatever the other finds.
     /// </summary>
-    private static Outcome<EmittedModule> Compared(EmittedModule module)
-    {
-        Diagnostic[] found = [.. Incomplete(module), .. Differences(module)];
-        return found.Length == 0 ? new Succeeded<EmittedModule>(module) : new Failed<EmittedModule>([.. found]);
-    }
+    private static List<Diagnostic> Compared(EmittedModule module) => [.. Incomplete(module), .. Differences(module)];
 
     /// <summary>
     /// A selected procedure whose result sets can't be listed and aren't declared: being selected is a claim that it is an
@@ -155,36 +157,4 @@ internal static class Check
     /// <summary>A diagnostic at the object's place in the SQL, under the folder it was read from; with no place when there is none.</summary>
     private static Diagnostic At(EmittedModule module, IrObject? obj, DiagnosticCode code, string message) =>
         ModuleRun.Rooted(code.At(obj is not null && SourceLocation.TryParse(obj.At, out var at) ? at : null, message), module.Project);
-
-    /// <summary>Writes what the run found, and its summary, and gives the exit code.</summary>
-    private static int Report(Outcome<EmittedModule> run, TextWriter output, TextWriter error)
-    {
-        foreach (var diagnostic in run.Diagnostics)
-            error.WriteLine(diagnostic);
-
-        return run switch
-        {
-            Succeeded<EmittedModule> { Value: var module } => Passed(module, output),
-            Failed<EmittedModule> failed => Failed(failed, error),
-        };
-    }
-
-    private static int Passed(EmittedModule module, TextWriter output)
-    {
-        output.WriteLine(
-            $"haruspex: {Generate.Counted(module.Document)}, {module.Document.Unknowns.Count} unknown(s). {DiagnosticFormatter.PathAsShown(module.Out)} is up to date.");
-        return HaruspexCli.ExitCodes.Success;
-    }
-
-    private static int Failed(Failed<EmittedModule> failed, TextWriter error)
-    {
-        var changes = failed.Diagnostics.Count(d => d.Code == CliCodes.ClaimChanged);
-        if (changes > 0)
-        {
-            error.WriteLine(
-                $"haruspex: {changes} change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.");
-        }
-
-        return ModuleRun.ExitCode(failed.Diagnostics);
-    }
 }

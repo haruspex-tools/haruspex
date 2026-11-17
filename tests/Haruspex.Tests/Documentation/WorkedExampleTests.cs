@@ -278,7 +278,7 @@ public class WorkedExampleTests
     }
 
     /// <summary>
-    /// What <c>haruspex generate</c> prints, standard error then standard output, run in a folder holding the example's project
+    /// What <c>haruspex generate</c> prints, standard output then standard error, the order the command writes them in, run in a folder holding the example's project
     /// as <c>db/project.sql</c> and its config file, if it has one, as <c>haruspex.json</c>; paths are shown from that folder.
     /// </summary>
     private static string Run(string sql, WorkedExample.Output run)
@@ -291,7 +291,7 @@ public class WorkedExampleTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         HaruspexCli.Run(["generate", .. arguments], output, error, folder.Path);
-        return CliOutput.Shown(error.ToString() + output, folder.Path);
+        return CliOutput.Shown(output.ToString() + error, folder.Path);
     }
 
     /// <summary>
@@ -312,7 +312,7 @@ public class WorkedExampleTests
         error.GetStringBuilder().Clear();
         folder.File("db/project.sql", sql);
         HaruspexCli.Run(["check", .. arguments], output, error, folder.Path);
-        return CliOutput.Shown(error.ToString() + output, folder.Path);
+        return CliOutput.Shown(output.ToString() + error, folder.Path);
     }
 
     /// <summary>

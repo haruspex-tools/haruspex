@@ -607,7 +607,7 @@ public partial class SqlProjectReaderTests
 
         HaruspexCli.Run(["generate", "p/p.sqlproj", "--include", "*.*", "--out", "out"], output, error, folder.Path);
 
-        Assert.Contains($"{DiagnosticFormatter.PathAsShown(Path.Combine(folder.Path, "q", "q.sqlproj"))}:", error.ToString(), StringComparison.Ordinal);
+        Assert.StartsWith("q/q.sqlproj:", error.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("..", error.ToString(), StringComparison.Ordinal);
     }
 

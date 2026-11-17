@@ -60,7 +60,7 @@ public class CheckTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal("", error);
-        Assert.Equal("haruspex: 1 procedure, 0 unknown(s). generated is up to date.\n", output);
+        Assert.Equal("haruspex: 1 procedure, no unknowns. generated is up to date.\n", output);
     }
 
     private const string EmitsBoth = """{ "source": "db", "out": "generated", "emit": ["zod", "json-schema"], "schemas": { "shop": { "include": ["*"] } } }""";
@@ -248,9 +248,12 @@ public class CheckTests
     {
         const string Unknown = "CREATE PROCEDURE shop.list_notes AS\nSELECT json_query(o.note) AS note FROM shop.orders AS o FOR JSON PATH;";
         using var reported = Generated(Unknown);
-        var (passed, _, notes) = Run(reported, "check");
+        var (passed, summary, quiet) = Run(reported, "check");
+        var (_, _, notes) = Run(reported, "check", "--verbose");
 
         Assert.Equal(0, passed);
+        Assert.Equal("", quiet);
+        Assert.Contains("1 unknown (--verbose lists them).", summary, StringComparison.Ordinal);
         Assert.Contains("note HAR2013:", notes, StringComparison.Ordinal);
 
         using var failed = Generated(Unknown, config: """{ "source": "db", "out": "generated", "schemas": { "shop": { "include": ["*"] } }, "check": { "unknowns": "fail" } }""");

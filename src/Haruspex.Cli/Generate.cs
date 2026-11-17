@@ -1,32 +1,45 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 
 namespace Haruspex.Cli;
 
 /// <summary>
-/// <c>haruspex generate</c>: the module the shared steps give (<see cref="ModuleRun"/>), written to the output folder, then
-/// each unknown in it noted. The guide's chapter docs/internals/12-from-input-to-output.md follows a run through it.
+/// <c>haruspex generate</c>: the module the shared steps give (<see cref="ModuleRun"/>), written to the output folder, with each
+/// unknown in it noted. It reports what it did (<see cref="ModuleReport"/>) and prints nothing itself. The guide's chapter
+/// docs/internals/12-from-input-to-output.md follows a run through it.
 /// </summary>
 internal static class Generate
 {
-    /// <summary>Runs the command, writing diagnostics to <paramref name="error"/> and the summary to <paramref name="output"/>.</summary>
-    /// <returns>The exit code (<see cref="HaruspexCli.ExitCodes"/>).</returns>
-    public static int Run(RunRequest request, TextWriter output, TextWriter error)
+    /// <summary>Runs the command over one module.</summary>
+    public static ModuleReport Run(RunRequest request)
     {
-        var run = ModuleRun.Emitted(request)
-            .Then(Write)
-            .Then(Noted);
-        return Report(run, output, error);
+        var emitted = ModuleRun.Emitted(request);
+        var run = emitted.Then(Write);
+        return run switch
+        {
+            Succeeded<Written> { Value: var written } => new ModuleReport(CommandName.Generate, request, [.. run.Diagnostics, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
+            {
+                Out = written.Module.Out,
+                Document = written.Module.Document,
+                Written = written.Paths,
+                Unknowns = written.Unknowns,
+            },
+            Failed<Written> failed => new ModuleReport(CommandName.Generate, request, failed.Diagnostics, ModuleRun.ExitCode(failed.Diagnostics))
+            {
+                Out = (emitted as Succeeded<EmittedModule>)?.Value.Out,
+            },
+        };
     }
 
-    /// <summary>The written output: where each file went, the IR first, and the project it was read from, which roots its locations.</summary>
-    private sealed class Written(IrDocument document, IReadOnlyList<string> paths, SqlProject project)
+    /// <summary>The written output: the module, where each file went (the IR first), and each unknown in it, noted.</summary>
+    private sealed class Written(EmittedModule module, EquatableArray<string> paths)
     {
-        public IrDocument Document { get; } = document;
+        public EmittedModule Module { get; } = module;
 
-        public IReadOnlyList<string> Paths { get; } = paths;
+        public EquatableArray<string> Paths { get; } = paths;
 
-        public SqlProject Project { get; } = project;
+        public EquatableArray<NotedUnknown> Unknowns { get; } = ModuleRun.Notes(module.Document, module.Project);
     }
 
     /// <summary>One file of a run's output, on its way into place: its text, a temporary name to write it to, and a name to keep what it replaces under.</summary>
@@ -94,7 +107,7 @@ internal static class Generate
                 Remove(temporary);
         }
 
-        return new Succeeded<Written>(new Written(module.Document, [.. staged.Select(f => f.Path)], module.Project));
+        return new Succeeded<Written>(new Written(module, [.. staged.Select(f => f.Path)]));
     }
 
     /// <summary>
@@ -146,29 +159,6 @@ internal static class Generate
         }
     }
 
-    /// <summary>Each unknown in what was written, as a note (<see cref="ModuleRun.Notes"/>).</summary>
-    private static Succeeded<Written> Noted(Written written) => new(written, [.. ModuleRun.Notes(written.Document, written.Project)]);
-
-    /// <summary>Writes what the run found, and its summary, and gives the exit code.</summary>
-    private static int Report(Outcome<Written> run, TextWriter output, TextWriter error)
-    {
-        foreach (var diagnostic in run.Diagnostics)
-            error.WriteLine(diagnostic);
-
-        return run switch
-        {
-            Succeeded<Written> { Value: var written } => Succeeded(written, output),
-            Failed<Written> failed => Failed(failed, error),
-        };
-    }
-
-    private static int Succeeded(Written written, TextWriter output)
-    {
-        output.WriteLine(
-            $"haruspex: {Counted(written.Document)}, {written.Document.Unknowns.Count} unknown(s). Wrote {EnglishList.Of([.. written.Paths.Select(DiagnosticFormatter.PathAsShown)])}.");
-        return HaruspexCli.ExitCodes.Success;
-    }
-
     /// <summary>How many objects a module types, as its summary line says: the procedures, and the query files when there are any.</summary>
     internal static string Counted(IrDocument document)
     {
@@ -176,13 +166,5 @@ internal static class Generate
         var queries = document.Objects.Count - procedures;
         var counted = $"{procedures} {(procedures == 1 ? "procedure" : "procedures")}";
         return queries == 0 ? counted : $"{counted}, {queries} query {(queries == 1 ? "file" : "files")}";
-    }
-
-    private static int Failed(Failed<Written> failed, TextWriter error)
-    {
-        var sql = failed.Diagnostics.Count(d => d.IsError && d.At is SourceLocation);
-        if (sql > 0)
-            error.WriteLine($"haruspex: {sql} error(s); nothing was written.");
-        return ModuleRun.ExitCode(failed.Diagnostics);
     }
 }

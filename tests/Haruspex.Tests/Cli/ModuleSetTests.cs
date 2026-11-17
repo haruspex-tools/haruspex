@@ -58,8 +58,8 @@ public class ModuleSetTests
             error);
         Assert.Equal(
             """
-            haruspex: 1 procedure, 0 unknown(s). Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.
-            haruspex: 1 procedure, 0 unknown(s). Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.
+            haruspex: 1 procedure, no unknowns. Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.
+            haruspex: 1 procedure, no unknowns. Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.
             haruspex: 2 modules, none failed.
 
             """,
@@ -80,8 +80,8 @@ public class ModuleSetTests
         Assert.Equal(0, exitCode);
         Assert.Equal(
             [
-                "haruspex: 1 procedure, 0 unknown(s). Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.",
-                "haruspex: 1 procedure, 0 unknown(s). Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.",
+                "haruspex: 1 procedure, no unknowns. Wrote plugins/orders/generated/haruspex.ir.json and plugins/orders/generated/haruspex.zod.ts.",
+                "haruspex: 1 procedure, no unknowns. Wrote plugins/returns/generated/haruspex.ir.json and plugins/returns/generated/haruspex.zod.ts.",
                 "haruspex: 2 modules, none failed.",
             ],
             output.TrimEnd('\n').Split('\n'));

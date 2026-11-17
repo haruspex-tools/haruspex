@@ -11,7 +11,7 @@ have names: *result types* against exceptions, *railway-oriented programming* an
 
 `haruspex generate` is eight steps, each a method short enough to read at once, each taking what the one before it gave.
 The first six are `ModuleRun`'s, shared with `haruspex check`, and end with the module in memory; the last two are
-`Generate`'s:
+`Generate`'s. Then a report prints what the run found:
 
 ```mermaid
 flowchart LR
@@ -22,8 +22,10 @@ flowchart LR
     infer --> emit["emit"]
     emit --> write["write"]
     write --> noted["note the unknowns"]
+    noted --> report["report"]
     emit -. "check" .-> checkNoted["note the unknowns"]
     checkNoted -.-> compare["compare with what is committed"]
+    compare -.-> report
 ```
 
 - **Settle** works out what the run is asked: it reads the config file (named, or `haruspex.json` in the working folder
@@ -35,7 +37,10 @@ flowchart LR
 - **Infer** infers their results, the query files' too, and applies the config file: overrides, declared results, names.
 - **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both.
 - **Write** puts the IR and each emitted file in place.
-- **Noted** lists each unknown in what was written.
+- **Noted** lists each unknown in what was written, with its note.
+- **Report** prints what was found, in the format and at the detail asked for. It is no step of the pipeline: the command
+  gives back a `ModuleReport`, which says what the run found and did, and a report, such as `TextReport`, decides what to
+  print of it.
 
 `haruspex check` takes the dotted path after **Emit**: it notes the unknowns, then compares the module with what is committed
 instead of writing it ("Checking without writing", below).
@@ -88,14 +93,14 @@ public static Outcome<EmittedModule> Emitted(RunRequest request) =>
         .Then(Infer)
         .Then(Emit);
 
-var run = ModuleRun.Emitted(request)
-    .Then(Write)
-    .Then(Noted);
-return Report(run, output, error);
+var emitted = ModuleRun.Emitted(request);
+var run = emitted.Then(Write);
 ```
 
-At the end, `Generate.Report` writes everything found, in the order it was found, and gives the exit code from what failed: the
-input itself or the write, 1; the command line or the config file, 2.
+At the end, `Generate.Run` turns the outcome into a `ModuleReport`: everything found, in the order it was found, and the exit
+code from what failed (the input itself or the write, 1; the command line or the config file, 2). It prints nothing. Keeping
+what a run found apart from how it is printed lets one run be printed for a person, as JSON for a tool or as SARIF for a code
+scanner, each from the same report.
 
 The running example is a library with two procedures. One reads JSON a column holds, whose shape haruspex can't see;
 the other runs SQL it builds as it runs.
@@ -163,15 +168,20 @@ With the pattern corrected, the run succeeds:
 ```
 
 ```text haruspex-run
+haruspex: 2 procedures, 2 unknowns. Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
+Unknowns by reason (--verbose lists each):
+  1  HAR2013  JSON whose shape isn't visible
+  1  results only a declaration can give, as the warnings say
 haruspex.json: warning HAR4204: lib.find_books: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (project.sql:11:1) Declare them in haruspex.json under procedures["lib.find_books"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
-db/project.sql:7:23: note HAR2013: lib.list_books results[0][].extra: json_query(b.extra) reads JSON that is not built here, so its shape is unknown.
-haruspex: 2 procedures, 2 unknown(s). Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
 ```
 
-A success can still say things. `lib.find_books` runs dynamic SQL, so its result sets are unknown and only a
-declaration can give them: that is a warning, with what to declare. The `extra` key of `lib.list_books` is unknown, a note
-with its reason and where it is. Every unknown is reported, but each once: the dynamic SQL is already the warning, so it
-has no note of its own. Neither changes the exit code, which is 0.
+A success can still say things. It says first what it did, then what needs attention. `lib.find_books` runs dynamic SQL, so
+its result sets are unknown and only a declaration can give them: that is a warning, in full, with what to declare. The
+`extra` key of `lib.list_books` is unknown too, which the summary counts under its reason's code. Its note, with the reason
+and where it is, is one flag away: `--verbose` lists every unknown, grouped by the procedure it is in. A command run many
+times a day shouldn't repeat what its reader has seen, so the summary counts, and the detail waits to be asked for. Every
+unknown is still reported, but each once: the dynamic SQL is already the warning, so it has no note of its own. Neither
+changes the exit code, which is 0.
 
 ## Every problem, not the first
 
@@ -221,7 +231,7 @@ folder is made in `Generate.Write`, after every other step has succeeded.
 ## Checking without writing
 
 `haruspex check` runs the same six steps and, where `generate` writes, compares: `Check.Run` is `ModuleRun.Emitted`, then
-`Check.Noted`, then `Check.Compared`. Reuse is why the steps stop at a value, the module in memory, rather than at a file:
+`ModuleRun.Notes`, then `Check.Compared`. Reuse is why the steps stop at a value, the module in memory, rather than at a file:
 a check that read the project differently from `generate` would compare two things that were never alike.
 
 What it compares is the question. The files are text, and a text diff is the obvious answer, but the IR records where each
@@ -253,7 +263,7 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 ```
 
 ```text haruspex-run
-haruspex: 1 procedure, 0 unknown(s). Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
+haruspex: 1 procedure, no unknowns. Wrote generated/haruspex.ir.json and generated/haruspex.zod.ts.
 ```
 
 Then a stocktake changes the table: a book may have lost its title, and a book may be lost. A comment is added above it too,
@@ -277,7 +287,7 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 ```text haruspex-check
 db/project.sql:7:1: error HAR6014: lib.list_books results[0][].title: became nullable
 db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost"
-haruspex: 2 change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+haruspex: 2 changes from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
 
 Two changes, each where an application reading `list_books` will meet it, and nothing about the comment. The exit code is 1,

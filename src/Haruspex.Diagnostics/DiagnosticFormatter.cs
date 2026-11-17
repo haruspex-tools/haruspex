@@ -25,17 +25,39 @@ public static class DiagnosticFormatter
     /// <param name="sourceRoot">The folder a SQL file's path is relative to, joined in front of it; empty to keep the path as held.</param>
     public static string Format(Diagnostic diagnostic, string sourceRoot = "")
     {
+        var (place, head, text) = Parts(diagnostic, sourceRoot);
+        return $"{place}: {head}: {text}";
+    }
+
+    /// <summary>
+    /// The line's three parts, which <see cref="Format"/> joins with <c>": "</c>: where (<c>db/get_order.sql:7:5</c>, or
+    /// <c>haruspex</c>), the severity and code (<c>error HAR1001</c>), and the text, with a JSON value's path before the message.
+    /// A writer that styles the parts, as the command line colours the head on a terminal, still writes the same line.
+    /// </summary>
+    /// <param name="diagnostic">The diagnostic.</param>
+    /// <param name="sourceRoot">As for <see cref="Format"/>.</param>
+    public static (string Place, string Head, string Text) Parts(Diagnostic diagnostic, string sourceRoot = "")
+    {
         ArgumentNullException.ThrowIfNull(diagnostic);
         ArgumentNullException.ThrowIfNull(sourceRoot);
         var head = $"{Word(diagnostic.Severity)} {diagnostic.Code}";
         return diagnostic.At switch
         {
-            SourceLocation at => string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(Path.Join(sourceRoot, at.File))}:{at.Line}:{at.Column}: {head}: {diagnostic.Message}"),
-            JsonLocation at => string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(at.File)}:{at.Line}:{at.Column}: {head}: {(at.Path.Length == 0 ? "" : at.Path + ": ")}{diagnostic.Message}"),
-            FileLocation at => $"{PathAsShown(at.File)}: {head}: {diagnostic.Message}",
-            null => $"haruspex: {head}: {diagnostic.Message}",
+            SourceLocation at => (string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(Path.Join(sourceRoot, at.File))}:{at.Line}:{at.Column}"), head, diagnostic.Message),
+            JsonLocation at => (string.Create(CultureInfo.InvariantCulture, $"{PathAsShown(at.File)}:{at.Line}:{at.Column}"), head, $"{(at.Path.Length == 0 ? "" : at.Path + ": ")}{diagnostic.Message}"),
+            FileLocation at => (PathAsShown(at.File), head, diagnostic.Message),
+            null => ("haruspex", head, diagnostic.Message),
         };
     }
+
+    /// <summary>The word a severity is written as: <c>error</c>, <c>warning</c> or <c>note</c>, SARIF's levels.</summary>
+    /// <param name="severity">The severity.</param>
+    public static string Word(DiagnosticSeverity severity) => severity switch
+    {
+        DiagnosticSeverity.Error => "error",
+        DiagnosticSeverity.Warning => "warning",
+        DiagnosticSeverity.Note => "note",
+    };
 
     /// <summary>
     /// A path as haruspex prints it: with <c>/</c> between its names on every platform, so that a diagnostic or a summary reads the
@@ -49,11 +71,4 @@ public static class DiagnosticFormatter
         ArgumentNullException.ThrowIfNull(path);
         return OperatingSystem.IsWindows() ? path.Replace('\\', '/') : path;
     }
-
-    private static string Word(DiagnosticSeverity severity) => severity switch
-    {
-        DiagnosticSeverity.Error => "error",
-        DiagnosticSeverity.Warning => "warning",
-        DiagnosticSeverity.Note => "note",
-    };
 }

@@ -1,0 +1,9 @@
+exit code 0
+--- standard output
+haruspex: 4 procedures, 3 unknowns. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
+Unknowns by reason (--verbose lists each):
+  1  HAR2009  A column that can't be found or is ambiguous
+  1  HAR2013  JSON whose shape isn't visible
+  1  results only a declaration can give, as the warnings say
+--- standard error
+haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures["kennel.find_dogs"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.

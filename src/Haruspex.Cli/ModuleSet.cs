@@ -8,8 +8,8 @@ namespace Haruspex.Cli;
 /// The modules one run covers, and the run of a command over each: the config files <c>--config</c> names, every
 /// <c>haruspex.json</c> below a folder (<c>--all</c>), or the one config file found by walking up, as before. Each module is
 /// self-contained (its own selection, names, output and committed contract), so each runs as a run of its own would, and is
-/// reported under its config file's path; the run fails if any module does, with the worst of their exit codes. One module
-/// runs exactly as a single run always has, with nothing added to what it prints.
+/// reported under its config file's path; the run fails if any module does, with the worst of their exit codes
+/// (<see cref="RunReport.ExitCode"/>). One module runs exactly as a single run always has.
 /// </summary>
 internal static class ModuleSet
 {
@@ -32,43 +32,13 @@ internal static class ModuleSet
         AttributesToSkip = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReparsePoint,
     };
 
-    /// <summary>Runs <paramref name="command"/> over each module the request covers, and gives the run's exit code.</summary>
-    public static int Run(ModulesRequest request, Func<RunRequest, TextWriter, TextWriter, int> command, TextWriter output, TextWriter error) =>
+    /// <summary>Runs <paramref name="command"/> over each module the request covers, in turn, and gives what each found.</summary>
+    public static RunReport Run(CommandName name, ModulesRequest request, Func<RunRequest, ModuleReport> command) =>
         Requests(request) switch
         {
-            Failed<EquatableArray<RunRequest>> failed => Refused(failed, error),
-            Succeeded<EquatableArray<RunRequest>> { Value: var requests } when !request.Several => command(requests.Single(), output, error),
-            Succeeded<EquatableArray<RunRequest>> { Value: var requests } => Each(requests, command, output, error),
+            Failed<EquatableArray<RunRequest>> failed => new RunReport(name, [], request.Several, failed.Diagnostics),
+            Succeeded<EquatableArray<RunRequest>> { Value: var requests } => new RunReport(name, [.. requests.Select(command)], request.Several, []),
         };
-
-    private static int Refused(Failed<EquatableArray<RunRequest>> failed, TextWriter error)
-    {
-        foreach (var diagnostic in failed.Diagnostics)
-            error.WriteLine(diagnostic);
-        return HaruspexCli.ExitCodes.Usage;
-    }
-
-    /// <summary>Each module in turn, under a line naming its config file, then one line saying which failed.</summary>
-    private static int Each(EquatableArray<RunRequest> requests, Func<RunRequest, TextWriter, TextWriter, int> command, TextWriter output, TextWriter error)
-    {
-        var failed = new List<string>();
-        var worst = HaruspexCli.ExitCodes.Success;
-        foreach (var module in requests)
-        {
-            var name = Name(module);
-            error.WriteLine($"haruspex: module {name}");
-            var exitCode = command(module, output, error);
-            if (exitCode != HaruspexCli.ExitCodes.Success)
-                failed.Add(name);
-            worst = Math.Max(worst, exitCode);
-        }
-
-        var modules = $"{requests.Count} module{(requests.Count == 1 ? "" : "s")}";
-        output.WriteLine(failed.Count == 0
-            ? $"haruspex: {modules}, none failed."
-            : $"haruspex: {modules}; {failed.Count} failed: {string.Join(", ", failed)}.");
-        return worst;
-    }
 
     /// <summary>
     /// A request for each module, or why there are none: options that apply to one module beside several, or <c>--all</c> with
@@ -121,7 +91,7 @@ internal static class ModuleSet
         return shared.Count == 0 ? new Succeeded<EquatableArray<RunRequest>>(requests) : new Failed<EquatableArray<RunRequest>>([.. shared]);
     }
 
-    /// <summary>A module's config file, from the working directory, as its line and the last line name it.</summary>
+    /// <summary>A module's config file, from the working directory, as a message names it.</summary>
     private static string Name(RunRequest module) =>
         // Several modules always have their config files: --all found them, or --config named them.
         DiagnosticFormatter.PathAsShown(Path.GetRelativePath(module.WorkingDirectory, module.Resolve(module.Config ?? HaruspexConfig.FileName)));

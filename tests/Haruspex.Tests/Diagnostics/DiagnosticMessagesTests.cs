@@ -44,7 +44,8 @@ public class DiagnosticMessagesTests
         arrange?.Invoke(folder);
         using var output = new StringWriter();
         using var error = new StringWriter();
-        HaruspexCli.Run(["generate", .. args ?? (config is null ? ["db", "--include", "*.*", "--out", "out"] : [])], output, error, folder.Path);
+        // --verbose, so that every note is said: the notes are among the messages this test holds.
+        HaruspexCli.Run(["generate", "--verbose", .. args ?? (config is null ? ["db", "--include", "*.*", "--out", "out"] : [])], output, error, folder.Path);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -65,7 +66,7 @@ public class DiagnosticMessagesTests
         HaruspexCli.Run(["generate"], output, error, folder.Path);
         change(folder);
         error.GetStringBuilder().Clear();
-        HaruspexCli.Run(["check"], output, error, folder.Path);
+        HaruspexCli.Run(["check", "--verbose"], output, error, folder.Path);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 

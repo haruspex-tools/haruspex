@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Haruspex.Cli.Output;
 using Haruspex.Config;
 
 namespace Haruspex.Cli;
@@ -41,16 +42,20 @@ internal static class HaruspexCli
     /// </summary>
     public const string ZodModuleSpecifier = "./haruspex.zod.js";
 
+    /// <summary>Runs the command in the process's own console, from its working directory.</summary>
     public static int Run(string[] args, TextWriter output, TextWriter error) =>
-        Run(args, output, error, Directory.GetCurrentDirectory());
+        Run(args, output, error, Directory.GetCurrentDirectory(), Terminal.FromConsole());
 
-    /// <summary>Runs the command as if from <paramref name="workingDirectory"/>, where relative paths start and the config file is looked for.</summary>
-    internal static int Run(string[] args, TextWriter output, TextWriter error, string workingDirectory)
+    /// <summary>
+    /// Runs the command as if from <paramref name="workingDirectory"/>, where relative paths start and the config file is looked
+    /// for, in <paramref name="terminal"/>: by default neither stream a terminal and no variable set (<see cref="Terminal.Plain"/>).
+    /// </summary>
+    internal static int Run(string[] args, TextWriter output, TextWriter error, string workingDirectory, Terminal? terminal = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(error);
 
-        var root = Build(output, error, workingDirectory);
+        var root = Build(output, error, workingDirectory, terminal ?? Terminal.Plain);
         var parsed = root.Parse(args);
 
         // System.CommandLine exits with 1 on a parse error; usage errors are 2 here, and 1 is kept for failures.
@@ -75,24 +80,39 @@ internal static class HaruspexCli
         }
     }
 
-    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory) =>
+    private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal) =>
         new("haruspex: infers the result shapes of SQL Server procedures, FOR JSON included.")
         {
             Module(
                 "generate",
                 "Infer the result shapes of procedures, and write the IR and what the config file's \"emit\" names: a Zod module by default, a JSON Schema document too or instead.",
-                request => ModuleSet.Run(request, Generate.Run, output, error),
-                workingDirectory),
+                CommandName.Generate,
+                Generate.Run,
+                new Streams(output, error, workingDirectory, terminal)),
             Module(
                 "check",
                 $"Infer as generate does, write nothing, and fail if {IrFileName} and the files emitted beside it in the output folder claim something else, saying what changed.",
-                request => ModuleSet.Run(request, Check.Run, output, error),
-                workingDirectory),
+                CommandName.Check,
+                Check.Run,
+                new Streams(output, error, workingDirectory, terminal)),
         };
 
-    /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
-    private static Command Module(string name, string description, Func<ModulesRequest, int> run, string workingDirectory)
+    /// <summary>Where a command writes, where it runs from, and what it knows of the terminal.</summary>
+    private sealed class Streams(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal)
     {
+        public TextWriter Output { get; } = output;
+
+        public TextWriter Error { get; } = error;
+
+        public string WorkingDirectory { get; } = workingDirectory;
+
+        public Terminal Terminal { get; } = terminal;
+    }
+
+    /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
+    private static Command Module(string name, string description, CommandName command, Func<RunRequest, ModuleReport> run, Streams streams)
+    {
+        var workingDirectory = streams.WorkingDirectory;
         var directory = new Argument<string?>("source")
         {
             Description = "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Overrides \"source\" in the config file.",
@@ -118,22 +138,44 @@ internal static class HaruspexCli
             Description = $"The folder of {IrFileName} and the files emitted beside it. Overrides \"out\" in the config file.",
         };
 
-        var command = new Command(name, description)
+        var verbose = new Option<bool>("--verbose", "-v")
+        {
+            Description = "Also list every note: each unknown, grouped by the procedure or query file it is in.",
+        };
+        var quiet = new Option<bool>("--quiet", "-q")
+        {
+            Description = "Print errors only.",
+        };
+
+        var made = new Command(name, description)
         {
             directory,
             config,
             all,
             include,
             outDirectory,
+            verbose,
+            quiet,
         };
-        command.SetAction(parsed => run(
-            new ModulesRequest(
+        made.Validators.Add(result =>
+        {
+            if (result.GetValue(verbose) && result.GetValue(quiet))
+                result.AddError("--verbose and --quiet can't go together.");
+        });
+        made.SetAction(parsed =>
+        {
+            var request = new ModulesRequest(
                 parsed.GetValue(directory),
                 [.. parsed.GetValue(config) ?? []],
                 parsed.GetResult(all) is null ? null : parsed.GetValue(all) ?? "",
                 [.. parsed.GetValue(include) ?? []],
                 parsed.GetValue(outDirectory),
-                workingDirectory)));
-        return command;
+                workingDirectory);
+            var detail = parsed.GetValue(quiet) ? OutputDetail.Quiet : parsed.GetValue(verbose) ? OutputDetail.Verbose : OutputDetail.Normal;
+            var report = ModuleSet.Run(command, request, run);
+            new TextReport(detail, TextStyle.Plain, TextStyle.Plain, workingDirectory).Write(report, streams.Output, streams.Error);
+            return report.ExitCode;
+        });
+        return made;
     }
 }

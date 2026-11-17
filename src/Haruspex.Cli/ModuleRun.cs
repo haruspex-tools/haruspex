@@ -258,15 +258,16 @@ internal static class ModuleRun
             : null;
 
     /// <summary>
-    /// Each unknown in <paramref name="document"/>, as a note with its reason's code, where it is and why, so that none is
-    /// silent. One that only a declaration can resolve is reported by the config layer instead, with what to declare, and is not
-    /// said twice (<see cref="InferenceCodes.Of"/>).
+    /// Each unknown in <paramref name="document"/>, with the note it is reported by: its reason's code, where it is and why, so
+    /// that none is silent. One that only a declaration can resolve is reported by the config layer instead, with what to declare,
+    /// and is not said twice (<see cref="InferenceCodes.Of"/>), so it has no note.
     /// </summary>
-    public static IEnumerable<Diagnostic> Notes(IrDocument document, SqlProject project) =>
-        document.Unknowns.Select(u => InferenceCodes.Of(u.Reason) is { } code
-                ? Rooted(code.At(SourceLocation.TryParse(u.At, out var at) ? at : null, $"{u.Object} {u.Path}: {u.Detail}"), project)
-                : null)
-            .OfType<Diagnostic>();
+    public static EquatableArray<NotedUnknown> Notes(IrDocument document, SqlProject project) =>
+    [
+        .. document.Unknowns.Select(u => new NotedUnknown(u, InferenceCodes.Of(u.Reason) is { } code
+            ? Rooted(code.At(SourceLocation.TryParse(u.At, out var at) ? at : null, $"{u.Object} {u.Path}: {u.Detail}"), project)
+            : null)),
+    ];
 
     /// <summary>
     /// The exit code of a failed run, by what failed (the contract in the CLI's README): the input itself (SQL that doesn't read,

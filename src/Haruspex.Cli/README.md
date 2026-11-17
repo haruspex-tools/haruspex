@@ -68,6 +68,8 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module ("Several modules", below). |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run. |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
+| `--verbose`, `-v` | Also list every note: each unknown, grouped by the procedure or query file it is in. |
+| `--quiet`, `-q` | Print errors only. |
 
 Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
 and `haruspex check --help` list the same.
@@ -86,7 +88,7 @@ A check that fails says what changed, one line for each change, at the procedure
 ```text
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].customer: became nullable
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
-haruspex: 2 change(s) from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+haruspex: 2 changes from what is committed. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
 
 In CI, until haruspex is published as a package, a job runs it from a copy of its source pinned to a commit, and one step
@@ -113,8 +115,11 @@ db/procedures/list_orders.sql:12:9: note HAR2013: sales.list_orders results[0][]
 ```
 
 An error stops the run. A warning, such as a call whose results only a declaration in the config file could give, and a
-note, one for each unknown in the output with where it is and why, don't. A run that succeeds prints one line to standard
-output: how many procedures it typed (and query files, when there are any), how many unknowns there are, and where it wrote.
+note, one for each unknown in the output with where it is and why, don't. A run that succeeds first prints its summary to
+standard output: how many procedures it typed (and query files, when there are any), how many unknowns there are, and where it
+wrote, then the unknowns counted by reason. Errors and warnings follow in full. Notes are counted, not listed: `--verbose` lists
+each, grouped by the procedure or query file it is in, and `--quiet` prints errors only. Paths below the working directory are
+shown from it.
 
 ## What it guarantees
 

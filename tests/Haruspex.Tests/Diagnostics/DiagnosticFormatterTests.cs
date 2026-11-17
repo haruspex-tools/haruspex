@@ -49,6 +49,17 @@ public class DiagnosticFormatterTests
         Assert.Equal("haruspex: note HAR9003: it is unknown.", DiagnosticFormatter.Format(new Diagnostic(Unknown, "it is unknown.", null)));
 
     [Fact]
+    public void A_line_s_parts_are_its_place_its_head_and_its_text_joined_by_colons()
+    {
+        var diagnostic = new Diagnostic(Doubtful, "it is doubtful.", new JsonLocation("haruspex.json", "objects", 4, 14));
+
+        var (place, head, text) = DiagnosticFormatter.Parts(diagnostic);
+
+        Assert.Equal(("haruspex.json:4:14", "warning HAR9002", "objects: it is doubtful."), (place, head, text));
+        Assert.Equal(DiagnosticFormatter.Format(diagnostic), $"{place}: {head}: {text}");
+    }
+
+    [Fact]
     public void A_diagnostic_prints_as_the_formatter_writes_it() =>
         Assert.Equal("a.sql:1:2: error HAR9001: it is broken.", new Diagnostic(Broken, "it is broken.", new SourceLocation("a.sql", 1, 2)).ToString());
 
