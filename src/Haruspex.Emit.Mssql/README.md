@@ -60,6 +60,11 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
   otherwise an object of `result`, or `result1`, `result2` and so on for several, `output` for the `OUTPUT` parameters, and
   `returnValue` when the code may be other than 0; and nothing, when there is nothing to hand back. A `FOR JSON` result is read as
   decision 0048 fixes, whether the pool parses JSON or not.
+- **It reads the result sets its procedure lists, and ignores any after them**, so a database deployed ahead of the
+  application with a trailing set more doesn't break it; `MssqlOptions.RefusesExtraResultSets`, which `"objects": "strict"`
+  sets, refuses them. A set every call returns that doesn't arrive is a `ResultError` either way, since read as `[]` it would
+  pass
+  ([decision 0063](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)).
 - **A query file's function runs its text through `sp_executesql`**: the text as the IR holds it, and each parameter declared
   by its name and its type's `sql`, so the query runs with the types it was inferred with, and each value is bound beside them
   by name, converted by the server to its declared type. A parameter with no type to declare, or named `@stmt` or `@params`

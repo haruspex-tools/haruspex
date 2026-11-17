@@ -67,6 +67,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0060](0060-a-call-returns-its-one-result-itself.md) | 16 Nov 2026 | A call returns its one result itself |
 | [0061](0061-the-npm-packages-are-haruspex-and-a-scope-per-platform.md) | 17 Nov 2026 | The npm packages are `haruspex` and a scope per platform |
 | [0062](0062-generated-files-pass-typescript-eslint-s-strict-rules-with-no-disable-header.md) | 17 Nov 2026 | Generated files pass typescript-eslint's strict rules, with no disable header |
+| [0063](0063-a-function-ignores-result-sets-after-those-it-knows.md) | 17 Nov 2026 | A function ignores result sets after those it knows, and refuses them under strict objects |
 
 ## Writing a record
 

@@ -103,6 +103,7 @@ export async function uspGetBillOfMaterials(db: Queryable, params: types.UspGetB
   request.input('CheckDate', sql.VarChar(sql.MAX), p.CheckDate)
   const response = await request.execute('dbo.uspGetBillOfMaterials')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('dbo.uspGetBillOfMaterials', 'the results', [{ message: `Expected at least one result set, received ${sets.length}` }])
   const result = await checked(UspGetBillOfMaterialsSchema, readRows(sets[0]), (issues) => new ResultError('dbo.uspGetBillOfMaterials', 'the results', issues))
   return result
 }

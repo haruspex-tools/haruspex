@@ -239,7 +239,9 @@ generated TypeScript, by the names `SchemaModuleNames` gives, and check values t
 methods, so a second schema emitter could serve the same functions; the emit check compiles the two files together, which is
 where a disagreement would show. Two stages there, a plan (`FunctionPlanner`) and a printer, since a function's code is the same
 for every procedure but for its names, its bindings (`DriverTypes`, from the IR's kinds and facets, never from a type's
-spelling) and how each result set is read. A query file's differs in one place: it executes `sp_executesql` with the text the IR
+spelling), how each result set is read, and how many sets must arrive: those before the first the IR says may be absent,
+and under strict objects no more than it lists
+([decision 0063](../decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)). A query file's differs in one place: it executes `sp_executesql` with the text the IR
 holds and its parameters declared by their types' `sql`, the one place the emitter writes a type's spelling, since it is what
 the server must declare. Each module writes its own error classes and helpers, only those its functions use,
 since a linter reports one nothing calls, and only TypeScript a type stripper erases, so Node runs it as it is

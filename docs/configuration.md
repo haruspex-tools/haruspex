@@ -326,9 +326,15 @@ missing. A file of an emitter taken off the list is left where it is, not delete
 
 - `"strip"`, the default: `z.object`, and JSON Schema objects that allow other keys. Types are still exact, but keys a type
   doesn't list are removed when parsing, or allowed when validating, so a column the database gains before the application
-  redeploys doesn't break the running application.
+  redeploys doesn't break the running application. In the same way, a function reads the result sets its procedure lists and
+  ignores any after them, so a procedure that gains a trailing result set doesn't break it either.
 - `"strict"`: `z.strictObject`, and JSON Schema objects that allow no other keys, for projects that deploy the application first or together
-  with the database, and want an unexpected key to fail loudly.
+  with the database, and want an unexpected key to fail loudly. A function then refuses a result set after those it knows,
+  with a `ResultError` (`dbo.get_order, the results: Expected exactly 2 result sets, received 3`).
+
+Either way, a result set the procedure always returns that doesn't arrive fails the call. Only the reaction to something
+unexpected changes: the types, and what a function returns, are the same under both
+([decision 0063](decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)).
 
 This is the one deliberate exception to haruspex's rule that the generated code claims everything the engine guarantees
 ([decision 0005](decisions/0005-claim-everything-the-engine-guarantees.md)): `FOR JSON` produces exactly the known

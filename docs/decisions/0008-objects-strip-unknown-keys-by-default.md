@@ -17,4 +17,7 @@ teams the database is deployed before the applications that call it.
 [claiming everything the engine guarantees](0005-claim-everything-the-engine-guarantees.md), made for deployment safety. A
 project that deploys its applications first, or together with the database, can choose strict.
 
+**Extended** on 17 Nov 2026 by [decision 0063](0063-a-function-ignores-result-sets-after-those-it-knows.md), to a
+procedure's result sets: a generated function ignores a set after those it knows, and refuses it under `"objects": "strict"`.
+
 **In the code:** `ZodObjects`, and `ZodEmitter`, where each object is written.

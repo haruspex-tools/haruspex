@@ -191,6 +191,7 @@ export async function getOrderLines(db: Queryable, params: types.GetOrderLinesPa
   request.input('OrderID', sql.Int, p.OrderID)
   const response = await request.execute('sys.sp_executesql')
   const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('sql/getOrderLines.sql', 'the results', [{ message: `Expected at least one result set, received ${sets.length}` }])
   const result = await checked(GetOrderLinesSchema, readRows(sets[0]), (issues) => new ResultError('sql/getOrderLines.sql', 'the results', issues))
   return result
 }

@@ -20,6 +20,10 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
     private async Task<IReadOnlyList<GeneratedFunctions.Response>> Run(IrDocument module, string[] procedures, params GeneratedFunctions.Call[] calls) =>
         await GeneratedFunctions.RunAsync(server, module, [Schema, .. procedures], calls, TestContext.Current.CancellationToken);
 
+    /// <summary>As <see cref="Run(IrDocument, string[], GeneratedFunctions.Call[])"/>, with the module written as <c>"objects": "strict"</c> writes it when <paramref name="strict"/>.</summary>
+    private async Task<IReadOnlyList<GeneratedFunctions.Response>> Run(bool strict, IrDocument module, string[] procedures, params GeneratedFunctions.Call[] calls) =>
+        await GeneratedFunctions.RunAsync(server, module, [Schema, .. procedures], calls, TestContext.Current.CancellationToken, strict);
+
     private static Dictionary<string, object?> Params(params (string Key, object? Value)[] values) => values.ToDictionary(v => v.Key, v => v.Value);
 
     private const string GetOrder = """
@@ -119,12 +123,13 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
     [Fact]
     public async Task A_failure_in_one_of_several_result_sets_names_the_set_and_a_row_count_in_words()
     {
-        // The second set is one row (an aggregate without GROUP BY); the deployed procedure leaves it out, or returns a null
-        // the first set's column can't hold. The message names the set as a person counts them, and the count in rows.
+        // The second set is one row (an aggregate without GROUP BY); the deployed procedure returns it with none, or returns a
+        // null the first set's column can't hold. The message names the set as a person counts them, and the count in rows.
         const string Generated = "CREATE PROCEDURE outlet.order_sheet @fail int AS SELECT CAST(1 AS int) AS a; SELECT COUNT_BIG(*) AS n;";
         const string Deployed = """
             CREATE PROCEDURE outlet.order_sheet @fail int AS
             IF @fail = 1 SELECT CAST(1 AS int) AS a;
+            IF @fail = 1 SELECT CAST(1 AS bigint) AS n WHERE 1 = 0;
             IF @fail = 2 SELECT CAST(NULL AS int) AS a;
             IF @fail = 2 SELECT COUNT_BIG(*) AS n;
             """;
@@ -138,6 +143,52 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
         Assert.Equal("outlet.order_sheet, the results: result set 2: Expected exactly one row", responses[0].Error!.Message);
         Assert.StartsWith("outlet.order_sheet, the results: result set 1, [0].a: ", responses[1].Error!.Message, StringComparison.Ordinal);
         Assert.Equal(["0", "0", "a"], Assert.Single(responses[1].Error!.Issues).Path);
+    }
+
+    [Theory]
+    [InlineData(false, "two_sets", """{"result1":[{"a":1}],"result2":[{"b":"x"}]}""")]
+    [InlineData(true, "two_sets", "outlet.two_sets, the results: Expected exactly 2 result sets, received 3")]
+    [InlineData(false, "one_set", """[{"a":1}]""")]
+    [InlineData(true, "one_set", "outlet.one_set, the results: Expected exactly one result set, received 2")]
+    [InlineData(false, "no_set", "null")]
+    [InlineData(true, "no_set", "outlet.no_set, the results: Expected no result sets, received 1")]
+    public async Task A_result_set_after_those_a_function_knows_is_ignored_unless_objects_are_strict(bool strict, string procedure, string expected)
+    {
+        // The database gained a trailing result set the deployed module doesn't know. By decision 0008's reasoning a deployed
+        // application survives it, as it survives an added key, unless "objects": "strict" asks to refuse both (decision 0063).
+        var generated = new Dictionary<string, string>
+        {
+            ["two_sets"] = "CREATE PROCEDURE outlet.two_sets AS SELECT CAST(1 AS int) AS a; SELECT N'x' AS b;",
+            ["one_set"] = "CREATE PROCEDURE outlet.one_set AS SELECT CAST(1 AS int) AS a;",
+            ["no_set"] = "CREATE PROCEDURE outlet.no_set AS SET NOCOUNT ON;",
+        };
+        var deployed = new Dictionary<string, string>
+        {
+            ["two_sets"] = "CREATE PROCEDURE outlet.two_sets AS SELECT CAST(1 AS int) AS a; SELECT N'x' AS b; SELECT 2 AS c;",
+            ["one_set"] = "CREATE PROCEDURE outlet.one_set AS SELECT CAST(1 AS int) AS a; SELECT 2 AS c;",
+            ["no_set"] = "CREATE PROCEDURE outlet.no_set AS SELECT 2 AS c;",
+        };
+        var function = procedure switch { "two_sets" => "twoSets", "one_set" => "oneSet", _ => "noSet" };
+
+        var response = Assert.Single(await Run(strict, Module(generated[procedure]), [deployed[procedure]], new GeneratedFunctions.Call("call", function)));
+
+        Assert.Equal(expected, strict ? response.Error!.Message : JsonSerializer.Serialize(response.Value));
+        if (strict)
+            Assert.Equal(("HaruspexResultError", "the results"), (response.Error!.Name, response.Error.Part));
+    }
+
+    [Theory]
+    [InlineData(false, "outlet.two_sets, the results: Expected at least 2 result sets, received 1")]
+    [InlineData(true, "outlet.two_sets, the results: Expected exactly 2 result sets, received 1")]
+    public async Task A_result_set_every_call_returns_that_is_missing_fails_under_either_setting(bool strict, string expected)
+    {
+        // Read as [] it would pass the schema of a set of any number of rows: a set the IR says always arrives must arrive.
+        const string Generated = "CREATE PROCEDURE outlet.two_sets AS SELECT CAST(1 AS int) AS a; SELECT N'x' AS b;";
+        const string Deployed = "CREATE PROCEDURE outlet.two_sets AS SELECT CAST(1 AS int) AS a;";
+
+        var response = Assert.Single(await Run(strict, Module(Generated), [Deployed], new GeneratedFunctions.Call("call", "twoSets")));
+
+        Assert.Equal(expected, response.Error!.Message);
     }
 
     [Theory]

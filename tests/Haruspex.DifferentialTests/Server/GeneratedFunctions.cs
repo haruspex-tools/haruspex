@@ -16,10 +16,11 @@ internal static class GeneratedFunctions
 
     /// <summary>
     /// Writes <paramref name="document"/>'s database module, runs the setup, then each call, in one transaction that is rolled
-    /// back, holding the database alone meanwhile, and returns what each call gave or threw.
+    /// back, holding the database alone meanwhile, and returns what each call gave or threw. With <paramref name="strict"/>, the
+    /// module is written as <c>"objects": "strict"</c> writes it.
     /// </summary>
     public static async Task<IReadOnlyList<Response>> RunAsync(
-        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token)
+        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false)
     {
         server.Require();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated functions were not run");
@@ -29,8 +30,8 @@ internal static class GeneratedFunctions
         Directory.CreateDirectory(folder);
         try
         {
-            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.zod.ts"), ZodEmitter.Emit(document).Expected(), token).ConfigureAwait(false);
-            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.mssql.ts"), MssqlEmitter.Emit(document).Expected(), token).ConfigureAwait(false);
+            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.zod.ts"), ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip }).Expected(), token).ConfigureAwait(false);
+            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.mssql.ts"), MssqlEmitter.Emit(document, new MssqlOptions { RefusesExtraResultSets = strict }).Expected(), token).ConfigureAwait(false);
             await File.WriteAllTextAsync(Path.Combine(folder, "functions.json"), JsonSerializer.Serialize(new { setup, calls }, Json), token).ConfigureAwait(false);
 
             using (var session = await server.DriverAsync(token).ConfigureAwait(false))

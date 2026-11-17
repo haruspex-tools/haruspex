@@ -49,7 +49,10 @@ has `OUTPUT` parameters or a return code, or that returns several result sets, g
 A procedure that returns no result set has no `result`, and one that hands back nothing at all returns nothing. The shape follows
 the procedure: when it gains an `OUTPUT` parameter or a `RETURN` with a value, its function's shape changes, `haruspex check` says
 so, and the compiler finds each call to change. A rowset whose statement didn't run, in a branch or after a
-`RETURN`, is `[]`. A `FOR JSON` result is read the same whether
+`RETURN`, is `[]`. A result set after those the procedure lists, which a database deployed ahead of the application may
+return, is ignored, as a key a result's type doesn't list is, unless `"objects": "strict"` asks to refuse both; a set the
+procedure always returns that doesn't arrive fails the call either way
+([decision 0063](decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)). A `FOR JSON` result is read the same whether
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
 
@@ -248,5 +251,7 @@ Either way, a `FOR JSON` result with no rows is `null`, a list as much as one ob
 whose statement didn't run, in a branch or after a `RETURN`, isn't sent at all, so `result.recordset` is then `undefined`:
 that is what `?.` and `?? null` are for, and a schema whose summary says "when it does not run" needs them. Rows from a plain
 `SELECT` are `result.recordset`, or `[]` when it didn't run. A procedure with several result sets has one schema, a tuple:
-it parses an array holding each of `result.recordsets`, read as above. A test runs both reads against a real server, through
+it parses an array holding each of `result.recordsets`, read as above, and only those the procedure lists: the tuple refuses
+any more, so an application that reads the sets itself takes as many as the tuple has, as the functions do, to survive a set
+added after them. A test runs both reads against a real server, through
 the driver, in each mode (`MssqlDriverAcceptanceTests`).
