@@ -47,7 +47,7 @@ internal static class CatalogueSweep
         "DATEFROMPARTS({0}, 1, 1)", "DATETIMEFROMPARTS({0}, 1, 1, 0, 0, 0, 0)", "SMALLDATETIMEFROMPARTS({0}, 1, 1, 0, 0)",
         "DATETIME2FROMPARTS({0}, 1, 1, 0, 0, 0, 0, 3)", "TIMEFROMPARTS({0}, 0, 0, 0, 3)", "DATETIMEOFFSETFROMPARTS({0}, 1, 1, 0, 0, 0, 0, 0, 0, 3)",
         "DATETRUNC(month, {0})", "DATE_BUCKET(week, 2, {0})", "DATE_BUCKET(day, {0}, dt)", "SWITCHOFFSET({0}, '+01:00')",
-        "SWITCHOFFSET(dto3, {0})", "TODATETIMEOFFSET({0}, '-05:00')", "ISDATE({0})",
+        "SWITCHOFFSET(dto3, {0})", "TODATETIMEOFFSET({0}, '-05:00')", "{0} AT TIME ZONE 'UTC'", "dt23 AT TIME ZONE {0}", "ISDATE({0})",
         "GETDATE()", "GETUTCDATE()", "SYSDATETIME()", "SYSUTCDATETIME()", "SYSDATETIMEOFFSET()", "CURRENT_TIMESTAMP",
         "LTRIM({0})", "RTRIM({0})", "TRIM({0})", "LTRIM({0}, 'x')", "RTRIM({0}, N'x')", "TRIM('x' FROM {0})", "UPPER({0})", "LOWER({0})",
         "SUBSTRING({0}, 1, 2)", "LEFT({0}, 2)", "RIGHT({0}, 2)", "LEN({0})", "DATALENGTH({0})", "REPLACE({0}, 'a', 'b')",

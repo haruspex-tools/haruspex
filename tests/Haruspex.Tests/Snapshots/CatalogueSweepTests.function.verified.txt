@@ -918,6 +918,86 @@ TODATETIMEOFFSET('ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOF
 TODATETIMEOFFSET(N'ab', '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(N'ab', '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET(1e0, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(1e0, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET($1, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET($1, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
+bt AT TIME ZONE 'UTC' -> unknown unsupported-expression: bt AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+ti AT TIME ZONE 'UTC' -> unknown unsupported-expression: ti AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+si AT TIME ZONE 'UTC' -> unknown unsupported-expression: si AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+i AT TIME ZONE 'UTC' -> unknown unsupported-expression: i AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+bi AT TIME ZONE 'UTC' -> unknown unsupported-expression: bi AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+d52 AT TIME ZONE 'UTC' -> unknown unsupported-expression: d52 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+d380 AT TIME ZONE 'UTC' -> unknown unsupported-expression: d380 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+d3838 AT TIME ZONE 'UTC' -> unknown unsupported-expression: d3838 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+n102 AT TIME ZONE 'UTC' -> unknown unsupported-expression: n102 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+m AT TIME ZONE 'UTC' -> unknown unsupported-expression: m AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+sm AT TIME ZONE 'UTC' -> unknown unsupported-expression: sm AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+f AT TIME ZONE 'UTC' -> unknown unsupported-expression: f AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+r AT TIME ZONE 'UTC' -> unknown unsupported-expression: r AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+f24 AT TIME ZONE 'UTC' -> unknown unsupported-expression: f24 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+f25 AT TIME ZONE 'UTC' -> unknown unsupported-expression: f25 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+c3 AT TIME ZONE 'UTC' -> unknown unsupported-expression: c3 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+v10 AT TIME ZONE 'UTC' -> unknown unsupported-expression: v10 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+vx AT TIME ZONE 'UTC' -> unknown unsupported-expression: vx AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+nc3 AT TIME ZONE 'UTC' -> unknown unsupported-expression: nc3 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+nv10 AT TIME ZONE 'UTC' -> unknown unsupported-expression: nv10 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+nvx AT TIME ZONE 'UTC' -> unknown unsupported-expression: nvx AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt AT TIME ZONE 'UTC' -> unknown unsupported-expression: dt AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+tm3 AT TIME ZONE 'UTC' -> unknown unsupported-expression: tm3 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dtm AT TIME ZONE 'UTC' -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE 'UTC' -> datetimeoffset(3) datetime/offset
+sdt AT TIME ZONE 'UTC' -> datetimeoffset(0) datetime/offset
+dto3 AT TIME ZONE 'UTC' -> datetimeoffset(3) datetime/offset
+u AT TIME ZONE 'UTC' -> unknown unsupported-expression: u AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+bin4 AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+vb10 AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+x AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type xml is not modelled yet.
+sv AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+j AT TIME ZONE 'UTC' -> unknown (no unknown recorded)
+1 AT TIME ZONE 'UTC' -> unknown unsupported-expression: 1 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+12345 AT TIME ZONE 'UTC' -> unknown unsupported-expression: 12345 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+2.50 AT TIME ZONE 'UTC' -> unknown unsupported-expression: 2.50 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+'ab' AT TIME ZONE 'UTC' -> unknown unsupported-expression: 'ab' AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+N'ab' AT TIME ZONE 'UTC' -> unknown unsupported-expression: N'ab' AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+1e0 AT TIME ZONE 'UTC' -> unknown unsupported-expression: 1e0 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+$1 AT TIME ZONE 'UTC' -> unknown unsupported-expression: $1 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE bt -> unknown unsupported-expression: dt23 AT TIME ZONE bt: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE ti -> unknown unsupported-expression: dt23 AT TIME ZONE ti: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE si -> unknown unsupported-expression: dt23 AT TIME ZONE si: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE i -> unknown unsupported-expression: dt23 AT TIME ZONE i: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE bi -> unknown unsupported-expression: dt23 AT TIME ZONE bi: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE d52 -> unknown unsupported-expression: dt23 AT TIME ZONE d52: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE d380 -> unknown unsupported-expression: dt23 AT TIME ZONE d380: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE d3838 -> unknown unsupported-expression: dt23 AT TIME ZONE d3838: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE n102 -> unknown unsupported-expression: dt23 AT TIME ZONE n102: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE m -> unknown unsupported-expression: dt23 AT TIME ZONE m: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE sm -> unknown unsupported-expression: dt23 AT TIME ZONE sm: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE f -> unknown unsupported-expression: dt23 AT TIME ZONE f: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE r -> unknown unsupported-expression: dt23 AT TIME ZONE r: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE f24 -> unknown unsupported-expression: dt23 AT TIME ZONE f24: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE f25 -> unknown unsupported-expression: dt23 AT TIME ZONE f25: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE c3 -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE v10 -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE vx -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE nc3 -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE nv10 -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE nvx -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE dt -> unknown unsupported-expression: dt23 AT TIME ZONE dt: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE tm3 -> unknown unsupported-expression: dt23 AT TIME ZONE tm3: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE dtm -> unknown unsupported-expression: dt23 AT TIME ZONE dtm: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE dt23 -> unknown unsupported-expression: dt23 AT TIME ZONE dt23: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE sdt -> unknown unsupported-expression: dt23 AT TIME ZONE sdt: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE dto3 -> unknown unsupported-expression: dt23 AT TIME ZONE dto3: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE u -> unknown unsupported-expression: dt23 AT TIME ZONE u: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE bin4 -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+dt23 AT TIME ZONE vb10 -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+dt23 AT TIME ZONE x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dt23 AT TIME ZONE sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+dt23 AT TIME ZONE j -> unknown (no unknown recorded)
+dt23 AT TIME ZONE 1 -> unknown unsupported-expression: dt23 AT TIME ZONE 1: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE 12345 -> unknown unsupported-expression: dt23 AT TIME ZONE 12345: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE 2.50 -> unknown unsupported-expression: dt23 AT TIME ZONE 2.50: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE 'ab' -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE N'ab' -> datetimeoffset(3) datetime/offset
+dt23 AT TIME ZONE 1e0 -> unknown unsupported-expression: dt23 AT TIME ZONE 1e0: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
+dt23 AT TIME ZONE $1 -> unknown unsupported-expression: dt23 AT TIME ZONE $1: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 ISDATE(bt) -> int number/int32 {[0 1]}
 ISDATE(ti) -> int number/int32 {[0 1]}
 ISDATE(si) -> int number/int32 {[0 1]}

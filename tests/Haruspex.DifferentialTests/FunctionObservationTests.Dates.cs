@@ -62,6 +62,41 @@ public partial class FunctionObservationTests
     }
 
     [Fact]
+    public async Task At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone()
+    {
+        // datetime gives 3 digits and smalldatetime 0; a chain keeps the first's. The zone is any string.
+        Assert.Equal(
+            "a datetimeoffset(3), b datetimeoffset(3), c datetimeoffset(0), d datetimeoffset(2), e datetimeoffset(3), f datetimeoffset(7), g datetimeoffset(3)",
+            await Describe($"""
+                SELECT d2 AT TIME ZONE 'UTC' AS a, dt AT TIME ZONE N'Pacific Standard Time' AS b, sdt AT TIME ZONE 'UTC' AS c,
+                       dto AT TIME ZONE CAST('UTC' AS varchar(max)) AS d, (d2 AT TIME ZONE 'UTC') AT TIME ZONE 'GMT Standard Time' AS e,
+                       CAST(d2 AS datetime2) AT TIME ZONE 'UTC' AS f, d2 AT TIME ZONE CAST('UTC' AS char(10)) AS g
+                FROM {Dates}
+                """));
+
+        // NULL for a NULL date or zone. A zone the server doesn't know is an error, and a date past either end of the range is
+        // held at it, not an error or NULL, under the caller's options too.
+        Assert.Equal(
+            "a,b: null,null",
+            await Select("DECLARE @d datetime2 = NULL, @z sysname = NULL; SELECT @d AT TIME ZONE 'UTC' AS a, SYSDATETIME() AT TIME ZONE @z AS b;"));
+        Assert.Equal(" ! 9820", (await Run([], "SELECT SYSDATETIME() AT TIME ZONE 'Nowhere' AS v;")).ToString());
+        Assert.Equal(
+            "a,b: 9999-12-31 23:59:59.9999999 +00:00,0001-01-01 00:00:00.0000000 +00:00",
+            (await Run([], """
+                SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;
+                SELECT CONVERT(varchar(40), CAST('9999-12-31 23:00 +00:00' AS datetimeoffset) AT TIME ZONE 'Tokyo Standard Time', 121) AS a,
+                       CONVERT(varchar(40), CAST('0001-01-01 00:00 +00:00' AS datetimeoffset) AT TIME ZONE 'Pacific Standard Time', 121) AS b;
+                """)).ToString());
+
+        // A date, a time, a string or a number is refused (8116), and so is a zone that is not a string.
+        Assert.Equal(8116, (await Run([], $"SELECT da AT TIME ZONE 'UTC' AS v FROM {Dates};")).Error);
+        Assert.Equal(8116, (await Run([], $"SELECT tm AT TIME ZONE 'UTC' AS v FROM {Dates};")).Error);
+        Assert.Equal(8116, (await Run([], "SELECT '2026-01-05' AT TIME ZONE 'UTC' AS v;")).Error);
+        Assert.Equal(8116, (await Run([], $"SELECT i AT TIME ZONE 'UTC' AS v FROM {Dates};")).Error);
+        Assert.Equal(8116, (await Run([], $"SELECT d2 AT TIME ZONE i AS v FROM {Dates};")).Error);
+    }
+
+    [Fact]
     public async Task Isdate_is_an_int_never_null()
     {
         Assert.Equal("a int, b int, c int", await Describe($"SELECT ISDATE(CAST(d AS varchar(10))) AS a, ISDATE(dt) AS b, ISDATE(i) AS c FROM {Dates}"));

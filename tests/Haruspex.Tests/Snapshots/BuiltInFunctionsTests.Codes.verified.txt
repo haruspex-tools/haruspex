@@ -17,6 +17,7 @@ scalar.datetrunc
 scalar.date_bucket
 scalar.switchoffset
 scalar.todatetimeoffset
+scalar.at time zone
 scalar.isdate
 scalar.getdate
 scalar.getutcdate

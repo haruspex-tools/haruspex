@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 215 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 161 |
+| Modelled, wholly or in part | 162 |
 | Read, changing no result | 29 |
-| Unknown | 315 |
+| Unknown | 314 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -596,6 +596,7 @@ Functions the list above doesn't name, such as those the reference documents as 
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
+| `AT TIME ZONE` | `scalar.at time zone` | datetimeoffset of the date's fractional digits |  | [At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Dates.cs) |
 | `COALESCE` | `scalar.coalesce` | the type of highest precedence over its arguments | `arithmetic-overflow`, `read-twice`, `null-literal` | [Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Coalesce_reads_a_subquery_twice_so_it_can_be_null_where_isnull_cannot](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs) |
 | `NULLIF` | `scalar.nullif` | the first argument's type | `null-when-equal` | [Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it](../tests/Haruspex.DifferentialTests/CaseObservationTests.cs) |
 
@@ -876,7 +877,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `RIGHT` | `RightFunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#strings) | As LEFT. |
 | `CURRENT_TIMESTAMP, CURRENT_USER, …` | `ParameterlessCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. |
 | `@@ROWCOUNT, …` | `GlobalVariableExpression` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
-| `AT TIME ZONE` | `AtTimeZoneCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `AT TIME ZONE` | `AtTimeZoneCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dates) | datetimeoffset of the date's fractional digits; NULL only when the date or the zone is. |
 | `NEXT VALUE FOR` | `NextValueForExpression` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `IDENTITY( … ) in SELECT INTO` | `IdentityFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `$PARTITION.f( … )` | `PartitionFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |

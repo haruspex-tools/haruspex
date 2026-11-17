@@ -95,11 +95,12 @@ public partial class FunctionTableTests
 
     /// <summary>
     /// Whether a test's body calls the function in its form: a window function's name, its arguments, and <c>OVER</c> (after
-    /// any <c>WITHIN GROUP</c>); any other's name and its arguments with no <c>OVER</c> after them; a keyword alone.
+    /// any <c>WITHIN GROUP</c>); any other's name and its arguments with no <c>OVER</c> after them; a keyword alone, or an operator
+    /// (<c>AT TIME ZONE</c>).
     /// </summary>
     private static bool Calls(string body, BuiltInFunction function)
     {
-        if (function == ScalarFunctions.CurrentTimestamp || function == RowsetFunctions.OpenJson)
+        if (function == ScalarFunctions.CurrentTimestamp || function == ScalarFunctions.AtTimeZone || function == RowsetFunctions.OpenJson)
             return Regex.IsMatch(body, $@"\b{function.Name}\b", RegexOptions.IgnoreCase);
         return Regex.Matches(body, $@"\b{function.Name}\s*\(", RegexOptions.IgnoreCase)
             .Any(m => Windowed(body, m.Index + m.Length - 1) == (function.Form == FunctionForm.Window));
@@ -129,11 +130,16 @@ public partial class FunctionTableTests
         return text.Length - 1;
     }
 
-    /// <summary>The function an expression of the sweep is one call of, or null when it is anything else.</summary>
+    /// <summary>
+    /// The function an expression of the sweep is one call of, written as a call or as <c>AT TIME ZONE</c> after one operand, or null
+    /// when it is anything else.
+    /// </summary>
     private static BuiltInFunction? CalledIn(string expression)
     {
         if (expression == "CURRENT_TIMESTAMP")
             return ScalarFunctions.CurrentTimestamp;
+        if (Regex.IsMatch(expression, @"^\w+ AT TIME ZONE [\w']+$"))
+            return ScalarFunctions.AtTimeZone;
         var open = expression.IndexOf('(', StringComparison.Ordinal);
         if (open <= 0 || !Regex.IsMatch(expression[..open], "^[A-Z_0-9]+$"))
             return null;

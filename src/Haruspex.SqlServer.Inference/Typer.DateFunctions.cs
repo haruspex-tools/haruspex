@@ -192,6 +192,28 @@ internal sealed partial class Typer
     }
 
     /// <summary>
+    /// <c>d AT TIME ZONE zone</c> of a <c>datetime</c>, <c>smalldatetime</c>, <c>datetime2</c> or <c>datetimeoffset</c> and a
+    /// string: datetimeoffset of d's fractional digits, 3 for a datetime and 0 for a smalldatetime; NULL only when either is. A
+    /// zone the server doesn't know is an error, and a date moved past either end of the range is held at it, under any options,
+    /// so nothing overflows. A date, a time, a string or a number is refused when the procedure is created, and so is a zone that
+    /// isn't a string (observed: At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone).
+    /// </summary>
+    private Value AtTimeZone(AtTimeZoneCall call, ReadScope scope)
+    {
+        var (values, unknown) = Arguments([call.DateValue, call.TimeZone], scope);
+        if (unknown is not null)
+            return unknown;
+        BuiltInType[] dates = [BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset];
+        if (TypeOf(values[0]) is not { } type || !dates.Contains(type.Type) || StringOf(values[1]) is null)
+        {
+            return NotModelled(call, "AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.");
+        }
+
+        var digits = type.Type == BuiltInType.DateTime ? 3 : type.Type == BuiltInType.SmallDateTime ? 0 : type.Precision;
+        return Typed(new ScalarType(BuiltInType.DateTimeOffset, Precision: digits), Reasons(values), call);
+    }
+
+    /// <summary>
     /// <c>ISDATE(x)</c> of a string, a number, a datetime or a smalldatetime: int, 0 or 1, never null; NULL gives 0 (observed:
     /// Isdate_is_an_int_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null). Which strings read as dates depends on the session's language and DATEFORMAT, but the
     /// type and the nullability don't.

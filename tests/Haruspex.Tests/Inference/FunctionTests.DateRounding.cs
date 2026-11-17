@@ -46,6 +46,28 @@ public partial class FunctionTests
     }
 
     [Fact]
+    public void At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_null_only_as_the_date_or_zone_is()
+    {
+        // At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone. A date past the
+        // range is held at its end, so nothing overflows; a date, time, string or number is refused, so not modelled.
+        var doc = Procedure("""
+            SELECT d2 AT TIME ZONE 'UTC' AS a, dt AT TIME ZONE ns AS b, sdt AT TIME ZONE 'UTC' AS c, dto AT TIME ZONE s AS d,
+                   (d21 AT TIME ZONE 'UTC') AT TIME ZONE 'GMT Standard Time' AS e, da AT TIME ZONE 'UTC' AS f, tm AT TIME ZONE 'UTC' AS g,
+                   s AT TIME ZONE 'UTC' AS h, d2 AT TIME ZONE n AS i
+            FROM dbo.t;
+            """);
+        Assert.Equal("datetimeoffset(3)", Typed(doc, "a"));
+        Assert.Equal("datetimeoffset(3) nullable-column", Typed(doc, "b"));
+        Assert.Equal("datetimeoffset(0) nullable-column", Typed(doc, "c"));
+        Assert.Equal("datetimeoffset(4) nullable-column", Typed(doc, "d"));
+        Assert.Equal("datetimeoffset(1) nullable-column", Typed(doc, "e"));
+        Unknown(doc, "f");
+        Unknown(doc, "g");
+        Unknown(doc, "h");
+        Unknown(doc, "i");
+    }
+
+    [Fact]
     public void Isdate_is_an_int_0_or_1_never_null_even_of_a_null()
     {
         // Isdate_is_an_int_never_null, Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null.

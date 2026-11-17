@@ -1687,6 +1687,13 @@ not listed is not modelled.
   fractional digits, 7 for a `date`, 3 for a `datetime`, 0 for a `smalldatetime`; NULL when either is. A number of minutes
   is converted to `smallint`, so a wider one may overflow; an offset it can't read, or one past the range, is an error
   (9812, 9813) (`Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits`).
+- **`d AT TIME ZONE zone`** of a `datetime`, `smalldatetime`, `datetime2` or `datetimeoffset` and a string: `datetimeoffset` of
+  `d`'s fractional digits, 3 for a `datetime` and 0 for a `smalldatetime`, so a chain keeps the first date's; NULL only when
+  either is. A zone the server doesn't know is an error (9820), and a date moved past either end of the range is held at it,
+  under any options, so nothing overflows. A date, a time, a string or a number is refused when the procedure is created
+  (8116), and so is a zone that isn't a string
+  (`At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone`). In the catalogue it
+  is `scalar.at time zone`, named as T-SQL writes it.
 - **`ISDATE(x)`** of a string, a number, a `bit`, a `datetime` or a `smalldatetime`: `int`, 0 or 1 (`min` 0 and `max` 1
   `from` `{ "engine": "ISDATE" }`), never null; `ISDATE(NULL)` is 0 (`Isdate_is_an_int_never_null`,
   `Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null`). Which strings read as dates depends on the session's language and `DATEFORMAT`; the type
