@@ -56,7 +56,7 @@ test("the main package lists every platform package as an optional dependency at
 
 test("a platform package is installed only where its binary runs", () => {
   const linux = platformManifest(platforms.find((p) => p.rid === "linux-x64"), version);
-  assert.deepEqual([linux.name, linux.os, linux.cpu, linux.libc], ["@haruspex/linux-x64", ["linux"], ["x64"], ["glibc"]]);
+  assert.deepEqual([linux.name, linux.os, linux.cpu, linux.libc], ["@haruspex.tools/linux-x64", ["linux"], ["x64"], ["glibc"]]);
   const windows = platformManifest(platforms.find((p) => p.rid === "win-x64"), version);
   assert.deepEqual([windows.os, windows.cpu, windows.libc], [["win32"], ["x64"], undefined]);
   assert.equal(windows.version, version);
@@ -67,7 +67,7 @@ test("packs one tarball per platform and the main package, named by the version"
   const names = packed.map((p) => path.basename(p.tarball)).sort();
   assert.deepEqual(names, [
     `haruspex-${version}.tgz`,
-    ...packable.map((p) => `haruspex-${p.os}-${p.cpu}-${version}.tgz`),
+    ...packable.map((p) => `haruspex.tools-${p.os}-${p.cpu}-${version}.tgz`),
   ].sort());
   for (const p of packed) assert.ok(fs.existsSync(p.tarball), p.tarball);
 });
@@ -127,7 +127,7 @@ test("refuses a missing platform unless it is left out by name", () => {
     (error) => error.message.includes("linux-x64") && error.message.includes("--only"),
   );
   const only = pack({ binaries: some, out: path.join(root, "out-only"), commit, only: ["win32-x64"] });
-  assert.deepEqual(only.map((p) => p.name).sort(), ["@haruspex/win32-x64", "haruspex"]);
+  assert.deepEqual(only.map((p) => p.name).sort(), ["@haruspex.tools/win32-x64", "haruspex"]);
 });
 
 test("refuses a platform name it doesn't know", () => {

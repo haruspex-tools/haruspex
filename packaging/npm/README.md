@@ -13,9 +13,9 @@ One small package, `haruspex`, holds the command, and one package per platform h
 | Package | Holds | Installed |
 |---|---|---|
 | `haruspex` | `bin/haruspex.js` (the command), `lib/launcher.js`, the JSON Schema of `haruspex.json`, the licence | always |
-| `@haruspex/linux-x64`, `@haruspex/linux-arm64` | `haruspex`, linked against glibc | on Linux with glibc, on that CPU |
-| `@haruspex/darwin-arm64`, `@haruspex/darwin-x64` | `haruspex` | on macOS, on that CPU |
-| `@haruspex/win32-x64` | `haruspex.exe` | on Windows on x64 |
+| `@haruspex.tools/linux-x64`, `@haruspex.tools/linux-arm64` | `haruspex`, linked against glibc | on Linux with glibc, on that CPU |
+| `@haruspex.tools/darwin-arm64`, `@haruspex.tools/darwin-x64` | `haruspex` | on macOS, on that CPU |
+| `@haruspex.tools/win32-x64` | `haruspex.exe` | on Windows on x64 |
 
 `haruspex` lists every platform package in `optionalDependencies`, at its own version exactly. Each platform package sets
 `os`, `cpu` and, on Linux, `libc`, so npm installs the one that matches the machine and skips the others; an optional

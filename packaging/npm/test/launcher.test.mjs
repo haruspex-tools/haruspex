@@ -15,11 +15,11 @@ const glibc = "2.39";
 
 test("chooses the package for each platform haruspex ships", () => {
   const cases = [
-    [{ platform: "linux", arch: "x64", glibc }, "@haruspex/linux-x64", "haruspex"],
-    [{ platform: "linux", arch: "arm64", glibc }, "@haruspex/linux-arm64", "haruspex"],
-    [{ platform: "darwin", arch: "arm64" }, "@haruspex/darwin-arm64", "haruspex"],
-    [{ platform: "darwin", arch: "x64" }, "@haruspex/darwin-x64", "haruspex"],
-    [{ platform: "win32", arch: "x64" }, "@haruspex/win32-x64", "haruspex.exe"],
+    [{ platform: "linux", arch: "x64", glibc }, "@haruspex.tools/linux-x64", "haruspex"],
+    [{ platform: "linux", arch: "arm64", glibc }, "@haruspex.tools/linux-arm64", "haruspex"],
+    [{ platform: "darwin", arch: "arm64" }, "@haruspex.tools/darwin-arm64", "haruspex"],
+    [{ platform: "darwin", arch: "x64" }, "@haruspex.tools/darwin-x64", "haruspex"],
+    [{ platform: "win32", arch: "x64" }, "@haruspex.tools/win32-x64", "haruspex.exe"],
   ];
   for (const [host, name, binary] of cases) {
     const chosen = launcher.choosePlatform(host);
@@ -47,7 +47,7 @@ test("refuses a platform with no binary, listing those there are", () => {
 test("every package name follows the platform it is for", () => {
   assert.deepEqual(
     launcher.platforms.map((p) => p.packageName),
-    launcher.platforms.map((p) => `@haruspex/${p.os}-${p.cpu}`),
+    launcher.platforms.map((p) => `@haruspex.tools/${p.os}-${p.cpu}`),
   );
 });
 
@@ -78,7 +78,7 @@ test("runs the platform's binary with the arguments as given", () => {
   const h = host();
   assert.equal(launcher.launch(h), 0);
   assert.deepEqual(h.spawned, [
-    { file: "/app/node_modules/@haruspex/darwin-arm64/haruspex", args: ["generate", "--out", "src/db"] },
+    { file: "/app/node_modules/@haruspex.tools/darwin-arm64/haruspex", args: ["generate", "--out", "src/db"] },
   ]);
   assert.deepEqual(h.errors, []);
 });
@@ -101,7 +101,7 @@ test("says which package is missing and why it may be", () => {
   });
   assert.equal(launcher.launch(h), 1);
   const text = h.errors.join("");
-  assert.match(text, /@haruspex\/darwin-arm64/);
+  assert.match(text, /@haruspex\.tools\/darwin-arm64/);
   assert.match(text, /optional dependencies/);
   assert.equal(h.spawned.length, 0);
 });

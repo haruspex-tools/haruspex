@@ -6,8 +6,9 @@ it writes [Zod](https://zod.dev) schemas and types, JSON Schema, and a function 
 [mssql](https://www.npmjs.com/package/mssql) driver. It never connects to a database.
 
 This package is the `haruspex` command. It holds no program of its own: npm installs the native binary for your platform from
-one of its optional dependencies (`@haruspex/linux-x64`, `@haruspex/linux-arm64`, `@haruspex/darwin-arm64`,
-`@haruspex/darwin-x64` or `@haruspex/win32-x64`), and the command runs it. No .NET runtime is needed. Linux needs glibc.
+one of its optional dependencies (`@haruspex.tools/linux-x64`, `@haruspex.tools/linux-arm64`,
+`@haruspex.tools/darwin-arm64`, `@haruspex.tools/darwin-x64` or `@haruspex.tools/win32-x64`), and the command runs it. No .NET
+runtime is needed. Linux needs glibc.
 
 ```sh
 npx haruspex generate     # settings from haruspex.json, found by walking up

@@ -17,7 +17,7 @@ const platforms = [
   { os: "darwin", cpu: "arm64", rid: "osx-arm64", binary: "haruspex", label: "macOS on Apple silicon" },
   { os: "darwin", cpu: "x64", rid: "osx-x64", binary: "haruspex", label: "macOS on Intel" },
   { os: "win32", cpu: "x64", rid: "win-x64", binary: "haruspex.exe", label: "Windows on x64" },
-].map((p) => ({ ...p, packageName: `@haruspex/${p.os}-${p.cpu}` }));
+].map((p) => ({ ...p, packageName: `@haruspex.tools/${p.os}-${p.cpu}` }));
 
 const supported = platforms.map((p) => p.label).join(", ");
 

@@ -240,7 +240,7 @@ jobs:
           mkdir app
           cd app
           npm init -y > /dev/null
-          npm install --offline --ignore-scripts --no-audit --no-fund ../npm/haruspex-0.0.0-*.tgz "../npm/haruspex-$PLATFORM-"*.tgz
+          npm install --offline --ignore-scripts --no-audit --no-fund ../npm/haruspex-0.0.0-*.tgz "../npm/haruspex.tools-$PLATFORM-"*.tgz
           ls "node_modules/@haruspex"
         env:
           PLATFORM: ${{ matrix.platform }}

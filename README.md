@@ -348,7 +348,7 @@ dotnet build
 **This is a preview.** Once published, haruspex will be installed from npm, as `npm install --save-dev haruspex`, with a native binary for
 each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, each CI
 run builds the packages as tarballs and keeps them for 30 days as its artifact `haruspex-npm`: the command,
-`haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, `haruspex-<platform>-0.0.0-preview-<commit>.tgz`, where
+`haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, `haruspex.tools-<platform>-0.0.0-preview-<commit>.tgz`, where
 the platform is `linux-x64`, `linux-arm64`, `darwin-arm64`, `darwin-x64` or `win32-x64`. Download them from the run's page, or
 with the `gh` CLI:
 
@@ -359,7 +359,7 @@ gh run download <run id> --repo sharpblue/haruspex --name haruspex-npm --dir har
 To try it on one machine, install the command and the binary for that machine:
 
 ```sh
-npm install --save-dev ./haruspex-preview/haruspex-0.0.0-preview-<commit>.tgz ./haruspex-preview/haruspex-darwin-arm64-0.0.0-preview-<commit>.tgz
+npm install --save-dev ./haruspex-preview/haruspex-0.0.0-preview-<commit>.tgz ./haruspex-preview/haruspex.tools-darwin-arm64-0.0.0-preview-<commit>.tgz
 npx haruspex --version
 ```
 
@@ -369,7 +369,7 @@ for the machine it runs on and the lock file covers them all:
 
 ```sh
 npm install --save-dev ./vendor/haruspex/haruspex-0.0.0-preview-<commit>.tgz
-npm install --save-optional ./vendor/haruspex/haruspex-linux-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-linux-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-darwin-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-darwin-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-win32-x64-0.0.0-preview-<commit>.tgz
+npm install --save-optional ./vendor/haruspex/haruspex.tools-linux-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex.tools-linux-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex.tools-darwin-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex.tools-darwin-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex.tools-win32-x64-0.0.0-preview-<commit>.tgz
 ```
 
 Then `npx haruspex generate` and `npx haruspex check` run it, and so does a package script (`"db": "haruspex generate"`). The
