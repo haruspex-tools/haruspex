@@ -55,13 +55,14 @@
       ]
     },
     "emit": {
-      "description": "What generate writes beside haruspex.ir.json, each from the IR alone: \"zod\", haruspex.zod.ts, a module of Zod schemas and TypeScript types; \"json-schema\", haruspex.jsonschema.json, one JSON Schema (2020-12) document with each procedure's results in $defs under its name; \"mssql\", haruspex.mssql.ts, a function for each procedure that calls it through the mssql driver, importing the Zod module's schemas, so it needs \"zod\" beside it. check compares each. [\"zod\"] by default.",
+      "description": "What generate writes beside haruspex.ir.json, each from the IR alone: \"zod\", haruspex.zod.ts, a module of Zod schemas and TypeScript types; \"json-schema\", haruspex.jsonschema.json, one JSON Schema (2020-12) document with each procedure's results in $defs under its name; \"mssql\", haruspex.mssql.ts, a function for each procedure that calls it through the mssql driver, importing the Zod module's schemas, so it needs \"zod\" beside it; \"mapping\", haruspex.mapping.ts, TypeScript types with which a mapper accounts for every key of a generated row, the same for every module, needing \"zod\" beside it. check compares each. [\"zod\"] by default.",
       "type": "array",
       "items": {
         "enum": [
           "zod",
           "json-schema",
-          "mssql"
+          "mssql",
+          "mapping"
         ]
       },
       "minItems": 1

@@ -19,7 +19,7 @@ otherwise silently do nothing.
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
 
-  "emit": ["zod"],                          // and "json-schema", "mssql"; see "What is written"
+  "emit": ["zod"],                          // and "json-schema", "mssql", "mapping"; see "What is written"
   "serverOnly": false,                      // true: the functions import 'server-only'; see "What is written"
   "objects": "strip",                       // or "strict"
 
@@ -307,6 +307,10 @@ alone:
 - `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure and query file, which check its
   parameters, run it through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
   the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
+- `"mapping"`: `haruspex.mapping.ts`, TypeScript types with which the application's own mapper accounts for every key of a
+  generated row, using it or ignoring it with a reason, so that a key the row gains, at any depth, is a compile error in the
+  mapper ([decision 0066](decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)). It is types only, the same for every
+  module, and works on the types `haruspex.zod.ts` declares, so `"mapping"` needs `"zod"` beside it.
 
 ```jsonc
 "emit": ["zod", "json-schema"]   // both, each from the same IR

@@ -35,6 +35,9 @@ internal static class HaruspexCli
     /// </summary>
     public const string MssqlFileName = "haruspex.mssql.ts";
 
+    /// <summary>The name of the mapping helper's file, written beside the Zod module, whose types its mappers account for.</summary>
+    public const string MappingFileName = "haruspex.mapping.ts";
+
     /// <summary>
     /// How the functions file imports the Zod module beside it: with the <c>.js</c> of the file it compiles to, which an ECMAScript
     /// module needs and TypeScript maps to the <c>.ts</c> under every module resolution (<c>nodenext</c>, <c>node16</c> and

@@ -1,6 +1,7 @@
 using Haruspex.Cli;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.JsonSchema;
+using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
 using Haruspex.Tests.Snapshotting;
@@ -362,6 +363,18 @@ public partial class CliTests
         Assert.Equal((0, "haruspex: nothing changed since the last run: 1 procedure, no unknowns.\n"), (exitCodeAgain, outputAgain));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
         Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
+    }
+
+    [Fact]
+    public void Generate_writes_the_mapping_helper_beside_the_zod_when_emit_names_it()
+    {
+        using var folder = Emitting("""["zod", "mapping"]""");
+
+        var (exitCode, output, error) = RunIn(folder.Path, "generate");
+
+        Assert.True(exitCode == 0, error);
+        Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.mapping.ts.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
+        Assert.Equal(MappingModule.Text, File.ReadAllText(Path.Combine(folder.Path, "out", HaruspexCli.MappingFileName)));
     }
 
     [Fact]

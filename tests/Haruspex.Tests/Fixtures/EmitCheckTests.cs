@@ -10,7 +10,8 @@ namespace Haruspex.Tests.Fixtures;
 /// <c>tests/emit-check/package-lock.json</c>, and lints them with the rules pinned in <c>tests/emit-lint</c>. <c>src/usage.ts</c> and
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
-/// changes.
+/// changes, and <c>src/mapping-usage.ts</c> that the mapping helper accepts a mapper that accounts for every key of a fixture's
+/// row and refuses one that doesn't.
 /// </summary>
 public class EmitCheckTests
 {
@@ -84,6 +85,10 @@ public class EmitCheckTests
             var options = new MssqlOptions { SchemaModule = $"./{fixture.Name}.zod.js", IsReserved = TypeScriptNames.IsReserved };
             File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.mssql.ts"), MssqlEmitter.Emit(fixture.Ir, options).Expected());
         }
+
+        // The mapping helper, which is the same for every module, once: src/mapping-usage.ts checks it against the fixtures' types,
+        // and the lint holds it to the rules every generated file meets.
+        File.WriteAllText(Path.Combine(generated, HaruspexCli.MappingFileName), MappingModule.Text);
 
         // A project fixture through the CLI, with its config file: the shop's strict objects, overrides and an import
         // that tsconfig.json maps to src/shop-types.ts.

@@ -67,8 +67,8 @@ when there is no `src` folder). It never writes over a config file, and when it 
 for one: `haruspex init Sales/Sales.sqlproj`.
 
 `generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`
-(the default), `haruspex.jsonschema.json` and `haruspex.mssql.ts`, the database module's functions
-([the configuration page](../../docs/configuration.md#what-is-written-emit)).
+(the default), `haruspex.jsonschema.json`, `haruspex.mssql.ts`, the database module's functions, and `haruspex.mapping.ts`, the
+mapping helper ([the configuration page](../../docs/configuration.md#what-is-written-emit)).
 `check` infers the same way, writes nothing, and compares with the files there, which in CI are the ones committed. Both
 take:
 
