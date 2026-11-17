@@ -51,7 +51,7 @@ internal static class Acknowledgements
         foreach (var diagnostic in diagnostics)
         {
             var by = diagnostic is { Severity: DiagnosticSeverity.Warning, Subject: { } subject }
-                ? config.Acknowledged.FirstOrDefault(a => a.Code == diagnostic.Code.ToString() && a.Subject == subject)
+                ? config.Acknowledged.FirstOrDefault(a => a.Code == diagnostic.Code.ToString() && a.Subject.Equals(subject, StringComparison.OrdinalIgnoreCase))
                 : null;
             if (by is null)
             {

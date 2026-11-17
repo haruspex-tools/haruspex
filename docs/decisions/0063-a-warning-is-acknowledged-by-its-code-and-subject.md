@@ -8,7 +8,8 @@ a reason is refused. An acknowledged warning is counted in the summary rather th
 `--format json` (`acknowledged`) and written to SARIF as a result with an external suppression. Every other warning of the same
 code is still said. Only warnings about the source that name a subject can be acknowledged: a referenced DACPAC or project not
 found (HAR1003, HAR1007, by its file name), a build target that isn't read (HAR1008, by its name) and a write to an object the
-project doesn't define (HAR2101, by the object). An entry for any other code is an error (HAR6024), and an entry that matches
+project doesn't define (HAR2101, by the object's name, its parts joined by dots without brackets). Subjects are compared
+ignoring case, as SQL Server compares names, so one table is one subject however a procedure spells it. An entry for any other code is an error (HAR6024), and an entry that matches
 no warning in a run is a warning (HAR6025), except in a run whose `--include` narrows the selection.
 
 HAR1003 for a missing `master.dacpac` stays a warning, acknowledgeable like any other.

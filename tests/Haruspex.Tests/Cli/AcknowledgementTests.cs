@@ -83,6 +83,19 @@ public class AcknowledgementTests
     }
 
     [Fact]
+    public void A_table_written_in_brackets_or_another_case_is_one_subject()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/p.sql", "CREATE PROCEDURE dbo.p AS\nINSERT INTO [audit].[Trail] (id) VALUES (1);\nINSERT INTO audit.trail (id) VALUES (2);\nSELECT 1 AS one;\n");
+        folder.File("haruspex.json", """{ "source": "db", "out": "out", "schemas": { "dbo": { "include": ["*"] } }, "acknowledge": [{ "code": "HAR2101", "subject": "AUDIT.TRAIL", "why": "no triggers" }] }""");
+
+        var (exitCode, output, error) = Run(folder, "generate");
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("1 warning acknowledged", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_warning_is_never_acknowledged_by_its_code_alone()
     {
         using var folder = Project("""[{ "code": "HAR2101", "why": "triggers never return results here" }]""");

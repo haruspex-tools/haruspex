@@ -374,9 +374,10 @@ the name the warning gives:
 | [HAR1003](diagnostics/HAR1003.md), a referenced DACPAC isn't found | its file name, such as `master.dacpac` |
 | [HAR1007](diagnostics/HAR1007.md), a referenced project isn't found | its file name, such as `Shared.sqlproj` |
 | [HAR1008](diagnostics/HAR1008.md), part of a project file isn't read | the name of the build target that isn't read; the other parts can't be acknowledged |
-| [HAR2101](diagnostics/HAR2101.md), a write to an object the project doesn't define | the object, as the warning names it |
+| [HAR2101](diagnostics/HAR2101.md), a write to an object the project doesn't define | the object's name, its parts joined by dots without brackets, such as `audit.log` |
 
-No other code can be acknowledged: an error must be fixed, and a warning about the config file is fixed in it (HAR6024). An
+A subject is compared ignoring case, as SQL Server compares names, so `[Audit].[Log]` and `audit.log` are one subject. No other
+code can be acknowledged: an error must be fixed, and a warning about the config file is fixed in it (HAR6024). An
 entry that matches no warning in a run is said, as a warning (HAR6025), so that one left behind after its cause is gone doesn't
 hide the next warning of that subject; a run whose `--include` narrows the selection doesn't say it, since the warning may be
 about a procedure the run left out.

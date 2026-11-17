@@ -47,7 +47,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         {
             var resolved = binder.ResolveWritten(written);
             if (resolved.Count == 0)
-                Warn(FragmentText.OneLine(written), at);
+                Warn(written, at);
             foreach (var name in resolved)
             {
                 if (Reaches(name, events, binder, at, visited) is { } why)
@@ -58,14 +58,26 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         return null;
     }
 
-    private void Warn(string name, SourceLocation at)
+    /// <summary>Warns of a name written that resolves to nothing, as written, by its canonical subject (<see cref="Subject(ObjectName)"/>).</summary>
+    private void Warn(SchemaObjectName written, SourceLocation at) =>
+        Warn(FragmentText.OneLine(written), string.Join('.', written.Identifiers.Select(i => i.Value)), at);
+
+    /// <summary>
+    /// What a config file acknowledges a warning about <paramref name="name"/> by: its parts joined by dots, without brackets, as
+    /// <c>audit.log</c>, so that <c>[audit].[log]</c> and <c>audit.log</c> are one subject; the CLI compares subjects ignoring
+    /// case, as SQL Server compares names.
+    /// </summary>
+    private static string Subject(ObjectName name) => name.Database is { } database ? $"{database}.{name.Schema}.{name.Name}" : $"{name.Schema}.{name.Name}";
+
+    /// <summary>Warns, once for each subject, of an object written that the project doesn't define: <paramref name="name"/> as the message shows it.</summary>
+    private void Warn(string name, string subject, SourceLocation at)
     {
-        if (warned.Add(name))
+        if (warned.Add(subject))
         {
             warnings.Add(InferenceCodes.UndefinedWriteTarget.At(
                 at,
                 $"{name} is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.",
-                name));
+                subject));
         }
     }
 
@@ -80,7 +92,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
                 return null;
             var objects = binder.ResolveWritten(synonym.For);
             if (objects.Count == 0)
-                Warn($"{name} (a synonym for {synonym.For})", at);
+                Warn($"{name} (a synonym for {synonym.For})", Subject(name), at);
             foreach (var target in objects)
             {
                 if (Reaches(target, events, binder, at, visited) is { } why)
@@ -94,7 +106,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         var table = model.FindTable(name) is not null || model.FindTableRedefinition(name) is not null;
         if (view is null && !table)
         {
-            Warn(name.ToString(), at);
+            Warn(name.ToString(), Subject(name), at);
             return null;
         }
 
@@ -122,7 +134,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
             foreach (var read in DmlTarget.Underneath(view.Query))
             {
                 if (binder.ResolveWritten(read).Count == 0)
-                    Warn(FragmentText.OneLine(read), at);
+                    Warn(read, at);
                 foreach (var below in binder.ResolveWritten(read))
                 {
                     if (Reaches(below, remaining, binder, at, visited) is { } why)
@@ -204,7 +216,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         {
             var resolved = binder.ResolveWritten(written);
             if (resolved.Count == 0)
-                Warn(FragmentText.OneLine(written), at);
+                Warn(written, at);
             foreach (var name in resolved)
             {
                 if (Reaches(name, events, binder, at, visited) is { } why)
