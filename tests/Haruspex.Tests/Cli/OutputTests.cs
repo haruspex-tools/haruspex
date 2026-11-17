@@ -229,6 +229,27 @@ public class OutputTests
         Assert.Contains(@"has no column nick\n::error::boom\x1B[31m.", error.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Every_line_ends_with_lf_alone_on_every_platform()
+    {
+        using var folder = Kennel(Procedures + "\nGO\nCREATE PROCEDURE kennel.broken AS SELECT FROM;");
+        using var fine = Kennel();
+
+        var printed = RawPrinted(fine, "generate", "--verbose") + RawPrinted(folder, "generate") + RawPrinted(fine, "--help");
+
+        Assert.Contains("\n", printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("\r", printed, StringComparison.Ordinal);
+    }
+
+    /// <summary>What a run prints, both streams, as written: line endings as they are.</summary>
+    private static string RawPrinted(TempDirectory folder, params string[] args)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        HaruspexCli.Run(args, output, error, folder.Path);
+        return output.ToString() + error;
+    }
+
     private const string FindDogsWarning = "haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures[\"kennel.find_dogs\"].results, as \"none\" or a JSON Schema, or declare the results of the procedure that runs it.\n";
 
     /// <summary>The kennel without the procedure whose results only a declaration can give, which a check doesn't pass.</summary>

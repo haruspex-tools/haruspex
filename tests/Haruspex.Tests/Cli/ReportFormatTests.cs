@@ -101,7 +101,7 @@ public class ReportFormatTests
 
         var name = Path.GetFileName(folder.Path);
         Assert.Equal(1, exitCode);
-        Assert.Equal($"::error file={name}/db/broken.sql,line=1,col=42,title=HAR1001 The SQL doesn't parse::Incorrect syntax near 'FROM'.\n", output.ToString().ReplaceLineEndings("\n"));
+        Assert.Equal($"::error file={name}/db/broken.sql,line=1,col=42,title=HAR1001 The SQL doesn't parse::Incorrect syntax near 'FROM'.\n", output.ToString());
         Assert.Equal("db/broken.sql:1:42: error HAR1001: Incorrect syntax near 'FROM'.\nharuspex: 1 error; nothing was written.\n", CliOutput.Shown(error.ToString(), folder.Path));
     }
 

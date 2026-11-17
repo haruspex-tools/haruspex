@@ -55,6 +55,11 @@ internal static class HaruspexCli
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(error);
 
+        // LF on every platform, as in every file haruspex writes, so a run prints the same bytes on Windows as elsewhere and a CI
+        // log or a test compares them as they are.
+        output.NewLine = "\n";
+        error.NewLine = "\n";
+
         var root = Build(output, error, workingDirectory, terminal ?? Terminal.Plain);
 
         // The version is the terminal's, as everything else the command says about where it runs: the binary's own version

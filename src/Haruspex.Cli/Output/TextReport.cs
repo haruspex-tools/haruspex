@@ -125,7 +125,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
 
         if (acknowledged.Length > 0)
             lines.Add(acknowledged.TrimStart());
-        return string.Join(Environment.NewLine, lines);
+        return string.Join('\n', lines);
     }
 
     /// <summary>
