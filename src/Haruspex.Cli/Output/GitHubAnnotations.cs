@@ -46,9 +46,12 @@ internal sealed class GitHubAnnotations(string root, OutputDetail detail)
         return $"::{command} {string.Join(',', properties)}::{Data(DiagnosticFormatter.Parts(diagnostic).Text)}";
     }
 
-    /// <summary>A message, escaped as the runner reads one: <c>%</c>, carriage return and line feed as <c>%25</c>, <c>%0D</c> and <c>%0A</c>.</summary>
-    internal static string Data(string text) =>
-        text.Replace("%", "%25", StringComparison.Ordinal).Replace("\r", "%0D", StringComparison.Ordinal).Replace("\n", "%0A", StringComparison.Ordinal);
+    /// <summary>
+    /// A message, escaped as the runner reads one (<c>%</c> as <c>%25</c>), after each control character from the input is written
+    /// as an escape, as the text report writes it (<see cref="Visible"/>): so no line break can start a workflow command, and no
+    /// escape sequence reaches the log or the pull request, which would render it.
+    /// </summary>
+    internal static string Data(string text) => Visible.Of(text).Replace("%", "%25", StringComparison.Ordinal);
 
     /// <summary>A property's value, escaped as a message is and also its separators, <c>:</c> and <c>,</c>, as <c>%3A</c> and <c>%2C</c>.</summary>
     internal static string Property(string text) =>

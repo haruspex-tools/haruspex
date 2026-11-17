@@ -119,7 +119,8 @@ public class ReportFormatTests
     }
 
     [Theory]
-    [InlineData("100% sure\r\n2 lines", "100%25 sure%0D%0A2 lines", "100%25 sure%0D%0A2 lines")]
+    [InlineData("100% sure\r\n2 lines", @"100%25 sure\r\n2 lines", @"100%25 sure\r\n2 lines")]
+    [InlineData("red\u001b[31m\u0007", @"red\x1B[31m\x07", @"red\x1B[31m\x07")]
     [InlineData("a: b, c", "a: b, c", "a%3A b%2C c")]
     public void A_message_and_a_property_are_escaped_as_the_runner_reads_them(string text, string data, string property) =>
         Assert.Equal((data, property), (Haruspex.Cli.Output.GitHubAnnotations.Data(text), Haruspex.Cli.Output.GitHubAnnotations.Property(text)));
