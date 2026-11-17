@@ -21,7 +21,7 @@ export async function plants(pool: sql.ConnectionPool): Promise<ListPlantsRow[]>
   return await listPlants(pool)
 }
 
-/** The types are the application's own from here on: no haruspex type appears in its code. */
+/** Code written against the generated type itself; src/watering.ts makes the application's own type instead. */
 export function litresGiven(plant: NonNullable<GetPlant>): number {
   // A plant never watered has no water_log key at all, which FOR JSON leaves out rather than writing an empty array.
   return (plant.water_log ?? []).reduce((total: number, entry: GetPlantWaterLogItem) => total + entry.litres, 0)

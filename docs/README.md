@@ -12,15 +12,17 @@ is, what it does today and what it can't see; read it first whichever path you t
 2. [The database module](database-module.md): how an application calls a procedure through its generated function, what
    comes back, how parameters are checked, the three ways a call fails, and where the functions run; and how to read
    results with the schemas alone.
-3. [The example application](../examples/greenhouse/README.md): a small TypeScript application that calls its procedures
+3. [The application's own types](layers.md): where the generated types end and the application's begin, with a thin step
+   written by hand on the generated type, and a helper that makes it account for every key of a row.
+4. [The example application](../examples/greenhouse/README.md): a small TypeScript application that calls its procedures
    through a generated module, as a team would commit it.
-4. [The configuration reference](configuration.md): `haruspex.json`, which says which procedures to type, what to write, how
+5. [The configuration reference](configuration.md): `haruspex.json`, which says which procedures to type, what to write, how
    to name the generated code, and how to correct or declare what can't be inferred.
-5. [The command line](command-line.md), for `init`, `generate` and `check`: what each prints, their options, the formats for
+6. [The command line](command-line.md), for `init`, `generate` and `check`: what each prints, their options, the formats for
    tools and CI, the environment variables they read and their exit codes; [the CLI's README](../src/Haruspex.Cli/README.md)
    for several modules at once and what a run guarantees; and [the diagnostics](diagnostics/README.md), when it reports a problem: each code
    has a page saying what it means and what to do.
-6. [What haruspex models](coverage.md), to see before you start whether your procedures use something it reads as unknown.
+7. [What haruspex models](coverage.md), to see before you start whether your procedures use something it reads as unknown.
 
 ### To decide whether to trust it
 
@@ -70,6 +72,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | [README](../README.md) | What haruspex is, what an application gets from it, examples on Microsoft's samples (two procedures and a query file), its other uses, what it guarantees, its status and roadmap, how to install and run it, and who it is not for. |
 | [Five minutes with AdventureWorks](quick-start.md) | A first run, from a fresh clone, that a test runs as written. |
 | [The database module](database-module.md) | The generated functions: calling a procedure, what comes back, the parameters' checks, the three failures and where they run; and reading results with the schemas alone. |
+| [The application's own types](layers.md) | The three layers: the generated function calls, the generated schema checks, and a thin step written by hand makes the application's types; and the mapping helper, with which that step accounts for every key of a row. |
 | [The command line](../src/Haruspex.Cli/README.md) | `haruspex generate` and `haruspex check`: their arguments and options, several modules at once, what they print, and their exit codes. |
 | [The generated code](../src/Haruspex.Emit.Zod/README.md) | What the Zod module holds, and how each SQL type arrives: in JSON, and in a row as the mssql driver delivers it. |
 | [Configuration](configuration.md) | Every setting of `haruspex.json`, held to its [JSON Schema](../schemas/haruspex.schema.json) by a test. |

@@ -20,7 +20,7 @@ public class ExampleAppTests
         var exitCode = HaruspexCli.Run(["generate", "--out", temp.Path], output, error, Folder);
 
         Assert.True(exitCode == 0, error.ToString());
-        foreach (var file in new[] { "haruspex.ir.json", "haruspex.zod.ts", "haruspex.mssql.ts" })
+        foreach (var file in new[] { "haruspex.ir.json", "haruspex.zod.ts", "haruspex.mssql.ts", "haruspex.mapping.ts" })
         {
             Assert.True(
                 File.ReadAllText(Path.Combine(Folder, "src", "db", file)) == File.ReadAllText(Path.Combine(temp.Path, file)),

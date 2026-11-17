@@ -4,8 +4,9 @@ A small TypeScript application for an invented greenhouse, which keeps its plant
 Server. It shows what a team does with haruspex's output: `haruspex generate`, run in this folder, reads the database
 project in `database`, and the application's own query file in `queries`, with the settings in `haruspex.json`, and writes the
 database module: `src/db/haruspex.zod.ts`, a schema and a type for each procedure and query file, and `src/db/haruspex.mssql.ts`,
-a function for each, which runs it through the [mssql](https://www.npmjs.com/package/mssql) driver. The application's own code, `src/plants.ts`, calls the functions, and
-uses the types to write the code that handles what they return.
+a function for each, which runs it through the [mssql](https://www.npmjs.com/package/mssql) driver, with `src/db/haruspex.mapping.ts`,
+the mapping helper. The application's own code, `src/plants.ts`, calls the functions, and uses the types to write the code that
+handles what they return; `src/watering.ts` makes the application's own types from them.
 
 ```sh
 dotnet run --project ../../src/Haruspex.Cli -- generate
@@ -34,6 +35,10 @@ What to look at:
   own errors are mssql's `RequestError`, passed through as they are.
 - `garden.list_plants` returns rows, which the mssql driver delivers with `date` columns as `Date`, so `planted` is a
   `Date | null`.
+- `src/watering.ts` is the step where the database's shape becomes the application's
+  ([the application's own types](../../docs/layers.md)): `toPlant` turns the row `getPlant` returns into a `Plant` whose
+  `history` is never absent and whose amounts are `Litres`, and the type it takes accounts for every key of the row, so a
+  column the procedure gains is a compile error there.
 - `kind` is limited by a CHECK constraint, but it is an `nvarchar` column, which the database compares under its collation:
   where `HERB` can pass a check for `herb`, the value that arrives may be either, so the module notes the values rather
   than claiming an enum. [The configuration](../../docs/configuration.md#the-databases-collation-collation) says when a set

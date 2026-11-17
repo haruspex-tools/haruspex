@@ -200,6 +200,16 @@ internal sealed partial class CodeReferences
                 generated.Add(m.Groups["name"].Value);
         }
 
+        // An example application's TypeScript, its own and the module generated for it, which its test compiles
+        // (ExampleAppTests): a name declared there, exported or not, is real, as a page quoting the file shows it
+        // (QuotedExampleTests).
+        foreach (var source in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "examples"), "*.ts", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        {
+            foreach (Match m in ExampleDeclaration().Matches(File.ReadAllText(source)))
+                generated.Add(m.Groups["name"].Value);
+        }
+
         foreach (var fixture in Fixture.All)
         {
             var model = SqlScriptFolder.Read(fixture.Database).Model;
@@ -362,6 +372,10 @@ internal sealed partial class CodeReferences
 
     [GeneratedRegex(@"\bexport\s+(?:const|type|interface|class|async\s+function)\s+(?<name>[A-Za-z_]\w*)")]
     private static partial Regex GeneratedName();
+
+    /// <summary>A declaration in an example application's TypeScript, exported or not.</summary>
+    [GeneratedRegex(@"^(?:export\s+)?(?:const|type|interface|class|(?:async\s+)?function)\s+(?<name>[A-Za-z_]\w*)", RegexOptions.Multiline)]
+    private static partial Regex ExampleDeclaration();
 
     /// <summary>A key of a generated object, one to a line: <c>  orderDate: z.iso.date(),</c>.</summary>
     [GeneratedRegex(@"^[ ]+(?<name>[A-Za-z_]\w*): ", RegexOptions.Multiline)]
