@@ -6,9 +6,9 @@ namespace Haruspex.Tests.Architecture;
 
 /// <summary>
 /// What Native AOT refuses, kept out of the source: the command is compiled ahead of time (CI's native jobs), where a call that
-/// needs reflection is a warning, and warnings are errors. <c>JsonSerializer</c>'s <c>Serialize</c> and <c>Deserialize</c>
-/// without a source-generated context need it; <c>Utf8JsonWriter</c>, <c>JsonDocument</c> and <c>JsonEncodedText</c> don't, and
-/// are what the source uses.
+/// needs reflection is a warning, and warnings are errors. Every method of <c>JsonSerializer</c> writes or reads objects by
+/// reflection unless given a source-generated context; <c>Utf8JsonWriter</c>, <c>JsonDocument</c> and <c>JsonEncodedText</c>
+/// don't, and are what the source uses.
 /// </summary>
 public partial class NativeAotTests
 {
@@ -34,7 +34,7 @@ public partial class NativeAotTests
     [InlineData("<html> & 'apostrophes'")]
     [InlineData("\u00e9, \u00df, \u6771\u4eac, \U0001F600")]
     [InlineData("\u2028\u2029")]
-    public void A_replacement_hint_quotes_text_as_json_serialisation_did(string text) =>
+    public void A_replacement_hint_quotes_text_as_the_json_serialiser_did(string text) =>
         Assert.Equal(
             JsonSerializer.Serialize(text, Relaxed),
             ReplacementHint.Json(text));
@@ -42,7 +42,7 @@ public partial class NativeAotTests
     /// <summary>The options the hint serialised with before, to compare with.</summary>
     private static readonly JsonSerializerOptions Relaxed = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
-    /// <summary>A call of <c>JsonSerializer.Serialize</c> or <c>Deserialize</c>.</summary>
-    [GeneratedRegex(@"\bJsonSerializer\.(Serialize|Deserialize)\b")]
+    /// <summary>A call of any method of <c>JsonSerializer</c>.</summary>
+    [GeneratedRegex(@"(?<!\w)JsonSerializer\.\w+[(<]")]
     private static partial Regex Reflective();
 }
