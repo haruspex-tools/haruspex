@@ -37,7 +37,9 @@ internal static class Init
             return Refused(error, [.. failed.Diagnostics]);
         var chosen = ((Succeeded<string>)found).Value;
 
-        var shown = DisplayPath.From(workingDirectory, chosen);
+        // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
+        // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
+        var shown = DiagnosticFormatter.PathAsShown(Path.GetRelativePath(workingDirectory, chosen));
         var schemas = Schemas(chosen);
         var @out = Directory.Exists(Path.Join(workingDirectory, "src")) ? "src/db" : "generated";
         try

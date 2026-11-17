@@ -170,4 +170,18 @@ public class InitTests
         Assert.Equal(1, exitCode);
         Assert.StartsWith("haruspex: error HAR6008: cannot write haruspex.json: ", error, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_source_outside_the_folder_is_written_relative_to_the_config_file()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/p.sql", Procedure);
+        Directory.CreateDirectory(Path.Combine(folder.Path, "app"));
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+
+        Assert.Equal(0, HaruspexCli.Run(["init", "../db"], output, error, Path.Combine(folder.Path, "app")));
+
+        Assert.Contains("\"source\": \"../db\",", File.ReadAllText(Path.Combine(folder.Path, "app", "haruspex.json")), StringComparison.Ordinal);
+    }
 }
