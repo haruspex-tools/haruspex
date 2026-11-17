@@ -359,7 +359,7 @@ public partial class CliTests
 
         Assert.True(exitCode == 0, error);
         Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
-        Assert.Equal((0, "haruspex: nothing changed since the last run: 1 procedure, no unknowns.\n"), (exitCodeAgain, outputAgain));
+        Assert.Equal((0, "haruspex: nothing changed since the last run: 1 procedure, no unknowns.\n"), (exitCodeAgain, outputAgain.ReplaceLineEndings("\n")));
         Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
         Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
     }
