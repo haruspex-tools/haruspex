@@ -3,7 +3,8 @@
 The haruspex command is a .NET program, compiled ahead of time to one native binary per platform (Native AOT, in CI's native job). Its
 users are mostly TypeScript teams, who already have Node and npm, so its main way in is npm: `npm install haruspex`, then
 `npx haruspex generate` or a package script, with no .NET runtime and nothing to compile. This folder builds those packages.
-Nothing is published yet: CI and the script below make tarballs, which npm installs from the file.
+Nothing is published yet: CI and the script below make tarballs, which install from the file
+([the README's Install section](../../README.md#install)).
 
 ## The layout
 

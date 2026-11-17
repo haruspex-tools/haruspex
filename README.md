@@ -343,6 +343,39 @@ cd haruspex
 dotnet build
 ```
 
+### A preview from npm tarballs
+
+**This is a preview.** Once published, haruspex will be installed from npm, as `npm install --save-dev haruspex`, with a native binary for
+each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, each CI
+run builds the packages as tarballs and keeps them for 30 days as its artifact `haruspex-npm`: the command,
+`haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, `haruspex-<platform>-0.0.0-preview-<commit>.tgz`, where
+the platform is `linux-x64`, `linux-arm64`, `darwin-arm64`, `darwin-x64` or `win32-x64`. Download them from the run's page, or
+with the `gh` CLI:
+
+```sh
+gh run download <run id> --repo sharpblue/haruspex --name haruspex-npm --dir haruspex-preview
+```
+
+To try it on one machine, install the command and the binary for that machine:
+
+```sh
+npm install --save-dev ./haruspex-preview/haruspex-0.0.0-preview-<commit>.tgz ./haruspex-preview/haruspex-darwin-arm64-0.0.0-preview-<commit>.tgz
+npx haruspex --version
+```
+
+In an application that others install too, or that CI installs with `npm ci`, keep the tarballs in the repository (say in
+`vendor/haruspex`), install the command as before, and every platform's binary as optional, so that npm installs only the one
+for the machine it runs on and the lock file covers them all:
+
+```sh
+npm install --save-dev ./vendor/haruspex/haruspex-0.0.0-preview-<commit>.tgz
+npm install --save-optional ./vendor/haruspex/haruspex-linux-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-linux-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-darwin-arm64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-darwin-x64-0.0.0-preview-<commit>.tgz ./vendor/haruspex/haruspex-win32-x64-0.0.0-preview-<commit>.tgz
+```
+
+Then `npx haruspex generate` and `npx haruspex check` run it, and so does a package script (`"db": "haruspex generate"`). The
+package holds the JSON Schema of `haruspex.json`, so the config file can name it as
+`"$schema": "./node_modules/haruspex/haruspex.schema.json"`. The Linux binaries need glibc 2.34 or later.
+
 The application installs [Zod 4](https://zod.dev) and [mssql](https://www.npmjs.com/package/mssql) itself. The tests compile
 every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScript 7.0.2.
 
