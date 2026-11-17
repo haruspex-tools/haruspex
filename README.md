@@ -316,7 +316,7 @@ fails loudly, with an error saying which, rather than reaching the application's
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
 - **Typed 32 of 38 fields in AdventureWorks.**
-- **Typed 170 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.**
+- **Typed 172 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.**
 
 [The harvest](docs/corpus-harvest.md) measures more databases; [what haruspex models](docs/coverage.md) lists every construct.
 

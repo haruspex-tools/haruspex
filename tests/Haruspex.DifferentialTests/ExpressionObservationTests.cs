@@ -9,7 +9,7 @@ namespace Haruspex.DifferentialTests;
 /// (<c>sys.dm_exec_describe_first_result_set</c>); what can be NULL, and what is cut short, is read from values. The rules
 /// rest on these (Haruspex.SqlServer.Inference's README.md, "Expressions"). Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class ExpressionObservationTests(SqlServerFixture server)
+public partial class ExpressionObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string call, bool errorsAsMessages = false) =>
         ObservedCall.Run(server, [], call, errorsAsMessages);

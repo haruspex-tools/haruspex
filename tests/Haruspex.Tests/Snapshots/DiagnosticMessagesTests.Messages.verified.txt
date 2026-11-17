@@ -59,7 +59,7 @@ HAR2006
 db/p1.sql:1:34: note HAR2006: lib.p results[0][].value: The table source REGEXP_SPLIT_TO_TABLE(N'a,b', N',') AS s is not modelled yet.
 
 HAR2007
-db/tables.sql:8:5: note HAR2007: lib.p results[0][].pages: lib.book.pages is a computed column, which is not modelled yet.
+db/tables.sql:8:5: note HAR2007: lib.p results[0][].cover: The type varbinary(max) is not modelled yet.
 
 HAR2008
 db/p1.sql:1:34: note HAR2008: lib.p results[0][].a: There is no table lib.missing in the project.

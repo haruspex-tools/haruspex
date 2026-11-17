@@ -30,6 +30,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="uncommittedReads">
 /// Whether the body (a view's, a function's) is read uncommitted where it is used, so that no key of what it reads holds.
 /// </param>
+/// <param name="inComputedColumn">Whether it reads a computed column's expression, which may read no other computed column.</param>
 /// <param name="uses">
 /// Where a query file's walk with its parameters undeclared keeps what their uses say of their types (<see cref="ParameterUses"/>):
 /// each query read is handed to it in its scope. Null for every other read, which records nothing.
@@ -41,8 +42,15 @@ internal sealed partial class Typer(
     EquatableMap<LocalName, Value>? parameters = null,
     bool ansiNullsOff = false,
     bool uncommittedReads = false,
-    ParameterUses? uses = null)
+    ParameterUses? uses = null,
+    bool inComputedColumn = false)
 {
+    /// <summary>
+    /// Whether this typer reads a computed column's expression (<see cref="ComputedColumn"/>), in which a computed column is one
+    /// SQL Server refuses to read.
+    /// </summary>
+    private readonly bool inComputedColumn = inComputedColumn;
+
     /// <summary>Where a query file's parameters' uses are kept, while its parameters are being typed; null otherwise.</summary>
     private readonly ParameterUses? uses = uses;
 
@@ -398,9 +406,15 @@ internal sealed partial class Typer(
     internal Value FromColumn(TableColumn bound, ReadScope scope)
     {
         var (source, table, column) = bound;
+        var computed = column.ComputedExpression is { } expression ? ComputedColumn(bound, expression, scope) : null;
+        if (computed is { Shape: UnknownShape })
+            return computed;
+
+        // A computed column may be null as its expression may, unless declared PERSISTED NOT NULL (or in a key), whose rows are
+        // refused when they are written with NULL there.
         var because = new List<IrNullReason>();
         if (!SchemaRules.IsNeverNull(model, table, column) && scope.Facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.None)
-            because.Add(new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}"));
+            because.AddRange(computed?.NullableBecause ?? [new IrNullReason(IrNullRule.NullableColumn, $"{table.Name}.{column.Name}")]);
 
         // The optional side of an outer join, or of an OUTER APPLY, has no row when nothing matches, so every column read
         // from it can be null, whatever its declaration says; unless a filter proves the row matched.
@@ -425,7 +439,31 @@ internal sealed partial class Typer(
                 IsLiveJson: true);
         }
 
-        return Value.Computed(ColumnShape(table, table.Name.ToString(), column), [.. because]);
+        return Value.Computed(computed?.Shape ?? ColumnShape(table, table.Name.ToString(), column), [.. because]);
+    }
+
+    /// <summary>
+    /// A computed column's value where it is read: its expression, read over the same row as any expression is, PERSISTED or
+    /// not (observed: A_computed_column_is_of_its_expressions_type_and_null_as_its_expression_is_persisted_or_not), in the
+    /// table's own file, as its source wrote it. The row is read without the outer join or APPLY it may be on, whose reasons
+    /// <see cref="FromColumn"/> adds to the column's. Unknown when its expression is, and when it holds JSON, which FOR JSON
+    /// nests as JSON (A_computed_column_of_json_nests_as_json_in_for_json), not modelled for a column; and when it reads another
+    /// computed column, which SQL Server refuses (1759). A non-persisted column is computed under the reader's options, and a
+    /// persisted one was written under ANSI_WARNINGS on (1934 otherwise), so typing it under the callers' options claims no less
+    /// than its value can be (A_persisted_computed_column_is_written_only_with_ansi_warnings_on_and_a_computed_column_reads_no_other).
+    /// The model doesn't record the table's ANSI_NULLS, so the expression is read with it on, as for any body.
+    /// </summary>
+    private Value ComputedColumn(TableColumn bound, ScalarExpression expression, ReadScope scope)
+    {
+        var (source, table, column) = bound;
+        if (inComputedColumn)
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column, which another computed column can't read (1759).", column.At));
+
+        var row = QueryScope.OfRow(source with { Optional = null }, scope.Bound.Names);
+        var value = new Typer(model, table.Span, summaries, inComputedColumn: true).Expression(expression, scope.In(row));
+        return value.IsLiveJson
+            ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column holding JSON, which is not modelled for a column.", column.At))
+            : value;
     }
 
     /// <summary>A column's shape when it is not null.</summary>

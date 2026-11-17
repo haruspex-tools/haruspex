@@ -58,7 +58,7 @@ None: every script is read.
 
 ## WideWorldImporters
 
-**Typed 170 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.** 25 of the 30 procedures that return fields are fully typed.
+**Typed 172 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.** 27 of the 30 procedures that return fields are fully typed.
 
 An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read the scripts the project lists to build, as a build would, and leave out the others, listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are parsed here with it on; in these scripts every double quote is inside a string or a comment, where the setting changes nothing. Read through the project file, each script with its own setting, the project gives the IR of the package its build makes (`ProjectEquivalenceTests`).
 
@@ -72,9 +72,9 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read
 | Procedures whose result sets can't be listed | 23 |
 | Procedures that return no result set | 71 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 25 |
+| Procedures that return fields, fully typed | 27 |
 | Fields | 175 |
-| Fields typed | 170 |
+| Fields typed | 172 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 35 |
 | Results of unknown shape | 5 |
@@ -85,7 +85,7 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read
 |---|---:|---:|---:|---:|
 | `dynamic-sql` | 0 | 0 | 18 | 0 |
 | `unsupported-query` | 0 | 5 | 0 | 0 |
-| `unsupported-sql-type` | 5 | 0 | 0 | 4 |
+| `unsupported-sql-type` | 3 | 0 | 0 | 4 |
 | `unsupported-statement` | 0 | 0 | 5 | 0 |
 
 ### Scripts left out

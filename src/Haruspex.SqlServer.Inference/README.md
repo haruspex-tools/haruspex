@@ -616,6 +616,24 @@ write fires them. A trigger disabled by `DISABLE TRIGGER` is still counted, whic
 computed by an expression is any value of its type: it has the type's facets, not the CHECK set or bounds of a column it
 read, except where it is that value unchanged (a conversion to its own type, `ISNULL` of a value never null).
 
+### Computed columns
+
+A computed column of a table, `is_valid AS (CASE WHEN … THEN 1 ELSE 0 END)`, `PERSISTED` or not, is read as its expression is
+(`Typer.ComputedColumn`): its type, its facets (a CASE's value set included) and its reasons to be null, read over the same row
+in the table's own file, where its unknowns and reasons point. A folder's script and a DACPAC both carry the expression, parsed
+by ScriptDom. It is null as its expression is, unless it is declared `PERSISTED NOT NULL` or is in the primary key: a row whose
+value would be NULL there is refused when it is written (515), though the server describes it by its expression. Read from the
+optional side of a join or `OUTER APPLY` it may be NULL there too, and a filter on the column itself proves it as it proves any
+column (`A_computed_column_is_of_its_expressions_type_and_null_as_its_expression_is_persisted_or_not`).
+
+A computed column that isn't persisted is computed under the reader's options, and a persisted one can only be written under
+`ANSI_WARNINGS` on (1934), so typing it under the callers' options claims no more than its value can be. The model doesn't
+record the table's `ANSI_NULLS`, so its expression is read with it on. It stays unknown when its expression is (with the
+expression's reason), when it holds JSON, which `FOR JSON` nests as JSON (`A_computed_column_of_json_nests_as_json_in_for_json`)
+and which isn't modelled for a column, and when it reads another computed column, which SQL Server refuses (1759,
+`A_persisted_computed_column_is_written_only_with_ansi_warnings_on_and_a_computed_column_reads_no_other`). A temporary table's
+or a table variable's computed column is still unknown.
+
 ### Literals
 
 `'abc'` is `varchar(3)`, `N'ab'` `nvarchar(2)`, `''` `varchar(1)`; an integer within `int` is `int`, a larger one

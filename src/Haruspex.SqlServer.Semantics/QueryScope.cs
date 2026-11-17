@@ -37,6 +37,20 @@ public sealed class QueryScope
         return new(outer, [], outer?.Names ?? names);
     }
 
+    /// <summary>
+    /// The scope a computed column's expression is read in: the one row of its own table, read by <paramref name="row"/>, and
+    /// nothing beyond it. Its expression names only that table's columns, unqualified, and reads no subquery (SQL Server refuses
+    /// both, 1759 and 1046), so this is all a name in it can mean.
+    /// </summary>
+    /// <param name="row">The source that reads the table's row.</param>
+    /// <param name="names">The names in force where the column is read.</param>
+    public static QueryScope OfRow(BoundSource row, NameEnvironment names)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        ArgumentNullException.ThrowIfNull(names);
+        return new(null, [row], names);
+    }
+
     /// <summary>The sources of this scope that a table reference binds: those of every table source in it, through its joins.</summary>
     /// <param name="reference">A table reference of this scope's FROM, or one inside it.</param>
     public IReadOnlyList<BoundSource> SourcesUnder(TableReference reference)

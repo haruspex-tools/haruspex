@@ -356,8 +356,9 @@ public class ConstructTests
     // ---- types --------------------------------------------------------------------------------------
 
     [Fact]
-    public void A_computed_column_is_unknown() =>
-        AssertUnknown(Procedure("SELECT c.b FROM dbo.c AS c;"), "results[0][].b", IrUnknownReason.UnsupportedSqlType);
+    public void A_computed_column_is_read_as_its_expression() =>
+        // ExpressionTests.ComputedColumns.cs holds what it gives.
+        Assert.Empty(Procedure("SELECT c.b FROM dbo.c AS c;").Unknowns);
 
     // ---- statements outside procedures --------------------------------------------------------------
 

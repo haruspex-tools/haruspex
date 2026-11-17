@@ -16,7 +16,7 @@ namespace Haruspex.Tests.Diagnostics;
 /// </summary>
 public class DiagnosticMessagesTests
 {
-    /// <summary>A small invented library: a table of books, with a constraint, a computed column and a trigger-free audit.</summary>
+    /// <summary>A small invented library: a table of books, with a constraint, a binary column and a trigger-free audit.</summary>
     private const string Tables = """
         CREATE TABLE lib.book (
             id int NOT NULL PRIMARY KEY,
@@ -25,7 +25,7 @@ public class DiagnosticMessagesTests
             status varchar(10) NOT NULL CHECK (status IN ('open', 'lent')),
             copies int NOT NULL CHECK (copies IN (1, 2)),
             extra nvarchar(max) NULL,
-            pages AS id * 2);
+            cover varbinary(max) NULL);
         """;
 
     private const string GetBook = "CREATE PROCEDURE lib.get_book AS SELECT b.id, b.title, b.note, b.status, b.copies, b.extra FROM lib.book AS b;";
@@ -153,7 +153,7 @@ public class DiagnosticMessagesTests
         (2004, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b FOR JSON AUTO;"])),
         (2005, () => Cli(["CREATE PROCEDURE lib.p AS SELECT here.lib.book.id AS c FROM lib.book;"])),
         (2006, () => Cli(["CREATE PROCEDURE lib.p AS SELECT s.value FROM REGEXP_SPLIT_TO_TABLE(N'a,b', N',') AS s;"])),
-        (2007, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.pages FROM lib.book AS b;"])),
+        (2007, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.cover FROM lib.book AS b;"])),
         (2008, () => Cli(["CREATE PROCEDURE lib.p AS SELECT x.a FROM lib.missing AS x;"])),
         (2009, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.nope AS gone FROM lib.book AS b;"])),
         (2010, () => Cli(["CREATE PROCEDURE lib.p AS SELECT (b.id) FROM lib.book AS b;"])),
