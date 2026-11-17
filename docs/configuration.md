@@ -315,7 +315,9 @@ alone:
 database module is two files so that the schemas and types, which a browser may use, stay apart from the functions, which it
 must not. In a Next.js application they are for route handlers, server actions and server components. `"serverOnly": true`
 starts `haruspex.mssql.ts` with `import 'server-only'`, so that a build fails where client code imports it (install the
-`server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework.
+`server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework. Tests that
+import the functions then need `server-only` resolved as Next.js resolves it, or replaced by an empty module: the database
+module's page has [the Vitest configuration for each](database-module.md#where-the-functions-run).
 
 `emit` lists at least one, each once. `check` compares each file it names with what is committed, and fails when one is
 missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.

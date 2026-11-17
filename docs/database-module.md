@@ -156,6 +156,34 @@ for route handlers, server actions and server components; the types and schemas,
 `"serverOnly": true` in `haruspex.json` starts the functions' file with `import 'server-only'`, so that a build fails where
 browser code imports it. It is off by default, since haruspex assumes no framework.
 
+**In tests.** With `"serverOnly": true`, a test that imports the functions' file, itself or through the code under test,
+imports `server-only` too, and a test runner resolves it as Node does: `Cannot find package 'server-only'` when it isn't
+installed, and when it is, the package's own error, `This module cannot be imported from a Client Component module`, since
+it is empty only under the `react-server` condition, which Next.js sets for server code. So the tests need one of these
+(both checked with Vitest 5.1):
+
+- `server-only` installed (`npm install --save-dev server-only`) and resolved under the `react-server` condition, beside
+  Vite's own conditions for server code. The condition then applies to every package the tests import, so a package with a
+  `react-server` build, React among them, resolves to that build:
+
+  ```ts
+  // vitest.config.ts
+  import { defaultServerConditions } from 'vite'
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ ssr: { resolve: { conditions: [...defaultServerConditions, 'react-server'] } } })
+  ```
+
+- or `server-only`, installed or not, resolved to an empty module of the application's own (`export {}`), which changes
+  nothing else:
+
+  ```ts
+  // vitest.config.ts
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ resolve: { alias: { 'server-only': new URL('./test/empty.ts', import.meta.url).pathname } } })
+  ```
+
 An application whose plugins or sub-applications each need their own interface to the database gives each its own
 `haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
 another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
