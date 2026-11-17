@@ -60,7 +60,7 @@ internal sealed partial class CodeReferences
         "Date", "Infinity",
 
         // The mssql driver's types, which the functions take and pass through.
-        "ConnectionPool", "Transaction", "RequestError",
+        "ConnectionPool", "Transaction", "RequestError", "IProcedureResult",
 
         // Names from before the split into layers, in the table of what each type became (docs/architecture.md).
         "Haruspex.SqlServer", "Catalog", "TableModel", "ColumnModel", "SqlProject.Changed",

@@ -50,6 +50,23 @@ public class EmitCheckTests
             $"ESLint reported the generated Zod ({why}):\n{output}");
     }
 
+    /// <summary>
+    /// Runs a generated function against the test double <c>docs/database-module.md</c> shows (<c>src/test-double.ts</c>, which
+    /// the compile above type-checks): its result and <c>OUTPUT</c> parameters come back from the double's <c>recordsets</c> and
+    /// <c>output</c>, what it returns is checked by the schemas, and a double giving only <c>recordset</c> fails the call.
+    /// </summary>
+    [Fact]
+    public void A_function_runs_against_a_double_that_returns_recordsets_output_and_return_value()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the functions were not run against a test double");
+        WriteGenerated(RepositoryPaths.EmitCheck);
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "double.mjs")], RepositoryPaths.EmitCheck, out var output, out var why),
+            $"A generated function did not run as documented against the test double ({why}):\n{output}");
+    }
+
     /// <summary>Every fixture's module in <c>generated</c> under <paramref name="package"/>.</summary>
     private static void WriteGenerated(string package)
     {

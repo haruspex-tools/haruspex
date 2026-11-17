@@ -105,6 +105,50 @@ try {
 }
 ```
 
+## Testing with a double
+
+A function takes anything with `request()`, so a test can hand it a double rather than a pool. The double's `request()`
+returns an object with `input()` and `output()`, whose results the function ignores, and `execute()`, which the function
+calls for a procedure and for a query file alike (a query file runs through `sp_executesql`). What `execute()` resolves to
+is what the function reads, and it must have all three of the driver's fields:
+
+- `recordsets`: every result set, in order, each an array of rows (or, for a `FOR JSON` result, the one row the driver
+  makes of it). The function reads the sets from here, never from `recordset`, the first set alone, which hand-written
+  doubles often give instead: with only `recordset`, every call fails before any schema is applied;
+- `output`: the `OUTPUT` parameters, by their declared names, `{}` when there are none;
+- `returnValue`: the return code, 0 unless the test is about another.
+
+Typing the result as the driver's `IProcedureResult` makes the compiler ask for each. A double for a procedure with an `OUTPUT`
+parameter, as a test in this repository runs it against a generated function:
+
+```ts
+import type sql from 'mssql'
+import type { Queryable } from './db/haruspex.mssql'
+
+/** A connection whose every call returns these result sets, OUTPUT parameters and return code. */
+export function returning(sets: object[][], output: Record<string, unknown> = {}, returnValue = 0): Queryable {
+  const result: sql.IProcedureResult<object> = {
+    recordsets: sets as sql.IRecordSet<object>[],
+    recordset: sets[0] as sql.IRecordSet<object>,
+    output,
+    returnValue,
+    rowsAffected: sets.map((rows) => rows.length),
+  }
+  const request = { input: (): void => undefined, output: (): void => undefined, execute: async () => result }
+  return { request: () => request as unknown as sql.Request }
+}
+
+const sale = await ringUp(returning([[{ basket_id: '7', discount: 0, gift: false, token: null, weight: null, ratio: null }]], { sale_id: 12 }), {
+  product_id: 1,
+  quantity: 2,
+  basket_id: 7,
+})
+// { result: [{ basket_id: '7', … }], output: { sale_id: 12 } }
+```
+
+What the double returns is still checked by the procedure's schemas, so a double that drifts from the database fails the
+way the database would, with a `ResultError`.
+
 ## Where the functions run
 
 On the server. They take a connection, and a connection holds the database's credentials. In a Next.js application they are

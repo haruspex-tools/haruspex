@@ -70,6 +70,22 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
 - **It is self-contained.** Its errors and helpers are written into it, so a module needs no package of haruspex's at run time,
   and several modules in one application share nothing.
 
+## Testing with a double
+
+A double that stands in for the connection gives `request()`, whose object has `input()`, `output()` and `execute()`. The
+functions call `execute()` for a procedure and a query file alike, and read three fields of what it resolves to: `recordsets`,
+every result set in order; `output`, the `OUTPUT` parameters by name (`{}` when there are none); and `returnValue`, the
+return code (0). A double that gives only `recordset`, the first set, fails every call:
+
+```ts
+const result = { recordsets: [[{ order_id: 42 }]], output: {}, returnValue: 0 }
+const db = { request: () => ({ input() {}, output() {}, execute: async () => result }) } as unknown as Queryable
+```
+
+[The database module's page](https://github.com/sharpblue/haruspex/blob/main/docs/database-module.md#testing-with-a-double)
+has a whole example, typed as the driver's `IProcedureResult` so that the compiler asks for each field, which a test runs
+against a generated function.
+
 ## What it deliberately doesn't do
 
 - **No naming.** A function's name is its procedure's settled name with a lower-case first word (`GetOrder` is `getOrder`); a
