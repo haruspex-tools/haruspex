@@ -29,15 +29,16 @@ internal sealed class Terminal
     /// <summary>The tool's version, as <c>--version</c> prints it and SARIF records it.</summary>
     public string Version { get; init; } = ToolVersion;
 
+    /// <summary>The version this build of haruspex carries: the assembly's informational version, which the build stamps with the commit.</summary>
+    /// <remarks>Declared before <see cref="Plain"/>, whose version it is: static properties are set in the order they are written.</remarks>
+    public static string ToolVersion { get; } =
+        typeof(Terminal).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
     /// <summary>
     /// Neither stream a terminal, and no variable set: how the tests run the command unless they say otherwise, and how a
     /// script or a CI job that sets nothing sees it.
     /// </summary>
     public static Terminal Plain { get; } = new();
-
-    /// <summary>The version this build of haruspex carries: the assembly's informational version, which the build stamps with the commit.</summary>
-    public static string ToolVersion { get; } =
-        typeof(Terminal).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
 
     /// <summary>
     /// The value of the variable <paramref name="name"/>, or null when it isn't set or is empty: <c>NO_COLOR</c>'s convention,

@@ -56,6 +56,12 @@ internal static class HaruspexCli
         ArgumentNullException.ThrowIfNull(error);
 
         var root = Build(output, error, workingDirectory, terminal ?? Terminal.Plain);
+
+        // The version is the terminal's, as everything else the command says about where it runs: the binary's own version
+        // (Terminal.ToolVersion), which is its npm packages', and not the entry assembly's, which in a test is the test's.
+        var version = terminal ?? Terminal.Plain;
+        foreach (var option in root.Options.OfType<VersionOption>())
+            option.Action = new PrintVersion(output, version.Version);
         var parsed = root.Parse(args);
 
         // System.CommandLine exits with 1 on a parse error; usage errors are 2 here, and 1 is kept for failures.
@@ -166,6 +172,16 @@ internal static class HaruspexCli
         "never" => ColourChoice.Never,
         _ => ColourChoice.Auto,
     };
+
+    /// <summary><c>--version</c>: the version, alone on a line.</summary>
+    private sealed class PrintVersion(TextWriter output, string version) : System.CommandLine.Invocation.SynchronousCommandLineAction
+    {
+        public override int Invoke(ParseResult parseResult)
+        {
+            output.WriteLine(version);
+            return ExitCodes.Success;
+        }
+    }
 
     /// <summary>Where a command writes, where it runs from, and what it knows of the terminal.</summary>
     private sealed class Streams(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal)

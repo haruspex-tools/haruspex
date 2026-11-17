@@ -34,4 +34,17 @@
     <InternalsVisibleTo Include="Haruspex.Tests" />
     <InternalsVisibleTo Include="Haruspex.DifferentialTests" />
   </ItemGroup>
+  <!-- The commit in a preview's version, so the binary says the same version as the npm package it ships in. The commit is the
+       one the SDK reads from git (SourceRevisionId); it appends the whole of it after a +, which the pack script checks. A
+       target, not a property, because the commit is known only once the build has asked git for it. It is here, in the
+       command's project, not in Directory.Build.props: a database project below this repository (the test fixtures) imports
+       that file too, and haruspex reports a target it can't read there. -->
+  <Target Name="HaruspexPreviewVersion"
+          AfterTargets="InitializeSourceControlInformation"
+          BeforeTargets="AddSourceRevisionToInformationalVersion"
+          Condition="'$(VersionSuffix)' == 'preview' and $([System.Text.RegularExpressions.Regex]::IsMatch('$(SourceRevisionId)', '^[0-9a-f]{40}$'))">
+    <PropertyGroup>
+      <InformationalVersion>$(VersionPrefix)-preview-$(SourceRevisionId.Substring(0, 8))</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 </Project>
