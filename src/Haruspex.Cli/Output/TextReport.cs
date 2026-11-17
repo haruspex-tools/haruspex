@@ -135,8 +135,8 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     private string OneLine(ModuleReport module, string counted)
     {
         var acknowledged = module.Acknowledged.Count == 0 ? "" : $"; {Counted(module.Acknowledged.Count, "warning")} acknowledged";
-        var listable = module.Document?.Unknowns.Count > 0 || module.Acknowledged.Count > 0;
-        return $"{counted}{acknowledged}{(listable && detail != OutputDetail.Verbose ? " (--verbose lists them)" : "")}";
+        var anyToList = module.Document?.Unknowns.Count > 0 || module.Acknowledged.Count > 0;
+        return $"{counted}{acknowledged}{(anyToList && detail != OutputDetail.Verbose ? " (--verbose lists them)" : "")}";
     }
 
     /// <summary>
