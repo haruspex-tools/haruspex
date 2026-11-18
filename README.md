@@ -21,6 +21,28 @@ SQL Server cuts a string too long for its parameter, and rounds a decimal with t
 The tool works from the source alone (a folder of `.sql` files, an SSDT `.sqlproj` or a DACPAC). It never connects to a
 database, so it needs no credentials and no data. And it follows one rule: **never claim more than the engine guarantees.**
 
+## What a type means here
+
+A hand-written type describes the values its author expects. A type haruspex writes is a claim about every value the
+database can produce: for any rows its tables can hold, and any arguments its parameters accept, under the session the
+callers declare. Not today's data, not the usual case, every case. Most of what makes haruspex different follows from that
+one choice:
+
+- **It is looser than intuition where the engine allows more.** `COUNT(*)` is nullable, because SQL Server returns NULL
+  past 2,147,483,647 rows under session options the caller controls.
+- **It is tighter where the database promises more.** A `CHECK` constraint becomes a value set or a range, and a query
+  that filters on a whole key returns at most one row.
+- **What it can't prove, it doesn't claim.** A construct it doesn't model, or a procedure whose results only appear at run
+  time, is unknown, with a reason, never a guess.
+- **The engine decides, not the documentation.** A rule the types rely on is observed on SQL Server by a test, so a claim
+  that SQL Server stops honouring fails in the test suite before it fails in an application.
+- **It is still checked when it runs.** The generated functions validate every value, so a database that has moved on
+  from the one the types were made from fails loudly at the call, not deep inside the application.
+
+A type that holds in every case can be trusted without reading the SQL behind it, which is the point.
+[What it guarantees](#what-it-guarantees-and-what-it-cant-see) has the limits, and [the guide](docs/internals/README.md)
+how the analysis reaches its claims.
+
 ## What an application gets
 
 With `"emit": ["zod", "mssql"]` in `haruspex.json`, `haruspex generate` writes the database module: `haruspex.zod.ts`, a schema
