@@ -128,7 +128,7 @@ public static class IrJsonSchema
             Closed(
                 "One result set.",
                 ["encoding", "type", "mayBeAbsent", "cardinality"],
-                ("name", Identifier("The set's name, a key of the object its function returns; left out when the object's sets are unnamed, and given for all of them or none.")),
+                ("name", SetName("The set's name, a key of the object its function returns; left out when the object's sets are unnamed, and given for all of them or none.")),
                 ("encoding", Vocabulary<IrEncoding>(IrWireNames.Of)),
                 ("type", Ref("type")),
                 ("mayBeAbsent", Flag("Whether the result can arrive with no value at all.")),
@@ -414,9 +414,13 @@ public static class IrJsonSchema
 
     private static JsonObject Text(string description) => Node(("description", description), ("type", "string"));
 
-    /// <summary>An identifier, as <see cref="IrIdentifiers.IsIdentifier"/> reads one.</summary>
-    private static JsonObject Identifier(string description) =>
-        Node(("description", description), ("type", "string"), ("pattern", "^[A-Za-z_$][A-Za-z0-9_$]*$"));
+    /// <summary>A set's name: an identifier, as <see cref="IrIdentifiers.IsIdentifier"/> reads one, and none of <see cref="IrResult.KeysBesideSets"/>.</summary>
+    private static JsonObject SetName(string description) =>
+        Node(
+            ("description", description),
+            ("type", "string"),
+            ("pattern", "^[A-Za-z_$][A-Za-z0-9_$]*$"),
+            ("not", Node(("enum", new JsonArray([.. IrResult.KeysBesideSets.Select(n => (JsonNode)n)])))));
 
     /// <summary>The object schema with each of <paramref name="names"/> required whenever any other of them is there.</summary>
     private static JsonObject Together(string[] names, JsonObject schema)

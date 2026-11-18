@@ -16,4 +16,10 @@ public static class MssqlCodes
     /// declaration can name, or its name is one of <c>sp_executesql</c>'s own.
     /// </summary>
     public static DiagnosticCode QueryParameterCannotBeDeclared { get; } = new(5202, DiagnosticSeverity.Error, "A query file's parameter can't be declared");
+
+    /// <summary>
+    /// A result set named <c>__proto__</c>, which as a key of the object the function returns would set its prototype rather than
+    /// add a key.
+    /// </summary>
+    public static DiagnosticCode SetNameUnusable { get; } = new(5203, DiagnosticSeverity.Error, "A result set's name can't be a key of the function's object");
 }

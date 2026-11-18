@@ -188,6 +188,16 @@ public class IrJsonReaderTests
         Assert.Equal("$.objects[0].results names two sets \"lines\"; each set's name is its own.", e.Message);
     }
 
+    [Theory]
+    [InlineData("output")]
+    [InlineData("returnValue")]
+    public void A_set_name_its_function_already_returns_is_refused(string name)
+    {
+        var e = Refused(json => FirstResult(json)["name"] = name);
+
+        Assert.Equal($"$.objects[0].results[0].name is \"{name}\", which can't name a set: the object its function returns already has that key.", e.Message);
+    }
+
     [Fact]
     public void A_set_name_that_is_not_an_identifier_is_refused()
     {

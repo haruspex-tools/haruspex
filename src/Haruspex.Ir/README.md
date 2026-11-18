@@ -203,8 +203,10 @@ its types' identity names it as `{ "query": "queries/get_order_card.sql", "path"
 A result's `name` (0.23) is the key the object's function returns the set under, `order` or `lines`, as the config file names it
 ([decision 0070](../../docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). An object's sets are named all or
 none: a writer must give every set a `name` or leave it out of every one; each name must be an identifier (an ASCII letter, `_` or
-`$`, then letters, digits, `_` or `$`) and no two sets of an object may have the same one. A reader refuses a document that breaks
-any of these.
+`$`, then letters, digits, `_` or `$`), none may be `output` or `returnValue` (the keys the function returns its `OUTPUT`
+parameters and return code under), and no two sets of an object may have the same one. A reader refuses a document that breaks
+any of these. A name a target's language can't hold as a key, such as `__proto__` in JavaScript, is that target's emitter's to
+refuse.
 
 `returnsCode` (0.22) says whether a call of the object may end with a return code other than 0: `true` when its body has a
 `RETURN` whose value isn't the constant 0 or NULL, or when the body can't be read; `false` when every call that succeeds ends with

@@ -279,7 +279,13 @@
         "name": {
           "description": "The set's name, a key of the object its function returns; left out when the object's sets are unnamed, and given for all of them or none.",
           "type": "string",
-          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+          "not": {
+            "enum": [
+              "output",
+              "returnValue"
+            ]
+          }
         },
         "encoding": {
           "enum": [

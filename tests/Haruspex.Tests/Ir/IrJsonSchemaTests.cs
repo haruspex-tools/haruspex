@@ -162,6 +162,9 @@ public class IrJsonSchemaTests
         ["an identity with two owners"] = json => json["types"]!["OrderRow"]!["identity"]!["function"] = "sales.line_tree",
         ["results that are neither listed nor null"] = json => json["objects"]![0]!["results"] = "none",
         ["an absent result without reasons"] = json => Result(json).Remove("absentBecause"),
+        ["sets named some but not all"] = json => Result(json).Remove("name"),
+        ["a set named output"] = json => Result(json)["name"] = "output",
+        ["a set named returnValue"] = json => Result(json)["name"] = "returnValue",
         ["a negative count"] = json => Field(json)["type"]!["maxLength"]!["value"] = -1,
         ["a count past 32 bits"] = json => json["types"]!["OrderRow"]!["fields"]![3]!["type"]!["maxItems"] = 4294967296,
     };

@@ -230,12 +230,17 @@ public static class IrJsonReader
         return result;
     }
 
-    /// <summary>A set's name, a key of its function's object, so an identifier; null when the set is unnamed.</summary>
+    /// <summary>
+    /// A set's name, a key of its function's object, so an identifier and none of <see cref="IrResult.KeysBesideSets"/>; null when
+    /// the set is unnamed.
+    /// </summary>
     private static string? SetName(IrJsonObject json)
     {
         var name = json.OptionalString("name");
         if (name is not null && !IrIdentifiers.IsIdentifier(name))
             throw new IrFormatException(json.PathOf("name"), $"is \"{name}\", which is not an identifier.");
+        if (name is not null && IrResult.KeysBesideSets.Contains(name, StringComparer.Ordinal))
+            throw new IrFormatException(json.PathOf("name"), $"is \"{name}\", which can't name a set: the object its function returns already has that key.");
         return name;
     }
 

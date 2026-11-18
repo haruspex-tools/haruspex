@@ -56,6 +56,14 @@ internal static class FunctionPlanner
             }
 
             bound[name] = obj;
+
+            // The IR allows any identifier but the function's own keys; __proto__ is one an object literal can't hold as a key.
+            if (obj.SetNames?.FirstOrDefault(s => s == "__proto__") is { } unusable)
+            {
+                refusals.Add(MssqlCodes.SetNameUnusable.At(null, $"A result set of {obj.Id} is named {unusable}, which as a key of the object its function returns sets its prototype rather than adding a key; rename the set."));
+                continue;
+            }
+
             (string Text, string Declaration)? batch = obj.Kind == IrObjectKind.Query ? Batch(obj, refusals) : null;
             functions.Add(new MssqlFunction(
                 name,

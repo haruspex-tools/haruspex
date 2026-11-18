@@ -260,6 +260,10 @@ public class DiagnosticMessagesTests
             new() { ["GetBasket"] = Row(Number) },
             new IrObject("shop.get_basket", "GetBasket", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("GetBasket"), [])]))).Diagnostics.Select(d => d.ToString())),
 
+        (5007, () => Emitted(Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])))),
+        (5203, () => MssqlEmitter.Emit(
+            Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])),
+            new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
         (5201, () => MssqlEmitter.Emit(
             Document([], new IrObject("shop.delete", "Delete", IrObjectKind.Procedure, "p.sql:1:1", [], [])),
             new MssqlOptions { IsReserved = TypeScriptNames.IsReserved }).Diagnostics.Select(d => d.ToString())),

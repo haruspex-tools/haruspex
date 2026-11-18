@@ -149,9 +149,11 @@ reason.
 | [HAR5004](HAR5004.md) | error | An imported name the module also declares |
 | [HAR5005](HAR5005.md) | error | A type read both as rows and as JSON |
 | [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
+| [HAR5007](HAR5007.md) | error | A result set's name can't be a key |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
 | [HAR5201](HAR5201.md) | error | A procedure's function can't take its name |
 | [HAR5202](HAR5202.md) | error | A query file's parameter can't be declared |
+| [HAR5203](HAR5203.md) | error | A result set's name can't be a key of the function's object |
 
 ## The command line and files
 

@@ -325,6 +325,9 @@ haruspex: error HAR5005: The type Shared is read both as rows and as JSON, so on
 HAR5006
 haruspex: error HAR5006: The parameters of shop.get_order are declared as GetOrderParams, which is also the name of another procedure or type; rename one of them in the config file.
 
+HAR5007
+haruspex: error HAR5007: A result set of s.p is named __proto__, which as a key of an object sets its prototype rather than adding a key; rename the set.
+
 HAR5101
 haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
 
@@ -333,6 +336,9 @@ haruspex: error HAR5201: The function of shop.delete would be named delete, whic
 
 HAR5202
 haruspex.json: error HAR5202: The function of sql/label.sql must declare @label to sp_executesql, and its type isn't known (undecided-parameter); declare it in the file, as -- @param @label <type>.
+
+HAR5203
+haruspex: error HAR5203: A result set of s.p is named __proto__, which as a key of the object its function returns sets its prototype rather than adding a key; rename the set.
 
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.
