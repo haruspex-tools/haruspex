@@ -137,7 +137,10 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             return;
         }
 
-        var table = SyntaxReader.Table(name, statement.Definition ?? new TableDefinition(), SyntaxReader.Span(file, statement), statement.AsNode || statement.AsEdge);
+        var read = SyntaxReader.Table(name, statement.Definition ?? new TableDefinition(), SyntaxReader.Span(file, statement), statement.AsNode || statement.AsEdge);
+
+        // Its computed columns compare with NULL by the setting in force when it is created, as a module's body does.
+        var table = read with { AnsiNullsOff = ansiNullsOff };
         into.Define(into.Tables, name, table, At(statement));
         ReadCascadingKeys(name, statement.Definition);
     }

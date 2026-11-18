@@ -51,6 +51,19 @@ public partial class ExpressionObservationTests
     }
 
     [Fact]
+    public async Task A_computed_column_compares_with_null_by_its_tables_ansi_nulls_whatever_the_readers()
+    {
+        // Created under ANSI_NULLS off, a = NULL is TRUE for a NULL a, so the CASE gives that NULL; under on, never. Either way
+        // round, the reader's own setting doesn't matter: the table's, when it was created, does.
+        string[] off = ["SET ANSI_NULLS OFF;", "CREATE TABLE dbo.obs_an (id int NOT NULL PRIMARY KEY, a int NULL, c AS (CASE WHEN a = NULL THEN a ELSE 0 END));", "SET ANSI_NULLS ON;", "INSERT INTO dbo.obs_an (id, a) VALUES (1, NULL);"];
+        string[] on = ["CREATE TABLE dbo.obs_an (id int NOT NULL PRIMARY KEY, a int NULL, c AS (CASE WHEN a = NULL THEN a ELSE 0 END));", "INSERT INTO dbo.obs_an (id, a) VALUES (1, NULL);"];
+        Assert.Equal("c: null", (await ObservedCall.Run(server, off, "SET ANSI_NULLS ON; SELECT c FROM dbo.obs_an;")).ToString());
+        Assert.Equal("c: null", (await ObservedCall.Run(server, off, "SET ANSI_NULLS OFF; SELECT c FROM dbo.obs_an;")).ToString());
+        Assert.Equal("c: 0", (await ObservedCall.Run(server, on, "SET ANSI_NULLS OFF; SELECT c FROM dbo.obs_an;")).ToString());
+        Assert.Equal("c: 0", (await ObservedCall.Run(server, on, "SET ANSI_NULLS ON; SELECT c FROM dbo.obs_an;")).ToString());
+    }
+
+    [Fact]
     public async Task A_computed_column_of_json_nests_as_json_in_for_json()
     {
         // A column computed with JSON_OBJECT or JSON_QUERY is written as JSON, not as a string, by FOR JSON.

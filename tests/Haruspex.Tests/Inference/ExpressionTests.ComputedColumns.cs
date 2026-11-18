@@ -1,3 +1,4 @@
+using Haruspex.Cli;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Inference;
@@ -46,6 +47,38 @@ public partial class ExpressionTests
         var grouped = Computed("SELECT g.is_high, COUNT(*) AS n FROM dbo.gauge AS g GROUP BY g.is_high;");
         Assert.Empty(grouped.Unknowns);
         Assert.Equal("int", Typed(grouped, "is_high"));
+    }
+
+    [Fact]
+    public void A_computed_column_compares_with_null_by_its_tables_ansi_nulls()
+    {
+        // A_computed_column_compares_with_null_by_its_tables_ansi_nulls_whatever_the_readers: created under ANSI_NULLS off,
+        // a = NULL holds for a NULL a, so the CASE may give it; created under on, never.
+        const string Table = "CREATE TABLE dbo.an (id int NOT NULL PRIMARY KEY, a int NULL, c AS (CASE WHEN a = NULL THEN a ELSE 0 END));\nGO\n";
+        var off = InferProcedure.Infer("dbo.p", ("tables.sql", "SET ANSI_NULLS OFF;\nGO\n" + Table), ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT c FROM dbo.an;"));
+        var on = InferProcedure.Infer("dbo.p", ("tables.sql", Table), ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT c FROM dbo.an;"));
+        Assert.Equal("int nullable-column", Typed(off, "c"));
+        Assert.Equal("int", Typed(on, "c"));
+    }
+
+    [Theory]
+    [InlineData("project")]
+    [InlineData("package")]
+    public void A_computed_column_is_typed_alike_from_a_project_and_the_package_it_builds(string source)
+    {
+        // tests/dacpacs/projects/gauge, and gauge.dacpac built from it: its dial_off table is built with ANSI_NULLS off by item
+        // metadata, which the package records by leaving out IsAnsiNullsOn.
+        var dacpacs = Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
+        var project = source == "project"
+            ? SqlProject.LoadProject(Path.Combine(dacpacs, "projects", "gauge", "gauge.sqlproj"), [])
+            : SqlProject.LoadPackage(Path.Combine(dacpacs, "gauge", "gauge.dacpac"), []);
+        Assert.Empty(project.Diagnostics);
+        var doc = project.Infer(project.Procedures).Expected();
+        Assert.Equal("int", Typed(doc, "is_high"));
+        Assert.Equal("bigint nullable-column arithmetic-overflow", Typed(doc, "doubled"));
+        Assert.Equal("varchar(12)", Typed(doc, "tag"));
+        Assert.Equal("int", Typed(doc, "unread"));
+        Assert.Equal("int nullable-column", Typed(doc, "unread_off"));
     }
 
     [Fact]

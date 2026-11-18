@@ -92,6 +92,9 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
         var table = new Table(name, PackageLocation.Whole(file, columnElements.Count + parts.Count), [.. columns], primaryKey, [.. checks], [.. keys])
         {
             IsGraph = ModelXml.IsTrue(element, ModelXml.IsNode) || ModelXml.IsTrue(element, ModelXml.IsEdge),
+
+            // Written only when on, as for a module (ModuleTextReader).
+            AnsiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn),
         };
         return (table, cascading);
     }

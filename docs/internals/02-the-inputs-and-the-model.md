@@ -102,9 +102,9 @@ runs after the `NOCHECK` on it: both are statements of batches (not inside a bod
 the re-enable comes later, names the table with its schema, and names the check, or `ALL`. The model records where a check or
 key may be disabled (`CheckConstraint.DisabledAt`, `UniqueKey.DisabledAt`), and the schema's rules claim nothing from it.
 
-One setting is read in order within a file: `ANSI_NULLS`. SQL Server keeps the setting in force when a procedure, function
-or view is created, and it changes what `= NULL` means in its body, so a `SET ANSI_NULLS OFF` before a definition in the
-same script is kept with it (`Procedure.AnsiNullsOff`). Another file's `SET` may run before it too, in an order the folder
+One setting is read in order within a file: `ANSI_NULLS`. SQL Server keeps the setting in force when a procedure, function,
+view or table is created, and it changes what `= NULL` means in its body or its computed columns, so a `SET ANSI_NULLS OFF`
+before a definition in the same script is kept with it (`Procedure.AnsiNullsOff`, `Table.AnsiNullsOff`). Another file's `SET` may run before it too, in an order the folder
 doesn't say; that isn't followed, and the default every client library uses, on, is assumed.
 
 ## Why the model hides ScriptDom

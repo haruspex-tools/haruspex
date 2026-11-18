@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+  <PropertyGroup>
+    <Name>gauge</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
+  </PropertyGroup>
+  <ItemGroup>
+    <Build Update="tables/dial_off.sql" AnsiNulls="Off" />
+  </ItemGroup>
+</Project>

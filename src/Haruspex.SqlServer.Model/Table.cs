@@ -35,6 +35,12 @@ public sealed record Table(
     /// </summary>
     public bool IsGraph { get; init; }
 
+    /// <summary>
+    /// Whether it was created with <c>ANSI_NULLS</c> off, under which its computed columns compare with NULL whatever the
+    /// reader's setting (observed: A_computed_column_compares_with_null_by_its_tables_ansi_nulls_whatever_the_readers).
+    /// </summary>
+    public bool AnsiNullsOff { get; init; }
+
     /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
     public Column? Column(string name) =>
         Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));

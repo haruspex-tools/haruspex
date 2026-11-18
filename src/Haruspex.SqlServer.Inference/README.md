@@ -627,8 +627,10 @@ optional side of a join or `OUTER APPLY` it may be NULL there too, and a filter 
 column (`A_computed_column_is_of_its_expressions_type_and_null_as_its_expression_is_persisted_or_not`).
 
 A computed column that isn't persisted is computed under the reader's options, and a persisted one can only be written under
-`ANSI_WARNINGS` on (1934), so typing it under the callers' options claims no more than its value can be. The model doesn't
-record the table's `ANSI_NULLS`, so its expression is read with it on. It stays unknown when its expression is (with the
+`ANSI_WARNINGS` on (1934), so typing it under the callers' options claims no more than its value can be. Its expression compares with NULL by the
+table's `ANSI_NULLS` when it was created, whatever the reader's
+(`A_computed_column_compares_with_null_by_its_tables_ansi_nulls_whatever_the_readers`): the setting in force at `CREATE TABLE`
+in a folder's script or a project's item, and a package's `IsAnsiNullsOn`. It stays unknown when its expression is (with the
 expression's reason), when it holds JSON, which `FOR JSON` nests as JSON (`A_computed_column_of_json_nests_as_json_in_for_json`)
 and which isn't modelled for a column, and when it reads another computed column, which SQL Server refuses (1759,
 `A_persisted_computed_column_is_written_only_with_ansi_warnings_on_and_a_computed_column_reads_no_other`). A temporary table's

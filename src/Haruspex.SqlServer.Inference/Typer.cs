@@ -451,7 +451,8 @@ internal sealed partial class Typer(
     /// computed column, which SQL Server refuses (1759). A non-persisted column is computed under the reader's options, and a
     /// persisted one was written under ANSI_WARNINGS on (1934 otherwise), so typing it under the callers' options claims no less
     /// than its value can be (A_persisted_computed_column_is_written_only_with_ansi_warnings_on_and_a_computed_column_reads_no_other).
-    /// The model doesn't record the table's ANSI_NULLS, so the expression is read with it on, as for any body.
+    /// It compares with NULL by the table's ANSI_NULLS when it was created, whatever the reader's
+    /// (A_computed_column_compares_with_null_by_its_tables_ansi_nulls_whatever_the_readers).
     /// </summary>
     private Value ComputedColumn(TableColumn bound, ScalarExpression expression, ReadScope scope)
     {
@@ -460,7 +461,7 @@ internal sealed partial class Typer(
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column, which another computed column can't read (1759).", column.At));
 
         var row = QueryScope.OfRow(source with { Optional = null }, scope.Bound.Names);
-        var value = new Typer(model, table.Span, summaries, inComputedColumn: true).Expression(expression, scope.In(row));
+        var value = new Typer(model, table.Span, summaries, ansiNullsOff: table is Table { AnsiNullsOff: true }, inComputedColumn: true).Expression(expression, scope.In(row));
         return value.IsLiveJson
             ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column holding JSON, which is not modelled for a column.", column.At))
             : value;
