@@ -252,6 +252,13 @@ internal static class MssqlPrinter
             case null:
                 output.Append("  const result = await checked(").Append(SchemaModuleNames.ResultsSchema(name)).Append(", sets, ").Append(Fail(id, "the results")).Append(")\n");
                 break;
+
+            // Named sets are checked as one object, so an issue's path starts with its set's name.
+            case var named when procedure.SetNames is { } sets:
+                output.Append("  const result = await checked(").Append(SchemaModuleNames.ResultsSchema(name)).Append(", { ")
+                    .Append(string.Join(", ", named.Select((encoding, i) => sets[i] + ": " + Read(encoding, i)))).Append(" }, ")
+                    .Append(Fail(id, "the results")).Append(")\n");
+                break;
             case []:
                 break;
             case [var only]:
@@ -279,14 +286,19 @@ internal static class MssqlPrinter
 
     /// <summary>
     /// What a function hands back, by name: each result set, the <c>OUTPUT</c> parameters, and the return code when one other than
-    /// 0 may come back. One result set is <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on, in order. A function
-    /// with only <c>result</c> returns it itself, and one with none returns nothing (<see cref="MssqlFunction.ReturnsResultAlone"/>).
+    /// 0 may come back. A named set is its name, however many there are; otherwise one result set is <c>result</c>, and several
+    /// are <c>result1</c>, <c>result2</c> and so on, in order. A function with only an unnamed <c>result</c> returns it itself,
+    /// and one with none returns nothing (<see cref="MssqlFunction.ReturnsResultAlone"/>).
     /// </summary>
     private static IEnumerable<(string Name, string Type, string Value)> Fields(MssqlFunction function)
     {
         var results = "types." + SchemaModuleNames.Results(function.Procedure.Name);
         switch (function.Results)
         {
+            case not null when function.Procedure.SetNames is { } sets:
+                foreach (var set in sets)
+                    yield return (set, $"{results}['{set}']", $"{set}: result.{set}");
+                break;
             case null or [_]:
                 yield return ("result", results, "result");
                 break;

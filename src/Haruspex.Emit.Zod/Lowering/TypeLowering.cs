@@ -11,8 +11,8 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// each fact becomes in Zod; it writes no text.
 /// </summary>
 /// <param name="types">The document's named types, whose keys a union's variants are told apart by.</param>
-/// <param name="declaredAs">The name each named type's schema is declared under: its own, or that of a type of the same shape.</param>
-internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, Func<string, string> declaredAs)
+/// <param name="schemaOf">The binding each named type's schema is declared under: its own, or that of the shape it shares.</param>
+internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, Func<string, string> schemaOf)
 {
     /// <summary>The schema of a value of <paramref name="type"/> that is not null, as <paramref name="encoding"/> delivers it.</summary>
     public ZodExpression Type(IrType type, IrEncoding encoding) => type switch
@@ -44,7 +44,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>The schema a named type is declared under.</summary>
-    public Name Reference(IrRef reference) => new(ZodModule.SchemaOf(declaredAs(reference.Name)));
+    public Name Reference(IrRef reference) => new(schemaOf(reference.Name));
 
     /// <summary>
     /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the aggregates; an

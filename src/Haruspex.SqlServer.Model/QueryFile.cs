@@ -23,6 +23,16 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="Declared">The parameters its declaration comments give a type, in the order written, each at its comment.</param>
 public sealed record QueryFile(string Path, SourceSpan Span, string Text, StatementList Statements, EquatableArray<Parameter> Declared)
 {
+    /// <summary>
+    /// The names its sets comment gives its result sets, in order (<c>-- @sets order, lines</c>), as written; null when it has
+    /// none. Whether each can name a set, and whether there is one for every set, is the config layer's to check, as it checks a
+    /// procedure's <c>sets</c> (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
+    /// </summary>
+    public EquatableArray<string>? Sets { get; init; }
+
+    /// <summary>Where its sets comment is, when it has one.</summary>
+    public SourceLocation? SetsAt { get; init; }
+
     /// <summary>The file's path.</summary>
     public override string ToString() => Path;
 }

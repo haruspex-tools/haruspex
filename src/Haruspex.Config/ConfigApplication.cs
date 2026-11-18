@@ -25,6 +25,7 @@ public static class ConfigApplication
     /// The inferred IR of the procedures of the project whose results are declared but which are not in
     /// <paramref name="document"/>, so that each declaration can be checked against what is inferred. Null when there are none.
     /// </param>
+    /// <param name="queries">The query files inferred in <paramref name="document"/>, whose <c>-- @sets</c> comments name their sets; none when null.</param>
     /// <returns>The document with the config applied and every name settled, with any warnings; or every problem found.</returns>
     public static Outcome<IrDocument> Apply(
         IrDocument document,
@@ -32,13 +33,14 @@ public static class ConfigApplication
         IReadOnlyList<ObjectName> procedures,
         IReadOnlyCollection<ObjectName>? selectedByFile = null,
         string? outputDirectory = null,
-        IrDocument? declaredDocument = null)
+        IrDocument? declaredDocument = null,
+        IReadOnlyList<QueryFile>? queries = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(procedures);
         // An override that makes a set exact leaves its fold unnamed, and declared results may name one only their document holds.
-        return new ConfigApplying(document, config, procedures, selectedByFile, from => Import(from, config.Directory, outputDirectory), declaredDocument).Apply()
+        return new ConfigApplying(document, config, procedures, selectedByFile, from => Import(from, config.Directory, outputDirectory), declaredDocument, queries ?? []).Apply()
             .Select(applied => IrDocumentFolds.Settled(applied, declaredDocument is null ? [] : [declaredDocument.Folds]));
     }
 

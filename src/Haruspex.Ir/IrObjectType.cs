@@ -19,4 +19,11 @@ public sealed record IrObjectType(EquatableArray<IrField> Fields)
     /// document; a reader may also find cycles itself, by following references with the names it is expanding.
     /// </summary>
     public bool Recursive { get; init; }
+
+    /// <summary>
+    /// Whether the config file gave the type its name (a <c>name</c> in <c>paths</c>) rather than the naming rules. An emitter that
+    /// declares a shape several types share once declares it under a declared name when one of them has one
+    /// (<c>docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md</c>).
+    /// </summary>
+    public bool NameDeclared { get; init; }
 }

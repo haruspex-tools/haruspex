@@ -39,18 +39,21 @@ than being replaced by them. A procedure with no parameters takes the connection
 A function returns what its procedure hands back, checked by the procedure's schema
 ([decision 0060](decisions/0060-a-call-returns-its-one-result-itself.md)). For a procedure with one result set and nothing else,
 that is the result itself: an array of rows, or a `FOR JSON` document, which is `null` when no rows matched. A procedure that also
-has `OUTPUT` parameters or a return code, or that returns several result sets, gives an object naming each part:
+has `OUTPUT` parameters or a return code, that returns several result sets, or whose sets the config file names, gives an object
+naming each part:
 
 | Key | What it holds |
 |---|---|
 | `result` | The one result set. |
 | `result1`, `result2`, … | Each result set, for a procedure that returns more than one. |
+| each set's name | Each result set, under the name the config file's `sets` gives it, however many there are: `{ order, lines }` in place of `result` or `result1`, `result2` ([decision 0070](decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). |
 | `output` | The `OUTPUT` parameters, by their declared names, for a procedure that has any. |
 | `returnValue` | The procedure's return code, for a procedure whose body has a `RETURN` with a value other than 0 or NULL. Without one, the code is always 0 (observed), so it isn't handed back. |
 
 A procedure that returns no result set has no `result`, and one that hands back nothing at all returns nothing. The shape follows
 the procedure: when it gains an `OUTPUT` parameter or a `RETURN` with a value, its function's shape changes, `haruspex check` says
-so, and the compiler finds each call to change. A rowset whose statement didn't run, in a branch or after a
+so, and the compiler finds each call to change. So it does when a procedure of one unnamed set gains a second; one whose sets are
+named already returns an object, so a set added and named is one more key. A rowset whose statement didn't run, in a branch or after a
 `RETURN`, is `[]`. A result set after those the procedure lists, which a database deployed ahead of the application may
 return, is ignored, as a key a result's type doesn't list is, unless `"objects": "strict"` asks to refuse both; a set the
 procedure always returns that doesn't arrive fails the call either way

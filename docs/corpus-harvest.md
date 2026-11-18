@@ -8,7 +8,7 @@ page from the corpora, so a figure here is always what the code does
 vendored in the repository, whose own figures are on [the corpus figures](corpus-figures.md); the others are fetched at
 a pinned commit into a folder outside the checkout, never committed ([how and why](../tests/corpus/README.md)). From a
 fetched corpus this page keeps counts only: no name, IR or generated code. Every procedure in every schema is inferred,
-with no config file, into IR version 0.22, and counted as
+with no config file, into IR version 0.23, and counted as
 [the corpus figures define](corpus-figures.md#how-the-figures-are-counted).
 
 ## The harvest

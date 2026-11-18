@@ -173,6 +173,30 @@ public class IrJsonReaderTests
     }
 
     [Fact]
+    public void An_object_that_names_some_of_its_sets_and_not_others_is_refused()
+    {
+        var e = Refused(json => FirstResult(json).Remove("name"));
+
+        Assert.Equal("$.objects[0].results names some of its sets and not others; an object's sets are named all or none.", e.Message);
+    }
+
+    [Fact]
+    public void An_object_that_names_two_sets_alike_is_refused()
+    {
+        var e = Refused(json => FirstResult(json)["name"] = "lines");
+
+        Assert.Equal("$.objects[0].results names two sets \"lines\"; each set's name is its own.", e.Message);
+    }
+
+    [Fact]
+    public void A_set_name_that_is_not_an_identifier_is_refused()
+    {
+        var e = Refused(json => FirstResult(json)["name"] = "the order");
+
+        Assert.Equal("$.objects[0].results[0].name is \"the order\", which is not an identifier.", e.Message);
+    }
+
+    [Fact]
     public void A_procedure_with_text_to_run_is_refused()
     {
         var e = Refused(json => json["objects"]![0]!["text"] = "select 1;");
@@ -198,7 +222,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.22 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

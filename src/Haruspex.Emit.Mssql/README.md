@@ -51,14 +51,17 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
 - **The database's error is the driver's own**, a `RequestError` with its number, state, class, procedure and line, passed
   through unchanged. **A result that breaks its schema** is a `ResultError` naming the procedure, the part (the results, or the
   `OUTPUT` parameters) and each issue's path, as JavaScript reads it (`[0].label`); of several result sets, the set comes
-  first, counted from 1 (`result set 2, [0].label`). Each error has a stable `name` and `kind`, so code that handles errors from several
+  first, counted from 1 (`result set 2, [0].label`), or named by its name when the config file names the sets (`lines[0].label`). Each error has a stable `name` and `kind`, so code that handles errors from several
   modules tells them apart without importing any
   ([decision 0056](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)).
 - **The shape follows what the procedure hands back**
   ([decision 0060](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0060-a-call-returns-its-one-result-itself.md)):
   its one result set itself, when it has no `OUTPUT` parameter and no return code worth handing back (the IR's `returnsCode`);
-  otherwise an object of `result`, or `result1`, `result2` and so on for several, `output` for the `OUTPUT` parameters, and
-  `returnValue` when the code may be other than 0; and nothing, when there is nothing to hand back. A `FOR JSON` result is read as
+  otherwise an object of `result`, or `result1`, `result2` and so on for several, or each set under its name when the config
+  file names them (always an object then, even for one set:
+  [decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)),
+  `output` for the `OUTPUT` parameters, and `returnValue` when the code may be other than 0; and nothing, when there is nothing
+  to hand back. A `FOR JSON` result is read as
   decision 0048 fixes, whether the pool parses JSON or not.
 - **It reads the result sets its procedure lists, and ignores any after them**, so a database deployed ahead of the
   application with a trailing set more doesn't break it; `MssqlOptions.RefusesExtraResultSets`, which `"objects": "strict"`

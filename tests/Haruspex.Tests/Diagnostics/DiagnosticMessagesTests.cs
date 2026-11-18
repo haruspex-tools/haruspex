@@ -147,6 +147,7 @@ public class DiagnosticMessagesTests
         (1015, () => Query("-- @param @client_id int\nSELECT b.title FROM lib.book AS b WHERE b.id = @customer_id;\n")),
         (1016, () => Query("SELECT @x AS v; DECLARE @x int = 1;")),
         (1017, () => Query("SELECT 1 AS one; RETURN 5;")),
+        (1018, () => Query("-- @sets books\n-- @sets titles\nSELECT b.title FROM lib.book AS b;\n")),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
@@ -191,6 +192,7 @@ public class DiagnosticMessagesTests
 
         (3021, () => Config("\"references\": [\"no/such/folder\"]")),
         (3022, () => Config("\"queries\": \"../shared/sql\"")),
+        (3023, () => Config("\"procedures\": { \"lib.get_book\": { \"sets\": [\"books\", \"output\"] } }")),
         (3101, () => Declares("{ \"rowset\": { \"type\": \"string\" } }")),
         (3102, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"integer\" }, \"b\": { \"type\": \"integer\" } }, \"required\": [\"a\"] } }")),
         (3103, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"array\", \"items\": { \"type\": \"integer\" } } } } }")),
@@ -229,6 +231,7 @@ public class DiagnosticMessagesTests
         (4109, () => Override("[].title", "{ \"name\": \"Title\" }")),
         (4110, () => Override("[].id", "{ \"nullable\": false, \"why\": \"w\" }")),
         (4111, () => Override("[].copies", "{ \"values\": \"exact\", \"why\": \"w\" }")),
+        (4112, () => Config("\"procedures\": { \"lib.get_book\": { \"sets\": [\"books\", \"totals\"] } }")),
         (4201, () => Config("\"procedures\": { \"lib.get_book\": { \"results\": \"none\", \"why\": \"w\" } }")),
         (4202, () => Config("\"procedures\": { \"lib.count_books\": { \"results\": { \"rowset\": { \"type\": \"object\", \"properties\": { \"n\": { \"type\": [\"integer\", \"null\"] } } } }, \"why\": \"w\" } }", GetBook, "CREATE PROCEDURE lib.count_books AS SELECT COUNT(*) AS n FROM lib.book AS b;")),
         (4203, () => Config("\"procedures\": { \"other.thing\": { \"results\": \"none\", \"why\": \"w\" } }")),

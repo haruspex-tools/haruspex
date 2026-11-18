@@ -112,8 +112,11 @@ public static class IrJsonSchema
             ("returnsCode", Flag("Whether a call may end with a return code other than 0.")),
             ("parameters", ArrayOf(Ref("parameter"))),
             ("results", Node(
-                ("description", "Its result sets in order, or null when they cannot be listed."),
-                ("anyOf", new JsonArray(Node(("type", "null")), ArrayOf(Ref("result"))))))))),
+                ("description", "Its result sets in order, or null when they cannot be listed; named all or none."),
+                ("anyOf", new JsonArray(
+                    Node(("type", "null")),
+                    ArrayOf(ResultNamed(true)),
+                    ArrayOf(ResultNamed(false))))))))),
         ("parameter", Closed(
             "A declared parameter.",
             ["name", "type", "hasDefault", "output"],
@@ -125,6 +128,7 @@ public static class IrJsonSchema
             Closed(
                 "One result set.",
                 ["encoding", "type", "mayBeAbsent", "cardinality"],
+                ("name", Identifier("The set's name, a key of the object its function returns; left out when the object's sets are unnamed, and given for all of them or none.")),
                 ("encoding", Vocabulary<IrEncoding>(IrWireNames.Of)),
                 ("type", Ref("type")),
                 ("mayBeAbsent", Flag("Whether the result can arrive with no value at all.")),
@@ -137,6 +141,7 @@ public static class IrJsonSchema
             ["kind", "fields"],
             ("kind", Node(("const", "object"))),
             ("recursive", Flag("Whether the type refers to itself; left out when it doesn't.")),
+            ("nameDeclared", Flag("Whether the config file gave the type its name; left out when the naming rules did.")),
             ("identity", Ref("identity")),
             ("fields", ArrayOf(Ref("field"))))),
         ("identity", Identity()),
@@ -339,6 +344,14 @@ public static class IrJsonSchema
         return schema;
     }
 
+    /// <summary>A result that has a <c>name</c>, or one that has none: an object's sets are all of one or all of the other.</summary>
+    private static JsonObject ResultNamed(bool named)
+    {
+        var schema = named ? Having("name") : Node(("not", Having("name")));
+        schema.Add("$ref", "#/$defs/result");
+        return schema;
+    }
+
     /// <summary>An object's schema with <c>text</c> required of a query and refused on any other kind.</summary>
     private static JsonObject RunsText(JsonObject schema)
     {
@@ -400,6 +413,10 @@ public static class IrJsonSchema
         Node(("enum", new JsonArray([.. Enum.GetValues<T>().Where(v => !unnamed.Contains(v)).Select(v => (JsonNode)name(v))])));
 
     private static JsonObject Text(string description) => Node(("description", description), ("type", "string"));
+
+    /// <summary>An identifier, as <see cref="IrIdentifiers.IsIdentifier"/> reads one.</summary>
+    private static JsonObject Identifier(string description) =>
+        Node(("description", description), ("type", "string"), ("pattern", "^[A-Za-z_$][A-Za-z0-9_$]*$"));
 
     /// <summary>The object schema with each of <paramref name="names"/> required whenever any other of them is there.</summary>
     private static JsonObject Together(string[] names, JsonObject schema)

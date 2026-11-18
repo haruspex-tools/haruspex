@@ -258,6 +258,43 @@ public partial class MssqlFunctionTests(SqlServerFixture server)
         Assert.Equal("""{"result1":[{"a":1}],"result2":[{"b":"x"}]}""", JsonSerializer.Serialize(response.Value));
     }
 
+    /// <summary><paramref name="module"/> with the sets of each procedure named, as a config file's <c>sets</c> names them.</summary>
+    private static IrDocument Named(IrDocument module, params (string Id, string[] Sets)[] names) => module with
+    {
+        Objects = [.. module.Objects.Select(o => names.FirstOrDefault(n => n.Id == o.Id) is { Sets: { } sets } && o.Results is { } results
+            ? o with { Results = [.. results.Select((r, i) => r with { Name = sets[i] })] }
+            : o)],
+    };
+
+    [Fact]
+    public async Task Named_sets_come_back_under_their_names_even_one_and_a_set_added_after_them_is_ignored()
+    {
+        // Decision 0070: a procedure whose sets are named returns them by name, however many, so a set the database adds after
+        // them is one more set the function ignores (decision 0063), not a change of the function's shape.
+        const string Two = "CREATE PROCEDURE outlet.two_sets AS SELECT CAST(1 AS int) AS a; SELECT N'x' AS b;";
+        const string One = "CREATE PROCEDURE outlet.one_named AS SELECT CAST(1 AS int) AS one;";
+        const string OneGrown = "CREATE PROCEDURE outlet.one_named AS SELECT CAST(1 AS int) AS one; SELECT N'x' AS b;";
+        var module = Named(Module(Two, One), ("outlet.two_sets", ["numbers", "letters"]), ("outlet.one_named", ["ones"]));
+
+        var responses = await Run(module, [Two, OneGrown], new GeneratedFunctions.Call("two", "twoSets"), new GeneratedFunctions.Call("one", "oneNamed"));
+
+        Assert.Equal(
+            ["""{"numbers":[{"a":1}],"letters":[{"b":"x"}]}""", """{"ones":[{"one":1}]}"""],
+            responses.Select(r => JsonSerializer.Serialize(r.Value)));
+    }
+
+    [Fact]
+    public async Task A_failure_in_a_named_set_names_the_set_by_its_name()
+    {
+        const string Generated = "CREATE PROCEDURE outlet.order_sheet AS SELECT CAST(1 AS int) AS a; SELECT COUNT_BIG(*) AS n;";
+        const string Deployed = "CREATE PROCEDURE outlet.order_sheet AS SELECT CAST(NULL AS int) AS a; SELECT CAST(1 AS bigint) AS n WHERE 1 = 0;";
+
+        var response = Assert.Single(await Run(Named(Module(Generated), ("outlet.order_sheet", ["lines", "count"])), [Deployed], new GeneratedFunctions.Call("call", "orderSheet")));
+
+        Assert.StartsWith("outlet.order_sheet, the results: lines[0].a: ", response.Error!.Message, StringComparison.Ordinal);
+        Assert.EndsWith("; count: Expected exactly one row", response.Error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_bigint_and_a_date_are_sent_as_the_schema_takes_them_and_kept()
     {

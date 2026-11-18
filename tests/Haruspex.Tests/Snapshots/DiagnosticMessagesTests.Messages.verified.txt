@@ -43,6 +43,9 @@ sql/q.sql:1:8: error HAR1016: @x is used before the DECLARE of it, which SQL Ser
 HAR1017
 sql/q.sql:1:18: error HAR1017: a batch run through sp_executesql may RETURN, but SQL Server refuses RETURN with a value there (error 178), so every call would fail; write RETURN alone.
 
+HAR1018
+sql/q.sql:2:1: error HAR1018: -- @sets titles: the sets are named already, at line 1; name them once.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -166,6 +169,9 @@ haruspex.json:1:92: error HAR3021: references[0]: "no/such/folder" is not a fold
 HAR3022
 haruspex.json:1:88: error HAR3022: queries: "../shared/sql" reaches outside the folder of the config file; a query file belongs to the module whose folder holds it, so name only files below this one.
 
+HAR3023
+haruspex.json:1:129: error HAR3023: procedures["lib.get_book"].sets[1]: 'output' can't name a set: the function already returns its OUTPUT parameters under it.
+
 HAR3101
 haruspex.json:1:127: error HAR3101: procedures["lib.p"].results.rowset: a rowset is declared by the schema of one row: an object with "properties", one for each column.
 
@@ -271,6 +277,9 @@ haruspex.json:1:122: warning HAR4110: procedures["lib.get_book"].paths["[].id"]:
 HAR4111
 haruspex.json:1:122: warning HAR4111: procedures["lib.get_book"].paths["[].copies"]: "values": "exact" agrees with the inference, which already proves the set at results[0][].copies exact. Remove it.
 
+HAR4112
+haruspex.json:1:119: error HAR4112: procedures["lib.get_book"].sets: names 2 result sets, but lib.get_book returns one result set. Name every set it returns, in order, or none.
+
 HAR4201
 haruspex.json:1:93: error HAR4201: procedures["lib.get_book"]: haruspex infers the results of lib.get_book, and the declaration disagrees at results: the inference says 1 result set, the declaration 0. A declaration is for results that can't be inferred; to correct inferred results, override a path under "paths".
 
@@ -359,7 +368,7 @@ HAR6011
 haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json and out/haruspex.zod.ts aren't there. Run haruspex generate, read what it writes, and commit it.
 
 HAR6012
-out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.22, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
+out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.23, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
 
 HAR6013
 out/haruspex.ir.json: error HAR6013: this file can't be read as IR: $.source is missing. Run haruspex generate to write it again.

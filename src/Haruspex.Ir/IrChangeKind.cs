@@ -52,6 +52,9 @@ public enum IrChangeKind
     /// <summary>A result set only the earlier document has.</summary>
     ResultRemoved,
 
+    /// <summary>A result set's name changed, was given, or was taken away: the key its function returns it under.</summary>
+    ResultRenamed,
+
     /// <summary>A result is delivered as rows where it was JSON, or the reverse.</summary>
     EncodingChanged,
 

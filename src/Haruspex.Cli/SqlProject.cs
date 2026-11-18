@@ -221,6 +221,6 @@ internal sealed class SqlProject
 
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
         var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session).Value;
-        return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument));
+        return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries));
     }
 }

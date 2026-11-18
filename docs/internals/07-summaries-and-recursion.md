@@ -294,10 +294,13 @@ At the end, one path returned one result set and the other two. So position 1 ma
 (`not-run`, at the `SELECT`); the generated code reads a missing rowset as an empty array:
 
 ```ts haruspex-zod
-export const ProductHeaderRowSchema = z.object({
+/** A shape several types share, declared once; each is exported under its own name. */
+const shape786bdc = z.object({
   product_id: z.int32(),
   name: z.string().max(80),
 })
+
+export const ProductHeaderRowSchema = shape786bdc
 export type ProductHeaderRow = z.infer<typeof ProductHeaderRowSchema>
 
 /** shop.product_header: its parameters, checked before anything is sent. */
@@ -310,8 +313,7 @@ export type ProductHeaderParams = z.infer<typeof ProductHeaderParamsSchema>
 export const ProductHeaderSchema = z.array(ProductHeaderRowSchema).max(1, { error: "Expected at most one row" })
 export type ProductHeader = z.infer<typeof ProductHeaderSchema>
 
-/** The same shape as ProductHeaderRow. */
-export const ProductPageResult1RowSchema = ProductHeaderRowSchema
+export const ProductPageResult1RowSchema = shape786bdc
 export type ProductPageResult1Row = z.infer<typeof ProductPageResult1RowSchema>
 
 export const ProductPageResult2RowSchema = z.object({
@@ -328,13 +330,14 @@ export const ProductPageParamsSchema = z.strictObject({
 export type ProductPageParams = z.infer<typeof ProductPageParamsSchema>
 
 /** shop.product_page: returns 2 result sets: rows; rows, [] when it does not run. */
-export const ProductPageSchema = z.tuple([z.array(ProductHeaderRowSchema).max(1, { error: "Expected at most one row" }), z.array(ProductPageResult2RowSchema)])
+export const ProductPageSchema = z.tuple([z.array(ProductPageResult1RowSchema).max(1, { error: "Expected at most one row" }), z.array(ProductPageResult2RowSchema)])
 export type ProductPage = z.infer<typeof ProductPageSchema>
 ```
 
 The header's `.max(1)` comes from the filter on the primary key, through the call: a callee's claims arrive with its
-results. The page's first result set has the header's row shape exactly, so the module declares that shape once and
-keeps the page's name for it as an alias ([Emitting code](11-emitting-code.md)).
+results. The page's first result set has the header's row shape exactly, so the module declares that shape once, as a
+constant it doesn't export named from its structure, and exports it under each type's own name
+([Emitting code](11-emitting-code.md)).
 
 Why a set of counts, rather than something simpler:
 

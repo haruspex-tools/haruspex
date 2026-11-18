@@ -64,12 +64,21 @@ What a value looks like depends on how it arrives, and the module follows what a
   and the check parses it and validates its content against the inner schema.
 - **Recursive types** (a tree built by a function that calls itself) use Zod 4's getter form, so the inferred type needs
   no casts.
-- **Nothing is said twice.** A shape the module would declare twice is declared once, and the second name is kept as an
-  alias of the first, so code that imports either keeps working. A check the schema already makes is not repeated:
+- **Nothing is said twice, and every exported name is its own.** A shape several named types share is declared once, and
+  each type is exported under its own name as that schema: under a name the config file gave one of them, or else as a
+  constant the module doesn't export, named from a hash of its structure (`const shape3f2a9c = z.object(…)`), so no exported
+  name depends on which procedure came first
+  ([decision 0071](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
+  A check the schema already makes is not repeated:
   `z.int32()` rather than an `int`'s own bounds, and a union without a variant another one already accepts.
 - **It passes a linter.** A number a double can't hold is written as the double JavaScript reads it as, which is the check
   it always was, and the tests lint every fixture's module with ESLint's recommended rules and typescript-eslint's strict and stylistic sets, so
   every helper states its return type.
+
+**A procedure's results** are one schema under its name (`GetOrderSchema`, and its type `GetOrder`): its one result set's
+schema, a `z.tuple` of several, or, when the config file names its sets, a `z.object` with a property for each set, even for
+one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+The types inside are named after the sets: `GetOrderLinesRow` for a set named `lines`.
 
 **A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
 declared before its results' schema, whatever the `objects` setting: a key it doesn't know is an error

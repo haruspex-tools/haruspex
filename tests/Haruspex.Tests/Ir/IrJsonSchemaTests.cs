@@ -51,6 +51,7 @@ public class IrJsonSchemaTests
         (typeof(IrObject), nameof(IrObject.Results), "object", "results"),
         (typeof(IrObject), nameof(IrObject.Text), "object", "text"),
         (typeof(IrObject), nameof(IrObject.ReturnsCode), "object", "returnsCode"),
+        (typeof(IrObject), nameof(IrObject.SetNames), "object", null), // derived from its results' names; not written
         (typeof(IrParameter), nameof(IrParameter.Name), "parameter", "name"),
         (typeof(IrParameter), nameof(IrParameter.Type), "parameter", "type"),
         (typeof(IrParameter), nameof(IrParameter.HasDefault), "parameter", "hasDefault"),
@@ -60,11 +61,13 @@ public class IrJsonSchemaTests
         (typeof(IrResult), nameof(IrResult.MayBeAbsent), "result", "mayBeAbsent"),
         (typeof(IrResult), nameof(IrResult.AbsentBecause), "result", "absentBecause"),
         (typeof(IrResult), nameof(IrResult.Cardinality), "result", "cardinality"),
+        (typeof(IrResult), nameof(IrResult.Name), "result", "name"),
         (typeof(IrResult), nameof(IrResult.FewestItems), "result", null), // derived from the type, cardinality and absence; not written
         (typeof(IrResult), nameof(IrResult.MostItems), "result", null), // derived from the type and cardinality; not written
         (typeof(IrObjectType), nameof(IrObjectType.Fields), "objectType", "fields"),
         (typeof(IrObjectType), nameof(IrObjectType.Identity), "objectType", "identity"),
         (typeof(IrObjectType), nameof(IrObjectType.Recursive), "objectType", "recursive"),
+        (typeof(IrObjectType), nameof(IrObjectType.NameDeclared), "objectType", "nameDeclared"),
         (typeof(IrTypeIdentity), nameof(IrTypeIdentity.Owner), "identity", null), // the owner's kind is the key
         (typeof(IrTypeIdentity), nameof(IrTypeIdentity.Object), "identity", null), // the value under that key
         (typeof(IrTypeIdentity), nameof(IrTypeIdentity.Path), "identity", "path"),

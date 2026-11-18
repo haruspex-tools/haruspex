@@ -16,6 +16,13 @@ public sealed record IrResult(IrEncoding Encoding, IrType Type, EquatableArray<I
     public bool MayBeAbsent => AbsentBecause.Count > 0;
 
     /// <summary>
+    /// The name the config file gives the set, a key of the object its function returns (<c>order</c>, <c>lines</c>), or null
+    /// when its sets are unnamed. An object's sets are named all or none, each name an identifier, unique among them
+    /// (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
+    /// </summary>
+    public string? Name { get; init; }
+
+    /// <summary>
     /// How many rows the result's query returns when it runs: a rowset's rows, or the objects of a FOR JSON result (the
     /// items of its array, or its one object without the array wrapper). Whether the result set may be missing is
     /// <see cref="AbsentBecause"/>, not this. <see cref="IrCardinality.Many"/> claims nothing.

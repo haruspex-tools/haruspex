@@ -16,7 +16,7 @@ internal sealed class SchemaSubset(JsonElement root)
 
     private static readonly HashSet<string> Implemented = new(StringComparer.Ordinal)
     {
-        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "maxProperties", "minProperties", "minimum", "maximum", "minLength", "pattern",
+        "type", "enum", "const", "properties", "additionalProperties", "required", "items", "minItems", "uniqueItems", "maxProperties", "minProperties", "minimum", "maximum", "minLength", "pattern",
         "$ref", "dependentRequired", "dependentSchemas", "anyOf", "not", "propertyNames",
     };
 
@@ -94,6 +94,10 @@ internal sealed class SchemaSubset(JsonElement root)
                     var i = 0;
                     foreach (var item in value.EnumerateArray())
                         Check(k, item, $"{at}/{i++.ToString(CultureInfo.InvariantCulture)}", errors);
+                    break;
+                case "uniqueItems" when value.ValueKind == JsonValueKind.Array && k.ValueKind == JsonValueKind.True:
+                    if (value.EnumerateArray().Select(item => item.GetRawText()).GroupBy(text => text, StringComparer.Ordinal).Any(g => g.Count() > 1))
+                        errors.Add($"{at}: has an item twice");
                     break;
                 case "minItems" when value.ValueKind == JsonValueKind.Array:
                     if (value.GetArrayLength() < k.GetInt32())
