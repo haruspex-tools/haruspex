@@ -30,10 +30,14 @@ direction:
 - **What can't be shown to fit doesn't.** A value that became unknown, a length counted in another unit, a value set matched
   under another fold, results that can no longer be listed: each is refused. A result the application had as unknown accepts
   anything, as its schema does. A parameter the procedure has as unknown is refused, since nothing is known of what it takes
-  (`int` to `hierarchyid` fails with error 206), unless the application had it as unknown too and both documents say the
-  unknown alike, with the same reason and detail, which for a type not modelled names it: an unchanged `xml` parameter fits,
-  and `hierarchyid` to `geography` doesn't. Refusing every unknown on both sides would fail every module with such a parameter
-  on every check, for a change nobody made.
+  (`int` to `hierarchyid` fails with error 206). Unknown on both sides, it fits only when both documents name the same
+  built-in type whose name is all there is to it: `hierarchyid`, `geography`, `geometry`, `sql_variant`, or `binary` or
+  `varbinary` of a length. A type the database defines may change under its name, and the IR doesn't hold its definition: a
+  table type that gains a column fails the old call (error 500), and an `xml` schema collection that narrows an element fails
+  it (6926). So a table type, a CLR type and `xml` are refused even when named alike (`xml` too because the IR spells it alike
+  with a collection and without). That fails a module with such a parameter on every check, for a change it may not have
+  made; it is sound, and carrying the definition in the IR is what would let it fit. A user's type is named with its schema,
+  so one named as a built-in type is not taken for it.
 - **Result sets are matched by place**, as the server sends them. A set's name (decision 0070) is the key the application's
   own function returns it under, which the running application keeps, so a name given, changed or taken away is no finding
   here: it changes the application's next build, which `check` warns of as a return shape (decision 0069).

@@ -116,9 +116,13 @@ internal static class SqlTypes
         return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null), resolved.Scalar);
     }
 
+    /// <remarks>
+    /// A user's type is named with the schema it was written with, so that a table type given a built-in type's name reads apart
+    /// from it: <c>IrFit</c> takes an unknown built-in type named alike in two documents as the same type.
+    /// </remarks>
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>
         // XML, CLR types, and alias types that cannot be resolved for certain.
-        new(IrUnknownReason.UnsupportedSqlType, $"The type {type?.ToString() ?? "(none)"} is not modelled yet.", at);
+        new(IrUnknownReason.UnsupportedSqlType, $"The type {(type is { Schema: { } schema } ? $"{schema}.{type}" : type?.ToString() ?? "(none)")} is not modelled yet.", at);
 
     private static IrFacets? Facets(ColumnFacts facts)
     {

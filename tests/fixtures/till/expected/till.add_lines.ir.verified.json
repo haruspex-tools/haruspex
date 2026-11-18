@@ -90,7 +90,7 @@
       "object": "till.add_lines",
       "path": "parameters.@lines",
       "reason": "unsupported-sql-type",
-      "detail": "The type line_list is not modelled yet.",
+      "detail": "The type till.line_list is not modelled yet.",
       "at": "procedures/add_lines.sql:3:5"
     },
     {

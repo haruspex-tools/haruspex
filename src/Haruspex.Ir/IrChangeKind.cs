@@ -100,6 +100,12 @@ public enum IrChangeKind
     /// <summary>The source's own type of a scalar changed, as written: informational, but part of what the module says.</summary>
     SqlTypeChanged,
 
+    /// <summary>
+    /// A type the IR names but doesn't hold the definition of, such as a table type or an <c>xml</c> schema collection, so it
+    /// can't be shown the same in both documents, though named alike. Only <see cref="IrFit"/> finds it.
+    /// </summary>
+    TypeUnproven,
+
     /// <summary>A string's maximum or fixed length changed.</summary>
     LengthChanged,
 

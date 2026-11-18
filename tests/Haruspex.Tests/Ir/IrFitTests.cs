@@ -416,8 +416,56 @@ public class IrFitTests
 
         Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from number (int32) to unknown (unsupported-sql-type)"], Fit(Taking("int"), Taking("hierarchyid")));
         Assert.Empty(Fit(Taking("hierarchyid"), Taking("hierarchyid")));
-        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from unknown (unsupported-sql-type) to unknown (unsupported-sql-type)"], Fit(Taking("hierarchyid"), Taking("geography")));
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: SQL type changed from hierarchyid to geography"], Fit(Taking("hierarchyid"), Taking("geography")));
         Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from unknown (unsupported-sql-type) to number (int32)"], Fit(Taking("hierarchyid"), Taking("int")));
+    }
+
+    /// <summary>
+    /// Types a procedure's parameter may have that the IR names but doesn't model: a schema collection, a table type's columns and
+    /// a CLR type are defined in the database, so the same name in both documents may be another type.
+    /// </summary>
+    private const string Types = """
+        GO
+        CREATE TYPE shop.lines AS TABLE (a int NOT NULL);
+        GO
+        CREATE TYPE shop.hierarchyid AS TABLE (a int NOT NULL);
+        GO
+        CREATE XML SCHEMA COLLECTION shop.sc AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="a" type="xs:string"/></xs:schema>';
+        GO
+        CREATE TYPE shop.blob FROM varbinary(16);
+        """;
+
+    [Theory]
+    [InlineData("hierarchyid", null)]
+    [InlineData("geography", null)]
+    [InlineData("geometry", null)]
+    [InlineData("sql_variant", null)]
+    [InlineData("varbinary(16)", null)]
+    [InlineData("varbinary(max)", null)]
+    [InlineData("binary(4)", null)]
+    [InlineData("shop.blob", null)] // an alias type the IR resolves to varbinary(16), which it names
+    [InlineData("xml", "xml")] // the IR doesn't say whether it has a schema collection
+    [InlineData("xml(shop.sc)", "xml")]
+    [InlineData("shop.lines READONLY", "shop.lines")]
+    [InlineData("shop.hierarchyid READONLY", "shop.hierarchyid")] // a table type of a built-in type's name
+    [InlineData("image", "image")]
+    public void A_parameter_of_the_same_unknown_type_both_sides_fits_only_when_its_name_is_all_of_its_definition(string type, string? named)
+    {
+        // Observed: a table type that gains a column fails the old call (500), and an xml collection that narrows an element
+        // fails it (6926), each under the same name; a built-in type's name is all there is to it.
+        var document = Infer($"CREATE PROCEDURE shop.find_orders @at {type} AS SELECT o.order_id FROM shop.orders AS o;", Orders + "\n" + Types);
+
+        Assert.Equal(named is null ? [] : [$"refused: shop.find_orders parameters[\"@at\"]: type {named} can't be shown unchanged"], Fit(document, document));
+    }
+
+    [Fact]
+    public void A_parameter_of_a_user_type_is_named_with_its_schema_so_it_is_not_taken_for_a_built_in_type()
+    {
+        const string Find = "CREATE PROCEDURE shop.find_orders @at {0} AS SELECT o.order_id FROM shop.orders AS o;";
+        static IrDocument Taking(string type) => Infer(string.Format(System.Globalization.CultureInfo.InvariantCulture, Find, type), Orders + "\n" + Types);
+
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: SQL type changed from hierarchyid to shop.hierarchyid"], Fit(Taking("hierarchyid"), Taking("shop.hierarchyid READONLY")));
+        Assert.Empty(Fit(Taking("hierarchyid"), Taking("HierarchyID"))); // a built-in type's name, in any case
     }
 
     [Fact]

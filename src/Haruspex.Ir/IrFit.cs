@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Haruspex.Collections;
 
 namespace Haruspex.Ir;
@@ -119,24 +120,51 @@ public static partial class IrFit
                 if (parameter.IsOutput && !now.IsOutput)
                     Add(findings, IrChangeKind.ParameterDirectionChanged, path, IrFitVerdict.Refused, "the application sends it as an output parameter", "true", "false");
 
-                // A type unknown in both, said alike in both (its reason and detail name the SQL type), is the same type: whatever the
-                // application sent before, the procedure still takes. Said otherwise, it may be another type, which can't be shown to fit.
-                if (parameter.Type is IrUnknownType && now.Type is IrUnknownType && SameUnknown($"parameters.{parameter.Name}"))
-                    continue;
-                new Values(this, Flow.Parameters, findings).Type(path, now.Type, parameter.Type);
+                if (parameter.Type is IrUnknownType && now.Type is IrUnknownType)
+                    BothUnknown(path, $"parameters.{parameter.Name}", parameter.Type, now.Type);
+                else
+                    new Values(this, Flow.Parameters, findings).Type(path, now.Type, parameter.Type);
             }
         }
 
         /// <summary>
-        /// Whether the unknown at <paramref name="path"/> (as the document's unknowns place it) is said alike in both documents: the
-        /// same reason and the same detail, which for a type not modelled names it.
+        /// A parameter whose type neither document models. It fits only when both name the same built-in type whose name is all
+        /// there is to it (<see cref="WholeByName"/>): whatever the application sent before, the procedure still takes. Any other
+        /// type may have changed under its name, which the IR can't show.
         /// </summary>
-        private bool SameUnknown(string path)
+        /// <remarks>
+        /// The IR names such a type only in the detail of its unknown, as <c>SqlTypes</c> in inference writes it ("The type
+        /// hierarchyid is not modelled yet."), with a user's type qualified by its schema. Observed: a table type that gains a
+        /// column fails the old call (error 500), and an <c>xml</c> schema collection that narrows an element fails it (6926), each
+        /// under the same name; and the IR spells <c>xml</c> alike with a collection and without.
+        /// </remarks>
+        private void BothUnknown(IrPathSegment[] path, string at, IrType known, IrType met)
         {
-            var was = Application.Unknowns.Where(u => u.Object == id && u.Path == path).Select(u => (u.Reason, u.Detail)).ToList();
-            var now = Database.Unknowns.Where(u => u.Object == id && u.Path == path).Select(u => (u.Reason, u.Detail)).ToList();
-            return was.Count > 0 && was.SequenceEqual(now);
+            const string Why = "the procedure's type of it isn't modelled, so it can't be shown to take what the application may send";
+            switch (Named(Application, at), Named(Database, at))
+            {
+                // A built-in type's name is the same in any case, as SQL Server reads it; a user's type is named as written.
+                case ({ } was, { } now) when WholeByName(was) && string.Equals(was, now, StringComparison.OrdinalIgnoreCase):
+                    return;
+                case ({ } was, { } now) when was == now:
+                    Add(findings, IrChangeKind.TypeUnproven, path, IrFitVerdict.Refused,
+                        "the IR doesn't hold its definition (an xml schema collection, a user type's columns or class), which may have changed under its name", was, now);
+                    return;
+                case ({ } was, { } now):
+                    Add(findings, IrChangeKind.SqlTypeChanged, path, IrFitVerdict.Refused, Why, was, now);
+                    return;
+                default:
+                    Add(findings, IrChangeKind.TypeChanged, path, IrFitVerdict.Refused, Why, IrClaimText.Type(known), IrClaimText.Type(met));
+                    return;
+            }
         }
+
+        /// <summary>The SQL type the unknown at <paramref name="at"/> names, when it is the one unknown there and is a type not modelled.</summary>
+        private string? Named(IrDocument document, string at) =>
+            document.Unknowns.Where(u => u.Object == id && u.Path == at).ToList() is [{ Reason: IrUnknownReason.UnsupportedSqlType } unknown]
+                && NotModelled().Match(unknown.Detail) is { Success: true } match
+                ? match.Groups["type"].Value
+                : null;
 
         /// <summary>
         /// The result sets, which the database returns: matched by position, as the functions read them. Results the application
@@ -209,6 +237,20 @@ public static partial class IrFit
         private void Add(List<IrFitFinding> to, IrChangeKind kind, IrPathSegment[] path, IrFitVerdict verdict, string why, string? before = null, string? after = null) =>
             to.Add(new IrFitFinding(new IrChange(kind, id, IrPath.Render(path), before, after), verdict, why));
     }
+
+    /// <summary>
+    /// Whether a type the IR doesn't model is defined by its name alone: a built-in type, with a binary type's length, rather
+    /// than one the database defines (a table type, a CLR type, an alias) or <c>xml</c>, which may name a schema collection the
+    /// IR doesn't spell.
+    /// </summary>
+    private static bool WholeByName(string type) =>
+        type.ToUpperInvariant() is "HIERARCHYID" or "GEOGRAPHY" or "GEOMETRY" or "SQL_VARIANT" || BinaryType().IsMatch(type);
+
+    [GeneratedRegex(@"^The type (?<type>.+) is not modelled yet\.$", RegexOptions.CultureInvariant)]
+    private static partial Regex NotModelled();
+
+    [GeneratedRegex(@"^(var)?binary\((\d+|max)\)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
+    private static partial Regex BinaryType();
 
     /// <summary>Which way values flow, which decides which document's type accepts and which gives.</summary>
     private enum Flow
