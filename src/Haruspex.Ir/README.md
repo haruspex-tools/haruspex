@@ -11,7 +11,8 @@ The IR is the product: front ends write it, emitters read it, and it is a file, 
 language suits it. This project holds the model (`IrDocument` and the records it holds, one to a file), its writer, its
 reader, the generator of its schema, and the walks every reader needs: `IrTypeTree` for the structure of one type and
 `IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
-types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`.
+types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`, and
+`IrFit` whether one document's values fit within another's, for `haruspex check --baseline`.
 
 ## How data flows through it
 
@@ -72,6 +73,12 @@ shows one whole, with an unknown.
   documents claim as an `IrChange`, where it is (`results[0][].note`) and how it changed (`became nullable`), and nothing for
   what only says where a claim came from: a location, a reason, the source of a fact, a package's hash. Equality of documents
   is stricter: two documents with no changes between them may still differ there.
+- **A fit is a comparison with a direction.** `IrFit.Of` asks what an application built against one document does when it
+  meets a database described by another, and reports each difference that matters as an `IrFitFinding`: the change, worded
+  as `IrComparison` words it, and whether the application refuses it or ignores it. Results are judged as the database
+  gives them to the application, parameters as the application sends them to the database, so a narrower string fits in a
+  result and is refused in a parameter
+  ([decision 0068](../../docs/decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)).
 
 ## What it deliberately doesn't do
 
