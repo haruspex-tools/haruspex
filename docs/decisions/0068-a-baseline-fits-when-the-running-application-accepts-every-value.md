@@ -19,7 +19,9 @@ direction:
   A new parameter fits only with a default, and is then ignored. One removed is refused, with or without a default, since the
   application may send it and SQL Server refuses the call (error 8144). A default lost, a parameter no longer `OUTPUT` (error
   8162) and a type narrowed (`int` to `tinyint` fails with error 8114 on a value past 255; a string cut short is cut silently)
-  are refused. A type widened (`int` to `bigint`) fits, since the server converts what is sent. A date or time is compared by
+  are refused. A type widened (`int` to `bigint`) fits, since the server converts what is sent. An `OUTPUT` parameter's value comes
+  back too, declared as the application's type, so it is also judged as a result is: one widened (`int` to `bigint`, or
+  `nvarchar(5)` to `nvarchar(10)`) fails the call with 8114 on a value past the old range, or is cut short without an error. A date or time is compared by
   the range and fraction of its SQL type, which the IR keeps and has no other fact for: `datetime2(7)` to `smalldatetime`
   fails with error 8114 on a date past 2079, and to `datetime2(0)` rounds the fraction without an error, so both are refused;
   a type outside the list decision 0041 spells can't be compared, and a change of it is refused. In a result the IR claims no

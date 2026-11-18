@@ -49,14 +49,20 @@ public class CombinedTypesTests(SqlServerFixture server)
         public bool Bridged => !Findings.Any(f => f.StartsWith("unbridgeable:", StringComparison.Ordinal));
     }
 
-    /// <summary>A table both versions read, whose CHECK grows in the candidate, with a row only the candidate allows.</summary>
+    /// <summary>
+    /// Tables both versions read: a ticket's CHECK grows in the candidate, and a tier's shrinks, each with a row only its own
+    /// version allows, so that the combined value set must hold both's values.
+    /// </summary>
     private static readonly (string Baseline, string Candidate) Tickets = (
-        "CREATE TABLE blend.ticket (grade int NOT NULL CHECK (grade IN (1, 2)), note nvarchar(10) NOT NULL);",
-        "CREATE TABLE blend.ticket (grade int NOT NULL CHECK (grade IN (1, 2, 3)), note nvarchar(10) NULL);");
+        "CREATE TABLE blend.ticket (grade int NOT NULL CHECK (grade IN (1, 2)), note nvarchar(10) NOT NULL, tier int NOT NULL CHECK (tier IN (1, 2)));",
+        "CREATE TABLE blend.ticket (grade int NOT NULL CHECK (grade IN (1, 2, 3)), note nvarchar(10) NULL, tier int NOT NULL CHECK (tier IN (1)));");
 
     private static readonly (string Baseline, string Candidate) TicketRows = (
-        "INSERT INTO blend.ticket (grade, note) VALUES (1, N'a');",
-        "INSERT INTO blend.ticket (grade, note) VALUES (3, NULL);");
+        "INSERT INTO blend.ticket (grade, note, tier) VALUES (1, N'a', 2);",
+        "INSERT INTO blend.ticket (grade, note, tier) VALUES (3, NULL, 1);");
+
+    /// <summary>The procedure whose sets the config file names, and the names each version's reading gives them.</summary>
+    private const string Named = "blend.get_named";
 
     private static readonly Pair[] Pairs =
     [
@@ -68,9 +74,17 @@ public class CombinedTypesTests(SqlServerFixture server)
             "CREATE PROCEDURE blend.get_tag AS SELECT CAST(1 AS int) AS id, CAST(N'a' AS nvarchar(10)) AS tag;",
             "CREATE PROCEDURE blend.get_tag AS SELECT CAST(1 AS int) AS id;",
             []),
-        new("a column nullable in the candidate, and a value set that grew",
-            "CREATE PROCEDURE blend.list_tickets AS SELECT t.grade, t.note FROM blend.ticket AS t;",
-            "CREATE PROCEDURE blend.list_tickets AS SELECT t.grade, t.note FROM blend.ticket AS t;",
+        new("a column nullable in the candidate, a value set that grew, and one that shrank",
+            "CREATE PROCEDURE blend.list_tickets AS SELECT t.grade, t.note, t.tier FROM blend.ticket AS t;",
+            "CREATE PROCEDURE blend.list_tickets AS SELECT t.grade, t.note, t.tier FROM blend.ticket AS t;",
+            []),
+        new("a bigint where there was an int",
+            "CREATE PROCEDURE blend.get_big AS SELECT CAST(7 AS int) AS n;",
+            "CREATE PROCEDURE blend.get_big AS SELECT CAST(3000000000 AS bigint) AS n;",
+            []),
+        new("named sets, a third added",
+            "CREATE PROCEDURE blend.get_named AS SELECT CAST(1 AS int) AS id; SELECT CAST(2 AS int) AS line;",
+            "CREATE PROCEDURE blend.get_named AS SELECT CAST(1 AS int) AS id; SELECT CAST(2 AS int) AS line; SELECT CAST(3 AS int) AS note;",
             []),
         new("a longer string",
             "CREATE PROCEDURE blend.get_code AS SELECT CAST(N'abc' AS nvarchar(3)) AS code;",
@@ -122,6 +136,28 @@ public class CombinedTypesTests(SqlServerFixture server)
             Params = new() { ["qty"] = 255, ["code"] = "abcdefghij" },
             Echoed = """{"qty":255,"code":"abcdefghij"}""",
         },
+        new("a date narrowed, sent at the narrower type's latest",
+            "CREATE PROCEDURE blend.find_day @at datetime2(7) AS SELECT CONVERT(varchar(19), @at, 126) AS at;",
+            "CREATE PROCEDURE blend.find_day @at smalldatetime AS SELECT CONVERT(varchar(19), @at, 126) AS at;",
+            [])
+        {
+            Params = new() { ["at"] = "2079-06-06T23:59:00" },
+            Echoed = """{"at":"2079-06-06T23:59:00"}""",
+        },
+        new("an OUTPUT parameter of the same type in both, its procedure otherwise changed",
+            "CREATE PROCEDURE blend.count_lines @n int OUTPUT AS SET @n = 5; SELECT CAST(1 AS int) AS id;",
+            "CREATE PROCEDURE blend.count_lines @n int OUTPUT AS SET @n = 6; SELECT CAST(1 AS int) AS id, CAST(NULL AS int) AS more;",
+            [])
+        {
+            Params = new() { ["n"] = 0 },
+        },
+        new("an OUTPUT parameter in one only, sent plain to both",
+            "CREATE PROCEDURE blend.count_rows @n int AS SELECT @n AS n;",
+            "CREATE PROCEDURE blend.count_rows @n int OUTPUT AS SELECT @n AS n;",
+            [])
+        {
+            Params = new() { ["n"] = 4 },
+        },
         new("a new required parameter",
             "CREATE PROCEDURE blend.place_order @id int AS SELECT @id AS id;",
             "CREATE PROCEDURE blend.place_order @id int, @channel varchar(10) AS SELECT @id AS id;",
@@ -141,7 +177,7 @@ public class CombinedTypesTests(SqlServerFixture server)
         new("a parameter of another kind",
             "CREATE PROCEDURE blend.find_code @code int AS SELECT CAST(1 AS int) AS id;",
             "CREATE PROCEDURE blend.find_code @code nvarchar(10) AS SELECT CAST(1 AS int) AS id;",
-            ["unbridgeable: blend.find_code parameters[\"@code\"]: changed type from number (int32) to string, which have no value in common the function could send: ship the change in two releases"])
+            ["unbridgeable: blend.find_code parameters[\"@code\"]: changed type from int to nvarchar(10), which have no value in common the function could send: ship the change in two releases"])
         {
             Params = new() { ["code"] = "abc" },
             Fails = 8114,
@@ -153,16 +189,36 @@ public class CombinedTypesTests(SqlServerFixture server)
         {
             Fails = null,
         },
+
+        // Last: a value returned to an OUTPUT parameter that its declared type can't hold fails the call (8114) and rolls back the
+        // transaction the calls share, which a call after it would find gone.
+        new("an OUTPUT parameter narrowed",
+            "CREATE PROCEDURE blend.count_all @n bigint OUTPUT AS SET @n = 3000000000; SELECT CAST(1 AS int) AS id;",
+            "CREATE PROCEDURE blend.count_all @n int OUTPUT AS SET @n = 5; SELECT CAST(1 AS int) AS id;",
+            ["unbridgeable: blend.count_all parameters[\"@n\"]: changed the type of the OUTPUT parameter @n from bigint to int: it is declared as one type, which can't both send only what both take and hold what both give back, so ship the change in two releases"])
+        {
+            Params = new() { ["n"] = 0 },
+            Fails = 8114,
+        },
     ];
 
-    private static IrDocument Module(Func<Pair, string> procedure, string tickets) =>
-        InferProcedure.Infer(
+    /// <summary>The pairs' module, its <see cref="Named"/> procedure's sets named as a config file's <c>sets</c> list names them.</summary>
+    private static IrDocument Module(Func<Pair, string> procedure, string tickets, string[] names)
+    {
+        var module = InferProcedure.Infer(
             "blend.*",
             [("schema.sql", "CREATE SCHEMA blend;"), ("ticket.sql", tickets), .. Pairs.Select(procedure).Select((p, i) => ($"p{i}.sql", p))]);
+        return module with
+        {
+            Objects = [.. module.Objects.Select(o => o.Id != Named ? o : o with { Results = [.. o.Results!.Select((r, i) => r with { Name = names[i] })] })],
+        };
+    }
 
-    private static IrDocument Baselines => Module(p => p.Baseline, Tickets.Baseline);
+    // The config file names the candidate's three sets; read as a baseline, it names the two the baseline returns by its first
+    // two names (HaruspexConfig.AppliedToBaseline).
+    private static IrDocument Baselines => Module(p => p.Baseline, Tickets.Baseline, ["head", "lines"]);
 
-    private static IrDocument Candidates => Module(p => p.Candidate, Tickets.Candidate);
+    private static IrDocument Candidates => Module(p => p.Candidate, Tickets.Candidate, ["head", "lines", "notes"]);
 
     private static IrCombined Combined(bool strict = false) => IrCombination.Of(Baselines, Candidates, new IrFitOptions { StrictObjects = strict });
 
@@ -224,5 +280,43 @@ public class CombinedTypesTests(SqlServerFixture server)
             Assert.Equal(p.Fails is null ? "HaruspexResultError" : "RequestError", response.Error.Name);
             Assert.Equal(p.Fails, response.Error.IsRequestError ? response.Error.Number : null);
         });
+    }
+
+    /// <summary>
+    /// Query files, read against each database as a source baseline is read, with their text as it is now: one that reads what
+    /// both have is combined and runs against both; one that reads a column only the candidate's table has is left out, and its
+    /// own function fails against the baseline's database (207), which the unknown its reading there gave would have hidden.
+    /// </summary>
+    [Fact]
+    public async Task A_query_file_runs_against_both_unless_it_reads_what_the_baseline_lacks()
+    {
+        const string Orders = "CREATE TABLE stall.orders (id int NOT NULL PRIMARY KEY, status varchar(10) NOT NULL{0});";
+        var (before, after) = (string.Format(System.Globalization.CultureInfo.InvariantCulture, Orders, ""), string.Format(System.Globalization.CultureInfo.InvariantCulture, Orders, ", channel varchar(10) NULL"));
+        (string Path, string Sql)[] queries =
+        [
+            ("sql/find_order.sql", "SELECT o.id, o.status FROM stall.orders AS o WHERE o.id = @id;"),
+            ("sql/find_channel.sql", "SELECT o.id, o.channel FROM stall.orders AS o WHERE o.id = @id;"),
+        ];
+        var baseline = InferQuery.Module("CREATE SCHEMA stall;\nGO\n" + before, queries);
+        var candidate = InferQuery.Module("CREATE SCHEMA stall;\nGO\n" + after, queries);
+
+        var combined = IrCombination.Of(baseline, candidate, new IrFitOptions());
+
+        var finding = Assert.Single(combined.Findings);
+        Assert.StartsWith("unbridgeable: sql/find_channel.sql results[0][].channel: its text doesn't run against the baseline's database (", finding.ToString(), StringComparison.Ordinal);
+        Assert.Equal(["sql/find_order.sql"], combined.Document.Objects.Select(o => o.Id));
+
+        var token = TestContext.Current.CancellationToken;
+        const string Schema = "IF SCHEMA_ID(N'stall') IS NULL EXEC (N'CREATE SCHEMA stall');";
+        GeneratedFunctions.Call[] find = [new("find_order", "findOrder", new Dictionary<string, object?> { ["id"] = 1 })];
+        foreach (var table in new[] { before, after })
+        {
+            var response = Assert.Single(await GeneratedFunctions.RunAsync(server, combined.Document, [Schema, table, "INSERT INTO stall.orders (id, status) VALUES (1, 'open');"], find, token));
+            Assert.True(response.Error is null, $"{table}: {response.Error}");
+        }
+
+        var own = Assert.Single(await GeneratedFunctions.RunAsync(
+            server, candidate, [Schema, before], [new GeneratedFunctions.Call("find_channel", "findChannel", new Dictionary<string, object?> { ["id"] = 1 })], token));
+        Assert.Equal(207, own.Error?.Number);
     }
 }

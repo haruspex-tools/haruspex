@@ -157,4 +157,27 @@ public class GenerateBaselineTests
         Assert.StartsWith("haruspex: error HAR6036: the baseline release/haruspex.ir.json is a combined IR", error, StringComparison.Ordinal);
         Assert.Equal(0, Run(folder, "check", "--baseline", "release/haruspex.ir.json", "--fit-only").ExitCode);
     }
+
+    [Theory]
+    [InlineData(2, 3)]
+    [InlineData(3, 2)]
+    public void Named_sets_a_change_adds_to_or_takes_from_are_read_from_a_source_baseline_without_stopping_the_run(int released, int now)
+    {
+        // The config file names the source's sets; read as a baseline, a list of another length names what the baseline returns.
+        static string Procedure(int sets) => "CREATE PROCEDURE shop.get_sheet AS\n" + string.Join("\n", Enumerable.Range(1, sets).Select(i => $"SELECT CAST({i} AS int) AS v{i};"));
+        string[] names = ["head", "lines", "notes"];
+        var config = Edit(Config, "\"schemas\"", $"\"procedures\": {{ \"shop.get_sheet\": {{ \"sets\": [{string.Join(", ", names.Take(now).Select(n => $"\"{n}\""))}] }} }}, \"schemas\"");
+        using var folder = Project(Procedure(released), Procedure(now), config);
+
+        var (exitCode, _, error) = Run(folder, "generate", "--baseline", "release/db");
+
+        Assert.Equal(0, exitCode);
+        Assert.DoesNotContain("HAR4112", error, StringComparison.Ordinal);
+        Assert.Equal([.. names.Take(now)], IrJsonReader.Read(Written(folder, HaruspexCli.IrFileName)).Objects.Single().SetNames);
+
+        // The fit is judged, not stopped: a set gone is one the application already running counts on.
+        var (checkExit, _, checkError) = Run(folder, "check", "--baseline", "release/db", "--fit-only");
+        Assert.Equal(now < released ? 1 : 0, checkExit);
+        Assert.Equal(now < released, checkError.Contains("error HAR6026: shop.get_sheet results[2]: removed", StringComparison.Ordinal));
+    }
 }

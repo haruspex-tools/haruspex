@@ -34,11 +34,13 @@ internal static class ModuleRun
             .Then(Emit);
 
     /// <summary>
-    /// The IR the request would infer, with the config file applied, without emitting it: how a baseline given as a source is
-    /// read, with the module's own config file, so that the two are selected, overridden and named alike.
+    /// The IR a baseline given as a source has, with the module's own config file applied as to a baseline
+    /// (<see cref="HaruspexConfig.AppliedToBaseline"/>), without emitting it: so that the two are selected, overridden and named
+    /// alike, and a procedure whose named sets the change adds to or takes from doesn't stop the run.
     /// </summary>
-    public static Outcome<IrDocument> Inferred(RunRequest request, Progress progress) =>
+    public static Outcome<IrDocument> InferredAsBaseline(RunRequest request, Progress progress) =>
         Settle(request)
+            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Source, plan.Out, plan.Include))
             .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))

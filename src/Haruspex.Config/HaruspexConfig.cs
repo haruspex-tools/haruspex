@@ -111,6 +111,15 @@ public sealed record HaruspexConfig
     /// <summary>The per-procedure overrides, in the order written.</summary>
     public EquatableArray<ProcedureOverride> Procedures { get; init; } = [];
 
+    /// <summary>
+    /// Whether the file is applied to a baseline, the database before a change, rather than to the source it was written for.
+    /// Its <c>sets</c> name the source's result sets, so a procedure that returns another number of them in the baseline isn't
+    /// an error: the baseline's sets take the list's first names where it returns fewer, and none where it returns more. Set
+    /// by the command line, never read from the file. Why:
+    /// docs/decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md.
+    /// </summary>
+    public bool AppliedToBaseline { get; init; }
+
     /// <summary>The settings that apply when there is no config file: nothing selected, every default.</summary>
     public static HaruspexConfig None(string directory, ReservedWords? reserved = null) =>
         new() { File = "", Directory = directory, Reserved = reserved ?? ReservedWords.None };

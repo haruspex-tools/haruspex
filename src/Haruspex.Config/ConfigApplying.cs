@@ -164,6 +164,13 @@ internal sealed class ConfigApplying
             return;
         }
 
+        if (known.Count != sets.Count && config.AppliedToBaseline)
+        {
+            if (known.Count < sets.Count)
+                results[index] = [.. known.Select((result, i) => result with { Name = sets[i] })];
+            return;
+        }
+
         if (known.Count != sets.Count)
         {
             problems.Add(ConfigCodes.SetsMiscounted.At(at,

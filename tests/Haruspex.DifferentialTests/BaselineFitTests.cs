@@ -271,6 +271,17 @@ public class BaselineFitTests(SqlServerFixture server)
             null,
             ["refused: drift.retired: removed"],
             Ending.Server(2812)),
+
+        // Last: a value returned to an OUTPUT parameter that its declared type can't hold fails the call (8114) and rolls back the
+        // transaction the calls share, which a call after it would find gone.
+        new("an OUTPUT parameter widened, whose value comes back",
+            "CREATE PROCEDURE drift.get_total @n int OUTPUT AS SET @n = 5; SELECT CAST(1 AS int) AS id;",
+            "CREATE PROCEDURE drift.get_total @n bigint OUTPUT AS SET @n = 3000000000; SELECT CAST(1 AS int) AS id;",
+            ["refused: drift.get_total parameters[\"@n\"]: type changed from number (int32) to number (int64)"],
+            Ending.Server(8114))
+        {
+            Params = new() { ["n"] = 0 },
+        },
     ];
 
     private static IrDocument Module(Func<Pair, string?> procedure, string tickets) =>

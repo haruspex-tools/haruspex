@@ -180,6 +180,21 @@ public class IrFitTests
     }
 
     [Fact]
+    public void An_output_parameter_s_value_comes_back_so_one_widened_is_refused_as_a_result_is()
+    {
+        // Declared as the application's type, the procedure's wider value fails the call (8114) or a longer string is cut short.
+        var before = Infer("CREATE PROCEDURE shop.count_orders @n int OUTPUT, @s nvarchar(5) OUTPUT AS SELECT @n = 1, @s = N'a';");
+        var after = Infer("CREATE PROCEDURE shop.count_orders @n bigint OUTPUT, @s nvarchar(10) OUTPUT AS SELECT @n = 1, @s = N'a';");
+
+        Assert.Equal(
+            [
+                "refused: shop.count_orders parameters[\"@n\"]: type changed from number (int32) to number (int64)",
+                "refused: shop.count_orders parameters[\"@s\"]: length changed from at most 5 to at most 10",
+            ],
+            Fit(before, after));
+    }
+
+    [Fact]
     public void A_result_that_may_now_be_absent_is_refused()
     {
         var before = Infer("CREATE PROCEDURE shop.get_order @order_id int AS SELECT 1 AS found; SELECT o.customer FROM shop.orders AS o WHERE o.order_id = @order_id;");

@@ -248,7 +248,7 @@ public class IrCombinationTests
         var combined = Combine(baseline, candidate);
 
         Assert.Equal(
-            ["unbridgeable: shop.get_order parameters[\"@order_id\"]: changed type from number (int32) to uuid, which have no value in common the function could send: ship the change in two releases"],
+            ["unbridgeable: shop.get_order parameters[\"@order_id\"]: changed type from int to uniqueidentifier, which have no value in common the function could send: ship the change in two releases"],
             combined.Findings.Select(f => f.ToString()));
     }
 
@@ -329,5 +329,98 @@ public class IrCombinationTests
         Assert.Equal(
             ["unbridgeable: queries/find.sql: its text changed since the baseline, which says what the old text returns, not the new: give the baseline as a source, so that this text is read against it"],
             combined.Findings.Select(f => f.ToString()));
+    }
+
+    [Fact]
+    public void An_output_parameter_is_output_only_where_both_are_and_one_of_another_type_can_t_be_bridged()
+    {
+        const string Count = "CREATE PROCEDURE shop.count_orders @n int OUTPUT, @m int AS SELECT @n = COUNT(*), @m = 1 FROM shop.orders AS o;";
+        var baseline = Infer(Count);
+        var candidate = Infer(Edit(Count, "@m int AS", "@m int OUTPUT AS"));
+
+        var combined = Combine(baseline, candidate);
+
+        Assert.Empty(combined.Findings);
+        Assert.Equal([("@n", true), ("@m", false)], combined.Document.Objects.Single().Parameters.Select(p => (p.Name, p.IsOutput)));
+        FitsBoth(combined, baseline, candidate);
+
+        // Declared once, its value goes as the narrower type and comes back as that type, which the wider value doesn't fit.
+        var wider = Infer(Edit(Count, "@n int OUTPUT", "@n bigint OUTPUT"));
+        Assert.Equal(
+            ["unbridgeable: shop.count_orders parameters[\"@n\"]: changed the type of the OUTPUT parameter @n from int to bigint: it is declared as one type, which can't both send only what both take and hold what both give back, so ship the change in two releases"],
+            Combine(baseline, wider).Findings.Select(f => f.ToString()));
+        Assert.Single(Combine(wider, baseline).Findings);
+    }
+
+    [Fact]
+    public void Two_decimals_neither_of_which_holds_the_other_meet_at_the_fewer_places_on_each_side_of_the_point()
+    {
+        // decimal(9,3) and decimal(9,2) both take every decimal(8,2): six places before the point and two after.
+        var baseline = Infer(Edit(GetOrder, "@order_id int AS", "@order_id int, @price decimal(9,3) AS"));
+        var candidate = Infer(Edit(GetOrder, "@order_id int AS", "@order_id int, @price decimal(9,2) AS"));
+
+        var combined = Combine(baseline, candidate);
+
+        Assert.Empty(combined.Findings);
+        var price = (IrScalar)Parameter(combined.Document, "shop.get_order", "@price").Type;
+        Assert.Equal(("decimal(8,2)", 8, 2), (price.Sql, price.Facets!.Digits!.Precision, price.Facets.Digits.Scale));
+        FitsBoth(combined, baseline, candidate);
+    }
+
+    [Fact]
+    public void A_string_parameter_counted_in_another_unit_can_t_be_bridged_and_the_message_says_why()
+    {
+        var baseline = Infer(Edit(GetOrder, "@order_id int AS", "@order_id int, @code nvarchar(10) AS"));
+        var candidate = Infer(Edit(GetOrder, "@order_id int AS", "@order_id int, @code varchar(10) AS"));
+
+        Assert.Equal(
+            ["unbridgeable: shop.get_order parameters[\"@code\"]: changed type from nvarchar(10) to varchar(10), whose lengths are counted in another unit, so what one takes can't be shown to be taken by the other (a character outside a code page is changed without an error): ship the change in two releases"],
+            Combine(baseline, candidate).Findings.Select(f => f.ToString()));
+    }
+
+    [Fact]
+    public void A_value_set_that_shrank_keeps_the_values_the_baseline_returns()
+    {
+        var baseline = Infer(GetOrder);
+        var candidate = Infer(GetOrder, Edit(Orders, "('open', 'closed')", "('open')"));
+
+        var combined = Combine(baseline, candidate);
+
+        Assert.Equal(["closed", "open"], ((IrScalar)Field(combined.Document, "shop.get_order", "status").Type).Facets!.Values!.Items.Select(v => v.Text).Order(StringComparer.Ordinal));
+        FitsBoth(combined, baseline, candidate);
+    }
+
+    [Fact]
+    public void A_trailing_set_only_the_baseline_returns_without_a_name_of_its_own_is_set_aside_unless_objects_are_strict()
+    {
+        // The config file names the candidate's one set; the baseline, read with it, returns two, which it can't name.
+        var named = Infer(GetOrder);
+        var candidate = named with { Objects = [.. named.Objects.Select(o => o with { Results = [.. o.Results!.Select(r => r with { Name = "order" })] })] };
+        var baseline = Infer(Edit(GetOrder, "= @order_id;", "= @order_id; SELECT o.qty FROM shop.orders AS o;"));
+
+        var combined = Combine(baseline, candidate);
+
+        Assert.Empty(combined.Findings);
+        Assert.Equal(["order"], combined.Document.Objects.Single().SetNames!);
+        FitsBoth(combined, baseline, candidate);
+        Assert.Equal(
+            ["unbridgeable: shop.get_order results: returns fewer result sets than the baseline, whose others have no names of their own beside the ones the config file gives now, and the function, with \"objects\": \"strict\", refuses a set it doesn't know: ship the change in two releases"],
+            Combine(baseline, candidate, strict: true).Findings.Select(f => f.ToString()));
+    }
+
+    [Fact]
+    public void A_query_file_whose_text_names_what_the_baseline_lacks_can_t_be_combined()
+    {
+        var document = Infer(GetOrder);
+        var query = new IrObject("queries/find.sql", "Find", IrObjectKind.Query, "queries/find.sql:1:1", [], []) { Text = "SELECT o.channel FROM shop.orders AS o;" };
+        var candidate = document with { Objects = [.. document.Objects, query] };
+        var baseline = candidate with
+        {
+            Unknowns = [new IrUnknown("queries/find.sql", "results[0][].channel", IrUnknownReason.UnresolvedColumn, "The column o.channel is not found.", "queries/find.sql:1:8")],
+        };
+
+        Assert.Equal(
+            ["unbridgeable: queries/find.sql results[0][].channel: its text doesn't run against the baseline's database (The column o.channel is not found): ship the change to the database first, or the query in a later release"],
+            Combine(baseline, candidate).Findings.Select(f => f.ToString()));
     }
 }

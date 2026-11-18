@@ -60,7 +60,7 @@ internal sealed class Baseline(string path, IrDocument document, bool isIr)
     /// said: a warning is about the old source, which nobody is changing.
     /// </summary>
     private static Outcome<IrDocument> Inferred(RunRequest request, string baseline, Progress progress) =>
-        ModuleRun.Inferred(request with { Directory = baseline, Baseline = null }, progress) switch
+        ModuleRun.InferredAsBaseline(request with { Directory = baseline, Baseline = null }, progress) switch
         {
             Succeeded<IrDocument> { Value: var document } => new Succeeded<IrDocument>(document),
             var failed => new Failed<IrDocument>([.. failed.Diagnostics.Where(d => d.IsError)]),

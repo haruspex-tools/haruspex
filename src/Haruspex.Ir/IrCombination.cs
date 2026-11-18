@@ -15,13 +15,14 @@ namespace Haruspex.Ir;
 /// nullable if either's is, a length, a range and a value set are the larger, a trailing result set only one returns may be
 /// missing (<see cref="IrNullRule.NotInBoth"/>), and a value of another kind is a union of both. <b>Parameters</b> flow to the
 /// database, so they <b>narrow</b>: the combined function sends only what both procedures take. A parameter only one has is
-/// left out while it has a default there; a type is the narrower of the two.
+/// left out while it has a default there; a type is the narrower of the two; an <c>OUTPUT</c> parameter's value comes back too,
+/// so one in both is bridged only when its type is the same in both.
 /// </para>
 /// <para>
 /// What no one function bridges is reported (<see cref="IrCombinationKind.Unbridgeable"/>) and its object left out, so that
 /// one stuck procedure doesn't stop the rest: a new required parameter, a removed one the baseline requires, types with no
-/// value in common, a result read another way, a query file whose text changed. So is an object only one document has, which
-/// the other database can't run. A key gone and another appeared in the same object type is reported as a possible rename.
+/// value in common, an <c>OUTPUT</c> parameter of another type, a result read another way, a query file whose text changed or
+/// names what the baseline's database lacks. So is an object only one document has, which the other database can't run. A key gone and another appeared in the same object type is reported as a possible rename.
 /// </para>
 /// <para>
 /// The combined document is then held to the fits-within operation itself: an application built against it must meet each
@@ -50,9 +51,9 @@ public static partial class IrCombination
         if (candidate.Source.Baseline is not null)
             throw new ArgumentException("A candidate is a document of one database.", nameof(candidate));
 
-        var combined = new Combiner(baseline, candidate, []).Combined();
+        var combined = new Combiner(baseline, candidate, options, []).Combined();
         var unproven = Unproven(combined.Document, baseline, candidate, options);
-        return unproven.Count == 0 ? combined : new Combiner(baseline, candidate, unproven).Combined();
+        return unproven.Count == 0 ? combined : new Combiner(baseline, candidate, options, unproven).Combined();
     }
 
     /// <summary>
@@ -79,7 +80,7 @@ public static partial class IrCombination
     /// the objects are combined: the findings, and for each object type of the combined document, the baseline's types it must
     /// also accept (decision 0073); both live only as long as the combining.
     /// </summary>
-    private sealed partial class Combiner(IrDocument baseline, IrDocument candidate, IReadOnlyList<IrCombinationFinding> unproven)
+    private sealed partial class Combiner(IrDocument baseline, IrDocument candidate, IrFitOptions options, IReadOnlyList<IrCombinationFinding> unproven)
     {
         private readonly List<IrCombinationFinding> findings = [];
 
@@ -141,12 +142,33 @@ public static partial class IrCombination
             if (now.Kind == IrObjectKind.Query && was.Text != now.Text)
                 return Unbridgeable(now.Id, "", "its text changed since the baseline, which says what the old text returns, not the new: give the baseline as a source, so that this text is read against it");
 
+            // A query file's text runs against both databases, and one that names what the baseline's database doesn't have (a
+            // table, a column, a procedure) fails there with an error (207, 208, 2812) before it returns anything. Its unknown,
+            // which accepts any value, would otherwise pass as a value both may return.
+            if (now.Kind == IrObjectKind.Query && Unbound(was, now) is { } unbound)
+                return Unbridgeable(now.Id, unbound.Path, $"its text doesn't run against the baseline's database ({unbound.Detail.TrimEnd('.')}): ship the change to the database first, or the query in a later release");
+
             var parameters = Parameters(now.Id, was.Parameters, now.Parameters);
             var (bridged, results) = Results(now.Id, was, now);
             if (parameters is null || !bridged)
                 return null;
             return now with { Parameters = [.. parameters], Results = results, ReturnsCode = was.ReturnsCode || now.ReturnsCode };
         }
+
+        /// <summary>
+        /// An unknown of the baseline's for a name its reading of the query file couldn't bind, where the candidate's reading
+        /// could; null when there is none.
+        /// </summary>
+        private IrUnknown? Unbound(IrObject was, IrObject now)
+        {
+            var own = candidate.Unknowns.Where(u => u.Object == now.Id).Select(u => (u.Path, u.Reason)).ToHashSet();
+            return baseline.Unknowns.FirstOrDefault(u => u.Object == was.Id
+                && u.Reason is IrUnknownReason.UnresolvedTable or IrUnknownReason.UnresolvedColumn or IrUnknownReason.MissingProcedure
+                && !own.Contains((u.Path, u.Reason)));
+        }
+
+        /// <summary>A type as its SQL type spells it where it has one (<c>decimal(9,3)</c>), as the IR says it otherwise.</summary>
+        private static string Spelt(IrType type) => type is IrScalar { Sql: { } sql } ? sql : IrClaimText.Type(type);
 
         /// <summary>A change that can't be bridged, reported; null, for the object it leaves out.</summary>
         private IrObject? Unbridgeable(string id, string path, string what)
@@ -177,9 +199,19 @@ public static partial class IrCombination
                     continue;
                 }
 
-                if (Narrower(old.Type, parameter.Type) is not { } type)
+                var (type, why) = Narrower(old.Type, parameter.Type);
+                if (type is null)
                 {
-                    bridged = Unbridgeable(id, path, $"changed type from {IrClaimText.Type(old.Type)} to {IrClaimText.Type(parameter.Type)}, which have no value in common the function could send: ship the change in two releases") is not null;
+                    bridged = Unbridgeable(id, path, $"changed type from {Spelt(old.Type)} to {Spelt(parameter.Type)}, {why}: ship the change in two releases") is not null;
+                    continue;
+                }
+
+                // An OUTPUT parameter is declared once, as one type, and its value both goes and comes back: sent, the narrower
+                // type is taken by both, but returned, the server converts each procedure's value to it, failing on one past its
+                // range (8114) and cutting a longer string short without an error. So only one of the same type in both is bridged.
+                if (old.IsOutput && parameter.IsOutput && old.Type != parameter.Type)
+                {
+                    bridged = Unbridgeable(id, path, $"changed the type of the OUTPUT parameter {parameter.Name} from {Spelt(old.Type)} to {Spelt(parameter.Type)}: it is declared as one type, which can't both send only what both take and hold what both give back, so ship the change in two releases") is not null;
                     continue;
                 }
 
@@ -218,12 +250,18 @@ public static partial class IrCombination
             }
 
             // Sets are named all or none (decision 0070), by the config file, so a set only the baseline returns needs a name of
-            // its own there, which none of the candidate's has.
+            // its own there, which none of the candidate's has. Without one it can't be read under a name; the function then
+            // sets it aside, as it does any set after those it knows (decision 0063), but under "objects": "strict" it refuses it.
             var named = now.SetNames is not null;
             if (named && before.Count > after.Count && (was.SetNames is not { } old || old.Skip(after.Count).Intersect(now.SetNames ?? []).Any()))
             {
-                Unbridgeable(id, "results", "returns fewer result sets than the baseline, and the baseline's others have no names of their own beside the ones the config file gives now: name them all, or ship the change in two releases");
-                return (false, null);
+                if (options.StrictObjects)
+                {
+                    Unbridgeable(id, "results", "returns fewer result sets than the baseline, whose others have no names of their own beside the ones the config file gives now, and the function, with \"objects\": \"strict\", refuses a set it doesn't know: ship the change in two releases");
+                    return (false, null);
+                }
+
+                before = [.. before.Take(after.Count)];
             }
 
             var at = now.At;

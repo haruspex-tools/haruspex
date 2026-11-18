@@ -427,20 +427,23 @@ export const GetOrderRowSchema = z.object({
 
 | | Results (to the application) widen | Parameters (to the database) narrow |
 |---|---|---|
-| Combined | a key only one returns may be left out; nullable if either is; a length, range, digits or value set the larger; integers of two sizes the wider; a trailing result set only one returns may be missing; a value of another kind a union of both | a parameter only one has is left out while it has a default there; the narrower type of the two; a default only where both have one; `OUTPUT` only where both are |
-| An error, the procedure left out of the module (HAR6033) | rows that became JSON, or the reverse | a parameter added without a default; one removed that the baseline requires; types with no value in common, or digits, dates or lengths in another unit neither of which holds the other |
+| Combined | a key only one returns may be left out; nullable if either is; a length, range, digits or value set the larger; integers of two sizes the wider; a trailing result set only one returns may be missing; a value of another kind a union of both | a parameter only one has is left out while it has a default there; the narrower type of the two (two decimals meet at the fewer places each side of the point); a default only where both have one; `OUTPUT` only where both are |
+| An error, the procedure left out of the module (HAR6033) | rows that became JSON, or the reverse | a parameter added without a default; one removed that the baseline requires; types with no value in common, dates neither of which holds the other, or lengths counted in another unit; an `OUTPUT` parameter of another type, whose value comes back too |
 | A warning | a key gone and another appeared in the same row: perhaps a rename (HAR6034); a function whose return shape changes (HAR6028) | |
 
 A procedure only one database has is left out with a warning (HAR6035), and so is the rest of the module written when one
 procedure can't be bridged: the run then fails. A query file is combined only when the baseline was read with its text as it
-is now, which a source baseline is; against an IR baseline whose text differs, it can't be (HAR6033).
+is now, which a source baseline is, and that text runs against the baseline's database: one that names a table, a column or a
+procedure the baseline doesn't have can't be combined, nor one whose text differs from an IR baseline's (HAR6033). Named result
+sets are read from a source baseline by position, so a procedure whose `sets` name one set more or fewer than the baseline returns
+is combined, not refused.
 
 **What `check` judges.** Values flow two ways, and each is judged in its own direction
 ([decision 0068](decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)):
 
 | Change | Results (to the application) | Parameters (to the database) |
 |---|---|---|
-| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, of a table type, a CLR type or `xml` (whose definition the IR doesn't hold) even when unchanged, no longer `OUTPUT`, or that lost its default |
+| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, of a table type, a CLR type or `xml` (whose definition the IR doesn't hold) even when unchanged, no longer `OUTPUT`, or that lost its default; an `OUTPUT` parameter whose value, which comes back, widened, as a result's would |
 | A warning | a new key; a new trailing result set; both fail under `"objects": "strict"` | a parameter added with a default |
 | Fits | a value that became non-null; a length, range or value set narrowed; keys in another order; a trailing result set the application may find missing (a statement that may not run), gone | a parameter widened, or that gained a default |
 

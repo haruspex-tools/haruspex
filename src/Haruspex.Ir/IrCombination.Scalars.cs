@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Haruspex.Ir;
 
 public static partial class IrCombination
@@ -118,57 +120,58 @@ public static partial class IrCombination
 
         /// <summary>
         /// The narrower of two parameters' types: every value of it both procedures take, so the combined function sends only
-        /// that. Null when there is no such type the IR can say: another kind, a length counted in another unit, digits or dates
-        /// neither of which holds the other, or value sets and ranges with nothing in common. A parameter unknown in both stays
-        /// unknown, claiming nothing, as it does in a document of one database; one known in only one can't be shown to be taken
-        /// by the other.
+        /// that; or why there is no such type the IR can say. A parameter unknown in both stays unknown, claiming nothing, as it
+        /// does in a document of one database; one known in only one can't be shown to be taken by the other.
         /// </summary>
-        private static IrType? Narrower(IrType was, IrType now) => (was, now) switch
+        private static (IrType? Type, string? Why) Narrower(IrType was, IrType now) => (was, now) switch
         {
-            (IrUnknownType, IrUnknownType) => now,
+            (IrUnknownType, IrUnknownType) => (now, null),
+            (IrUnknownType, _) or (_, IrUnknownType) => (null, "and haruspex doesn't model one of the two, so no value can be shown to be taken by both"),
             (IrScalar before, IrScalar after) => Narrower(before, after),
-            _ => was == now ? now : null,
+            _ => was == now ? (now, null) : (null, "which have no value in common the function could send"),
         };
 
-        private static IrScalar? Narrower(IrScalar was, IrScalar now)
+        private static (IrType? Type, string? Why) Narrower(IrScalar was, IrScalar now)
         {
+            const string Nothing = "which have no value in common the function could send";
             if (was == now)
-                return now;
+                return (now, null);
             if (was.Kind != now.Kind)
-                return null;
+                return (null, Nothing);
 
             if (was.Format != now.Format)
             {
                 // Integers of another size: the server converts what is sent, so the narrower is taken by both (decision 0068).
                 if (Rank(was.Format) is not { } before || Rank(now.Format) is not { } after)
-                    return null;
-                return before < after ? was : now;
+                    return (null, Nothing);
+                return (before < after ? was : now, null);
             }
 
-            // A date or time is compared by the range and fraction of its SQL type, which the IR keeps and has no fact for.
+            // A date or time is compared by the range and fraction of its SQL type, which the IR keeps and has no other fact for.
             if (was.Kind is IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime && was.Sql != now.Sql)
-                return IrDateTimes.Takes(now.Sql, was.Sql) ? was : IrDateTimes.Takes(was.Sql, now.Sql) ? now : null;
+            {
+                return IrDateTimes.Takes(now.Sql, was.Sql) ? (was, null)
+                    : IrDateTimes.Takes(was.Sql, now.Sql) ? (now, null)
+                    : (null, "neither of whose range and fraction holds the other's, so no one type of the two sends only what both take");
+            }
 
             var (old, facets) = (was.Facets ?? new IrFacets(), now.Facets ?? new IrFacets());
             if (old.Length is { } a && facets.Length is { } b && (a.Unit, a.Encoding) != (b.Unit, b.Encoding))
-                return null;
-            if (old.Digits is { } p && facets.Digits is { } q && !Holds(p, q) && !Holds(q, p))
-                return null;
+                return (null, "whose lengths are counted in another unit, so what one takes can't be shown to be taken by the other (a character outside a code page is changed without an error)");
 
             var length = (old.Length, facets.Length) switch
             {
                 ({ } x, { } y) => x.Value < y.Value ? x : y,
                 (var x, var y) => x ?? y,
             };
-            var digits = (old.Digits, facets.Digits) switch
-            {
-                ({ } x, { } y) => Holds(x, y) ? y : x,
-                (var x, var y) => x ?? y,
-            };
+            var (digits, sql) = Digits(was, now);
+            if (digits is null && old.Digits is not null && facets.Digits is not null)
+                return (null, Nothing);
+
             var min = Tighter(old.Min, facets.Min, above: true);
             var max = Tighter(old.Max, facets.Max, above: false);
             if (min is not null && max is not null && IrNumbers.Compare(min.Value, max.Value) is var order && (order > 0 || (order == 0 && !(min.Inclusive && max.Inclusive))))
-                return null;
+                return (null, "whose ranges don't meet");
 
             var values = (old.Values, facets.Values) switch
             {
@@ -177,13 +180,13 @@ public static partial class IrCombination
                 (var x, var y) => x ?? y,
             };
             if (old.Values is not null && facets.Values is not null && values is not { Items.Count: > 0 })
-                return null;
+                return (null, "whose value sets have no value in common");
 
             var narrowed = new IrFacets(length, Longest(old.MinLength, facets.MinLength), digits, min, max, values);
 
             // The SQL type the function declares is the one whose length or digits were kept: a query file sends it to sp_executesql.
-            var sql = (length is not null && length == old.Length && length != facets.Length) || (digits is not null && digits == old.Digits && digits != facets.Digits) ? was.Sql : now.Sql;
-            return now with { Sql = sql, Facets = narrowed.IsEmpty ? null : narrowed };
+            sql ??= length is not null && length == old.Length && length != facets.Length ? was.Sql : now.Sql;
+            return (now with { Sql = sql, Facets = narrowed.IsEmpty ? null : narrowed }, null);
 
             static IrMinLength? Longest(IrMinLength? x, IrMinLength? y) => x is null ? y : y is null ? x : x.Value >= y.Value ? x : y;
 
@@ -197,6 +200,27 @@ public static partial class IrCombination
             };
         }
 
+        /// <summary>
+        /// The digits both decimals take, and the SQL type that declares them when it is neither's: the fewer places before the
+        /// point and the fewer after, so <c>decimal(9,3)</c> and <c>decimal(9,2)</c> meet at <c>decimal(8,2)</c>, which each takes
+        /// exactly. Null digits when either has none; null SQL when one side's digits are kept whole, whose SQL type is used.
+        /// </summary>
+        private static (IrDigits? Digits, string? Sql) Digits(IrScalar was, IrScalar now)
+        {
+            if (was.Facets?.Digits is not { } a || now.Facets?.Digits is not { } b)
+                return (was.Facets?.Digits ?? now.Facets?.Digits, null);
+            if (Holds(a, b))
+                return (b, now.Sql);
+            if (Holds(b, a))
+                return (a, was.Sql);
+
+            var scale = Math.Min(a.Scale, b.Scale);
+            var precision = Math.Min(a.Precision - a.Scale, b.Precision - b.Scale) + scale;
+            return DecimalSpelling().Match(now.Sql ?? "") is { Success: true } spelt
+                ? (new IrDigits(precision, scale, new IrFactSource(IrFactSourceKind.Type, $"{spelt.Groups["name"].Value}({precision},{scale})")), $"{spelt.Groups["name"].Value}({precision},{scale})")
+                : (null, null);
+        }
+
         /// <summary>The tighter of two bounds (the higher minimum or the lower maximum), or the one there is.</summary>
         private static IrBound? Tighter(IrBound? was, IrBound? now, bool above)
         {
@@ -207,5 +231,9 @@ public static partial class IrCombination
                 return was.Inclusive ? now : was;
             return (order > 0) == above ? was : now;
         }
+
+        /// <summary>A decimal type as SQL Server spells it: its name, and its precision and scale.</summary>
+        [GeneratedRegex(@"^(?<name>decimal|numeric)\(\d+,\s*\d+\)$", RegexOptions.CultureInvariant)]
+        private static partial Regex DecimalSpelling();
     }
 }

@@ -121,9 +121,17 @@ public static partial class IrFit
                     Add(findings, IrChangeKind.ParameterDirectionChanged, path, IrFitVerdict.Refused, "the application sends it as an output parameter", "true", "false");
 
                 if (parameter.Type is IrUnknownType && now.Type is IrUnknownType)
+                {
                     BothUnknown(path, $"parameters.{parameter.Name}", parameter.Type, now.Type);
-                else
-                    new Values(this, Flow.Parameters, findings).Type(path, now.Type, parameter.Type);
+                    continue;
+                }
+
+                new Values(this, Flow.Parameters, findings).Type(path, now.Type, parameter.Type);
+
+                // An OUTPUT parameter's value comes back too, declared as the application's type: the server converts the
+                // procedure's value to it, failing on one past its range (8114) and cutting a longer string short without an error.
+                if (parameter.IsOutput && now.IsOutput)
+                    new Values(this, Flow.Results, findings).Type(path, parameter.Type, now.Type);
             }
         }
 
