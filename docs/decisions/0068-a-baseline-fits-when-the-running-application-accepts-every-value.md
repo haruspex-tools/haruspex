@@ -9,20 +9,31 @@ direction:
 - **Results flow to the application**, so they fit when every value the database can return is one the application's types
   accept. A value that may now be null, a key or a result set that went, a key that may now be left out, a result that may
   now be absent, a type of another kind, and a length, range, number of digits, number of rows or value set that widened are
-  each refused. The reverse of each (a value proved never null, a shorter string) fits. Integers of another size are compared
+  each refused. The reverse of each (a value proved never null, a shorter string) fits. A key the application has as left out
+  when null is written as optional and never null, so one that may now arrive as `null` (`INCLUDE_NULL_VALUES` added) is
+  refused too. A result is judged absent as the application's function counts it (decision 0063): a `FOR JSON` set absent only
+  for want of rows still arrives, so the function counts it on every call, and one that may now not be sent at all is refused. Integers of another size are compared
   by the range each allows, since every schema checks them as numbers; a `bigint` is refused either way, since a row delivers
   it as a string.
 - **Parameters flow to the database**, so they fit when everything the application may send is something the procedure takes.
   A new parameter fits only with a default, and is then ignored. One removed is refused, with or without a default, since the
   application may send it and SQL Server refuses the call (error 8144). A default lost, a parameter no longer `OUTPUT` (error
   8162) and a type narrowed (`int` to `tinyint` fails with error 8114 on a value past 255; a string cut short is cut silently)
-  are refused. A type widened (`int` to `bigint`) fits, since the server converts what is sent.
+  are refused. A type widened (`int` to `bigint`) fits, since the server converts what is sent. A date or time is compared by
+  the range and fraction of its SQL type, which the IR keeps and has no other fact for: `datetime2(7)` to `smalldatetime`
+  fails with error 8114 on a date past 2079, and to `datetime2(0)` rounds the fraction without an error, so both are refused;
+  a type outside the list decision 0041 spells can't be compared, and a change of it is refused. In a result the IR claims no
+  range or fraction for a date, and the schemas check none, so there it is compared by kind and format alone.
 - **What the application doesn't know is ignored**, as its generated code ignores it: a key its type doesn't list (decision
   0008), a result set after those it knows (decision 0063), a parameter it doesn't send that has a default, a procedure it
   doesn't call. Under `"objects": "strict"` a key and a result set are refused, since the code then refuses them.
 - **What can't be shown to fit doesn't.** A value that became unknown, a length counted in another unit, a value set matched
-  under another fold, results that can no longer be listed: each is refused. A value the application had as unknown accepts
-  anything, as its schema does.
+  under another fold, results that can no longer be listed: each is refused. A result the application had as unknown accepts
+  anything, as its schema does. A parameter the procedure has as unknown is refused, since nothing is known of what it takes
+  (`int` to `hierarchyid` fails with error 206), unless the application had it as unknown too and both documents say the
+  unknown alike, with the same reason and detail, which for a type not modelled names it: an unchanged `xml` parameter fits,
+  and `hierarchyid` to `geography` doesn't. Refusing every unknown on both sides would fail every module with such a parameter
+  on every check, for a change nobody made.
 - **Result sets are matched by place**, as the server sends them. A set's name (decision 0070) is the key the application's
   own function returns it under, which the running application keeps, so a name given, changed or taken away is no finding
   here: it changes the application's next build, which `check` warns of as a return shape (decision 0069).

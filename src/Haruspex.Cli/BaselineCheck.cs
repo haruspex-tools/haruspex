@@ -21,7 +21,7 @@ internal static class BaselineCheck
     /// <summary>What the fit finds, each change at its procedure; or why the baseline can't be read.</summary>
     public static IReadOnlyList<Diagnostic> Run(RunRequest request, EmittedModule module, string baseline, Progress progress)
     {
-        var shown = DiagnosticFormatter.PathAsShown(Path.GetRelativePath(request.WorkingDirectory, baseline));
+        var shown = DisplayPath.From(request.WorkingDirectory, baseline);
         if (!File.Exists(baseline) && !Directory.Exists(baseline))
             return [CliCodes.BaselineNotFound.At(request.Baseline is null ? module.Config.Location : null, $"the baseline {shown} isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or \"baseline\".")];
 

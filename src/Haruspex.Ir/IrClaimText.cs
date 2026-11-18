@@ -66,6 +66,7 @@ internal static class IrClaimText
         (null, null) => "any",
         ({ } least, null) => "at least " + Count(least),
         (null, { } most) => "at most " + Count(most),
+        ({ } least, { } most) when least == most => "exactly " + Count(least),
         ({ } least, { } most) => $"{Count(least)} to {Count(most)}",
     };
 

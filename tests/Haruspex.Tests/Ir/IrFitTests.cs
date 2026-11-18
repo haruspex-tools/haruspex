@@ -342,4 +342,137 @@ public class IrFitTests
         Assert.Equal(IrFitVerdict.Refused, finding.Verdict);
         Assert.Equal("the application doesn't send it, and it has no default", finding.Why);
     }
+
+    /// <summary>The document with the type of the row's field <paramref name="name"/> changed.</summary>
+    private static IrDocument WithField(IrDocument document, string name, Func<IrType, IrType> change)
+    {
+        var (row, type) = document.Types.Single(t => t.Value.Fields.Any(f => f.Name == name));
+        var fields = type.Fields.Select(f => f.Name == name ? f with { Type = change(f.Type) } : f);
+        return document with { Types = new Dictionary<string, IrObjectType>(document.Types) { [row] = type with { Fields = [.. fields] } } };
+    }
+
+    private static IrScalar Faceted(IrType type, Func<IrFacets, IrFacets> change) =>
+        Assert.IsType<IrScalar>(type) is var scalar ? scalar with { Facets = change(scalar.Facets ?? new IrFacets()) } : scalar;
+
+    /// <summary>The facets with their length as given, in the unit and encoding they had.</summary>
+    private static IrFacets Sized(IrFacets facets, int value, bool isFixed) =>
+        facets with { Length = Assert.IsType<IrLength>(facets.Length) with { Value = value, IsFixed = isFixed } };
+
+    private static readonly IrFactSource Declared = new(IrFactSourceKind.Type, "");
+
+    [Fact]
+    public void A_key_left_out_when_null_that_may_now_arrive_as_null_is_refused()
+    {
+        // Observed: the old schema has the key optional and never null, and "note": null fails it.
+        const string Cards = "CREATE PROCEDURE shop.list_cards AS SELECT o.order_id, o.note FROM shop.orders AS o FOR JSON PATH;";
+        var before = Infer(Cards);
+        var after = Infer(Edit(Cards, "FOR JSON PATH", "FOR JSON PATH, INCLUDE_NULL_VALUES"));
+
+        Assert.Equal(["refused: shop.list_cards results[0][].note: presence changed from omittedWhenNull to always"], Fit(before, after));
+        Assert.Equal(["refused: shop.list_cards results[0][].note: presence changed from always to omittedWhenNull"], Fit(after, before));
+    }
+
+    [Fact]
+    public void A_json_result_absent_for_want_of_rows_that_may_now_not_be_sent_is_refused_since_the_function_counts_it()
+    {
+        // A FOR JSON set with no rows still arrives (decision 0063), so the old function counts it on every call.
+        const string Cards = "CREATE PROCEDURE shop.list_cards @show int AS SELECT o.order_id FROM shop.orders AS o FOR JSON PATH;";
+        var before = Infer(Cards);
+        var after = Infer(Edit(Cards, "AS SELECT", "AS IF @show = 1 SELECT"));
+
+        Assert.Equal(["refused: shop.list_cards results[0]: may now be absent"], Fit(before, after));
+        Assert.Empty(Fit(after, before));
+    }
+
+    [Theory]
+    [InlineData("datetime2(7)", "smalldatetime", true)]
+    [InlineData("datetime2(7)", "datetime2(0)", true)]
+    [InlineData("datetime2(0)", "datetime2(7)", false)]
+    [InlineData("smalldatetime", "datetime", false)]
+    [InlineData("smalldatetime", "datetime2(0)", false)]
+    [InlineData("datetime", "smalldatetime", true)]
+    [InlineData("datetime", "datetime2(3)", false)]
+    [InlineData("datetime", "datetime2(2)", true)]
+    [InlineData("datetime2(2)", "datetime", true)] // datetime2 reaches back before 1753
+    [InlineData("datetime2(3)", "datetime", true)]
+    [InlineData("time(7)", "time(3)", true)]
+    [InlineData("time(0)", "time(3)", false)]
+    public void A_date_or_time_parameter_fits_when_the_procedure_holds_its_range_and_fraction(string sent, string taken, bool refused)
+    {
+        // Observed: 2100-01-01 sent to smalldatetime fails the call (8114), and a finer fraction is rounded without an error.
+        const string Find = "CREATE PROCEDURE shop.find_orders @at {0} AS SELECT o.order_id FROM shop.orders AS o;";
+        var before = Infer(string.Format(System.Globalization.CultureInfo.InvariantCulture, Find, sent));
+        var after = Infer(string.Format(System.Globalization.CultureInfo.InvariantCulture, Find, taken));
+
+        Assert.Equal(refused ? [$"refused: shop.find_orders parameters[\"@at\"]: SQL type changed from {sent} to {taken}"] : [], Fit(before, after));
+    }
+
+    [Fact]
+    public void A_parameter_whose_type_the_procedure_has_as_unknown_is_refused_unless_the_same_unknown_both_sides()
+    {
+        // Observed: an int sent to a hierarchyid parameter fails the call (206, operand type clash).
+        const string Find = "CREATE PROCEDURE shop.find_orders @at {0} AS SELECT o.order_id FROM shop.orders AS o;";
+        static IrDocument Taking(string type) => Infer(string.Format(System.Globalization.CultureInfo.InvariantCulture, Find, type));
+
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from number (int32) to unknown (unsupported-sql-type)"], Fit(Taking("int"), Taking("hierarchyid")));
+        Assert.Empty(Fit(Taking("hierarchyid"), Taking("hierarchyid")));
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from unknown (unsupported-sql-type) to unknown (unsupported-sql-type)"], Fit(Taking("hierarchyid"), Taking("geography")));
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: type changed from unknown (unsupported-sql-type) to number (int32)"], Fit(Taking("hierarchyid"), Taking("int")));
+    }
+
+    [Fact]
+    public void A_decimal_with_more_places_is_refused_and_one_with_fewer_places_and_integer_digits_fits()
+    {
+        const string Totals = "CREATE PROCEDURE shop.list_totals AS SELECT o.total FROM shop.orders AS o;";
+        var before = Infer(Totals);
+        var after = Infer(Totals, Edit(Orders, "total decimal(10, 2)", "total decimal(12, 3)"));
+
+        Assert.Contains("refused: shop.list_totals results[0][].total: digits changed from precision 10, scale 2 to precision 12, scale 3", Fit(before, after));
+        Assert.DoesNotContain(Fit(after, before), f => f.Contains("digits", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_shorter_minimum_length_is_refused()
+    {
+        var before = WithField(Infer(ListOrders), "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(2, Declared) }));
+        var after = WithField(before, "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(1, Declared) }));
+
+        Assert.Equal(["refused: shop.list_orders results[0][].customer: minimum length changed from at least 2 to at least 1"], Fit(before, after));
+        Assert.Empty(Fit(after, before));
+    }
+
+    [Fact]
+    public void A_fixed_length_fits_only_the_same_fixed_length()
+    {
+        var before = WithField(Infer(ListOrders), "customer", t => Faceted(t, f => Sized(f, 10, isFixed: true)));
+        var shorter = WithField(before, "customer", t => Faceted(t, f => Sized(f, 8, isFixed: true)));
+        var varying = WithField(before, "customer", t => Faceted(t, f => Sized(f, 10, isFixed: false)));
+
+        Assert.Single(Fit(before, shorter), f => f.Contains("length changed", StringComparison.Ordinal));
+        Assert.Single(Fit(before, varying), f => f.Contains("length changed", StringComparison.Ordinal));
+        Assert.Empty(Fit(before, before));
+    }
+
+    [Fact]
+    public void A_union_variant_that_fails_its_trial_leaves_no_pair_behind_for_a_later_walk()
+    {
+        // The row's x accepts one of two objects, and y the first. What arrives in both is an object whose k may be null, which
+        // only the second accepts: x fits through it, and y, compared after, must still be refused.
+        static IrField Key(bool nullable) => new("k", new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"), IrPresence.Always, nullable ? [new IrNullReason(IrNullRule.NoRows, "t.sql:1:1")] : []);
+        var document = Infer(ListOrders);
+        var row = document.Types.Single().Key;
+        IrDocument With(params (string Name, IrObjectType Type)[] types) => document with
+        {
+            Types = new Dictionary<string, IrObjectType>(types.ToDictionary(t => t.Name, t => t.Type)),
+        };
+        var application = With(
+            (row, new IrObjectType([new IrField("x", new IrUnion([new IrRef("Strict"), new IrRef("Loose")]), IrPresence.Always, []), new IrField("y", new IrRef("Strict"), IrPresence.Always, [])])),
+            ("Strict", new IrObjectType([Key(nullable: false)])),
+            ("Loose", new IrObjectType([Key(nullable: true)])));
+        var database = With(
+            (row, new IrObjectType([new IrField("x", new IrRef("Given"), IrPresence.Always, []), new IrField("y", new IrRef("Given"), IrPresence.Always, [])])),
+            ("Given", new IrObjectType([Key(nullable: true)])));
+
+        Assert.Equal(["refused: shop.list_orders results[0][].y.k: became nullable"], Fit(application, database));
+    }
 }

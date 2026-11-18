@@ -10,7 +10,8 @@ namespace Haruspex.DifferentialTests;
 /// deployed, each in a transaction of its own that is rolled back, and the application's generated functions, written from the
 /// baseline, call each: against the baseline every call must return, and against the candidate a call must return exactly
 /// when the operation finds nothing refused. A pair that doesn't fit makes the candidate return, or be sent, a real value the
-/// application refuses or the procedure does: each such call must fail, and for the reason the finding gives.
+/// application refuses or the procedure does: each such call must fail, and for the reason the finding gives, or, where the
+/// server changes a value without an error, return something other than what was sent.
 /// </summary>
 /// <remarks>
 /// The procedures are invented here, in schema <c>drift</c>, which no fixture uses. Every call of a run is made in the same
@@ -42,6 +43,12 @@ public class BaselineFitTests(SqlServerFixture server)
     {
         /// <summary>The call's arguments, by name without the <c>@</c>; null for a function that takes none.</summary>
         public Dictionary<string, object?>? Params { get; init; }
+
+        /// <summary>
+        /// For a value the server may change without an error, what the call returns when the value sent arrived as sent: the
+        /// first column of the first row. A call that returns anything else returned, but not what was sent.
+        /// </summary>
+        public string? Echoed { get; init; }
 
         /// <summary>The findings under <c>"objects": "strict"</c>, when they differ.</summary>
         public string[]? StrictFindings { get; init; }
@@ -132,7 +139,7 @@ public class BaselineFitTests(SqlServerFixture server)
             "CREATE PROCEDURE drift.get_both @show int AS SELECT CAST(1 AS int) AS id; IF @show = 1 SELECT CAST(2 AS int) AS more;",
             [
                 "refused: drift.get_both results[1]: may now be absent",
-                "refused: drift.get_both results[1]: number of items changed from 1 to 1 to at most 1",
+                "refused: drift.get_both results[1]: number of items changed from exactly 1 to at most 1",
             ],
             Ending.ResultRefused)
         {
@@ -202,6 +209,53 @@ public class BaselineFitTests(SqlServerFixture server)
         {
             Params = new() { ["n"] = 0 },
         },
+        new("a key left out when null that now arrives as null",
+            "CREATE PROCEDURE drift.get_slip AS SELECT CAST(1 AS int) AS id, CAST(NULL AS nvarchar(10)) AS note FOR JSON PATH;",
+            "CREATE PROCEDURE drift.get_slip AS SELECT CAST(1 AS int) AS id, CAST(NULL AS nvarchar(10)) AS note FOR JSON PATH, INCLUDE_NULL_VALUES;",
+            ["refused: drift.get_slip results[0][].note: presence changed from omittedWhenNull to always"],
+            Ending.ResultRefused),
+        new("a JSON result that may now not be sent",
+            "CREATE PROCEDURE drift.get_stub @show int AS SELECT CAST(1 AS int) AS id WHERE @show = 1 FOR JSON PATH;",
+            "CREATE PROCEDURE drift.get_stub @show int AS IF @show = 1 SELECT CAST(1 AS int) AS id FOR JSON PATH;",
+            ["refused: drift.get_stub results[0]: may now be absent"],
+            Ending.ResultRefused)
+        {
+            Params = new() { ["show"] = 0 },
+        },
+        new("a decimal with more places",
+            "CREATE PROCEDURE drift.get_price AS SELECT CAST(1.25 AS decimal(10, 2)) AS price;",
+            "CREATE PROCEDURE drift.get_price AS SELECT CAST(1.255 AS decimal(12, 3)) AS price;",
+            [
+                "refused: drift.get_price results[0][].price: lower bound changed from at least -99999999.99 to at least -999999999.999",
+                "refused: drift.get_price results[0][].price: upper bound changed from at most 99999999.99 to at most 999999999.999",
+                "refused: drift.get_price results[0][].price: digits changed from precision 10, scale 2 to precision 12, scale 3",
+            ],
+            Ending.ResultRefused),
+        new("a date and time parameter of a narrower range",
+            "CREATE PROCEDURE drift.find_slot @d datetime2(7) AS SELECT CONVERT(varchar(27), @d, 126) AS d;",
+            "CREATE PROCEDURE drift.find_slot @d smalldatetime AS SELECT CONVERT(varchar(27), @d, 126) AS d;",
+            ["refused: drift.find_slot parameters[\"@d\"]: SQL type changed from datetime2(7) to smalldatetime"],
+            Ending.Server(8114))
+        {
+            Params = new() { ["d"] = "2100-01-01T00:00:00" },
+        },
+        new("a date and time parameter of a coarser fraction",
+            "CREATE PROCEDURE drift.find_tick @d datetime2(7) AS SELECT CONVERT(varchar(27), @d, 126) AS d;",
+            "CREATE PROCEDURE drift.find_tick @d datetime2(0) AS SELECT CONVERT(varchar(27), @d, 126) AS d;",
+            ["refused: drift.find_tick parameters[\"@d\"]: SQL type changed from datetime2(7) to datetime2(0)"],
+            Ending.Returns)
+        {
+            Params = new() { ["d"] = "2026-11-16T08:30:00.1234567" },
+            Echoed = "2026-11-16T08:30:00.1234567",
+        },
+        new("a parameter whose type is unknown",
+            "CREATE PROCEDURE drift.find_node @b int AS SELECT CAST(1 AS int) AS id;",
+            "CREATE PROCEDURE drift.find_node @b hierarchyid AS SELECT CAST(1 AS int) AS id;",
+            ["refused: drift.find_node parameters[\"@b\"]: type changed from number (int32) to unknown (unsupported-sql-type)"],
+            Ending.Server(206))
+        {
+            Params = new() { ["b"] = 1 },
+        },
         new("a procedure that is gone",
             "CREATE PROCEDURE drift.retired AS SELECT CAST(1 AS int) AS id;",
             null,
@@ -233,7 +287,14 @@ public class BaselineFitTests(SqlServerFixture server)
             server, baselines, Deployed(p => p.Baseline, Tickets.Baseline, TicketRows.Baseline), Calls(baselines), TestContext.Current.CancellationToken);
 
         Assert.All(responses, r => Assert.True(r.Error is null, $"{r.Name}: {r.Error}"));
+        Assert.All(Pairs.Zip(responses).Where(p => p.First.Echoed is not null), p => Assert.Equal(p.First.Echoed, First(p.Second)));
     }
+
+    /// <summary>The first column of the first row a call returned, as text; null when there is none.</summary>
+    private static string? First(GeneratedFunctions.Response response) =>
+        response.Value is { ValueKind: System.Text.Json.JsonValueKind.Array } rows && rows.GetArrayLength() > 0
+            ? rows[0].EnumerateObject().Select(c => c.Value.ToString()).FirstOrDefault()
+            : null;
 
     [Fact]
     public void Each_pair_has_the_findings_it_is_written_with()
@@ -264,7 +325,8 @@ public class BaselineFitTests(SqlServerFixture server)
             var (p, response) = pair;
             var fits = findings.Where(f => f.Change.Object == p.Id).All(f => f.Verdict == IrFitVerdict.Ignored);
             var ends = (strict ? p.StrictEnds : null) ?? p.Ends;
-            Assert.True(fits == (response.Error is null), $"{p.Name}: the operation says it {(fits ? "fits" : "doesn't")}, and the call {(response.Error is null ? "returned" : $"failed: {response.Error}")}");
+            var asSent = response.Error is null && (p.Echoed is null || p.Echoed == First(response));
+            Assert.True(fits == asSent, $"{p.Name}: the operation says it {(fits ? "fits" : "doesn't")}, and the call {(response.Error is null ? $"returned {First(response)}" : $"failed: {response.Error}")}");
             Assert.Equal(ends, new Ending(response.Error?.Name, response.Error is { IsRequestError: true } ? response.Error.Number : null));
         });
     }

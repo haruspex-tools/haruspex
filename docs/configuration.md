@@ -412,7 +412,7 @@ Values flow two ways, and each is judged in its own direction
 
 | Change | Results (to the application) | Parameters (to the database) |
 |---|---|---|
-| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a result that may now be absent; a type of another kind; a length, range, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed, no longer `OUTPUT`, or that lost its default |
+| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, no longer `OUTPUT`, or that lost its default |
 | A warning | a new key; a new trailing result set; both fail under `"objects": "strict"` | a parameter added with a default |
 | Fits | a value that became non-null; a length, range or value set narrowed; keys in another order | a parameter widened, or that gained a default |
 

@@ -118,14 +118,36 @@ public static partial class IrFit
                 // Sent as OUTPUT to a parameter not declared so, a call fails (error 8162); the reverse is a plain argument.
                 if (parameter.IsOutput && !now.IsOutput)
                     Add(findings, IrChangeKind.ParameterDirectionChanged, path, IrFitVerdict.Refused, "the application sends it as an output parameter", "true", "false");
+
+                // A type unknown in both, said alike in both (its reason and detail name the SQL type), is the same type: whatever the
+                // application sent before, the procedure still takes. Said otherwise, it may be another type, which can't be shown to fit.
+                if (parameter.Type is IrUnknownType && now.Type is IrUnknownType && SameUnknown($"parameters.{parameter.Name}"))
+                    continue;
                 new Values(this, Flow.Parameters, findings).Type(path, now.Type, parameter.Type);
             }
+        }
+
+        /// <summary>
+        /// Whether the unknown at <paramref name="path"/> (as the document's unknowns place it) is said alike in both documents: the
+        /// same reason and the same detail, which for a type not modelled names it.
+        /// </summary>
+        private bool SameUnknown(string path)
+        {
+            var was = Application.Unknowns.Where(u => u.Object == id && u.Path == path).Select(u => (u.Reason, u.Detail)).ToList();
+            var now = Database.Unknowns.Where(u => u.Object == id && u.Path == path).Select(u => (u.Reason, u.Detail)).ToList();
+            return was.Count > 0 && was.SequenceEqual(now);
         }
 
         /// <summary>
         /// The result sets, which the database returns: matched by position, as the functions read them. Results the application
         /// couldn't list are handed over as they arrive, whatever they are, so anything fits them.
         /// </summary>
+        /// <remarks>
+        /// The application's function counts the sets every call returns, and fails a call that returns fewer
+        /// (docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md): those before the first that may be missing,
+        /// where a <c>FOR JSON</c> set absent only because no rows matched still arrives, and so counts. Each set it counts must be
+        /// one the database still sends on every call. The count is the one <c>MssqlFunction.SetsAlwaysReturned</c> makes.
+        /// </remarks>
         private void Results(EquatableArray<IrResult>? known, EquatableArray<IrResult>? met)
         {
             IrPathSegment[] results = [new IrPathKey("results")];
@@ -137,6 +159,7 @@ public static partial class IrFit
                     Add(findings, IrChangeKind.ResultsBecameUnknown, results, IrFitVerdict.Refused, "the application's schemas expect the result sets it knew");
                     return;
                 case ({ } before, { } after):
+                    var counted = before.TakeWhile(AlwaysSent).Count();
                     for (var i = 0; i < Math.Max(before.Count, after.Count); i++)
                     {
                         IrPathSegment[] path = [.. results, new IrPathIndex(i)];
@@ -152,7 +175,7 @@ public static partial class IrFit
                         }
                         else
                         {
-                            Result(path, before[i], after[i]);
+                            Result(path, before[i], after[i], i < counted);
                         }
                     }
 
@@ -160,7 +183,10 @@ public static partial class IrFit
             }
         }
 
-        private void Result(IrPathSegment[] path, IrResult known, IrResult met)
+        /// <summary>Whether a set arrives on every call: it is never absent, or absent only for want of rows, as a <c>FOR JSON</c> set then still arrives.</summary>
+        private static bool AlwaysSent(IrResult result) => result.AbsentBecause.All(reason => reason.Rule == IrNullRule.NoRows);
+
+        private void Result(IrPathSegment[] path, IrResult known, IrResult met, bool counted)
         {
             if (known.Encoding != met.Encoding)
             {
@@ -170,6 +196,8 @@ public static partial class IrFit
 
             if (met.MayBeAbsent && !known.MayBeAbsent)
                 Add(findings, IrChangeKind.BecameMayBeAbsent, path, IrFitVerdict.Refused, "the application's schema requires it");
+            else if (counted && !AlwaysSent(met))
+                Add(findings, IrChangeKind.BecameMayBeAbsent, path, IrFitVerdict.Refused, "the application's function counts on it arriving on every call");
 
             // How many rows a result has is its array's bounds and its cardinality together, which is how the schemas bound it.
             new Values(this, Flow.Results, findings).Type(path, Bounded(known), Bounded(met));
