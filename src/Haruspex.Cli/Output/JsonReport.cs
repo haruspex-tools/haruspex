@@ -65,6 +65,7 @@ internal sealed class JsonReport(string workingDirectory)
         json.WriteStartObject();
         Path(json, "config", module.Config);
         Path(json, "out", module.Out);
+        Path(json, "baseline", module.Baseline);
         json.WriteNumber("exitCode", module.ExitCode);
         if (module.Document is { } document)
         {

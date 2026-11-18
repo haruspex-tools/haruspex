@@ -8,6 +8,7 @@
     {
       "config": null,
       "out": "src/db",
+      "baseline": null,
       "exitCode": 1,
       "typed": {
         "procedures": 4,

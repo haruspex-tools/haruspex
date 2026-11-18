@@ -25,11 +25,12 @@
   "$defs": {
     "module": {
       "type": "object",
-      "required": ["config", "out", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics", "acknowledged"],
+      "required": ["config", "out", "baseline", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics", "acknowledged"],
       "additionalProperties": false,
       "properties": {
         "config": { "description": "The config file --config named or --all found; null when the run looked for one.", "type": ["string", "null"] },
-        "out": { "description": "The output folder, once settled; null when the run failed before.", "type": ["string", "null"] },
+        "out": { "description": "The output folder, once settled; null when the run failed before, or when check compared the module with its baseline alone (a baseline that is the output folder's own IR).", "type": ["string", "null"] },
+        "baseline": { "description": "The baseline check judged the module against (--baseline, or \"baseline\" in the config file); null when there was none.", "type": ["string", "null"] },
         "exitCode": { "description": "The module's exit code.", "type": "integer", "minimum": 0 },
         "typed": {
           "description": "What the module types; null when the run failed before inferring.",

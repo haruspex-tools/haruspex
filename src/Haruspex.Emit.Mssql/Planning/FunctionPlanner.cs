@@ -57,18 +57,15 @@ internal static class FunctionPlanner
 
             bound[name] = obj;
             (string Text, string Declaration)? batch = obj.Kind == IrObjectKind.Query ? Batch(obj, refusals) : null;
-            functions.Add(new MssqlFunction(
-                name,
-                obj,
-                [.. obj.Parameters.Select(Bind)],
-                obj.Results is { } results ? [.. results.Select(r => r.Encoding)] : null)
-            {
-                Batch = batch,
-            });
+            functions.Add(Function(name, obj) with { Batch = batch });
         }
 
         return Outcome.Of<IReadOnlyList<MssqlFunction>>(functions, refusals);
     }
+
+    /// <summary>The function of <paramref name="obj"/>, named <paramref name="name"/>: what it binds and how it reads each result set.</summary>
+    public static MssqlFunction Function(string name, IrObject obj) =>
+        new(name, obj, [.. obj.Parameters.Select(Bind)], obj.Results is { } results ? [.. results.Select(r => r.Encoding)] : null);
 
     /// <summary>
     /// What a query file's function sends <c>sp_executesql</c>: its text, and each parameter declared by its name and its type's

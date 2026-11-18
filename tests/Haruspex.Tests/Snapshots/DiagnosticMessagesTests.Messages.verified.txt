@@ -110,7 +110,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -380,7 +380,7 @@ HAR6018
 haruspex: error HAR6018: --all: no haruspex.json below db. Give the folder that holds the modules' config files.
 
 HAR6019
-haruspex: error HAR6019: a source, --include and --out are for one module; with several config files, each says its own source, selection and out.
+haruspex: error HAR6019: a source, --include, --out and --baseline are for one module; with several config files, each says its own source, selection, out and baseline.
 
 HAR6020
 haruspex: error HAR6020: a/haruspex.json and b/haruspex.json both write to out, so one module would overwrite the other's. Give each module its own "out".
@@ -399,4 +399,22 @@ haruspex.json:1:93: error HAR6024: acknowledge[0]: HAR1001 can't be acknowledged
 
 HAR6025
 haruspex.json:1:93: warning HAR6025: acknowledge[0]: acknowledges HAR2101 for "lib.audit", but this run gave no such warning. Remove the entry, or correct its code or its subject: HAR2101's subject is the name the warning gives.
+
+HAR6026
+db/p1.sql:1:1: error HAR6026: lib.get_book results[0][].title: removed (string, nvarchar(100)), and the application's schema requires the key. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed.
+
+HAR6027
+db/p1.sql:1:1: warning HAR6027: lib.get_book results[0][].extra: added (string, nvarchar(max), nullable), and the application's schema strips a key it doesn't list. The application already running sets it aside until it is redeployed.
+
+HAR6028
+db/p1.sql:1:1: warning HAR6028: lib.get_book: its function now returns { result1, result2 } where it returned the result itself, so each call of it changes when the application is next built; the application already running is unaffected. A procedure whose result sets are named returns the same object whatever sets it gains.
+
+HAR6029
+haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
+
+HAR6030
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.22, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+
+HAR6031
+sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.
 

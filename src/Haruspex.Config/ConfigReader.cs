@@ -103,6 +103,10 @@ public static class ConfigReader
                         if (NonEmpty(member.Value, path) is { } source)
                             config = config with { Source = Path.GetFullPath(Path.Combine(directory, source)) };
                         break;
+                    case "baseline":
+                        if (NonEmpty(member.Value, path) is { } baseline)
+                            config = config with { Baseline = Path.GetFullPath(Path.Combine(directory, baseline)) };
+                        break;
                     case "references":
                         config = config with { References = [.. Folders(member.Value, path, directory)] };
                         break;
@@ -163,7 +167,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
                         break;
                 }
             }

@@ -93,11 +93,33 @@ internal static class CliCodes
     public static DiagnosticCode AcknowledgesNothing { get; } = new(6025, DiagnosticSeverity.Warning, "An acknowledgement that matches no warning");
 
     /// <summary>
+    /// A change the application already running, built against the baseline, would fail on: a value its schemas refuse, or a call
+    /// the procedure refuses. One diagnostic per change, at the procedure.
+    /// </summary>
+    public static DiagnosticCode BaselineRefused { get; } = new(6026, DiagnosticSeverity.Error, "A change the running application would fail on");
+
+    /// <summary>A change the application already running sets aside: a key or a result set it doesn't know, a parameter with a default it doesn't send.</summary>
+    public static DiagnosticCode BaselineIgnored { get; } = new(6027, DiagnosticSeverity.Warning, "A change the running application ignores");
+
+    /// <summary>A procedure's function returns another shape than it did for the baseline, so its callers change when next built.</summary>
+    public static DiagnosticCode ReturnShapeChanged { get; } = new(6028, DiagnosticSeverity.Warning, "A function's return shape changes");
+
+    /// <summary>The baseline the command line or the config file names isn't there.</summary>
+    public static DiagnosticCode BaselineNotFound { get; } = new(6029, DiagnosticSeverity.Error, "The baseline isn't there");
+
+    /// <summary>The baseline is an IR file of another version, or can't be read.</summary>
+    public static DiagnosticCode BaselineUnreadable { get; } = new(6030, DiagnosticSeverity.Error, "The baseline can't be read");
+
+    /// <summary>A query file whose text, as the application already running sends it, the baseline doesn't hold, so what it returns isn't checked.</summary>
+    public static DiagnosticCode QueryTextUnchecked { get; } = new(6031, DiagnosticSeverity.Warning, "A query file's sent text isn't checked");
+
+    /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from the files in the output folder, or can't be compared with it, or is
-    /// incomplete. Each makes the exit code 1, not 2: the command line and the config file may be right.
+    /// incomplete; or the application already running would fail on it, or the baseline can't be read. Each makes the exit code
+    /// 1, not 2: the command line and the config file may be right.
     /// </summary>
     public static IReadOnlySet<DiagnosticCode> CheckFailures { get; } = new HashSet<DiagnosticCode>
     {
-        NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, ResultsUnknown, UnknownsFail,
+        NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, ResultsUnknown, UnknownsFail, BaselineRefused, BaselineUnreadable,
     };
 }

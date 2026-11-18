@@ -179,3 +179,9 @@ reason.
 | [HAR6023](HAR6023.md) | error | More than one database to read |
 | [HAR6024](HAR6024.md) | error | A code that can't be acknowledged |
 | [HAR6025](HAR6025.md) | warning | An acknowledgement that matches no warning |
+| [HAR6026](HAR6026.md) | error | A change the running application would fail on |
+| [HAR6027](HAR6027.md) | warning | A change the running application ignores |
+| [HAR6028](HAR6028.md) | warning | A function's return shape changes |
+| [HAR6029](HAR6029.md) | error | The baseline isn't there |
+| [HAR6030](HAR6030.md) | error | The baseline can't be read |
+| [HAR6031](HAR6031.md) | warning | A query file's sent text isn't checked |

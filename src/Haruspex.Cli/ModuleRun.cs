@@ -32,6 +32,17 @@ internal static class ModuleRun
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
             .Then(Emit);
 
+    /// <summary>
+    /// The IR the request would infer, with the config file applied, without emitting it: how a baseline given as a source is
+    /// read, with the module's own config file, so that the two are selected, overridden and named alike.
+    /// </summary>
+    public static Outcome<IrDocument> Inferred(RunRequest request, Progress progress) =>
+        Settle(request)
+            .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
+            .Then(Select)
+            .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
+            .Select(inferred => inferred.Document);
+
     /// <summary>The value, once <paramref name="what"/> has been said as the run's step.</summary>
     private static Succeeded<T> Said<T>(Progress progress, string what, T value)
     {

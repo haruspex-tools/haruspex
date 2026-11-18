@@ -15,6 +15,11 @@
       "type": "string",
       "minLength": 1
     },
+    "baseline": {
+      "description": "The database the application already running was built against, for haruspex check to judge whether this one fits it: a folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json of this version. Relative to this file. --baseline overrides it. haruspex never fetches it: put it there first, as CI does.",
+      "type": "string",
+      "minLength": 1
+    },
     "references": {
       "description": "Folders to look for the DACPACs a .dacpac or .sqlproj source refers to, relative to this file, in order: after the folder of the package that refers to them, or where a project's build takes them from.",
       "type": "array",

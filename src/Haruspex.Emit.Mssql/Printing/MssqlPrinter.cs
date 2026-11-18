@@ -278,30 +278,21 @@ internal static class MssqlPrinter
     }
 
     /// <summary>
-    /// What a function hands back, by name: each result set, the <c>OUTPUT</c> parameters, and the return code when one other than
-    /// 0 may come back. One result set is <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on, in order. A function
-    /// with only <c>result</c> returns it itself, and one with none returns nothing (<see cref="MssqlFunction.ReturnsResultAlone"/>).
+    /// What a function hands back (<see cref="MssqlFunction.Returned"/>), each with its type and the value it is: a result set by
+    /// its place among the sets, the <c>OUTPUT</c> parameters, and the return code.
     /// </summary>
     private static IEnumerable<(string Name, string Type, string Value)> Fields(MssqlFunction function)
     {
         var results = "types." + SchemaModuleNames.Results(function.Procedure.Name);
-        switch (function.Results)
+        var sets = function.Results is { Count: > 1 };
+        return function.Returned.Select((name, i) => name switch
         {
-            case null or [_]:
-                yield return ("result", results, "result");
-                break;
-            case []:
-                break;
-            case var many:
-                for (var i = 0; i < many.Count; i++)
-                    yield return (Result(i), $"{results}[{i.ToString(CultureInfo.InvariantCulture)}]", Result(i));
-                break;
-        }
+            "output" => (name, "types." + SchemaModuleNames.Output(function.Procedure.Name), name),
+            "returnValue" => (name, "number", "returnValue: response.returnValue"),
 
-        if (function.HasOutput)
-            yield return ("output", "types." + SchemaModuleNames.Output(function.Procedure.Name), "output");
-        if (function.ReturnsCode)
-            yield return ("returnValue", "number", "returnValue: response.returnValue");
+            // The sets come first, so a set's place among the fields is its place among the sets.
+            _ => (name, sets ? $"{results}[{i.ToString(CultureInfo.InvariantCulture)}]" : results, name),
+        });
     }
 
     /// <summary>

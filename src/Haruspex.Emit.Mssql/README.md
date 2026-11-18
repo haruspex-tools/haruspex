@@ -75,6 +75,12 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
 - **It is self-contained.** Its errors and helpers are written into it, so a module needs no package of haruspex's at run time,
   and several modules in one application share nothing.
 
+A function's shape is what its callers are written against, so the emitter also says what it is apart from the module:
+`MssqlEmitter.ReturnShape` gives a procedure's `MssqlReturnShape` (its one result itself, an object of named fields, or
+nothing), and `MssqlReturnShape.KeepsCallersOf` whether code written against one still reads another. `haruspex check
+--baseline` uses it to warn when a change to the database changes the shape (HAR6028). The names come from the plan
+(`MssqlFunction.Returned`), which the printer writes too, so the two can't disagree.
+
 ## Testing with a double
 
 A double that stands in for the connection gives `request()`, whose object has `input()`, `output()` and `execute()`. The

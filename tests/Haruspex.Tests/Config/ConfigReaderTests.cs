@@ -35,6 +35,19 @@ public class ConfigReaderTests
     }
 
     [Fact]
+    public void A_baseline_is_read_as_a_path_from_the_file_s_folder_whatever_it_names()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "project");
+
+        var dacpac = Read("""{ "baseline": "build/release/Shop.dacpac" }""").Expected();
+        var ir = Read("""{ "baseline": "../shop-app/src/db/haruspex.ir.json" }""").Expected();
+
+        Assert.Equal(Path.Combine(directory, "build", "release", "Shop.dacpac"), dacpac.Baseline);
+        Assert.Equal(Path.GetFullPath(Path.Combine(directory, "..", "shop-app", "src", "db", "haruspex.ir.json")), ir.Baseline);
+        Assert.Null(Read("{}").Expected().Baseline);
+    }
+
+    [Fact]
     public void Reads_every_setting_from_json_with_comments_and_trailing_commas()
     {
         var directory = Path.Combine(Path.GetTempPath(), "project");
@@ -180,10 +193,11 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
+        { """{ "baseline": "" }""", "haruspex.json:1:15: error HAR3005: baseline: must not be empty." },
         { """{ "out": 3 }""", "haruspex.json:1:10: error HAR3005: out: must be a string." },
         { """{ "queries": 3 }""", "haruspex.json:1:14: error HAR3005: queries: must name the application's query files: a folder, a file or a pattern such as \"queries/**/*.sql\", or an array of them." },
         { """{ "queries": [] }""", "haruspex.json:1:14: error HAR3005: queries: must name the application's query files: a folder, a file or a pattern such as \"queries/**/*.sql\", or an array of them." },

@@ -23,6 +23,13 @@ public sealed record HaruspexConfig
     public string? Source { get; init; }
 
     /// <summary>
+    /// What the application already running was built against (<c>baseline</c>): a folder of <c>.sql</c> files, a project file, a
+    /// DACPAC or an IR file, resolved against <see cref="Directory"/>; or null when the file doesn't say. <c>haruspex check</c>
+    /// judges whether the source fits within it (docs/decisions/0069-check-with-a-baseline-judges-the-deploy-window.md).
+    /// </summary>
+    public string? Baseline { get; init; }
+
+    /// <summary>
     /// The folders to look for the DACPACs a DACPAC or a project file refers to (<c>references</c>), resolved against
     /// <see cref="Directory"/>, in order, after the folder of the package that refers to them or where a project's build takes them
     /// from; empty when the file names none.

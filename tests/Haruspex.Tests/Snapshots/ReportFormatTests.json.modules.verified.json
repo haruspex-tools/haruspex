@@ -8,6 +8,7 @@
     {
       "config": "a/haruspex.json",
       "out": "a/out",
+      "baseline": null,
       "exitCode": 0,
       "typed": {
         "procedures": 1,
@@ -31,6 +32,7 @@
     {
       "config": "b/haruspex.json",
       "out": null,
+      "baseline": null,
       "exitCode": 2,
       "typed": null,
       "written": [],

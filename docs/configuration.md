@@ -14,6 +14,7 @@ otherwise silently do nothing.
 {
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
+  "baseline": "release/database",           // what the application already running was built against; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
@@ -61,7 +62,7 @@ otherwise silently do nothing.
 }
 ```
 
-The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, and
+The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, `--baseline` replaces `baseline`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
 procedures the run leaves out are skipped). Without a file, the source argument, `--include` and `--out` are required.
 
@@ -362,6 +363,31 @@ throughout:
 ```
 
 `unknowns` is `"report"`, the default, or `"fail"`.
+
+## The baseline: `baseline`
+
+An application and its database deploy separately, so for a while the application already running meets a database newer
+than the one it was built against. `baseline` names that older database, and `haruspex check` then fails on any change the
+running application would fail on, besides comparing the module with the output folder:
+
+```jsonc
+"baseline": "release/database"            // a folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json
+```
+
+It is any source `source` takes, read with this file's selection, overrides and naming, or an IR file written by this version
+of haruspex. The path is relative to this file, and `--baseline` replaces it for one run. It is never fetched: CI puts it
+there first, usually the database as of the application's last release (the release's `.dacpac`, or its tag checked out into a
+folder). [Checking against a baseline](command-line.md#checking-against-a-baseline) shows what the check says and gives the
+recipes for GitHub Actions.
+
+Values flow two ways, and each is judged in its own direction
+([decision 0068](decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)):
+
+| Change | Results (to the application) | Parameters (to the database) |
+|---|---|---|
+| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a result that may now be absent; a type of another kind; a length, range, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed, no longer `OUTPUT`, or that lost its default |
+| A warning | a new key; a new trailing result set; both fail under `"objects": "strict"` | a parameter added with a default |
+| Fits | a value that became non-null; a length, range or value set narrowed; keys in another order | a parameter widened, or that gained a default |
 
 ## Warnings acknowledged: `acknowledge`
 

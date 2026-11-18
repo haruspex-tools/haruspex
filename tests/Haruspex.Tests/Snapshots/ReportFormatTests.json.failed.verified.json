@@ -8,6 +8,7 @@
     {
       "config": null,
       "out": null,
+      "baseline": null,
       "exitCode": 1,
       "typed": null,
       "written": [],

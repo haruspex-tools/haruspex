@@ -102,6 +102,27 @@ public class DiagnosticMessagesTests
             </Project>
             """));
 
+    /// <summary>
+    /// A check against a baseline: the project as released, <paramref name="released"/> in <c>release/</c>, changed to
+    /// <paramref name="now"/> and generated, then checked with <c>--baseline</c> naming <paramref name="baseline"/>.
+    /// </summary>
+    private static string[] AgainstBaseline(string released, string now, string more = "", string baseline = "release", Action<TempDirectory>? arrange = null)
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/tables.sql", Tables);
+        folder.File("db/p1.sql", now);
+        folder.File("release/tables.sql", Tables);
+        folder.File("release/p1.sql", released);
+        folder.File("haruspex.json", $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
+        arrange?.Invoke(folder);
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        HaruspexCli.Run(["generate"], output, error, folder.Path);
+        error.GetStringBuilder().Clear();
+        HaruspexCli.Run(["check", "--baseline", baseline], output, error, folder.Path);
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
+    }
+
     /// <summary>A run with <paramref name="sql"/> and a config file of the standard settings and <paramref name="more"/>.</summary>
     private static string[] Config(string more, params string[] sql) => Cli(sql.Length == 0 ? [GetBook] : sql, $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
 
@@ -290,6 +311,12 @@ public class DiagnosticMessagesTests
         })),
         (6024, () => Config("\"acknowledge\": [{ \"code\": \"HAR1001\", \"subject\": \"db/p1.sql\", \"why\": \"it parses on the server\" }]")),
         (6025, () => Config("\"acknowledge\": [{ \"code\": \"HAR2101\", \"subject\": \"lib.audit\", \"why\": \"it has no triggers\" }]")),
+        (6026, () => AgainstBaseline(GetBook, GetBook.Replace("b.title, ", "", StringComparison.Ordinal))),
+        (6027, () => AgainstBaseline(GetBook.Replace(", b.extra", "", StringComparison.Ordinal), GetBook)),
+        (6028, () => AgainstBaseline(GetBook, GetBook + "\nSELECT count(*) AS books FROM lib.book;", "\"emit\": [\"zod\", \"mssql\"]")),
+        (6029, () => AgainstBaseline(GetBook, GetBook, baseline: "release/Library.dacpac")),
+        (6030, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f => f.File("release.ir.json", "{ \"irVersion\": \"0.9\" }"))),
+        (6031, () => AgainstBaseline(GetBook, GetBook, "\"queries\": \"sql\"", arrange: f => f.File("sql/titles.sql", "SELECT b.title FROM lib.book AS b;"))),
         (6021, () => Init(f => f.File("haruspex.json", "{}"))),
         (6022, () => Init(_ => { })),
         (6023, () => Init(f =>

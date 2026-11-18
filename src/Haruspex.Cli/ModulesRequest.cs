@@ -17,6 +17,9 @@ internal sealed record ModulesRequest(
     string? Out,
     string WorkingDirectory)
 {
+    /// <summary>The baseline <c>--baseline</c> names, as given, or null to take the config file's <c>baseline</c>, if any; for one module only.</summary>
+    public string? Baseline { get; init; }
+
     /// <summary>A path given on the command line, made full against the working directory.</summary>
     public string Resolve(string path) => Path.GetFullPath(Path.Combine(WorkingDirectory, path));
 

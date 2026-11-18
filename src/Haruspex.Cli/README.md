@@ -93,8 +93,8 @@ repeated, and `--all` runs every `haruspex.json` below a folder (the working dir
 order, leaving out folders whose name starts with a dot, `node_modules`, and a repository or worktree nested below (a
 folder holding `.git`), whose modules are another checkout's. Each module runs as a run of its own would, under a line
 naming its config file, and the run ends with one line saying which failed; its exit code is the worst of theirs. A
-source, `--include` and `--out` are one module's, so they can't be given with several, and two modules may not share an
-`out`. With one config file, nothing is added to what a run prints.
+source, `--include`, `--out` and `--baseline` are one module's, so they can't be given with several, and two modules may not
+share an `out`. With one config file, nothing is added to what a run prints.
 
 A check that fails says what changed, one line for each change, at the procedure it is in, or, for a value that became
 nullable, where its new reason is (here the column's declaration):
@@ -166,13 +166,20 @@ shown from it.
   with, an IR there of another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
   unless the config file says `"check": { "unknowns": "fail" }`
   ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
+- **`check` with a baseline also fails on what the application already running would fail on** (`BaselineCheck`): the
+  baseline, the database that application was built against, is read as a source is, with the module's own config file, or
+  from an IR file, and `IrFit` judges the module against it. A change it would fail on is an error (HAR6026), one it sets aside
+  a warning (HAR6027), and a function whose return shape changes a warning (HAR6028). The comparison with the output folder is
+  still made, unless the baseline is the output folder's own IR, as in a database's pipeline checking an application's
+  committed contract
+  ([decision 0069](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0069-check-with-a-baseline-judges-the-deploy-window.md)).
 - **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row). A run over several
   modules exits with the highest of theirs (`ModuleSetTests`):
 
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, or it can't be compared with the files in the output folder |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, it can't be compared with the files in the output folder, or the application already running, built against the baseline, would fail on a change |
 | 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write; or `init` wrote nothing, finding a config file, no database or more than one |
 | 3 | A fault in haruspex itself |
 

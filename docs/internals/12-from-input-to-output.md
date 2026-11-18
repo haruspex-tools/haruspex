@@ -307,6 +307,28 @@ which fails the build. If the change is meant, `generate` writes the new module 
 see the change in their own build; if not, the SQL goes back. That is consumer-driven contract testing, as Pact does for HTTP
 services: the committed module is the contract, and the database's build checks that it still holds.
 
+## Checking against a baseline
+
+A comparison says that something changed; it doesn't say whether the change matters to whom. An application and its database
+deploy separately, so for a while the application already running, built against one database (the baseline), meets another.
+The question is then a direction: is every value the new database can give the old application one it accepts?
+
+That is subtyping, as type systems know it. A type `S` is a subtype of `T` when a value of `S` can go wherever a `T` is
+expected, and for structured types it is decided structurally: a record type with more fields is a subtype of one with fewer,
+and a field's type may narrow. A procedure is a function, and functions are subtypes the way Liskov's substitution principle
+says: their results are *covariant* (the new procedure may return less, a narrower type, a value no longer null) and their
+parameters *contravariant* (it may accept more, a wider type, a new parameter with a default). `IrFit.Of` decides it over two
+documents, walking them as `IrComparison.Compare` does, but asking of each pair of types whether the one given fits within the
+one that accepts, with the two roles swapped between results and parameters. A key the application's type doesn't list is
+width subtyping, which the generated schemas allow by stripping it (decision 0008), and refuse under `"objects": "strict"`.
+
+`BaselineCheck` reads the baseline as a source is read, with the module's own config file, or from an IR file, and says each
+finding at its procedure: a change the running application would fail on is an error, one it sets aside a warning. A change
+that fails is shipped as a parallel change, expand and contract: first a change the running application can take, then the
+rest once it has moved on. [Decision 0068](../decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)
+gives each rule, and `BaselineFitTests` holds them to the server, calling each candidate procedure through the functions
+generated from its baseline.
+
 ## Where to read more
 
 - Scott Wlaschin, *Railway oriented programming* (2014), the talk and the article, for the pattern and its pictures.
@@ -317,5 +339,9 @@ services: the committed module is the contract, and the database's build checks 
 - Jean-Rémy Falleri and others, *Fine-grained and accurate source code differencing* (ASE 2014), which describes GumTree:
   differencing by structure rather than by text.
 - Ian Robinson, *Consumer-Driven Contracts: A Service Evolution Pattern* (2006), for the pattern `check` applies to a database.
+- Benjamin Pierce, *Types and Programming Languages* (MIT Press, 2002), chapter 15, on subtyping: width and depth subtyping
+  of records, and why functions are contravariant in their arguments and covariant in their results.
+- Barbara Liskov, *Data abstraction and hierarchy* (OOPSLA 1987 keynote), where the substitution principle was first put.
+- Danilo Sato, *Parallel Change* (2014, on Martin Fowler's site), for expand and contract.
 - OASIS, *Static Analysis Results Interchange Format (SARIF) 2.1.0*, for the levels `error`, `warning` and `note`, and rule
   identifiers such as haruspex's codes.

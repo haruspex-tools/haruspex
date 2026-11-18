@@ -24,6 +24,14 @@ public static class MssqlEmitter
     /// </summary>
     public static string FunctionName(string procedure) => FunctionPlanner.FunctionName(procedure);
 
+    /// <summary>What the function of <paramref name="procedure"/> hands back (<see cref="MssqlReturnShape"/>).</summary>
+    public static MssqlReturnShape ReturnShape(IrObject procedure)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        var function = FunctionPlanner.Function(FunctionName(procedure.Name), procedure);
+        return new MssqlReturnShape(function.ReturnsResultAlone, function.ReturnsNothing ? [] : function.Returned);
+    }
+
     /// <summary>Emits the module with the default options.</summary>
     /// <returns>The module's text; or every refusal (<see cref="MssqlCodes"/>).</returns>
     public static Outcome<string> Emit(IrDocument document) => Emit(document, new MssqlOptions());

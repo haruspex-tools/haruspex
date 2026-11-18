@@ -103,7 +103,16 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             ? ""
             : $" {Counted(module.Acknowledged.Count, "warning")} acknowledged{(detail == OutputDetail.Verbose ? "" : " (--verbose lists them)")}.";
         if (module.Command == CommandName.Check)
-            return $"haruspex: {OneLine(module, counted)}. {Shown(module.Out ?? "")} is up to date.";
+        {
+            var verdict = (module.Out, module.Baseline) switch
+            {
+                ({ } folder, null) => $"{Shown(folder)} is up to date.",
+                ({ } folder, { } baseline) => $"{Shown(folder)} is up to date, and fits the baseline {Shown(baseline)}.",
+                (null, { } baseline) => $"It fits the baseline {Shown(baseline)}.",
+                (null, null) => "",
+            };
+            return $"haruspex: {OneLine(module, counted)}. {verdict}";
+        }
         if (module.Since is SinceLastRun.Compared { Nothing: true })
             return $"haruspex: nothing changed since the last run: {OneLine(module, counted)}.";
 
@@ -237,9 +246,13 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (module.Command == CommandName.Check)
         {
             var changes = module.Diagnostics.Count(d => d.Code == CliCodes.ClaimChanged);
-            return changes == 0
-                ? null
-                : $"haruspex: {Counted(changes, "change")} from the module in {Shown(module.Out ?? "")}. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.";
+            var refused = module.Diagnostics.Count(d => d.Code == CliCodes.BaselineRefused);
+            string?[] lines =
+            [
+                changes == 0 ? null : $"haruspex: {Counted(changes, "change")} from the module in {Shown(module.Out ?? "")}. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.",
+                refused == 0 ? null : $"haruspex: {Counted(refused, "change")} the application already running, built against {Shown(module.Baseline ?? "")}, would fail on. Ship each in two steps: first a change it can take, then the rest once it is redeployed.",
+            ];
+            return lines.Any(l => l is not null) ? string.Join('\n', lines.OfType<string>()) : null;
         }
 
         var sql = module.Diagnostics.Count(d => d.IsError && d.At is SourceLocation);

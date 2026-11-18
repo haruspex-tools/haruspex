@@ -53,8 +53,8 @@ internal sealed class EarlierOutput
         return new EarlierOutput(ReadIr(module.IrPath), files, unreadable);
     }
 
-    /// <summary>The IR at <paramref name="path"/>, or why there is none to compare with.</summary>
-    private static EarlierIr ReadIr(string path)
+    /// <summary>The IR at <paramref name="path"/>, or why there is none to compare with: also how a baseline given as an IR file is read.</summary>
+    internal static EarlierIr ReadIr(string path)
     {
         try
         {

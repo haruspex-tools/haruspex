@@ -41,4 +41,21 @@ internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableA
 
     /// <summary>Whether the procedure has <c>OUTPUT</c> parameters, whose values come back.</summary>
     public bool HasOutput => Bindings.Any(b => b.IsOutput);
+
+    /// <summary>
+    /// What the function hands back, by name, in order: each result set, the <c>OUTPUT</c> parameters, and the return code when one
+    /// other than 0 may come back. One result set (or results that can't be listed, which come back as one value) is
+    /// <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on; then <c>output</c>, then <c>returnValue</c>. A function
+    /// with only <c>result</c> returns it itself (<see cref="ReturnsResultAlone"/>), and one with none returns nothing.
+    /// </summary>
+    public EquatableArray<string> Returned =>
+    [
+        .. Results switch
+        {
+            null or [_] => ["result"],
+            var many => many.Select((_, i) => "result" + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)),
+        },
+        .. HasOutput ? ["output"] : Array.Empty<string>(),
+        .. ReturnsCode ? ["returnValue"] : Array.Empty<string>(),
+    ];
 }

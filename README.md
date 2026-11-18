@@ -296,6 +296,9 @@ from its alias type `Name`, and `unit` is exactly three characters because `ncha
 - **Drift caught in CI**: `haruspex check` fails a build when a change to the SQL would change what the module in the output folder (in CI,
   the committed one) says,
   naming each change (`shop.list_orders results[0][].note: became nullable`).
+- **Safe to deploy**: `haruspex check --baseline` fails a change that the application already running, built against the last
+  release, would fail on, and passes one it can take, such as a new column
+  ([checking against a baseline](docs/command-line.md#checking-against-a-baseline), with recipes for both sides' CI).
 - **Several modules**: plugins or sub-applications each have a `haruspex.json` of their own, sharing nothing, and
   `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy).
 

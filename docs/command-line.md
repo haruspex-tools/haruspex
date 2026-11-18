@@ -12,6 +12,7 @@ haruspex init                                           # find the database belo
 haruspex generate                                       # write the module, and say what changed
 haruspex generate db --include 'sales.*' --out src/db   # without a config file
 haruspex check --all                                    # in CI: fail if a module in its output folder would change
+haruspex check --baseline release/Shop.dacpac           # and if the application already running would break
 ```
 
 ## What a run prints
@@ -94,7 +95,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 ## Options
 
-`generate` and `check` take the same options:
+`generate` and `check` take the same options, and `check` one more:
 
 | Argument or option | What it is |
 |---|---|
@@ -103,6 +104,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module. |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run. |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
+| `--baseline`, `-b` | `check` only: what the application already running was built against, a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file. Replaces `baseline` in the config file ([below](#checking-against-a-baseline)). |
 | `--verbose`, `-v` | Also list every note. |
 | `--quiet`, `-q` | Print errors only. |
 | `--color` | `auto`, the default, `always` or `never` (below). |
@@ -110,6 +112,98 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 `init` takes one argument, the `.sqlproj`, `.dacpac` or folder of `.sql` files to read, when it shouldn't look for one.
 `haruspex --help` and `haruspex <command> --help` list the same, and `haruspex --version` prints the version.
+
+## Checking against a baseline
+
+An application and its database deploy separately, so for a while the application already running meets the database being
+deployed. With a baseline, the database the running application was built against, `check` also fails on each change that
+application would fail on, and warns of each it sets aside:
+
+```text
+$ haruspex check --baseline release/database
+db/procedures.sql:4:1: error HAR6026: shop.list_orders results[0][].customer: became nullable, and the application's schema refuses null. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed.
+db/procedures.sql:9:1: warning HAR6027: shop.get_order results[1]: added, and the application ignores a result set after those it knows. The application already running sets it aside until it is redeployed.
+haruspex: 1 change the application already running, built against release/database, would fail on. Ship each in two steps: first a change it can take, then the rest once it is redeployed.
+```
+
+Each change is said as `check` says a change of claim, with why the running application fails on it or sets it aside: the
+rules, for results and for parameters, are in [the configuration](configuration.md#the-baseline-baseline). A change it would
+fail on is shipped in two steps (expand, then contract): first one it can take, such as a new column beside the old, then the
+rest once it has been redeployed. A function whose return shape changes, one result becoming `{ result1, result2 }`, is a
+warning (HAR6028): the running application keeps its own functions, but each call changes when it is next built.
+
+The baseline is given with `--baseline` or `"baseline"` in the config file, for one module at a time. It is read as a source is,
+with the module's config file, or from an IR file this version wrote. The comparison with the output folder is still made,
+except when the baseline is the output folder's own IR, which is the database's side below. A query file is the application's
+own SQL, sent with the text it was built with, so it is judged only against an IR baseline whose text is unchanged; otherwise
+the check warns that it isn't (HAR6031). A baseline is never fetched: a step before the check puts it there. Two
+recipes for GitHub Actions, one for each side.
+
+**The application's side**: the database as of the last release, checked out from its tag into a folder, beside the change.
+
+```yaml
+name: database
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0             # the tags, to find the last release
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: npm ci
+      - name: The database as last released
+        run: git worktree add --detach release "$(git describe --tags --abbrev=0)"
+      - run: npx haruspex check --baseline release/database
+```
+
+With `"baseline": "release/database"` in `haruspex.json`, the last step is `npx haruspex check`. A release pipeline that keeps
+the database's `.dacpac` can download that instead, and name it as the baseline.
+
+**The database's side**: a database with its own repository checks each application that uses it, with the application's
+config file and its committed IR as the baseline, and refuses a deploy that would break one of them already running. The
+baseline is then the output folder's own IR, so only the fit is judged, not whether the module is current. Each application is
+checked out at the commit that is deployed (here its default branch), and its own pinned haruspex is run, so its IR is of the
+version that reads it.
+
+```yaml
+name: applications
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        application: [your-org/shop-web, your-org/warehouse]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: database
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.application }}
+          path: application
+          persist-credentials: false
+          # A private repository needs a token that can read it: token: ${{ secrets.APPLICATIONS_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: npm ci
+        working-directory: application
+      - run: npx haruspex check ../database/Shop.sqlproj --baseline src/db/haruspex.ir.json
+        working-directory: application
+```
+
+Here `src/db` is the application's `out`, and `../database/Shop.sqlproj` replaces its `source` for the run.
 
 ## `init`
 
@@ -213,6 +307,6 @@ Fixed, so scripts and CI can rely on them. A run over several modules exits with
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes; `init` wrote its file |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed (a baseline's included) |
 | 2 | The command line or the config file is wrong; or `init` wrote nothing: a config file is already there, or it found no database or more than one |
 | 3 | A fault in haruspex itself |

@@ -189,6 +189,7 @@ vendored
 vendoring
 writable
 prettyprinting
+subtyping
 
 # Authors the guide cites (docs/internals), named as their works are
 adve
@@ -228,6 +229,8 @@ wadler
 wlaschin
 falleri
 rémy
+liskov
+danilo
 
 # A conference and a journal the guide cites papers from
 OOPSLA

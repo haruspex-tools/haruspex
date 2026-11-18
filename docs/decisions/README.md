@@ -73,6 +73,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0066](0066-a-mapper-accounts-for-every-key-of-a-generated-row.md) | 17 Nov 2026 | A mapper accounts for every key of a generated row, with a helper asked for by name |
 | [0067](0067-a-function-a-compatibility-level-lacks-is-unknown-only-at-a-level-known-to-lack-it.md) | 17 Nov 2026 | A function a compatibility level lacks is unknown only at a level known to lack it |
 | [0068](0068-a-baseline-fits-when-the-running-application-accepts-every-value.md) | 18 Nov 2026 | A baseline fits when the running application accepts every value the database can give it |
+| [0069](0069-check-with-a-baseline-judges-the-deploy-window.md) | 18 Nov 2026 | `check` with a baseline judges the deploy window, beside the comparison with the output folder |
 
 ## Writing a record
 

@@ -10,7 +10,8 @@ namespace Haruspex.Cli;
 /// with the files in the output folder (in CI, the ones committed), claim by claim (<see cref="IrComparison"/>) and as text, without writing
 /// anything. It fails when a claim would change, when there is nothing to compare with, and when the module leaves what the
 /// config file selected unknown: results that can't be listed, or, if the file says so, any value. Why it compares claims and
-/// not files, and why it fails when nothing is committed: docs/decisions/0050-check-compares-claims-not-files.md.
+/// not files, and why it fails when nothing is committed: docs/decisions/0050-check-compares-claims-not-files.md. With a
+/// baseline, it also fails on what the application already running would fail on (<see cref="BaselineCheck"/>).
 /// </summary>
 internal static class Check
 {
@@ -23,13 +24,22 @@ internal static class Check
 
         // Each unknown is noted before the comparison, so a failed check says them too.
         var unknowns = ModuleRun.Notes(module.Document, module.Project);
-        progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
-        var compared = Compared(module);
+
+        // With a baseline whose file is the output folder's own IR, the fit is the comparison asked for, and the exact one would
+        // refuse what it allows (BaselineCheck.IsOutputIr); otherwise the two are made side by side.
+        var baseline = BaselineCheck.Of(request, module.Config);
+        var withOut = baseline is null || !BaselineCheck.IsOutputIr(baseline, module);
+        if (withOut)
+            progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
+        var compared = Compared(module, withOut);
+        var fit = baseline is null ? [] : BaselineCheck.Run(request, module, baseline, progress);
         var (kept, acknowledged) = Acknowledgements.Apply(emitted.Diagnostics, module.Config, sayUnused: request.Include.Count == 0);
-        Diagnostic[] found = [.. kept, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared];
-        return new ModuleReport(CommandName.Check, request, [.. found], compared.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(compared))
+        Diagnostic[] found = [.. kept, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared, .. fit];
+        var failures = compared.Concat(fit).Where(d => d.IsError).ToList();
+        return new ModuleReport(CommandName.Check, request, [.. found], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
         {
-            Out = module.Out,
+            Out = withOut ? module.Out : null,
+            Baseline = baseline,
             Document = module.Document,
             Unknowns = unknowns,
             Acknowledged = acknowledged,
@@ -37,10 +47,10 @@ internal static class Check
     }
 
     /// <summary>
-    /// What would fail the check: the module incomplete, and its differences from the files in the output folder. The two don't depend on each
-    /// other, so each is said whatever the other finds.
+    /// What would fail the check: the module incomplete, and, when <paramref name="withOut"/>, its differences from the files in the
+    /// output folder. The two don't depend on each other, so each is said whatever the other finds.
     /// </summary>
-    private static List<Diagnostic> Compared(EmittedModule module) => [.. Incomplete(module), .. Differences(module)];
+    private static List<Diagnostic> Compared(EmittedModule module, bool withOut) => withOut ? [.. Incomplete(module), .. Differences(module)] : [.. Incomplete(module)];
 
     /// <summary>
     /// A selected procedure whose result sets can't be listed and aren't declared: being selected is a claim that it is an
