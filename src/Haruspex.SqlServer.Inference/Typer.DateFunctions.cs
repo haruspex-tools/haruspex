@@ -194,8 +194,8 @@ internal sealed partial class Typer
     /// <summary>
     /// <c>d AT TIME ZONE zone</c> of a <c>datetime</c>, <c>smalldatetime</c>, <c>datetime2</c> or <c>datetimeoffset</c> and a
     /// string: datetimeoffset of d's fractional digits, 3 for a datetime and 0 for a smalldatetime; NULL only when either is. A
-    /// zone the server doesn't know is an error, and a date moved past either end of the range is held at it, under any options,
-    /// so nothing overflows. A date, a time, a string or a number is refused when the procedure is created, and so is a zone that
+    /// zone the server doesn't know is an error; moved past either end of the range, a datetimeoffset is held at it and a date
+    /// without an offset is an error (9813), under any options, so it is never NULL for that. A date, a time, a string or a number is refused when the procedure is created, and so is a zone that
     /// isn't a string (observed: At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone).
     /// </summary>
     private Value AtTimeZone(AtTimeZoneCall call, ReadScope scope)

@@ -1707,8 +1707,8 @@ not listed is not modelled.
   (9812, 9813) (`Switchoffset_and_todatetimeoffset_are_datetimeoffset_of_the_dates_fractional_digits`).
 - **`d AT TIME ZONE zone`** of a `datetime`, `smalldatetime`, `datetime2` or `datetimeoffset` and a string: `datetimeoffset` of
   `d`'s fractional digits, 3 for a `datetime` and 0 for a `smalldatetime`, so a chain keeps the first date's; NULL only when
-  either is. A zone the server doesn't know is an error (9820), and a date moved past either end of the range is held at it,
-  under any options, so nothing overflows. A date, a time, a string or a number is refused when the procedure is created
+  either is. A zone the server doesn't know is an error (9820); moved past either end of the range, a `datetimeoffset` is held
+  at it and a date without an offset is an error (9813), under any options, so neither is NULL. A date, a time, a string or a number is refused when the procedure is created
   (8116), and so is a zone that isn't a string
   (`At_time_zone_is_datetimeoffset_of_the_dates_fractional_digits_and_null_only_for_a_null_date_or_zone`). In the catalogue it
   is `scalar.at time zone`, named as T-SQL writes it.

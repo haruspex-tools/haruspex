@@ -74,8 +74,8 @@ public partial class FunctionObservationTests
                 FROM {Dates}
                 """));
 
-        // NULL for a NULL date or zone. A zone the server doesn't know is an error, and a date past either end of the range is
-        // held at it, not an error or NULL, under the caller's options too.
+        // NULL for a NULL date or zone. A zone the server doesn't know is an error. Moved past either end of the range, a
+        // datetimeoffset is held at it, and a date without an offset is an error (9813), under the caller's options too: never NULL.
         Assert.Equal(
             "a,b: null,null",
             await Select("DECLARE @d datetime2 = NULL, @z sysname = NULL; SELECT @d AT TIME ZONE 'UTC' AS a, SYSDATETIME() AT TIME ZONE @z AS b;"));
@@ -87,6 +87,10 @@ public partial class FunctionObservationTests
                 SELECT CONVERT(varchar(40), CAST('9999-12-31 23:00 +00:00' AS datetimeoffset) AT TIME ZONE 'Tokyo Standard Time', 121) AS a,
                        CONVERT(varchar(40), CAST('0001-01-01 00:00 +00:00' AS datetimeoffset) AT TIME ZONE 'Pacific Standard Time', 121) AS b;
                 """)).ToString());
+        const string Off = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; ";
+        Assert.Equal(" ! 9813", (await Run([], Off + "SELECT CAST('0001-01-01' AS datetime2) AT TIME ZONE 'Tokyo Standard Time' AS v;")).ToString());
+        Assert.Equal(" ! 9813", (await Run([], Off + "SELECT CAST('9999-12-31 23:00' AS datetime2) AT TIME ZONE 'Pacific Standard Time' AS v;")).ToString());
+        Assert.Equal(" ! 9813", (await Run([], Off + "SELECT CAST('9999-12-31 23:00' AS datetime) AT TIME ZONE 'Pacific Standard Time' AS v;")).ToString());
 
         // A date, a time, a string or a number is refused (8116), and so is a zone that is not a string.
         Assert.Equal(8116, (await Run([], $"SELECT da AT TIME ZONE 'UTC' AS v FROM {Dates};")).Error);
