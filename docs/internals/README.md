@@ -122,6 +122,10 @@ checks, whose project is a database; `ShowcaseTests` holds it to the file of the
 call through its function. A call of the showcase's functions, in a `ts haruspex-call` block that imports them from
 `./db/haruspex.mssql`, is compiled strictly against the module its fixture generates.
 
+Code from an example application is shown with the file's path after the language (`ts examples/greenhouse/src/watering.ts`):
+the block must be whole lines of that file (`QuotedExampleTests`), which the example's own test compiles, so a page shows only
+code that compiles.
+
 When an example's output changes, the test prints what haruspex now gives. Read it as a claim about SQL Server, as you would
 a snapshot, before pasting it in: the example teaches whatever it shows.
 

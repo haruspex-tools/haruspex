@@ -203,7 +203,7 @@ public static class ConfigReader
         /// </summary>
         private EquatableArray<Emitter>? Emitters(JsonValue value, string path)
         {
-            const string Expected = "must be an array of what to write beside the IR: any of \"zod\", \"json-schema\" and \"mssql\".";
+            const string Expected = "must be an array of what to write beside the IR: any of \"zod\", \"json-schema\", \"mssql\" and \"mapping\".";
             if (value is not JsonArrayValue array)
             {
                 Report(ConfigCodes.WrongKind, value, path, Expected);
@@ -221,7 +221,7 @@ public static class ConfigReader
             for (var i = 0; i < array.Items.Count; i++)
             {
                 var item = array.Items[i];
-                switch (Choice(item, Index(path, i), "zod", "json-schema", "mssql"))
+                switch (Choice(item, Index(path, i), "zod", "json-schema", "mssql", "mapping"))
                 {
                     case null:
                         valid = false;
@@ -243,13 +243,21 @@ public static class ConfigReader
                 valid = false;
             }
 
+            // The helper works on the types the Zod module declares; without them it has nothing to account for.
+            if (valid && emitters.Contains(Emitter.Mapping) && !emitters.Contains(Emitter.Zod))
+            {
+                Report(ConfigCodes.NeedsAnother, value, path, "names \"mapping\" without \"zod\": the mapping helper works on the types the Zod module declares, so name both.");
+                valid = false;
+            }
+
             return valid ? [.. emitters] : null;
 
             static Emitter Of(string name) => name switch
             {
                 "zod" => Emitter.Zod,
                 "json-schema" => Emitter.JsonSchema,
-                _ => Emitter.Mssql,
+                "mssql" => Emitter.Mssql,
+                _ => Emitter.Mapping,
             };
         }
 

@@ -3,7 +3,9 @@
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
 parameters are checked, how it fails, where it runs, and the functions of the application's own query files. The last section is for an application that calls the
 [mssql](https://www.npmjs.com/package/mssql) driver itself, with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
-says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI.
+says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI. What a
+function returns is the database's shape; [the application's own types](layers.md) shows the step that makes it the
+application's.
 
 ## Two files
 

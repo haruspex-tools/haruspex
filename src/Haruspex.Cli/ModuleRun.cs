@@ -267,6 +267,7 @@ internal static class ModuleRun
                     document,
                     new MssqlOptions { SchemaModule = HaruspexCli.ZodModuleSpecifier, ServerOnly = plan.Config.ServerOnly, IsReserved = TypeScriptNames.IsReserved, RefusesExtraResultSets = strict })
                 .Select(text => new EmittedFile(HaruspexCli.MssqlFileName, text)),
+            Emitter.Mapping => new Succeeded<EmittedFile>(new EmittedFile(HaruspexCli.MappingFileName, MappingModule.Text)),
         });
         return Located(Outcome.All(files), plan.Config.Location).Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted));
     }

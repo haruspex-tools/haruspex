@@ -38,6 +38,9 @@ The functions belong on the server, since they take the connection and its crede
 file, may go to the browser. [The database module](docs/database-module.md) has the detail: dates, return shapes and
 `serverOnly` for Next.js.
 
+The generated types are the database's, not the application's: [the application's own types](docs/layers.md) shows the thin
+step, written by hand on them, where an absent list becomes empty, a figure gets its unit and the database's names stop.
+
 ## Examples on Microsoft's sample databases
 
 Each example is written for this page over the real tables of a Microsoft sample kept in

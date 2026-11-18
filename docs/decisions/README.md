@@ -70,6 +70,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0063](0063-a-function-ignores-result-sets-after-those-it-knows.md) | 17 Nov 2026 | A function ignores result sets after those it knows, and refuses them under strict objects |
 | [0064](0064-the-command-line-s-output-is-designed.md) | 17 Nov 2026 | The command line's output is designed for a command run many times a day |
 | [0065](0065-a-warning-is-acknowledged-by-its-code-and-subject.md) | 17 Nov 2026 | A warning is acknowledged by its code and subject; a missing `master.dacpac` stays a warning |
+| [0066](0066-a-mapper-accounts-for-every-key-of-a-generated-row.md) | 17 Nov 2026 | A mapper accounts for every key of a generated row, with a helper asked for by name |
 | [0067](0067-a-function-a-compatibility-level-lacks-is-unknown-only-at-a-level-known-to-lack-it.md) | 17 Nov 2026 | A function a compatibility level lacks is unknown only at a level known to lack it |
 
 ## Writing a record

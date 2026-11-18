@@ -23,6 +23,7 @@ public class FixtureSnapshotTests
             Emitter.Zod => (HaruspexCli.ZodFileName, "haruspex.zod", "ts"),
             Emitter.JsonSchema => (HaruspexCli.JsonSchemaFileName, "haruspex.jsonschema", "json"),
             Emitter.Mssql => (HaruspexCli.MssqlFileName, "haruspex.mssql", "ts"),
+            Emitter.Mapping => (HaruspexCli.MappingFileName, "haruspex.mapping", "ts"),
         }).Prepend((HaruspexCli.IrFileName, "haruspex.ir", "json"));
 
     /// <summary>What each of a procedure's snapshots ends with: its IR, its Zod and its JSON Schema.</summary>

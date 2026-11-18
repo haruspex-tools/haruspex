@@ -92,6 +92,15 @@ breaking them
 `ZodObjects.Strict` makes them `z.strictObject`. The output is deterministic, with stable ordering and LF line endings, so
 a CI check can compare it byte for byte.
 
+## The mapping helper
+
+`MappingModule` holds `haruspex.mapping.ts`, which `"mapping"` in `"emit"` writes beside the module: TypeScript types, the same
+for every module, with which an application's mapper accounts for every key of a row the module declares, at any depth, so
+once the module is regenerated, a key the row gains is a compile error in the mapper
+([decision 0066](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)).
+It lives here because what it accounts for is this module's types: a `Date`, which a rowset's date arrives as, is a value
+rather than an object with keys.
+
 ## What it deliberately doesn't do
 
 - **No config file.** It takes `ZodOptions`. The CLI reads `haruspex.json` and maps its settings across, so the emitter

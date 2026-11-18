@@ -130,6 +130,7 @@ public class ConfigReaderTests
     [InlineData("""{ "emit": ["json-schema"] }""", new[] { Emitter.JsonSchema })]
     [InlineData("""{ "emit": ["json-schema", "zod"] }""", new[] { Emitter.JsonSchema, Emitter.Zod })]
     [InlineData("""{ "emit": ["zod", "mssql"] }""", new[] { Emitter.Zod, Emitter.Mssql })]
+    [InlineData("""{ "emit": ["zod", "mssql", "mapping"] }""", new[] { Emitter.Zod, Emitter.Mssql, Emitter.Mapping })]
     public void What_is_emitted_is_the_zod_unless_the_file_names_its_emitters(string text, Emitter[] emitters) =>
         Assert.Equal(emitters, Read(text).Expected().Emitters);
 
@@ -193,10 +194,11 @@ public class ConfigReaderTests
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 
         // What generate writes beside the IR.
-        { """{ "emit": "zod" }""", "haruspex.json:1:11: error HAR3005: emit: must be an array of what to write beside the IR: any of \"zod\", \"json-schema\" and \"mssql\"." },
+        { """{ "emit": "zod" }""", "haruspex.json:1:11: error HAR3005: emit: must be an array of what to write beside the IR: any of \"zod\", \"json-schema\", \"mssql\" and \"mapping\"." },
         { """{ "emit": [] }""", "haruspex.json:1:11: error HAR3005: emit: must name at least one emitter; with none, generate would write the IR alone. Use [\"zod\"], the default, or leave it out." },
-        { """{ "emit": ["typescript"] }""", "haruspex.json:1:12: error HAR3005: emit[0]: must be \"zod\" or \"json-schema\" or \"mssql\", not \"typescript\"." },
+        { """{ "emit": ["typescript"] }""", "haruspex.json:1:12: error HAR3005: emit[0]: must be \"zod\" or \"json-schema\" or \"mssql\" or \"mapping\", not \"typescript\"." },
         { """{ "emit": ["mssql"] }""", "haruspex.json:1:11: error HAR3012: emit: names \"mssql\" without \"zod\": the functions import the Zod module's schemas, so name both." },
+        { """{ "emit": ["json-schema", "mapping"] }""", "haruspex.json:1:11: error HAR3012: emit: names \"mapping\" without \"zod\": the mapping helper works on the types the Zod module declares, so name both." },
         { """{ "serverOnly": true }""", "haruspex.json:1:17: error HAR3012: serverOnly: is about the functions' file, which \"emit\" writes when it names \"mssql\"; it names none here." },
         { """{ "serverOnly": "yes", "emit": ["zod", "mssql"] }""", "haruspex.json:1:17: error HAR3005: serverOnly: must be true or false." },
         { """{ "emit": ["zod", "zod"] }""", "haruspex.json:1:19: error HAR3005: emit[1]: names \"zod\" again; each emitter is listed once." },
