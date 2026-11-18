@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Syntax;
@@ -9,7 +10,7 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// Reads a query file of the application: one batch, as the application sends it through <c>sp_executesql</c>, and its
-/// parameters' declaration comments (<c>-- @param @order_id int</c>). README.md in this folder ("Query files") says what a file
+/// parameters' declaration comments (<c>-- @param @order_id int</c>) and its sets comment (<c>-- @sets order, lines</c>). README.md in this folder ("Query files") says what a file
 /// may hold; <c>docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md</c> why a declaration is a comment.
 /// </summary>
 public static partial class QueryFileReader
@@ -73,12 +74,41 @@ public static partial class QueryFileReader
         }
 
         var declared = Declarations(script, relative, statements, problems);
+        var sets = Sets(script, relative, problems);
         if (problems.Count > 0)
             return new Failed<QueryFile>([.. problems]);
 
         var end = SyntaxReader.Span(relative, batch);
         var span = new SourceSpan(relative, 1, 1, end.EndLine, end.EndColumn);
-        return new Succeeded<QueryFile>(new QueryFile(relative, span, text, statements, [.. declared]));
+        return new Succeeded<QueryFile>(new QueryFile(relative, span, text, statements, [.. declared]) { Sets = sets?.Names, SetsAt = sets?.At });
+    }
+
+    /// <summary>
+    /// The names the file's sets comment gives its result sets, in order: a line comment that starts <c>@sets</c>, then names
+    /// between commas, written once in the file. Null when there is none. The names themselves are checked where a procedure's
+    /// are, in the config layer.
+    /// </summary>
+    private static (EquatableArray<string> Names, SourceLocation At)? Sets(TSqlScript script, string file, List<Diagnostic> problems)
+    {
+        (EquatableArray<string> Names, SourceLocation At)? sets = null;
+        foreach (var token in script.ScriptTokenStream.Where(t => t.TokenType == TSqlTokenType.SingleLineComment))
+        {
+            var comment = token.Text[2..].Trim();
+            if (!SetsKeyword().IsMatch(comment))
+                continue;
+
+            var at = new SourceLocation(file, token.Line, token.Column);
+            void Refuse(string why) => problems.Add(SourceCodes.BadSetsDeclaration.At(at, $"-- {comment}: {why}"));
+            var names = comment["@sets".Length..].Split(',').Select(n => n.Trim()).ToList();
+            if (sets is { } earlier)
+                Refuse($"the sets are named already, at line {earlier.At.Line}; name them once.");
+            else if (names.Any(n => n.Length == 0))
+                Refuse("the sets are named between commas, in order, such as -- @sets order, lines.");
+            else
+                sets = ([.. names], at);
+        }
+
+        return sets;
     }
 
     /// <summary>
@@ -159,6 +189,10 @@ public static partial class QueryFileReader
                 Found.Add(node);
         }
     }
+
+    /// <summary>A comment that names the sets, or is meant to: <c>@sets</c> as a word of its own at its start.</summary>
+    [GeneratedRegex(@"^@sets(\s|$)", RegexOptions.CultureInvariant)]
+    private static partial Regex SetsKeyword();
 
     /// <summary>A comment that is a declaration, or meant as one: <c>@param</c> as a word of its own at its start.</summary>
     [GeneratedRegex(@"^@param(\s|$)", RegexOptions.CultureInvariant)]

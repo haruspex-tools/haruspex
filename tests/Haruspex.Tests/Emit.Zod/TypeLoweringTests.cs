@@ -16,7 +16,7 @@ public class TypeLoweringTests
     {
         ["Small"] = new([new IrField("a", Text10, IrPresence.Always, [])]),
         ["Large"] = new([new IrField("a", Text10, IrPresence.Always, []), new IrField("b", Text10, IrPresence.OmittedWhenNull, [Because])]),
-    }, name => name);
+    }, ZodModule.SchemaOf);
 
     [Fact]
     public void A_reference_is_the_named_schema() => Assert.Equal(new Name("OrderSchema"), Lowering.Type(new IrRef("Order"), IrEncoding.Json));

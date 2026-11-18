@@ -27,5 +27,10 @@ code is kept errs towards keeping it: a `RETURN` with a value on a path never ta
 when its procedure starts or stops returning a code, or gains an `OUTPUT` parameter or a result set, so `haruspex check` reports
 each (`returnsCode` among them) and the compiler finds every caller to change.
 
+**Amended** (18 Nov 2026, [decision 0070](0070-a-procedure-s-result-sets-are-named-all-or-none.md)). A procedure or query file
+whose sets the config file names (`sets`, or `-- @sets`) returns an object of them by name, `{ order, lines }`, even when it has
+one set and nothing else: naming the sets is how a team says the procedure will grow, so a set added later is one more key
+rather than this decision's change from the set itself to an object.
+
 **In the code:** `ReturnCodes` (Inference), `IrObject.ReturnsCode`, and `MssqlFunction.ReturnsResultAlone` and
 `MssqlFunction.ReturnsNothing` in the mssql emitter.

@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.22 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -207,6 +207,10 @@ Version 0.22 kept it ended. It added what a query file gives (the object kind `q
 `query`, the reason `undecided-parameter`), which alone a 0.21 file could have been read beside; but it also added `returnsCode`,
 whether a procedure may end with a code other than 0, which decides the shape of its function, and which no 0.21 file says. So
 the 0.22 reader reads 0.22 only.
+
+Version 0.23 kept it ended, in the same way. It added a result set's `name`, which a 0.22 file could only lack; but it also added
+a type's `nameDeclared`, whether the config file gave the type its name, which decides the name a shape several types share is
+declared under, and which no 0.22 file says. So the 0.23 reader reads 0.23 only.
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

@@ -190,8 +190,23 @@ public static class IrJsonReader
             Text = text,
             ReturnsCode = json.Boolean("returnsCode"),
         };
+        SetNames(obj, json);
         json.End();
         return obj;
+    }
+
+    /// <summary>
+    /// An object's sets are named all or none, and no two alike, since each name is a key of the one object its function
+    /// returns (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
+    /// </summary>
+    private static void SetNames(IrObject obj, IrJsonObject json)
+    {
+        if (obj.Results is not { } results || results.All(r => r.Name is null))
+            return;
+        if (results.Any(r => r.Name is null))
+            throw new IrFormatException(json.PathOf("results"), "names some of its sets and not others; an object's sets are named all or none.");
+        if (results.GroupBy(r => r.Name, StringComparer.Ordinal).FirstOrDefault(g => g.Count() > 1) is { } twice)
+            throw new IrFormatException(json.PathOf("results"), $"names two sets \"{twice.Key}\"; each set's name is its own.");
     }
 
     private static IrParameter Parameter(IrJsonObject json)
@@ -208,10 +223,25 @@ public static class IrJsonReader
             Type(json.Object("type")),
             Reasons(json, "mayBeAbsent", "absentBecause"))
         {
+            Name = SetName(json),
             Cardinality = json.Name<IrCardinality>("cardinality", IrWireNames.TryParse, "a cardinality"),
         };
         json.End();
         return result;
+    }
+
+    /// <summary>
+    /// A set's name, a key of its function's object, so an identifier and none of <see cref="IrResult.KeysBesideSets"/>; null when
+    /// the set is unnamed.
+    /// </summary>
+    private static string? SetName(IrJsonObject json)
+    {
+        var name = json.OptionalString("name");
+        if (name is not null && !IrIdentifiers.IsIdentifier(name))
+            throw new IrFormatException(json.PathOf("name"), $"is \"{name}\", which is not an identifier.");
+        if (name is not null && IrResult.KeysBesideSets.Contains(name, StringComparer.Ordinal))
+            throw new IrFormatException(json.PathOf("name"), $"is \"{name}\", which can't name a set: the object its function returns already has that key.");
+        return name;
     }
 
     private static Dictionary<string, IrObjectType> Types(IrJsonObject json)
@@ -251,6 +281,7 @@ public static class IrJsonReader
         {
             // Left out when false: a type that is not recursive says nothing.
             Recursive = json.OptionalBoolean("recursive") ?? false,
+            NameDeclared = json.OptionalBoolean("nameDeclared") ?? false,
             Identity = json.OptionalObject("identity") is { } identity ? Identity(identity) : null,
         };
         json.End();

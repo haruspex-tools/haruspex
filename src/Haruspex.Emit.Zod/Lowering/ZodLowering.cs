@@ -1,6 +1,8 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Emit.Zod.Planning;
+using Haruspex.Emit.Zod.Printing;
 using Haruspex.Ir;
 using static Haruspex.Emit.Zod.Model.ZodExpression;
 
@@ -18,14 +20,18 @@ internal static class ZodLowering
     public static ZodModule Lower(ZodPlan plan)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        var declaredAs = SameShapes(plan);
-        var types = new TypeLowering(plan.Document.Types, name => declaredAs[name]);
+        var shapes = SharedShapes(plan);
+
+        // A reference names its type's own exported schema, which reads as what it is; only inside a shared shape does it name
+        // the shapes it holds by their bindings, so that the shape is the same whichever of its types it was built from.
+        var types = new TypeLowering(plan.Document.Types, ZodModule.SchemaOf);
+        var shared = new TypeLowering(plan.Document.Types, name => shapes.SchemaOf[name]);
+        var hosted = new HashSet<string>(StringComparer.Ordinal);
         List<ZodDeclaration> declarations =
         [
             .. plan.Entries.SelectMany(entry => entry switch
             {
-                ZodPlanEntry.NamedType named when declaredAs[named.Name] != named.Name => [Alias(named.Name, declaredAs[named.Name])],
-                ZodPlanEntry.NamedType named => [ObjectType(named, plan, types)],
+                ZodPlanEntry.NamedType named => Named(named, plan, types, shared, shapes, hosted),
 
                 // What a caller sends, then what comes back: the results, and the OUTPUT parameters.
                 ZodPlanEntry.Procedure procedure => new[]
@@ -90,40 +96,105 @@ internal static class ZodLowering
     };
 
     /// <summary>
-    /// The name each named type is declared under: its own, or that of the first type in the plan with the same schema.
-    /// Identical shapes are declared once, as the design asks; the others' names stay, as aliases, so code that imports
-    /// one keeps working (<see cref="Alias"/>).
+    /// A named type's declarations. A type whose shape no other shares is declared as itself. One that shares its shape is exported
+    /// under its own name as the shared schema, which is declared once, where the first of the types that share it is: under the
+    /// name the config file gave one of them, or else unexported under a name made from its structure (<see cref="ShapeNames"/>).
+    /// So every exported name is its own type's, and none depends on which procedure came first
+    /// (<c>docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md</c>).
+    /// </summary>
+    private static IEnumerable<ZodDeclaration> Named(ZodPlanEntry.NamedType named, ZodPlan plan, TypeLowering types, TypeLowering shared, SharedShapeNames shapes, HashSet<string> hosted)
+    {
+        if (!shapes.Host.TryGetValue(named.Name, out var host))
+        {
+            yield return ObjectType(named, plan, types);
+            yield break;
+        }
+
+        // The shared schema is built from this type, the first of those sharing it, so it is declared before every alias.
+        if (hosted.Add(host.Binding))
+        {
+            var schema = ObjectType(named, plan, shared).Schema;
+            yield return host.Declared is { } declared
+                ? new ZodDeclaration(declared, SharedSummary, schema)
+                : new ZodDeclaration(host.Binding, SharedSummary, schema, Exported: false);
+        }
+
+        if (host.Declared != named.Name)
+            yield return new ZodDeclaration(named.Name, null, new Name(host.Binding));
+    }
+
+    /// <summary>What the reader of the module is told of a shape declared once for several types.</summary>
+    private const string SharedSummary = "A shape several types share, declared once; each is exported under its own name.";
+
+    /// <summary>
+    /// Where each named type's schema is bound (<see cref="SharedShapeNames"/>). Types of the same shape are found first: two
+    /// schemas are the same when their models are equal, notes included, which records give by value. A schema refers to others
+    /// by name, so merging two leaf types can make their users the same too: the comparison is repeated with the names merged so
+    /// far until nothing more merges. Merges only ever add, so it ends. Two recursive types are never found the same, since each
+    /// refers to itself by its own name, which only claims less.
     /// </summary>
     /// <remarks>
-    /// Two schemas are the same when their models are equal, notes included, which records give by value. A schema
-    /// refers to others by name, so merging two leaf types can make their users the same too: the comparison is repeated
-    /// with the names merged so far until nothing more merges. Merges only ever add, so it ends. Two recursive types are
-    /// never found the same, since each refers to itself by its own name, which only claims less.
+    /// Then each group of more than one type is given its binding, in the plan's order, which puts a type after the types it
+    /// refers to, so a shape is named after the shapes inside it are: by a name the config file declared for one of its types, the
+    /// ordinally first when several were, and otherwise by its schema's text, in which a shape inside it appears by its own name.
     /// </remarks>
-    private static Dictionary<string, string> SameShapes(ZodPlan plan)
+    private static SharedShapeNames SharedShapes(ZodPlan plan)
     {
         var named = plan.Entries.OfType<ZodPlanEntry.NamedType>().ToList();
-        var declaredAs = named.ToDictionary(n => n.Name, n => n.Name, StringComparer.Ordinal);
+        var sameAs = named.ToDictionary(n => n.Name, n => n.Name, StringComparer.Ordinal);
         while (true)
         {
-            var types = new TypeLowering(plan.Document.Types, name => declaredAs[name]);
+            var lowering = new TypeLowering(plan.Document.Types, name => ZodModule.SchemaOf(sameAs[name]));
             var first = new Dictionary<ZodExpression, string>();
             var next = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var type in named)
             {
-                var schema = ObjectType(type, plan, types).Schema;
+                var schema = ObjectType(type, plan, lowering).Schema;
                 next[type.Name] = first.TryGetValue(schema, out var earlier) ? earlier : first[schema] = type.Name;
             }
 
-            if (next.All(n => declaredAs[n.Key] == n.Value))
-                return declaredAs;
-            declaredAs = next;
+            if (next.All(n => sameAs[n.Key] == n.Value))
+                break;
+            sameAs = next;
         }
+
+        var groups = named.GroupBy(n => sameAs[n.Name], StringComparer.Ordinal).Where(g => g.Count() > 1).ToList();
+        var schemaOf = named.ToDictionary(n => n.Name, n => ZodModule.SchemaOf(n.Name), StringComparer.Ordinal);
+        var host = new Dictionary<string, SharedShape>(StringComparer.Ordinal);
+        var shapeNames = new ShapeNames(plan.Imports.SelectMany(i => i.Names));
+        var types = new TypeLowering(plan.Document.Types, name => schemaOf[name]);
+        foreach (var group in groups)
+        {
+            var declared = group.Where(t => t.Type.NameDeclared).Select(t => t.Name).Order(StringComparer.Ordinal).FirstOrDefault();
+            var shape = declared is not null
+                ? new SharedShape(ZodModule.SchemaOf(declared), declared)
+                : new SharedShape(shapeNames.Of(ZodPrinter.Expression(ObjectType(group.First(), plan, types).Schema)), null);
+            foreach (var type in group)
+            {
+                schemaOf[type.Name] = shape.Binding;
+                host[type.Name] = shape;
+            }
+        }
+
+        return new SharedShapeNames(schemaOf, host);
     }
 
-    /// <summary>A named type of the same shape as one declared earlier: its name, kept for importers, for that schema.</summary>
-    private static ZodDeclaration Alias(string name, string declaredAs) =>
-        new(name, $"The same shape as {declaredAs}.", new Name(ZodModule.SchemaOf(declaredAs)));
+    /// <summary>Where each named type's schema is bound, and for a type that shares its shape, where the shared schema is.</summary>
+    /// <param name="schemaOf">The binding each named type's schema is: its own schema's, or its shared shape's.</param>
+    /// <param name="host">For each type that shares its shape with another, the shape.</param>
+    private sealed class SharedShapeNames(Dictionary<string, string> schemaOf, Dictionary<string, SharedShape> host)
+    {
+        /// <summary>The binding each named type's schema is: its own schema's, or its shared shape's.</summary>
+        public FrozenDictionary<string, string> SchemaOf { get; } = schemaOf.ToFrozenDictionary(StringComparer.Ordinal);
+
+        /// <summary>For each type that shares its shape with another, the shape.</summary>
+        public FrozenDictionary<string, SharedShape> Host { get; } = host.ToFrozenDictionary(StringComparer.Ordinal);
+    }
+
+    /// <summary>A shape several types share, declared once.</summary>
+    /// <param name="Binding">The binding its schema is declared under: <c>OrderTotalSchema</c>, or <c>shape3f2a9c</c>.</param>
+    /// <param name="Declared">The type whose declared name it is exported under, or null when it is not exported.</param>
+    private sealed record SharedShape(string Binding, string? Declared);
 
     /// <summary>
     /// A named object type: an object schema with a property per field. Strip by default: unknown keys are dropped at parse
@@ -143,19 +214,27 @@ internal static class ZodLowering
         return new ZodDeclaration(named.Name, null, new ObjectSchema([.. properties], plan.Options.Objects == ZodObjects.Strict));
     }
 
-    /// <summary>A procedure: its one result's schema, a tuple of several, or <c>z.unknown()</c> when they can't be listed.</summary>
+    /// <summary>
+    /// A procedure: an object of its result sets by name when they are named, even one
+    /// (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>); otherwise its one result's schema, a tuple of
+    /// several, or <c>z.unknown()</c> when they can't be listed.
+    /// </summary>
     private static ZodDeclaration Procedure(IrObject obj, TypeLowering types)
     {
         var summary = obj.Results switch
         {
             null => "its result sets cannot be listed; see the unknowns in the IR",
             [] => "returns no result sets",
+            [{ Name: { } name } single] => $"returns one result set, {name}: {IrResultText.Describe(single)}",
             [var single] => $"returns {IrResultText.Describe(single)}",
-            var many => $"returns {many.Count} result sets: " + string.Join("; ", many.Select(IrResultText.Describe)),
+            var many => $"returns {many.Count} result sets: " + string.Join("; ", many.Select(r => (r.Name is { } name ? name + ": " : "") + IrResultText.Describe(r))),
         };
         var schema = obj.Results switch
         {
             null => Z("unknown"),
+
+            // Strict whatever the objects are: the function builds it from exactly its sets, as JSON Schema's has no other keys.
+            var sets when obj.SetNames is { } names => new ObjectSchema([.. sets.Zip(names, (r, name) => new ZodProperty(name, Result(r, types)))], Strict: true),
             [var single] => Result(single, types),
             var many => Z("tuple", new ArrayLiteral([.. many.Select(r => Result(r, types))])),
         };

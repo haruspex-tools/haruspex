@@ -618,7 +618,14 @@ public static class ConfigReader
         }
 
         /// <summary>The settings a procedure's block holds, as read.</summary>
-        private sealed record ProcedureSettings(string? Name, JsonLocation? NameAt, EquatableArray<PathOverride> Paths, JsonMember? Results, string? Why);
+        private sealed record ProcedureSettings(string? Name, JsonLocation? NameAt, EquatableArray<PathOverride> Paths, JsonMember? Results, string? Why)
+        {
+            /// <summary>The names of its result sets, in order, when given and each usable.</summary>
+            public EquatableArray<string>? Sets { get; init; }
+
+            /// <summary>Where they are written.</summary>
+            public JsonLocation? SetsAt { get; init; }
+        }
 
         /// <summary>One procedure's overrides (<c>procedures["s.p"]</c>), or null when its key or its block has a problem.</summary>
         private ProcedureOverride? Procedure(JsonMember member, string path)
@@ -635,9 +642,9 @@ public static class ConfigReader
             if (procedure is not { } named)
                 return null;
             if (settings.Results is null)
-                return new InferredResultsOverride(named, member.Name, settings.Name, settings.Paths, at, settings.NameAt);
+                return new InferredResultsOverride(named, member.Name, settings.Name, settings.Paths, at, settings.NameAt) { Sets = settings.Sets, SetsAt = settings.SetsAt };
             return Declared(settings.Results, Child(path, "results"), named.ToString(), settings.Why ?? "") is { } declared
-                ? new DeclaredResultsOverride(named, member.Name, settings.Name, declared, at, settings.NameAt)
+                ? new DeclaredResultsOverride(named, member.Name, settings.Name, declared, at, settings.NameAt) { Sets = settings.Sets, SetsAt = settings.SetsAt }
                 : null;
         }
 
@@ -680,13 +687,43 @@ public static class ConfigReader
                     case "paths":
                         settings = settings with { Paths = [.. PathOverrides(setting.Value, settingPath)] };
                         break;
+                    case "sets":
+                        settings = settings with { Sets = SetNames(setting.Value, settingPath), SetsAt = At(setting.Value, settingPath) };
+                        break;
                     default:
-                        Unknown(setting, settingPath, "name, paths, results, why");
+                        Unknown(setting, settingPath, "name, paths, results, sets, why");
                         break;
                 }
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// <c>sets</c>: a name for each of the procedure's result sets, in order (<see cref="SetNameRules"/>); or null when one
+        /// can't be used, which is reported.
+        /// </summary>
+        private EquatableArray<string>? SetNames(JsonValue value, string path)
+        {
+            if (value is not JsonArrayValue { Items.Count: > 0 } array)
+            {
+                Report(ConfigCodes.BadSetNames, value, path, "must be an array of names, one for each result set in order, such as [\"order\", \"lines\"].");
+                return null;
+            }
+
+            var names = new List<string>();
+            var errors = Problems.Count(p => p.IsError);
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                var item = array.Items[i];
+                if (String(item, Index(path, i)) is not { } name)
+                    continue;
+                if (SetNameRules.Problem(name, names, reserved) is { } problem)
+                    Report(ConfigCodes.BadSetNames, item, Index(path, i), $"'{name}' {problem}");
+                names.Add(name);
+            }
+
+            return Problems.Count(p => p.IsError) > errors ? null : [.. names];
         }
 
         private List<PathOverride> PathOverrides(JsonValue value, string path)

@@ -86,6 +86,10 @@ every client library sets it; no SQLCMD variable is replaced, since the applicat
 `-- @param @name type` declares a parameter's type, read as a `DECLARE` of it reads, and one that can't be taken is refused
 with why (HAR1015): it doesn't read, it names a parameter twice, or it names a variable the file declares itself or doesn't use
 ([decision 0059](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
+A line comment `-- @sets order, lines` names the file's result sets, in order; one that names none, leaves a name out between
+commas or comes a second time is refused (HAR1018). Whether each name can name a set, and whether there is one for every set,
+is the config layer's to check, as it checks a procedure's `sets`
+([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
 
 ## Example
 

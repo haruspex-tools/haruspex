@@ -42,6 +42,10 @@
         "lines[]": { "name": "BasketItem" },
       },
     },
+    // Its rows and report_stock's are one shape, which this name declares, so the module declares it once under it.
+    "shop_admin.report_sales": { "paths": { "[]": { "name": "PriceListItem" } } },
+    // Named sets: its function returns { products, count }, and its types are named after them (AdminStockCountRow).
+    "shop_admin.report_stock": { "sets": ["products", "count"] },
     "shop.list_products": {
       "paths": {
         "[].status": { "values": "exact", "why": "the application writes the status in lower case only" },

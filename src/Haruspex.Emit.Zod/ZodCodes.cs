@@ -25,4 +25,7 @@ public static class ZodCodes
 
     /// <summary>A procedure whose parameters' schema would take a name the module already declares.</summary>
     public static DiagnosticCode ParametersNameTaken { get; } = new(5006, DiagnosticSeverity.Error, "A procedure's parameters' name is taken");
+
+    /// <summary>A result set named with a key a TypeScript object can't hold (<see cref="TypeScriptNames.IsUnusableKey"/>).</summary>
+    public static DiagnosticCode SetNameUnusable { get; } = new(5007, DiagnosticSeverity.Error, "A result set's name can't be a key");
 }

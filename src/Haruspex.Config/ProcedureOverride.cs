@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
@@ -35,4 +36,14 @@ public abstract record ProcedureOverride
 
     /// <summary>Where its name is written, when it has one.</summary>
     public JsonLocation? NameAt { get; }
+
+    /// <summary>
+    /// The names of its result sets, in order (<c>sets</c>), each a key of the object its function returns; null when its sets
+    /// are unnamed. Read as camel-case identifiers, unique, and neither <c>output</c> nor <c>returnValue</c>; whether there is one
+    /// for every set is known only once its results are (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
+    /// </summary>
+    public EquatableArray<string>? Sets { get; init; }
+
+    /// <summary>Where its set names are written, when it has them.</summary>
+    public JsonLocation? SetsAt { get; init; }
 }

@@ -42,9 +42,10 @@ internal static class IrSamples
                 [
                     new IrResult(IrEncoding.Json, new IrRef("OrderRow"), [new IrNullReason(IrNullRule.NoRows, "procedures/get_order.sql:4:5")])
                     {
+                        Name = "order",
                         Cardinality = IrCardinality.AtMostOne,
                     },
-                    new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("LineRow")), []),
+                    new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("LineRow")), []) { Name = "lines" },
                 ])
             {
                 ReturnsCode = true,
@@ -115,6 +116,7 @@ internal static class IrSamples
             ])
             {
                 Identity = new IrTypeIdentity(IrTypeOwner.Procedure, "sales.get_order", "results[0]"),
+                NameDeclared = true,
             },
             ["LineRow"] = new([new IrField("sku", Int, IrPresence.Always, []), new IrField("parts", new IrArray(new IrRef("LineRow")), IrPresence.Always, [])])
             {

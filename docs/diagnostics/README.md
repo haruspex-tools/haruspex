@@ -29,6 +29,7 @@ reason.
 | [HAR1015](HAR1015.md) | error | A query file's parameter declaration can't be taken |
 | [HAR1016](HAR1016.md) | error | A query file uses a variable before declaring it |
 | [HAR1017](HAR1017.md) | error | A query file returns a value |
+| [HAR1018](HAR1018.md) | error | A query file's sets comment can't be taken |
 
 ## Inference
 
@@ -86,6 +87,7 @@ reason.
 | [HAR3020](HAR3020.md) | error | An override says nothing |
 | [HAR3021](HAR3021.md) | error | A references folder isn't there |
 | [HAR3022](HAR3022.md) | error | A queries entry outside the config file's folder |
+| [HAR3023](HAR3023.md) | error | Set names that can't be used |
 | [HAR3101](HAR3101.md) | error | A rowset isn't declared by one row's schema |
 | [HAR3102](HAR3102.md) | error | A rowset's required leaves a column out |
 | [HAR3103](HAR3103.md) | error | A rowset's column isn't a scalar |
@@ -126,6 +128,7 @@ reason.
 | [HAR4109](HAR4109.md) | error | A name for a value that isn't an object |
 | [HAR4110](HAR4110.md) | warning | A nullability the inference already proves |
 | [HAR4111](HAR4111.md) | warning | Exact values the inference already proves |
+| [HAR4112](HAR4112.md) | error | Set names that don't match the result sets |
 | [HAR4201](HAR4201.md) | error | Declared results disagree with the inference |
 | [HAR4202](HAR4202.md) | warning | Declared results the inference already gives |
 | [HAR4203](HAR4203.md) | warning | Declared results nothing uses |
@@ -146,9 +149,11 @@ reason.
 | [HAR5004](HAR5004.md) | error | An imported name the module also declares |
 | [HAR5005](HAR5005.md) | error | A type read both as rows and as JSON |
 | [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
+| [HAR5007](HAR5007.md) | error | A result set's name can't be a key |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
 | [HAR5201](HAR5201.md) | error | A procedure's function can't take its name |
 | [HAR5202](HAR5202.md) | error | A query file's parameter can't be declared |
+| [HAR5203](HAR5203.md) | error | A result set's name can't be a key of the function's object |
 
 ## The command line and files
 

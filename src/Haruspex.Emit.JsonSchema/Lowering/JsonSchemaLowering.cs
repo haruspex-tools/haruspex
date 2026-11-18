@@ -114,8 +114,10 @@ internal static class JsonSchemaLowering
     }
 
     /// <summary>
-    /// A procedure: its one result's schema, an array of exactly as many as it returns, or <c>{}</c> when they can't be listed.
-    /// Its title is its name in the database, and its description says what it returns.
+    /// A procedure: an object of its result sets by name when they are named, even one
+    /// (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>); otherwise its one result's schema, an array
+    /// of exactly as many as it returns, or <c>{}</c> when they can't be listed. Its title is its name in the database, and its
+    /// description says what it returns.
     /// </summary>
     private static Schema Procedure(IrObject obj, TypeLowering types, UnknownDetails unknowns)
     {
@@ -124,6 +126,10 @@ internal static class JsonSchemaLowering
         {
             null => Schema.Any,
             [] => Schema.OfType("array").With(Keyword.MaxItems, 0),
+            var sets when obj.SetNames is { } names => Schema.OfType("object")
+                .With(Keyword.Properties, new SchemaValue.Properties([.. sets.Zip(names, (r, name) => (r, name)).Select((s, i) => new SchemaProperty(s.name, Result(s.r, results.Then(new IrPathIndex(i)), types)))]))
+                .With(Keyword.Required, new SchemaValue.List([.. names.Select(name => (SchemaValue)new SchemaValue.Text(name))]))
+                .With(Keyword.AdditionalProperties, new SchemaValue.Boolean(false)),
             [var single] => Result(single, results.Then(new IrPathIndex(0)), types),
             var many => Schema.OfType("array")
                 .With(Keyword.PrefixItems, new SchemaValue.List([.. many.Select((r, i) => new SchemaValue.Nested(Result(r, results.Then(new IrPathIndex(i)), types)))]))
@@ -134,8 +140,9 @@ internal static class JsonSchemaLowering
         {
             null => unknowns.Results(results),
             [] => new SchemaNote("Returns no result sets."),
+            [{ Name: { } name } single] => new SchemaNote($"Returns one result set, {name}: {IrResultText.Describe(single)}."),
             [var single] => new SchemaNote($"Returns {IrResultText.Describe(single)}."),
-            var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(IrResultText.Describe))}."),
+            var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(r => (r.Name is { } name ? name + ": " : "") + IrResultText.Describe(r)))}."),
         };
         return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. types.Declared(results), .. schema.Notes] };
     }

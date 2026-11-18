@@ -13,7 +13,8 @@ namespace Haruspex.Config;
 /// <remarks>
 /// <para><b>Names that don't shift.</b> A procedure's name comes from its own name and its schema's naming rules, and a
 /// nested type's from its procedure's name and the keys leading to it (<c>GetOrder</c>, <c>GetOrderRow</c>,
-/// <c>GetOrderLine</c> for <c>lines[]</c>; <c>…Result2Row</c> for a second result set; <c>PartTreeNode</c> for a
+/// <c>GetOrderLine</c> for <c>lines[]</c>; <c>…LinesRow</c> for a set named <c>lines</c>, <c>…Result2Row</c> for a second
+/// unnamed result set; <c>PartTreeNode</c> for a
 /// recursive function's node). None depends on which other objects exist.</para>
 /// <para><b>Clashes are errors.</b> When two objects' names come out the same, the error names both and asks for an
 /// override. A number added instead would let adding one procedure renumber another's types and break code that used
@@ -33,6 +34,9 @@ internal sealed class NameSettler(
 {
     /// <summary>Provisional key to settled name.</summary>
     private readonly Dictionary<string, string> named = new(StringComparer.Ordinal);
+
+    /// <summary>The provisional keys of the types whose names a <c>name</c> in <c>paths</c> gave, rather than the naming rules.</summary>
+    private readonly HashSet<string> declared = new(StringComparer.Ordinal);
 
     /// <summary>Settled name to what holds it: the object it belongs to, and a description for errors.</summary>
     private readonly Dictionary<string, Holder> holders = new(StringComparer.Ordinal);
@@ -102,7 +106,7 @@ internal sealed class NameSettler(
             {
                 for (var i = 0; i < objectResults.Count; i++)
                 {
-                    var stem = objectResults.Count == 1 ? name : name + "Result" + (i + 1).ToString(CultureInfo.InvariantCulture);
+                    var stem = Stem(name, objectResults, i);
                     Root(objectResults[i].Type, stem, $"results[{i.ToString(CultureInfo.InvariantCulture)}]", obj.Id);
                 }
             }
@@ -123,11 +127,21 @@ internal sealed class NameSettler(
         foreach (var (key, type) in types)
         {
             if (named.TryGetValue(key, out var name))
-                renamed[name] = type with { Fields = [.. type.Fields.Select(f => f with { Type = Rename(f.Type) })] };
+                renamed[name] = type with { Fields = [.. type.Fields.Select(f => f with { Type = Rename(f.Type) })], NameDeclared = declared.Contains(key) };
         }
 
         return document with { Objects = [.. objects], Types = renamed };
     }
+
+    /// <summary>
+    /// What the names of the types in a result set start with: a named set's name after its procedure's (<c>GetOrderLines</c>,
+    /// so <c>GetOrderLinesRow</c>), whatever the number of sets; the procedure's own name for one unnamed set; and for several
+    /// unnamed sets, its place (<c>GetOrderResult2</c>). A named set's types then keep their names when a set is added.
+    /// </summary>
+    private static string Stem(string name, IReadOnlyList<IrResult> results, int index) =>
+        results[index].Name is { } set ? name + NamingRules.Part(set)
+        : results.Count == 1 ? name
+        : name + "Result" + (index + 1).ToString(CultureInfo.InvariantCulture);
 
     private string? ProcedureName(string id)
     {
@@ -216,6 +230,7 @@ internal sealed class NameSettler(
         if (pathNames.TryGetValue((owner, path), out var given))
         {
             name = given.Name;
+            declared.Add(key);
             if (name == generated)
                 problems.Add(ConfigCodes.NameAgrees.At(given.At, $"the name \"{name}\" is what the naming rules give the type at {path} already. Remove it."));
         }

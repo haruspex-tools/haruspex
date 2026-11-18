@@ -30,5 +30,11 @@ browser too, and its functions must never be there: they take a connection, whic
 **Reason.** The browser gets what it may have, the server what it needs, and nothing assumes a framework or a validator. One
 shape of return means a procedure can grow without breaking its callers.
 
+**Amended** (16 Nov 2026, [decision 0060](0060-a-call-returns-its-one-result-itself.md); 18 Nov 2026,
+[decision 0070](0070-a-procedure-s-result-sets-are-named-all-or-none.md)). The one shape is no longer every function's: one
+with a single result set and nothing else returns that set itself, and one whose sets the config file names (`sets`, or a
+query file's `-- @sets`) returns each under its name in place of `result` or `result1`, `result2`, always as an object, so a
+set added and named later is one more key.
+
 **In the code:** `MssqlEmitter`, `SchemaModuleNames`; the CLI's `HaruspexCli.MssqlFileName`; the config's `Emitter.Mssql` and
 `HaruspexConfig.ServerOnly`.

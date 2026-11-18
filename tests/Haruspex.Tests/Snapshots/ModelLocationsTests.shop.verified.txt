@@ -26,6 +26,7 @@ procedure shop.list_products at procedures/list_products.sql:2:1
 procedure shop.recalculate_internal at procedures/recalculate_internal.sql:2:1
 procedure shop_admin.purge_baskets at procedures/purge.sql:2:1
 procedure shop_admin.report_sales at procedures/report_sales.sql:2:1
+procedure shop_admin.report_stock at procedures/report_stock.sql:3:1
 table shop.basket at tables/basket.sql:7:1
 table shop.basket_line at tables/basket.sql:14:1
 table shop.customer at tables/basket.sql:1:1

@@ -177,6 +177,10 @@ public static class IrJsonWriter
             foreach (var result in obj.Results)
             {
                 json.WriteStartObject();
+
+                // Written only when named, so an unnamed set says nothing.
+                if (result.Name is { } name)
+                    json.WriteString("name", name);
                 json.WriteString("encoding", IrWireNames.Of(result.Encoding));
                 json.WritePropertyName("type");
                 WriteType(json, result.Type);
@@ -201,6 +205,10 @@ public static class IrJsonWriter
         // Written only when true, so a type that is not recursive reads as in 0.3.
         if (type.Recursive)
             json.WriteBoolean("recursive", true);
+
+        // Likewise only when true: a name the naming rules gave says nothing.
+        if (type.NameDeclared)
+            json.WriteBoolean("nameDeclared", true);
         if (type.Identity is { } identity)
         {
             json.WriteStartObject("identity");

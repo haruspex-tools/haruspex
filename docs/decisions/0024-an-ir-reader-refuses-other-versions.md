@@ -56,5 +56,11 @@ under the newer label, the first reason above.
 0.21 file could only lack, but also `returnsCode`, whether a procedure may end with a code other than 0, which no 0.21 file says
 and which decides the shape of the procedure's function, so a 0.21 file doesn't mean what a 0.22 file of its source does.
 
+**Amended a seventh time** (18 Nov 2026, IR 0.23, [decision 0070](0070-a-procedure-s-result-sets-are-named-all-or-none.md),
+[decision 0071](0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). The 0.23 reader reads 0.23 only. 0.23 added
+a result set's `name`, which a 0.22 file could only lack, but also a type's `nameDeclared`, whether the config file gave its name,
+which no 0.22 file says and which decides the name a shared shape is declared under, so a 0.22 file doesn't mean what a 0.23
+file of its source does.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).
