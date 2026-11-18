@@ -45,6 +45,23 @@ public class IrFitTests
     }
 
     [Fact]
+    public void A_set_named_renamed_or_unnamed_is_no_finding_since_the_database_sends_sets_by_place()
+    {
+        // A set's name is the key the application's own function returns it under: the running application keeps its functions,
+        // so a name the config file changes reaches it only when it is next built, which check warns of as a return shape
+        // (HAR6028), not here.
+        var unnamed = Infer(ListOrders);
+        IrDocument Named(string name) => unnamed with
+        {
+            Objects = [.. unnamed.Objects.Select(o => o with { Results = [.. o.Results!.Select(r => r with { Name = name })] })],
+        };
+
+        Assert.Empty(Fit(unnamed, Named("orders")));
+        Assert.Empty(Fit(Named("orders"), Named("rows")));
+        Assert.Empty(Fit(Named("rows"), unnamed));
+    }
+
+    [Fact]
     public void A_column_that_becomes_nullable_is_refused_and_one_that_becomes_non_null_fits()
     {
         var before = Infer(ListOrders);

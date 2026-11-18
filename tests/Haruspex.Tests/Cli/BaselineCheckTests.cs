@@ -159,17 +159,20 @@ public class BaselineCheckTests
         Assert.Contains("error HAR6029: the baseline release/Shop.dacpac isn't there. haruspex never fetches it", error, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void A_baseline_ir_of_another_version_is_refused_naming_both_versions()
+    [Theory]
+    [InlineData("0.1")]
+    [InlineData("0.22")] // the version before set names
+    public void A_baseline_ir_of_another_version_is_refused_naming_both_versions(string version)
     {
         using var folder = Released(ListOrders, ListOrders);
         var ir = Path.Combine(folder.Path, "release", "haruspex.ir.json");
-        File.WriteAllText(ir, File.ReadAllText(ir).Replace($"\"irVersion\": \"{Haruspex.Ir.IrDocument.CurrentVersion}\"", "\"irVersion\": \"0.1\"", StringComparison.Ordinal));
+        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.CurrentVersion}\"", $"\"irVersion\": \"{version}\""));
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR 0.1, and this haruspex reads IR {Haruspex.Ir.IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR {Haruspex.Ir.IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -183,6 +186,23 @@ public class BaselineCheckTests
         Assert.Equal(0, exitCode);
         Assert.Contains("warning HAR6027: shop.list_orders results[1]: added, and the application ignores a result set after those it knows.", error, StringComparison.Ordinal);
         Assert.Contains("warning HAR6028: shop.list_orders: its function now returns { result1, result2 } where it returned the result itself, so each call of it changes when the application is next built", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_set_renamed_in_the_config_file_is_a_return_shape_warning_not_a_refusal()
+    {
+        // The database sends sets by place; the name is the key the application's own function returns a set under, which the
+        // running application keeps. Its next build reads the set under the new name.
+        const string Named = """{ "source": "db", "out": "generated", "emit": ["zod", "mssql"], "schemas": { "shop": { "include": ["*"] } }, "procedures": { "shop.list_orders": { "sets": ["orders"] } } }""";
+        using var folder = Released(ListOrders, ListOrders, config: Named);
+        folder.File("haruspex.json", Edit(Named, "[\"orders\"]", "[\"rows\"]"));
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+
+        var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
+
+        Assert.Equal(0, exitCode);
+        Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
+        Assert.Contains("warning HAR6028: shop.list_orders: its function now returns { rows } where it returned { orders }", error, StringComparison.Ordinal);
     }
 
     private const string WithQueries = """{ "source": "db", "out": "generated", "queries": "sql", "schemas": { "shop": { "include": ["*"] } } }""";

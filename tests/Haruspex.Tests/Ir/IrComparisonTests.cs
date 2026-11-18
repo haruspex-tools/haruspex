@@ -154,6 +154,17 @@ public class IrComparisonTests
     }
 
     [Fact]
+    public void A_procedure_whose_generated_name_changes_is_reported_as_renamed()
+    {
+        // The name is what its function and types are called, so callers change though no claim about a value does.
+        var before = Infer(ListOrders);
+        var after = before with { Objects = [.. before.Objects.Select(o => o with { Name = "ListAllOrders" })] };
+
+        Assert.Equal(["shop.list_orders: renamed from ListOrders to ListAllOrders"], Changes(before, after));
+        Assert.Equal(["shop.list_orders: renamed from ListAllOrders to ListOrders"], Changes(after, before));
+    }
+
+    [Fact]
     public void A_query_whose_text_changes_is_reported_though_its_types_do_not()
     {
         // The text is what the query's function sends, so a check must fail when it changes, as when a type does.

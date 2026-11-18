@@ -23,6 +23,9 @@ direction:
 - **What can't be shown to fit doesn't.** A value that became unknown, a length counted in another unit, a value set matched
   under another fold, results that can no longer be listed: each is refused. A value the application had as unknown accepts
   anything, as its schema does.
+- **Result sets are matched by place**, as the server sends them. A set's name (decision 0070) is the key the application's
+  own function returns it under, which the running application keeps, so a name given, changed or taken away is no finding
+  here: it changes the application's next build, which `check` warns of as a return shape (decision 0069).
 
 Each finding is said as the change `IrComparison` words (`results[0][].note: became nullable`), the application's claim
 before and the database's after, with whether the application refuses or ignores it and why.

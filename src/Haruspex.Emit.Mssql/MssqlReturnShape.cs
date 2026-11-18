@@ -9,8 +9,8 @@ namespace Haruspex.Emit.Mssql;
 /// </summary>
 /// <param name="IsResultItself">Whether the function returns its one result itself rather than an object naming it.</param>
 /// <param name="Fields">
-/// What it hands back, by name, in order (<c>result</c>, or <c>result1</c>, <c>result2</c>, then <c>output</c> and
-/// <c>returnValue</c>); empty when it returns nothing, and <c>result</c> alone when it returns the result itself.
+/// What it hands back, by name, in order (each named set's name, or <c>result</c>, or <c>result1</c>, <c>result2</c>; then
+/// <c>output</c> and <c>returnValue</c>); empty when it returns nothing, and <c>result</c> alone when it returns the result itself.
 /// </param>
 public sealed record MssqlReturnShape(bool IsResultItself, EquatableArray<string> Fields)
 {

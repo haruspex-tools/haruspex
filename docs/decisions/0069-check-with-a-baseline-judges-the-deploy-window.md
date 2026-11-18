@@ -12,7 +12,9 @@ being checked fits within the baseline, as the application already running, buil
   **One it sets aside is a warning** (HAR6027), and fails it only under `"objects": "strict"`, where it is an error instead.
 - **A function whose return shape changes is a warning** (HAR6028), when the module writes the functions: the application
   running keeps its own functions, but each call changes at its next build
-  ([decision 0060](0060-a-call-returns-its-one-result-itself.md)).
+  ([decision 0060](0060-a-call-returns-its-one-result-itself.md)). A result set's name that is given, changed or taken away
+  ([decision 0070](0070-a-procedure-s-result-sets-are-named-all-or-none.md)) is such a change, and only that: the server
+  sends sets by place, so the running application doesn't see it.
 - **The comparison with the output folder is still made**, so the application's CI checks both that the committed module is
   current and that the change is safe to deploy. **`--fit-only` makes the fit alone**, without reading the output folder:
   a database's pipeline checking an application's committed contract asks for it, since the exact comparison with that

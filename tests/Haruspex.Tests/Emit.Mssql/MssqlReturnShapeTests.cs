@@ -40,4 +40,22 @@ public class MssqlReturnShapeTests
         Assert.False(two.KeepsCallersOf(withOutput));
         Assert.True(alone.KeepsCallersOf(MssqlEmitter.ReturnShape(Procedure([], false))));
     }
+
+    [Fact]
+    public void A_set_renamed_or_named_loses_its_callers_and_a_named_set_added_keeps_them()
+    {
+        static IrResult Named(string name) => Rows with { Name = name };
+        var orders = MssqlEmitter.ReturnShape(Procedure([], false, Named("orders")));
+        var rows = MssqlEmitter.ReturnShape(Procedure([], false, Named("rows")));
+        var ordersAndLines = MssqlEmitter.ReturnShape(Procedure([], false, Named("orders"), Named("lines")));
+        var alone = MssqlEmitter.ReturnShape(Procedure([], false, Rows));
+
+        Assert.Equal("{ orders }", orders.Description);
+        Assert.Equal("{ orders, lines }", ordersAndLines.Description);
+        Assert.False(rows.KeepsCallersOf(orders));
+        Assert.False(orders.KeepsCallersOf(alone));
+        Assert.False(alone.KeepsCallersOf(orders));
+        Assert.True(ordersAndLines.KeepsCallersOf(orders));
+        Assert.False(orders.KeepsCallersOf(ordersAndLines));
+    }
 }
