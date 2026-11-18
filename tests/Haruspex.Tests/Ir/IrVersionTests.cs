@@ -51,7 +51,7 @@ public class IrVersionTests
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Equal(
-            $"$.irVersion is \"{version}\", and this reader reads IR 0.22 only. Run haruspex generate again to write the file in this version.",
+            $"$.irVersion is \"{version}\", and this reader reads IR 0.23 only. Run haruspex generate again to write the file in this version.",
             e.Message);
     }
 

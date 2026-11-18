@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -17,6 +18,7 @@ internal sealed class ConfigApplying
     private readonly IReadOnlyList<ObjectName> procedures;
     private readonly IReadOnlyCollection<ObjectName>? selectedByFile;
     private readonly IrDocument? declaredDocument;
+    private readonly IReadOnlyList<QueryFile> queries;
 
     private readonly List<Diagnostic> problems = [];
     private readonly Dictionary<string, IrObjectType> types;
@@ -35,8 +37,10 @@ internal sealed class ConfigApplying
         IReadOnlyList<ObjectName> procedures,
         IReadOnlyCollection<ObjectName>? selectedByFile,
         Func<string, string> importFrom,
-        IrDocument? declaredDocument)
+        IrDocument? declaredDocument,
+        IReadOnlyList<QueryFile> queries)
     {
+        this.queries = queries;
         this.document = document;
         this.config = config;
         this.procedures = procedures;
@@ -53,6 +57,7 @@ internal sealed class ConfigApplying
     {
         foreach (var entry in config.Procedures)
             Override(entry);
+        NameQuerySets();
         WarnOfResultsToDeclare();
         WarnOfValuesUnknownAfterCalls();
         return Named();
@@ -63,7 +68,7 @@ internal sealed class ConfigApplying
     {
         // Results alone may be declared for any procedure: one a selected procedure calls need not be selected, nor in
         // the project (a system procedure, another database's).
-        var onlyDeclared = entry is DeclaredResultsOverride { Name: null };
+        var onlyDeclared = entry is DeclaredResultsOverride { Name: null, Sets: null };
         var target = procedures.Where(p => p.Equals(entry.Procedure)).ToList();
         if (target.Count == 0)
         {
@@ -108,7 +113,69 @@ internal sealed class ConfigApplying
         if (entry.Name is { } name)
             procedureNames[obj.Id] = (name, entry.NameAt);
         Applied(entry, obj, index);
+        if (entry.Sets is { } sets)
+            NameSets((DiagnosticLocation?)entry.SetsAt ?? entry.At, obj, index, sets);
     }
+
+    /// <summary>
+    /// The sets a query file's <c>-- @sets</c> comment names, checked as a procedure's <c>sets</c> are (<see cref="SetNameRules"/>),
+    /// each problem at the comment.
+    /// </summary>
+    private void NameQuerySets()
+    {
+        foreach (var query in queries.Where(q => q.Sets is not null))
+        {
+            var index = document.Objects.ToList().FindIndex(o => o.Kind == IrObjectKind.Query && o.Id == query.Path);
+            if (index < 0 || query.Sets is not { } sets)
+                continue;
+            var names = new List<string>();
+            var usable = true;
+            foreach (var name in sets)
+            {
+                if (SetNameRules.Problem(name, names, config.Reserved) is { } problem)
+                {
+                    problems.Add(ConfigCodes.BadSetNames.At(query.SetsAt, $"-- @sets: '{name}' {problem}"));
+                    usable = false;
+                }
+
+                names.Add(name);
+            }
+
+            if (usable)
+                NameSets(query.SetsAt, document.Objects[index], index, sets);
+        }
+    }
+
+    /// <summary>
+    /// The sets' names, given to the results they name, one each and in order: all or none, so a list that names more or fewer
+    /// sets than the procedure is known to return is refused, naming both counts. A set a newer database returns after these is
+    /// still ignored by the function (decision 0063), so naming them is how a set added later stays additive
+    /// (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
+    /// </summary>
+    private void NameSets(DiagnosticLocation? at, IrObject obj, int index, EquatableArray<string> sets)
+    {
+        if (results[index] is not { } known)
+        {
+            var remedy = obj.Kind == IrObjectKind.Query
+                ? "Remove -- @sets, or write the file so that its results can be inferred."
+                : "Declare its results under \"results\", or remove \"sets\".";
+            problems.Add(ConfigCodes.SetsMiscounted.At(at,
+                $"names {Sets(sets.Count)}, but the result sets of {obj.Id} can't be listed, so there are none to name. {remedy}"));
+            return;
+        }
+
+        if (known.Count != sets.Count)
+        {
+            problems.Add(ConfigCodes.SetsMiscounted.At(at,
+                $"names {Sets(sets.Count)}, but {obj.Id} returns {(known.Count == 0 ? "none" : Sets(known.Count))}. Name every set it returns, in order, or none."));
+            return;
+        }
+
+        results[index] = [.. known.Select((result, i) => result with { Name = sets[i] })];
+    }
+
+    /// <summary>A number of result sets in words: "one result set", "3 result sets".</summary>
+    private static string Sets(int count) => count == 1 ? "one result set" : count.ToString(CultureInfo.InvariantCulture) + " result sets";
 
     /// <summary>A selected procedure's overrides: declared results checked or put in place of unknown ones, or path overrides.</summary>
     private void Applied(ProcedureOverride entry, IrObject obj, int index)

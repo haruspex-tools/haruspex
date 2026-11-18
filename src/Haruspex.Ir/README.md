@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.22
+# Haruspex.Ir: the IR format, version 0.23
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.22: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.23: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -104,7 +104,7 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.22"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.23"` and a document that this page and the schema allow;
 - must write `text` on an object exactly when its kind is `query`;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
@@ -143,7 +143,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.22",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.23",                // versioned separately from the tool; a reader checks it first
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -207,6 +207,14 @@ first use, each `hasDefault` and `output` false; each one's type is what a call 
 `undecided-parameter` unknown where the file's uses don't decide it. A query's results are written as a procedure's are, and
 its types' identity names it as `{ "query": "queries/get_order_card.sql", "path": … }`.
 
+A result's `name` (0.23) is the key the object's function returns the set under, `order` or `lines`, as the config file names it
+([decision 0070](../../docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). An object's sets are named all or
+none: a writer must give every set a `name` or leave it out of every one; each name must be an identifier (an ASCII letter, `_` or
+`$`, then letters, digits, `_` or `$`), none may be `output` or `returnValue` (the keys the function returns its `OUTPUT`
+parameters and return code under), and no two sets of an object may have the same one. A reader refuses a document that breaks
+any of these. A name a target's language can't hold as a key, such as `__proto__` in JavaScript, is that target's emitter's to
+refuse.
+
 `returnsCode` (0.22) says whether a call of the object may end with a return code other than 0: `true` when its body has a
 `RETURN` whose value isn't the constant 0 or NULL, or when the body can't be read; `false` when every call that succeeds ends with
 0, so the code tells a caller nothing, as for a body with no such `RETURN`, and for every query (SQL Server refuses `RETURN` with a
@@ -257,9 +265,11 @@ A type node is one of these, and nothing else:
 | import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from`. `from` is a path relative to the folder the IR file is in, when it starts `./` or `../`, and otherwise a name the target resolves itself (a package, a path alias). Emitters import and use it as it is, so the value is still checked, by that schema, which receives the value as it arrives: the string, where it replaces JSON text |
 | unknown | `{ "kind": "unknown", "reason" }` | a value of any shape: nothing is claimed. The document's `unknowns` says why, and where |
 
-A named object type, in `types`, is `{ "kind": "object", "recursive"?, "identity"?, "fields": […] }`; each field is
+A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "identity"?, "fields": […] }`; each field is
 `{ "name", "type", "presence", "nullable", "nullableBecause"? }`. `presence` is `always` (the key is there, null or not) or
-`omittedWhenNull` (the key is left out when the value is null). `recursive` may be left out when false. `identity` is left
+`omittedWhenNull` (the key is left out when the value is null). `recursive` may be left out when false. `nameDeclared` (0.23) is `true` when the config file gave the type its name rather than
+the naming rules, and may be left out when false: an emitter that declares a shape several types share once declares it under such a
+name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `identity` is left
 out only in a document built by hand.
 
 **Logical kinds.** `string`, `number`, `boolean`, `date` (no time, no zone), `time` (no date, no zone), `datetime`, and
@@ -478,6 +488,12 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.23** (18 Nov 2026, named result sets). A result set's `name`, the key its function returns it under, given for all of an
+object's sets or none ([decision 0070](../../docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)); and a
+type's `nameDeclared`, whether the config file gave it its name, under which an emitter declares a shape several types share
+([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). A 0.22 file doesn't say
+which names were declared, so this reader reads 0.23 only.
 
 **0.22** (16 Nov 2026, query files). The object kind `query`, a file of the application holding one batch, identified by its path,
 with `text`, what it runs; the type owner `query`; and the unknown reason `undecided-parameter`, for a query's parameter whose uses

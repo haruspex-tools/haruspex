@@ -99,6 +99,12 @@ internal static class ZodPrinter
             output.Append('\n');
             // A declaration's own schema may carry notes too (a result that is unknown, or JSON text): they follow its summary.
             output.Append(Documentation([.. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(), .. ZodNotes.Of(declaration.Schema).Select(n => n.Text)], ""));
+            if (!declaration.Exported)
+            {
+                output.Append("const ").Append(declaration.Name).Append(" = ").Append(Expression(declaration.Schema)).Append('\n');
+                continue;
+            }
+
             var schema = ZodModule.SchemaOf(declaration.Name);
             output.Append("export const ").Append(schema).Append(" = ").Append(Expression(declaration.Schema)).Append('\n')
                 .Append("export type ").Append(declaration.Name).Append(" = " + ZodModule.ZodName + ".infer<typeof ").Append(schema).Append(">\n");

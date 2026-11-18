@@ -41,6 +41,7 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.ParameterDirectionChanged => After == "true" ? "is now an output parameter" : "is no longer an output parameter",
         IrChangeKind.ResultsBecameUnknown => "became unknown: the result sets can't be listed",
         IrChangeKind.ResultsBecameKnown => $"became known: {After}",
+        IrChangeKind.ResultRenamed => $"name changed from {Before ?? "none"} to {After ?? "none"}",
         IrChangeKind.EncodingChanged => $"encoding changed from {Before} to {After}",
         IrChangeKind.CardinalityChanged => $"rows changed from {Before} to {After}",
         IrChangeKind.BecameMayBeAbsent => "may now be absent",

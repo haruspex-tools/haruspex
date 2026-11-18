@@ -174,6 +174,20 @@ public class IrComparisonTests
     }
 
     [Fact]
+    public void A_result_set_named_renamed_or_unnamed_is_reported_since_its_function_returns_it_under_its_name()
+    {
+        var unnamed = Infer(ListOrders);
+        IrDocument Named(string name) => unnamed with
+        {
+            Objects = [.. unnamed.Objects.Select(o => o with { Results = [.. o.Results!.Select(r => r with { Name = name })] })],
+        };
+
+        Assert.Equal(["shop.list_orders results[0]: name changed from none to orders"], Changes(unnamed, Named("orders")));
+        Assert.Equal(["shop.list_orders results[0]: name changed from orders to rows"], Changes(Named("orders"), Named("rows")));
+        Assert.Equal(["shop.list_orders results[0]: name changed from rows to none"], Changes(Named("rows"), unnamed));
+    }
+
+    [Fact]
     public void Results_that_become_unknown_are_reported_as_one_change()
     {
         var before = Infer(ListOrders);

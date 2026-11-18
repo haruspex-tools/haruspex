@@ -22,12 +22,13 @@ public sealed record IrDocument(
     /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
     /// programs read: a change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.22";
+    public const string CurrentVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one only. 0.22 added query files, and
-    /// <see cref="IrObject.ReturnsCode"/>, whether a procedure may end with a code other than 0, which a 0.21 file doesn't say, and
-    /// which decides the shape of the procedure's function; so no 0.21 file means what a 0.22 file of its source does.
+    /// The versions a reader reads, as decision 0024 says: the current one only. 0.23 added a result set's name
+    /// (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
+    /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
+    /// source does.
     /// </summary>
     public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
 

@@ -81,7 +81,7 @@ public class ConfigCliTests
 
         Assert.Equal("", error);
         Assert.Equal(0, exitCode);
-        Assert.Contains("haruspex: 4 procedures, 2 query files, no unknowns.", output, StringComparison.Ordinal);
+        Assert.Contains("haruspex: 5 procedures, 2 query files, no unknowns.", output, StringComparison.Ordinal);
 
         // What it writes is the shop's expected output, which FixtureSnapshotTests checks for every project fixture.
         Assert.True(File.Exists(Path.Combine(outDir.Path, "haruspex.ir.json")));
@@ -185,7 +185,7 @@ public class ConfigCliTests
         var (exitCode, output, _) = Run(Path.Combine(Shop, "database", "procedures"), "generate", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("4 procedures", output, StringComparison.Ordinal);
+        Assert.Contains("5 procedures", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class ConfigCliTests
         var (exitCode, output, _) = Run(cwd.Path, "generate", "--config", Path.Combine(Shop, "haruspex.json"), "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("4 procedures", output, StringComparison.Ordinal);
+        Assert.Contains("5 procedures", output, StringComparison.Ordinal);
     }
 
     [Fact]

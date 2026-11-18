@@ -36,7 +36,9 @@ From the command line, `"emit": ["zod", "json-schema"]` in `haruspex.json` write
 ([the configuration page](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md#what-is-written-emit)).
 
 A procedure's schema is the definition under its generated name, the name the Zod module exports it by, and its `title` is
-its name in the database. Here a basket, its lines nested by `FOR JSON`, and its status in a binary collation, where SQL Server
+its name in the database. It is its one result set's schema; for several, an array of exactly as many (`prefixItems`); and when
+the config file names its sets, an object with a property for each set, required, even for one
+([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). Here a basket, its lines nested by `FOR JSON`, and its status in a binary collation, where SQL Server
 ignores only trailing spaces:
 
 ```sql haruspex-example
@@ -220,6 +222,10 @@ its formats asserted (`JsonSchemaAcceptanceTests`).
 - **No config file.** It takes `JsonSchemaOptions`. The CLI reads `haruspex.json` and maps its settings across.
 - **No naming.** Names come from the IR, where the config's naming rules have already been applied, so a procedure has the
   same name in the JSON Schema as in the Zod. One name for two definitions is refused with a diagnostic (`JsonSchemaCodes`).
+- **No shared definitions.** Each named type is written in full under its own name, even where the Zod module declares a
+  shape several types share once: every definition in `$defs` can be referred to, so there is no unexported name to declare a
+  shared one under, and each says where it comes from
+  ([decision 0071](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
 - **No renaming of keys.** The document describes the wire format, the keys as SQL Server writes them.
 - **No SQL.** It can't look at a procedure, only at what the IR says about it.
 

@@ -38,4 +38,11 @@ public sealed record IrObject(
     /// <c>RETURN</c>, a bare one, <c>RETURN 0</c> and <c>RETURN NULL</c> all give 0), so the code tells a caller nothing.
     /// </summary>
     public bool ReturnsCode { get; init; }
+
+    /// <summary>
+    /// The names of its result sets, in order, when the config file named them (<see cref="IrResult.Name"/>); null when they are
+    /// unnamed or can't be listed. An object's sets are named all or none, so one name means every set has one.
+    /// </summary>
+    public EquatableArray<string>? SetNames =>
+        Results is { Count: > 0 } results && results.All(r => r.Name is not null) ? [.. results.Select(r => r.Name).OfType<string>()] : null;
 }

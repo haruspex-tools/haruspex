@@ -21,10 +21,14 @@ internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableA
 
     /// <summary>
     /// Whether the function returns its one result set itself, rather than an object naming it: when there is one (or the sets
-    /// can't be listed, and come back as one value), no <c>OUTPUT</c> parameter, and no return code worth handing back
-    /// (<c>docs/decisions/0060-a-call-returns-its-one-result-itself.md</c>).
+    /// can't be listed, and come back as one value), unnamed, no <c>OUTPUT</c> parameter, and no return code worth handing back
+    /// (<c>docs/decisions/0060-a-call-returns-its-one-result-itself.md</c>). A named set is always returned under its name
+    /// (<c>docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md</c>).
     /// </summary>
-    public bool ReturnsResultAlone => Results is null or [_] && !HasOutput && !ReturnsCode;
+    public bool ReturnsResultAlone => Results is null or [_] && !NamesSets && !HasOutput && !ReturnsCode;
+
+    /// <summary>Whether the procedure's result sets are named, each returned under its name.</summary>
+    public bool NamesSets => Procedure.SetNames is not null;
 
     /// <summary>Whether the function returns nothing: no result set, no <c>OUTPUT</c> parameter, no return code worth handing back.</summary>
     public bool ReturnsNothing => Results is [] && !HasOutput && !ReturnsCode;
@@ -44,14 +48,16 @@ internal sealed record MssqlFunction(string Name, IrObject Procedure, EquatableA
 
     /// <summary>
     /// What the function hands back, by name, in order: each result set, the <c>OUTPUT</c> parameters, and the return code when one
-    /// other than 0 may come back. One result set (or results that can't be listed, which come back as one value) is
-    /// <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on; then <c>output</c>, then <c>returnValue</c>. A function
-    /// with only <c>result</c> returns it itself (<see cref="ReturnsResultAlone"/>), and one with none returns nothing.
+    /// other than 0 may come back. A named set is its name, however many there are; otherwise one result set (or results that
+    /// can't be listed, which come back as one value) is <c>result</c>, several are <c>result1</c>, <c>result2</c> and so on;
+    /// then <c>output</c>, then <c>returnValue</c>. A function with only an unnamed <c>result</c> returns it itself
+    /// (<see cref="ReturnsResultAlone"/>), and one with none returns nothing.
     /// </summary>
     public EquatableArray<string> Returned =>
     [
         .. Results switch
         {
+            not null when Procedure.SetNames is { } names => names,
             null or [_] => ["result"],
             var many => many.Select((_, i) => "result" + (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)),
         },

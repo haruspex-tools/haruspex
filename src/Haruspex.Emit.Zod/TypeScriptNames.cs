@@ -29,4 +29,10 @@ public static class TypeScriptNames
     /// preserved names can be. A reserved word is still a valid property name (<c>{ class: 1 }</c>), so keys may be one.
     /// </summary>
     public static bool IsReserved(string name) => Reserved.Contains(name);
+
+    /// <summary>
+    /// Whether <paramref name="key"/> can't be a key of an object a module writes as a literal: <c>__proto__</c>, which there sets
+    /// the object's prototype rather than adding a key, in TypeScript's source and in the values a schema builds alike.
+    /// </summary>
+    public static bool IsUnusableKey(string key) => key == "__proto__";
 }

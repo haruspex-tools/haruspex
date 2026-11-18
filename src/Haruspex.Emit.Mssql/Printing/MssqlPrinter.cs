@@ -252,6 +252,13 @@ internal static class MssqlPrinter
             case null:
                 output.Append("  const result = await checked(").Append(SchemaModuleNames.ResultsSchema(name)).Append(", sets, ").Append(Fail(id, "the results")).Append(")\n");
                 break;
+
+            // Named sets are checked as one object, so an issue's path starts with its set's name.
+            case var named when procedure.SetNames is { } sets:
+                output.Append("  const result = await checked(").Append(SchemaModuleNames.ResultsSchema(name)).Append(", { ")
+                    .Append(string.Join(", ", named.Select((encoding, i) => sets[i] + ": " + Read(encoding, i)))).Append(" }, ")
+                    .Append(Fail(id, "the results")).Append(")\n");
+                break;
             case []:
                 break;
             case [var only]:
@@ -278,8 +285,8 @@ internal static class MssqlPrinter
     }
 
     /// <summary>
-    /// What a function hands back (<see cref="MssqlFunction.Returned"/>), each with its type and the value it is: a result set by
-    /// its place among the sets, the <c>OUTPUT</c> parameters, and the return code.
+    /// What a function hands back (<see cref="MssqlFunction.Returned"/>), each with its type and the value it is: a named set by
+    /// its name, an unnamed one by its place among the sets, the <c>OUTPUT</c> parameters, and the return code.
     /// </summary>
     private static IEnumerable<(string Name, string Type, string Value)> Fields(MssqlFunction function)
     {
@@ -290,7 +297,9 @@ internal static class MssqlPrinter
             "output" => (name, "types." + SchemaModuleNames.Output(function.Procedure.Name), name),
             "returnValue" => (name, "number", "returnValue: response.returnValue"),
 
-            // The sets come first, so a set's place among the fields is its place among the sets.
+            // The sets come first, so a set's place among the fields is its place among the sets. A set's name is never output
+            // or returnValue (SetNameRules).
+            _ when function.NamesSets => (name, $"{results}['{name}']", $"{name}: result.{name}"),
             _ => (name, sets ? $"{results}[{i.ToString(CultureInfo.InvariantCulture)}]" : results, name),
         });
     }

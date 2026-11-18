@@ -53,6 +53,7 @@ otherwise silently do nothing.
         "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }   // see "type" below
       }
     },
+    "sales.get_order_with_lines": { "sets": ["order", "lines"] },   // returns { order, lines }; see "sets" below
     "sales.search_orders": {                // dynamic SQL: see "Declared results" below
       "results": { "rowset": "schemas/order-search-row.schema.json" },
       "why": "the filter is built as dynamic SQL"
@@ -205,6 +206,21 @@ passed over; an entry that names no file of this module is an error ([HAR4007](d
 selects nothing is. A query file's name and a procedure's share the module's names: one that clashes is an error naming both
 ([HAR4303](diagnostics/HAR4303.md)), and neither is renamed for the other.
 
+A comment in the file names its result sets, as `sets` names a procedure's (under "Overrides"), in order and between commas:
+
+```sql
+-- @sets order, lines
+SELECT o.order_id, o.placed FROM sales.orders AS o WHERE o.order_id = @order_id;
+SELECT l.sku, l.quantity FROM sales.order_lines AS l WHERE l.order_id = @order_id;
+```
+
+Its function then returns `{ order, lines }`, even for one set, and its types are named after the sets. The rules are the
+same as for `sets`: every set or none, each name in camel case, given once, not a reserved word, and neither `output` nor
+`returnValue`; each problem is reported at the comment ([HAR1018](diagnostics/HAR1018.md) for a comment that doesn't read,
+[HAR3023](diagnostics/HAR3023.md) and [HAR4112](diagnostics/HAR4112.md) for its names). A shape a query file's type shares with
+another is declared once, as a procedure's is
+([decision 0071](decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
+
 ## Overrides
 
 An override corrects or completes what was inferred, for one procedure. Overrides live in `procedures`, keyed by the
@@ -214,6 +230,17 @@ runtime**: the generated validator still checks every value, so a wrong override
 a silent cast. The IR lists every claim an override made under `overrides`, with its reason.
 
 - `name`: the procedure's generated name.
+- `sets`: a name for each of its result sets, in order, such as `["order", "lines"]`. Its function then returns them by
+  name, `{ order, lines }`, with `output` and `returnValue` beside them as before, **even when there is one set**; and the
+  types in each set are named after it, `GetOrderLinesRow` rather than `GetOrderResult2Row` (a `name` under `paths` still
+  wins). Name every set the procedure returns or none: more or fewer names than its sets is an error naming both counts
+  ([HAR4112](diagnostics/HAR4112.md)), and so is naming sets that can't be listed until `results` declares them. Each name is
+  in camel case (a lower-case ASCII letter, then letters and digits), given once, not a reserved word, and neither `output`
+  nor `returnValue` ([HAR3023](diagnostics/HAR3023.md)). It can be given with `results`, naming the declared sets. Naming a
+  procedure's sets is how a team says it will grow: a set the database adds after them is ignored until it is named
+  ([decision 0063](decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)), and naming it then adds a key
+  rather than changing what the function returns
+  ([decision 0070](decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
 - `paths`: places in its results, in the IR's path syntax, relative to the result: `[]` for a list's rows, `.key` (the
   first dot may be left out) or `["a key"]`, `{}` for a record's values, `[0]` for a tuple's position, `<json>` for
   what JSON text holds. A procedure with several result sets names one: `results[1][].id`. Each path takes:
@@ -480,8 +507,9 @@ Generated names come from each object's own name, **never its schema**, by decla
    not a valid identifier is an error naming the object.
 
 Nested types build on their procedure's name: `GetOrderRow` for its rows, `GetOrderLine` for the items of `lines`,
-`GetOrderResult2Row` for a second result set's rows, and `PartTreeNode` for the recursive type of a function
-`bom.part_tree` (named by its own schema's settings).
+`GetOrderLinesRow` for the rows of a set named `lines` (`sets`, under "Overrides"), `GetOrderResult2Row` for a second unnamed
+result set's rows, and `PartTreeNode` for the recursive type of a function `bom.part_tree` (named by its own schema's
+settings).
 
 **Names don't shift.** When two objects' names come out the same (two schemas with a `get_order` each, say), it is an
 error naming both, which asks for a `prefix` on one of the schemas or a `name` override; haruspex never adds a number

@@ -147,6 +147,9 @@ public static class IrComparison
 
         private void Result(IrPathSegment[] path, IrResult was, IrResult now)
         {
+            // A set's name is the key its function returns it under, so a renamed set breaks its callers.
+            if (was.Name != now.Name)
+                Add(IrChangeKind.ResultRenamed, path, was.Name, now.Name);
             if (was.Encoding != now.Encoding)
                 Add(IrChangeKind.EncodingChanged, path, IrWireNames.Of(was.Encoding), IrWireNames.Of(now.Encoding));
             if (was.Cardinality != now.Cardinality)

@@ -82,4 +82,10 @@ public static class SourceCodes
     /// (error 178, observed), so every call of its function would fail.
     /// </summary>
     public static DiagnosticCode QueryReturnsValue { get; } = new(1017, DiagnosticSeverity.Error, "A query file returns a value");
+
+    /// <summary>
+    /// A query file's sets comment (<c>-- @sets order, lines</c>) that can't be taken: it names no set, leaves a name out between
+    /// commas, or is written a second time.
+    /// </summary>
+    public static DiagnosticCode BadSetsDeclaration { get; } = new(1018, DiagnosticSeverity.Error, "A query file's sets comment can't be taken");
 }

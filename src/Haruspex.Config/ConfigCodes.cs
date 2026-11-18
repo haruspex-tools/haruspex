@@ -69,6 +69,12 @@ public static class ConfigCodes
     /// <summary>A generated name, or an imported schema's, that isn't a valid identifier.</summary>
     public static DiagnosticCode BadName { get; } = new(3019, Error, "A name isn't a valid identifier");
 
+    /// <summary>
+    /// A procedure's <c>sets</c> that can't name its result sets: empty, or a name that isn't a camel-case identifier, is given
+    /// twice, or is a key its function already returns (<c>output</c>, <c>returnValue</c>).
+    /// </summary>
+    public static DiagnosticCode BadSetNames { get; } = new(3023, Error, "Set names that can't be used");
+
     /// <summary>A path override that sets nothing.</summary>
     public static DiagnosticCode EmptyOverride { get; } = new(3020, Error, "An override says nothing");
 
@@ -191,6 +197,12 @@ public static class ConfigCodes
 
     /// <summary><c>"values": "exact"</c> where the inference already proves the set exact.</summary>
     public static DiagnosticCode ExactAgrees { get; } = new(4111, Warning, "Exact values the inference already proves");
+
+    /// <summary>
+    /// A procedure's <c>sets</c> that don't name its result sets one each: more or fewer names than the sets it is known to
+    /// return, or results that can't be listed, so there is nothing to name.
+    /// </summary>
+    public static DiagnosticCode SetsMiscounted { get; } = new(4112, Error, "Set names that don't match the result sets");
 
     /// <summary>Declared results that disagree with what haruspex infers.</summary>
     public static DiagnosticCode DeclarationDisagrees { get; } = new(4201, Error, "Declared results disagree with the inference");

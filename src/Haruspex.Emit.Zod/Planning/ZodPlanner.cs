@@ -42,6 +42,8 @@ internal static class ZodPlanner
         foreach (var obj in document.Objects.OrderBy(o => o.Id, StringComparer.Ordinal))
         {
             RequireIdentifier(obj.Name, refusals);
+            foreach (var set in obj.SetNames?.Where(TypeScriptNames.IsUnusableKey) ?? [])
+                refusals.Add(ZodCodes.SetNameUnusable.At(null, $"A result set of {obj.Id} is named {set}, which as a key of an object sets its prototype rather than adding a key; rename the set."));
             var reached = graph.ReachableFrom(obj.Results?.Select(r => r.Type) ?? [])
                 .Where(name => !declared.Contains(name))
                 .OrderBy(name => position[name])

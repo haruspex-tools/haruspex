@@ -207,6 +207,22 @@
             }
           ]
         },
+        "sets": {
+          "description": "A name for each of the procedure's result sets, in order: the keys its function returns them under, as { order, lines }, even for one set. All or none: as many names as the sets it returns. Each in camel case, unique, and neither output nor returnValue.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][A-Za-z0-9]*$",
+            "not": {
+              "enum": [
+                "output",
+                "returnValue"
+              ]
+            }
+          }
+        },
         "why": {
           "description": "Why the declared results hold. Required with results.",
           "type": "string",

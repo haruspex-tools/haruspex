@@ -60,6 +60,14 @@ public class IrReaderSchemaAgreementTests
             return;
         }
 
+        // An object's sets are named all or none, so a name taken from one set is refused as its object's list of sets.
+        if (key == "name" && location.Contains("/results/", StringComparison.Ordinal))
+        {
+            Assert.NotEmpty(schemaErrors);
+            Assert.Equal(ReaderPath(location[..location.LastIndexOf('/')]), refusal?.Path);
+            return;
+        }
+
         if (schemaErrors.Count == 0)
         {
             Assert.True(refusal is null, $"The schema accepts the file without {location}/{key}, but the reader refuses it: {refusal?.Message}");

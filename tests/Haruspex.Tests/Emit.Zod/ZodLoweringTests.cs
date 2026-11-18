@@ -27,7 +27,7 @@ public class ZodLoweringTests
     private static ZodDeclaration Procedure(ZodModule module) => Assert.Single(module.Declarations, d => d.Name == "P");
 
     [Fact]
-    public void Types_of_the_same_shape_are_declared_once_and_the_others_names_kept_as_aliases()
+    public void Types_of_the_same_shape_are_one_unexported_shape_named_by_its_structure_and_each_exported_under_its_own_name()
     {
         var module = Lower(Document(
             new()
@@ -39,16 +39,87 @@ public class ZodLoweringTests
             },
             new IrResult(IrEncoding.Json, new IrTuple([new IrElement(new IrRef("UsesA"), []), new IrElement(new IrRef("UsesB"), [])]), [])));
 
+        // The inner shape's name is in the outer one's text, so the outer one's hash follows from the inner one's.
+        var flag = Shape("z.object({\n  flag: z.boolean(),\n})");
+        var item = Shape($"z.object({{\n  item: {flag},\n}})");
         Assert.Equal(
             [
-                new ZodDeclaration("A", null, new ObjectSchema([new ZodProperty("flag", Z("boolean"))], Strict: false)),
-                new ZodDeclaration("UsesA", null, new ObjectSchema([new ZodProperty("item", new Name("ASchema"))], Strict: false)),
-                new ZodDeclaration("B", "The same shape as A.", new Name("ASchema")),
-                new ZodDeclaration("UsesB", "The same shape as UsesA.", new Name("UsesASchema")),
+                new ZodDeclaration(flag, Shared, new ObjectSchema([new ZodProperty("flag", Z("boolean"))], Strict: false), Exported: false),
+                new ZodDeclaration("A", null, new Name(flag)),
+                new ZodDeclaration(item, Shared, new ObjectSchema([new ZodProperty("item", new Name(flag))], Strict: false), Exported: false),
+                new ZodDeclaration("UsesA", null, new Name(item)),
+                new ZodDeclaration("B", null, new Name(flag)),
+                new ZodDeclaration("UsesB", null, new Name(item)),
             ],
             module.Declarations.Where(d => d.Name != "P"));
-        Assert.Equal(Z("tuple", new ArrayLiteral([new Name("UsesASchema"), new Name("UsesASchema")])), Procedure(module).Schema);
+
+        // Outside a shared shape, a reference names its own type's schema.
+        Assert.Equal(Z("tuple", new ArrayLiteral([new Name("UsesASchema"), new Name("UsesBSchema")])), Procedure(module).Schema);
     }
+
+    [Fact]
+    public void A_shared_shape_is_declared_under_a_name_the_config_file_gave_one_of_its_types_the_ordinally_first()
+    {
+        var module = Lower(Document(
+            new()
+            {
+                ["A"] = new([Field("flag", Flag)]),
+                ["Total"] = new([Field("flag", Flag)]) { NameDeclared = true },
+                ["Sum"] = new([Field("flag", Flag)]) { NameDeclared = true },
+                ["UsesA"] = new([Field("a", new IrRef("A")), Field("total", new IrRef("Total")), Field("sum", new IrRef("Sum"))]),
+            },
+            new IrResult(IrEncoding.Json, new IrRef("UsesA"), [])));
+
+        Assert.Equal(
+            [
+                new ZodDeclaration("Sum", Shared, new ObjectSchema([new ZodProperty("flag", Z("boolean"))], Strict: false)),
+                new ZodDeclaration("A", null, new Name("SumSchema")),
+                new ZodDeclaration("Total", null, new Name("SumSchema")),
+            ],
+            module.Declarations.Where(d => d.Name is "A" or "Sum" or "Total"));
+    }
+
+    [Fact]
+    public void A_shape_s_name_depends_on_its_structure_not_on_which_types_share_it_or_their_order()
+    {
+        static IrDocument Sharing(params string[] names) => Document(
+            names.ToDictionary(n => n, _ => new IrObjectType([Field("flag", Flag)]), StringComparer.Ordinal),
+            new IrResult(IrEncoding.Json, new IrTuple([.. names.Select(n => new IrElement(new IrRef(n), []))]), []));
+
+        var two = Lower(Sharing("A", "B")).Declarations.Single(d => !d.Exported);
+        var three = Lower(Sharing("Zed", "C", "B")).Declarations.Single(d => !d.Exported);
+
+        Assert.Equal(two, three);
+    }
+
+    [Fact]
+    public void Two_shapes_whose_short_names_collide_are_given_longer_names_rather_than_one()
+    {
+        var names = new ShapeNames([], digits: 0);
+
+        var first = names.Of("z.object({ a: z.boolean() })");
+        var second = names.Of("z.object({ b: z.boolean() })");
+
+        Assert.Equal("shape", first);
+        Assert.StartsWith("shape", second, StringComparison.Ordinal);
+        Assert.NotEqual(first, second);
+        Assert.Equal(first, names.Of("z.object({ a: z.boolean() })"));
+    }
+
+    [Fact]
+    public void A_shape_never_takes_a_name_the_module_imports()
+    {
+        var text = "z.object({ a: z.boolean() })";
+        var usual = new ShapeNames([]).Of(text);
+
+        Assert.NotEqual(usual, new ShapeNames([usual]).Of(text));
+        Assert.StartsWith(usual, new ShapeNames([usual]).Of(text), StringComparison.Ordinal);
+    }
+
+    private const string Shared = "A shape several types share, declared once; each is exported under its own name.";
+
+    /// <summary>The name of the shape the module writes as <paramref name="text"/>: <c>shape</c> and six digits of its SHA-256.</summary>
+    private static string Shape(string text) => "shape" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..6];
 
     [Fact]
     public void The_header_states_once_each_shared_fact_the_notes_rest_on()
