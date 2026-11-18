@@ -123,18 +123,29 @@ public class BaselineCheckTests
     }
 
     [Fact]
-    public void A_baseline_that_is_the_output_folder_s_own_ir_is_compared_by_fit_alone()
+    public void Fit_only_judges_the_fit_alone_as_a_database_s_pipeline_does_against_an_application_s_committed_ir()
     {
-        // As a database's pipeline checks an application's committed contract: the module isn't regenerated, and a change that
-        // fits passes, though the plain check, which compares exactly, fails on it.
+        // The module isn't regenerated: a change that fits passes with --fit-only, though the comparison with the output folder,
+        // which a baseline otherwise adds the fit to, fails on it.
         using var folder = Released(ListOrders, ListOrders);
         folder.File("db/procedures.sql", Edit(ListOrders, "o.customer", "o.customer, o.note"));
 
-        var (exitCode, output, _) = Run(folder, "check", "--baseline", "generated/haruspex.ir.json");
+        var (exitCode, output, _) = Run(folder, "check", "--baseline", "generated/haruspex.ir.json", "--fit-only");
 
         Assert.Equal(0, exitCode);
         Assert.Equal("haruspex: 1 procedure, no unknowns. It fits the baseline generated/haruspex.ir.json.\n", output);
-        Assert.Equal(1, Run(folder, "check").ExitCode);
+        Assert.Equal(1, Run(folder, "check", "--baseline", "generated/haruspex.ir.json").ExitCode);
+    }
+
+    [Fact]
+    public void Fit_only_without_a_baseline_is_a_usage_error()
+    {
+        using var folder = Released(ListOrders, ListOrders);
+
+        var (exitCode, _, error) = Run(folder, "check", "--fit-only");
+
+        Assert.Equal(2, exitCode);
+        Assert.StartsWith("haruspex: error HAR6032: --fit-only judges the module against a baseline alone, and none is given.", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -222,5 +233,6 @@ public class BaselineCheckTests
         using var folder = Released(ListOrders, ListOrders);
 
         Assert.Equal(2, Run(folder, "generate", "--baseline", "release/db").ExitCode);
+        Assert.Equal(2, Run(folder, "generate", "--fit-only").ExitCode);
     }
 }

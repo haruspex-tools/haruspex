@@ -185,3 +185,4 @@ reason.
 | [HAR6029](HAR6029.md) | error | The baseline isn't there |
 | [HAR6030](HAR6030.md) | error | The baseline can't be read |
 | [HAR6031](HAR6031.md) | warning | A query file's sent text isn't checked |
+| [HAR6032](HAR6032.md) | error | --fit-only without a baseline |

@@ -14,9 +14,9 @@ being checked fits within the baseline, as the application already running, buil
   running keeps its own functions, but each call changes at its next build
   ([decision 0060](0060-a-call-returns-its-one-result-itself.md)).
 - **The comparison with the output folder is still made**, so the application's CI checks both that the committed module is
-  current and that the change is safe to deploy. **When the baseline is the output folder's own IR**, only the fit is made:
-  that is a database's pipeline checking an application's committed contract, where the exact comparison with the same file
-  would refuse every change the fit allows.
+  current and that the change is safe to deploy. **`--fit-only` makes the fit alone**, without reading the output folder:
+  a database's pipeline checking an application's committed contract asks for it, since the exact comparison with that
+  contract would refuse every change the fit allows. Without a baseline it is a usage error (HAR6032, exit code 2).
 - **A source baseline is read with the module's own config file and command line**, so the two documents are selected,
   overridden and named alike, and its warnings aren't said (they are about the old source). An IR baseline is read as it is,
   and one of another version is refused (HAR6030), as the output folder's is.
@@ -33,8 +33,10 @@ refusing a deploy that would break an application already running.
 - *The baseline in place of the output folder.* One question per run, but a `"baseline"` in the config file would then stop the
   application's CI checking that the committed module is current, and V1b's `generate`, which makes types covering both, needs
   the comparison with what it wrote.
-- *A flag to leave out the comparison with the output folder.* The database's pipeline needs it, but only when the baseline is
-  the committed IR, so the case says itself and no flag is needed.
+- *Make the fit alone when the baseline is the output folder's own IR*, with no option. In a database's pipeline the
+  application's IR is usually copied or fetched somewhere else, so the paths wouldn't match, the exact comparison would run,
+  and every additive change would fail; a link or another spelling of the path fails the same way. A behaviour that changes
+  because two paths happen to match is also hard to explain. An option says what is asked.
 - *Read git refs (`"baseline": "git:v1.4.0"`).* The tool would run git and build a project from another commit, which is more
   than it should own. The recipes in [the command line](../command-line.md#checking-against-a-baseline) do it in CI instead.
 - *Infer the baseline with its own release's config file.* Not at hand for a DACPAC from a release pipeline, and a config file
@@ -46,4 +48,4 @@ refusing a deploy that would break an application already running.
 between them: expand and contract, enforced mechanically, with each step said as the change.
 
 **In the code:** `BaselineCheck` and `Check` in the CLI, `HaruspexConfig.Baseline`; [HAR6026](../diagnostics/HAR6026.md) to
-[HAR6031](../diagnostics/HAR6031.md).
+[HAR6032](../diagnostics/HAR6032.md).

@@ -18,14 +18,6 @@ internal static class BaselineCheck
     public static string? Of(RunRequest request, HaruspexConfig config) =>
         request.Baseline is { } given ? request.Resolve(given) : config.Baseline;
 
-    /// <summary>
-    /// Whether the baseline is the IR in the module's own output folder, as in a database's pipeline checking an application's
-    /// committed contract. The exact comparison with that same file would then refuse every change the fit allows, so only the
-    /// fit is made.
-    /// </summary>
-    public static bool IsOutputIr(string baseline, EmittedModule module) =>
-        string.Equals(Path.GetFullPath(baseline), Path.GetFullPath(module.IrPath), OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
-
     /// <summary>What the fit finds, each change at its procedure; or why the baseline can't be read.</summary>
     public static IReadOnlyList<Diagnostic> Run(RunRequest request, EmittedModule module, string baseline, Progress progress)
     {

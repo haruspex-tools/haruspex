@@ -206,7 +206,7 @@ internal static class HaruspexCli
     }
 
     /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
-    /// <param name="withBaseline">Whether the command takes <c>--baseline</c>, which only <c>check</c> reads.</param>
+    /// <param name="withBaseline">Whether the command takes <c>--baseline</c> and <c>--fit-only</c>, which only <c>check</c> reads.</param>
     private static Command Module(string name, string description, CommandName command, Func<RunRequest, Progress, ModuleReport> run, Streams streams, bool withBaseline = false)
     {
         var workingDirectory = streams.WorkingDirectory;
@@ -265,6 +265,11 @@ internal static class HaruspexCli
             HelpName = "source",
         };
 
+        var fitOnly = new Option<bool>("--fit-only")
+        {
+            Description = "With a baseline: judge only whether the module fits it, without comparing with the output folder, as a database's pipeline does.",
+        };
+
         var made = new Command(name, description)
         {
             directory,
@@ -278,7 +283,11 @@ internal static class HaruspexCli
             format,
         };
         if (withBaseline)
+        {
             made.Options.Add(baseline);
+            made.Options.Add(fitOnly);
+        }
+
         made.Validators.Add(result =>
         {
             if (result.GetValue(verbose) && result.GetValue(quiet))
@@ -295,6 +304,7 @@ internal static class HaruspexCli
                 workingDirectory)
             {
                 Baseline = withBaseline ? parsed.GetValue(baseline) : null,
+                FitOnly = withBaseline && parsed.GetValue(fitOnly),
             };
             var detail = parsed.GetValue(quiet) ? OutputDetail.Quiet : parsed.GetValue(verbose) ? OutputDetail.Verbose : OutputDetail.Normal;
             var settings = OutputSettings.Settle(detail, Colour(parsed.GetValue(colour)), streams.Terminal);

@@ -25,10 +25,16 @@ internal static class Check
         // Each unknown is noted before the comparison, so a failed check says them too.
         var unknowns = ModuleRun.Notes(module.Document, module.Project);
 
-        // With a baseline whose file is the output folder's own IR, the fit is the comparison asked for, and the exact one would
-        // refuse what it allows (BaselineCheck.IsOutputIr); otherwise the two are made side by side.
+        // --fit-only asks for the fit alone, as a database's pipeline does against an application's committed IR, where the
+        // exact comparison would refuse every change the fit allows; otherwise the two are made side by side.
         var baseline = BaselineCheck.Of(request, module.Config);
-        var withOut = baseline is null || !BaselineCheck.IsOutputIr(baseline, module);
+        if (request.FitOnly && baseline is null)
+        {
+            return new ModuleReport(CommandName.Check, request, [CliCodes.FitWithoutBaseline.At(null,
+                "--fit-only judges the module against a baseline alone, and none is given. Give --baseline, or \"baseline\" in the config file; or leave out --fit-only to compare with the output folder.")], HaruspexCli.ExitCodes.Usage);
+        }
+
+        var withOut = !request.FitOnly;
         if (withOut)
             progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
         var compared = Compared(module, withOut);

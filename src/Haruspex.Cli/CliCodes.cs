@@ -113,6 +113,9 @@ internal static class CliCodes
     /// <summary>A query file whose text, as the application already running sends it, the baseline doesn't hold, so what it returns isn't checked.</summary>
     public static DiagnosticCode QueryTextUnchecked { get; } = new(6031, DiagnosticSeverity.Warning, "A query file's sent text isn't checked");
 
+    /// <summary><c>--fit-only</c> with no baseline given, on the command line or in the config file.</summary>
+    public static DiagnosticCode FitWithoutBaseline { get; } = new(6032, DiagnosticSeverity.Error, "--fit-only without a baseline");
+
     /// <summary>
     /// The codes with which <c>check</c> fails: what it found differs from the files in the output folder, or can't be compared with it, or is
     /// incomplete; or the application already running would fail on it, or the baseline can't be read. Each makes the exit code

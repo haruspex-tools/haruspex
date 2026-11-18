@@ -418,3 +418,6 @@ haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this harusp
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.
 
+HAR6032
+haruspex: error HAR6032: --fit-only judges the module against a baseline alone, and none is given. Give --baseline, or "baseline" in the config file; or leave out --fit-only to compare with the output folder.
+

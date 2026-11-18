@@ -95,7 +95,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 ## Options
 
-`generate` and `check` take the same options, and `check` one more:
+`generate` and `check` take the same options, and `check` two more:
 
 | Argument or option | What it is |
 |---|---|
@@ -105,6 +105,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run. |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
 | `--baseline`, `-b` | `check` only: what the application already running was built against, a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file. Replaces `baseline` in the config file ([below](#checking-against-a-baseline)). |
+| `--fit-only` | `check` only, with a baseline: judge only whether the module fits it, without reading the output folder ([below](#checking-against-a-baseline)). |
 | `--verbose`, `-v` | Also list every note. |
 | `--quiet`, `-q` | Print errors only. |
 | `--color` | `auto`, the default, `always` or `never` (below). |
@@ -134,7 +135,7 @@ warning (HAR6028): the running application keeps its own functions, but each cal
 
 The baseline is given with `--baseline` or `"baseline"` in the config file, for one module at a time. It is read as a source is,
 with the module's config file, or from an IR file this version wrote. The comparison with the output folder is still made,
-except when the baseline is the output folder's own IR, which is the database's side below. A query file is the application's
+unless `--fit-only` asks for the fit alone, as the database's side below does. A query file is the application's
 own SQL, sent with the text it was built with, so it is judged only against an IR baseline whose text is unchanged; otherwise
 the check warns that it isn't (HAR6031). A baseline is never fetched: a step before the check puts it there. Two
 recipes for GitHub Actions, one for each side.
@@ -168,7 +169,7 @@ the database's `.dacpac` can download that instead, and name it as the baseline.
 
 **The database's side**: a database with its own repository checks each application that uses it, with the application's
 config file and its committed IR as the baseline, and refuses a deploy that would break one of them already running. The
-baseline is then the output folder's own IR, so only the fit is judged, not whether the module is current. Each application is
+check uses `--fit-only`, so only the fit is judged, not whether the module is current. Each application is
 checked out at the commit that is deployed (here its default branch), and its own pinned haruspex is run, so its IR is of the
 version that reads it.
 
@@ -199,7 +200,7 @@ jobs:
           node-version: lts/*
       - run: npm ci
         working-directory: application
-      - run: npx haruspex check ../database/Shop.sqlproj --baseline src/db/haruspex.ir.json
+      - run: npx haruspex check ../database/Shop.sqlproj --baseline src/db/haruspex.ir.json --fit-only
         working-directory: application
 ```
 

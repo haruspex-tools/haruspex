@@ -145,3 +145,4 @@ HAR6028 W A function's return shape changes [Haruspex.Cli.CliCodes.ReturnShapeCh
 HAR6029 E The baseline isn't there [Haruspex.Cli.CliCodes.BaselineNotFound]
 HAR6030 E The baseline can't be read [Haruspex.Cli.CliCodes.BaselineUnreadable]
 HAR6031 W A query file's sent text isn't checked [Haruspex.Cli.CliCodes.QueryTextUnchecked]
+HAR6032 E --fit-only without a baseline [Haruspex.Cli.CliCodes.FitWithoutBaseline]

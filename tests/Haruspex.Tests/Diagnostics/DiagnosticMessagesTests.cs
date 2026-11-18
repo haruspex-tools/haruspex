@@ -65,7 +65,7 @@ public class DiagnosticMessagesTests
     /// <paramref name="more"/>, generated first and then changed by <paramref name="change"/>, as a database change or a hand
     /// would change it.
     /// </summary>
-    private static string[] Checked(string[] sql, Action<TempDirectory> change, string more = "")
+    private static string[] Checked(string[] sql, Action<TempDirectory> change, string more = "", string[]? args = null)
     {
         using var folder = new TempDirectory();
         folder.File("db/tables.sql", Tables);
@@ -77,7 +77,7 @@ public class DiagnosticMessagesTests
         HaruspexCli.Run(["generate"], output, error, folder.Path);
         change(folder);
         error.GetStringBuilder().Clear();
-        HaruspexCli.Run(["check", "--verbose"], output, error, folder.Path);
+        HaruspexCli.Run(["check", "--verbose", .. args ?? []], output, error, folder.Path);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -317,6 +317,7 @@ public class DiagnosticMessagesTests
         (6029, () => AgainstBaseline(GetBook, GetBook, baseline: "release/Library.dacpac")),
         (6030, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f => f.File("release.ir.json", "{ \"irVersion\": \"0.9\" }"))),
         (6031, () => AgainstBaseline(GetBook, GetBook, "\"queries\": \"sql\"", arrange: f => f.File("sql/titles.sql", "SELECT b.title FROM lib.book AS b;"))),
+        (6032, () => Checked([GetBook], _ => { }, args: ["--fit-only"])),
         (6021, () => Init(f => f.File("haruspex.json", "{}"))),
         (6022, () => Init(_ => { })),
         (6023, () => Init(f =>

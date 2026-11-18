@@ -170,8 +170,8 @@ shown from it.
   baseline, the database that application was built against, is read as a source is, with the module's own config file, or
   from an IR file, and `IrFit` judges the module against it. A change it would fail on is an error (HAR6026), one it sets aside
   a warning (HAR6027), and a function whose return shape changes a warning (HAR6028). The comparison with the output folder is
-  still made, unless the baseline is the output folder's own IR, as in a database's pipeline checking an application's
-  committed contract
+  still made, unless `--fit-only` asks for the fit alone, as a database's pipeline does against an application's committed
+  contract
   ([decision 0069](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0069-check-with-a-baseline-judges-the-deploy-window.md)).
 - **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row). A run over several
   modules exits with the highest of theirs (`ModuleSetTests`):
