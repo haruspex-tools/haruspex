@@ -42,7 +42,8 @@ public partial class FunctionTests
     [InlineData("SELECT v.value AS a FROM dbo.t AS t CROSS APPLY STRING_SPLIT(t.s) AS v;")]
     public void String_split_of_what_the_server_refuses_is_unknown(string body)
     {
-        // A string that isn't a string, and an ordinal flag that isn't the literal 0, 1 or NULL, are refused.
+        // A string that isn't a string is refused; an ordinal flag other than the literal 0, 1 or NULL is refused or, a constant
+        // integer written otherwise, not read.
         var doc = Procedure(body);
         Unknown(doc, "a");
     }

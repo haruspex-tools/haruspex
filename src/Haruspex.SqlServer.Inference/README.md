@@ -1851,9 +1851,10 @@ its arguments' one integer type, or of the type `COALESCE` gives decimals all na
 In `FROM`, a join or `APPLY` it is a relation (`Typer.StringSplit`, bound as `GENERATE_SERIES` is) of `value`: the string's
 type made varying, of its length (`char(5)` gives `varchar(5)`), max staying max, `nvarchar` if the separator is; never null,
 since a NULL string gives no rows and an empty piece is `''`. With the literal 1 as its third argument it has `ordinal` too, a
-`bigint` from 1 (`min` 1 `from` `{ "engine": "STRING_SPLIT" }`); with 0 or NULL, or without it, it hasn't. Any other third
-argument is an error (8748 for one that isn't a literal, 4199 for another literal), and so is a NULL separator or one longer
-than a character (214); a string that isn't a string is refused (8116) and not modelled
+`bigint` from 1 (`min` 1 `from` `{ "engine": "STRING_SPLIT" }`); with 0 or NULL, or without it, it hasn't. The server reads any
+constant integer there (`CAST(1 AS bit)`, `1 - 0`), which only as a literal is read here: any other third argument is unknown.
+It refuses a variable or column (8748), another value (4199), and a string or a decimal (8116); a NULL separator or one longer
+than a character is an error (214); a string that isn't a string is refused (8116) and not modelled
 (`String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked`). Many rows. It needs
 compatibility level 130 (208 below it), so in a project whose level is known to be below it is unknown (`unsupported-source`),
 and at a level not known it is typed, since a statement that can't find it fails rather than giving other columns

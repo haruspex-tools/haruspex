@@ -280,7 +280,7 @@ internal sealed partial class Typer
         }
 
         if (reference.Parameters.Count is not (2 or 3) || symbol.Columns is not { } columns)
-            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: SQL Server reads a string, a separator, and 0 or 1 written as it is.", at));
+            return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(reference)}: STRING_SPLIT is read with two arguments, or three whose last is the literal 0, 1 or NULL.", at));
 
         var (values, unknown) = Arguments(reference.Parameters.Take(2), scope);
         if (unknown is not null)

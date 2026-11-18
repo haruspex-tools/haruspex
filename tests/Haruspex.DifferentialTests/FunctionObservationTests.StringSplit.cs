@@ -30,13 +30,18 @@ public partial class FunctionObservationTests
                 SELECT COUNT(*) AS n FROM STRING_SPLIT(@s, N',');
                 """));
 
-        // A NULL separator or one longer than a character is an error (214); so is an ordinal flag that isn't a literal (8748)
-        // or is a literal other than 0 or 1 (4199); a string that isn't a string is refused (8116).
+        // A NULL separator or one longer than a character is an error (214). The ordinal flag is any constant integer, written
+        // as a literal or not; a variable or column is refused (8748), a value other than 0 or 1 too (4199), and a string, a
+        // decimal or a float (8116); so is a string that isn't a string.
         Assert.Equal(" ! 214", (await Run([], "DECLARE @p nvarchar(1) = NULL; SELECT value FROM STRING_SPLIT(N'a', @p);")).ToString());
         Assert.Equal(" ! 214", (await Run([], "SELECT value FROM STRING_SPLIT(N'a', N',,');")).ToString());
         Assert.Equal(8748, (await Run([], "DECLARE @o int = 1; SELECT value FROM STRING_SPLIT(N'a', N',', @o);")).Error);
         Assert.Equal(4199, (await Run([], "SELECT value FROM STRING_SPLIT(N'a', N',', 2);")).Error);
         Assert.Equal(8116, (await Run([], $"SELECT v.value FROM {Row} CROSS APPLY STRING_SPLIT(x.i, ',') AS v;")).Error);
+        Assert.Equal("value nvarchar(1), ordinal bigint", await Describe("SELECT * FROM STRING_SPLIT(N'a', N',', CAST(1 AS bit))"));
+        Assert.Equal("value nvarchar(1), ordinal bigint", await Describe("SELECT * FROM STRING_SPLIT(N'a', N',', 1 - 0)"));
+        Assert.Equal(8116, (await Run([], "SELECT value FROM STRING_SPLIT(N'a', N',', '1');")).Error);
+        Assert.Equal(8116, (await Run([], "SELECT value FROM STRING_SPLIT(N'a', N',', 1.0);")).Error);
     }
 
     [Fact]
