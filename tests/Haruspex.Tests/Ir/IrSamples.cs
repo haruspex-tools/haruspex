@@ -146,6 +146,29 @@ internal static class IrSamples
         ],
     };
 
+    /// <summary>
+    /// <see cref="Everything"/> combined with a baseline (0.24): its source names the baseline's, a key one of the two databases
+    /// lacks may be left out whatever its value, and a result set only one of them returns may be missing.
+    /// </summary>
+    public static IrDocument Combined { get; } = Everything with
+    {
+        Source = Everything.Source with { Baseline = new IrSource("tsql") { Package = new IrPackage("shop-release.dacpac", Hash('d')) } },
+        Objects =
+        [
+            .. Everything.Objects.Select(o => o.Id != "sales.get_order" ? o : o with
+            {
+                Results = [.. o.Results!, new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("FindOrdersRow")), [new IrNullReason(IrNullRule.NotInBoth, "procedures/get_order.sql:9:5")]) { Name = "notes" }],
+            }),
+        ],
+        Types = new Dictionary<string, IrObjectType>(Everything.Types)
+        {
+            ["FindOrdersRow"] = Everything.Types["FindOrdersRow"] with
+            {
+                Fields = [.. Everything.Types["FindOrdersRow"].Fields, new IrField("channel", new IrScalar(IrScalarKind.String, null, "varchar(10)"), IrPresence.Optional, [Column])],
+            },
+        },
+    };
+
     /// <summary>Every type node in a document, nested ones included, each once per place it appears.</summary>
     public static IEnumerable<IrType> TypeNodes(IrDocument document) =>
         document.Objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? []))

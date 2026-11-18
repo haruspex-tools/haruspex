@@ -103,6 +103,7 @@ internal static class HaruspexCli
               haruspex generate                                      write the module, and say what changed
               haruspex generate db --include 'sales.*' --out src/db  without a config file
               haruspex check --all                                   in CI: fail if a module in its output folder would change
+              haruspex generate --baseline release/Shop.dacpac       types that work before and after the change is deployed
               haruspex check --baseline release/Shop.dacpac          fail if the application already running would break
 
             Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
@@ -121,8 +122,7 @@ internal static class HaruspexCli
                 "Infer as generate does, write nothing, and fail (exit code 1) if the module in the output folder would change.",
                 CommandName.Check,
                 Check.Run,
-                new Streams(output, error, workingDirectory, terminal),
-                withBaseline: true),
+                new Streams(output, error, workingDirectory, terminal)),
         };
 
     /// <summary><c>haruspex init</c>, which writes a starter config file.</summary>
@@ -206,8 +206,8 @@ internal static class HaruspexCli
     }
 
     /// <summary>A command that makes a module from a project: <c>generate</c> and <c>check</c> take the same arguments.</summary>
-    /// <param name="withBaseline">Whether the command takes <c>--baseline</c> and <c>--fit-only</c>, which only <c>check</c> reads.</param>
-    private static Command Module(string name, string description, CommandName command, Func<RunRequest, Progress, ModuleReport> run, Streams streams, bool withBaseline = false)
+    /// <remarks>Each takes <c>--baseline</c>, and <c>check</c> <c>--fit-only</c> too.</remarks>
+    private static Command Module(string name, string description, CommandName command, Func<RunRequest, Progress, ModuleReport> run, Streams streams)
     {
         var workingDirectory = streams.WorkingDirectory;
         var directory = new Argument<string?>("source")
@@ -261,7 +261,9 @@ internal static class HaruspexCli
 
         var baseline = new Option<string?>("--baseline", "-b")
         {
-            Description = "What the application already running was built against: a folder of .sql files, a .sqlproj, a .dacpac or an IR file. Fails on what it would refuse. Overrides \"baseline\" in the config file.",
+            Description = command == CommandName.Check
+                ? "What the application already running was built against: a folder of .sql files, a .sqlproj, a .dacpac or an IR file. Fails on what it would refuse. Overrides \"baseline\" in the config file."
+                : "The database before the change: a folder of .sql files, a .sqlproj, a .dacpac or an IR file. Writes types that work against both. Overrides \"baseline\" in the config file.",
             HelpName = "source",
         };
 
@@ -282,11 +284,9 @@ internal static class HaruspexCli
             colour,
             format,
         };
-        if (withBaseline)
-        {
-            made.Options.Add(baseline);
+        made.Options.Add(baseline);
+        if (command == CommandName.Check)
             made.Options.Add(fitOnly);
-        }
 
         made.Validators.Add(result =>
         {
@@ -303,8 +303,8 @@ internal static class HaruspexCli
                 parsed.GetValue(outDirectory),
                 workingDirectory)
             {
-                Baseline = withBaseline ? parsed.GetValue(baseline) : null,
-                FitOnly = withBaseline && parsed.GetValue(fitOnly),
+                Baseline = parsed.GetValue(baseline),
+                FitOnly = command == CommandName.Check && parsed.GetValue(fitOnly),
             };
             var detail = parsed.GetValue(quiet) ? OutputDetail.Quiet : parsed.GetValue(verbose) ? OutputDetail.Verbose : OutputDetail.Normal;
             var settings = OutputSettings.Settle(detail, Colour(parsed.GetValue(colour)), streams.Terminal);

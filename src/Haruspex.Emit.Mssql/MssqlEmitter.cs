@@ -42,6 +42,6 @@ public static class MssqlEmitter
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
-        return FunctionPlanner.Plan(document, options).Select(functions => MssqlPrinter.Print(functions, options));
+        return FunctionPlanner.Plan(document, options).Select(functions => MssqlPrinter.Print(functions, document, options));
     }
 }

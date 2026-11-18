@@ -4,7 +4,7 @@ namespace Haruspex.Ir;
 
 /// <summary>
 /// Where the shapes were inferred from: the dialect, the package they were read from when there is one, and what the callers'
-/// sessions are declared to set.
+/// sessions are declared to set; and, for a document combining two databases, where the other was read from.
 /// </summary>
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
 public sealed record IrSource(string Dialect)
@@ -35,4 +35,17 @@ public sealed record IrSource(string Dialect)
             .ThenBy(r => r.Database is not null)
             .ThenBy(r => r.Database, StringComparer.Ordinal)];
     } = [];
+
+    /// <summary>
+    /// For a document that combines two databases (0.24), the source of the other: the baseline, the database the application
+    /// meets before a change is deployed, whose claims the document's hold for as well as its own source's. Null for a document
+    /// of one database, which is every document but one <c>haruspex generate</c> writes with a baseline, and then the file leaves
+    /// <c>baseline</c> out. A baseline is itself the source of one database, so it has none of its own.
+    /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
+    /// </summary>
+    public IrSource? Baseline
+    {
+        get;
+        init => field = value?.Baseline is null ? value : throw new ArgumentException("A baseline is the source of one database, so it has no baseline of its own.", nameof(value));
+    }
 }

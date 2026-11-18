@@ -329,6 +329,24 @@ rest once it has moved on. [Decision 0068](../decisions/0068-a-baseline-fits-whe
 gives each rule, and `BaselineFitTests` holds them to the server, calling each candidate procedure through the functions
 generated from its baseline.
 
+## Generating against a baseline
+
+The same question, asked the other way round, makes types: what does a new application need to accept, and what may it send,
+to work against the database before its change and after? For results the answer is the least upper bound of the two types,
+the narrowest type of which both are subtypes, and for parameters the greatest lower bound: a join and a meet, in the terms of
+[chapter 5](05-values-as-a-lattice.md), taken over two databases where inference takes them over two paths through one
+procedure. `IrCombination.Of` computes them over two documents: two object types merge into one, a key only one has becomes
+optional, a value nullable in either is nullable, a fact only one side has is dropped, and two types of different kinds stand
+side by side in a union. Object types are merged by name, so each combined type also accepts every type of the baseline's met in
+its place, worked out until nothing new is met, which ends at a recursive type as the fit's walk does.
+
+Not every pair has a meet the IR can say. A parameter only the new procedure takes, with no default, can't be left out and can't
+be sent; that is a change no one call bridges, and the procedure is left out of the module with an error, while every other is
+written. The combined document is then held to `IrFit` against each database: whatever the fit would refuse is left out too,
+so the two operations can't drift apart. `ModuleRun` reads the baseline once (`Baseline`), combines it before the emitters
+(`CombinedTypes`), and keeps the database's own document beside the combined one, which `check` judges against the baseline
+as before.
+
 ## Where to read more
 
 - Scott Wlaschin, *Railway oriented programming* (2014), the talk and the article, for the pattern and its pictures.

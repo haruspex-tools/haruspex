@@ -428,11 +428,23 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.
 
 HAR6032
 haruspex: error HAR6032: --fit-only judges the module against a baseline alone, and none is given. Give --baseline, or "baseline" in the config file; or leave out --fit-only to compare with the output folder.
+
+HAR6033
+db/p1.sql:1:1: error HAR6033: lib.get_book parameters["@shelf"]: gained the required parameter @shelf, which the baseline's procedure doesn't take: give it a default first, or ship the change in two releases. Until then the module leaves out its function and types, since none works against both databases.
+
+HAR6034
+db/p1.sql:1:1: warning HAR6034: lib.get_book results[0][]: note went and remark appeared; if it was renamed, read both until the baseline moves on. The combined type has both keys, each optional.
+
+HAR6035
+db/p1.sql:3:1: warning HAR6035: lib.count_books: the baseline's database doesn't have it, so the application can't call it until the change is deployed; the module leaves it out until the baseline moves on.
+
+HAR6036
+haruspex: error HAR6036: the baseline release.ir.json is a combined IR, written with a baseline of its own: it says what an application built against two databases accepts, not what one database is. Give the database the application meets before the change, as its source (a .dacpac, a .sqlproj or a folder) or an IR written without a baseline. A combined IR is a baseline for check --fit-only only, which asks whether a database fits an application.
 

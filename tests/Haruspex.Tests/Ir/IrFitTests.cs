@@ -170,6 +170,16 @@ public class IrFitTests
     }
 
     [Fact]
+    public void A_trailing_result_set_the_application_may_find_missing_is_ignored_when_it_goes()
+    {
+        // Its function doesn't count on it, and reads it as [] when it doesn't arrive, which a set that may not run accepts.
+        var before = Infer("CREATE PROCEDURE shop.get_order @order_id int AS SELECT 1 AS found; IF @order_id > 0 SELECT o.customer FROM shop.orders AS o WHERE o.order_id = @order_id;");
+        var after = Infer("CREATE PROCEDURE shop.get_order @order_id int AS SELECT 1 AS found;");
+
+        Assert.Equal(["ignored: shop.get_order results[1]: removed"], Fit(before, after));
+    }
+
+    [Fact]
     public void A_result_that_may_now_be_absent_is_refused()
     {
         var before = Infer("CREATE PROCEDURE shop.get_order @order_id int AS SELECT 1 AS found; SELECT o.customer FROM shop.orders AS o WHERE o.order_id = @order_id;");

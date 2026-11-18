@@ -18,13 +18,14 @@ public static class IrResultText
         ArgumentNullException.ThrowIfNull(result);
         var noRows = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NoRows);
         var notRun = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NotRun);
-        var when = (noRows, notRun) switch
-        {
-            (true, true) => "when no rows match or it does not run",
-            (true, false) => "when no rows match",
-            (false, true) => "when it does not run",
-            _ => null,
-        };
+        var notInBoth = result.AbsentBecause.Any(r => r.Rule == IrNullRule.NotInBoth);
+        string[] whens =
+        [
+            .. noRows ? ["no rows match"] : Array.Empty<string>(),
+            .. notRun ? ["it does not run"] : Array.Empty<string>(),
+            .. notInBoth ? ["called against the database without it"] : Array.Empty<string>(),
+        ];
+        var when = whens.Length == 0 ? null : "when " + string.Join(" or ", whens);
         var what = result.Encoding == IrEncoding.Rowset ? "rows" : "JSON";
         var absent = result.Encoding == IrEncoding.Rowset ? "[]" : "null";
 

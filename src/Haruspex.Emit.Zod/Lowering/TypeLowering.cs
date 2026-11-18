@@ -33,14 +33,18 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
 
     /// <summary>
     /// A field's schema. Presence and nullability are separate: a key that is left out when null is <c>.optional()</c>
-    /// (never null), and a key that is kept as null is <c>.nullable()</c> (never absent).
+    /// (never null), a key that is kept as null is <c>.nullable()</c> (never absent), and a key that may be left out whatever its
+    /// value, in a document combining two databases, is <c>.optional()</c> and <c>.nullable()</c> as well when it may be null.
     /// </summary>
     public ZodExpression Field(IrField field, IrEncoding encoding)
     {
         var value = Type(field.Type, encoding);
-        if (field.Nullable && field.Presence == IrPresence.OmittedWhenNull)
-            return value.Then("optional");
-        return Nullable(value, field.Nullable, field.Type);
+        return field.Presence switch
+        {
+            IrPresence.OmittedWhenNull when field.Nullable => value.Then("optional"),
+            IrPresence.Optional => Nullable(value, field.Nullable, field.Type).Then("optional"),
+            _ => Nullable(value, field.Nullable, field.Type),
+        };
     }
 
     /// <summary>The schema a named type is declared under.</summary>

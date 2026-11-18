@@ -33,17 +33,15 @@ public static class IrJsonWriter
         using (var json = new Utf8JsonWriter(buffer, Options))
         {
             json.WriteStartObject();
-            json.WriteString("irVersion", IrDocument.CurrentVersion);
+            json.WriteString("irVersion", document.Version);
 
             json.WriteStartObject("source");
-            json.WriteString("dialect", document.Source.Dialect);
-            WritePackage(json, document.Source);
-            if (document.Source.Session.Count > 0)
+            WriteSource(json, document.Source);
+            if (document.Source.Baseline is { } baseline)
             {
-                // Left out when nothing is declared, so that a document that assumes nothing reads as it did before 0.17.
-                json.WriteStartObject("session");
-                foreach (var option in document.Source.Session.OrderBy(o => o.Name, StringComparer.Ordinal))
-                    json.WriteBoolean(option.Name, option.On);
+                // Left out for a document of one database, so that one reads as it did in 0.23.
+                json.WriteStartObject("baseline");
+                WriteSource(json, baseline);
                 json.WriteEndObject();
             }
 
@@ -110,6 +108,21 @@ public static class IrJsonWriter
         }
 
         return Encoding.UTF8.GetString(buffer.ToArray()) + "\n";
+    }
+
+    /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
+    private static void WriteSource(Utf8JsonWriter json, IrSource source)
+    {
+        json.WriteString("dialect", source.Dialect);
+        WritePackage(json, source);
+        if (source.Session.Count > 0)
+        {
+            // Left out when nothing is declared, so that a document that assumes nothing reads as it did before 0.17.
+            json.WriteStartObject("session");
+            foreach (var option in source.Session.OrderBy(o => o.Name, StringComparer.Ordinal))
+                json.WriteBoolean(option.Name, option.On);
+            json.WriteEndObject();
+        }
     }
 
     /// <summary>

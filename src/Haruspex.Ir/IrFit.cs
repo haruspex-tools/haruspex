@@ -193,7 +193,12 @@ public static partial class IrFit
                         IrPathSegment[] path = [.. results, new IrPathIndex(i)];
                         if (i >= after.Count)
                         {
-                            Add(findings, IrChangeKind.ResultRemoved, path, IrFitVerdict.Refused, "the application expects it");
+                            // A set the function doesn't count on is read as missing when it doesn't arrive, which a set that may
+                            // be missing accepts: [] for rows, null for JSON.
+                            if (i >= counted && before[i].MayBeAbsent)
+                                Add(findings, IrChangeKind.ResultRemoved, path, IrFitVerdict.Ignored, "the application's function doesn't count on it arriving, and reads it as missing");
+                            else
+                                Add(findings, IrChangeKind.ResultRemoved, path, IrFitVerdict.Refused, "the application expects it");
                         }
                         else if (i >= before.Count)
                         {

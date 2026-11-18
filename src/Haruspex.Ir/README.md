@@ -1,7 +1,8 @@
-# Haruspex.Ir: the IR format, version 0.23
+# Haruspex.Ir: the IR format, version 0.24
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.23: what a document holds, what each part claims, and what a program that writes or reads one must do. *Must*,
+version 0.24, whose documents of one database are labelled 0.23 ("Changelog", below): what a document holds, what each part
+claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
 guide's chapter [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md). What SQL Server's constructs give in
@@ -11,8 +12,9 @@ The IR is the product: front ends write it, emitters read it, and it is a file, 
 language suits it. This project holds the model (`IrDocument` and the records it holds, one to a file), its writer, its
 reader, the generator of its schema, and the walks every reader needs: `IrTypeTree` for the structure of one type and
 `IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
-types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`, and
-`IrFit` whether one document's values fit within another's, for `haruspex check --baseline`.
+types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`;
+`IrFit` whether one document's values fit within another's, for `haruspex check --baseline`; and `IrCombination` combines two
+documents into one whose types hold against both databases, for `haruspex generate --baseline`.
 
 ## How data flows through it
 
@@ -79,6 +81,11 @@ shows one whole, with an unknown.
   gives them to the application, parameters as the application sends them to the database, so a narrower string fits in a
   result and is refused in a parameter
   ([decision 0068](../../docs/decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)).
+- **A combined document holds against both databases.** `IrCombination.Of` combines a baseline's document with a candidate's:
+  results widen, so every value either database returns is accepted, and parameters narrow, so every call is one both
+  procedures take. What no one call bridges is reported as an `IrCombinationFinding` and its object left out. The result is held
+  to `IrFit` against each database, and refused there for nothing
+  ([decision 0073](../../docs/decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)).
 
 ## What it deliberately doesn't do
 
@@ -104,7 +111,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.23"` and a document that this page and the schema allow;
+- must write `irVersion` as `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), and as
+  `"0.23"` for any other, and a document that this page and the schema allow;
 - must write `text` on an object exactly when its kind is `query`;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
@@ -115,7 +123,9 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any other version, older or newer, without reading further;
+- must read `irVersion` first and must refuse a document of any version but 0.24 and 0.23, older or newer, without reading
+  further; and must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names one,
+  has a key whose presence is `optional`, or a reason whose rule is `not-in-both`;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
   type, a count that is negative or past 2,147,483,647, a number in a
@@ -143,7 +153,7 @@ object, and a `ref` that names no type.
 
 ```jsonc
 {
-  "irVersion": "0.23",                // versioned separately from the tool; a reader checks it first
+  "irVersion": "0.23",                // versioned separately from the tool; a reader checks it first; 0.24 when combined
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -242,6 +252,13 @@ an ignored character is padded, as the database compares it. Two strings a colum
 when their canonical forms are equal. A front end gives a fold only where it has shown that, for every string the column can hold
 ([decision 0043](../../docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
 
+`source.baseline` (0.24) is there exactly when the document combines two databases: the types `haruspex generate` writes
+with a baseline, which hold against the database before a change is deployed (the baseline) and after it (the source). It is
+the baseline's own source, written as a source is but without a `baseline` of its own: its `dialect`, and its `package`,
+`sha256` and `references` when it was read from a package. Every claim in a combined document holds for both databases. A
+reason only the baseline gives, and an unknown only the baseline has, place it (`at`) in the baseline's source, not the
+document's ([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)).
+
 `source.session` (0.17) holds the options the callers' sessions are declared to set, by the dialect's name for each as the
 config file writes it, `true` for on and `false` for off: for `tsql`, `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`
 and (0.18) `numericRoundAbort`. Every claim in the document assumes them. It is left out when none is declared, and must not be
@@ -266,8 +283,11 @@ A type node is one of these, and nothing else:
 | unknown | `{ "kind": "unknown", "reason" }` | a value of any shape: nothing is claimed. The document's `unknowns` says why, and where |
 
 A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "identity"?, "fields": […] }`; each field is
-`{ "name", "type", "presence", "nullable", "nullableBecause"? }`. `presence` is `always` (the key is there, null or not) or
-`omittedWhenNull` (the key is left out when the value is null). `recursive` may be left out when false. `nameDeclared` (0.23) is `true` when the config file gave the type its name rather than
+`{ "name", "type", "presence", "nullable", "nullableBecause"? }`. `presence` is `always` (the key is there, null or not),
+`omittedWhenNull` (the key is left out when the value is null), or (0.24) `optional` (the key may be left out whatever its
+value, and when it is there, its value is null only with a reason). Only a combined document has `optional`: one of its
+databases doesn't return the key, or one leaves it out when null where the other sends the null. `recursive` may be left out
+when false. `nameDeclared` (0.23) is `true` when the config file gave the type its name rather than
 the naming rules, and may be left out when false: an emitter that declares a shape several types share once declares it under such a
 name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `identity` is left
 out only in a document built by hand.
@@ -317,6 +337,7 @@ of which dialect made it ([decision 0025](../../docs/decisions/0025-null-reasons
 | `too-few-values` | it is a sample statistic, null over fewer than two values |
 | `unknown` | its type is unknown, so nothing is proved about it |
 | `declared` | the config file declares it may be null, or absent (in declared results); `at` is the procedure declared |
+| `not-in-both` | (0.24, of a result in a combined document) only one of the two databases returns it, so against the other it is missing; `at` is the object |
 
 ## Unknowns and overrides
 
@@ -440,6 +461,8 @@ which constraints it trusts, is in [its README](../Haruspex.SqlServer.Inference/
   comes from one statement). A position some path does not reach has `not-run` in `absentBecause`, at each statement that
   can return it there, and so does every position after it: the result sets a client receives are always the first ones
   listed. **Reader convention:** a reader pads the missing ones as absent, `[]` for a rowset and `null` for a JSON result.
+  In a combined document, a trailing result set only one of the two databases returns has `not-in-both`, and is missing
+  against the other in the same way.
 - **The IR describes calls that succeed.** A path that ends in an error the caller sees describes no call that returns, and
   is left out.
 - **A result says how many rows it returns** (`cardinality`): `one`, `atMostOne` or `many`, counting a rowset's rows, or a
@@ -452,7 +475,8 @@ which constraints it trusts, is in [its README](../Haruspex.SqlServer.Inference/
   claimed as one object even where `cardinality` is `many`. The claim can't be silently wrong: several rows produce
   `{...},{...}`, which is not valid JSON, so parsing fails loudly before any schema is applied.
 - **A result in words.** `IrResultText.Describe` says what a result is and what it reads as when absent, and why (`no-rows`,
-  `not-run`, or `declared`, the config file's declaration): "JSON, null when no rows match". Every emitter's summary of a
+  `not-run`, `not-in-both`, or `declared`, the config file's declaration): "JSON, null when no rows match". `IrSourceText`
+  says what a combined document means for the code written from it, for an emitter's header. Every emitter's summary of a
   procedure uses it, so they say the same of the same result.
 
 ## Decisions
@@ -488,6 +512,13 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.24** (18 Nov 2026, combined documents). A document combining two databases, which `haruspex generate` writes with a
+baseline: `source.baseline`, the baseline's source; the presence `optional`; and the null rule `not-in-both`
+([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). Only a combined
+document has any of the three, and only it is labelled 0.24: every 0.23 document is a 0.24 document of one database that means
+the same, so a document of one database is still written as 0.23, and this reader reads both
+([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), eighth amendment).
 
 **0.23** (18 Nov 2026, named result sets). A result set's `name`, the key its function returns it under, given for all of an
 object's sets or none ([decision 0070](../../docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)); and a

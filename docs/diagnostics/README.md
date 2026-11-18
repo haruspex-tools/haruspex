@@ -191,3 +191,7 @@ reason.
 | [HAR6030](HAR6030.md) | error | The baseline can't be read |
 | [HAR6031](HAR6031.md) | warning | A query file's sent text isn't checked |
 | [HAR6032](HAR6032.md) | error | --fit-only without a baseline |
+| [HAR6033](HAR6033.md) | error | A change no one function bridges |
+| [HAR6034](HAR6034.md) | warning | A key that may have been renamed |
+| [HAR6035](HAR6035.md) | warning | A procedure in only one of the two databases |
+| [HAR6036](HAR6036.md) | error | A combined IR given as a database |

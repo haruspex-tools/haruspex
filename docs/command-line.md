@@ -12,7 +12,8 @@ haruspex init                                           # find the database belo
 haruspex generate                                       # write the module, and say what changed
 haruspex generate db --include 'sales.*' --out src/db   # without a config file
 haruspex check --all                                    # in CI: fail if a module in its output folder would change
-haruspex check --baseline release/Shop.dacpac           # and if the application already running would break
+haruspex generate --baseline release/Shop.dacpac        # types that work before and after the change is deployed
+haruspex check --baseline release/Shop.dacpac           # and fail if the application already running would break
 ```
 
 ## What a run prints
@@ -95,7 +96,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 ## Options
 
-`generate` and `check` take the same options, and `check` two more:
+`generate` and `check` take the same options, and `check` one more:
 
 | Argument or option | What it is |
 |---|---|
@@ -104,7 +105,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module. |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run. |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
-| `--baseline`, `-b` | `check` only: what the application already running was built against, a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file. Replaces `baseline` in the config file ([below](#checking-against-a-baseline)). |
+| `--baseline`, `-b` | The database before the change being made, a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file: `generate` writes types that work against both ([below](#generating-against-a-baseline)), and `check` also fails on what the application already running would fail on ([below](#checking-against-a-baseline)). Replaces `baseline` in the config file. |
 | `--fit-only` | `check` only, with a baseline: judge only whether the module fits it, without reading the output folder ([below](#checking-against-a-baseline)). |
 | `--verbose`, `-v` | Also list every note. |
 | `--quiet`, `-q` | Print errors only. |
@@ -113,6 +114,33 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 `init` takes one argument, the `.sqlproj`, `.dacpac` or folder of `.sql` files to read, when it shouldn't look for one.
 `haruspex --help` and `haruspex <command> --help` list the same, and `haruspex --version` prints the version.
+
+## Generating against a baseline
+
+An application and its database deploy separately, so a new release of the application may meet the database before its
+latest change or after it. With a baseline, the database before, `generate` writes types that work against both: each result
+accepts what either database returns, and each function sends only what both procedures take. The types loosen while the two
+differ and tighten again when the baseline moves on.
+
+```text
+$ haruspex generate --baseline release/database
+db/procedures.sql:1:1: warning HAR6034: shop.get_order results[0][]: customerName went and customer_name appeared; if it was renamed, read both until the baseline moves on. The combined type has both keys, each optional.
+db/procedures.sql:3:1: error HAR6033: shop.place_order parameters["@channel"]: gained the required parameter @channel, which the baseline's procedure doesn't take: give it a default first, or ship the change in two releases. Until then the module leaves out its function and types, since none works against both databases.
+haruspex: 1 change no one function bridges, each procedure left out of the module written. Ship each in two releases.
+```
+
+The types are merged rather than given as alternatives: one object type, where a key only one database returns may be left out
+and a value is nullable if either's is (the rules are in [the configuration](configuration.md#the-baseline-baseline)). A change no
+one function can bridge is an error at its procedure (HAR6033), which the module leaves out, while it is still written for every
+other procedure; the run then fails. A key gone with another appeared is said as a possible rename (HAR6034), a procedure only
+one database has is left out (HAR6035), and a function whose return shape changes is a warning (HAR6028). The IR written is
+the combined one, IR 0.24, whose `source` names the baseline, and each module's header says it is combined. Without a baseline,
+`generate` writes what it always did.
+
+`check` with the same baseline compares the output folder with the combined module, as `generate` with it writes it, so a
+config file that names the baseline gives both commands the same one. The baseline is the database itself: its source (the
+release's `.dacpac`, or its tag checked out into a folder) or an IR file written without a baseline. A combined IR describes
+an application, so it is a baseline for `check --fit-only` only (HAR6036).
 
 ## Checking against a baseline
 
@@ -141,6 +169,8 @@ the check warns that it isn't (HAR6031). A baseline is never fetched: a step bef
 recipes for GitHub Actions, one for each side.
 
 **The application's side**: the database as of the last release, checked out from its tag into a folder, beside the change.
+The same baseline makes the module's types work against both databases, so the module a developer generates with it, and
+commits, is the one the check compares with.
 
 ```yaml
 name: database
@@ -165,7 +195,9 @@ jobs:
 ```
 
 With `"baseline": "release/database"` in `haruspex.json`, the last step is `npx haruspex check`. A release pipeline that keeps
-the database's `.dacpac` can download that instead, and name it as the baseline.
+the database's `.dacpac` can download that instead, and name it as the baseline. A developer generates with the same baseline,
+checked out the same way (`git worktree add --detach release <tag>`), so the committed module is the combined one; after a
+release, the baseline moves on to it, and the types tighten.
 
 **The database's side**: a database with its own repository checks each application that uses it, with the application's
 config file and its committed IR as the baseline, and refuses a deploy that would break one of them already running. The
@@ -204,7 +236,9 @@ jobs:
         working-directory: application
 ```
 
-Here `src/db` is the application's `out`, and `../database/Shop.sqlproj` replaces its `source` for the run.
+Here `src/db` is the application's `out`, and `../database/Shop.sqlproj` replaces its `source` for the run. An application
+generated with a baseline commits the combined IR, which says what the application accepts against either database, and is
+the right baseline here.
 
 ## `init`
 

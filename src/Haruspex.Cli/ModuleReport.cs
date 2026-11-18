@@ -34,7 +34,7 @@ internal sealed class ModuleReport(CommandName command, RunRequest request, Equa
     /// <summary>The output folder, full, once the run has settled it; null when it failed before.</summary>
     public string? Out { get; init; }
 
-    /// <summary>The baseline <c>check</c> judged the module against, full; null when there was none.</summary>
+    /// <summary>The baseline the run was given, full: what <c>generate</c> combined the module with, or <c>check</c> judged it against; null when there was none.</summary>
     public string? Baseline { get; init; }
 
     /// <summary>The module's IR, once inferred; null when the run failed before.</summary>

@@ -117,12 +117,29 @@ internal static class CliCodes
     public static DiagnosticCode FitWithoutBaseline { get; } = new(6032, DiagnosticSeverity.Error, "--fit-only without a baseline");
 
     /// <summary>
-    /// The codes with which <c>check</c> fails: what it found differs from the files in the output folder, or can't be compared with it, or is
-    /// incomplete; or the application already running would fail on it, or the baseline can't be read. Each makes the exit code
-    /// 1, not 2: the command line and the config file may be right.
+    /// A change between the baseline and the module's database that no one function bridges: a new required parameter, one removed
+    /// that the baseline requires, types with nothing in common, a result read another way. The module leaves the procedure out,
+    /// is written for the rest, and the run fails.
+    /// </summary>
+    public static DiagnosticCode Unbridgeable { get; } = new(6033, DiagnosticSeverity.Error, "A change no one function bridges");
+
+    /// <summary>A key gone and another appeared in the same type between the baseline and the module's database: perhaps a rename.</summary>
+    public static DiagnosticCode PossibleRename { get; } = new(6034, DiagnosticSeverity.Warning, "A key that may have been renamed");
+
+    /// <summary>A procedure only the baseline or only the module's database has, which the module leaves out.</summary>
+    public static DiagnosticCode InOneDatabase { get; } = new(6035, DiagnosticSeverity.Warning, "A procedure in only one of the two databases");
+
+    /// <summary>A combined IR given as the database to combine with, which describes an application, not a database.</summary>
+    public static DiagnosticCode BaselineCombined { get; } = new(6036, DiagnosticSeverity.Error, "A combined IR given as a database");
+
+    /// <summary>
+    /// The codes with which a run fails though the command line and the config file may be right, so the exit code is 1, not 2:
+    /// what <c>check</c> found differs from the files in the output folder, or can't be compared with it, or is incomplete; the
+    /// application already running would fail on it; a change can't be bridged; or the baseline can't be read or is combined.
     /// </summary>
     public static IReadOnlySet<DiagnosticCode> CheckFailures { get; } = new HashSet<DiagnosticCode>
     {
         NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, ResultsUnknown, UnknownsFail, BaselineRefused, BaselineUnreadable,
+        Unbridgeable, BaselineCombined,
     };
 }

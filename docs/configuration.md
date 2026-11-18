@@ -14,7 +14,7 @@ otherwise silently do nothing.
 {
   "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
-  "baseline": "release/database",           // what the application already running was built against; see "The baseline"
+  "baseline": "release/database",           // the database before the change being made; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
@@ -393,9 +393,11 @@ throughout:
 
 ## The baseline: `baseline`
 
-An application and its database deploy separately, so for a while the application already running meets a database newer
-than the one it was built against. `baseline` names that older database, and `haruspex check` then fails on any change the
-running application would fail on, besides comparing the module with the output folder:
+An application and its database deploy separately, so for a while the application meets the database before its latest
+change or after it. `baseline` names the database before: usually the one as of the application's last release. With it,
+`haruspex generate` writes types that work against both, and `haruspex check` fails on any change the application already
+running would fail on, besides comparing the module with the output folder (with what `generate`, given the same baseline,
+writes):
 
 ```jsonc
 "baseline": "release/database"            // a folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json
@@ -404,17 +406,43 @@ running application would fail on, besides comparing the module with the output 
 It is any source `source` takes, read with this file's selection, overrides and naming, or an IR file written by this version
 of haruspex. The path is relative to this file, and `--baseline` replaces it for one run. It is never fetched: CI puts it
 there first, usually the database as of the application's last release (the release's `.dacpac`, or its tag checked out into a
-folder). [Checking against a baseline](command-line.md#checking-against-a-baseline) shows what the check says and gives the
-recipes for GitHub Actions.
+folder). [Generating against a baseline](command-line.md#generating-against-a-baseline) shows what `generate` writes, and
+[Checking against a baseline](command-line.md#checking-against-a-baseline) what the check says, with the recipes for GitHub
+Actions. A combined IR (one `generate` wrote with a baseline) describes an application, not a database, so it is a baseline for
+`check --fit-only` only (HAR6036).
 
-Values flow two ways, and each is judged in its own direction
+**The types `generate` writes** take, for each value, what both databases allow, merged into one type
+([decision 0073](decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)). For `shop.get_order`
+returning `{ order_id, status }` before and `{ order_id, status, channel }` after, with `'held'` a new status:
+
+```ts
+export const GetOrderRowSchema = z.object({
+  order_id: z.int32(),
+  /** One of "open", "closed", "held", as the database compares strings. */
+  status: z.string().max(10),
+  /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
+  channel: z.string().max(10).nullable().optional(),    // only the newer database returns it
+})
+```
+
+| | Results (to the application) widen | Parameters (to the database) narrow |
+|---|---|---|
+| Combined | a key only one returns may be left out; nullable if either is; a length, range, digits or value set the larger; integers of two sizes the wider; a trailing result set only one returns may be missing; a value of another kind a union of both | a parameter only one has is left out while it has a default there; the narrower type of the two; a default only where both have one; `OUTPUT` only where both are |
+| An error, the procedure left out of the module (HAR6033) | rows that became JSON, or the reverse | a parameter added without a default; one removed that the baseline requires; types with no value in common, or digits, dates or lengths in another unit neither of which holds the other |
+| A warning | a key gone and another appeared in the same row: perhaps a rename (HAR6034); a function whose return shape changes (HAR6028) | |
+
+A procedure only one database has is left out with a warning (HAR6035), and so is the rest of the module written when one
+procedure can't be bridged: the run then fails. A query file is combined only when the baseline was read with its text as it
+is now, which a source baseline is; against an IR baseline whose text differs, it can't be (HAR6033).
+
+**What `check` judges.** Values flow two ways, and each is judged in its own direction
 ([decision 0068](decisions/0068-a-baseline-fits-when-the-running-application-accepts-every-value.md)):
 
 | Change | Results (to the application) | Parameters (to the database) |
 |---|---|---|
 | Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, of a table type, a CLR type or `xml` (whose definition the IR doesn't hold) even when unchanged, no longer `OUTPUT`, or that lost its default |
 | A warning | a new key; a new trailing result set; both fail under `"objects": "strict"` | a parameter added with a default |
-| Fits | a value that became non-null; a length, range or value set narrowed; keys in another order | a parameter widened, or that gained a default |
+| Fits | a value that became non-null; a length, range or value set narrowed; keys in another order; a trailing result set the application may find missing (a statement that may not run), gone | a parameter widened, or that gained a default |
 
 ## Warnings acknowledged: `acknowledge`
 

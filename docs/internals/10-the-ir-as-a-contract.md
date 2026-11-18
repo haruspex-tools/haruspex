@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -171,7 +171,7 @@ The alternative was to migrate: to read an older file by mapping its differences
 
 A newer version than the reader's is refused for the same reason and more plainly: the reader can't know what it would be
 ignoring. One file from every version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md), and
-`IrVersionTests` checks that the current one is read and every older one refused with that message.
+`IrVersionTests` checks that each one the reader reads round trips and every older one is refused with that message.
 
 There was one exception for a while, and both its start and its end show what the rule is for. Version 0.17 added one thing:
 `source.session`, the options the callers' sessions are declared to set, which a file leaves out when none is declared. Every
@@ -211,6 +211,15 @@ the 0.22 reader reads 0.22 only.
 Version 0.23 kept it ended, in the same way. It added a result set's `name`, which a 0.22 file could only lack; but it also added
 a type's `nameDeclared`, whether the config file gave the type its name, which decides the name a shape several types share is
 declared under, and which no 0.22 file says. So the 0.23 reader reads 0.23 only.
+
+Version 0.24 started the exception again, and took it one step further. It added only what a document combining two databases
+says, the types `generate` writes with a baseline: the baseline's source (`source.baseline`), a key that may be left out
+whatever its value (`optional`), and a result one of the two databases doesn't return (`not-in-both`). Every 0.23 file is a
+0.24 file of one database that means the same, so the 0.24 reader reads it, refusing one labelled 0.23 that says any of the
+three. The step further is on the writer's side: a document of one database is still written as 0.23, since that is what it is.
+So a run without a baseline writes the same bytes as before, every module's header included, and a reader of 0.23, haruspex's own
+or another program's, still reads it; only a combined document, the one such a reader would misread, is labelled 0.24, and that
+reader refuses it ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

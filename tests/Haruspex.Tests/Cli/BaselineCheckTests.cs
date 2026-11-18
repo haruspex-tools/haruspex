@@ -5,7 +5,8 @@ namespace Haruspex.Tests.Cli;
 /// <summary>
 /// <c>haruspex check --baseline</c> (<see cref="BaselineCheck"/>): the database being checked meets the application already
 /// running, built against the baseline. Each case keeps the project as released in <c>release/db</c>, changes the project as a
-/// database change would, generates it as a developer would, and checks it against the release.
+/// database change would, generates it as a developer would, with the release as its baseline (so the module is the combined one
+/// that <c>check</c> with the same baseline compares with the output folder), and checks it against the release.
 /// </summary>
 public class BaselineCheckTests
 {
@@ -22,9 +23,10 @@ public class BaselineCheckTests
 
     /// <summary>
     /// A project released as <paramref name="released"/> (kept in <c>release/db</c>, with its IR in <c>release/haruspex.ir.json</c>),
-    /// then changed to <paramref name="now"/> and generated, so that the output folder is up to date.
+    /// then changed to <paramref name="now"/> and generated with <paramref name="baseline"/>, so that the output folder is up to date
+    /// for a check with the same baseline.
     /// </summary>
-    private static TempDirectory Released(string released, string now, string config = Config, string tables = Tables, string? tablesNow = null)
+    private static TempDirectory Released(string released, string now, string config = Config, string tables = Tables, string? tablesNow = null, string baseline = "release/db")
     {
         var folder = new TempDirectory();
         folder.File("haruspex.json", config);
@@ -37,7 +39,7 @@ public class BaselineCheckTests
 
         folder.File("db/tables.sql", tablesNow ?? tables);
         folder.File("db/procedures.sql", now);
-        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        Assert.Equal(0, Run(folder, "generate", "--baseline", baseline).ExitCode);
         return folder;
     }
 
@@ -102,7 +104,7 @@ public class BaselineCheckTests
     [Fact]
     public void The_baseline_may_be_the_ir_file_the_running_application_was_built_with()
     {
-        using var folder = Released(ListOrders, Edit(ListOrders, "o.customer", "o.note AS customer"));
+        using var folder = Released(ListOrders, Edit(ListOrders, "o.customer", "o.note AS customer"), baseline: "release/haruspex.ir.json");
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
@@ -118,8 +120,9 @@ public class BaselineCheckTests
         folder.File("now/tables.sql", Tables);
         folder.File("now/procedures.sql", Edit(ListOrders, "o.customer", "o.note AS customer"));
 
-        Assert.Equal(1, Run(folder, "check").ExitCode);
-        Assert.Equal(0, Run(folder, "check", "--baseline", "now").ExitCode);
+        // The fit alone, since the module in the output folder is combined with one baseline and not the other.
+        Assert.Equal(1, Run(folder, "check", "--fit-only").ExitCode);
+        Assert.Equal(0, Run(folder, "check", "--fit-only", "--baseline", "now").ExitCode);
     }
 
     [Fact]
@@ -166,12 +169,12 @@ public class BaselineCheckTests
     {
         using var folder = Released(ListOrders, ListOrders);
         var ir = Path.Combine(folder.Path, "release", "haruspex.ir.json");
-        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.CurrentVersion}\"", $"\"irVersion\": \"{version}\""));
+        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.OneDatabaseVersion}\"", $"\"irVersion\": \"{version}\""));
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR {Haruspex.Ir.IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.24 and 0.23", error, StringComparison.Ordinal);
         Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
     }
 
@@ -196,7 +199,7 @@ public class BaselineCheckTests
         const string Named = """{ "source": "db", "out": "generated", "emit": ["zod", "mssql"], "schemas": { "shop": { "include": ["*"] } }, "procedures": { "shop.list_orders": { "sets": ["orders"] } } }""";
         using var folder = Released(ListOrders, ListOrders, config: Named);
         folder.File("haruspex.json", Edit(Named, "[\"orders\"]", "[\"rows\"]"));
-        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        Assert.Equal(0, Run(folder, "generate", "--baseline", "release/haruspex.ir.json").ExitCode);
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
@@ -248,11 +251,10 @@ public class BaselineCheckTests
     }
 
     [Fact]
-    public void Generate_takes_no_baseline_yet()
+    public void Fit_only_is_check_s_alone()
     {
         using var folder = Released(ListOrders, ListOrders);
 
-        Assert.Equal(2, Run(folder, "generate", "--baseline", "release/db").ExitCode);
         Assert.Equal(2, Run(folder, "generate", "--fit-only").ExitCode);
     }
 }

@@ -39,17 +39,23 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     {
         var at = place?.Then(new IrPathKey(field.Name));
         var value = Type(field.Type, at);
-        var schema = field.Presence == IrPresence.OmittedWhenNull
-            ? value.Noted(Notes(Origins.Nulls("Left out when null", field.NullableBecause)))
-            : Nullable(value, field.NullableBecause);
+        var schema = field.Presence switch
+        {
+            IrPresence.OmittedWhenNull => value.Noted(Notes(Origins.Nulls("Left out when null", field.NullableBecause))),
+            IrPresence.Optional => Nullable(value, field.NullableBecause).Noted(LeftOut),
+            _ => Nullable(value, field.NullableBecause),
+        };
         return schema.Noted(declared.At(at));
     }
+
+    /// <summary>Why a key of a document combining two databases may be left out whatever its value.</summary>
+    private static readonly SchemaNote LeftOut = new("May be left out: the two databases these types combine don't agree on it.");
 
     /// <summary>The notes of the claims the config file made at <paramref name="place"/>, such as a procedure's declared results.</summary>
     public IEnumerable<SchemaNote> Declared(Place place) => declared.At(place);
 
     /// <summary>Whether a field's key is always there: in a rowset, and in JSON when its value is never null.</summary>
-    public static bool IsRequired(IrField field) => field.Presence == IrPresence.Always || !field.Nullable;
+    public static bool IsRequired(IrField field) => field.Presence == IrPresence.Always || (field.Presence == IrPresence.OmittedWhenNull && !field.Nullable);
 
     /// <summary>The schema, accepting null too when there is a reason, which its note gives.</summary>
     public static Schema Nullable(Schema schema, EquatableArray<IrNullReason> reasons) =>

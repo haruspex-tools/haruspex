@@ -40,6 +40,8 @@ public class IrJsonSchemaTests
         (typeof(IrPackage), nameof(IrPackage.Name), "document.source", "package"),
         (typeof(IrPackage), nameof(IrPackage.Sha256), "document.source", "sha256"),
         (typeof(IrSource), nameof(IrSource.References), "document.source", "references"),
+        (typeof(IrSource), nameof(IrSource.Baseline), "document.source", "baseline"),
+        (typeof(IrDocument), nameof(IrDocument.Version), "", "irVersion"),
         (typeof(IrPackageReference), nameof(IrPackageReference.Name), "packageReference", "package"),
         (typeof(IrPackageReference), nameof(IrPackageReference.Sha256), "packageReference", "sha256"),
         (typeof(IrPackageReference), nameof(IrPackageReference.Database), "packageReference", "database"),
@@ -198,13 +200,13 @@ public class IrJsonSchemaTests
     }
 
     [Fact]
-    public void The_schema_is_a_2020_12_schema_with_its_id_and_the_current_version()
+    public void The_schema_is_a_2020_12_schema_with_its_id_and_the_versions_a_reader_reads()
     {
         using var schema = JsonDocument.Parse(IrJsonSchema.Write());
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal(IrDocument.CurrentVersion, schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("const").GetString());
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]

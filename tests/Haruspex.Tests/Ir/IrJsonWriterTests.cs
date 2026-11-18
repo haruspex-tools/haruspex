@@ -28,7 +28,7 @@ public class IrJsonWriterTests
     {
         var json = IrJsonWriter.Write(Document());
 
-        Assert.StartsWith("{\n  \"irVersion\": \"" + IrDocument.CurrentVersion + "\",\n", json, StringComparison.Ordinal);
+        Assert.StartsWith("{\n  \"irVersion\": \"" + IrDocument.OneDatabaseVersion + "\",\n", json, StringComparison.Ordinal);
     }
 
     [Fact]

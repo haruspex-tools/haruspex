@@ -173,4 +173,9 @@ public enum IrNullRule
     /// inferred. <see cref="IrNullReason.At"/> is the procedure declared.
     /// </summary>
     Declared,
+
+    /// <summary>
+    /// Of a result in a document combining two databases (0.24): only one of them returns it, so against the other it is missing.
+    /// </summary>
+    NotInBoth,
 }

@@ -59,26 +59,13 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}: the shapes haruspex inferred for a set of database objects. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", "The IR's version, which a reader checks before anything else."), ("const", IrDocument.CurrentVersion))),
-            ("source", Together(["package", "sha256"], Closed(
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else: {IrDocument.CurrentVersion} for a document combining two databases, {IrDocument.OneDatabaseVersion} for one of one database."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.OneDatabaseVersion)))),
+            ("source", Source(
                 "Where the shapes were inferred from.",
-                ["dialect"],
-                ("dialect", Text("The SQL dialect, such as tsql.")),
-                ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
-                ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
-                ("references", Node(
-                    ("description", "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none."),
-                    ("type", "array"),
-                    ("minItems", 1),
-                    ("items", Ref("packageReference")))),
-                ("session", Node(
-                    ("description", "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared."),
-                    ("type", "object"),
-                    ("minProperties", 1),
-                    ("additionalProperties", Node(("type", "boolean")))))))),
+                ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Given exactly when irVersion is 0.24.")))),
             ("objects", ArrayOf(Ref("object"))),
             ("types", Node(
                 ("description", "The named object types, by name."),
@@ -92,7 +79,37 @@ public static class IrJsonSchema
                 ("additionalProperties", Ref("fold")))))),
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
+
+        // A document names a baseline exactly when it is labelled 0.24, which only a combined document is.
+        ("anyOf", new JsonArray(
+            Node(("properties", Node(
+                ("irVersion", Node(("const", IrDocument.OneDatabaseVersion))),
+                ("source", Node(("not", Node(("required", Names("baseline"))))))))),
+            Node(("properties", Node(
+                ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                ("source", Node(("required", Names("baseline"))))))))),
         ("$defs", Definitions()));
+
+    /// <summary>A source, with the properties every source has and those given (a document's own source has its baseline).</summary>
+    private static JsonObject Source(string description, params (string Name, JsonNode Schema)[] more) => Together(["package", "sha256"], Closed(
+        description,
+        ["dialect"],
+        [
+            ("dialect", Text("The SQL dialect, such as tsql.")),
+            ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
+            ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
+            ("references", Node(
+                ("description", "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none."),
+                ("type", "array"),
+                ("minItems", 1),
+                ("items", Ref("packageReference")))),
+            ("session", Node(
+                ("description", "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared."),
+                ("type", "object"),
+                ("minProperties", 1),
+                ("additionalProperties", Node(("type", "boolean"))))),
+            .. more,
+        ]));
 
     private static JsonObject Definitions() => Node(
         ("packageReference", Closed(

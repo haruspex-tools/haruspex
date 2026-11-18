@@ -33,13 +33,21 @@ internal static class Generate
         };
     }
 
-    /// <summary>The report of a module written: what the run found, but for the warnings the config file acknowledges, which are set aside.</summary>
+    /// <summary>
+    /// The report of a module written: what the run found, but for the warnings the config file acknowledges, which are set aside.
+    /// With a baseline, what combining it found too, and each function whose return shape differs from the baseline's; a change
+    /// that can't be bridged fails the run, though the module is written for the rest.
+    /// </summary>
     private static ModuleReport Reported(RunRequest request, EquatableArray<Diagnostic> found, Written written, SinceLastRun since)
     {
-        var (kept, acknowledged) = Acknowledgements.Apply(found, written.Module.Config, sayUnused: request.Include.Count == 0);
-        return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], HaruspexCli.ExitCodes.Success)
+        var module = written.Module;
+        Diagnostic[] combining = module.Baseline is { } baseline ? [.. module.Combination, .. BaselineCheck.Shapes(module, baseline.Document, module.Document)] : [];
+        var (kept, acknowledged) = Acknowledgements.Apply([.. found, .. combining], module.Config, sayUnused: request.Include.Count == 0);
+        var failures = combining.Where(d => d.IsError).ToList();
+        return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
         {
             Out = written.Module.Out,
+            Baseline = module.Baseline?.Path,
             Document = written.Module.Document,
             Written = written.Paths,
             Unknowns = written.Unknowns,
