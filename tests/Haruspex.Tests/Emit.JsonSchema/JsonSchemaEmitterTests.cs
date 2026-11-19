@@ -100,10 +100,25 @@ public partial class JsonSchemaEmitterTests
     [InlineData(IrScalarKind.Number, IrFormat.Int16, """{ "type": "integer", "minimum": -32768, "maximum": 32767 }""")]
     [InlineData(IrScalarKind.Number, IrFormat.Int64, """{ "type": "integer", "minimum": -9223372036854775808, "maximum": 9223372036854775807 }""")]
     [InlineData(IrScalarKind.Number, IrFormat.Float, """{ "type": "number" }""")]
+    [InlineData(IrScalarKind.Bytes, null, """{ "type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", "contentEncoding": "base64" }""")]
     public void Describes_each_scalar_as_json_writes_it_in_a_rowset_and_in_json_alike(IrScalarKind kind, IrFormat? format, string expected)
     {
         AssertSchema(expected, Value(new IrScalar(kind, format, null), IrEncoding.Rowset));
         AssertSchema(expected, Value(new IrScalar(kind, format, null), IrEncoding.Json));
+    }
+
+    [Theory]
+    // Base64 takes four characters for every three bytes or part of three, padded: 32 bytes are 44, 8000 are 10668.
+    [InlineData(32, true, "\"minLength\": 44, \"maxLength\": 44")]
+    [InlineData(8000, false, "\"maxLength\": 10668")]
+    [InlineData(1, false, "\"maxLength\": 4")]
+    public void A_binary_value_s_length_is_its_base64_text_s_whether_in_a_rowset_or_in_json(int length, bool isFixed, string lengths)
+    {
+        var bytes = new IrScalar(IrScalarKind.Bytes, null, "varbinary", new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, "varbinary"))));
+        var expected = $$"""{ "type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", {{lengths}}, "contentEncoding": "base64" }""";
+
+        AssertSchema(expected, Value(bytes, IrEncoding.Rowset));
+        AssertSchema(expected, Value(bytes, IrEncoding.Json));
     }
 
     [Fact]

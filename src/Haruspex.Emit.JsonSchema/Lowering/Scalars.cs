@@ -23,6 +23,7 @@ internal static class Scalars
     private const string TimePattern = @"^\d{2}:\d{2}:\d{2}(?:\.\d+)?$";
     private const string LocalPattern = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$";
     private const string OffsetPattern = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$";
+    private const string Base64Pattern = "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$";
     private const string UuidPattern = "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$";
 
     /// <summary>The scalar's schema: its kind's, with its SQL type and facts' origins said before any note of its own.</summary>
@@ -45,8 +46,24 @@ internal static class Scalars
                 _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Format, "A date and time's format is local or offset."),
             },
             IrScalarKind.Uuid => Patterned(UuidPattern, "uuid"),
+            IrScalarKind.Bytes => Base64(scalar.Facets?.Length),
         };
         return schema with { Notes = [.. Origins.Of(scalar), .. schema.Notes] };
+    }
+
+    /// <summary>
+    /// A binary value: the base64 text <c>FOR JSON</c> writes, padded and on one line (observed: <c>FOR JSON</c> writes binary as
+    /// base64 in <c>BinaryObservationTests</c>), as long as its bytes take, four characters for every three bytes or part of three:
+    /// exactly that for a fixed length, at most that otherwise. A rowset's value is described as <c>FOR JSON</c> would write it,
+    /// as every value of a rowset is. Why: docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md.
+    /// </summary>
+    private static Schema Base64(IrLength? length)
+    {
+        var schema = Patterned(Base64Pattern).With(Keyword.ContentEncoding, new SchemaValue.Text("base64"));
+        if (length is null)
+            return schema;
+        var characters = (int)Math.Min(int.MaxValue, 4L * ((length.Value + 2L) / 3));
+        return schema.With(Keyword.MinLength, length.IsFixed && characters > 0 ? characters : null).With(Keyword.MaxLength, characters);
     }
 
     private static Schema Patterned(string pattern, string? format = null)

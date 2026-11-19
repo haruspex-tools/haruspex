@@ -53,8 +53,12 @@ files of several config files are ([decision 0074](https://github.com/sharpblue/
   would send NULL, which overrides it (observed). An `OUTPUT` parameter without a default is always bound, since SQL Server
   refuses a call that leaves it out.
 - **Each value is sent with the driver's type for the declared one** (`DriverTypes`): `nvarchar(40)` as `sql.NVarChar(40)`, a
-  decimal with its precision and scale, and a date or time as text, which SQL Server converts exactly in any session
-  ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)).
+  decimal with its precision and scale, a date or time as text, which SQL Server converts exactly in any session
+  ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)),
+  and a binary value as a `Buffer` of `sql.Binary(n)` for a fixed length, `sql.VarBinary(n)` otherwise and `sql.VarBinary(sql.MAX)`
+  with none: the parameters' schema has refused a longer one, which `sql.VarBinary(n)` would fail with error 8016 and `sql.Binary(n)`
+  cut short
+  ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
 - **A table-valued parameter is sent as an `sql.Table` of its type** (`TableValue`, built by the module's `table` helper): the
   type named by its schema and name apart, so that no name needs quoting, and every column declared in the type's order, each
   with the driver's type of a scalar parameter of its type, since the server matches the columns by place. A `bigint` is sent as

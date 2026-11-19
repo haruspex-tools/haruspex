@@ -243,6 +243,39 @@ internal static class Facets
     private static bool IsSafeInteger(string text) =>
         BigInteger.TryParse(text, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n) && BigInteger.Abs(n) < SafeInteger;
 
+    /// <summary>
+    /// A binary value with its length: in a rowset the Node <c>Buffer</c> the mssql driver hands over for every binary type
+    /// (<c>z.instanceof(Buffer)</c>, its length checked with <c>.check(z.maxLength(n))</c>, or <c>z.length(n)</c> when fixed); in JSON
+    /// the base64 text SQL Server writes, padded and on one line (<c>z.base64()</c>), as long as <c>n</c> bytes take (four characters
+    /// for every three bytes or part of three). Why: docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md.
+    /// </summary>
+    /// <remarks>
+    /// <c>Buffer</c>, not <c>Uint8Array</c>, which a <c>Buffer</c> is: the driver refuses a plain <c>Uint8Array</c> as a parameter
+    /// ("Invalid buffer"), and hands over only <c>Buffer</c>s, so a schema of either direction names what the driver deals in. It
+    /// is a global of Node's, as the driver is.
+    /// </remarks>
+    public static ZodExpression Bytes(IrScalar scalar, bool json)
+    {
+        var length = scalar.Facets?.Length;
+        if (json)
+        {
+            var code = Z("base64");
+            return length is null ? code : code.Then(length.IsFixed ? "length" : "max", Count(Base64Length(length.Value)));
+        }
+
+        var buffer = Z("instanceof", new Name("Buffer"));
+        return length is null ? buffer : buffer.Then("check", Z(length.IsFixed ? "length" : "maxLength", Count(length.Value)));
+    }
+
+    /// <summary>
+    /// A parameter's binary value, or a table-valued parameter's column's: a <c>Buffer</c> of at most its length, fixed or not, since
+    /// the server pads a shorter one to a fixed length and a longer one is cut short or refused.
+    /// </summary>
+    public static ZodExpression SentBytes(IrScalar scalar) => Bytes(scalar with { Facets = scalar.Facets?.Length is { IsFixed: true } length ? scalar.Facets with { Length = length with { IsFixed = false } } : scalar.Facets }, json: false);
+
+    /// <summary>The characters base64 takes for <paramref name="bytes"/> bytes, padded: four for every three bytes or part of three.</summary>
+    public static int Base64Length(int bytes) => (int)Math.Min(int.MaxValue, 4L * ((bytes + 2L) / 3));
+
     private static Number Count(int value) => new(value.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>A value quoted inside a note, as it would be written in code, so that spaces and quotes in it stay visible.</summary>

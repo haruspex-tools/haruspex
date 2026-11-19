@@ -139,7 +139,8 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// </para>
     /// <para>
     /// In a rowset, the mssql driver returns dates and times as <c>Date</c> and <c>bigint</c> as a string, because a
-    /// JavaScript number cannot hold every 64-bit value.
+    /// JavaScript number cannot hold every 64-bit value. A binary value is a Node <c>Buffer</c> in a rowset and base64 text in
+    /// JSON (<see cref="Facets.Bytes"/>).
     /// </para>
     /// </remarks>
     private static ZodExpression Scalar(IrScalar scalar, IrEncoding encoding)
@@ -163,6 +164,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
                 _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Format, "A date and time's format is local or offset."),
             },
             IrScalarKind.Number => Facets.Number(scalar, json),
+            IrScalarKind.Bytes => Facets.Bytes(scalar, json),
             _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Kind, "A scalar kind outside the IR's closed set."),
         };
     }

@@ -147,7 +147,8 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
     /// Whether the IR says where its fields came from: false for one written before 0.25, which has the reasons but neither the
     /// columns nor the files' hashes.
     /// </summary>
-    private bool Derived => document.Version is IrDocument.CurrentVersion or IrDocument.SourcesVersion;
+    /// <remarks>Named by the two versions before it, so that a later version is one that says.</remarks>
+    private bool Derived => document.Version is not (IrDocument.CombinedVersion or IrDocument.OneDatabaseVersion);
 
     /// <summary>For an IR written before 0.25, why no column is shown and no line, and what writes one that has them.</summary>
     private void SayIfNotDerived(TextWriter output)

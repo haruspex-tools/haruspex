@@ -20,7 +20,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Scalar_kinds_keep_their_names() => Assert.Equal(
-        ["string", "number", "boolean", "date", "time", "datetime", "uuid"],
+        ["string", "number", "boolean", "date", "time", "datetime", "uuid", "bytes"],
         Names<IrScalarKind>(IrWireNames.Of));
 
     [Fact]

@@ -54,9 +54,13 @@ What a value looks like depends on how it arrives, and the module follows what a
 
 - **In JSON** (`FOR JSON` and the JSON functions), SQL Server writes dates, times and GUIDs as strings in fixed formats, so
   they are validated strings (`z.iso.date()`, `z.iso.datetime(…)`, `z.guid()`). They are deliberately not converted to
-  `Date`: a `date` has no time zone, and `new Date('2026-11-09')` is UTC midnight, the previous day west of Greenwich.
+  `Date`: a `date` has no time zone, and `new Date('2026-11-09')` is UTC midnight, the previous day west of Greenwich. A binary
+  value is base64 text, padded, of the length its bytes take (`z.base64().length(44)` for `binary(32)`).
 - **In a rowset**, the types follow the default mapping of the [mssql](https://www.npmjs.com/package/mssql) (tedious)
-  driver: dates and times as `Date`, `bigint` as a string.
+  driver: dates and times as `Date`, `bigint` as a string, a binary value as a Node `Buffer` of its length
+  (`z.instanceof(Buffer).check(z.maxLength(8000))` for `varbinary(8000)`), which is why a module that holds one in a rowset or a
+  parameter compiles against Node's types, as the driver does
+  ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
 - **A procedure's `FOR JSON` result** is the document, as the mssql driver hands it over with its `parseJSON` option: `null`
   when no rows matched, an array as much as an object, and an array that arrives has at least one item
   ([decision 0048](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
@@ -91,7 +95,8 @@ of exactly the form its type holds, never a `Date`
 ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)):
 a `Date` a rowset result handed over is sent back as its `toISOString()` without the `Z`, cut to the digits its type holds,
 since a type without an offset would drop the `Z` without an error. A `bigint` is a safe integer, a JavaScript `bigint`, or the
-string of digits a rowset hands over.
+string of digits a rowset hands over. A binary value is a `Buffer` of at most its length, fixed or not, since a shorter one is
+padded; the driver refuses a plain `Uint8Array`.
 Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`; one with a default, or an `OUTPUT` one, may be
 left out. A `json` one is a string.
 

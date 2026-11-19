@@ -56,7 +56,7 @@ public partial class ParameterTests
         Assert.Equal(["int", "smallint", "nvarchar(200)"], definition.Columns.Select(c => c.Sql));
         Assert.Equal(["product_id"], Assert.Single(definition.Keys).Columns);
         Assert.Equal(["qty > 0"], definition.Checks);
-        Assert.Equal(IrDocument.CurrentVersion, document.Version);
+        Assert.Equal(IrDocument.TableTypesVersion, document.Version);
     }
 
     [Theory]

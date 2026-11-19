@@ -19,11 +19,17 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that defines a table type is written in (0.26,
-    /// <see cref="TableTypes"/>). The IR is versioned separately from the tool, because it is a file that other programs read: a
-    /// change that would break a reader changes this.
+    /// The newest IR format version, the one a document that holds a binary value is written in (0.27, a scalar of kind
+    /// <see cref="IrScalarKind.Bytes"/>). The IR is versioned separately from the tool, because it is a file that other programs
+    /// read: a change that would break a reader changes this. Why: docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md.
     /// </summary>
-    public const string CurrentVersion = "0.26";
+    public const string CurrentVersion = "0.27";
+
+    /// <summary>
+    /// The version a document that holds no binary value but defines a table type is written in (0.26, <see cref="TableTypes"/>).
+    /// Why: docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
+    /// </summary>
+    public const string TableTypesVersion = "0.26";
 
     /// <summary>
     /// The version a document that defines no table type but says where a field's value came from is written in (0.25): a
@@ -48,29 +54,34 @@ public sealed record IrDocument(
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.25, 0.24 and 0.23, every document of which is a
-    /// 0.26 document that defines no table type and says no more than its version could, meaning the same. 0.23 added a result
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.26, 0.25, 0.24 and 0.23, every document of which
+    /// is a 0.27 document that holds no binary value and says no more than its version could, meaning the same. 0.23 added a result
     /// set's name (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
     /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
     /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
+    /// <see cref="CurrentVersion"/> when it holds a binary value (<see cref="HoldsBytes"/>); else <see cref="TableTypesVersion"/>
+    /// when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
     /// value came from, which a document inferred from SQL almost always does; else <see cref="CombinedVersion"/> when it combines
     /// two databases; else <see cref="OneDatabaseVersion"/>.
     /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md and
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        TableTypes.Count > 0 ? CurrentVersion
+        HoldsBytes ? CurrentVersion
+        : TableTypes.Count > 0 ? TableTypesVersion
         : Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
             || Source.Path is not null || Source.Baseline?.Path is not null
             ? SourcesVersion
         : Source.Baseline is null ? OneDatabaseVersion
         : CombinedVersion;
+
+    /// <summary>Whether any of its values is a binary one (0.27): a scalar of kind <see cref="IrScalarKind.Bytes"/> anywhere.</summary>
+    internal bool HoldsBytes => IrDocumentScalars.Of(this).Any(s => s.Scalar.Kind == IrScalarKind.Bytes);
 
     /// <summary>
     /// The table types the document's table-valued parameters take, by the key a parameter names (<see cref="IrParameter.TableType"/>),

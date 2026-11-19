@@ -74,5 +74,10 @@ parameter's `tableType`, the type owner `tableType`), and every 0.25, 0.24 and 0
 means the same. So a document is labelled with the oldest version that says all it says, and a label that disagrees is refused by
 the path of what disagrees.
 
+**Amended a tenth time** (19 Nov 2026, IR 0.27, [decision 0081](0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)).
+The 0.27 reader reads 0.26, 0.25, 0.24 and 0.23 too, by the same test: 0.27 added only the scalar kind `bytes`, and every document
+of those versions is a 0.27 document that holds no binary value, meaning the same. A binary value in a document labelled before
+0.27 is refused by its path, and a document labelled 0.27 that holds none is refused by its label.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

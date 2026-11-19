@@ -27,4 +27,11 @@ public enum IrScalarKind
 
     /// <summary>A 128-bit identifier written as 8-4-4-4-12 hex digits; not necessarily an RFC 9562 UUID.</summary>
     Uuid,
+
+    /// <summary>
+    /// A string of bytes, such as SQL Server's <c>binary</c>, <c>varbinary</c> and <c>rowversion</c> give (0.27): a driver's buffer
+    /// of bytes in a rowset, base64 text in JSON. Its length, when known, counts bytes. Why:
+    /// docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md.
+    /// </summary>
+    Bytes,
 }

@@ -59,10 +59,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, and (0.26) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, and (0.27) binary values. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -72,7 +72,7 @@ public static class IrJsonSchema
                 ("type", "object"),
                 ("additionalProperties", Ref("objectType")))),
             ("tableTypes", Node(
-                ("description", "The table types the parameters take, by the key a parameter's tableType names (0.26). Given exactly when irVersion is 0.26."),
+                ("description", "The table types the parameters take, by the key a parameter's tableType names (0.26). Always given when irVersion is 0.26, never before it, and when it is 0.27 exactly when a parameter takes a table type."),
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Ref("tableType")))),
@@ -85,8 +85,9 @@ public static class IrJsonSchema
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
 
-        // A document labelled 0.23 never names a baseline, one labelled 0.24 always does, and one labelled 0.25 or 0.26 may; one of
-        // those that names none says nothing only a combined document says. Only one labelled 0.26 defines table types.
+        // A document labelled 0.23 never names a baseline, one labelled 0.24 always does, and one labelled 0.25, 0.26 or 0.27 may;
+        // one of those that names none says nothing only a combined document says. One labelled 0.26 always defines table types, one
+        // labelled 0.27 may, and one labelled earlier never does.
         ("anyOf", new JsonArray(
             Node(
                 ("properties", Node(
@@ -106,18 +107,23 @@ public static class IrJsonSchema
             OneDatabaseOf(IrDocument.SourcesVersion, tableTypes: false),
             Node(
                 ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("irVersion", Node(("const", IrDocument.TableTypesVersion))),
                     ("source", Node(("required", Names("baseline")))))),
                 ("required", Names("tableTypes"))),
-            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: true))),
+            OneDatabaseOf(IrDocument.TableTypesVersion, tableTypes: true),
+            Node(
+                ("properties", Node(
+                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("source", Node(("required", Names("baseline"))))))),
+            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: null))),
         ("$defs", Definitions()));
 
     /// <summary>
-    /// A document of <paramref name="version"/> (0.25 or 0.26) that names no baseline, with table types when <paramref name="tableTypes"/>
-    /// and without them otherwise: then no field has <c>sides</c> or the presence <c>optional</c>,
+    /// A document of <paramref name="version"/> (0.25, 0.26 or 0.27) that names no baseline, with table types when <paramref name="tableTypes"/>
+    /// is true, without them when it is false, and either way when it is null: then no field has <c>sides</c> or the presence <c>optional</c>,
     /// and no result is missing for the rule <c>not-in-both</c>, which only a combined document says.
     /// </summary>
-    private static JsonObject OneDatabaseOf(string version, bool tableTypes)
+    private static JsonObject OneDatabaseOf(string version, bool? tableTypes)
     {
         var field = Node(
             ("not", Node(("required", Names("sides")))),
@@ -130,8 +136,9 @@ public static class IrJsonSchema
             ("types", Node(("additionalProperties", Properties("fields", Node(("items", field)))))),
             ("objects", Node(("items", Properties("results", Node(("items", result)))))))));
 
-        // Only a document of 0.26 defines table types, and it always does.
-        document.Add(tableTypes ? "required" : "not", tableTypes ? Names("tableTypes") : Node(("required", Names("tableTypes"))));
+        // A document of 0.26 always defines table types, one of 0.25 never does, and one of 0.27 may.
+        if (tableTypes is { } defines)
+            document.Add(defines ? "required" : "not", defines ? Names("tableTypes") : Node(("required", Names("tableTypes"))));
         return document;
 
         static JsonObject Not(string value) => Node(("not", Node(("const", value))));
@@ -423,6 +430,16 @@ public static class IrJsonSchema
 
         // A length is fixed or a maximum, never both.
         scalar.Add("not", Having("length", "maxLength"));
+
+        // A binary value (0.27) has no format, and of the facets only a length, counted in bytes with no encoding.
+        var bytes = IrWireNames.Of(IrScalarKind.Bytes);
+        var unit = Node(("const", IrWireNames.Of(IrLengthUnit.Bytes)));
+        JsonObject InBytes() => Node(("properties", Node(("unit", unit.DeepClone()))), ("not", Having("encoding")));
+        string[] others = ["format", "minLength", "digits", "min", "max", "values"];
+        var notBytes = Node(("properties", Node(("kind", Node(("not", Node(("const", bytes))))))));
+        var othersAbsent = Node(("anyOf", new JsonArray([.. others.Select(f => (JsonNode)Having(f))])));
+        var asBytes = Node(("not", othersAbsent), ("properties", Node(("length", InBytes()), ("maxLength", InBytes()))));
+        scalar.Add("anyOf", new JsonArray(notBytes, asBytes));
         return scalar;
     }
 

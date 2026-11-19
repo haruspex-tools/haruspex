@@ -150,13 +150,13 @@ public static class IrJsonReader
         var source = json.Object("source");
         var baseline = source.OptionalObject("baseline");
         if (baseline is not null && version == IrDocument.OneDatabaseVersion)
-            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion} or later.");
         if (baseline is null && version == IrDocument.CombinedVersion)
-            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or later.");
         var tableTypes = json.OptionalObject("tableTypes");
-        if (tableTypes is not null && version != IrDocument.CurrentVersion)
-            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.CurrentVersion}.");
-        if (tableTypes is null && version == IrDocument.CurrentVersion)
+        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.TableTypesVersion))
+            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, or {IrDocument.CurrentVersion} when it holds a binary value.");
+        if (tableTypes is null && version == IrDocument.TableTypesVersion)
             throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
 
         var document = new IrDocument(
@@ -173,8 +173,9 @@ public static class IrJsonReader
         json.End();
         if (baseline is null)
             OneDatabase(document);
-        if (version is not (IrDocument.CurrentVersion or IrDocument.SourcesVersion))
+        if (version is not (IrDocument.CurrentVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
+        HoldsBytesAsLabelled(document, version);
         return document;
     }
 
@@ -294,6 +295,19 @@ public static class IrJsonReader
         var source = DocumentSource(json);
         json.End();
         return source;
+    }
+
+    /// <summary>
+    /// Refuses a binary value (0.27) in a document labelled before 0.27, by the path of the first, and a document labelled 0.27 that
+    /// holds none, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void HoldsBytesAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentScalars.Of(document).FirstOrDefault(s => s.Scalar.Kind == IrScalarKind.Bytes);
+        if (first.Scalar is not null && version != IrDocument.CurrentVersion)
+            throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.CurrentVersion}.");
+        if (first.Scalar is null && version == IrDocument.CurrentVersion)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a binary value, and this one holds none. One that holds none is labelled {IrDocument.TableTypesVersion} or earlier, by what else it says.");
     }
 
     /// <summary>
@@ -631,11 +645,39 @@ public static class IrJsonReader
         return element;
     }
 
-    private static IrScalar Scalar(IrJsonObject json, IrScalarKind kind) => new(
-        kind,
-        json.OptionalName<IrFormat>("format", IrWireNames.TryParse, "a scalar's format"),
-        json.OptionalString("sql"),
-        Facets(json));
+    private static IrScalar Scalar(IrJsonObject json, IrScalarKind kind)
+    {
+        var scalar = new IrScalar(
+            kind,
+            json.OptionalName<IrFormat>("format", IrWireNames.TryParse, "a scalar's format"),
+            json.OptionalString("sql"),
+            Facets(json));
+        if (kind == IrScalarKind.Bytes)
+            Bytes(json, scalar);
+        return scalar;
+    }
+
+    /// <summary>
+    /// What a binary value may say (0.27): no format, and of the facets only a length, counted in bytes with no encoding, since its
+    /// bytes are the value and not text. Why: docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md.
+    /// </summary>
+    private static void Bytes(IrJsonObject json, IrScalar scalar)
+    {
+        const string Why = "which a binary value doesn't have: of the facets it has only a length, counted in bytes";
+        if (scalar.Format is not null)
+            throw new IrFormatException(json.PathOf("format"), "is given on a binary value (kind \"bytes\"), which has no format.");
+        foreach (var facet in (string[])["minLength", "digits", "min", "max", "values"])
+        {
+            if (json.Has(facet))
+                throw new IrFormatException(json.PathOf(facet), $"is given on a binary value (kind \"bytes\"), {Why}.");
+        }
+
+        if (scalar.Facets?.Length is { } length && (length.Unit != IrLengthUnit.Bytes || length.Encoding != IrByteEncoding.Unknown))
+        {
+            var at = json.PathOf(length.IsFixed ? "length" : "maxLength");
+            throw new IrFormatException(at, $"of a binary value (kind \"bytes\") is counted in {IrWireNames.Of(length.Unit)}{(length.Encoding == IrByteEncoding.Unknown ? "" : " of an encoding")}: a binary value's length counts its bytes, which encode nothing.");
+        }
+    }
 
     /// <summary>The facets, which the writer puts beside the scalar's kind rather than in an object of their own.</summary>
     private static IrFacets Facets(IrJsonObject json)

@@ -101,6 +101,10 @@ public partial class MssqlEmitterTests
     // A date or time is sent as its ISO 8601 text, which the server converts exactly (decision 0055).
     [InlineData("sql.VarChar(sql.MAX)", IrScalarKind.Date, null, 0, IrLengthUnit.Utf16, false)]
     [InlineData("sql.VarChar(sql.MAX)", IrScalarKind.Datetime, IrFormat.Local, 0, IrLengthUnit.Utf16, false)]
+    // A binary value is sent as its declared type, of which the driver pads a shorter Buffer to a fixed length.
+    [InlineData("sql.VarBinary(16)", IrScalarKind.Bytes, null, 16, IrLengthUnit.Bytes, false)]
+    [InlineData("sql.Binary(32)", IrScalarKind.Bytes, null, 32, IrLengthUnit.Bytes, true)]
+    [InlineData("sql.VarBinary(sql.MAX)", IrScalarKind.Bytes, null, 0, IrLengthUnit.Bytes, false)]
     public void Each_parameter_is_sent_with_the_driver_s_type_for_its_declared_one(string driver, IrScalarKind kind, IrFormat? format, int length, IrLengthUnit unit, bool isFixed)
     {
         var facets = length > 0 ? new IrFacets(Length: new IrLength(length, isFixed, unit, IrByteEncoding.Unknown, Type)) : null;

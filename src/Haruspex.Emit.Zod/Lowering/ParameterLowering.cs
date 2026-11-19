@@ -112,6 +112,7 @@ internal static class ParameterLowering
         IrScalar { Kind: IrScalarKind.Number, Format: IrFormat.Int64 } => BigInt(),
         IrScalar { Kind: IrScalarKind.Number } scalar => Number(scalar),
         IrScalar { Kind: IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime } scalar => DateTimes.Of(scalar),
+        IrScalar { Kind: IrScalarKind.Bytes } scalar => Facets.SentBytes(scalar),
 
         // A boolean and a GUID are checked as a result in JSON is.
         IrScalar scalar => types.Type(scalar, IrEncoding.Json),

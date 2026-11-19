@@ -34,7 +34,7 @@ public partial class IrCombinationTests
         Assert.Equal(20, ((IrScalar)row.Fields[2].Type).Facets!.Length!.Value); // the baseline's shorter note
         Assert.Equal(["qty > 0"], definition.Checks);
         Assert.Equal([["id"], ["note"]], definition.Keys.Select(k => k.Columns.ToArray()));
-        Assert.Equal(IrDocument.CurrentVersion, combined.Document.Version);
+        Assert.Equal(IrDocument.TableTypesVersion, combined.Document.Version);
         FitsBoth(combined, baseline, candidate);
     }
 

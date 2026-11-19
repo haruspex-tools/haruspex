@@ -18,6 +18,7 @@ internal static class Keyword
     public const string MaxLength = "maxLength";
     public const string Minimum = "minimum";
     public const string Maximum = "maximum";
+    public const string ContentEncoding = "contentEncoding";
     public const string ContentMediaType = "contentMediaType";
     public const string ContentSchema = "contentSchema";
     public const string Properties = "properties";
@@ -40,7 +41,7 @@ internal static class Keyword
     /// <summary>The order keywords are written in; a keyword not listed is a fault in the emitter, not something to write last.</summary>
     public static IReadOnlyList<string> Order { get; } =
     [
-        Schema, Ref, Title, Description, Type, Enum, Format, Pattern, MinLength, MaxLength, Minimum, Maximum, ContentMediaType,
+        Schema, Ref, Title, Description, Type, Enum, Format, Pattern, MinLength, MaxLength, Minimum, Maximum, ContentEncoding, ContentMediaType,
         ContentSchema, Properties, Required, AdditionalProperties, PrefixItems, Items, MinItems, MaxItems, AnyOf, Not, Definitions,
     ];
 }

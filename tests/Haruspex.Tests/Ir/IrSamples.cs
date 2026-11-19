@@ -245,6 +245,31 @@ internal static class IrSamples
         }.ToEquatableMap(t => t.Key, t => t.Value),
     };
 
+    /// <summary>
+    /// <see cref="Whole"/> with binary values (0.27): a parameter of no length, a field of a fixed length and one of a maximum, so
+    /// that it holds every kind of scalar the format has.
+    /// </summary>
+    public static IrDocument Binary { get; } = Whole with
+    {
+        Objects =
+        [
+            .. Whole.Objects.Select(o => o.Id != "sales.get_order" ? o : o with
+            {
+                Parameters = [.. o.Parameters, new IrParameter("@photo", new IrScalar(IrScalarKind.Bytes, null, "varbinary(max)"), HasDefault: true, IsOutput: false)],
+            }),
+        ],
+        Types = Whole.Types.ToDictionary(t => t.Key, t => t.Key switch
+        {
+            "OrderRow" => t.Value with { Fields = [.. t.Value.Fields, new IrField("signature", Bytes("binary(32)", 32, isFixed: true), IrPresence.OmittedWhenNull, [Column])] },
+            "LineRow" => t.Value with { Fields = [.. t.Value.Fields, new IrField("thumbnail", Bytes("varbinary(8000)", 8000, isFixed: false), IrPresence.Always, [])] },
+            _ => t.Value,
+        }),
+    };
+
+    /// <summary>A binary value of a length its type gives.</summary>
+    public static IrScalar Bytes(string sql, int length, bool isFixed) =>
+        new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));
+
     /// <summary>Every type node in a document, nested ones included, each once per place it appears.</summary>
     public static IEnumerable<IrType> TypeNodes(IrDocument document) =>
         document.Objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? []))

@@ -232,7 +232,7 @@ public partial class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

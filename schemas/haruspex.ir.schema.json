@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, and (0.26) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, and (0.27) binary values. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.26 for a document that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.27 for a document that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
+        "0.27",
         "0.26",
         "0.25",
         "0.24",
@@ -150,7 +151,7 @@
       }
     },
     "tableTypes": {
-      "description": "The table types the parameters take, by the key a parameter's tableType names (0.26). Given exactly when irVersion is 0.26.",
+      "description": "The table types the parameters take, by the key a parameter's tableType names (0.26). Always given when irVersion is 0.26, never before it, and when it is 0.27 exactly when a parameter takes a table type.",
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
@@ -381,6 +382,77 @@
       "required": [
         "tableTypes"
       ]
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "required": [
+            "baseline"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "not": {
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "additionalProperties": {
+            "properties": {
+              "fields": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "items": {
+            "properties": {
+              "results": {
+                "items": {
+                  "properties": {
+                    "absentBecause": {
+                      "items": {
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -1164,7 +1236,8 @@
             "date",
             "time",
             "datetime",
-            "uuid"
+            "uuid",
+            "bytes"
           ]
         },
         "format": {
@@ -1219,7 +1292,112 @@
           "length",
           "maxLength"
         ]
-      }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "kind": {
+              "not": {
+                "const": "bytes"
+              }
+            }
+          }
+        },
+        {
+          "not": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "format": true
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "minLength": true
+                },
+                "required": [
+                  "minLength"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "digits": true
+                },
+                "required": [
+                  "digits"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "min": true
+                },
+                "required": [
+                  "min"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "max": true
+                },
+                "required": [
+                  "max"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "values": true
+                },
+                "required": [
+                  "values"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "length": {
+              "properties": {
+                "unit": {
+                  "const": "bytes"
+                }
+              },
+              "not": {
+                "type": "object",
+                "properties": {
+                  "encoding": true
+                },
+                "required": [
+                  "encoding"
+                ]
+              }
+            },
+            "maxLength": {
+              "properties": {
+                "unit": {
+                  "const": "bytes"
+                }
+              },
+              "not": {
+                "type": "object",
+                "properties": {
+                  "encoding": true
+                },
+                "required": [
+                  "encoding"
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     "length": {
       "description": "A string's length: a maximum (maxLength) or a fixed length (length).",

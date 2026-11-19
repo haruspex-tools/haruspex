@@ -1,0 +1,797 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "path": "database",
+    "package": "shop.dacpac",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "references": [
+      {
+        "package": "catalogue.dacpac",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "package": "ledger.dacpac",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "database": "$(Ledger)"
+      },
+      {
+        "package": "master.dacpac",
+        "database": "master"
+      }
+    ],
+    "session": {
+      "ansiWarnings": true,
+      "concatNullYieldsNull": false
+    },
+    "files": {
+      "tables/orders.sql": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    "baseline": {
+      "dialect": "tsql",
+      "package": "shop-release.dacpac",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  "objects": [
+    {
+      "id": "sales.get_order",
+      "name": "GetOrder",
+      "kind": "procedure",
+      "at": "procedures/get_order.sql:1:1",
+      "returnsCode": true,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(7,2)"
+          },
+          "hasDefault": true,
+          "output": true
+        },
+        {
+          "name": "@lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineListRow"
+            }
+          },
+          "tableType": "sales.line_list",
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@photo",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(max)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "name": "order",
+          "encoding": "json",
+          "type": {
+            "ref": "OrderRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/get_order.sql:4:5"
+            }
+          ],
+          "cardinality": "atMostOne"
+        },
+        {
+          "name": "lines",
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "name": "notes",
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FindOrdersRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "not-in-both",
+              "at": "procedures/get_order.sql:9:5"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "sales.run_report",
+      "name": "RunReport",
+      "kind": "procedure",
+      "at": "procedures/run_report.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": null
+    },
+    {
+      "id": "sql/find_orders.sql",
+      "name": "FindOrders",
+      "kind": "query",
+      "at": "sql/find_orders.sql:1:1",
+      "text": "select order_id from sales.orders\nwhere customer_id = @customer_id and (@since is null or @since < 1);\n",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@since",
+          "type": {
+            "kind": "unknown",
+            "reason": "undecided-parameter"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FindOrdersRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "Bare": {
+      "kind": "object",
+      "fields": []
+    },
+    "FindOrdersRow": {
+      "kind": "object",
+      "identity": {
+        "query": "sql/find_orders.sql",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "at": "tables/orders.sql:2:5"
+            }
+          ],
+          "sides": {
+            "baseline": {
+              "presence": "always",
+              "nullable": false,
+              "sql": "int",
+              "from": [
+                {
+                  "column": "sales.orders.order_id",
+                  "at": "tables/orders.sql:2:5"
+                }
+              ]
+            },
+            "candidate": {
+              "presence": "always",
+              "nullable": false,
+              "sql": "int",
+              "from": [
+                {
+                  "column": "sales.orders.order_id",
+                  "at": "tables/orders.sql:2:5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "channel",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)"
+          },
+          "presence": "optional",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.orders.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.orders.channel",
+              "sql": "varchar(10)",
+              "at": "tables/orders.sql:6:5"
+            }
+          ],
+          "sides": {
+            "candidate": {
+              "presence": "always",
+              "nullable": true,
+              "nullableBecause": [
+                {
+                  "rule": "nullable-column",
+                  "at": "sales.orders.note"
+                }
+              ],
+              "sql": "varchar(10)",
+              "from": [
+                {
+                  "column": "sales.orders.channel",
+                  "sql": "varchar(10)",
+                  "at": "tables/orders.sql:6:5"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "LineListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "sales.line_list",
+        "path": "<sales.line_list>"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.line_list.note"
+            }
+          ]
+        }
+      ]
+    },
+    "LineRow": {
+      "kind": "object",
+      "recursive": true,
+      "identity": {
+        "function": "sales.line_tree",
+        "path": "<sales.line_tree>"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineRow"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "thumbnail",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderRow": {
+      "kind": "object",
+      "nameDeclared": true,
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.orders.note"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "encoding": "utf-8",
+              "from": {
+                "type": "char(3)"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "from": {
+                "check": "ck_orders_code"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "new",
+                "old"
+              ],
+              "from": [
+                {
+                  "check": "ck_orders_code"
+                },
+                {
+                  "expression": "procedures/get_order.sql:3:9"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "state",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "values": {
+              "match": "canonical",
+              "items": [
+                "due",
+                "paid"
+              ],
+              "from": [
+                {
+                  "check": "ck_orders_state"
+                }
+              ],
+              "fold": "Latin1_General_100_CI_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(7,2)",
+            "digits": {
+              "precision": 7,
+              "scale": 2,
+              "from": {
+                "type": "decimal(7,2)"
+              }
+            },
+            "min": {
+              "value": -1,
+              "inclusive": false,
+              "from": {
+                "check": "ck_orders_total"
+              }
+            },
+            "max": {
+              "value": 99999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(7,2)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [0,-2.5
+              ],
+              "from": [
+                {
+                  "engine": "$action"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineRow"
+            },
+            "itemsNullable": true,
+            "itemsNullableBecause": [
+              {
+                "rule": "nullable-column",
+                "at": "sales.orders.note"
+              }
+            ],
+            "minItems": 1,
+            "maxItems": 3
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pair",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "kind": "number",
+                  "format": "int32",
+                  "sql": "int"
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "boolean",
+                  "sql": "bit"
+                },
+                "nullable": true,
+                "nullableBecause": [
+                  {
+                    "rule": "nullable-column",
+                    "at": "sales.orders.note"
+                  }
+                ]
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "record",
+            "values": {
+              "kind": "date",
+              "sql": "date"
+            },
+            "valuesNullable": true,
+            "valuesNullableBecause": [
+              {
+                "rule": "nullable-column",
+                "at": "sales.orders.note"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "plain",
+          "type": {
+            "kind": "record",
+            "values": {
+              "kind": "uuid",
+              "sql": "uniqueidentifier"
+            },
+            "valuesNullable": false
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "either",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "number",
+                "format": "int32",
+                "sql": "int"
+              },
+              {
+                "kind": "time",
+                "sql": "time(0)"
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "payload",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "LineRow"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "stored",
+          "type": {
+            "kind": "json-text"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "settings",
+          "type": {
+            "kind": "import",
+            "name": "OrderSettingsSchema",
+            "from": "./settings.js"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "when",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "odd",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-expression"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/get_order.sql:5:9"
+            }
+          ]
+        },
+        {
+          "name": "signature",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(32)",
+            "length": {
+              "value": 32,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(32)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.orders.note"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "sales.line_list": {
+      "schema": "sales",
+      "name": "line_list",
+      "at": "types/line_list.sql:1:1",
+      "columns": [
+        {
+          "name": "sku",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "sql": "nvarchar(40)",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "nullable": true,
+          "collation": "Latin1_General_100_CI_AS"
+        },
+        {
+          "name": "serial",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int"
+          },
+          "nullable": false,
+          "generated": "identity"
+        },
+        {
+          "name": "loud",
+          "nullable": true,
+          "generated": "computed"
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "sku"
+          ],
+          "ignoresDuplicates": true
+        },
+        {
+          "columns": [
+            "serial"
+          ]
+        }
+      ],
+      "checks": [
+        "sku > 0"
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "sales.get_order",
+      "path": "results[0].odd",
+      "reason": "unsupported-expression",
+      "detail": "An expression that is not modelled yet.",
+      "at": "procedures/get_order.sql:5:9"
+    },
+    {
+      "object": "sales.run_report",
+      "path": "results",
+      "reason": "dynamic-sql",
+      "detail": "Dynamic SQL.",
+      "at": "procedures/run_report.sql:2:5"
+    },
+    {
+      "object": "sql/find_orders.sql",
+      "path": "parameters.@since",
+      "reason": "undecided-parameter",
+      "detail": "Its uses don't decide its type.",
+      "at": "sql/find_orders.sql:2:42"
+    }
+  ],
+  "overrides": [
+    {
+      "object": "sales.get_order",
+      "path": "results",
+      "setting": "results",
+      "via": "sales.run_report"
+    },
+    {
+      "object": "sales.get_order",
+      "path": "results[0].settings",
+      "setting": "type",
+      "why": "Settings are checked by the application."
+    }
+  ],
+  "folds": {
+    "Latin1_General_100_CI_AS.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "A": "Aa",
+        "AE": "Ææ"
+      }
+    }
+  }
+}

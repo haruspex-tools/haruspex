@@ -236,7 +236,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]
@@ -259,7 +259,42 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Whole));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Binary));
+
+    [Fact]
+    public void The_samples_of_each_version_the_reader_reads_pass_the_schema() =>
+        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary], d => AssertValid(IrJsonWriter.Write(d)));
+
+    /// <summary>Ways to break a binary value, each of which the schema and the reader must both refuse.</summary>
+    private static readonly Dictionary<string, Action<JsonObject>> BinaryBreakages = new(StringComparer.Ordinal)
+    {
+        ["a length in code units"] = json => Signature(json)["length"]!["unit"] = "utf16",
+        ["a length with an encoding"] = json => Signature(json)["length"]!["encoding"] = "single-byte",
+        ["a minimum length"] = json => Signature(json)["minLength"] = JsonNode.Parse("""{ "value": 1, "from": { "type": "binary(32)" } }"""),
+        ["a format"] = json => Signature(json)["format"] = "int32",
+        ["a value set"] = json => Signature(json)["values"] = JsonNode.Parse("""{ "items": ["AQ=="], "match": "exact", "from": [{ "type": "binary(32)" }] }"""),
+        ["an earlier version"] = json => json["irVersion"] = IrDocument.TableTypesVersion,
+    };
+
+    public static TheoryData<string> BinaryBreakageNames { get; } = [.. BinaryBreakages.Keys];
+
+    [Theory]
+    [MemberData(nameof(BinaryBreakageNames))]
+    public void A_broken_binary_value_fails_the_reader_and_where_it_can_say_so_the_schema(string breakage)
+    {
+        var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Binary))!.AsObject();
+        BinaryBreakages[breakage](json);
+        var text = json.ToJsonString();
+
+        // That a document of 0.26 holds no binary value is the reader's to see: a schema can't require a kind somewhere in a document.
+        using var instance = JsonDocument.Parse(text);
+        if (breakage != "an earlier version")
+            Assert.NotEmpty(Schema().Validate(instance.RootElement));
+        Assert.Throws<IrFormatException>(() => IrJsonReader.Read(text));
+    }
+
+    private static JsonObject Signature(JsonObject json) =>
+        json["types"]!["OrderRow"]!["fields"]!.AsArray().Single(f => (string?)f!["name"] == "signature")!["type"]!.AsObject();
 
     [Theory]
     [MemberData(nameof(BreakageNames))]

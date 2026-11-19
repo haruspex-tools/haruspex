@@ -47,11 +47,31 @@ public partial class ZodEmitterTests
     [InlineData(IrEncoding.Rowset, IrScalarKind.Datetime, IrFormat.Offset, "datetimeoffset", "z.date()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Boolean, null, "bit", "z.boolean()")]
+    // A binary value is base64 text in JSON and the driver's Buffer in a rowset.
+    [InlineData(IrEncoding.Json, IrScalarKind.Bytes, null, "varbinary(max)", "z.base64()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Bytes, null, "varbinary(max)", "z.instanceof(Buffer)")]
     public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, IrFormat? format, string sql, string zod)
     {
         var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql)))).Expected();
 
         // An optional trailing comment may explain the mapping (int64 precision, say).
+        Assert.Matches($@"\n  v: {Regex.Escape(zod)}( /\*[^\n]*\*/)?,\n", ts);
+    }
+
+    [Theory]
+    [InlineData(IrEncoding.Rowset, 32, true, "z.instanceof(Buffer).check(z.length(32))")]
+    [InlineData(IrEncoding.Rowset, 8000, false, "z.instanceof(Buffer).check(z.maxLength(8000))")]
+    // Base64 takes four characters for every three bytes or part of three, padded: 32 bytes are 44 characters, 8000 are 10668.
+    [InlineData(IrEncoding.Json, 32, true, "z.base64().length(44)")]
+    [InlineData(IrEncoding.Json, 8000, false, "z.base64().max(10668)")]
+    [InlineData(IrEncoding.Json, 1, true, "z.base64().length(4)")]
+    [InlineData(IrEncoding.Json, 3, false, "z.base64().max(4)")]
+    public void A_binary_value_s_length_is_checked_in_bytes_in_a_rowset_and_in_base64_characters_in_json(IrEncoding encoding, int length, bool isFixed, string zod)
+    {
+        var bytes = new IrScalar(IrScalarKind.Bytes, null, "varbinary", new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, "varbinary"))));
+
+        var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", bytes))).Expected();
+
         Assert.Matches($@"\n  v: {Regex.Escape(zod)}( /\*[^\n]*\*/)?,\n", ts);
     }
 

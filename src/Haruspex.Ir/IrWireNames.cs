@@ -23,6 +23,7 @@ public static class IrWireNames
         IrScalarKind.Time => "time",
         IrScalarKind.Datetime => "datetime",
         IrScalarKind.Uuid => "uuid",
+        IrScalarKind.Bytes => "bytes",
     };
 
     /// <summary>A scalar's format (<c>format</c>).</summary>

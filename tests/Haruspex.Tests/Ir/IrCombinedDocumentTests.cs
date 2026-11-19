@@ -49,7 +49,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Combined, json => json["irVersion"] = "0.23");
 
-        Assert.Equal("$.source.baseline is given in a document of IR 0.23, which describes one database: a document combining two is IR 0.24, 0.25 or 0.26.", e.Message);
+        Assert.Equal("$.source.baseline is given in a document of IR 0.23, which describes one database: a document combining two is IR 0.24 or later.", e.Message);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Combined, json => json["source"]!.AsObject().Remove("baseline"));
 
-        Assert.Equal("$.source.baseline is missing: a document of IR 0.24 combines two databases and names the other's source. A document of one database is IR 0.23, 0.25 or 0.26.", e.Message);
+        Assert.Equal("$.source.baseline is missing: a document of IR 0.24 combines two databases and names the other's source. A document of one database is IR 0.23, 0.25 or later.", e.Message);
     }
 
     [Fact]

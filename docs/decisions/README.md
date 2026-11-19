@@ -85,6 +85,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0078](0078-the-ir-says-where-each-field-came-from.md) | 19 Nov 2026 | The IR says where each field came from |
 | [0079](0079-a-surprise-is-explained-where-it-is-written.md) | 19 Nov 2026 | A surprise is explained where it is written |
 | [0080](0080-the-last-definition-in-a-script-stands.md) | 19 Nov 2026 | The last definition of a procedure, function or view in a script stands; across scripts, a second is a doubt |
+| [0081](0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md) | 19 Nov 2026 | Binary values are a kind of their own, counted in bytes |
+| [0082](0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md) | 19 Nov 2026 | A binary value is a `Buffer` in a rowset and base64 in JSON |
 
 ## Writing a record
 

@@ -93,6 +93,17 @@ public class ZodParametersTests
             "z.string().refine((value) => new TextEncoder().encode(value).length <= 20, { error: \"More than 20 bytes of UTF-8, which nvarchar would cut short\" })",
             Schema(Text(20, IrLengthUnit.Bytes, encoding: IrByteEncoding.Utf8)));
 
+    [Theory]
+    [InlineData("varbinary(16)", false, "z.instanceof(Buffer).check(z.maxLength(16))")]
+    // A shorter value sent to binary(16) is padded with zeros, so a fixed length is a maximum too.
+    [InlineData("binary(16)", true, "z.instanceof(Buffer).check(z.maxLength(16))")]
+    public void A_binary_value_is_a_buffer_of_at_most_its_length(string sql, bool isFixed, string schema) =>
+        Assert.Equal(schema, Schema(new IrScalar(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(16, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, Type)))));
+
+    [Fact]
+    public void A_binary_value_of_no_length_is_any_buffer() =>
+        Assert.Equal("z.instanceof(Buffer)", Schema(new IrScalar(IrScalarKind.Bytes, null, "varbinary(max)")));
+
     [Fact]
     public void A_string_of_no_length_is_any_string() =>
         Assert.Equal("z.string()", Schema(new IrScalar(IrScalarKind.String, null, "nvarchar(max)")));

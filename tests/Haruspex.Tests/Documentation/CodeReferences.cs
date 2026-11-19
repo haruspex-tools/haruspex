@@ -56,8 +56,8 @@ internal sealed partial class CodeReferences
         // MSBuild's items and properties.
         "AnalysisLevel", "IsPackable", "SQLDBExtensionsRefPath", "NetCoreBuild",
 
-        // JavaScript, in the emitter's documentation.
-        "Date", "Infinity",
+        // JavaScript, in the emitter's documentation, and Node's buffer of bytes, which the driver hands a binary value over as.
+        "Date", "Infinity", "Buffer", "Uint8Array",
 
         // The mssql driver's types, which the functions take and pass through.
         "ConnectionPool", "Transaction", "RequestError", "IProcedureResult",

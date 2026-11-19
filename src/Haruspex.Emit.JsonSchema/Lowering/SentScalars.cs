@@ -36,6 +36,8 @@ internal static partial class SentScalars
         {
             Facets = facets with { Length = facets.Length is { } length ? length with { IsFixed = false } : null, MinLength = null },
         }),
+        // A binary value sent shorter than a fixed length is padded, as a string is.
+        { Kind: IrScalarKind.Bytes, Facets.Length: { IsFixed: true } length } => Scalars.Of(scalar with { Facets = scalar.Facets with { Length = length with { IsFixed = false } } }),
         _ => Scalars.Of(scalar),
     };
 

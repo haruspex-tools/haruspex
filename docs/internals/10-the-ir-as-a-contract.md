@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -226,6 +226,13 @@ version that says all it says. It added a table type's definition (`tableTypes`)
 a client sends in one; only a document whose parameters take a table type has them, and only it is labelled 0.26, so every other
 is written as before, 0.25, 0.24 or 0.23 by what it says, and the 0.26 reader reads all four
 ([decision 0077](../decisions/0077-the-ir-carries-a-table-type-s-definition.md)).
+
+Version 0.27 is the same move for a kind of value: a scalar kind for a string of bytes (`bytes`), whose only facet is its length
+in bytes. Labels are ordered, so a document that holds a binary value is labelled 0.27 whether or not it also defines a table
+type, and one that holds none keeps the label the rest of it earns; the 0.27 reader reads all five. A label is a promise about
+the whole document, so the reader must find a binary value wherever one can be (a parameter, a result, a field, a table type's
+column, inside a union or a JSON text's content) before it can say the label is right, which `IrDocumentScalars` does in one place
+([decision 0081](../decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

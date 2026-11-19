@@ -31,6 +31,7 @@ internal static class DriverTypes
         IrScalar { Kind: IrScalarKind.Boolean } => Plain("Bit"),
         IrScalar { Kind: IrScalarKind.Uuid } => Plain("UniqueIdentifier"),
         IrScalar { Kind: IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime } => new DriverType("VarChar", ["MAX"]),
+        IrScalar { Kind: IrScalarKind.Bytes } scalar => Bytes(scalar.Facets?.Length),
         IrJsonText => new DriverType("NVarChar", ["MAX"]),
 
         // A number of no known format or digits, a table-valued parameter, or a type not modelled: the driver chooses.
@@ -43,6 +44,17 @@ internal static class DriverTypes
         null => new DriverType("NVarChar", ["MAX"]),
         { Unit: IrLengthUnit.Utf16 } => new DriverType(length.IsFixed ? "NChar" : "NVarChar", [Count(length.Value)]),
         _ => new DriverType(length.IsFixed ? "Char" : "VarChar", [Count(length.Value)]),
+    };
+
+    /// <summary>
+    /// A binary value of its declared length: <c>Binary(n)</c> for a fixed one, which pads a shorter <c>Buffer</c> as the server
+    /// would, <c>VarBinary(n)</c> otherwise, and <c>VarBinary(MAX)</c> with none. The parameters' schema has refused a longer one,
+    /// which <c>VarBinary(n)</c> would fail with error 8016 and <c>Binary(n)</c> cut short (observed in <c>MssqlDriverObservationTests</c>).
+    /// </summary>
+    private static DriverType Bytes(IrLength? length) => length switch
+    {
+        null => new DriverType("VarBinary", ["MAX"]),
+        _ => new DriverType(length.IsFixed ? "Binary" : "VarBinary", [Count(length.Value)]),
     };
 
     private static DriverType Plain(string name) => new(name, []);

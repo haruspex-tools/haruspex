@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.26
+# Haruspex.Ir: the IR format, version 0.27
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.26, whose documents that say less are labelled 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
+version 0.27, whose documents that say less are labelled 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
@@ -114,8 +114,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.26"` when it defines a table type (one with
-  `tableTypes`), else `"0.25"` when a field has `from` or `sides`, or a source has `path` or `files`,
+- must write `irVersion` as the oldest version that says all the document says: `"0.27"` when it holds a binary value (a scalar
+  of kind `bytes`, anywhere), else `"0.26"` when it defines a table type (one with `tableTypes`), else `"0.25"` when a field has `from` or `sides`, or a source has `path` or `files`,
   else `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), else `"0.23"`; and a document
   that this page and the schema allow;
 - must write a table type in `tableTypes` exactly when a parameter names it, and a parameter that refers to a named type only as
@@ -130,12 +130,14 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.26, 0.25, 0.24 and 0.23, older or newer, without
+- must read `irVersion` first and must refuse a document of any version but 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
   is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
-  document labelled 0.23 or 0.24; and must refuse a document labelled 0.26 without `tableTypes`, and one labelled otherwise with
-  them;
+  document labelled 0.23 or 0.24; must refuse a document labelled 0.26 without `tableTypes`, and one labelled before 0.26 with
+  them; and must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none;
+- must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
+  `utf16` or with an `encoding`;
 - must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
   that refers to a named type other than the rows of its table type, and a table type's row with a field that isn't a scalar;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
@@ -159,14 +161,16 @@ find the cycles itself, "Recursive types"). `IrJsonReader` doesn't check them; a
 
 `IrJsonReader` and `IrJsonWriter` are this project's reader and writer, and follow every rule here that binds them. The schema
 checks what a reader must refuse except what JSON Schema can't express: a number's form, a key given twice in one object, a `ref`
-that names no type, and what ties a table-valued parameter to its type's definition and rows.
+that names no type, what ties a table-valued parameter to its type's definition and rows, and whether a document holds a binary
+value, which decides whether it is labelled 0.27.
 
 ## A document
 
 ```jsonc
 {
   "irVersion": "0.25",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
-                                      // (0.26 when it defines a table type: "Table types", below)
+                                      // (0.26 when it defines a table type: "Table types", below; 0.27 when it
+                                      // holds a binary value: "Logical kinds", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -285,7 +289,7 @@ the names; an emitter should say what was assumed where its output is read, as t
 A **table-valued parameter** (0.26) is a parameter of a table type, a type the database defines as a table's columns, keys and
 CHECK constraints, which a caller sends as a table of rows. Its `type` is an array of a named object type, the type's row, and
 its `tableType` names the type's definition in the document's `tableTypes`. A document has `tableTypes` exactly when a parameter
-names one, and holds only the types its parameters name; it is then labelled 0.25
+names one, and holds only the types its parameters name; it is then labelled 0.26, or 0.27 when it holds a binary value
 ([decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)).
 
 ```jsonc
@@ -367,9 +371,11 @@ A source's `path` (0.25) is where it was read from, as the config file names it,
 writes it, of its text with LF line endings in UTF-8, so that a reader can tell the file in front of it is the one a location
 was written from, as `sha256` tells a package. None of these is a claim: a comparison reports no change in them.
 
-**Logical kinds.** `string`, `number`, `boolean`, `date` (no time, no zone), `time` (no date, no zone), `datetime`, and
-`uuid` (8-4-4-4-12 hex digits, not necessarily an RFC 9562 UUID). `format` refines a `number` as `uint8`, `int16`,
-`int32`, `int64`, `decimal` or `float`, and a `datetime` as `local` (no offset) or `offset`. Dates, times and identifiers
+**Logical kinds.** `string`, `number`, `boolean`, `date` (no time, no zone), `time` (no date, no zone), `datetime`,
+`uuid` (8-4-4-4-12 hex digits, not necessarily an RFC 9562 UUID), and (0.27) `bytes`, a string of bytes, whose only facet is its
+length in bytes and which has no format
+([decision 0081](../../docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)). `format` refines a `number` as `uint8`, `int16`,
+`int32`, `int64`, `decimal` or `float`, and a `datetime` as `local` (no offset) or `offset`. Dates, times, identifiers and bytes
 are kinds, not strings, because in JSON they arrive as strings in a known format and in a rowset as a driver's native
 values, so an emitter can validate them only if it knows which each one is. What each kind's JSON value looks like is the
 front end's to say, from what its engine writes ([SQL Server's](../Haruspex.SqlServer.Inference/README.md#scalars-in-json)).
@@ -506,7 +512,7 @@ null.
 
 | Facet | Meaning |
 |---|---|
-| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units) or `bytes` (of the stored encoding). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both |
+| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units) or `bytes` (of the stored encoding). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
@@ -589,12 +595,18 @@ The format's versions, newest first. While the version is 0.x, every change a re
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
 
+**0.27** (19 Nov 2026, binary values). The scalar kind `bytes`, a string of bytes, such as SQL Server's `binary`, `varbinary`
+and `rowversion`, whose only facet is its length in bytes ("Logical kinds", above;
+[decision 0081](../../docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)). Only a document that holds
+a binary value is labelled 0.27: every 0.26, 0.25, 0.24 and 0.23 document is a 0.27 document without one that means the same, so
+this reader reads all five ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), tenth amendment).
+
 **0.26** (19 Nov 2026, table types). A document's `tableTypes`, the definition of each table type its parameters take; a
 parameter's `tableType`, naming its definition; and the type owner `tableType`, a table type's row, which a table-valued
 parameter's `type` is an array of ("Table types", above;
 [decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)). Only a document that defines a table type
 has any of the three, and only it is labelled 0.26: every 0.25, 0.24 and 0.23 document is a 0.26 document without one that means
-the same, so this reader reads all four ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), tenth
+the same, so this reader reads all four ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), ninth
 amendment).
 
 **0.25** (19 Nov 2026, where a field came from). A field's `from`, the table columns its value is read from; in a combined
