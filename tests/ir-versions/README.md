@@ -37,7 +37,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.22 | `f63964c` (set at `6aff87d`; `returnsCode` added at `f63964c`, before 0.22 reached `main`) |
 | 0.23 | `5bfdbcbd` |
 | 0.24 | `c4093e7d`; a document of one database is still written as 0.23, so this file is `sales.get_order` combined with a baseline in which it didn't return `isPriority` |
-| 0.25 | the commit that adds table types to the IR; a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
+| 0.25 | `645af81a`; a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the
