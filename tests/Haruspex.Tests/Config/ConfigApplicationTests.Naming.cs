@@ -18,6 +18,23 @@ public partial class ConfigApplicationTests
     }
 
     [Fact]
+    public void A_table_type_s_rows_are_named_after_the_type_by_its_schema_s_rules_once_for_every_parameter()
+    {
+        const string Procedures = """
+            CREATE TYPE sales.line_list AS TABLE (id int NOT NULL);
+            GO
+            CREATE PROCEDURE sales.add_lines @lines sales.line_list READONLY AS SELECT 1 AS one;
+            GO
+            CREATE PROCEDURE sales.check_lines @lines sales.line_list READONLY, @more sales.line_list READONLY AS SELECT 1 AS one;
+            """;
+
+        var doc = Apply(Procedures, """{ "schemas": { "sales": { "prefix": "Sales" } } }""").Document;
+
+        Assert.Equal("SalesLineListRow", Assert.Single(doc.Types, t => t.Value.Identity?.Owner == IrTypeOwner.TableType).Key);
+        Assert.All(doc.Objects.SelectMany(o => o.Parameters), p => Assert.Equal(new IrArray(new IrRef("SalesLineListRow")), p.Type));
+    }
+
+    [Fact]
     public void Naming_rules_apply_to_the_procedure_and_its_types()
     {
         var doc = Apply(GetCustomer, """{ "naming": { "case": "camel" } }""").Document;

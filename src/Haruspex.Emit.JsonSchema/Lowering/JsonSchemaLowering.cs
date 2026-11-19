@@ -146,7 +146,8 @@ internal static class JsonSchemaLowering
     /// <summary>
     /// A named object type: an object with a property per field, the keys that are always there <c>required</c>. Other keys are
     /// allowed by default, so a column the database adds before the application redeploys doesn't fail validation; strict objects
-    /// forbid them (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). Its description says where it comes from.
+    /// forbid them (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). A table type's row, which a client sends,
+    /// forbids them always. Its description says where it comes from.
     /// </summary>
     private static Schema ObjectType(IrObjectType type, JsonSchemaOptions options, TypeLowering types)
     {
@@ -156,9 +157,17 @@ internal static class JsonSchemaLowering
         var required = type.Fields.Where(TypeLowering.IsRequired).Select(f => (SchemaValue)new SchemaValue.Text(f.Name)).ToList();
         if (required.Count > 0)
             schema = schema.With(Keyword.Required, new SchemaValue.List([.. required]));
-        if (options.Objects == JsonSchemaObjects.Strict)
+        // A table type's row is sent, not read, so it is strict whatever the setting, as the parameters are: a key it doesn't list
+        // is a misspelt column, which would otherwise be sent as NULL (decision 0076).
+        var row = type.Identity is { Owner: IrTypeOwner.TableType };
+        if (options.Objects == JsonSchemaObjects.Strict || row)
             schema = schema.With(Keyword.AdditionalProperties, new SchemaValue.Boolean(false));
-        return type.Identity is { } identity ? schema.Noted(new SchemaNote($"The type at {identity.Path} in {identity.Object}.")) : schema;
+        return type.Identity switch
+        {
+            { Owner: IrTypeOwner.TableType } identity => schema.Noted(new SchemaNote($"A row of the table type {identity.Object}, as a table-valued parameter sends it: every column, in the type's order.")),
+            { } identity => schema.Noted(new SchemaNote($"The type at {identity.Path} in {identity.Object}.")),
+            null => schema,
+        };
     }
 
     /// <summary>

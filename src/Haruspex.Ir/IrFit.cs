@@ -120,6 +120,12 @@ public static partial class IrFit
                 if (parameter.IsOutput && !now.IsOutput)
                     Add(findings, IrChangeKind.ParameterDirectionChanged, path, IrFitVerdict.Refused, "the application sends it as an output parameter", "true", "false");
 
+                if (parameter.TableType is not null || now.TableType is not null)
+                {
+                    TableValued(path, parameter, now);
+                    continue;
+                }
+
                 if (parameter.Type is IrUnknownType && now.Type is IrUnknownType)
                 {
                     BothUnknown(path, $"parameters.{parameter.Name}", parameter.Type, now.Type);

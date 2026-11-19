@@ -44,6 +44,15 @@ internal static class ZodPlanner
             RequireIdentifier(obj.Name, refusals);
             foreach (var set in obj.SetNames?.Where(TypeScriptNames.IsUnusableKey) ?? [])
                 refusals.Add(ZodCodes.SetNameUnusable.At(null, $"A result set of {obj.Id} is named {set}, which as a key of an object sets its prototype rather than adding a key; rename the set."));
+            // A table type's row is sent, and is only scalars (the reader holds a document to both), so it is declared as it is,
+            // once, before the first procedure that takes it.
+            foreach (var row in obj.Parameters.SelectMany(p => IrTypeTree.References(p.Type)).Where(n => !declared.Contains(n)).Distinct())
+            {
+                RequireIdentifier(row, refusals);
+                entries.Add(new ZodPlanEntry.TableRow(row, document.Types[row]));
+                declared.Add(row);
+            }
+
             var reached = graph.ReachableFrom(obj.Results?.Select(r => r.Type) ?? [])
                 .Where(name => !declared.Contains(name))
                 .OrderBy(name => position[name])

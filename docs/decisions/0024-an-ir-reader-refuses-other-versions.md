@@ -68,5 +68,11 @@ The 0.24 reader reads 0.23 too, by the first amendment's test: 0.24 added only w
 database that means the same. So a document of one database is still written as 0.23, and a file labelled 0.23 that says any of
 the three is refused by its path, since 0.23 could say none of them.
 
+**Amended a ninth time** (19 Nov 2026, IR 0.25, [decision 0077](0077-the-ir-carries-a-table-type-s-definition.md)). The 0.25 reader
+reads 0.24 and 0.23 too, by the same test: 0.25 added only what a document that defines a table type says (`tableTypes`, a
+parameter's `tableType`, the type owner `tableType`), and every 0.24 and 0.23 document is a 0.25 document without one that means
+the same. So a document is labelled with the oldest version that says all it says, and a label that disagrees is refused by the
+path of what disagrees.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

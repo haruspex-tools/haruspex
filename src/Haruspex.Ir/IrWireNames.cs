@@ -51,6 +51,7 @@ public static class IrWireNames
         IrTypeOwner.Procedure => "procedure",
         IrTypeOwner.Function => "function",
         IrTypeOwner.Query => "query",
+        IrTypeOwner.TableType => "tableType",
     };
 
     /// <summary>How a result set arrives (<c>encoding</c>).</summary>
@@ -185,6 +186,14 @@ public static class IrWireNames
         IrValueMatch.Canonical => "canonical",
     };
 
+    /// <summary>How the server fills a table type's column (<c>generated</c>, 0.25).</summary>
+    public static string Of(IrColumnGeneration value) => value switch
+    {
+        IrColumnGeneration.Identity => "identity",
+        IrColumnGeneration.Computed => "computed",
+        IrColumnGeneration.Rowversion => "rowversion",
+    };
+
     /// <summary>The member of a scalar's kind that <paramref name="name"/> names, or false when it names none.</summary>
     public static bool TryParse(string name, out IrScalarKind value) => ScalarKinds.TryGetValue(name, out value);
 
@@ -226,6 +235,11 @@ public static class IrWireNames
 
     /// <summary>The member of how a value set's items are compared that <paramref name="name"/> names, or false when it names none.</summary>
     public static bool TryParse(string name, out IrValueMatch value) => ValueMatches.TryGetValue(name, out value);
+
+    /// <summary>The member of how a table type's column is filled that <paramref name="name"/> names, or false when it names none.</summary>
+    public static bool TryParse(string name, out IrColumnGeneration value) => ColumnGenerations.TryGetValue(name, out value);
+
+    private static readonly FrozenDictionary<string, IrColumnGeneration> ColumnGenerations = Inverse<IrColumnGeneration>(Of);
 
     private static readonly FrozenDictionary<string, IrScalarKind> ScalarKinds = Inverse<IrScalarKind>(Of);
 

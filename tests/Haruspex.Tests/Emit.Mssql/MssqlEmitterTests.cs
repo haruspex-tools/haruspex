@@ -305,9 +305,10 @@ public partial class MssqlEmitterTests
     [Fact]
     public void Every_name_the_module_binds_for_itself_is_one_the_planner_keeps_from_functions()
     {
-        // A procedure that needs every helper, whose function is left out of the names declared; sql and types are imported.
-        var ts = Emitted(Procedure("P", [Parameter("@v", Int)], Rows, Json));
-        var declared = Declarations().Matches(ts).Select(m => m.Groups["name"].Value).Where(n => n != "p").Append("sql").Append("types").Order(StringComparer.Ordinal);
+        // A procedure that needs every helper, a table-valued parameter's among them, whose function is left out of the names
+        // declared; sql and types are imported.
+        var ts = MssqlEmitter.Emit(WithTableValued(Document(Procedure("P", [Parameter("@v", Int)], Rows, Json)))).Expected();
+        var declared = Declarations().Matches(ts).Select(m => m.Groups["name"].Value).Where(n => n is not "p" and not "addLines").Append("sql").Append("types").Order(StringComparer.Ordinal);
 
         Assert.Equal(FunctionPlanner.ModuleNames.Order(StringComparer.Ordinal), declared);
     }

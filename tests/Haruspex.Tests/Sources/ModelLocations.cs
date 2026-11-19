@@ -42,7 +42,17 @@ internal static class ModelLocations
         }
 
         foreach (var type in model.UserTypes)
-            lines.Add($"type {type.Name} {(type is AliasType alias ? alias.BaseType.ToString() : "CLR")} at {type.Span}");
+        {
+            lines.Add($"type {type.Name} {type switch { AliasType alias => alias.BaseType.ToString(), TableType => "table", _ => "CLR" }} at {type.Span}");
+            if (type is not TableType table)
+                continue;
+            foreach (var column in table.Columns)
+                lines.Add($"column {table.Name}.{column.Name} {column.Type?.ToString() ?? "computed"}{(column.HasDefault ? " with a default" : "")} at {column.At}");
+            foreach (var check in table.Checks)
+                lines.Add($"check {table.Name} {check.Name ?? "unnamed"} at {check.At}");
+            foreach (var key in table.UniqueKeys)
+                lines.Add($"key {table.Name} {key.Name ?? "unnamed"} ({string.Join(", ", key.Columns)}){(key.IgnoresDuplicates ? " ignoring duplicates" : "")} at {key.At}");
+        }
         foreach (var procedure in model.Procedures)
         {
             lines.Add($"procedure {procedure.Name} at {procedure.Span}{AnsiNullsOff(procedure.AnsiNullsOff)}{Changed(procedure.Redefinition)}");

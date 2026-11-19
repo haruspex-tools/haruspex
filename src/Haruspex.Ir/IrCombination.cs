@@ -127,6 +127,7 @@ public static partial class IrCombination
             {
                 Overrides = [.. candidate.Overrides.Where(o => kept.Contains(o.Object))],
                 Folds = Folds(types, objects),
+                TableTypes = TableTypes(objects),
             };
             return new IrCombined(document, [.. findings.Distinct().OrderBy(f => f.Object, StringComparer.Ordinal)]);
         }
@@ -196,6 +197,15 @@ public static partial class IrCombination
                 {
                     if (!parameter.HasDefault)
                         bridged = Unbridgeable(id, path, $"gained the required parameter {parameter.Name}, which the baseline's procedure doesn't take: give it a default first, or ship the change in two releases") is not null;
+                    continue;
+                }
+
+                if (old.TableType is not null || parameter.TableType is not null)
+                {
+                    if (TableValued(id, path, old, parameter) is { } tableValued)
+                        combined.Add(tableValued with { HasDefault = old.HasDefault && parameter.HasDefault });
+                    else
+                        bridged = false;
                     continue;
                 }
 

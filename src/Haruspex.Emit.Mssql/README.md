@@ -55,6 +55,12 @@ files of several config files are ([decision 0074](https://github.com/sharpblue/
 - **Each value is sent with the driver's type for the declared one** (`DriverTypes`): `nvarchar(40)` as `sql.NVarChar(40)`, a
   decimal with its precision and scale, and a date or time as text, which SQL Server converts exactly in any session
   ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)).
+- **A table-valued parameter is sent as an `sql.Table` of its type** (`TableValue`, built by the module's `table` helper): the
+  type named by its schema and name apart, so that no name needs quoting, and every column declared in the type's order, each
+  with the driver's type of a scalar parameter of its type, since the server matches the columns by place. A `bigint` is sent as
+  the string of its digits, which the server converts exactly. Left out, it is not bound, and the procedure reads no rows. A
+  column whose type gives no driver type is refused (HAR5204)
+  ([decision 0076](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
 - **The database's error is the driver's own**, a `RequestError` with its number, state, class, procedure and line, passed
   through unchanged. **A result that breaks its schema** is a `ResultError` naming the procedure, the part (the results, or the
   `OUTPUT` parameters) and each issue's path, as JavaScript reads it (`[0].label`); of several result sets, the set comes

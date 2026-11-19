@@ -1,0 +1,234 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.grade_of",
+      "name": "GradeOf",
+      "kind": "procedure",
+      "at": "procedures/grade_of.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@tags",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TagListRow"
+            }
+          },
+          "tableType": "till.tag_list",
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@tag",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GradeOfRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GradeOfRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.grade_of",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "grade",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "TagListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.tag_list",
+        "path": "<till.tag_list>"
+      },
+      "fields": [
+        {
+          "name": "tag",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.tag_list": {
+      "schema": "till",
+      "name": "tag_list",
+      "at": "types/tag_list.sql:2:1",
+      "columns": [
+        {
+          "name": "tag",
+          "sql": "varchar(20)",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "sql": "tinyint",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "nullable": false
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "tag"
+          ]
+        }
+      ],
+      "checks": [
+        "grade IN (1, 2, 3)"
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

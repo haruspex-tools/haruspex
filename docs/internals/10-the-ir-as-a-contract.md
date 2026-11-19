@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -220,6 +220,12 @@ three. The step further is on the writer's side: a document of one database is s
 So a run without a baseline writes the same bytes as before, every module's header included, and a reader of 0.23, haruspex's own
 or another program's, still reads it; only a combined document, the one such a reader would misread, is labelled 0.24, and that
 reader refuses it ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)).
+
+Version 0.25 made the step a rule: a document is labelled with the oldest version that says all it says. It added a table type's
+definition (`tableTypes`), which a table-valued parameter names, and the row a client sends in one; only a document whose
+parameters take a table type has them, and only it is labelled 0.25, so every other is written as before, 0.24 when it combines
+two databases and 0.23 otherwise, and the 0.25 reader reads all three
+([decision 0077](../decisions/0077-the-ir-carries-a-table-type-s-definition.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

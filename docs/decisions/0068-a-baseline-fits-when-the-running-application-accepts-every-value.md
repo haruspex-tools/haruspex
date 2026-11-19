@@ -71,3 +71,11 @@ candidate, and the baseline's generated functions call the candidate. A call ret
 refused pair fails on a real value, as its finding says.
 
 **In the code:** `IrFit`, `IrFitFinding`, `IrFitVerdict`, `IrFitOptions`; `IrFitTests` and `BaselineFitTests`.
+
+**Amended** (19 Nov 2026, [decision 0077](0077-the-ir-carries-a-table-type-s-definition.md)). The IR now holds a table type's
+definition, so a table-valued parameter is judged by it rather than refused by name: what the application sends, rows of its
+definition, must be rows the procedure's type takes. Another type, even of the same columns, is refused (206); so are a column
+added or removed (500), one renamed or moved, which the server matches by place, one that became `NOT NULL` (515) or narrower, a
+CHECK added (547), a key added (2627), a column the server fills, and a collation changed. A column widened or made nullable, a key
+or CHECK removed and a default added or removed fit. `BaselineFitTests` calls each change through the old function. A CLR type and
+`xml` are still refused by name.

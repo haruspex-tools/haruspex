@@ -23,6 +23,9 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
     /// </summary>
     public bool AtLeastOne { get; init; }
 
-    /// <summary>Its unique keys, which only a view has here (see <see cref="Typer"/>'s <c>ViewKeys</c>).</summary>
+    /// <summary>
+    /// Its unique keys, which only a view (see <see cref="Typer"/>'s <c>ViewKeys</c>) and a table variable of a table type (its
+    /// <c>TableVariableValues</c>) have here.
+    /// </summary>
     public EquatableArray<RelationKey> Keys { get; init; } = [];
 }

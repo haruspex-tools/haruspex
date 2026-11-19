@@ -141,7 +141,7 @@ and a value is nullable if either's is (the rules are in [the configuration](con
 one function can bridge is an error at its procedure (HAR6033), which the module leaves out, while it is still written for every
 other procedure; the run then fails. A key gone with another appeared is said as a possible rename (HAR6034), a procedure only
 one database has is left out (HAR6035), and a function whose return shape changes is a warning (HAR6028). The IR written is
-the combined one, IR 0.24, whose `source` names the baseline, and each module's header says it is combined. Without a baseline,
+the combined one, IR 0.24 (0.25 when a parameter takes a table type), whose `source` names the baseline, and each module's header says it is combined. Without a baseline,
 `generate` writes what it always did.
 
 `check` with the same baseline compares the output folder with the combined module, as `generate` with it writes it, so a

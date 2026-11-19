@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Combined"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Whole"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Combined);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Whole);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
@@ -57,6 +57,21 @@ public class IrReaderSchemaAgreementTests
         {
             Assert.Empty(schemaErrors);
             Assert.EndsWith($"which names no fold in $.folds.", refusal?.Problem, StringComparison.Ordinal);
+            return;
+        }
+
+        // What ties a table-valued parameter to its rows and their type, which the schema can't follow from one place to another:
+        // the type a parameter names, the name, and the row's identity; and a column that declares no type, which only a computed
+        // one may, its kind removed. A combined document's claims without its baseline, which the schema can't tie to the source
+        // once the label no longer says it is combined (0.25 says only that a table type is defined).
+        if ((location == "/tableTypes" && File.Contains($"\"tableType\": \"{key}\"", StringComparison.Ordinal))
+            || (key == "tableType" && location.Contains("/parameters/", StringComparison.Ordinal))
+            || (key == "identity" && At(JsonNode.Parse(File)!, location)["identity"]?["tableType"] is not null)
+            || (key == "generated" && location.StartsWith("/tableTypes/", StringComparison.Ordinal) && target["sql"] is null)
+            || (location == "/source" && key == "baseline"))
+        {
+            Assert.DoesNotContain(schemaErrors, e => !e.Contains("tableTypes", StringComparison.Ordinal));
+            Assert.NotNull(refusal);
             return;
         }
 

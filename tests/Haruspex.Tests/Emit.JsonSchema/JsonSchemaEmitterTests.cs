@@ -7,7 +7,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests.Emit.JsonSchema;
 
 /// <summary>The JSON Schema emitter on hand-built IR, independent of any front end: what each IR fact becomes.</summary>
-public class JsonSchemaEmitterTests
+public partial class JsonSchemaEmitterTests
 {
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "shop.basket.note");
 

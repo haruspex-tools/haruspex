@@ -183,9 +183,10 @@ internal sealed partial class Cardinality(DatabaseModel model, Binder binder)
     /// A_varchar_key_under_a_sql_collation_compared_with_nvarchar_can_match_several_rows). See <see cref="InKeysType"/>.</para>
     /// <para>Only a WHERE conjunct, or an ON conjunct of a join that fixes a source inside it, counts: a row an inner join
     /// keeps passed its ON, and an outer join matches at most one optional row per kept row when its ON fixes the optional
-    /// side's key, and gives one null-extended row otherwise. Under OR nothing is fixed. Tables and views (ViewKeys) are
-    /// keyed here, and a relation of at most one row is fixed already; a CTE, temporary table or table variable source, or a
-    /// derived table of more rows, makes the answer many.</para>
+    /// side's key, and gives one null-extended row otherwise. Under OR nothing is fixed. Tables, views (ViewKeys) and table
+    /// variables of a table type, table-valued parameters among them (TableVariableValues), are keyed here, and a relation of at
+    /// most one row is fixed already; a CTE, a temporary table, a table variable declared with its own columns, or a derived
+    /// table of more rows, makes the answer many.</para>
     /// </summary>
     private bool Keyed(QuerySpecification query, ReadScope scope, bool readUncommitted)
     {
@@ -199,10 +200,10 @@ internal sealed partial class Cardinality(DatabaseModel model, Binder binder)
         if (query.FromClause?.TableReferences.Any(HasFullJoin) == true)
             return false;
 
-        // Each source's keys: a table's enforced ones, a view's (ViewKeys). A relation of at most one row is fixed from the
-        // start: it matches at most one row for each combination of the others' rows, and for an APPLY's right side, read for
-        // each outer row, at most one for each (observed: Top_1_applied_gives_at_most_one_row_for_every_outer_row). A temporary
-        // table, table variable, CTE or unresolved source makes the answer many.
+        // Each source's keys: a table's enforced ones, a view's (ViewKeys), a table type's. A relation of at most one row is fixed
+        // from the start: it matches at most one row for each combination of the others' rows, and for an APPLY's right side, read
+        // for each outer row, at most one for each (observed: Top_1_applied_gives_at_most_one_row_for_every_outer_row). A temporary
+        // table, a table variable of its own columns, a CTE or an unresolved source makes the answer many.
         var fixedSources = new HashSet<BoundSource>(ReferenceEqualityComparer.Instance);
         var keys = new Dictionary<BoundSource, List<List<KeyColumn>>>(ReferenceEqualityComparer.Instance);
         foreach (var source in scope.Bound.Sources)

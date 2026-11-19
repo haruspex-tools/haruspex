@@ -55,6 +55,12 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.TypeRenamed => $"type renamed from {Before} to {After}",
         IrChangeKind.SqlTypeChanged => $"SQL type changed from {Before} to {After}",
         IrChangeKind.TypeUnproven => $"type {After} can't be shown unchanged",
+        IrChangeKind.TableTypeChanged => (Before, After) switch
+        {
+            (null, _) => $"now a table type, {After}",
+            (_, null) => $"no longer a table type ({Before})",
+            _ => $"table type changed from {Before} to {After}",
+        },
         IrChangeKind.LengthChanged => $"length changed from {Before} to {After}",
         IrChangeKind.MinLengthChanged => $"minimum length changed from {Before} to {After}",
         IrChangeKind.DigitsChanged => $"digits changed from {Before} to {After}",

@@ -12,6 +12,12 @@ namespace Haruspex.SqlServer.Semantics;
 /// at any depth, and hold wherever the body reads them. A name can be declared once in a batch; the first declaration of each
 /// is kept.
 /// </summary>
+/// <remarks>
+/// A table-valued parameter (<c>@lines sales.line_list READONLY</c>) and a variable declared with a table type
+/// (<c>DECLARE @t sales.line_list</c>) are table variables of the type's definition (<see cref="TableType.As"/>), read as one
+/// declared with its own columns is; one whose type isn't a table type the model defines stays a parameter or variable, and a
+/// query that reads it is unknown.
+/// </remarks>
 public sealed class BodyDeclarations
 {
     private readonly Dictionary<LocalName, VariableResolution> variables = [];
@@ -42,31 +48,48 @@ public sealed class BodyDeclarations
     public IReadOnlyList<DeclaredTable> TableVariables { get; }
 
     /// <summary>The declarations of every body of only parameters: a function's <c>RETURN</c> expression, an inline function's query.</summary>
+    /// <param name="model">The model a parameter's table type is found in.</param>
     /// <param name="parameters">The parameters.</param>
-    public static BodyDeclarations Of(IReadOnlyList<Parameter> parameters) => new(parameters ?? throw new ArgumentNullException(nameof(parameters)), [], []);
+    public static BodyDeclarations Of(DatabaseModel model, IReadOnlyList<Parameter> parameters)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        return new(parameters, [], TableParameters(model, parameters));
+    }
+
+    /// <summary>Each table-valued parameter whose type the model defines, as the table it is.</summary>
+    private static List<DeclaredTable> TableParameters(DatabaseModel model, IReadOnlyList<Parameter> parameters) =>
+        [.. parameters.Where(p => p.IsReadOnly).Select(p => SchemaRules.ResolveTableType(model, p.Type)?.As(p.Name)).OfType<DeclaredTable>()];
 
     /// <summary>Reads what a body declares.</summary>
+    /// <param name="model">The model a table type a parameter or variable is declared with is found in.</param>
     /// <param name="parameters">The procedure's or function's parameters.</param>
     /// <param name="statements">Its body.</param>
     /// <param name="returnTable">A multi-statement function's return table, which its body fills as a table variable; null for a procedure.</param>
     /// <param name="source">Where the object whose body it is was read.</param>
-    public static BodyDeclarations Read(IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable, SourceSpan source)
+    public static BodyDeclarations Read(DatabaseModel model, IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable, SourceSpan source)
     {
+        ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(statements);
         ArgumentNullException.ThrowIfNull(source);
         var found = new Collector();
         statements.Accept(found);
 
+        // A table-valued parameter first, then a table variable: a batch declares a name once, so either is the name's.
+        var tables = TableParameters(model, parameters);
         var locals = new List<LocalVariable>();
         foreach (var element in found.Variables)
         {
             var name = new LocalName(element.VariableName.Value);
-            if (!parameters.Any(p => new LocalName(p.Name) == name) && !locals.Any(v => v.Name == name))
-                locals.Add(new LocalVariable(name, SyntaxReader.Type(element.DataType), source.At(element)));
+            if (parameters.Any(p => new LocalName(p.Name) == name) || locals.Any(v => v.Name == name) || tables.Any(t => new LocalName(t.Name) == name))
+                continue;
+            var type = SyntaxReader.Type(element.DataType);
+            if (SchemaRules.ResolveTableType(model, type) is { } tableType)
+                tables.Add(tableType.As(element.VariableName.Value));
+            else
+                locals.Add(new LocalVariable(name, type, source.At(element)));
         }
 
-        var tables = new List<DeclaredTable>();
         var declared = found.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t)));
         foreach (var table in returnTable is null ? declared : declared.Prepend(returnTable))
         {

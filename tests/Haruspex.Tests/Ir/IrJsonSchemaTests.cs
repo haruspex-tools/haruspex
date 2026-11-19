@@ -28,6 +28,22 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Objects), "", "objects"),
         (typeof(IrDocument), nameof(IrDocument.Types), "", "types"),
         (typeof(IrDocument), nameof(IrDocument.Folds), "", "folds"),
+        (typeof(IrDocument), nameof(IrDocument.TableTypes), "", "tableTypes"),
+        (typeof(IrTableType), nameof(IrTableType.Schema), "tableType", "schema"),
+        (typeof(IrTableType), nameof(IrTableType.Name), "tableType", "name"),
+        (typeof(IrTableType), nameof(IrTableType.Columns), "tableType", "columns"),
+        (typeof(IrTableType), nameof(IrTableType.At), "tableType", "at"),
+        (typeof(IrTableType), nameof(IrTableType.Keys), "tableType", "keys"),
+        (typeof(IrTableType), nameof(IrTableType.Checks), "tableType", "checks"),
+        (typeof(IrTableType), nameof(IrTableType.Bracketed), "tableType", null), // derived from its schema and name; not written
+        (typeof(IrTableColumn), nameof(IrTableColumn.Name), "tableColumn", "name"),
+        (typeof(IrTableColumn), nameof(IrTableColumn.Sql), "tableColumn", "sql"),
+        (typeof(IrTableColumn), nameof(IrTableColumn.Nullable), "tableColumn", "nullable"),
+        (typeof(IrTableColumn), nameof(IrTableColumn.Type), "tableColumn", "type"),
+        (typeof(IrTableColumn), nameof(IrTableColumn.Generated), "tableColumn", "generated"),
+        (typeof(IrTableColumn), nameof(IrTableColumn.Collation), "tableColumn", "collation"),
+        (typeof(IrTableKey), nameof(IrTableKey.Columns), "tableKey", "columns"),
+        (typeof(IrTableKey), nameof(IrTableKey.IgnoresDuplicates), "tableKey", "ignoresDuplicates"),
         (typeof(IrFold), nameof(IrFold.Ignored), "fold", "ignored"),
         (typeof(IrFold), nameof(IrFold.Classes), "fold", "classes"),
         (typeof(IrDocument), nameof(IrDocument.Unknowns), "", "unknowns"),
@@ -58,6 +74,7 @@ public class IrJsonSchemaTests
         (typeof(IrParameter), nameof(IrParameter.Type), "parameter", "type"),
         (typeof(IrParameter), nameof(IrParameter.HasDefault), "parameter", "hasDefault"),
         (typeof(IrParameter), nameof(IrParameter.IsOutput), "parameter", "output"),
+        (typeof(IrParameter), nameof(IrParameter.TableType), "parameter", "tableType"),
         (typeof(IrResult), nameof(IrResult.Encoding), "result", "encoding"),
         (typeof(IrResult), nameof(IrResult.Type), "result", "type"),
         (typeof(IrResult), nameof(IrResult.MayBeAbsent), "result", "mayBeAbsent"),
@@ -206,7 +223,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]
@@ -229,7 +246,7 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Everything));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Whole));
 
     [Theory]
     [MemberData(nameof(BreakageNames))]

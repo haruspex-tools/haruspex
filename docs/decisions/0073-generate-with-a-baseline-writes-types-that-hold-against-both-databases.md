@@ -67,3 +67,8 @@ parameter, so one widened is refused.
 **In the code:** `IrCombination`, `IrCombined`, `IrCombinationFinding`; `CombinedTypes`, `Baseline` and `ModuleRun` in the CLI;
 `IrCombinationTests`, `GenerateBaselineTests` and, on the server, `CombinedTypesTests`; [HAR6033](../diagnostics/HAR6033.md) to
 [HAR6036](../diagnostics/HAR6036.md).
+
+**Amended** (19 Nov 2026, [decision 0077](0077-the-ir-carries-a-table-type-s-definition.md)). A table-valued parameter narrows as any
+parameter does: the combined function sends rows both types take, each column the narrower of the two and nullable only where both
+are, under every key and CHECK of either. It is bridged only when both procedures take the same type with the same columns in the
+same order and collations, since the server matches columns by place; otherwise it is unbridgeable (HAR6033).

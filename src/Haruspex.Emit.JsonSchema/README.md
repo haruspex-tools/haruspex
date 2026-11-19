@@ -158,6 +158,10 @@ the shared document holds only types that are one type, such as a recursive func
 its file name, so that a relative reference resolves
 ([decision 0075](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
 
+A document describes results, not parameters, but it defines every named type of the IR, a table type's row among them (the
+rows a client sends in a table-valued parameter): strict whatever the `objects` setting, with every column required, since a row
+sent has every column and a key it doesn't list is a misspelt column.
+
 ## What it guarantees
 
 **It claims everything the IR states, and nothing more**

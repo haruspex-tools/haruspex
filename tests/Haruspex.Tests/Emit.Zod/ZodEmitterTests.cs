@@ -6,7 +6,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests.Emit.Zod;
 
 /// <summary>Emitter behaviour on hand-built IR, independent of any front end.</summary>
-public class ZodEmitterTests
+public partial class ZodEmitterTests
 {
     private static IrDocument OneResult(IrEncoding encoding, params IrField[] fields) => new(
         new IrSource("tsql"),

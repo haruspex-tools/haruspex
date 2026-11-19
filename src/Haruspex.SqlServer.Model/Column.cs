@@ -25,6 +25,13 @@ public sealed record Column(string Name, SqlType? Type, DeclaredNullability Null
     /// <summary>Whether it is a computed column.</summary>
     public bool IsComputed => ComputedExpression is not null;
 
+    /// <summary>
+    /// Whether a table type's column declares a default (<c>DEFAULT</c>); false for a table's, whose defaults are not read. Kept,
+    /// not read as a value: a row a table-valued parameter is sent never takes it, and a column an <c>INSERT</c> doesn't list is
+    /// read as any value of its type, which the default is one of.
+    /// </summary>
+    public bool HasDefault { get; init; }
+
     /// <summary>Whether it is declared <c>HIDDEN</c> (a period column of a temporal table), which <c>SELECT *</c> leaves out.</summary>
     public bool IsHidden { get; init; }
 

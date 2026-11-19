@@ -111,6 +111,10 @@ internal sealed class NameSettler(
                 }
             }
 
+            // A table-valued parameter's rows are a type of the table type's, named after it, once for every parameter of it.
+            foreach (var parameter in obj.Parameters)
+                Walk(parameter.Type, name, $"parameters.{parameter.Name}", obj.Id);
+
             objects.Add(obj with
             {
                 Name = name,
@@ -208,6 +212,9 @@ internal sealed class NameSettler(
             case IrRef reference when NodeOf(reference) is { } node:
                 Node(reference.Name, node);
                 break;
+            case IrRef reference when types[reference.Name].Identity is { Owner: IrTypeOwner.TableType } row:
+                TableRow(reference.Name, row);
+                break;
             case IrRef reference:
                 Object(reference.Name, name, null, path, owner);
                 break;
@@ -264,6 +271,33 @@ internal sealed class NameSettler(
         Claim(name, new Holder(function, $"the type of the recursive function {function}", true, SettingFor(function)));
         named[key] = name;
         Fields(type, name, identity.Path, function);
+    }
+
+    /// <summary>
+    /// A table type's row, named after the type as a procedure of its schema would be, with <c>Row</c> after it
+    /// (<c>LineListRow</c> for <c>sales.line_list</c>), once for the whole document, whichever parameters take it.
+    /// </summary>
+    private void TableRow(string key, IrTypeIdentity identity)
+    {
+        if (named.ContainsKey(key))
+            return;
+
+        var tableType = identity.Object;
+        string? generated = null;
+        var why = $"'{tableType}' is not a two-part name.";
+        if (TrySplit(tableType, out var schema, out var within))
+            generated = config.NamingFor(schema).Name(within, config.Reserved, out why);
+        if (generated is null)
+        {
+            problems.Add(ConfigCodes.TypeUnnamed.At(NamingOf(tableType),
+                $"the rows of the table type {tableType} cannot be named: {why} Change the naming rules so that they name it."));
+            named[key] = key;
+            return;
+        }
+
+        var name = generated + "Row";
+        Claim(name, new Holder(tableType, $"the rows of the table type {tableType}", true, SettingFor(tableType)));
+        named[key] = name;
     }
 
     private void Fields(IrObjectType type, string stem, string path, string owner)

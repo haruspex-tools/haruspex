@@ -1,0 +1,327 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.add_lines",
+      "name": "AddLines",
+      "kind": "procedure",
+      "at": "procedures/add_lines.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LineListRow"
+            }
+          },
+          "tableType": "till.line_list",
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@extras",
+          "type": {
+            "kind": "json-text"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AddLinesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AddLinesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.add_lines",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "types/line_list.sql:4:32"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@lines.note"
+            }
+          ]
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "LineListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.line_list",
+        "path": "<till.line_list>"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "types/line_list.sql:4:32"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.line_list.note"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.line_list": {
+      "schema": "till",
+      "name": "line_list",
+      "at": "types/line_list.sql:2:1",
+      "columns": [
+        {
+          "name": "product_id",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "quantity",
+          "sql": "smallint",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "types/line_list.sql:4:32"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "sql": "nvarchar(200)",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "nullable": true
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "product_id"
+          ]
+        }
+      ],
+      "checks": [
+        "quantity > 0"
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

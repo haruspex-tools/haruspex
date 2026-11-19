@@ -108,9 +108,38 @@ digits and range, an integer's range, in the database's default collation, which
 the conversion cuts a string short or rounds a decimal without an error, they are the rule a client checks a value against
 before sending it ([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)). What the
 server and the mssql driver do with a value outside them is observed, type by type, in `ParameterObservationTests`; the
-fixture is `tests/fixtures/till`. A table-valued parameter is unknown (`unsupported-sql-type`) until table types are read, and
-a `json` one is JSON text whose shape isn't typed yet. Nothing a body proves narrows a parameter: a guard says what the
-procedure does with a value, not what a caller may send.
+fixture is `tests/fixtures/till`. A `json` parameter is JSON text whose shape isn't typed yet. Nothing a body proves narrows a
+parameter: a guard says what the procedure does with a value, not what a caller may send.
+
+### Table-valued parameters
+
+A `READONLY` parameter of a table type the project defines (`CREATE TYPE … AS TABLE`) is an array of the type's rows, and
+names the type's definition, which the IR carries (`TableTypes`;
+[decision 0076](../../docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md),
+[decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)). A row has every column, in the type's
+order, each with its type's facts and those the type's CHECK constraints prove, and NULL only where the column takes it. What the
+server does with a row was observed through the mssql driver (`ParameterObservationTests`):
+
+- the columns are matched by place, not name (`Columns_are_matched_by_place_not_by_name`), and every one must be sent
+  (`A_column_left_out_fails_the_call`, 500);
+- a default never applies to a row sent (`A_default_never_applies_to_a_row_a_table_valued_parameter_is_sent`), so a column with
+  one is sent like any other;
+- a key refuses a row that shares it (`A_table_valued_parameter_s_key_refuses_a_duplicate_row`, 2627), but one declared
+  `IGNORE_DUP_KEY = ON` drops it (`A_key_that_ignores_duplicates_drops_a_duplicate_row_a_table_valued_parameter_is_sent`); a
+  CHECK refuses a row that breaks it (`A_check_on_a_table_type_refuses_a_row_that_breaks_it`, 547), and a string longer than its
+  column is refused (`A_value_longer_than_its_column_fails_the_call_with_8037`);
+- the parameter may be left out, and is then an empty table, or sent with no rows, but not as NULL
+  (`A_table_valued_parameter_can_be_left_out_or_empty_but_not_null`, 206);
+- a type with an identity, computed or `rowversion` column can't be sent at all, not even with no rows
+  (`A_type_with_a_column_the_server_fills_can_t_be_sent_even_with_no_rows`: 1077, 271, 273), so its parameter is unknown
+  (`unsupported-sql-type`) and can only be left out; so is one with a column of a type not modelled, or of a type the project
+  doesn't define.
+
+Inside the body the parameter, and a variable declared with a table type (`DECLARE @t sales.line_list`), is a table variable of
+the type's columns, keys and CHECK constraints (`BodyDeclarations`, `TableType.As`): a query that reads it is typed as a query
+over a table, its columns' nullability and value sets from the declaration, and one that fixes a key reads one row at most,
+since SQL Server enforces the type's keys on every row sent or written. A table type's column takes the database's collation
+(`A_table_type_s_column_takes_the_database_s_collation`). The unit tests are `ParameterTests.TableTypes.cs`.
 
 ## Query files
 
@@ -184,7 +213,9 @@ option not declared is not known, and each rule then claims what holds whatever 
 
 Declarations are compiled, not run (`A_variable_or_table_variable_declared_in_a_branch_not_taken_still_exists`), so
 variables' types and table variables are collected from the whole body before the walk, and a table variable is
-always its declaration: nothing a statement does changes what its columns may hold.
+always its declaration: nothing a statement does changes what its columns may hold. One declared with a table type, a
+table-valued parameter among them, has the type's keys too ("Table-valued parameters"); one declared with its own columns claims
+none yet, which only claims less.
 
 ### A temporary table's columns
 

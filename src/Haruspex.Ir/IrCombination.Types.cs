@@ -165,6 +165,15 @@ public static partial class IrCombination
                 foreach (var name in Stale())
                     pending.Enqueue(name);
                 var next = pending.Dequeue();
+
+                // A table type's row is sent, so it is narrowed with its parameter (TableValued), never widened.
+                if (rows.TryGetValue(next, out var row))
+                {
+                    types[next] = row;
+                    widenedBy[next] = 0;
+                    continue;
+                }
+
                 if (types.ContainsKey(next) && widenedBy[next] == Partners(next).Count)
                     continue;
 

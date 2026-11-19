@@ -4,8 +4,8 @@ namespace Haruspex.Ir;
 
 /// <summary>The inferred shapes of a set of database objects.</summary>
 /// <remarks>
-/// Two documents are equal when the IR's JSON says the same of them: the same source, objects, named types, unknowns, overrides
-/// and folds, in any order where the file's order is a sort (<see cref="IrDocumentOrder"/>), with each record compared by
+/// Two documents are equal when the IR's JSON says the same of them: the same source, objects, named types, unknowns, overrides,
+/// folds and table types, in any order where the file's order is a sort (<see cref="IrDocumentOrder"/>), with each record compared by
 /// value. So a document read back from its file equals the one written, and that is the round trip the format promises.
 /// </remarks>
 /// <param name="Source">Where the shapes were inferred from.</param>
@@ -19,11 +19,19 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that combines two databases is written in. The IR is versioned
-    /// separately from the tool, because it is a file that other programs read: a change that would break a reader changes
-    /// this.
+    /// The newest IR format version, the one a document that defines a table type is written in (<see cref="TableTypes"/>). The
+    /// IR is versioned separately from the tool, because it is a file that other programs read: a change that would break a
+    /// reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.24";
+    public const string CurrentVersion = "0.25";
+
+    /// <summary>
+    /// The version a document that combines two databases and defines no table type is written in: 0.24 added only what a
+    /// combined document says (a source's <see cref="IrSource.Baseline"/>, the presence <see cref="IrPresence.Optional"/> and the
+    /// null rule <see cref="IrNullRule.NotInBoth"/>).
+    /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
+    /// </summary>
+    public const string CombinedVersion = "0.24";
 
     /// <summary>
     /// The version a document of one database is written in: 0.24 added only what a combined document says (a source's
@@ -35,18 +43,27 @@ public sealed record IrDocument(
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.23, every document of which is a 0.24 document
-    /// of one database that means the same. 0.23 added a result set's name (<see cref="IrResult.Name"/>), which decides the shape
-    /// of the procedure's function, and whether a type's name was declared (<see cref="IrObjectType.NameDeclared"/>), which a 0.22
-    /// file doesn't say; so no 0.22 file means what a 0.23 file of its source does.
+    /// The versions a reader reads, as decision 0024 says: the current one, 0.24 and 0.23, every document of each of which is a
+    /// 0.25 document without a table type that means the same. 0.23 added a result set's name (<see cref="IrResult.Name"/>),
+    /// which decides the shape of the procedure's function, and whether a type's name was declared
+    /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
+    /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
-    /// The version this document is written in: <see cref="CurrentVersion"/> when it combines two databases, and
-    /// <see cref="OneDatabaseVersion"/> otherwise.
+    /// The version this document is written in, the oldest whose reader reads all it says: <see cref="CurrentVersion"/> when it
+    /// defines a table type, <see cref="CombinedVersion"/> when it combines two databases, and <see cref="OneDatabaseVersion"/>
+    /// otherwise, so that a run that uses neither writes what it wrote before.
+    /// Why: docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
-    public string Version => Source.Baseline is null ? OneDatabaseVersion : CurrentVersion;
+    public string Version => TableTypes.Count > 0 ? CurrentVersion : Source.Baseline is null ? OneDatabaseVersion : CombinedVersion;
+
+    /// <summary>
+    /// The table types the document's table-valued parameters take, by the key a parameter names (<see cref="IrParameter.TableType"/>),
+    /// the type's name as the source writes it (<c>sales.line_list</c>) (0.25). Empty when no parameter is of one.
+    /// </summary>
+    public EquatableMap<string, IrTableType> TableTypes { get; init; } = [];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -70,7 +87,8 @@ public sealed record IrDocument(
         && Types.All(t => other.Types.TryGetValue(t.Key, out var type) && t.Value == type)
         && IrDocumentOrder.Unknowns(this).SequenceEqual(IrDocumentOrder.Unknowns(other))
         && IrDocumentOrder.Overrides(this).SequenceEqual(IrDocumentOrder.Overrides(other))
-        && Folds == other.Folds;
+        && Folds == other.Folds
+        && TableTypes == other.TableTypes;
 
     /// <summary>A hash that ignores order, as equality does: from what the document holds, not where.</summary>
     public override int GetHashCode() =>

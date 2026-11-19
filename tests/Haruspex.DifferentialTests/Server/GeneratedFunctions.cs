@@ -19,12 +19,17 @@ internal static class GeneratedFunctions
     /// back, holding the database alone meanwhile, and returns what each call gave or threw. With <paramref name="strict"/>, the
     /// module is written as <c>"objects": "strict"</c> writes it.
     /// </summary>
+    /// <param name="committed">
+    /// When given, the calls run in this database of the test's own rather than the shared one, with what it already holds
+    /// committed: a table type created in the transaction the calls run in deadlocks the call that sends it (observed, 1205), so
+    /// a test of table-valued parameters creates its types here first. The setup still runs in the transaction, rolled back.
+    /// </param>
     /// <param name="modules">
     /// When given, the module is written split into these modules, each a Zod file and a functions file named after it with the
     /// shared Zod file beside them, as a config file's <c>split</c> writes them; every module's functions are called.
     /// </param>
     public static async Task<IReadOnlyList<Response>> RunAsync(
-        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false, IrModules? modules = null)
+        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false, IrModules? modules = null, ScratchDatabase? committed = null)
     {
         server.Require();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated functions were not run");
@@ -54,18 +59,25 @@ internal static class GeneratedFunctions
 
             await File.WriteAllTextAsync(Path.Combine(folder, "functions.json"), JsonSerializer.Serialize(new { setup, calls, functions }, Json), token).ConfigureAwait(false);
 
-            using (var session = await server.DriverAsync(token).ConfigureAwait(false))
+            if (committed is not null)
             {
-                Assert.True(
-                    EmitCheckPackage.TryRun(
-                        "node",
-                        [Path.Combine("src", "functions.mjs"), folder],
-                        RepositoryPaths.EmitCheck,
-                        new Dictionary<string, string> { ["HARUSPEX_DRIVER_CONFIG"] = session.Config },
-                        out var output,
-                        out var why),
-                    $"The generated functions' script failed ({why}):\n{output}");
+                Run(committed.DriverConfig);
             }
+            else
+            {
+                using var session = await server.DriverAsync(token).ConfigureAwait(false);
+                Run(session.Config);
+            }
+
+            void Run(string config) => Assert.True(
+                EmitCheckPackage.TryRun(
+                    "node",
+                    [Path.Combine("src", "functions.mjs"), folder],
+                    RepositoryPaths.EmitCheck,
+                    new Dictionary<string, string> { ["HARUSPEX_DRIVER_CONFIG"] = config },
+                    out var output,
+                    out var why),
+                $"The generated functions' script failed ({why}):\n{output}");
 
             var observed = await File.ReadAllTextAsync(Path.Combine(folder, "observed.json"), token).ConfigureAwait(false);
             return JsonSerializer.Deserialize<Observed>(observed, Json)!.Calls;
@@ -91,10 +103,10 @@ internal static class GeneratedFunctions
 
     /// <summary>
     /// An error a function threw: its name and kind, the procedure and part a haruspex error names with its issues, and the
-    /// number and procedure the driver's own error carries.
+    /// number and procedure the driver's own error carries, and the numbers of the server's errors it carries before it.
     /// </summary>
     public sealed record Failure(
-        string Name, string? Kind, string Message, string? Procedure, string? Part, IReadOnlyList<Issue> Issues, int? Number, string? ProcName, bool IsRequestError);
+        string Name, string? Kind, string Message, string? Procedure, string? Part, IReadOnlyList<Issue> Issues, int? Number, string? ProcName, bool IsRequestError, IReadOnlyList<int> Preceding);
 
     /// <summary>One issue a schema found: its message, and where, as keys.</summary>
     public sealed record Issue(string Message, IReadOnlyList<string> Path);

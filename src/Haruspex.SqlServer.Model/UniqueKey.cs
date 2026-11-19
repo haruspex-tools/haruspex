@@ -13,4 +13,12 @@ namespace Haruspex.SqlServer.Model;
 /// <c>DROP INDEX</c>), so that rows written meanwhile need not be unique; null when none does. Which runs last depends on the
 /// order of the scripts, which the source does not say.
 /// </param>
-public sealed record UniqueKey(string? Name, EquatableArray<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null);
+public sealed record UniqueKey(string? Name, EquatableArray<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null)
+{
+    /// <summary>
+    /// Whether it is declared <c>IGNORE_DUP_KEY = ON</c>, so that a row whose key another has is dropped without an error rather
+    /// than refused. The key still holds of the rows kept (observed:
+    /// <c>A_key_that_ignores_duplicates_drops_a_duplicate_row_a_table_valued_parameter_is_sent</c>).
+    /// </summary>
+    public bool IgnoresDuplicates { get; init; }
+}

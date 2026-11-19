@@ -7,6 +7,33 @@ namespace Haruspex.Tests.Sources;
 public class SqlScriptFolderTests
 {
     [Fact]
+    public void A_table_type_is_read_with_its_columns_keys_checks_and_defaults()
+    {
+        using var dir = new TempDirectory();
+        dir.File("types.sql", """
+            CREATE TYPE dbo.lines AS TABLE (
+                id int NOT NULL PRIMARY KEY WITH (IGNORE_DUP_KEY = ON),
+                qty smallint NOT NULL DEFAULT 1 CHECK (qty > 0),
+                note nvarchar(20) COLLATE Latin1_General_100_BIN2,
+                serial int IDENTITY,
+                loud AS upper(note),
+                INDEX ix_qty UNIQUE (qty, note)
+            );
+            """);
+
+        var type = Assert.IsType<TableType>(SqlScriptFolder.Read(dir.Path).Model.FindUserType(new ObjectName("dbo", "lines")));
+
+        Assert.Equal(["id", "qty", "note", "serial", "loud"], type.Columns.Select(c => c.Name));
+        Assert.Equal([DeclaredNullability.NotNull, DeclaredNullability.NotNull, DeclaredNullability.NotDeclared], type.Columns.Take(3).Select(c => c.Nullability));
+        Assert.Equal([false, true, false, false, false], type.Columns.Select(c => c.HasDefault));
+        Assert.Equal((true, true), (type.Columns[3].IsIdentity, type.Columns[4].IsComputed));
+        Assert.Equal("Latin1_General_100_BIN2", type.Columns[2].Collation);
+        Assert.Equal(["id"], type.PrimaryKey);
+        Assert.Equal([(["id"], true), (["qty", "note"], false)], type.UniqueKeys.Select(k => (k.Columns.ToArray(), k.IgnoresDuplicates)));
+        Assert.Equal("qty", Assert.Single(type.Checks).Column);
+    }
+
+    [Fact]
     public void Reads_only_the_files_it_is_given()
     {
         using var dir = new TempDirectory();

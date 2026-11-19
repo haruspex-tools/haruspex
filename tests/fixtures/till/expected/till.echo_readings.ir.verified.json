@@ -1,0 +1,472 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "till.echo_readings",
+      "name": "EchoReadings",
+      "kind": "procedure",
+      "at": "procedures/echo_readings.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@readings",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReadingListRow"
+            }
+          },
+          "tableType": "till.reading_list",
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "EchoReadingsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "EchoReadingsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.echo_readings",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "taken_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "taken_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.taken_at"
+            }
+          ]
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "min": {
+              "value": -999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "max": {
+              "value": 999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.amount"
+            }
+          ]
+        },
+        {
+          "name": "token",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.token"
+            }
+          ]
+        },
+        {
+          "name": "flagged",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.flagged"
+            }
+          ]
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.total"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "@readings.code"
+            }
+          ]
+        }
+      ]
+    },
+    "ReadingListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.reading_list",
+        "path": "<till.reading_list>"
+      },
+      "fields": [
+        {
+          "name": "taken_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "taken_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.taken_at"
+            }
+          ]
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "min": {
+              "value": -999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "max": {
+              "value": 999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.amount"
+            }
+          ]
+        },
+        {
+          "name": "token",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.token"
+            }
+          ]
+        },
+        {
+          "name": "flagged",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.flagged"
+            }
+          ]
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.total"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.reading_list.code"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.reading_list": {
+      "schema": "till",
+      "name": "reading_list",
+      "at": "types/reading_list.sql:2:1",
+      "columns": [
+        {
+          "name": "taken_on",
+          "sql": "date",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "nullable": false
+        },
+        {
+          "name": "taken_at",
+          "sql": "datetime2(0)",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "nullable": true
+        },
+        {
+          "name": "amount",
+          "sql": "decimal(5,2)",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,2)",
+            "digits": {
+              "precision": 5,
+              "scale": 2,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "min": {
+              "value": -999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            },
+            "max": {
+              "value": 999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,2)"
+              }
+            }
+          },
+          "nullable": true
+        },
+        {
+          "name": "token",
+          "sql": "uniqueidentifier",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "nullable": true
+        },
+        {
+          "name": "flagged",
+          "sql": "bit",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "nullable": true
+        },
+        {
+          "name": "total",
+          "sql": "bigint",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "nullable": true
+        },
+        {
+          "name": "code",
+          "sql": "char(3)",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            }
+          },
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "checks": []
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

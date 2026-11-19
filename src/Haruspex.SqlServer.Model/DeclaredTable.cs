@@ -5,7 +5,8 @@ namespace Haruspex.SqlServer.Model;
 
 /// <summary>
 /// A table a body declares for itself, which is not an object of the schema: a temporary table (<c>CREATE TABLE #t</c>), a
-/// table variable (<c>DECLARE @t TABLE</c>), or the table a multi-statement or CLR table-valued function returns. It is read
+/// table variable (<c>DECLARE @t TABLE</c>, or <c>DECLARE @t sales.line_list</c> of a <see cref="TableType"/>), a table-valued
+/// parameter, or the table a multi-statement or CLR table-valued function returns. It is read
 /// as the schema's tables are, so the schema's rules apply to it (<see cref="ITable"/>), but it belongs to no schema: its name
 /// is the body's, with its sigil, and a fact its CHECK constraints prove is named by it (<c>#totals.ck_amount</c>).
 /// </summary>
@@ -23,6 +24,12 @@ public sealed record DeclaredTable(
     EquatableArray<CheckConstraint> Checks,
     EquatableArray<UniqueKey> UniqueKeys) : ITable
 {
+    /// <summary>
+    /// The table type it was declared with: a table-valued parameter's (<c>@lines sales.line_list READONLY</c>) or a table
+    /// variable's (<c>DECLARE @t sales.line_list</c>); null for one declared with its own columns.
+    /// </summary>
+    public TableType? Type { get; init; }
+
     /// <summary>Never: a body's tables can't be graph tables.</summary>
     public bool IsGraph => false;
 

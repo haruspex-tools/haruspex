@@ -1,14 +1,47 @@
+check till.line_list unnamed at types/line_list.sql:4:32
+check till.tag_list unnamed at types/tag_list.sql:4:38
+column till.echo_list.k int at types/echo_list.sql:3:5
+column till.echo_list.v int at types/echo_list.sql:4:5
+column till.line_list.note nvarchar(200) at types/line_list.sql:5:5
+column till.line_list.product_id int at types/line_list.sql:3:5
+column till.line_list.quantity smallint at types/line_list.sql:4:5
+column till.odd list.first col int at types/odd_names.sql:3:5
+column till.odd list.select nvarchar(10) at types/odd_names.sql:4:5
 column till.product.label varchar(20) at tables/product.sql:5:5
 column till.product.name nvarchar(40) at tables/product.sql:4:5
 column till.product.price decimal(9,2) at tables/product.sql:6:5
 column till.product.product_id int at tables/product.sql:2:5
 column till.product.sku char(8) at tables/product.sql:3:5
+column till.reading_list.amount decimal(5,2) at types/reading_list.sql:5:5
+column till.reading_list.code char(3) at types/reading_list.sql:9:5
+column till.reading_list.flagged bit at types/reading_list.sql:7:5
+column till.reading_list.taken_at datetime2(0) at types/reading_list.sql:4:5
+column till.reading_list.taken_on date at types/reading_list.sql:3:5
+column till.reading_list.token uniqueidentifier at types/reading_list.sql:6:5
+column till.reading_list.total bigint at types/reading_list.sql:8:5
+column till.serial_list.label nvarchar(20) at types/serial_list.sql:4:5
+column till.serial_list.serial int at types/serial_list.sql:3:5
+column till.serial_list.shout computed at types/serial_list.sql:5:5
+column till.tag_list.grade tinyint with a default at types/tag_list.sql:4:5
+column till.tag_list.tag varchar(20) at types/tag_list.sql:3:5
+key till.echo_list unnamed (k) ignoring duplicates at types/echo_list.sql:3:20
+key till.line_list unnamed (product_id) at types/line_list.sql:6:5
 key till.product unnamed (product_id) at tables/product.sql:2:29
+key till.serial_list unnamed (serial) at types/serial_list.sql:3:31
+key till.tag_list unnamed (tag) at types/tag_list.sql:3:30
 parameter till.add_lines @extras at procedures/add_lines.sql:4:5
 parameter till.add_lines @lines at procedures/add_lines.sql:3:5
+parameter till.basket_total @note at procedures/basket_total.sql:4:5
+parameter till.basket_total @product_id at procedures/basket_total.sql:3:5
+parameter till.count_serials @serials at procedures/count_serials.sql:3:5
+parameter till.echo_echoes @echoes at procedures/echo_echoes.sql:3:5
+parameter till.echo_echoes @odd at procedures/echo_echoes.sql:4:5
+parameter till.echo_readings @readings at procedures/echo_readings.sql:3:5
 parameter till.find_products @label at procedures/find_products.sql:5:5
 parameter till.find_products @name at procedures/find_products.sql:3:5
 parameter till.find_products @sku at procedures/find_products.sql:4:5
+parameter till.grade_of @tag at procedures/grade_of.sql:4:5
+parameter till.grade_of @tags at procedures/grade_of.sql:3:5
 parameter till.price_band @fee at procedures/price_band.sql:6:5
 parameter till.price_band @highest at procedures/price_band.sql:4:5
 parameter till.price_band @lowest at procedures/price_band.sql:3:5
@@ -29,8 +62,19 @@ parameter till.shift_times @rota_slot at procedures/shift_times.sql:6:5
 parameter till.shift_times @stamped_at at procedures/shift_times.sql:8:5
 parameter till.shift_times @till_time at procedures/shift_times.sql:7:5
 procedure till.add_lines at procedures/add_lines.sql:2:1
+procedure till.basket_total at procedures/basket_total.sql:2:1
+procedure till.count_serials at procedures/count_serials.sql:2:1
+procedure till.echo_echoes at procedures/echo_echoes.sql:2:1
+procedure till.echo_readings at procedures/echo_readings.sql:2:1
 procedure till.find_products at procedures/find_products.sql:2:1
+procedure till.grade_of at procedures/grade_of.sql:2:1
 procedure till.price_band at procedures/price_band.sql:2:1
 procedure till.ring_up at procedures/ring_up.sql:2:1
 procedure till.shift_times at procedures/shift_times.sql:2:1
 table till.product at tables/product.sql:1:1
+type till.echo_list table at types/echo_list.sql:2:1
+type till.line_list table at types/line_list.sql:2:1
+type till.odd list table at types/odd_names.sql:2:1
+type till.reading_list table at types/reading_list.sql:2:1
+type till.serial_list table at types/serial_list.sql:2:1
+type till.tag_list table at types/tag_list.sql:2:1

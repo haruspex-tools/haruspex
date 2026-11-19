@@ -142,6 +142,36 @@ internal static class MssqlPrinter
 
         """;
 
+    /// <summary>How a table-valued parameter is built: written when some function sends one.</summary>
+    private const string TableBuilding = """
+
+        /**
+         * A table-valued parameter: the table type by its schema and name, each column declared in the type's order, and each
+         * row's values in that order, since the server matches columns by place, not by name.
+         */
+        function table(
+          schema: string,
+          name: string,
+          columns: readonly (readonly [string, sql.ISqlType | (() => sql.ISqlType)])[],
+          rows: readonly Readonly<Record<string, unknown>>[],
+        ): sql.Table {
+          const value = new sql.Table()
+          value.schema = schema
+          value.name = name
+          for (const [column, type] of columns) value.columns.add(column, type)
+          for (const row of rows) value.rows.add(...columns.map(([column]) => cell(row[column])))
+          return value
+        }
+
+        /** A column's value as the driver takes it: a bigint as the string of its digits, which the server converts exactly. */
+        function cell(value: unknown): string | number | boolean | null {
+          if (typeof value === 'bigint') return value.toString()
+          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) return value
+          throw new TypeError(`A table-valued parameter's column can't hold ${typeof value}.`)
+        }
+
+        """;
+
     /// <summary>The module as text.</summary>
     /// <param name="functions">The functions, in the module's order.</param>
     /// <param name="document">The document they were planned from, whose version and source the header says.</param>
@@ -170,6 +200,8 @@ internal static class MssqlPrinter
             output.Append(JsonReading);
         if (functions.Any(f => f.Results?.Contains(IrEncoding.Rowset) == true))
             output.Append(RowsReading);
+        if (functions.Any(f => f.Bindings.Any(b => b.Table is not null)))
+            output.Append(TableBuilding);
         foreach (var function in functions)
             Function(output, function, options.RefusesExtraResultSets);
         return output.ToString();
@@ -361,7 +393,9 @@ internal static class MssqlPrinter
     {
         var key = Quoted(binding.Key);
         var value = "p" + (IrIdentifiers.IsIdentifier(binding.Key) ? "." + binding.Key : "[" + key + "]");
-        var call = $"request.{(binding.IsOutput ? "output" : "input")}({key}, {(binding.Type is { } type ? Type(type) + ", " : "")}{value})";
+        var call = binding.Table is { } table
+            ? $"request.input({key}, table({Quoted(table.Schema)}, {Quoted(table.Name)}, [{string.Join(", ", table.Columns.Select(c => $"[{Quoted(c.Name)}, {Type(c.Type)}]"))}], {value}))"
+            : $"request.{(binding.IsOutput ? "output" : "input")}({key}, {(binding.Type is { } type ? Type(type) + ", " : "")}{value})";
         return binding.OnlyWhenGiven ? $"if ({value} !== undefined) {call}" : call;
     }
 

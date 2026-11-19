@@ -34,6 +34,13 @@ internal static class ModelXml
     public const string SqlForeignKeyConstraint = nameof(SqlForeignKeyConstraint);
     public const string SqlUserDefinedDataType = nameof(SqlUserDefinedDataType);
     public const string SqlUserDefinedType = nameof(SqlUserDefinedType);
+    public const string SqlTableType = nameof(SqlTableType);
+    public const string SqlTableTypeComputedColumn = nameof(SqlTableTypeComputedColumn);
+    public const string SqlTableTypePrimaryKeyConstraint = nameof(SqlTableTypePrimaryKeyConstraint);
+    public const string SqlTableTypeUniqueConstraint = nameof(SqlTableTypeUniqueConstraint);
+    public const string SqlTableTypeCheckConstraint = nameof(SqlTableTypeCheckConstraint);
+    public const string SqlTableTypeDefaultConstraint = nameof(SqlTableTypeDefaultConstraint);
+    public const string SqlTableTypeIndex = nameof(SqlTableTypeIndex);
     public const string SqlProcedure = nameof(SqlProcedure);
     public const string SqlScalarFunction = nameof(SqlScalarFunction);
     public const string SqlInlineTableValuedFunction = nameof(SqlInlineTableValuedFunction);
@@ -74,6 +81,7 @@ internal static class ModelXml
     public const string Scale = nameof(Scale);
     public const string IsMax = nameof(IsMax);
     public const string IsUnique = nameof(IsUnique);
+    public const string DoIgnoreDuplicateKey = nameof(DoIgnoreDuplicateKey);
     public const string IsDisabled = nameof(IsDisabled);
     public const string IsNotForReplication = nameof(IsNotForReplication);
     public const string OnDeleteAction = nameof(OnDeleteAction);
@@ -93,6 +101,8 @@ internal static class ModelXml
 
     // Relationships read.
     public const string Columns = nameof(Columns);
+    public const string Constraints = nameof(Constraints);
+    public const string ForColumn = nameof(ForColumn);
     public const string ColumnSpecifications = nameof(ColumnSpecifications);
     public const string Column = nameof(Column);
     public const string DefiningTable = nameof(DefiningTable);

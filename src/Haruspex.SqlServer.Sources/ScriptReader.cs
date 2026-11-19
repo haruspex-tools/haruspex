@@ -69,6 +69,10 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             case CreateTypeUdtStatement clr:
                 ReadClrType(clr);
                 break;
+            case CreateTypeTableStatement table:
+                var tableType = SyntaxReader.TableType(SyntaxReader.Name(table.Name), table.Definition, SyntaxReader.Span(file, table));
+                into.Define(into.UserTypes, tableType.Name, tableType, At(table));
+                break;
             case CreateProcedureStatement or CreateOrAlterProcedureStatement:
                 var procedure = ModuleReader.Procedure((ProcedureStatementBody)statement, file) with { AnsiNullsOff = ansiNullsOff };
                 into.Define(into.Procedures, procedure.Name, procedure, At(statement));

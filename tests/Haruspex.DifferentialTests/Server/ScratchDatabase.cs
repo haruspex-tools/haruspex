@@ -18,6 +18,9 @@ public sealed class ScratchDatabase : IAsyncDisposable
         this.drop = drop;
     }
 
+    /// <summary>The database as the mssql driver's config, in JSON, for the driver in Node; it holds the password, so it goes in the environment only.</summary>
+    internal string DriverConfig => SqlServerFixture.MssqlConfig(connectionString);
+
     /// <summary>A new session in the database, opened.</summary>
     public async Task<SqlConnection> OpenAsync(CancellationToken token)
     {

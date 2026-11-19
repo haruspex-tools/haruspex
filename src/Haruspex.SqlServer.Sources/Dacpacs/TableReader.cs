@@ -100,14 +100,76 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
     }
 
     /// <summary>
+    /// A table type, whose columns and constraints are all in its own element (<c>Columns</c> and <c>Constraints</c>), since a
+    /// type can't be altered. Every constraint is part of the type and enforced, so every CHECK is read, written inline or not.
+    /// </summary>
+    /// <remarks>
+    /// A table type's column says <c>IsNullable</c> only when it is nullable (observed in <c>till.dacpac</c>: <c>NOT NULL</c>
+    /// and a primary key's column have none, a column declared <c>NULL</c> or neither has <c>True</c>), where a table's says it
+    /// only when it is not; so its absence here is NOT NULL.
+    /// </remarks>
+    public TableType ReadType(XElement element)
+    {
+        var name = ElementName.Object(ModelXml.Named(element));
+        var file = PackageLocation.File(package, name);
+        var columnElements = ModelXml.Elements(element, ModelXml.Columns).ToList();
+        var parts = ModelXml.Elements(element, ModelXml.Constraints).ToList();
+        SourceLocation At(int line) => new(file, line, 1);
+
+        var owners = ModelXml.Disambiguators(element).Distinct(StringComparer.Ordinal).ToDictionary(d => d, _ => "", StringComparer.Ordinal);
+        var defaulted = parts.Where(p => ModelXml.TypeOf(p) == ModelXml.SqlTableTypeDefaultConstraint)
+            .SelectMany(p => ModelXml.References(p, ModelXml.ForColumn))
+            .Select(r => ElementName.Last(ModelXml.Named(r)))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var columns = new List<Column>();
+        for (var i = 0; i < columnElements.Count; i++)
+        {
+            var column = columnElements[i];
+            var columnName = ElementName.Last(ModelXml.Named(column));
+            foreach (var disambiguator in ModelXml.Disambiguators(column))
+                owners[disambiguator] = columnName;
+            columns.Add(Column(column, columnName, At(i + 1), nullableUnlessSaid: false) with { HasDefault = defaulted.Contains(columnName) });
+        }
+
+        var checks = new List<CheckConstraint>();
+        var keys = new List<UniqueKey>();
+        for (var i = 0; i < parts.Count; i++)
+        {
+            var part = parts[i];
+            var at = At(columnElements.Count + i + 1);
+            switch (ModelXml.TypeOf(part))
+            {
+                case ModelXml.SqlTableTypeCheckConstraint when Check(part, owners, at, trusted: true) is { } check:
+                    checks.Add(check);
+                    break;
+                case ModelXml.SqlTableTypePrimaryKeyConstraint or ModelXml.SqlTableTypeUniqueConstraint:
+                case ModelXml.SqlTableTypeIndex when ModelXml.IsTrue(part, ModelXml.IsUnique) && ModelXml.Property(part, ModelXml.FilterPredicate) is null:
+                    keys.Add(new UniqueKey(PartName(part), KeyColumns(part), ModelXml.TypeOf(part) == ModelXml.SqlTableTypePrimaryKeyConstraint, at)
+                    {
+                        IgnoresDuplicates = ModelXml.IsTrue(part, ModelXml.DoIgnoreDuplicateKey),
+                    });
+                    break;
+            }
+        }
+
+        checks = [.. checks.Where(c => c.Column is not null), .. checks.Where(c => c.Column is null)];
+        var primaryKey = keys.FirstOrDefault(k => k.IsPrimaryKey)?.Columns ?? [];
+        return new TableType(name, PackageLocation.Whole(file, columnElements.Count + parts.Count), [.. columns], primaryKey, [.. checks], [.. keys]);
+    }
+
+    /// <summary>
     /// A column, of a table or of the table a function returns. Its nullability is what DacFx resolved and deploys:
     /// <c>IsNullable</c> false is NOT NULL, and its absence NULL, whether the script said NULL or nothing (an alias type's NOT NULL
     /// included). A computed column takes its nullability from its expression, as in a folder, unless it is declared
     /// <c>PERSISTED NOT NULL</c> (<c>IsPersistedNullable</c> false) or <c>PERSISTED NULL</c> (true).
     /// </summary>
-    public Column Column(XElement column, string name, SourceLocation at)
+    /// <param name="column">The column's element.</param>
+    /// <param name="name">Its name.</param>
+    /// <param name="at">Where it is read.</param>
+    /// <param name="nullableUnlessSaid">Whether a column without <c>IsNullable</c> is nullable: a table's is, a table type's isn't.</param>
+    public Column Column(XElement column, string name, SourceLocation at, bool nullableUnlessSaid = true)
     {
-        if (ModelXml.TypeOf(column) == ModelXml.SqlComputedColumn)
+        if (ModelXml.TypeOf(column) is ModelXml.SqlComputedColumn or ModelXml.SqlTableTypeComputedColumn)
         {
             var expression = Parse(ModelXml.Property(column, ModelXml.ExpressionScript) ?? "", at, (parser, reader) => (parser.ParseExpression(reader, out var errors), errors));
             var declared = ModelXml.Property(column, ModelXml.IsPersistedNullable) switch
@@ -119,7 +181,8 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
             return new Column(name, null, declared, false, expression, at);
         }
 
-        var nullability = ModelXml.Property(column, ModelXml.IsNullable) == "False" ? DeclaredNullability.NotNull : DeclaredNullability.Null;
+        var nullable = ModelXml.Property(column, ModelXml.IsNullable) is { } said ? said == "True" : nullableUnlessSaid;
+        var nullability = nullable ? DeclaredNullability.Null : DeclaredNullability.NotNull;
         return new Column(name, TypeSpecifier.Of(column, ModelXml.TypeSpecifier), nullability, ModelXml.IsTrue(column, ModelXml.IsIdentity), null, at, ModelXml.Property(column, ModelXml.Collation))
         {
             IsHidden = ModelXml.IsTrue(column, ModelXml.IsHidden),
@@ -133,16 +196,16 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
     /// a <c>Disambiguator</c> with its table or one of its columns, whichever of the two carries the annotation and which the
     /// attached one (observed: an unnamed check carries the annotation, a named one the attached one).
     /// </summary>
-    private CheckConstraint? Check(XElement check, Dictionary<string, string> owners, SourceLocation at)
+    private CheckConstraint? Check(XElement check, Dictionary<string, string> owners, SourceLocation at, bool trusted = false)
     {
         var owner = ModelXml.Disambiguators(check).Select(d => owners.GetValueOrDefault(d)).FirstOrDefault(o => o is not null);
-        if (!extracted && owner is null)
+        if (!extracted && !trusted && owner is null)
             return null;
         if (Parse(ModelXml.Property(check, ModelXml.CheckExpressionScript) ?? "", at, (parser, reader) => (parser.ParseBooleanExpression(reader, out var errors), errors)) is not { } condition)
             return null;
         var column = owner is { Length: > 0 } ? owner : null;
-        var trusted = !ModelXml.IsTrue(check, ModelXml.IsDisabled) && ModelXml.Annotation(check, ModelXml.IsNotTrustedPropertyAnnotation) is null;
-        return new CheckConstraint(PartName(check), condition, column, ModelXml.IsTrue(check, ModelXml.IsNotForReplication), at, trusted ? null : at);
+        var enforced = !ModelXml.IsTrue(check, ModelXml.IsDisabled) && ModelXml.Annotation(check, ModelXml.IsNotTrustedPropertyAnnotation) is null;
+        return new CheckConstraint(PartName(check), condition, column, ModelXml.IsTrue(check, ModelXml.IsNotForReplication), at, enforced ? null : at);
     }
 
     /// <summary>An expression's script parsed so that it starts at <paramref name="at"/>; null, reported, when it doesn't parse.</summary>
