@@ -125,7 +125,7 @@ public partial class ApplyViewTests
     }
 
     [Theory]
-    [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER VIEW dbo.w AS SELECT u.id FROM dbo.u AS u;", IrUnknownReason.UnresolvedTable)]
+    [InlineData("CREATE VIEW dbo.w AS SELECT t.id FROM dbo.t AS t;\nGO\nIF @@SERVERNAME = N'x' DROP VIEW dbo.w;\nGO\nCREATE VIEW dbo.w AS SELECT u.id FROM dbo.u AS u;", IrUnknownReason.UnresolvedTable)]
     [InlineData("CREATE VIEW dbo.w AS SELECT y.id FROM dbo.y AS y;\nGO\nCREATE VIEW dbo.y AS SELECT w.id FROM dbo.w AS w;", IrUnknownReason.UnresolvedTable)]
     public void A_view_that_cannot_be_read_is_unknown(string views, IrUnknownReason reason) =>
         Assert.Equal(reason, Unknown(Procedure("SELECT x.id FROM dbo.w AS x;", views: views), "results[0][].id").Reason);

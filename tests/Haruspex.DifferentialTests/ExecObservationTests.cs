@@ -10,7 +10,7 @@ namespace Haruspex.DifferentialTests;
 /// which procedure a name runs. Each test creates what it needs in a write session, rolled back, alone in the test
 /// database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class ExecObservationTests(SqlServerFixture server)
+public partial class ExecObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call, bool errorsAsMessages = false) =>
         ObservedCall.Run(server, setup, call, errorsAsMessages);

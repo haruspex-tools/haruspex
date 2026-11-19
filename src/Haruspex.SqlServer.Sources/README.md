@@ -20,7 +20,8 @@ flowchart LR
 ```
 
 `SqlScriptFolder.Read` is three steps: which scripts there are and in which order, each parsed (`ScriptFile`); what each
-declares, applying nothing (`ScriptReader`); and the passes that settle what is in effect once every script is read
+declares, applying only its own order to the procedures, functions and views it names (`ScriptReader`, `ScriptDefinitions`);
+and the passes that settle what is in effect once every script is read
 (`DefinitionsInEffect`, `ConstraintTrust`).
 
 Files are read in order of their relative path, so the result doesn't depend on the file system. Each file is UTF-8 unless
@@ -121,8 +122,10 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   `CREATE TABLE` and `ALTER TABLE … ADD`, as their actions fire the referencing table's triggers. A primary key or unique
   constraint `ALTER TABLE … ADD CONSTRAINT` adds, as AdventureWorks adds every key, is one of the table's keys
   (`AddedKey`), when the statement is a batch's and names the table with its schema: SQL Server enforces it as one the table
-  declares, and an unqualified name may mean another table. A CHECK it adds is not read, which only claims less. A view defined once keeps
-  its definition (one defined twice records its second as a `Redefinition`), and a synonym the name it stands for. Every
+  declares, and an unqualified name may mean another table. A CHECK it adds is not read, which only claims less. A procedure, function or view is the
+  definition that stands once its script has run, read in batch order (`ScriptDefinitions`): a stub created and then altered is
+  its `ALTER`, one dropped and created again its last `CREATE` (decision 0080); one that two scripts define or change records the
+  second as a `Redefinition`. A synonym keeps the name it stands for. Every
   object keeps where it was read (`SourceSpan`).
 - **Settings a definition keeps are kept.** A procedure, function or view records whether `SET ANSI_NULLS OFF` came before
   it in its file, since SQL Server keeps the setting it was created with.
@@ -161,8 +164,10 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   targets. Each such part that touches what is read is reported and not read, never guessed. No restore: a package's version
   is the one the project names, and a range or a floating version isn't resolved. Given a folder, it reads every script in it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
-  its definition (`ALTER TABLE … ALTER COLUMN`, `DROP TABLE`, `ALTER PROCEDURE`, `DROP PROCEDURE`) is recorded as a
-  `Redefinition`, not applied. Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
+  its definition in another script (`ALTER PROCEDURE`, `DROP PROCEDURE`), or that changes a table anywhere (`ALTER TABLE …
+  ALTER COLUMN`, `DROP TABLE`), is recorded as a `Redefinition`, not applied. Only a script's own procedures, functions and
+  views are played in its order; an `ALTER` that no other script names stands
+  ([decision 0080](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0080-the-last-definition-in-a-script-stands.md)). Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
   SQL, are not seen.
 - **No name resolution or typing.** What a reference in a body points to, and what type an expression has, are questions
   for a semantic layer over the model.

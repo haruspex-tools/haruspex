@@ -52,43 +52,45 @@ flowchart LR
    depends only on the paths: two runs over the same files read them alike, and the first of two definitions of one name is
    the same one each time.
 2. **What each script declares** (`ScriptReader`). One reader per script walks its statements in order and adds what each
-   defines or changes to `SchemaDeclarations`, the reading's one piece of mutable state. It applies nothing. A statement that
-   alters or drops an object is recorded beside the object's definition, not used to replace it.
+   defines or changes to `SchemaDeclarations`, the reading's one piece of mutable state. Within the script, the order is
+   known: its procedures, functions and views are played as the server runs its batches (`ScriptDefinitions`), so what the
+   script adds is the definition it leaves standing. Anything that depends on another script is recorded beside the object's
+   definition, not used to replace it.
 3. **What is in effect** (`DefinitionsInEffect`, `ConstraintTrust`). Once every script is read, the passes decide what the
    model says of each object.
 
-The second step applies nothing because nothing tells it what to apply. A procedure created in one file and altered in
-another has two definitions, and which is in effect on a server depends on the order the scripts ran there, which the folder
-doesn't record. Guessing an order would make a claim haruspex can't support, so the model keeps the `CREATE` (for the
-procedure's parameters) and records the doubt as a `Redefinition`. Inference then says the procedure's results are unknown,
-and why:
+A script that creates a procedure as a stub and then alters it, or drops it and creates it again, is the usual way to deploy
+a procedure that may already exist, and the definition that stands is fixed by the script's order: the last one that runs.
+An `ALTER` replaces the whole definition, parameters included, whatever stood before; a second `CREATE` of a name that
+stands is refused, so the first stands; a `DROP` (with or without `IF EXISTS`, or under `IF OBJECT_ID(…) IS NOT NULL` naming
+the object) leaves none. Each is observed (`ExecObservationTests.Definitions.cs`), and the model keeps the definition that
+stands, with no doubt:
 
 ```sql haruspex-example
 CREATE TABLE shop.product (product_id int NOT NULL PRIMARY KEY, name nvarchar(80) NOT NULL);
 GO
-CREATE PROCEDURE shop.list_products
-AS
-SELECT p.product_id, p.name FROM shop.product AS p;
+CREATE PROCEDURE shop.list_products AS RETURN 0;
 GO
 ALTER PROCEDURE shop.list_products
 AS
-SELECT p.product_id FROM shop.product AS p;
+SELECT p.product_id, p.name FROM shop.product AS p;
 ```
 
 ```json haruspex-ir unknowns
-[
-  {
-    "object": "shop.list_products",
-    "path": "results",
-    "reason": "redefined",
-    "detail": "shop.list_products is changed by ALTER PROCEDURE at example.sql:7:1, and which definition applies depends on the order the scripts run.",
-    "at": "example.sql:7:1"
-  }
-]
+[]
 ```
 
-The same rule covers a function altered or dropped, a view defined twice, and a table changed by `ALTER TABLE` in a way that
-could change a column. An `ALTER TABLE` that can only tighten a table (adding a constraint, checking one, rebuilding) is no
+Between scripts, nothing applies an order, because nothing tells the reader one. A procedure created in one file and altered
+in another has two definitions, and which is in effect on a server depends on the order the scripts ran there, which the
+folder doesn't record. Guessing an order would make a claim haruspex can't support, so the model keeps the `CREATE` (for the
+procedure's parameters) and records the doubt as a `Redefinition`; inference then says the procedure's results are unknown
+(`redefined`), and why. An `ALTER` that no other script's statement names is the one exception: whatever stood before it, it
+replaces, and nothing the project holds runs after it, so it stands. That covers a stub made by dynamic SQL, which the reader
+can't see (`exec sp_executesql N'create procedure … as return 0'` under `IF OBJECT_ID(…) IS NULL`), followed by its `ALTER`
+([decision 0080](../decisions/0080-the-last-definition-in-a-script-stands.md)).
+
+The same rules cover a function and a view. A table isn't played in order: one changed by `ALTER TABLE` in a way that could
+change a column, or dropped, is a doubt wherever the statement is, its own script included. An `ALTER TABLE` that can only tighten a table (adding a constraint, checking one, rebuilding) is no
 doubt, since ignoring it can only leave a column more nullable than it is (`ScriptReader.OnlyTightens`). The primary keys and
 unique constraints it adds are read as the table's own (`AddedKey`), since the server enforces them as it does those the table
 declares; the CHECK constraints it adds are not.

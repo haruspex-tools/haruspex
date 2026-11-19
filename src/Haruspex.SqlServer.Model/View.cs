@@ -31,8 +31,9 @@ public sealed record View(ObjectName Name, SourceSpan Span, EquatableArray<strin
     public bool IsEncrypted { get; init; }
 
     /// <summary>
-    /// The second definition of a view defined more than once (created and altered, or created twice), so that which
-    /// definition applies depends on the order the scripts run; null when it is defined once.
+    /// The second definition of a view that two scripts define (created in one and altered in another, or created in both), or
+    /// the drop that may not run between two definitions in one script, so that which definition applies depends on an order
+    /// the source doesn't give; null when one definition stands.
     /// </summary>
     public Redefinition? Redefinition { get; init; }
 }

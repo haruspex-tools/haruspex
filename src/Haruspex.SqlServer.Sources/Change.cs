@@ -2,9 +2,13 @@ using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Sources;
 
-/// <summary>The first statement that changes a procedure or function after its definition, and, for an <c>ALTER</c>, the definition it gives.</summary>
+/// <summary>
+/// A script's change to a procedure or function it doesn't define itself, or the doubt it leaves on one it does
+/// (<see cref="ScriptOutcome{T}"/>): its first statement that changes it, and, when the script leaves an <c>ALTER</c>'s
+/// definition standing, that definition.
+/// </summary>
 /// <typeparam name="T">The kind of module.</typeparam>
 /// <param name="Why">The statement.</param>
-/// <param name="Altered">The definition an <c>ALTER</c> gives; null for a <c>DROP</c>, which gives none.</param>
+/// <param name="Altered">The definition an <c>ALTER</c> leaves standing; null when the script leaves none, or leaves a doubt.</param>
 internal sealed record Change<T>(Redefinition Why, T? Altered)
     where T : Module;

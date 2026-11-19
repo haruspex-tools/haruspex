@@ -108,8 +108,10 @@ public partial class ExecTests
     [Fact]
     public void A_redefined_callee_is_unknown()
     {
+        // Created in one script and altered in another, whose order a folder doesn't give.
         var why = ResultsUnknown(Infer(
-            ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;\nGO\nALTER PROCEDURE dbo.q AS SELECT t.name FROM dbo.t AS t;"),
+            ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;"),
+            ("q_altered", "ALTER PROCEDURE dbo.q AS SELECT t.name FROM dbo.t AS t;"),
             ("p", "CREATE PROCEDURE dbo.p AS EXEC dbo.q;")));
 
         Assert.Equal(IrUnknownReason.Redefined, why.Reason);

@@ -177,7 +177,13 @@ public partial class JsonFunctionTests
     [Fact]
     public void A_function_also_altered_is_unknown()
     {
-        var doc = Infer(Children + "\nALTER FUNCTION dbo.children(@id int) RETURNS int AS BEGIN RETURN 1; END\nGO\n", "SELECT dbo.children(t.id) AS v FROM dbo.t AS t FOR JSON PATH;");
+        // In another script than its CREATE, so which definition applies depends on the order the scripts run.
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("tables.sql", Tables),
+            ("functions.sql", Children),
+            ("altered.sql", "ALTER FUNCTION dbo.children(@id int) RETURNS int AS BEGIN RETURN 1; END"),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT dbo.children(t.id) AS v FROM dbo.t AS t FOR JSON PATH;"));
 
         Assert.Equal(IrUnknownReason.Redefined, Assert.Single(doc.Unknowns, u => u.Path == "results[0][].v").Reason);
     }

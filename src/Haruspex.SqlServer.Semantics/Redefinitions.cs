@@ -25,5 +25,6 @@ public static class Redefinitions
         RedefiningStatement.CreateView => "CREATE VIEW",
         RedefiningStatement.AlterView => "ALTER VIEW",
         RedefiningStatement.CreateOrAlterView => "CREATE OR ALTER VIEW",
+        RedefiningStatement.DropView => "DROP VIEW",
     };
 }

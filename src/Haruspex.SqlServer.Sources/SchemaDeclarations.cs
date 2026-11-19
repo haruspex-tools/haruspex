@@ -9,8 +9,9 @@ namespace Haruspex.SqlServer.Sources;
 /// </summary>
 /// <remarks>
 /// It is the reading's one mutable state, written by the script readers in file order and read once, by
-/// <see cref="ToModel"/>. A folder doesn't say the order its scripts run in, so nothing is applied while reading: a change is
-/// recorded beside the definition it changes, and the passes decide what the model says of each.
+/// <see cref="ToModel"/>. A folder doesn't say the order its scripts run in, so nothing is applied across scripts while
+/// reading: each script adds what its own order leaves (<see cref="Settle{T}"/>), a change is recorded beside the definition it
+/// changes, and the passes decide what the model says of each.
 /// </remarks>
 internal sealed class SchemaDeclarations
 {
@@ -32,16 +33,16 @@ internal sealed class SchemaDeclarations
     /// <summary>The procedures, each from its <c>CREATE</c> or <c>CREATE OR ALTER</c>.</summary>
     public Dictionary<ObjectName, Procedure> Procedures { get; } = [];
 
-    /// <summary>The first <c>ALTER</c> or <c>DROP</c> of each procedure.</summary>
-    public Dictionary<ObjectName, Change<Procedure>> ProcedureChanges { get; } = [];
+    /// <summary>Each script's change to each procedure, in the order read (<see cref="Change{T}"/>).</summary>
+    public Dictionary<ObjectName, List<Change<Procedure>>> ProcedureChanges { get; } = [];
 
     /// <summary>The functions, each from its <c>CREATE</c> or <c>CREATE OR ALTER</c>.</summary>
     public Dictionary<ObjectName, Function> Functions { get; } = [];
 
-    /// <summary>The first <c>ALTER</c> or <c>DROP</c> of each function.</summary>
-    public Dictionary<ObjectName, Change<Function>> FunctionChanges { get; } = [];
+    /// <summary>Each script's change to each function, in the order read (<see cref="Change{T}"/>).</summary>
+    public Dictionary<ObjectName, List<Change<Function>>> FunctionChanges { get; } = [];
 
-    /// <summary>Every definition of each view, in the order read.</summary>
+    /// <summary>Each script's definition of each view, in the order read.</summary>
     public Dictionary<ObjectName, List<ViewDefinition>> Views { get; } = [];
 
     /// <summary>The synonyms; of two of one name, the first read.</summary>
@@ -65,6 +66,57 @@ internal sealed class SchemaDeclarations
         ArgumentNullException.ThrowIfNull(into);
         if (!into.TryAdd(name, definition))
             Diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at));
+    }
+
+    /// <summary>
+    /// What one script leaves of each procedure or function it names: a definition it makes is defined (a second, from another
+    /// script, is reported), with the doubt it leaves as a change; a definition it only alters, or none, is a change.
+    /// </summary>
+    public void Settle<T>(IEnumerable<ScriptOutcome<T>> outcomes, Dictionary<ObjectName, T> created, Dictionary<ObjectName, List<Change<T>>> changes)
+        where T : Module
+    {
+        ArgumentNullException.ThrowIfNull(outcomes);
+        ArgumentNullException.ThrowIfNull(created);
+        ArgumentNullException.ThrowIfNull(changes);
+        foreach (var outcome in outcomes)
+        {
+            if (outcome is { Standing: { } made, Established: true, At: { } at })
+            {
+                Define(created, outcome.Name, made, at);
+                if (outcome.Why is { } doubt)
+                    Changes(changes, outcome.Name).Add(new Change<T>(doubt, null));
+            }
+            else if (outcome.Why is { } why)
+            {
+                Changes(changes, outcome.Name).Add(new Change<T>(why, outcome.Standing));
+            }
+        }
+    }
+
+    /// <summary>
+    /// What one script leaves of each view it names: the definition that stands, with the doubt it leaves. A view the script
+    /// drops last is not followed, as no drop of a view is elsewhere.
+    /// </summary>
+    public void Settle(IEnumerable<ScriptOutcome<ViewDefinition>> outcomes)
+    {
+        ArgumentNullException.ThrowIfNull(outcomes);
+        foreach (var outcome in outcomes)
+        {
+            if (outcome.Standing is not { } standing)
+                continue;
+            var definition = outcome.Established && outcome.Why is { } doubt ? standing with { View = standing.View with { Redefinition = doubt } } : standing;
+            if (!Views.TryGetValue(outcome.Name, out var definitions))
+                Views[outcome.Name] = definitions = [];
+            definitions.Add(definition);
+        }
+    }
+
+    private static List<Change<T>> Changes<T>(Dictionary<ObjectName, List<Change<T>>> changes, ObjectName name)
+        where T : Module
+    {
+        if (!changes.TryGetValue(name, out var list))
+            changes[name] = list = [];
+        return list;
     }
 
     /// <summary>The model: each object's definition in effect, as the passes settle it, in the model's own order.</summary>

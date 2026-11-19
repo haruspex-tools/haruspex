@@ -7,7 +7,8 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// Reads one parsed script into what the folder's scripts declare: each definition it makes, each statement that changes
-/// one later, and each statement that may disable or drop a constraint. It applies nothing; the passes after every script is read
+/// one later, and each statement that may disable or drop a constraint. It applies only its own order, to the procedures,
+/// functions and views it names (<see cref="ScriptDefinitions{T}"/>); the passes after every script is read
 /// (<see cref="DefinitionsInEffect"/>, <see cref="ConstraintTrust"/>) settle what the model says.
 /// </summary>
 /// <remarks>
@@ -29,6 +30,15 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// </summary>
     private bool ansiNullsOff = !settings.AnsiNulls;
 
+    /// <summary>The procedures this script defines, alters or drops, played in its order (<see cref="ScriptDefinitions{T}"/>).</summary>
+    private readonly ScriptDefinitions<Procedure> procedures = new(into.Diagnostics);
+
+    /// <summary>The functions this script defines, alters or drops, played in its order.</summary>
+    private readonly ScriptDefinitions<Function> functions = new(into.Diagnostics);
+
+    /// <summary>The views this script defines, alters or drops, played in its order.</summary>
+    private readonly ScriptDefinitions<ViewDefinition> views = new(into.Diagnostics);
+
     /// <summary>A script that starts with the default settings, as a folder's does.</summary>
     public ScriptReader(string file, SchemaDeclarations into)
         : this(file, into, ScriptSettings.Default)
@@ -43,6 +53,11 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         ReadKeyDisables(script);
         foreach (var statement in script.Batches.SelectMany(b => b.Statements))
             Read(statement);
+
+        // The script has run: what it leaves of each procedure, function and view is settled against the other scripts' later.
+        into.Settle(procedures.Outcomes, into.Procedures, into.ProcedureChanges);
+        into.Settle(functions.Outcomes, into.Functions, into.FunctionChanges);
+        into.Settle(views.Outcomes);
     }
 
     /// <summary>One statement of a batch: what it defines or changes, by kind, one reader each.</summary>
@@ -71,25 +86,25 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 break;
             case CreateProcedureStatement or CreateOrAlterProcedureStatement:
                 var procedure = ModuleReader.Procedure((ProcedureStatementBody)statement, file) with { AnsiNullsOff = ansiNullsOff };
-                into.Define(into.Procedures, procedure.Name, procedure, At(statement));
+                procedures.Create(procedure.Name, procedure, At(statement), statement is CreateOrAlterProcedureStatement);
                 break;
             case AlterProcedureStatement alter:
                 var altered = ModuleReader.Procedure(alter, file) with { AnsiNullsOff = ansiNullsOff };
-                into.ProcedureChanges.TryAdd(altered.Name, new(Changed(altered.Name, RedefiningStatement.AlterProcedure, alter), altered));
-                break;
-            case DropProcedureStatement drop:
-                ReadDrops(drop.Objects, RedefiningStatement.DropProcedure, drop, (name, why) => into.ProcedureChanges.TryAdd(name, new(why, null)));
+                procedures.Alter(altered.Name, altered, At(alter), Changed(altered.Name, RedefiningStatement.AlterProcedure, alter));
                 break;
             case CreateFunctionStatement or CreateOrAlterFunctionStatement:
                 var function = ModuleReader.Function((FunctionStatementBody)statement, file) with { AnsiNullsOff = ansiNullsOff };
-                into.Define(into.Functions, function.Name, function, At(statement));
+                functions.Create(function.Name, function, At(statement), statement is CreateOrAlterFunctionStatement);
                 break;
             case AlterFunctionStatement alter:
                 var alteredFunction = ModuleReader.Function(alter, file) with { AnsiNullsOff = ansiNullsOff };
-                into.FunctionChanges.TryAdd(alteredFunction.Name, new(Changed(alteredFunction.Name, RedefiningStatement.AlterFunction, alter), alteredFunction));
+                functions.Alter(alteredFunction.Name, alteredFunction, At(alter), Changed(alteredFunction.Name, RedefiningStatement.AlterFunction, alter));
                 break;
-            case DropFunctionStatement drop:
-                ReadDrops(drop.Objects, RedefiningStatement.DropFunction, drop, (name, why) => into.FunctionChanges.TryAdd(name, new(why, null)));
+            case DropProcedureStatement or DropFunctionStatement or DropViewStatement:
+                ReadModuleDrop((DropObjectsStatement)statement, certain: true);
+                break;
+            case IfStatement { ElseStatement: null } guarded:
+                ReadGuardedDrops(guarded);
                 break;
             case ViewStatementBody view:
                 ReadView(view);
@@ -102,6 +117,67 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 into.Triggers.Add(dml);
                 break;
         }
+    }
+
+    /// <summary>
+    /// A <c>DROP PROCEDURE</c>, <c>DROP FUNCTION</c> or <c>DROP VIEW</c> of one or more objects, with or without <c>IF EXISTS</c>:
+    /// <paramref name="certain"/> when it runs whenever each exists.
+    /// </summary>
+    private void ReadModuleDrop(DropObjectsStatement drop, bool certain)
+    {
+        foreach (var name in drop.Objects.Select(SyntaxReader.Name))
+        {
+            switch (drop)
+            {
+                case DropProcedureStatement:
+                    procedures.Drop(name, Changed(name, RedefiningStatement.DropProcedure, drop), certain);
+                    break;
+                case DropFunctionStatement:
+                    functions.Drop(name, Changed(name, RedefiningStatement.DropFunction, drop), certain);
+                    break;
+                case DropViewStatement:
+                    views.Drop(name, Changed(name, RedefiningStatement.DropView, drop), certain);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The drops of procedures, functions and views an <c>IF</c> with no <c>ELSE</c> makes, alone or in a block. Under
+    /// <c>IF OBJECT_ID(N'name') IS NOT NULL</c> naming the object it drops, the drop runs whenever the object exists, as an
+    /// unconditional one does (observed: A_procedure_dropped_and_created_again_runs_its_last_create); under any other condition
+    /// it may not run. Nothing else under an <c>IF</c> is read, as anywhere.
+    /// </summary>
+    private void ReadGuardedDrops(IfStatement guarded)
+    {
+        IEnumerable<TSqlStatement> then = guarded.ThenStatement is BeginEndBlockStatement block ? block.StatementList.Statements : [guarded.ThenStatement];
+        var exists = Existence(guarded.Predicate);
+        foreach (var drop in then.OfType<DropObjectsStatement>().Where(d => d is DropProcedureStatement or DropFunctionStatement or DropViewStatement))
+        {
+            // An unqualified name means the caller's default schema in both, which needn't be dbo, so both must say the same.
+            var certain = exists is { } tested && drop.Objects is [var target]
+                && SyntaxReader.Name(target) == tested.Name && (target.SchemaIdentifier is null) == (tested.Schema is null);
+            ReadModuleDrop(drop, certain);
+        }
+    }
+
+    /// <summary>
+    /// The object an <c>OBJECT_ID(N'name'[, type]) IS NOT NULL</c> tests for, and whether its name has a schema; null for any other
+    /// condition, or a name in another database.
+    /// </summary>
+    private static (ObjectName Name, string? Schema)? Existence(BooleanExpression predicate)
+    {
+        if (predicate is not BooleanIsNullExpression { IsNot: true, Expression: FunctionCall { CallTarget: null } call }
+            || !call.FunctionName.Value.Equals("OBJECT_ID", StringComparison.OrdinalIgnoreCase)
+            || call.Parameters is not [StringLiteral literal, ..])
+        {
+            return null;
+        }
+
+        var parsed = new TSql170Parser(initialQuotedIdentifiers: true).ParseSchemaObjectName(new StringReader(literal.Value), out var errors);
+        return errors.Count == 0 && parsed is { DatabaseIdentifier: null, ServerIdentifier: null }
+            ? (SyntaxReader.Name(parsed), parsed.SchemaIdentifier?.Value)
+            : null;
     }
 
     /// <summary>A <c>DROP</c> of one or more objects: each dropped object's first change, if it has none yet.</summary>
@@ -146,20 +222,23 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// Every definition of a view, kept in the order read: the objects a FROM clause can read besides tables, which an
-    /// unqualified name may resolve to instead of a table.
+    /// A definition of a view: the objects a FROM clause can read besides tables, which an unqualified name may resolve to
+    /// instead of a table. It is played in the script's order, as a procedure's is.
     /// </summary>
     private void ReadView(ViewStatementBody statement)
     {
         var view = ModuleReader.View(statement, file) with { AnsiNullsOff = ansiNullsOff };
-        if (!into.Views.TryGetValue(view.Name, out var definitions))
-            into.Views[view.Name] = definitions = [];
-        definitions.Add(new ViewDefinition(view, statement switch
+        var kind = statement switch
         {
             AlterViewStatement => RedefiningStatement.AlterView,
             CreateOrAlterViewStatement => RedefiningStatement.CreateOrAlterView,
             _ => RedefiningStatement.CreateView,
-        }));
+        };
+        var definition = new ViewDefinition(view, kind);
+        if (kind == RedefiningStatement.AlterView)
+            views.Alter(view.Name, definition, At(statement), Changed(view.Name, kind, statement));
+        else
+            views.Create(view.Name, definition, At(statement), kind == RedefiningStatement.CreateOrAlterView);
     }
 
     private void ReadAliasType(CreateTypeUddtStatement alias, SqlType baseType)

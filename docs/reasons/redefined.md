@@ -4,7 +4,7 @@ An unknown reason, `IrUnknownReason.Redefined` in the IR's model. A value or a r
 
 ## What it means
 
-An object defined more than once by statements whose order decides which applies, such as a CREATE and an ALTER PROCEDURE, or a definition followed by a DROP.
+An object defined more than once by statements whose order decides which applies, and which the source doesn't put in an order, such as a CREATE in one script and an ALTER PROCEDURE or a DROP in another. Within one script the order is the script's, and the definition that stands is the last that runs ([decision 0080](../decisions/0080-the-last-definition-in-a-script-stands.md)).
 
 ## What to do
 

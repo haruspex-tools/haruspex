@@ -4,7 +4,8 @@ namespace Haruspex.SqlServer.Model;
 
 /// <summary>
 /// A statement that changes an object after its definition, in a way the model does not apply: <c>ALTER TABLE</c>
-/// that changes columns, <c>DROP TABLE</c>, <c>ALTER PROCEDURE</c>, <c>DROP PROCEDURE</c>, a second definition of a view.
+/// that changes columns, <c>DROP TABLE</c>, or an <c>ALTER</c>, <c>DROP</c> or second definition of a procedure, function or
+/// view in another script than its definition, or under a condition in the same one.
 /// </summary>
 /// <remarks>
 /// A folder of scripts does not say the order they run in, so which definition is in effect is unknown. The model

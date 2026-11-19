@@ -63,7 +63,8 @@ foreach (var table in model.Tables)
   and a caller's options are the caller's. What the source refers to but couldn't read, such as a referenced package that
   wasn't found, is listed (`DatabaseModel.Unread`), so a name missing from the model can say where it may be.
 - **An object changed after its definition says so.** When the source changes an object (`ALTER TABLE`, `DROP PROCEDURE`,
-  `ALTER FUNCTION`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. A CHECK
+  `ALTER FUNCTION`) and doesn't say which runs last, the model records a `Redefinition` rather than applying one. Within one
+  script the order is the script's, so a procedure, function or view is the definition that stands once it has run. A CHECK
   constraint that a later `ALTER TABLE … NOCHECK CONSTRAINT` may disable records where (`CheckConstraint.DisabledAt`).
 
 ## What it deliberately doesn't do

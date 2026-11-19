@@ -397,12 +397,17 @@ public partial class ConstructTests
     }
 
     [Fact]
-    public void A_procedure_defined_only_by_alter_has_unknown_results()
+    public void A_procedure_defined_only_by_one_alter_is_that_alter_and_by_two_has_unknown_results()
     {
-        var doc = Infer(("tables.sql", Tables), ("b.sql", "ALTER PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;"));
+        // Its stub is made where the reader can't see, by dynamic SQL; the ALTER replaces whatever stood
+        // (docs/decisions/0080-the-last-definition-in-a-script-stands.md). Two scripts' ALTERs run in an order the folder doesn't give.
+        var one = Infer(("tables.sql", Tables), ("b.sql", "ALTER PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;"));
+        var two = Infer(("tables.sql", Tables), ("b.sql", "ALTER PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;"), ("c.sql", "ALTER PROCEDURE dbo.p AS SELECT t.name FROM dbo.t AS t;"));
 
-        Assert.Null(Assert.Single(doc.Objects).Results);
-        AssertUnknown(doc, "results", IrUnknownReason.Redefined);
+        Assert.Empty(one.Unknowns);
+        Assert.False(Assert.Single(RowFields(one)).Nullable);
+        Assert.Null(Assert.Single(two.Objects).Results);
+        AssertUnknown(two, "results", IrUnknownReason.Redefined);
     }
 
     // ---- generated code -----------------------------------------------------------------------------

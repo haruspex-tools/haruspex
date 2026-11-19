@@ -423,7 +423,7 @@ reason of its own, unless the config file declares them (below):
 | An unqualified name that more than one schema has | `ambiguous-procedure` |
 | A CLR procedure | `external-code` |
 | A procedure created `WITH ENCRYPTION` whose text the source lacks, as in a DACPAC extracted from a database | `encrypted-definition`. The placeholder such a package holds would claim the procedure returns nothing, so its body is never read (`An_encrypted_procedure_whose_text_the_source_lacks_has_unknown_results_with_their_own_reason`) |
-| A procedure changed after its definition | `redefined` |
+| A procedure changed after its definition by another script, whose order the source doesn't give (within one script, the definition that stands is read: [decision 0080](../../docs/decisions/0080-the-last-definition-in-a-script-stands.md)) | `redefined` |
 
 **The catalogue of system procedures** (Semantics' `SystemProcedures`, data with an observation test per entry in
 `ExecObservationTests`) lists those whose calls are followed, by name whatever the schema written: what each returns, its
@@ -2032,8 +2032,8 @@ README):
   since over no rows it is NULL, not `[]`.
 - **Changes after a definition withdraw claims.** A table altered (other than by adding or checking
   constraints) or dropped after its `CREATE TABLE` becomes unknown (`unsupported-source`), and a procedure
-  altered or dropped has unknown results (`redefined`), because which definition applies depends on the
-  order scripts run. A CLR procedure's results are unknown (`external-code`).
+  altered or dropped by another script than its definition has unknown results (`redefined`), because which
+  definition applies depends on the order scripts run. Within one script, the definition that stands is read. A CLR procedure's results are unknown (`external-code`).
 - **Live JSON versus JSON text.** A `FOR JSON` subquery with its array wrapper, a JSON constructor, `json_query`
   over any JSON, and a value of the native `json` type nest as JSON, in `FOR JSON` and in the constructors, also
   through a scalar subquery. Any other string is escaped as text, even one holding JSON: a `FOR JSON` subquery
@@ -2127,7 +2127,7 @@ in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
   no information and reading every body again until nothing changes, at most 4 steps per function in the cycle plus 4.
   A cycle that reaches no fixed point by then, or a function every return of which calls itself again, is unknown
   (`unresolved-recursion`). `Haruspex.SqlServer.Inference/FunctionSummaries.cs` says why the method is sound.
-- An altered or dropped function is unknown (`redefined`), as a procedure is; a function not in the project, or a
+- A function altered or dropped by another script than its definition is unknown (`redefined`), as a procedure is; a function not in the project, or a
   table-valued one called as a scalar, is unknown (`unsupported-expression`).
 
 ### Statement flow

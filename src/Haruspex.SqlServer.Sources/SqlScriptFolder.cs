@@ -9,11 +9,12 @@ namespace Haruspex.SqlServer.Sources;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Tables are read from <c>CREATE TABLE</c> and procedures from <c>CREATE PROCEDURE</c>. A statement that
-/// changes either afterwards is not applied, because which state wins depends on the order the scripts run,
-/// which a folder does not say. Instead it is recorded as a <see cref="Redefinition"/>: on a table for
-/// <c>ALTER TABLE</c> (other than adding or checking constraints, which can only tighten it) or
-/// <c>DROP TABLE</c>, and on a procedure for <c>ALTER PROCEDURE</c> or <c>DROP PROCEDURE</c>.
+/// Tables are read from <c>CREATE TABLE</c>, and procedures as their script leaves them, its statements played in batch
+/// order: a stub created and then altered is its <c>ALTER</c>. A statement in another script that changes either is not
+/// applied, because which state wins depends on the order the scripts run, which a folder does not say. Instead it is
+/// recorded as a <see cref="Redefinition"/>: on a table for <c>ALTER TABLE</c> (other than adding or checking constraints,
+/// which can only tighten it) or <c>DROP TABLE</c>, wherever it is, and on a procedure for <c>ALTER PROCEDURE</c> or
+/// <c>DROP PROCEDURE</c> in another script than its definition.
 /// </para>
 /// <para>
 /// Alias and CLR types are read from <c>CREATE TYPE</c>, and CHECK constraints from <c>CREATE TABLE</c>. A check that
@@ -22,14 +23,14 @@ namespace Haruspex.SqlServer.Sources;
 /// same script (see <c>ConstraintTrust</c>).
 /// </para>
 /// <para>
-/// Functions are read from <c>CREATE FUNCTION</c>, with the same rule as procedures for <c>ALTER FUNCTION</c> and
-/// <c>DROP FUNCTION</c>. Views are read from their definitions (a view defined twice records a <see cref="Redefinition"/>),
-/// synonyms from <c>CREATE SYNONYM</c>, and DML triggers from every definition of each. Every other statement
-/// is passed over (<c>ScriptReader</c> says why).
+/// Functions and views are read with the same rule as procedures (a view that two scripts define records a
+/// <see cref="Redefinition"/>), synonyms from <c>CREATE SYNONYM</c>, and DML triggers from every definition of each. Every
+/// other statement is passed over (<c>ScriptReader</c> says why).
 /// </para>
 /// <para>
 /// A read is three steps, each in a type of its own: which scripts there are and in which order, each parsed
-/// (<c>ScriptFile</c>); what each script declares, applying nothing (<c>ScriptReader</c>, into <c>SchemaDeclarations</c>);
+/// (<c>ScriptFile</c>); what each script declares, applying only its own order (<c>ScriptReader</c>, into
+/// <c>SchemaDeclarations</c>);
 /// and the passes that settle what is in effect once every script is read (<c>DefinitionsInEffect</c>,
 /// <c>ConstraintTrust</c>). The guide's chapter <i>The inputs and the model</i> explains them
 /// (<c>docs/internals/02-the-inputs-and-the-model.md</c>).

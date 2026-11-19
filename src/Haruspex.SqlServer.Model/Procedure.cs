@@ -5,8 +5,9 @@ namespace Haruspex.SqlServer.Model;
 
 /// <summary>A stored procedure: its parameters and its body.</summary>
 /// <remarks>
-/// The definition read is a <c>CREATE PROCEDURE</c>, a <c>CREATE OR ALTER PROCEDURE</c> or, when the source only alters
-/// the procedure, its <c>ALTER PROCEDURE</c>; when the source also changes it elsewhere, <see cref="Redefinition"/> says so.
+/// The definition read is the one that stands once its script has run: a <c>CREATE PROCEDURE</c>, a <c>CREATE OR ALTER
+/// PROCEDURE</c> or an <c>ALTER PROCEDURE</c>, the last of them in the script. When another script also defines or changes it,
+/// or its own leaves which stands in doubt, <see cref="Redefinition"/> says so.
 /// </remarks>
 /// <param name="Name">Its name.</param>
 /// <param name="Span">Where its definition is.</param>

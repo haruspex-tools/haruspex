@@ -8,9 +8,9 @@ namespace Haruspex.SqlServer.Model;
 /// <see cref="TableFunction"/> (a table its body fills).
 /// </summary>
 /// <remarks>
-/// The definition read is a <c>CREATE FUNCTION</c>, a <c>CREATE OR ALTER FUNCTION</c> or, when the source only alters the
-/// function, its <c>ALTER FUNCTION</c>; when the source also changes it elsewhere, <see cref="Redefinition"/> says so. The
-/// three kinds are all there are (decision 0031).
+/// The definition read is the one that stands once its script has run: a <c>CREATE FUNCTION</c>, a <c>CREATE OR ALTER
+/// FUNCTION</c> or an <c>ALTER FUNCTION</c>, the last of them in the script. When another script also defines or changes it, or
+/// its own leaves which stands in doubt, <see cref="Redefinition"/> says so. The three kinds are all there are (decision 0031).
 /// </remarks>
 #pragma warning disable CA1716 // SQL Server's own word for it. Visual Basic, where it is a keyword, writes it in brackets.
 public abstract record Function : Module

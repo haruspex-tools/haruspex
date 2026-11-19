@@ -17,6 +17,7 @@ public class RedefinitionsTests
         [RedefiningStatement.CreateView] = "CREATE VIEW",
         [RedefiningStatement.AlterView] = "ALTER VIEW",
         [RedefiningStatement.CreateOrAlterView] = "CREATE OR ALTER VIEW",
+        [RedefiningStatement.DropView] = "DROP VIEW",
     };
 
     public static TheoryData<RedefiningStatement> Statements { get; } = [.. Enum.GetValues<RedefiningStatement>()];

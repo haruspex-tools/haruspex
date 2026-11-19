@@ -82,6 +82,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0075](0075-what-several-modules-share-is-written-once-in-a-shared-file.md) | 18 Nov 2026 | What several modules share is written once in a shared file |
 | [0078](0078-the-ir-says-where-each-field-came-from.md) | 19 Nov 2026 | The IR says where each field came from |
 | [0079](0079-a-surprise-is-explained-where-it-is-written.md) | 19 Nov 2026 | A surprise is explained where it is written |
+| [0080](0080-the-last-definition-in-a-script-stands.md) | 19 Nov 2026 | The last definition of a procedure, function or view in a script stands; across scripts, a second is a doubt |
 
 ## Writing a record
 

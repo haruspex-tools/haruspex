@@ -29,4 +29,7 @@ public enum RedefiningStatement
 
     /// <summary><c>CREATE OR ALTER VIEW</c>.</summary>
     CreateOrAlterView,
+
+    /// <summary><c>DROP VIEW</c>, under a condition that may be false, between two definitions of a view in one script.</summary>
+    DropView,
 }

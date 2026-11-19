@@ -20,11 +20,10 @@ the rows at the top are where work types the most. **Places** adds the four colu
 |---|---:|---:|---:|---:|---:|---:|
 | `unsupported-sql-type` | 25 | 0 | 0 | 143 | 168 | 6 |
 | `unsupported-expression` | 108 | 0 | 0 | 0 | 108 | 2 |
-| `dynamic-sql` | 5 | 0 | 88 | 0 | 93 | 5 |
-| `unnamed-column` | 0 | 64 | 0 | 0 | 64 | 4 |
-| `unsupported-statement` | 16 | 0 | 19 | 0 | 35 | 6 |
+| `dynamic-sql` | 5 | 0 | 91 | 0 | 96 | 6 |
+| `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
+| `unsupported-statement` | 16 | 0 | 31 | 0 | 47 | 8 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |
-| `redefined` | 0 | 0 | 16 | 0 | 16 | 3 |
 | `procedure-variable` | 0 | 0 | 11 | 0 | 11 | 2 |
 | `unsupported-source` | 6 | 0 | 0 | 0 | 6 | 2 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
@@ -150,22 +149,22 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 | Warnings reading them | 0 |
 | Procedures | 7 |
 | Procedures that return fields | 2 |
-| Procedures whose results have no fields, because a result's shape is unknown | 0 |
-| Procedures whose result sets can't be listed | 1 |
+| Procedures whose results have no fields, because a result's shape is unknown | 1 |
+| Procedures whose result sets can't be listed | 0 |
 | Procedures that return no result set | 4 |
 | Procedures whose known results have no fields | 0 |
 | Procedures that return fields, fully typed | 0 |
 | Fields | 2 |
 | Fields typed | 0 |
 | Fields typed as JSON text whose content isn't known | 0 |
-| Results | 2 |
-| Results of unknown shape | 0 |
+| Results | 3 |
+| Results of unknown shape | 1 |
 
 #### Unknowns by reason
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
-| `redefined` | 0 | 0 | 1 | 0 |
+| `unnamed-column` | 0 | 1 | 0 | 0 |
 | `unsupported-statement` | 2 | 0 | 0 | 0 |
 
 ### ProfilesRNS
@@ -366,7 +365,7 @@ From [its repository](https://github.com/BrentOzarULTD/SQL-Server-First-Responde
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
-| `redefined` | 0 | 0 | 11 | 0 |
+| `unsupported-statement` | 0 | 0 | 11 | 0 |
 
 ### Ola Hallengren's Maintenance Solution
 
@@ -386,5 +385,6 @@ From [its repository](https://github.com/olahallengren/sql-server-maintenance-so
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
-| `redefined` | 0 | 0 | 4 | 0 |
+| `dynamic-sql` | 0 | 0 | 3 | 0 |
 | `unsupported-sql-type` | 0 | 0 | 0 | 1 |
+| `unsupported-statement` | 0 | 0 | 1 | 0 |
