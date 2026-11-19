@@ -30,18 +30,21 @@ internal static class ModuleRun
             .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
+            .Then(inferred => Combined(request, progress, inferred))
             .Then(Emit);
 
     /// <summary>
-    /// The IR the request would infer, with the config file applied, without emitting it: how a baseline given as a source is
-    /// read, with the module's own config file, so that the two are selected, overridden and named alike.
+    /// The IR a baseline given as a source has, with the module's own config file applied as to a baseline
+    /// (<see cref="HaruspexConfig.AppliedToBaseline"/>), without emitting it: so that the two are selected, overridden and named
+    /// alike, and a procedure whose named sets the change adds to or takes from doesn't stop the run.
     /// </summary>
-    public static Outcome<IrDocument> Inferred(RunRequest request, Progress progress) =>
+    public static Outcome<IrDocument> InferredAsBaseline(RunRequest request, Progress progress) =>
         Settle(request)
+            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Source, plan.Out, plan.Include))
             .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
-            .Select(inferred => inferred.Document);
+            .Select(inferred => inferred.Database);
 
     /// <summary>The value, once <paramref name="what"/> has been said as the run's step.</summary>
     private static Succeeded<T> Said<T>(Progress progress, string what, T value)
@@ -248,12 +251,47 @@ internal static class ModuleRun
     }
 
     /// <summary>The IR of the selected procedures, with the config file's overrides and naming applied.</summary>
-    private static Outcome<(Plan Plan, SqlProject Project, IrDocument Document)> Infer(Selection selection)
+    private static Outcome<Typed> Infer(Selection selection)
     {
         var plan = selection.Loaded.Plan;
         var project = selection.Loaded.Project;
         var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
-        return Rebased(applied, project).Select(document => (plan, project, document));
+        return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
+    }
+
+    /// <summary>
+    /// What is emitted: the plan and project, the document the module is written from, and the database's own document; with a
+    /// baseline, the baseline read and what combining the two found.
+    /// </summary>
+    private sealed class Typed(Plan plan, SqlProject project, IrDocument document, IrDocument database)
+    {
+        public Plan Plan { get; } = plan;
+
+        public SqlProject Project { get; } = project;
+
+        public IrDocument Document { get; } = document;
+
+        public IrDocument Database { get; } = database;
+
+        public Baseline? Baseline { get; init; }
+
+        public EquatableArray<Diagnostic> Combination { get; init; } = [];
+    }
+
+    /// <summary>
+    /// With a baseline, it read and the document combined with it, so that the module's types work against both databases
+    /// (<see cref="CombinedTypes"/>); without one, the document as it is. <c>check --fit-only</c> asks only whether the database
+    /// fits the baseline, so it reads the baseline but combines nothing.
+    /// </summary>
+    private static Outcome<Typed> Combined(RunRequest request, Progress progress, Typed typed)
+    {
+        var config = typed.Plan.Config;
+        if (Baseline.Named(request, config) is not { } path)
+            return new Succeeded<Typed>(typed);
+        return Baseline.Read(request, config, path, progress).Then(baseline => request.FitOnly
+            ? new Succeeded<Typed>(new Typed(typed.Plan, typed.Project, typed.Document, typed.Database) { Baseline = baseline })
+            : CombinedTypes.Of(typed.Database, baseline, config, typed.Project, DisplayPath.From(request.WorkingDirectory, path))
+                .Select(combined => new Typed(typed.Plan, typed.Project, combined.Document, typed.Database) { Baseline = baseline, Combination = combined.Found }));
     }
 
     /// <summary>
@@ -261,9 +299,9 @@ internal static class ModuleRun
     /// config file, so its settings are mapped across here; what it refuses is a name or an import the file's settings made, so it
     /// is reported against the file.
     /// </summary>
-    private static Outcome<EmittedModule> Emit((Plan Plan, SqlProject Project, IrDocument Document) inferred)
+    private static Outcome<EmittedModule> Emit(Typed typed)
     {
-        var (plan, project, document) = inferred;
+        var (plan, project, document) = (typed.Plan, typed.Project, typed.Document);
 
         // A config file that splits its output writes a module's files per module, which SplitModules names.
         var files = SplitModules.Assigned(plan.Config, project, document).Then(assigned =>
@@ -273,8 +311,13 @@ internal static class ModuleRun
             var modules = IrModules.Of(document, assigned);
             return SplitModules.Emit(plan.Config, document, modules).Select(split => (Files: split, Modules: modules.Names));
         });
-        return Located(files, plan.Config.Location)
-            .Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted.Files) { Modules = emitted.Modules });
+        return Located(files, plan.Config.Location).Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted.Files)
+        {
+            Modules = emitted.Modules,
+            Baseline = typed.Baseline,
+            Database = typed.Database,
+            Combination = typed.Combination,
+        });
     }
 
     /// <summary>Each emitter's one file, in the config file's order, as a config file that doesn't split its output writes them.</summary>

@@ -19,18 +19,34 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The IR format version. It is versioned separately from the tool, because the IR is a file that other
-    /// programs read: a change that would break a reader changes this.
+    /// The newest IR format version, the one a document that combines two databases is written in. The IR is versioned
+    /// separately from the tool, because it is a file that other programs read: a change that would break a reader changes
+    /// this.
     /// </summary>
-    public const string CurrentVersion = "0.23";
+    public const string CurrentVersion = "0.24";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one only. 0.23 added a result set's name
-    /// (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
-    /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
-    /// source does.
+    /// The version a document of one database is written in: 0.24 added only what a combined document says (a source's
+    /// <see cref="IrSource.Baseline"/>, the presence <see cref="IrPresence.Optional"/> and the null rule
+    /// <see cref="IrNullRule.NotInBoth"/>), so a document without them is a 0.23 document that means the same, and is labelled
+    /// so: a run without a baseline writes what it wrote before, and a 0.23 reader still reads it.
+    /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion];
+    public const string OneDatabaseVersion = "0.23";
+
+    /// <summary>
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.23, every document of which is a 0.24 document
+    /// of one database that means the same. 0.23 added a result set's name (<see cref="IrResult.Name"/>), which decides the shape
+    /// of the procedure's function, and whether a type's name was declared (<see cref="IrObjectType.NameDeclared"/>), which a 0.22
+    /// file doesn't say; so no 0.22 file means what a 0.23 file of its source does.
+    /// </summary>
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, OneDatabaseVersion];
+
+    /// <summary>
+    /// The version this document is written in: <see cref="CurrentVersion"/> when it combines two databases, and
+    /// <see cref="OneDatabaseVersion"/> otherwise.
+    /// </summary>
+    public string Version => Source.Baseline is null ? OneDatabaseVersion : CurrentVersion;
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

@@ -169,12 +169,12 @@ public class CheckTests
     {
         using var folder = Generated();
         var ir = Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName);
-        File.WriteAllText(ir, File.ReadAllText(ir).Replace($"\"irVersion\": \"{IrDocument.CurrentVersion}\"", "\"irVersion\": \"0.9\"", StringComparison.Ordinal));
+        File.WriteAllText(ir, File.ReadAllText(ir).Replace($"\"irVersion\": \"{IrDocument.OneDatabaseVersion}\"", "\"irVersion\": \"0.9\"", StringComparison.Ordinal));
 
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"generated/{HaruspexCli.IrFileName}: error HAR6012: this file is IR 0.9, and this haruspex writes IR {IrDocument.CurrentVersion}", error, StringComparison.Ordinal);
+        Assert.Contains($"generated/{HaruspexCli.IrFileName}: error HAR6012: this file is IR 0.9, and this haruspex writes IR {IrDocument.OneDatabaseVersion}", error, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -43,7 +43,7 @@ public static class MssqlEmitter
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
-        return FunctionPlanner.Plan(document, options).Select(functions => MssqlPrinter.Print(functions, options));
+        return FunctionPlanner.Plan(document, options).Select(functions => MssqlPrinter.Print(functions, document, options));
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public static class MssqlEmitter
             {
                 var own = options with { SchemaModule = schemaModule(module) };
                 return FunctionPlanner.Plan(document with { Objects = [.. modules.ObjectsOf(module)] }, own)
-                    .Select(functions => KeyValuePair.Create(module, MssqlPrinter.Print(functions, own)));
+                    .Select(functions => KeyValuePair.Create(module, MssqlPrinter.Print(functions, document, own)));
             }))
             .Select(files => files.ToEquatableMap(f => f.Key, f => f.Value));
     }

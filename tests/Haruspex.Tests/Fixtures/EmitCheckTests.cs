@@ -1,6 +1,7 @@
 using Haruspex.Cli;
 using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Zod;
+using Haruspex.Ir;
 
 namespace Haruspex.Tests.Fixtures;
 
@@ -11,7 +12,7 @@ namespace Haruspex.Tests.Fixtures;
 /// <c>src/checks-usage.ts</c> there also check the inferred types: that an omitted key is optional, a kept null is
 /// nullable, and a value set is a union of literals; <c>src/shop-usage.ts</c> checks what the shop fixture's config file
 /// changes, and <c>src/mapping-usage.ts</c> that the mapping helper accepts a mapper that accounts for every key of a fixture's
-/// row and refuses one that doesn't.
+/// row and refuses one that doesn't. A module combined with a baseline (<see cref="Combined"/>) is compiled and checked by the linter beside them.
 /// </summary>
 public class EmitCheckTests
 {
@@ -86,6 +87,13 @@ public class EmitCheckTests
             File.WriteAllText(Path.Combine(generated, $"{fixture.Name}.mssql.ts"), MssqlEmitter.Emit(fixture.Ir, options).Expected());
         }
 
+        // A module combined with a baseline, of the forms only combining writes: keys that may be left out whatever their value,
+        // unions of another kind, result sets that may be missing, parameters left out or narrowed.
+        File.WriteAllText(Path.Combine(generated, "combined.zod.ts"), ZodEmitter.Emit(Combined()).Expected());
+        File.WriteAllText(
+            Path.Combine(generated, "combined.mssql.ts"),
+            MssqlEmitter.Emit(Combined(), new MssqlOptions { SchemaModule = "./combined.zod.js", IsReserved = TypeScriptNames.IsReserved }).Expected());
+
         // The mapping helper, which is the same for every module, once: src/mapping-usage.ts checks it against the fixtures' types,
         // and the lint holds it to the rules every generated file meets.
         File.WriteAllText(Path.Combine(generated, HaruspexCli.MappingFileName), MappingModule.Text);
@@ -99,6 +107,34 @@ public class EmitCheckTests
             var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, fixture.Name)], output, error, fixture.Folder);
             Assert.True(exitCode == 0, error.ToString());
         }
+    }
+
+    /// <summary>
+    /// Invented procedures before a change and after, combined (<see cref="IrCombination"/>): a nullable key only the candidate
+    /// returns, one only the baseline does, a value of another kind in each, a trailing set in one, a JSON key left out when null
+    /// in one and sent as null in the other, a rename, and parameters only one has or of another width.
+    /// </summary>
+    private static IrDocument Combined()
+    {
+        const string Tables = "CREATE TABLE blend.item (id int NOT NULL PRIMARY KEY, name nvarchar(20) NOT NULL, note nvarchar(20) NULL, qty tinyint NOT NULL);";
+        const string Before = """
+            CREATE PROCEDURE blend.get_item @id int, @code nvarchar(20), @old bit = 0 AS
+            SELECT i.id, i.name AS label, i.qty AS amount, i.note AS gone FROM blend.item AS i WHERE i.id = @id;
+            GO
+            CREATE PROCEDURE blend.get_card AS SELECT i.id, i.note FROM blend.item AS i FOR JSON PATH;
+            """;
+        const string After = """
+            CREATE PROCEDURE blend.get_item @id int, @code nvarchar(10), @new bit = 0 AS
+            SELECT i.id, i.name AS title, i.name AS amount, i.note AS channel FROM blend.item AS i WHERE i.id = @id;
+            SELECT i.qty FROM blend.item AS i;
+            GO
+            CREATE PROCEDURE blend.get_card AS SELECT i.id, i.note FROM blend.item AS i FOR JSON PATH, INCLUDE_NULL_VALUES;
+            """;
+        var baseline = InferProcedure.Infer("blend.*", ("schema.sql", "CREATE SCHEMA blend;"), ("tables.sql", Tables), ("procedures.sql", Before));
+        var candidate = InferProcedure.Infer("blend.*", ("schema.sql", "CREATE SCHEMA blend;"), ("tables.sql", Tables), ("procedures.sql", After));
+        var combined = IrCombination.Of(baseline, candidate, new IrFitOptions());
+        Assert.DoesNotContain(combined.Findings, f => f.Kind == IrCombinationKind.Unbridgeable);
+        return combined.Document;
     }
 
     /// <summary>

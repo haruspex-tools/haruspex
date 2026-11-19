@@ -1,7 +1,3 @@
-using System.Globalization;
-using System.Numerics;
-using System.Text.RegularExpressions;
-
 namespace Haruspex.Ir;
 
 public static partial class IrFit
@@ -151,7 +147,7 @@ public static partial class IrFit
                 }
 
                 if (flow == Flow.Parameters && accepting.Kind is IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime && accepting.Sql != given.Sql
-                    && !DateTimeTaken(accepting.Sql, given.Sql))
+                    && !IrDateTimes.Takes(accepting.Sql, given.Sql))
                 {
                     Refuse(IrChangeKind.SqlTypeChanged, path, "the procedure's type holds a narrower range or a coarser fraction, so a value the application may send is refused or rounded without an error", accepting.Sql, given.Sql);
                 }
@@ -273,7 +269,7 @@ public static partial class IrFit
                         Refuse(IrChangeKind.PresenceChanged, at, "the application's schema requires the key", IrWireNames.Of(field.Presence), IrWireNames.Of(arrives.Presence));
 
                     // A key left out when null is written as optional and never null: it may now come as null.
-                    if (field.Presence == IrPresence.OmittedWhenNull && arrives.Presence == IrPresence.Always && arrives.NullableBecause.Count > 0)
+                    if (field.Presence == IrPresence.OmittedWhenNull && arrives.Presence != IrPresence.OmittedWhenNull && arrives.NullableBecause.Count > 0)
                         Refuse(IrChangeKind.PresenceChanged, at, "the application's schema has the key left out when null, and refuses a null", IrWireNames.Of(field.Presence), IrWireNames.Of(arrives.Presence));
                     Type(at, field.Type, arrives.Type);
                 }
@@ -309,48 +305,6 @@ public static partial class IrFit
             }
 
             /// <summary>
-            /// Whether every date or time of the type <paramref name="given"/> is taken exactly by the type <paramref name="accepting"/>:
-            /// its range within the other's and no finer fraction. The IR has no fact for either, so they are read from the SQL type
-            /// it keeps, spelt as decision 0041 fixes, as the Zod emitter's <c>DateTimes</c> reads them; a type outside that list
-            /// can't be shown to fit. Observed: a value out of range fails the call (8114), and a finer fraction is rounded without
-            /// an error (<c>docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md</c>).
-            /// </summary>
-            private static bool DateTimeTaken(string? accepting, string? given) =>
-                DateTimeType(accepting) is { } wide && DateTimeType(given) is { } narrow
-                && string.CompareOrdinal(wide.Earliest, narrow.Earliest) <= 0 && string.CompareOrdinal(narrow.Latest, wide.Latest) <= 0
-                && narrow.Fraction switch
-                {
-                    // Whole minutes or whole days: any type of the kind holds them.
-                    DateTimeFraction.None => true,
-
-                    // datetime's thousandths end in 0, 3 or 7 as it writes them, which a type of three places or more holds exactly.
-                    DateTimeFraction.Datetime => wide.Fraction is DateTimeFraction.Datetime || (wide.Fraction is DateTimeFraction.Digits && wide.Digits >= 3),
-
-                    // datetime holds every fraction of two places (a hundredth is three of its three-hundredths), but not three.
-                    _ => wide.Fraction switch
-                    {
-                        DateTimeFraction.Digits => narrow.Digits <= wide.Digits,
-                        DateTimeFraction.Datetime => narrow.Digits <= 2,
-                        _ => false,
-                    },
-                };
-
-            /// <summary>A date and time type's range, as ISO text, which orders as time does; and its fraction of a second.</summary>
-            private static (string Earliest, string Latest, DateTimeFraction Fraction, int Digits)? DateTimeType(string? sql) => DateTimeSpelling().Match(sql ?? "") switch
-            {
-                { Success: false } => null,
-                var type => (type.Groups["name"].Value, type.Groups["scale"].Success ? int.Parse(type.Groups["scale"].Value, CultureInfo.InvariantCulture) : (int?)null) switch
-                {
-                    ("date", null) => ("0001-01-01", "9999-12-31", DateTimeFraction.None, 0),
-                    ("time", { } n) => ("00:00:00", "23:59:59", DateTimeFraction.Digits, n),
-                    ("datetime2" or "datetimeoffset", { } n) => ("0001-01-01", "9999-12-31T23:59:59", DateTimeFraction.Digits, n),
-                    ("datetime", null) => ("1753-01-01", "9999-12-31T23:59:59", DateTimeFraction.Datetime, 3),
-                    ("smalldatetime", null) => ("1900-01-01", "2079-06-06T23:59:00", DateTimeFraction.None, 0),
-                    _ => null,
-                },
-            };
-
-            /// <summary>
             /// The range of values an integer format allows, where formats of other sizes are compared by range: in a result, the
             /// formats a row and JSON both deliver as a number; for a parameter, every integer, since the server converts what is
             /// sent to the type it declares. Null for any other format.
@@ -377,50 +331,17 @@ public static partial class IrFit
             /// exact set is (a set of a type's values keeps the type's own range as its bounds, which may be wider).
             /// </summary>
             private static bool AtLeast(IrBound least, IrBound? given, IrValueSet? values) =>
-                (given is { } bound && Compare(bound.Value, least.Value) is var order && (order > 0 || (order == 0 && (least.Inclusive || !bound.Inclusive))))
-                || (Numbers(values) is { } items && items.All(v => Compare(v, least.Value) is var each && (each > 0 || (each == 0 && least.Inclusive))));
+                (given is { } bound && IrNumbers.Compare(bound.Value, least.Value) is var order && (order > 0 || (order == 0 && (least.Inclusive || !bound.Inclusive))))
+                || (Numbers(values) is { } items && items.All(v => IrNumbers.Compare(v, least.Value) is var each && (each > 0 || (each == 0 && least.Inclusive))));
 
             /// <summary>Whether every value given is at most <paramref name="most"/>, as <see cref="AtLeast"/> is for a lower bound.</summary>
             private static bool AtMost(IrBound most, IrBound? given, IrValueSet? values) =>
-                (given is { } bound && Compare(bound.Value, most.Value) is var order && (order < 0 || (order == 0 && (most.Inclusive || !bound.Inclusive))))
-                || (Numbers(values) is { } items && items.All(v => Compare(v, most.Value) is var each && (each < 0 || (each == 0 && most.Inclusive))));
+                (given is { } bound && IrNumbers.Compare(bound.Value, most.Value) is var order && (order < 0 || (order == 0 && (most.Inclusive || !bound.Inclusive))))
+                || (Numbers(values) is { } items && items.All(v => IrNumbers.Compare(v, most.Value) is var each && (each < 0 || (each == 0 && most.Inclusive))));
 
             /// <summary>The numbers of an exact set of numbers, or null.</summary>
             private static List<string>? Numbers(IrValueSet? values) =>
                 values is { Match: IrValueMatch.Exact } set && set.Items.All(i => !i.IsString) ? [.. set.Items.Select(i => i.Text)] : null;
-
-            /// <summary>A date and time type as decision 0041 spells it: its name, and its scale where it has one.</summary>
-            [GeneratedRegex(@"^(?<name>date|time|datetime2|datetimeoffset|datetime|smalldatetime)(\((?<scale>[0-7])\))?$", RegexOptions.CultureInvariant)]
-            private static partial Regex DateTimeSpelling();
-
-            /// <summary>Two numbers as exact decimal text, compared exactly, never through a double: below zero, zero or above.</summary>
-            private static int Compare(string left, string right)
-            {
-                var (a, aScale) = Unscaled(left);
-                var (b, bScale) = Unscaled(right);
-                var scale = Math.Max(aScale, bScale);
-                return (a * BigInteger.Pow(10, scale - aScale)).CompareTo(b * BigInteger.Pow(10, scale - bScale));
-
-                static (BigInteger Value, int Scale) Unscaled(string text)
-                {
-                    var point = text.IndexOf('.', StringComparison.Ordinal);
-                    var digits = point < 0 ? text : text[..point] + text[(point + 1)..];
-                    return (BigInteger.Parse(digits, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture), point < 0 ? 0 : text.Length - point - 1);
-                }
-            }
         }
-    }
-
-    /// <summary>How finely a date and time type holds a second.</summary>
-    private enum DateTimeFraction
-    {
-        /// <summary>Not at all: whole days, or whole minutes.</summary>
-        None,
-
-        /// <summary>To so many decimal places.</summary>
-        Digits,
-
-        /// <summary>To three-hundredths, written to three places ending in 0, 3 or 7: <c>datetime</c>.</summary>
-        Datetime,
     }
 }

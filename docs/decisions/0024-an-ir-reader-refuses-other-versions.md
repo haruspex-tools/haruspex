@@ -62,5 +62,11 @@ a result set's `name`, which a 0.22 file could only lack, but also a type's `nam
 which no 0.22 file says and which decides the name a shared shape is declared under, so a 0.22 file doesn't mean what a 0.23
 file of its source does.
 
+**Amended an eighth time** (18 Nov 2026, IR 0.24, [decision 0072](0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)).
+The 0.24 reader reads 0.23 too, by the first amendment's test: 0.24 added only what a document combining two databases says
+(`source.baseline`, the presence `optional`, the null rule `not-in-both`), and every 0.23 document is a 0.24 document of one
+database that means the same. So a document of one database is still written as 0.23, and a file labelled 0.23 that says any of
+the three is refused by its path, since 0.23 could say none of them.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

@@ -66,6 +66,30 @@ procedure always returns that doesn't arrive fails the call either way
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
 
+## Working against two databases
+
+Generated with a baseline (`haruspex generate --baseline`, or `"baseline"` in the config file), the module works against the
+database before a change is deployed and after it, so a release of the application can go out before the database's change, or
+after it ([Generating against a baseline](command-line.md#generating-against-a-baseline)). Each file's header says so:
+
+```ts
+// Combined with a baseline (Shop.dacpac): results accept what either database returns, and parameters take only what both accept.
+```
+
+What changes for the code that calls the functions:
+
+- **A key one database doesn't return is optional** (`row.channel` is `string | null | undefined`), and so is a key one leaves
+  out when null where the other sends the null. Read it with a default, `row.channel ?? 'web'`, in the step that makes the row
+  the application's own ([the application's own types](layers.md)); once the baseline moves on, the key is required again, and
+  the compiler shows the defaults no longer needed.
+- **A value set, a length or a range is the wider of the two**, and a value of another kind in each database is a union of both.
+- **A result set only one database returns may be missing**: `[]` for rows, `null` for a `FOR JSON` result, as a set whose
+  statement didn't run is.
+- **A parameter only one procedure has is left out** while it has a default there, and a parameter's type is the narrower of the
+  two, so the function never sends what one of them refuses.
+- **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
+  doesn't compile, which the run's error explains (HAR6033).
+
 ## How the parameters are checked
 
 Before it asks the connection for a request, a function checks its parameters with a strict schema of each one's declared

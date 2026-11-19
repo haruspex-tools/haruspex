@@ -50,12 +50,12 @@ public class IrWireNamesTests
 
     [Fact]
     public void Presences_keep_their_names() => Assert.Equal(
-        ["always", "omittedWhenNull"],
+        ["always", "omittedWhenNull", "optional"],
         Names<IrPresence>(IrWireNames.Of));
 
     [Fact]
     public void Null_rules_keep_their_names() => Assert.Equal(
-        ["nullable-column", "unmatched-row", "unmatched-lateral-row", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "precision-loss", "failed-conversion", "subtotal-row", "missing-for-action", "no-branch-matched", "null-literal", "out-of-range", "read-twice", "null-when-equal", "json-null-or-absent", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared"],
+        ["nullable-column", "unmatched-row", "unmatched-lateral-row", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "precision-loss", "failed-conversion", "subtotal-row", "missing-for-action", "no-branch-matched", "null-literal", "out-of-range", "read-twice", "null-when-equal", "json-null-or-absent", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared", "not-in-both"],
         Names<IrNullRule>(IrWireNames.Of));
 
     [Fact]

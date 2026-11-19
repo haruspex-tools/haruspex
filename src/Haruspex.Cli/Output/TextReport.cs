@@ -116,7 +116,8 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (module.Since is SinceLastRun.Compared { Nothing: true })
             return $"haruspex: nothing changed since the last run: {OneLine(module, counted)}.";
 
-        var lines = new List<string> { $"haruspex: {counted}. Wrote {WrittenFiles(module)}." };
+        var combined = module.Baseline is { } against ? $" Its types work against the baseline {Shown(against)} too." : "";
+        var lines = new List<string> { $"haruspex: {counted}. Wrote {WrittenFiles(module)}.{combined}" };
         switch (module.Since)
         {
             case SinceLastRun.Compared compared:
@@ -254,6 +255,11 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             ];
             return lines.Any(l => l is not null) ? string.Join('\n', lines.OfType<string>()) : null;
         }
+
+        // A change that can't be bridged leaves its procedure out of a module that is written all the same.
+        var stuck = module.Diagnostics.Count(d => d.Code == CliCodes.Unbridgeable);
+        if (stuck > 0)
+            return $"haruspex: {Counted(stuck, "change")} no one function bridges, each procedure left out of the module written. Ship each in two releases.";
 
         var sql = module.Diagnostics.Count(d => d.IsError && d.At is SourceLocation);
         return sql == 0 ? null : $"haruspex: {Counted(sql, "error")}; nothing was written.";

@@ -76,6 +76,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0069](0069-check-with-a-baseline-judges-the-deploy-window.md) | 18 Nov 2026 | `check` with a baseline judges the deploy window, beside the comparison with the output folder |
 | [0070](0070-a-procedure-s-result-sets-are-named-all-or-none.md) | 18 Nov 2026 | A procedure's result sets are named all or none |
 | [0071](0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md) | 18 Nov 2026 | A shared shape is named by declaration or by its structure |
+| [0072](0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md) | 18 Nov 2026 | A document written with a baseline is the combined one, and says so |
+| [0073](0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md) | 18 Nov 2026 | `generate` with a baseline writes types that hold against both databases |
 | [0074](0074-a-config-may-split-its-output-into-modules.md) | 18 Nov 2026 | A config may split its output into modules |
 | [0075](0075-what-several-modules-share-is-written-once-in-a-shared-file.md) | 18 Nov 2026 | What several modules share is written once in a shared file |
 

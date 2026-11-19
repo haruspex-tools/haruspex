@@ -73,6 +73,7 @@ public static class IrWireNames
     {
         IrPresence.Always => "always",
         IrPresence.OmittedWhenNull => "omittedWhenNull",
+        IrPresence.Optional => "optional",
     };
 
     /// <summary>Why a value can be null (<c>rule</c>).</summary>
@@ -108,6 +109,7 @@ public static class IrWireNames
         IrNullRule.TooFewValues => "too-few-values",
         IrNullRule.Unknown => "unknown",
         IrNullRule.Declared => "declared",
+        IrNullRule.NotInBoth => "not-in-both",
     };
 
     /// <summary>Why a value or a result is unknown (<c>reason</c>).</summary>

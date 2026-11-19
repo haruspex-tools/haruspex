@@ -117,9 +117,30 @@ public class DiagnosticMessagesTests
         arrange?.Invoke(folder);
         using var output = new StringWriter();
         using var error = new StringWriter();
-        HaruspexCli.Run(["generate"], output, error, folder.Path);
+
+        // Generated with the same baseline, as the application's module is, so the check's comparison with it passes.
+        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path);
         error.GetStringBuilder().Clear();
         HaruspexCli.Run(["check", "--baseline", baseline], output, error, folder.Path);
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
+    }
+
+    /// <summary>
+    /// <c>generate</c> with a baseline: the project as released (in <c>release</c>) is <paramref name="released"/>, and now
+    /// <paramref name="now"/>; what the run says.
+    /// </summary>
+    private static string[] Combined(string released, string now, string baseline = "release", Action<TempDirectory>? arrange = null)
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/tables.sql", Tables);
+        folder.File("db/p1.sql", now);
+        folder.File("release/tables.sql", Tables);
+        folder.File("release/p1.sql", released);
+        folder.File("haruspex.json", $"{{ {Plain} }}");
+        arrange?.Invoke(folder);
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -330,6 +351,15 @@ public class DiagnosticMessagesTests
         (6030, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f => f.File("release.ir.json", "{ \"irVersion\": \"0.9\" }"))),
         (6031, () => AgainstBaseline(GetBook, GetBook, "\"queries\": \"sql\"", arrange: f => f.File("sql/titles.sql", "SELECT b.title FROM lib.book AS b;"))),
         (6032, () => Checked([GetBook], _ => { }, args: ["--fit-only"])),
+        (6033, () => Combined(GetBook, GetBook.Replace("lib.get_book AS", "lib.get_book @shelf int AS", StringComparison.Ordinal))),
+        (6034, () => Combined(GetBook, GetBook.Replace("b.note,", "b.note AS remark,", StringComparison.Ordinal))),
+        (6035, () => Combined(GetBook, GetBook + "\nGO\nCREATE PROCEDURE lib.count_books AS SELECT count(*) AS books FROM lib.book AS b;")),
+        (6036, () => Combined(GetBook, GetBook, baseline: "release.ir.json", arrange: f =>
+        {
+            // A combined IR, as generate with a baseline writes one.
+            HaruspexCli.Run(["generate", "--baseline", "release"], TextWriter.Null, TextWriter.Null, f.Path);
+            f.File("release.ir.json", File.ReadAllText(Path.Combine(f.Path, "out", HaruspexCli.IrFileName)));
+        })),
         (6021, () => Init(f => f.File("haruspex.json", "{}"))),
         (6022, () => Init(_ => { })),
         (6023, () => Init(f =>

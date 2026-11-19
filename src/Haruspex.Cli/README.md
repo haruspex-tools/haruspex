@@ -166,9 +166,15 @@ shown from it.
   with, an IR there of another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
   unless the config file says `"check": { "unknowns": "fail" }`
   ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
-- **`check` with a baseline also fails on what the application already running would fail on** (`BaselineCheck`): the
-  baseline, the database that application was built against, is read as a source is, with the module's own config file, or
-  from an IR file, and `IrFit` judges the module against it. A change it would fail on is an error (HAR6026), one it sets aside
+- **`generate` with a baseline writes types that work against both databases** (`CombinedTypes`): the baseline (`Baseline`),
+  read once for the run as a source is, with the module's own config file, or from an IR file, is combined with the module's
+  own document by `IrCombination`, and every emitter writes the combined one. A change no one function bridges is an error at its
+  procedure (HAR6033), which the module leaves out while it is written for the rest, and the run fails with 1; a possible rename
+  (HAR6034), a procedure in one database only (HAR6035) and a return shape that changes (HAR6028) are warnings
+  ([decision 0073](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)).
+- **`check` with a baseline also fails on what the application already running would fail on** (`BaselineCheck`): `IrFit`
+  judges the module's own database against the baseline, the database that application was built against, and the output
+  folder is compared with the combined module, as `generate` with the same baseline writes it. A change it would fail on is an error (HAR6026), one it sets aside
   a warning (HAR6027), and a function whose return shape changes a warning (HAR6028). The comparison with the output folder is
   still made, unless `--fit-only` asks for the fit alone, as a database's pipeline does against an application's committed
   contract
@@ -179,7 +185,7 @@ shown from it.
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, it can't be compared with the files in the output folder, or the application already running, built against the baseline, would fail on a change |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, it can't be compared with the files in the output folder, or the application already running, built against the baseline, would fail on a change; or a change between the baseline and the source can't be bridged, though the module is written for the rest |
 | 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write; or `init` wrote nothing, finding a config file, no database or more than one |
 | 3 | A fault in haruspex itself |
 

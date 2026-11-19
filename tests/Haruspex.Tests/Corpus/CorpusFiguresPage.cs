@@ -60,7 +60,7 @@ internal static class CorpusFiguresPage
 
             The databases are Microsoft's samples, from [microsoft/sql-server-samples]({manifest.Repository}) at commit
             `{manifest.Commit}` under the MIT licence, vendored in `tests/corpus/` ([how and why](../tests/corpus/README.md)).
-            Every procedure in every schema is inferred, with no config file, into IR version {IrDocument.CurrentVersion}. More public
+            Every procedure in every schema is inferred, with no config file, into IR version {IrDocument.OneDatabaseVersion}. More public
             corpora are fetched rather than vendored; [the harvest](corpus-harvest.md) gives their figures, and ranks what every
             corpus shows haruspex missing.
 

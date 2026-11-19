@@ -66,7 +66,7 @@ internal abstract class SinceLastRun
         return earlier.Ir switch
         {
             EarlierIr.Absent => new FirstRun(),
-            EarlierIr.OtherVersion { Version: var version } => new NotCompared($"the earlier {name} is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}"),
+            EarlierIr.OtherVersion { Version: var version } => new NotCompared($"the earlier {name} is IR {version}, and this haruspex writes IR {module.Document.Version}"),
             EarlierIr.Unreadable unreadable => new NotCompared($"the earlier {name} can't be read{(unreadable.AsIr ? " as IR" : "")} ({unreadable.Problem.TrimEnd('.')})"),
             EarlierIr.Readable { Document: var before } => Compare(before, earlier, module, unknowns),
 

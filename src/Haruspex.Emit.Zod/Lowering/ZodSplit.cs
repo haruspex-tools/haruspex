@@ -56,7 +56,7 @@ internal static class ZodSplit
             if (elsewhere.Count > 0)
                 imports.Add(new ZodImport(sharedModule, [.. elsewhere]));
             var folds = expressions.OfType<ZodExpression.Canonical>().Select(c => c.Fold).ToHashSet(StringComparer.Ordinal);
-            var header = ZodLowering.Header(plan.Document.Source, declarations).ToList();
+            var header = ZodLowering.Header(plan.Document.Source, plan.Document.Version, declarations).ToList();
             if (isShared)
                 header.Insert(1, SharedHeader);
             return new ZodModule(

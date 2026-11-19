@@ -27,8 +27,7 @@ internal static class Check
 
         // --fit-only asks for the fit alone, as a database's pipeline does against an application's committed IR, where the
         // exact comparison would refuse every change the fit allows; otherwise the two are made side by side.
-        var baseline = BaselineCheck.Of(request, module.Config);
-        if (request.FitOnly && baseline is null)
+        if (request.FitOnly && module.Baseline is null)
         {
             return new ModuleReport(CommandName.Check, request, [CliCodes.FitWithoutBaseline.At(null,
                 "--fit-only judges the module against a baseline alone, and none is given. Give --baseline, or \"baseline\" in the config file; or leave out --fit-only to compare with the output folder.")], HaruspexCli.ExitCodes.Usage);
@@ -38,14 +37,20 @@ internal static class Check
         if (withOut)
             progress.Step($"comparing with {DisplayPath.From(request.WorkingDirectory, module.Out)}");
         var compared = Compared(module, withOut);
-        var fit = baseline is null ? [] : BaselineCheck.Run(request, module, baseline, progress);
-        var (kept, acknowledged) = Acknowledgements.Apply(emitted.Diagnostics, module.Config, sayUnused: request.Include.Count == 0);
+        IReadOnlyList<Diagnostic> fit = [];
+        if (module.Baseline is { } baseline)
+        {
+            progress.Step($"comparing with the baseline {DisplayPath.From(request.WorkingDirectory, baseline.Path)}");
+            fit = BaselineCheck.Run(module, baseline);
+        }
+
+        var (kept, acknowledged) = Acknowledgements.Apply([.. emitted.Diagnostics, .. module.Combination], module.Config, sayUnused: request.Include.Count == 0);
         Diagnostic[] found = [.. kept, .. unknowns.Select(u => u.Note).OfType<Diagnostic>(), .. compared, .. fit];
-        var failures = compared.Concat(fit).Where(d => d.IsError).ToList();
+        var failures = compared.Concat(fit).Concat(module.Combination).Where(d => d.IsError).ToList();
         return new ModuleReport(CommandName.Check, request, [.. found], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
         {
             Out = withOut ? module.Out : null,
-            Baseline = baseline,
+            Baseline = module.Baseline?.Path,
             Document = module.Document,
             Unknowns = unknowns,
             Acknowledged = acknowledged,
@@ -161,7 +166,7 @@ internal static class Check
         {
             EarlierIr.Readable { Document: var document } => new Succeeded<(IrDocument, IReadOnlyList<string>)>((document, [.. earlier.Files.OfType<string>()])),
             EarlierIr.OtherVersion { Version: var version } => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedOtherVersion.At(at,
-                $"this file is IR {version}, and this haruspex writes IR {IrDocument.CurrentVersion}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {(module.Files.Count == 1 ? "both" : "them all")}.")]),
+                $"this file is IR {version}, and this haruspex writes IR {module.Document.Version}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {(module.Files.Count == 1 ? "both" : "them all")}.")]),
             EarlierIr.Unreadable unreadable => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, unreadable.AsIr
                 ? $"this file can't be read as IR: {unreadable.Problem} Run haruspex generate to write it again."
                 : $"this file can't be read: {unreadable.Problem}")]),

@@ -145,13 +145,14 @@ public static class IrJsonReader
         }
 
         var source = json.Object("source");
+        var baseline = source.OptionalObject("baseline");
+        if (baseline is not null && version == IrDocument.OneDatabaseVersion)
+            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CurrentVersion}.");
+        if (baseline is null && version != IrDocument.OneDatabaseVersion)
+            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}.");
+
         var document = new IrDocument(
-            new IrSource(source.String("dialect"))
-            {
-                Session = Session(source.OptionalObject("session")),
-                Package = Package(source),
-                References = References(source),
-            },
+            DocumentSource(source) with { Baseline = baseline is null ? null : Baseline(baseline) },
             [.. json.Array("objects").Select(o => Object(IrJsonObject.At(o.Item, o.Path)))],
             Types(json.Object("types")),
             [.. json.Array("unknowns").Select(u => Unknown(IrJsonObject.At(u.Item, u.Path)))])
@@ -161,7 +162,60 @@ public static class IrJsonReader
         };
         source.End();
         json.End();
+        if (version == IrDocument.OneDatabaseVersion)
+            OneDatabase(document);
         return document;
+    }
+
+    /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
+    private static IrSource DocumentSource(IrJsonObject json)
+    {
+        var source = new IrSource(json.String("dialect"))
+        {
+            Session = Session(json.OptionalObject("session")),
+            Package = Package(json),
+            References = References(json),
+        };
+        return source;
+    }
+
+    /// <summary>The source of the other database a combined document describes, which has nothing more.</summary>
+    private static IrSource Baseline(IrJsonObject json)
+    {
+        var source = DocumentSource(json);
+        json.End();
+        return source;
+    }
+
+    /// <summary>
+    /// Refuses, by its path, what only a document combining two databases says (0.24) in one labelled 0.23, which could say
+    /// neither: a key that may be left out whatever its value, and a result missing because only one database returns it.
+    /// </summary>
+    private static void OneDatabase(IrDocument document)
+    {
+        const string Why = "which only a document combining two databases (IR 0.24) says";
+        foreach (var (name, type) in document.Types)
+        {
+            foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
+            {
+                var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
+                if (field.Presence == IrPresence.Optional)
+                    throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", {Why}.");
+                Rules(at + ".nullableBecause", field.NullableBecause);
+            }
+        }
+
+        foreach (var (obj, i) in document.Objects.Select((o, i) => (o, i)))
+        {
+            foreach (var (result, j) in (obj.Results ?? []).Select((r, j) => (r, j)))
+                Rules($"$.objects[{i}].results[{j}].absentBecause", result.AbsentBecause);
+        }
+
+        static void Rules(string at, EquatableArray<IrNullReason> reasons)
+        {
+            if (reasons.Select((r, k) => (r, k)).FirstOrDefault(p => p.r.Rule == IrNullRule.NotInBoth) is ({ } reason, var k))
+                throw new IrFormatException($"{at}[{k}].rule", $"is \"{IrWireNames.Of(reason.Rule)}\", {Why}.");
+        }
     }
 
     private static IrObject Object(IrJsonObject json)
