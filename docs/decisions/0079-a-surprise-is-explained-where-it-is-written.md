@@ -39,8 +39,8 @@ for comments on the fields they would otherwise ask about.
 **Amended** (19 Nov 2026, Richard). A key left out of `FOR JSON` output when null is a surprise only through a reason the
 declarations don't give: a NOT NULL column made nullable by an outer join, an aggregate, a subquery or any other rule, whose
 comment says why it may be null and that the key is then left out. A key left out only because its column, a parameter or the
-config file says it may be null is not one, since that is what `FOR JSON` does with every null; the Zod module's header says so
-once, for every such key, and JSON Schema's description of each property says it already. A key left out whatever its value, in
+config file says it may be null is not one, since that is what `FOR JSON` (and `JSON_OBJECT` with `ABSENT ON NULL`) does with
+every null; the Zod module's header says so once, for every such key, and JSON Schema's description of each property says it already. A key left out whatever its value, in
 a combined document, still is. `"all"` still comments every field.
 
 On a large application's procedures, such keys were nearly half the fields the default explained, and their comments more than

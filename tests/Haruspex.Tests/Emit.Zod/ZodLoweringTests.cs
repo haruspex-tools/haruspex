@@ -154,7 +154,7 @@ public class ZodLoweringTests
         Assert.DoesNotContain(ForJsonLine, Lower(Document(new() { ["Row"] = new([id]) }, json)).Header);
     }
 
-    private const string ForJsonLine = "FOR JSON leaves out a key whose value is null, so a key it may leave out is optional rather than nullable.";
+    private const string ForJsonLine = "FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null, so a key they may leave out is optional rather than nullable.";
 
     [Fact]
     public void The_header_names_the_ir_version_and_the_rowset_mapping() =>

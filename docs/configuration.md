@@ -443,8 +443,8 @@ keys, so strict is the accurate schema, and strip is the default for deployment 
 Generated code says why a field is what it is where that would surprise its reader: a field whose nullability, presence or
 type differs from what its source column declares, and every unknown. A `COUNT` is nullable, a key is left out because an outer
 join made it null, a `SUM` of a `decimal(9,2)` is a `decimal(38,2)`: each is deliberate, and each looks like a bug without its
-reason. A key `FOR JSON` leaves out only because its column is nullable is not a surprise: `FOR JSON` leaves out every key whose
-value is null, and the Zod module says so once, in its header.
+reason. A key `FOR JSON` leaves out only because its column is nullable is not a surprise: `FOR JSON`, and `JSON_OBJECT` with
+`ABSENT ON NULL`, leave out every key whose value is null, and the Zod module says so once, in its header.
 
 ```ts
   /**

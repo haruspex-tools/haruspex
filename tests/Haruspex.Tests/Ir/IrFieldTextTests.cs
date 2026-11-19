@@ -59,6 +59,7 @@ public class IrFieldTextTests
 
         Assert.True(IrSurprises.AbsentWhenNull(note));
         Assert.False(IrSurprises.Of(note));
+        Assert.True(IrSurprises.Of(note with { Presence = IrPresence.Optional }));
         Assert.True(IrSurprises.Of(Place(json, "shipped_at", "shop.order_note").Field));
         Assert.True(IrSurprises.Of(line));
         var lines = Lines(json, "first_line", id: "shop.order_note");
