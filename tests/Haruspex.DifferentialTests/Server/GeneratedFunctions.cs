@@ -99,8 +99,8 @@ internal static class GeneratedFunctions
 
 #pragma warning disable CA1812 // Made by the JSON reader, from what the script wrote, never by code.
 
-    /// <summary>What a call returned, as JSON holds it, or what it threw.</summary>
-    public sealed record Response(string Name, JsonElement? Value, Failure? Error);
+    /// <summary>What a call returned, as JSON holds it, or what it threw, and the offset from UTC of the zone it ran in on 1 July 2026, in minutes east.</summary>
+    public sealed record Response(string Name, JsonElement? Value, Failure? Error, int MinutesEast);
 
     /// <summary>
     /// An error a function threw: its name and kind, the procedure and part a haruspex error names with its issues, and the

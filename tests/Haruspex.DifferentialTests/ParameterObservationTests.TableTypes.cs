@@ -157,6 +157,47 @@ public partial class ParameterObservationTests
         Assert.Equal([8037, 8061], varyingTooLong.Error?.Preceding);
     }
 
+    [Fact]
+    public async Task A_datetime_column_rounds_a_row_s_thousandths_to_0_3_or_7_without_an_error()
+    {
+        // Sent as text, as a generated function sends a row's datetime (decision 0055): the server rounds a fraction to the
+        // three-hundredths of a second it holds, as it does a scalar parameter's, so .xx0, .xx3 and .xx7 arrive as sent and
+        // every other thousandth moves, .999 into the next second.
+        string[] stamps =
+        [
+            "CREATE TYPE obs.stamps AS TABLE (k int NOT NULL, at datetime NOT NULL);",
+            "CREATE PROCEDURE obs.read_stamps @t obs.stamps READONLY AS SELECT CONVERT(varchar(30), at, 126) AS at FROM @t ORDER BY k;",
+        ];
+        string[] sent = [".1", ".12", ".120", ".123", ".127", ".997", ".001", ".002", ".005", ".008", ".998", ".999"];
+        object?[][] rows = [.. sent.Select((fraction, i) => new object?[] { i, "2026-11-19T10:20:30" + fraction })];
+
+        var response = Assert.Single(await SentTables(stamps, Sending("stamps", "obs.read_stamps", Table("stamps", [("k", "Int"), ("at", "VarChar(MAX)")], rows))));
+
+        // Each value's time of day, as style 126 writes it (no fraction for .000).
+        Assert.Equal(
+            "10:20:30.100 10:20:30.120 10:20:30.120 10:20:30.123 10:20:30.127 10:20:30.997 | 10:20:30 10:20:30.003 10:20:30.007 10:20:30.007 10:20:30.997 10:20:31",
+            string.Join(" ", JsonSerializer.Deserialize<JsonElement>(Rows(response)).EnumerateArray()
+                .Select((r, i) => (i == 6 ? "| " : "") + r.GetProperty("at").GetString()![11..])));
+    }
+
+    [Fact]
+    public async Task A_bigint_outside_its_range_in_a_row_is_refused_by_the_driver_before_the_server_sees_it()
+    {
+        // Sent as the string of its digits, as a generated function sends a row's bigint: one past the range fails in the driver
+        // (tedious validates the parameter, EREQUEST), with no number from the server and no error before it. So the JSON
+        // Schema's note names the driver.
+        string[] totals =
+        [
+            "CREATE TYPE obs.totals AS TABLE (total bigint NOT NULL);",
+            "CREATE PROCEDURE obs.read_totals @t obs.totals READONLY AS SELECT CAST(total AS varchar(20)) AS total FROM @t;",
+        ];
+        var fits = Assert.Single(await SentTables(totals, Sending("greatest", "obs.read_totals", Table("totals", [("total", "BigInt")], ["9223372036854775807"]))));
+        var past = Assert.Single(await SentTables(totals, Sending("past it", "obs.read_totals", Table("totals", [("total", "BigInt")], ["9223372036854775808"]))));
+
+        Assert.Equal("""[{"total":"9223372036854775807"}]""", Rows(fits));
+        Assert.Equal((null, "EREQUEST", 0, "Input parameter 't' could not be validated"), (past.Error?.Number, past.Error?.Code, past.Error?.Preceding.Count, past.Error?.Message));
+    }
+
     [Theory]
     [InlineData("an identity column", "id int IDENTITY", "Int", 1077)]
     [InlineData("a computed column", "doubled AS v * 2", "Int", 271)]

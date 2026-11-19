@@ -227,6 +227,50 @@ public partial class MssqlFunctionTests
     }
 
     [Fact]
+    public async Task A_row_s_datetime_arrives_as_sent_and_a_fraction_the_server_would_round_is_refused_before_sending()
+    {
+        // A_datetime_column_rounds_a_row_s_thousandths_to_0_3_or_7_without_an_error: the schema takes a fraction of one or two
+        // digits, or of three ending in 0, 3 or 7, which the server keeps; any other would be moved without an error.
+        const string Stamps = "CREATE TYPE outlet.stamp_list AS TABLE (k int NOT NULL, at datetime NOT NULL);";
+        const string Echo = "CREATE PROCEDURE outlet.echo_stamps @stamps outlet.stamp_list READONLY AS SELECT CONVERT(varchar(30), at, 126) AS at FROM @stamps ORDER BY k;";
+        static Dictionary<string, object?> Stamp(int k, string fraction) => new() { ["k"] = k, ["at"] = "2026-11-19T10:20:30" + fraction };
+        string[] kept = ["", ".1", ".12", ".120", ".123", ".127", ".997"];
+        string[] moved = [".001", ".002", ".005", ".998", ".999"];
+
+        var responses = await RunWithTypes(
+            [Stamps],
+            [Echo],
+            [
+                new GeneratedFunctions.Call("kept", "echoStamps", Params(("stamps", kept.Select((f, i) => Stamp(i, f)).ToArray()))),
+                .. moved.Select(f => new GeneratedFunctions.Call(f, "echoStamps", Params(("stamps", new[] { Stamp(0, f) })), Db: "untouchable")),
+            ]);
+
+        Assert.Null(responses[0].Error);
+        Assert.Equal(
+            """[{"at":"2026-11-19T10:20:30"},{"at":"2026-11-19T10:20:30.100"},{"at":"2026-11-19T10:20:30.120"},{"at":"2026-11-19T10:20:30.120"},{"at":"2026-11-19T10:20:30.123"},{"at":"2026-11-19T10:20:30.127"},{"at":"2026-11-19T10:20:30.997"}]""",
+            JsonSerializer.Serialize(responses[0].Value));
+        Assert.All(responses.Skip(1), r => Assert.Equal("stamps.0.at", string.Join(".", Assert.Single(r.Error!.Issues).Path)));
+    }
+
+    [Fact]
+    public async Task A_call_without_a_time_zone_runs_in_the_machine_s_before_and_after_one_with_a_zone()
+    {
+        // The harness, not haruspex: it once set TZ to the string "undefined" when it was unset, which Node reads as UTC, so the
+        // tests of a call without a zone ran in UTC wherever the machine was.
+        const string Ping = "CREATE PROCEDURE outlet.ping AS SELECT 1 AS one;";
+        var machine = (int)TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMinutes;
+
+        var responses = await RunWithTypes(
+            [],
+            [Ping],
+            new GeneratedFunctions.Call("before", "ping"),
+            new GeneratedFunctions.Call("Tokyo", "ping", TimeZone: "Asia/Tokyo"),
+            new GeneratedFunctions.Call("after", "ping"));
+
+        Assert.Equal([machine, 540, machine], responses.Select(r => r.MinutesEast));
+    }
+
+    [Fact]
     public async Task A_bigint_past_2_to_the_53_in_a_row_arrives_exact()
     {
         // The row's bigint is a JavaScript bigint, which the function sends as the string of its digits.

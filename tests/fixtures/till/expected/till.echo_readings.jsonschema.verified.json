@@ -126,7 +126,7 @@
           ]
         },
         "total": {
-          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. Or the string of its digits, as a rowset hands a bigint over, which a value past 2^53 must be to arrive exactly; the server refuses one outside the range. May be null: nullable-column (till.reading_list.total).",
+          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. Or the string of its digits, as a rowset hands a bigint over, which a value past 2^53 must be to arrive exactly; the mssql driver refuses one outside the range before sending it. May be null: nullable-column (till.reading_list.total).",
           "anyOf": [
             {
               "type": "integer",

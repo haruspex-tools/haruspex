@@ -15,7 +15,8 @@
 // written { "bigInt": "<digits>" }, at any depth, is passed as a JavaScript bigint, and one written { "bytes": "<base64>" } as a
 // Buffer. The connection is given in HARUSPEX_DRIVER_CONFIG.
 //
-// It writes observed.json beside: { "calls": [{ "name", "value" or "error" }] }, an error as { "name", "kind", "message",
+// It writes observed.json beside: { "calls": [{ "name", "minutesEast", "value" or "error" }] }, "minutesEast" the offset of the
+// zone the call ran in on 1 July 2026, an error as { "name", "kind", "message",
 // "procedure", "part", "issues", "number", "procName", "isRequestError", "preceding" }: "preceding" the numbers of the server's
 // errors the driver's error carries before it (precedingErrors), as for a row a table-valued parameter's type refuses.
 import { register } from 'node:module'
@@ -48,6 +49,13 @@ const plain = (value) =>
   JSON.parse(JSON.stringify(value, (_, v) =>
     typeof v === 'bigint' ? v.toString() : v !== null && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data) ? { bytes: Buffer.from(v.data).toString('base64') } : v))
 
+// Sets the process's TZ, or leaves it unset when it was: assigned undefined, it would be the string "undefined", a zone Node reads
+// as UTC, so every call would run in UTC whatever the machine's zone.
+const inZone = (timeZone) => {
+  if (timeZone === undefined) delete process.env.TZ
+  else process.env.TZ = timeZone
+}
+
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
 const transaction = new sql.Transaction(pool)
 await transaction.begin()
@@ -58,9 +66,10 @@ try {
   const zone = process.env.TZ
   for (const call of calls) {
     pool.config.parseJSON = call.parseJson ?? false
-    process.env.TZ = call.timeZone ?? zone
+    inZone(call.timeZone ?? zone)
     const db = call.db === 'untouchable' ? { request: () => { throw new Error('the connection was touched') } } : transaction
-    const entry = { name: call.name }
+    // The zone's offset from UTC on a summer's day, in minutes east, so a test can see which zone the call ran in.
+    const entry = { name: call.name, minutesEast: -new Date(Date.UTC(2026, 6, 1)).getTimezoneOffset() }
     try {
       const fn = functions[call.function]
       if (typeof fn !== 'function') throw new Error(`no function ${call.function}`)

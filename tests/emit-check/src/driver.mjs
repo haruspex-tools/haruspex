@@ -49,6 +49,12 @@ const special = (value) =>
     : value
 const plain = (value) => (value !== null && typeof value === 'object' && 'type' in value ? value.value : value)
 const zone = process.env.TZ
+// Sets the process's TZ, or leaves it unset when it was: assigned undefined, it would be the string "undefined", a zone Node reads
+// as UTC.
+const inZone = (timeZone) => {
+  if (timeZone === undefined) delete process.env.TZ
+  else process.env.TZ = timeZone
+}
 const driverType = (typed) => (typed.args ? sql[typed.type](...typed.args.map((a) => (a === 'MAX' ? sql.MAX : a))) : sql[typed.type])
 
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
@@ -60,7 +66,7 @@ try {
 
   for (const call of calls) {
     pool.config.parseJSON = call.parseJson
-    process.env.TZ = call.timeZone ?? zone
+    inZone(call.timeZone ?? zone)
     const request = new sql.Request(transaction)
     const entry = { name: call.name, recordsets: [], error: null, check: null, accepted: null }
     if (call.accepts) {

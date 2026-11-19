@@ -69,13 +69,17 @@ internal static partial class SentScalars
         return schema with { Notes = [.. Origins.Of(scalar), new SchemaNote(note)] };
     }
 
-    /// <summary>A <c>bigint</c>: a JSON integer in its range, or the string of its digits, which a number past 2^53 must be to arrive exactly.</summary>
+    /// <summary>
+    /// A <c>bigint</c>: a JSON integer in its range, or the string of its digits, which a number past 2^53 must be to arrive exactly.
+    /// The pattern doesn't bound the digits' value: the driver refuses one outside the range before the server sees it (observed:
+    /// A_bigint_outside_its_range_in_a_row_is_refused_by_the_driver_before_the_server_sees_it).
+    /// </summary>
     private static Schema BigInt(IrScalar scalar)
     {
         var number = Scalars.Of(scalar);
         var digits = Schema.OfType("string").With(Keyword.Pattern, new SchemaValue.Text(@"^-?\d{1,19}$"));
         var either = Schema.Any.With(Keyword.AnyOf, new SchemaValue.List([new SchemaValue.Nested(number with { Notes = [] }), new SchemaValue.Nested(digits)]));
-        return either with { Notes = [.. number.Notes, new SchemaNote("Or the string of its digits, as a rowset hands a bigint over, which a value past 2^53 must be to arrive exactly; the server refuses one outside the range.")] };
+        return either with { Notes = [.. number.Notes, new SchemaNote("Or the string of its digits, as a rowset hands a bigint over, which a value past 2^53 must be to arrive exactly; the mssql driver refuses one outside the range before sending it.")] };
     }
 
     /// <summary>Up to <paramref name="scale"/> digits of a second, or none.</summary>
