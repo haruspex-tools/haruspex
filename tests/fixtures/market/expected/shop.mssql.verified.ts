@@ -6,6 +6,7 @@ import type * as types from './shop.zod.js'
 import {
   GetProductParamsSchema,
   GetProductSchema,
+  ListProductsSchema,
   ListStaffSchema,
   TopProductsParamsSchema,
   TopProductsSchema,
@@ -119,6 +120,16 @@ export async function getProduct(db: Queryable, params: types.GetProductParams):
   if (sets.length < 2) throw new ResultError('shop.get_product', 'the results', [{ message: `Expected at least 2 result sets, received ${String(sets.length)}` }])
   const result = await checked(GetProductSchema, { product: readRows(sets[0]), orders: readRows(sets[1]) }, (issues) => new ResultError('shop.get_product', 'the results', issues))
   return { product: result.product, orders: result.orders }
+}
+
+/** Calls shop.list_products. */
+export async function listProducts(db: Queryable): Promise<types.ListProducts> {
+  const request = db.request()
+  const response = await request.execute('shop.list_products')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('shop.list_products', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
+  const result = await checked(ListProductsSchema, readRows(sets[0]), (issues) => new ResultError('shop.list_products', 'the results', issues))
+  return result
 }
 
 /** Calls shop.list_staff. */

@@ -3,6 +3,16 @@
 import { z } from 'zod'
 import { OrderTotalSchema, shape579045 } from './shared.zod.js'
 
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
+const jsonText = (content: () => z.ZodType): z.ZodString =>
+  z.string().refine((text) => {
+    try {
+      return content().safeParse(JSON.parse(text)).success
+    } catch {
+      return false
+    }
+  }, { error: 'Expected JSON text holding a value of its content type' })
+
 export const TopProductsRowSchema = z.object({
   product_id: z.int32(),
   name: z.string().max(60),
@@ -41,6 +51,22 @@ export const GetProductSchema = z.strictObject({
   orders: z.array(GetProductOrdersRowSchema),
 })
 export type GetProduct = z.infer<typeof GetProductSchema>
+
+export const ListProductsOrdersSchema = z.object({
+  order_id: z.int32(),
+})
+export type ListProductsOrders = z.infer<typeof ListProductsOrdersSchema>
+
+export const ListProductsRowSchema = z.object({
+  product_id: z.int32(),
+  /** A string holding JSON, checked against the schema inside. */
+  orders: jsonText(() => z.array(ListProductsOrdersSchema).min(1)).nullable(),
+})
+export type ListProductsRow = z.infer<typeof ListProductsRowSchema>
+
+/** shop.list_products: returns rows. */
+export const ListProductsSchema = z.array(ListProductsRowSchema)
+export type ListProducts = z.infer<typeof ListProductsSchema>
 
 export const ListStaffRowSchema = shape579045
 export type ListStaffRow = z.infer<typeof ListStaffRowSchema>

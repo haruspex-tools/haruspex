@@ -5,6 +5,52 @@
   },
   "objects": [
     {
+      "id": "admin.get_prefs",
+      "name": "GetPrefs",
+      "kind": "procedure",
+      "at": "procedures/get_prefs.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@user_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetPrefsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    },
+    {
       "id": "admin.list_retired_users",
       "name": "ListRetiredUsers",
       "kind": "procedure",
@@ -203,6 +249,33 @@
       ]
     },
     {
+      "id": "sales.order_feed",
+      "name": "OrderFeed",
+      "kind": "procedure",
+      "at": "procedures/order_feed.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderFeedRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/order_feed.sql:5:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
       "id": "shop.get_product",
       "name": "GetProduct",
       "kind": "procedure",
@@ -262,6 +335,27 @@
       ]
     },
     {
+      "id": "shop.list_products",
+      "name": "ListProducts",
+      "kind": "procedure",
+      "at": "procedures/list_products.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListProductsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
       "id": "shop.list_staff",
       "name": "ListStaff",
       "kind": "procedure",
@@ -284,6 +378,55 @@
     }
   ],
   "types": {
+    "GetPrefsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "admin.get_prefs",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "prefs",
+          "type": {
+            "kind": "import",
+            "name": "ProductAttributesSchema",
+            "from": "@shop/types"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "admin.users.prefs"
+            }
+          ]
+        }
+      ]
+    },
     "GetProductOrdersRow": {
       "kind": "object",
       "identity": {
@@ -492,6 +635,93 @@
         }
       ]
     },
+    "ListProductsOrders": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.list_products",
+        "path": "results[0][].orders<json>[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListProductsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.list_products",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "orders",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "ListProductsOrders"
+              },
+              "minItems": 1
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/list_products.sql:5:8"
+            }
+          ]
+        }
+      ]
+    },
     "ListRetiredUsersRow": {
       "kind": "object",
       "identity": {
@@ -672,6 +902,70 @@
         }
       ]
     },
+    "OrderFeedRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.order_feed",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "canonical",
+              "items": [
+                "closed",
+                "held",
+                "open"
+              ],
+              "from": [
+                {
+                  "check": "tables/orders.sql:6:66"
+                }
+              ],
+              "fold": "Latin1_General_100_CI_AS.codepage"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
     "OrderTotal": {
       "kind": "object",
       "nameDeclared": true,
@@ -788,6 +1082,62 @@
     }
   },
   "unknowns": [],
-  "overrides": [],
-  "folds": {}
+  "overrides": [
+    {
+      "object": "admin.get_prefs",
+      "path": "results[0][].prefs",
+      "setting": "type"
+    }
+  ],
+  "folds": {
+    "Latin1_General_100_CI_AS.codepage": {
+      "ignored": "\u0000­",
+      "classes": {
+        " ": " ",
+        "-": "-",
+        ".": ".",
+        "0": "0",
+        "1": "1¹",
+        "2": "2²",
+        "3": "3³",
+        "4": "4",
+        "5": "5",
+        "6": "6",
+        "7": "7",
+        "8": "8",
+        "9": "9",
+        "A": "Aa",
+        "AE": "Ææ",
+        "B": "Bb",
+        "C": "Cc",
+        "D": "Dd",
+        "E": "Ee",
+        "F": "Ff",
+        "G": "Gg",
+        "H": "Hh",
+        "I": "Ii",
+        "J": "Jj",
+        "K": "Kk",
+        "L": "Ll",
+        "M": "Mm",
+        "N": "Nn",
+        "O": "Oo",
+        "OE": "Œœ",
+        "P": "Pp",
+        "Q": "Qq",
+        "R": "Rr",
+        "S": "Ss",
+        "SS": "ß",
+        "T": "Tt",
+        "TH": "Þþ",
+        "U": "Uu",
+        "V": "Vv",
+        "W": "Ww",
+        "X": "Xx",
+        "Y": "Yy",
+        "Z": "Zz",
+        "_": "_"
+      }
+    }
+  }
 }

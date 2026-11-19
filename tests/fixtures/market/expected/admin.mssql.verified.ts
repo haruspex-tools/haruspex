@@ -4,6 +4,8 @@
 import sql from 'mssql'
 import type * as types from './admin.zod.js'
 import {
+  GetPrefsParamsSchema,
+  GetPrefsSchema,
   ListRetiredUsersSchema,
   ListUsersSchema,
 } from './admin.zod.js'
@@ -90,6 +92,18 @@ async function checked<T>(schema: Checks<T>, value: unknown, fail: (issues: read
 /** A rowset result: its rows, or none when its statement did not run. */
 function readRows(set: unknown): unknown {
   return set ?? []
+}
+
+/** Calls admin.get_prefs. */
+export async function getPrefs(db: Queryable, params: types.GetPrefsParams): Promise<types.GetPrefs> {
+  const p = await checked(GetPrefsParamsSchema, params, (issues) => new ParameterError('admin.get_prefs', issues))
+  const request = db.request()
+  request.input('user_id', sql.Int, p.user_id)
+  const response = await request.execute('admin.get_prefs')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('admin.get_prefs', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
+  const result = await checked(GetPrefsSchema, readRows(sets[0]), (issues) => new ResultError('admin.get_prefs', 'the results', issues))
+  return result
 }
 
 /** Calls admin.list_retired_users. */

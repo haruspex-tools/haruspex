@@ -8,6 +8,7 @@ import {
   GetOrderSchema,
   ListOrdersParamsSchema,
   ListOrdersSchema,
+  OrderFeedSchema,
 } from './sales.zod.js'
 
 /** Anything that makes an mssql request: a ConnectionPool, a Transaction, or a test double. */
@@ -89,6 +90,23 @@ async function checked<T>(schema: Checks<T>, value: unknown, fail: (issues: read
   return result.value
 }
 
+/** The name SQL Server gives the one column of a top-level FOR JSON result. */
+const forJson = 'JSON_F52E2B61-18A1-11d1-B105-00805F49916B'
+
+/**
+ * A FOR JSON result as one document, whether the pool parses JSON (parseJSON) or not: the driver joins its rows into one,
+ * which is the document, or its text under the column's name. No row, or empty text, is null.
+ */
+function readJson(set: unknown): unknown {
+  const row: unknown = Array.isArray(set) ? set[0] : undefined
+  if (row === undefined || row === null) return null
+  if (typeof row === 'object' && !Array.isArray(row) && Object.keys(row).length === 1 && forJson in row) {
+    const text: unknown = (row as Record<string, unknown>)[forJson]
+    if (typeof text === 'string') return text === '' ? null : JSON.parse(text)
+  }
+  return row
+}
+
 /** A rowset result: its rows, or none when its statement did not run. */
 function readRows(set: unknown): unknown {
   return set ?? []
@@ -115,5 +133,15 @@ export async function listOrders(db: Queryable, params: types.ListOrdersParams):
   const sets = response.recordsets as unknown as readonly unknown[]
   if (sets.length < 1) throw new ResultError('sales.list_orders', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
   const result = await checked(ListOrdersSchema, readRows(sets[0]), (issues) => new ResultError('sales.list_orders', 'the results', issues))
+  return result
+}
+
+/** Calls sales.order_feed. */
+export async function orderFeed(db: Queryable): Promise<types.OrderFeed> {
+  const request = db.request()
+  const response = await request.execute('sales.order_feed')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length < 1) throw new ResultError('sales.order_feed', 'the results', [{ message: `Expected at least one result set, received ${String(sets.length)}` }])
+  const result = await checked(OrderFeedSchema, readJson(sets[0]), (issues) => new ResultError('sales.order_feed', 'the results', issues))
   return result
 }

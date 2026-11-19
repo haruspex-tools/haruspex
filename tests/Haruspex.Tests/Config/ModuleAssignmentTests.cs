@@ -75,13 +75,17 @@ public class ModuleAssignmentTests
         Assert.Equal([$"sql/q.sql:1:1: error HAR4008: {why}"], assigned.Diagnostics.Select(d => d.ToString()));
     }
 
-    [Fact]
-    public void By_schema_a_schema_that_can_t_name_a_module_is_refused()
+    // A dot would make a file name such as RDF..zod.ts, and one name could read as another module's file.
+    [Theory]
+    [InlineData("sales team")]
+    [InlineData("RDF.")]
+    [InlineData("sales.v2")]
+    public void By_schema_a_schema_that_can_t_name_a_module_is_refused(string schema)
     {
-        var assigned = Assign("\"split\": \"schema\"", [new("sales team", "get_order")]);
+        var assigned = Assign("\"split\": \"schema\"", [new(schema, "get_order")]);
 
         Assert.Equal(
-            ["haruspex.json:1:12: error HAR3024: split: the schema 'sales team' can't name a module: a module's name starts with a letter and has only letters, digits, '_' and '-', since it names the module's files. List the modules instead, with a name for its module."],
+            [$"haruspex.json:1:12: error HAR3024: split: the schema '{schema}' can't name a module: a module's name starts with a letter and has only letters, digits, '_' and '-', since it names the module's files. List the modules instead, with a name for its module."],
             assigned.Diagnostics.Select(d => d.ToString()));
     }
 

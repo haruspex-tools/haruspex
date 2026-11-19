@@ -390,7 +390,9 @@ SELECT o.order_id, o.total FROM sales.orders AS o WHERE o.placed >= @since;
 ```
 
 The comment names one of the modules, or `queries`; a list may hold a module of query files alone, with an empty list of
-schemas. Without `split`, the comment is a warning ([HAR4009](diagnostics/HAR4009.md)), since it does nothing.
+schemas. Without `split`, a well-formed comment is a warning ([HAR4009](diagnostics/HAR4009.md)), since it does nothing. A
+comment that can't be taken, naming no module or more than one word, or written twice, is an error whether or not the output is
+split ([HAR1019](diagnostics/HAR1019.md)): the file is read the same either way, as its `-- @sets` comment is.
 
 **What is written.** For each module, each emitter's file, named after the module: `sales.zod.ts`, `sales.jsonschema.json`,
 `sales.mssql.ts`. A definition two or more modules use is written once, in `shared.zod.ts` and `shared.jsonschema.json`, which the

@@ -22,5 +22,7 @@
     // modules, declared once under this name in the shared file.
     "sales.get_order": { "paths": { "[]": { "name": "OrderTotal" } } },
     "shop.get_product": { "sets": ["product", "orders"] },
+    // An application's schema, imported by the one module that uses it (tests/emit-check maps @shop/types).
+    "admin.get_prefs": { "paths": { "[].prefs": { "type": "ProductAttributesSchema", "import": "@shop/types" } } },
   },
 }
