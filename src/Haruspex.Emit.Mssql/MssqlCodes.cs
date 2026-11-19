@@ -22,4 +22,10 @@ public static class MssqlCodes
     /// add a key.
     /// </summary>
     public static DiagnosticCode SetNameUnusable { get; } = new(5203, DiagnosticSeverity.Error, "A result set's name can't be a key of the function's object");
+
+    /// <summary>
+    /// A table type's column whose type gives no driver type to declare it as (a number of no known format), which a table-valued
+    /// parameter must declare for every column.
+    /// </summary>
+    public static DiagnosticCode TableColumnCannotBeDeclared { get; } = new(5204, DiagnosticSeverity.Error, "A table type's column can't be declared to the driver");
 }

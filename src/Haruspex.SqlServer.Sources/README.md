@@ -113,8 +113,10 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
 
 - **Everything the model needs is read.** Tables come with their CHECK constraints (a check that a later
   `ALTER TABLE … NOCHECK CONSTRAINT` may disable says so), their primary key, unique constraints and unfiltered unique
-  indexes (a key whose index a later `ALTER INDEX … DISABLE` may disable says so), and alias and CLR types from
-  `CREATE TYPE`. An edge table that declares no columns of its own (`CREATE TABLE shop.follows AS EDGE`) is a graph table
+  indexes (a key whose index a later `ALTER INDEX … DISABLE` may disable says so), and alias, CLR and table types from
+  `CREATE TYPE`, a table type with its columns, keys (whether each ignores duplicates), CHECK constraints, and which columns
+  have a default. In a DACPAC a table type's parts are entries of its own element, and its column says `IsNullable` only when it
+  is nullable, the reverse of a table's column. An edge table that declares no columns of its own (`CREATE TABLE shop.follows AS EDGE`) is a graph table
   with none listed, as its package reads it. A `CREATE TABLE` whose columns its script doesn't list, a FileTable's or one made
   from a query (`WITH (…) AS SELECT`), is passed over with a note (HAR1013), so a name in it is unresolved, never guessed.
   DML triggers are read from `CREATE`, `CREATE OR ALTER` and `ALTER TRIGGER`, every definition kept, since

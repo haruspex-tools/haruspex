@@ -10,7 +10,8 @@
 //
 // A parameter's value is sent as it is, for the driver to choose its type, or given as { "type", "args", "value" } to send it
 // with one of the driver's types, sql[type](...args) with "MAX" for sql.MAX, as a generated function does; a value JSON can't hold is written
-// { "js": "NaN" }, and a bigint { "bigInt": "<digits>" }. A call with a "timeZone" runs with the process's TZ set to it, which
+// { "js": "NaN" }, and a bigint { "bigInt": "<digits>" }. A table-valued parameter is given as { "table": { "schema", "name",
+// "columns": [{ "name", "type", "args" }], "rows": [[…], …] } }, sent as an sql.Table of those columns, in that order. A call with a "timeZone" runs with the process's TZ set to it, which
 // is where the driver turns a Date into the server's date and time. A call with "accepts": "<schema>" also parses its
 // parameters' values, as an object by name, with that schema of the module, and writes whether it accepted them.
 //
@@ -22,7 +23,8 @@
 // (an object holding that result set as its `recordset`), which the test takes from the project's README, so that what is
 // proved is the code a reader pastes.
 //
-// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "returnValue", "error", "check", "accepted" }] }.
+// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "returnValue", "error", "check", "accepted" }] },
+// an error as { "code", "number", "message", "preceding" }, "preceding" the numbers of the server's errors the driver's carries.
 // The connection is given in HARUSPEX_DRIVER_CONFIG, the mssql config as JSON, never on the command line.
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -38,6 +40,7 @@ const special = (value) =>
   value !== null && typeof value === 'object' ? ('js' in value ? { NaN, Infinity }[value.js] : BigInt(value.bigInt)) : value
 const plain = (value) => (value !== null && typeof value === 'object' && 'type' in value ? value.value : value)
 const zone = process.env.TZ
+const driverType = (typed) => (typed.args ? sql[typed.type](...typed.args.map((a) => (a === 'MAX' ? sql.MAX : a))) : sql[typed.type])
 
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
 const transaction = new sql.Transaction(pool)
@@ -59,9 +62,15 @@ try {
     try {
       if (call.procedure) {
         for (const [name, value] of Object.entries(call.parameters ?? {})) {
-          if (value !== null && typeof value === 'object' && 'type' in value) {
-            const type = value.args ? sql[value.type](...value.args.map((a) => (a === 'MAX' ? sql.MAX : a))) : sql[value.type]
-            request.input(name, type, special(value.value))
+          if (value !== null && typeof value === 'object' && 'table' in value) {
+            const table = new sql.Table()
+            table.schema = value.table.schema
+            table.name = value.table.name
+            for (const column of value.table.columns) table.columns.add(column.name, driverType(column))
+            for (const row of value.table.rows) table.rows.add(...row.map(special))
+            request.input(name, table)
+          } else if (value !== null && typeof value === 'object' && 'type' in value) {
+            request.input(name, driverType(value), special(value.value))
           } else {
             request.input(name, value)
           }
@@ -71,7 +80,12 @@ try {
         result = await request.query(call.batch)
       }
     } catch (error) {
-      entry.error = { code: error.code ?? null, number: typeof error.number === 'number' ? error.number : null, message: error.message }
+      entry.error = {
+        code: error.code ?? null,
+        number: typeof error.number === 'number' ? error.number : null,
+        message: error.message,
+        preceding: Array.isArray(error.precedingErrors) ? error.precedingErrors.map((e) => e.number) : [],
+      }
     }
 
     if (result) {

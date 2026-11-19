@@ -19,7 +19,7 @@ namespace Haruspex.DifferentialTests;
 /// The procedures are invented here, in schema <c>drift</c>, which no fixture uses. Every call of a run is made in the same
 /// transaction, so the pairs are deployed together, one database for the baselines and one for the candidates.
 /// </remarks>
-public class BaselineFitTests(SqlServerFixture server)
+public partial class BaselineFitTests(SqlServerFixture server)
 {
     private const string Schema = "IF SCHEMA_ID(N'drift') IS NULL EXEC (N'CREATE SCHEMA drift');";
 
@@ -353,52 +353,38 @@ public class BaselineFitTests(SqlServerFixture server)
     }
 
     /// <summary>
-    /// A type the database defines, changed under its name: the IR names it but doesn't hold its definition, so the operation
-    /// can't show it unchanged, and the call the application already makes fails against the new definition. Run in a database
-    /// of its own, whose writes are committed, and called through SqlClient as the generated function's driver sends the value:
-    /// a schema collection created in the shared database's open transaction deadlocks the call that uses it (observed, 1205),
-    /// and the generated functions' harness sends no table-valued parameter.
+    /// An <c>xml</c> schema collection changed under its name: the IR names it but doesn't hold its definition, so the operation
+    /// can't show it unchanged, and the call the application already makes fails against the new definition. Run in a database of
+    /// its own, whose writes are committed, and called through SqlClient as the generated function's driver sends the value: a
+    /// schema collection created in the shared database's open transaction deadlocks the call that uses it (observed, 1205).
     /// </summary>
-    [Theory]
-    [InlineData("an xml schema collection whose element narrows", "xml")]
-    [InlineData("a table type that gains a column", "drift.lines")]
-    public async Task A_type_redefined_under_its_name_is_refused_and_fails_the_old_call(string change, string named)
+    [Fact]
+    public async Task An_xml_schema_collection_redefined_under_its_name_is_refused_and_fails_the_old_call()
     {
         var token = TestContext.Current.CancellationToken;
-        var (before, after, procedure, argument, fails) = change.StartsWith("an xml", StringComparison.Ordinal)
-            ? (Collection("xs:string"), Collection("xs:int"), "CREATE PROCEDURE drift.take @v xml(drift.sc) AS SELECT CAST(1 AS int) AS id;", Xml(), 6926)
-            : ("CREATE TYPE drift.lines AS TABLE (a int NOT NULL, b int NOT NULL);", "CREATE TYPE drift.lines AS TABLE (a int NOT NULL, b int NOT NULL, extra int NOT NULL);",
-                "CREATE PROCEDURE drift.take @v drift.lines READONLY AS SELECT CAST(1 AS int) AS id;", Lines(), 500);
+        var (before, after) = (Collection("xs:string"), Collection("xs:int"));
+        const string Procedure = "CREATE PROCEDURE drift.take @v xml(drift.sc) AS SELECT CAST(1 AS int) AS id;";
 
-        var findings = IrFit.Of(Take(before, procedure), Take(after, procedure), new IrFitOptions());
-        Assert.Equal([$"refused: drift.take parameters[\"@v\"]: type {named} can't be shown unchanged"], findings.Select(f => f.ToString()));
+        var findings = IrFit.Of(Take(before, Procedure), Take(after, Procedure), new IrFitOptions());
+        Assert.Equal(["refused: drift.take parameters[\"@v\"]: type xml can't be shown unchanged"], findings.Select(f => f.ToString()));
 
         await using var database = await server.ScratchAsync();
         await database.ExecuteAsync("CREATE SCHEMA drift;", token);
         await database.ExecuteAsync(before, token);
-        await database.ExecuteAsync(procedure, token);
-        Assert.Null(await CallAsync(database, argument(), token));
+        await database.ExecuteAsync(Procedure, token);
+        Assert.Null(await CallAsync(database, Xml(), token));
 
         await database.ExecuteAsync("DROP PROCEDURE drift.take;", token);
-        await database.ExecuteAsync(named == "xml" ? "DROP XML SCHEMA COLLECTION drift.sc;" : "DROP TYPE drift.lines;", token);
+        await database.ExecuteAsync("DROP XML SCHEMA COLLECTION drift.sc;", token);
         await database.ExecuteAsync(after, token);
-        await database.ExecuteAsync(procedure, token);
-        Assert.Equal(fails, await CallAsync(database, argument(), token));
+        await database.ExecuteAsync(Procedure, token);
+        Assert.Equal(6926, await CallAsync(database, Xml(), token));
 
         static string Collection(string type) =>
             $"CREATE XML SCHEMA COLLECTION drift.sc AS N'<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"a\" type=\"{type}\"/></xs:schema>';";
 
-        // A string, as the driver sends one (nvarchar), and a table of the two columns the application knew.
-        static Func<SqlParameter> Xml() => () => new SqlParameter("@v", SqlDbType.NVarChar, -1) { Value = "<a>abc</a>" };
-
-        static Func<SqlParameter> Lines() => () =>
-        {
-            var table = new DataTable { Locale = System.Globalization.CultureInfo.InvariantCulture };
-            table.Columns.Add("a", typeof(int));
-            table.Columns.Add("b", typeof(int));
-            table.Rows.Add(1, 2);
-            return new SqlParameter("@v", SqlDbType.Structured) { TypeName = "drift.lines", Value = table };
-        };
+        // A string, as the driver sends one (nvarchar).
+        static SqlParameter Xml() => new("@v", SqlDbType.NVarChar, -1) { Value = "<a>abc</a>" };
     }
 
     private static IrDocument Take(string type, string procedure) =>

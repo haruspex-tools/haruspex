@@ -535,9 +535,9 @@ is combined, not refused.
 
 | Change | Results (to the application) | Parameters (to the database) |
 |---|---|---|
-| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, of a table type, a CLR type or `xml` (whose definition the IR doesn't hold) even when unchanged, no longer `OUTPUT`, or that lost its default; an `OUTPUT` parameter whose value, which comes back, widened, as a result's would |
+| Fails the check | a key or result set removed; a value that may now be null, a key that may now be left out, a key left out when null that may now arrive as `null`, a result that may now be absent or not be sent; a type of another kind; a length, range, number of digits, number of rows or value set widened; a procedure gone | a parameter added without a default, removed, narrowed (a date or time to a narrower range or a coarser fraction too), of a type now unknown, of a CLR type or `xml` (whose definition the IR doesn't hold) even when unchanged, of a table type whose definition changed so that a row the application sends may be refused or go to another column, no longer `OUTPUT`, or that lost its default; an `OUTPUT` parameter whose value, which comes back, widened, as a result's would |
 | A warning | a new key; a new trailing result set; both fail under `"objects": "strict"` | a parameter added with a default |
-| Fits | a value that became non-null; a length, range or value set narrowed; keys in another order; a trailing result set the application may find missing (a statement that may not run), gone | a parameter widened, or that gained a default |
+| Fits | a value that became non-null; a length, range or value set narrowed; keys in another order; a trailing result set the application may find missing (a statement that may not run), gone | a parameter widened, or that gained a default; a table type unchanged, or whose columns widened or became nullable, or that lost a key or CHECK |
 
 ## Warnings acknowledged: `acknowledge`
 

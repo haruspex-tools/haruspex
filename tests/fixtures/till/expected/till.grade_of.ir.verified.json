@@ -1,0 +1,259 @@
+{
+  "irVersion": "0.26",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/grade_of.sql": "298bd7c7e6cda505d33988a2baa231f60a6a4b80109876989c6168d147ed1b16",
+      "types/tag_list.sql": "26cb5d26f6caa2da644cbbd1ce780ee69da1225f4b9e18950884ef76c99b82a1"
+    }
+  },
+  "objects": [
+    {
+      "id": "till.grade_of",
+      "name": "GradeOf",
+      "kind": "procedure",
+      "at": "procedures/grade_of.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@tags",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TagListRow"
+            }
+          },
+          "tableType": "till.tag_list",
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@tag",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GradeOfRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GradeOfRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.grade_of",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "grade",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.grade",
+              "sql": "tinyint",
+              "at": "types/tag_list.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "TagListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.tag_list",
+        "path": "<till.tag_list>"
+      },
+      "fields": [
+        {
+          "name": "tag",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.tag",
+              "sql": "varchar(20)",
+              "at": "types/tag_list.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "grade",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.grade",
+              "sql": "tinyint",
+              "at": "types/tag_list.sql:4:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.tag_list": {
+      "schema": "till",
+      "name": "tag_list",
+      "at": "types/tag_list.sql:2:1",
+      "columns": [
+        {
+          "name": "tag",
+          "sql": "varchar(20)",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "sql": "tinyint",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [1,2,3
+              ],
+              "from": [
+                {
+                  "check": "types/tag_list.sql:4:38"
+                }
+              ]
+            }
+          },
+          "nullable": false
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "tag"
+          ]
+        }
+      ],
+      "checks": [
+        "grade IN (1, 2, 3)"
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

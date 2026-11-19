@@ -57,6 +57,8 @@ internal sealed partial class PackageLocationMap
             // A field's source columns (IR 0.25) name the tables of the other databases a project refers to as well as its own.
             foreach (var table in folder.Tables.Concat(folder.Databases.Values.SelectMany(d => d.Tables)))
                 AddTable(table, elements, package);
+            foreach (var type in folder.UserTypes.OfType<TableType>())
+                AddTableType(type, elements, package);
         }
 
         files = [.. regions.Select(r => r.File).Concat(points.Keys.Select(p => p.File)).Distinct(StringComparer.Ordinal).OrderByDescending(f => f.Length)];
@@ -107,9 +109,27 @@ internal sealed partial class PackageLocationMap
     {
         if (elements.FirstOrDefault(e => (string?)e.Attribute("Type") == "SqlTable" && SameObject(Name(e)!, table.Name)) is not { } element)
             return;
-        var target = PackageFile(package, table.Name);
-        var columns = Relationship(element, "Columns").Select(c => Last(Name(c)!)).ToList();
         var parts = elements.Where(e => Parts.Contains((string?)e.Attribute("Type") ?? "") && Owner(e) is { } owner && SameObject(owner, table.Name)).ToList();
+        AddParts(table, table.Name, element, parts, "", package);
+    }
+
+    /// <summary>A table type, whose constraints are entries of its own element (<c>Constraints</c>), defaults among them, in that order.</summary>
+    private void AddTableType(TableType type, List<XElement> elements, string package)
+    {
+        if (elements.FirstOrDefault(e => (string?)e.Attribute("Type") == "SqlTableType" && SameObject(Name(e)!, type.Name)) is not { } element)
+            return;
+        AddParts(type, type.Name, element, [.. Relationship(element, "Constraints")], "SqlTableType", package);
+    }
+
+    /// <summary>
+    /// A table's or table type's places: its columns by their place among its columns, and its constraints by their place among
+    /// its parts after them, each part's type <paramref name="prefix"/> followed by the table's (<c>SqlTableTypeCheckConstraint</c>).
+    /// </summary>
+    private void AddParts(ITable table, ObjectName name, XElement element, List<XElement> parts, string prefix, string package)
+    {
+        string Part(string type) => prefix.Length == 0 ? type : prefix + type["Sql".Length..];
+        var target = PackageFile(package, name);
+        var columns = Relationship(element, "Columns").Select(c => Last(Name(c)!)).ToList();
         points[table.Span.Start] = new SourceLocation(target, 1, 1);
         foreach (var column in table.Columns)
         {
@@ -122,7 +142,7 @@ internal sealed partial class PackageLocationMap
         foreach (var check in table.Checks)
         {
             var text = Words(FragmentText(check.Expression));
-            var part = parts.FindIndex(p => (string?)p.Attribute("Type") == "SqlCheckConstraint"
+            var part = parts.FindIndex(p => (string?)p.Attribute("Type") == Part("SqlCheckConstraint")
                 && (check.Name is { } name ? Name(p) is { } partName && Last(partName).Equals(name, StringComparison.OrdinalIgnoreCase) : Name(p) is null && Words(Property(p, "CheckExpressionScript") ?? "") == text));
             if (part < 0)
                 continue;
@@ -133,7 +153,7 @@ internal sealed partial class PackageLocationMap
 
         foreach (var key in table.UniqueKeys)
         {
-            var part = parts.FindIndex(p => (string?)p.Attribute("Type") is "SqlPrimaryKeyConstraint" or "SqlUniqueConstraint" or "SqlIndex"
+            var part = parts.FindIndex(p => new[] { Part("SqlPrimaryKeyConstraint"), Part("SqlUniqueConstraint"), Part("SqlIndex") }.Contains((string?)p.Attribute("Type"))
                 && (key.Name is { } name ? Name(p) is { } partName && Last(partName).Equals(name, StringComparison.OrdinalIgnoreCase) : Name(p) is null && KeyColumns(p).SequenceEqual(key.Columns, StringComparer.OrdinalIgnoreCase)));
             if (part >= 0)
                 points[key.At] = new SourceLocation(target, columns.Count + part + 1, 1);

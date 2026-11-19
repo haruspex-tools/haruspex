@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.25
+# Haruspex.Ir: the IR format, version 0.26
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.25, whose documents that say less are labelled 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
+version 0.26, whose documents that say less are labelled 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
@@ -114,10 +114,12 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.25"` when a field has `from` or `sides`, or
-  a source has `path` or `files`,
+- must write `irVersion` as the oldest version that says all the document says: `"0.26"` when it defines a table type (one with
+  `tableTypes`), else `"0.25"` when a field has `from` or `sides`, or a source has `path` or `files`,
   else `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), else `"0.23"`; and a document
   that this page and the schema allow;
+- must write a table type in `tableTypes` exactly when a parameter names it, and a parameter that refers to a named type only as
+  an array of the rows of the table type its `tableType` names ("Table types", below);
 - must write `text` on an object exactly when its kind is `query`;
 - must write a flag and its reasons together: `nullable`, `itemsNullable`, `valuesNullable` and `mayBeAbsent` are `true`
   exactly when the matching list of reasons (`nullableBecause`, …) is there, with at least one reason;
@@ -128,11 +130,14 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.25, 0.24 and 0.23, older or newer, without
+- must read `irVersion` first and must refuse a document of any version but 0.26, 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
-  is `not-in-both` and a field's `sides`; and must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
-  document labelled 0.23 or 0.24;
+  is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
+  document labelled 0.23 or 0.24; and must refuse a document labelled 0.26 without `tableTypes`, and one labelled otherwise with
+  them;
+- must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
+  that refers to a named type other than the rows of its table type, and a table type's row with a field that isn't a scalar;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
   type, a count that is negative or past 2,147,483,647, a number in a
@@ -153,14 +158,15 @@ are all different; and `recursive` is set exactly on the types that can reach th
 find the cycles itself, "Recursive types"). `IrJsonReader` doesn't check them; an emitter must refuse a name it can't bind.
 
 `IrJsonReader` and `IrJsonWriter` are this project's reader and writer, and follow every rule here that binds them. The schema
-checks what a reader must refuse except three things JSON Schema can't express: a number's form, a key given twice in one
-object, and a `ref` that names no type.
+checks what a reader must refuse except what JSON Schema can't express: a number's form, a key given twice in one object, a `ref`
+that names no type, and what ties a table-valued parameter to its type's definition and rows.
 
 ## A document
 
 ```jsonc
 {
   "irVersion": "0.25",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
+                                      // (0.26 when it defines a table type: "Table types", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -273,6 +279,52 @@ and (0.18) `numericRoundAbort`. Every claim in the document assumes them. It is 
 written empty: then every claim holds whatever the callers set, as in every version before 0.17. A reader doesn't interpret
 the names; an emitter should say what was assumed where its output is read, as the Zod emitter's header does
 ([decision 0038](../../docs/decisions/0038-the-callers-session-is-declared.md)).
+
+## Table types
+
+A **table-valued parameter** (0.26) is a parameter of a table type, a type the database defines as a table's columns, keys and
+CHECK constraints, which a caller sends as a table of rows. Its `type` is an array of a named object type, the type's row, and
+its `tableType` names the type's definition in the document's `tableTypes`. A document has `tableTypes` exactly when a parameter
+names one, and holds only the types its parameters name; it is then labelled 0.25
+([decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)).
+
+```jsonc
+"parameters": [{ "name": "@lines", "type": { "kind": "array", "items": { "ref": "LineListRow" } },
+  "tableType": "sales.line_list", "hasDefault": true, "output": false }],
+…
+"types": { "LineListRow": { "kind": "object",
+  "identity": { "tableType": "sales.line_list", "path": "<sales.line_list>" },   // owned by the type, shared by its parameters
+  "fields": [ { "name": "product_id", "type": { "kind": "number", "format": "int32", "sql": "int", … },
+      "presence": "always", "nullable": false }, … ] } },
+"tableTypes": {                       // by the name a parameter's tableType gives; sorted
+  "sales.line_list": { "schema": "sales", "name": "line_list", "at": "types/line_list.sql:1:1",
+    "columns": [                      // in the order declared, which is the order they are sent in
+      { "name": "product_id", "sql": "int", "type": { "kind": "number", … }, "nullable": false },
+      { "name": "qty", "sql": "smallint", "type": { …, "min": { "value": 0, "inclusive": false, … } }, "nullable": false },
+      { "name": "serial", "sql": "int", "type": { … }, "nullable": false, "generated": "identity" },
+      { "name": "note", "sql": "nvarchar(200)", "type": { … }, "nullable": true, "collation": "Latin1_General_100_CI_AS" } ],
+    "keys": [{ "columns": ["product_id"] }, { "columns": ["note"], "ignoresDuplicates": true }],
+    "checks": ["qty > 0"] } }
+```
+
+The **row** is what a client sends: every column of the type, in the type's order, each a key that is always there, typed as a
+parameter of the column's type is ([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)),
+nullable only where the column takes NULL, and each field's `from` is its column, named as a table's column is
+(`sales.line_list.note`), so that its derivation starts there. A result read from a table-valued parameter, or from a table
+variable of a table type, names the type's columns the same way, in its `from` and its reasons. The row's fields must be scalars. A type with a column no row can give (an identity,
+computed or `rowversion` column) has no row: its parameter's `type` is `unknown`, with its reason in `unknowns`, and the
+parameter still names the definition. A table-valued parameter's `hasDefault` is `true`: a caller may leave it out, and the
+procedure then reads no rows.
+
+The **definition** is the database's side: the type's `schema` and `name` as the database names them, where it is defined
+(`at`), and its `columns`, `keys` and `checks`. A column has its `name`; its `sql` type as the source spells it, left out only for
+a computed column; its `type`, a scalar with the facts its declaration and the type's CHECK constraints prove, left out when the
+type isn't modelled; whether it is `nullable`; `generated`, how the server fills it when a row can't (`identity`, `computed` or
+`rowversion`), left out for any other; and its `collation`, given for a string column whose collation is known. A key lists its
+columns in key order, and `ignoresDuplicates` is `true` when a row whose key another has is dropped without an error rather than
+refused (left out when false). Each of `checks` is a CHECK constraint's condition as written, on one line, its comments and runs of white
+space each one space, so that one condition from two sources (a folder and its DACPAC) reads alike. A column's default is not
+recorded: a row sent never takes it.
 
 ## Type nodes
 
@@ -418,7 +470,8 @@ its name. A target may reserve some identifiers for itself, and its emitter must
 ## Names and identity
 
 The IR keeps SQL names as the canonical identity: each object's `id`, and each object type's `identity`, the object
-(`procedure`, `query` (0.22), or `function` for a recursive function's types) and the path that own it. A query's identity is
+(`procedure`, `query` (0.22), `function` for a recursive function's types, or (0.26) `tableType` for a table type's row) and the
+path that own it. A query's identity is
 its file's path, since a file has no name in the database. Generated names (`name`, and
 the keys of `types`) come from the config file's naming rules and overrides, applied by Haruspex.Config after
 inference; an emitter uses them as they are and never reads the config file. Two types can share an identity: the
@@ -535,6 +588,14 @@ when the claims change. Another writer need not write the same bytes, but must w
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.26** (19 Nov 2026, table types). A document's `tableTypes`, the definition of each table type its parameters take; a
+parameter's `tableType`, naming its definition; and the type owner `tableType`, a table type's row, which a table-valued
+parameter's `type` is an array of ("Table types", above;
+[decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)). Only a document that defines a table type
+has any of the three, and only it is labelled 0.26: every 0.25, 0.24 and 0.23 document is a 0.26 document without one that means
+the same, so this reader reads all four ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), tenth
+amendment).
 
 **0.25** (19 Nov 2026, where a field came from). A field's `from`, the table columns its value is read from; in a combined
 document, its `sides`, the field as each database gave it, where they differ; and a source's `files`, the hash of each script

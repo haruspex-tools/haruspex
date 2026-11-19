@@ -8,7 +8,7 @@ namespace Haruspex.Tests.Inference;
 /// to it, so that a client can check a value against them before sending it (<c>ParameterObservationTests</c> observes what
 /// the server does with one outside them).
 /// </summary>
-public class ParameterTests
+public partial class ParameterTests
 {
     /// <summary>The one parameter of <c>dbo.p</c>, declared as <paramref name="declaration"/>.</summary>
     private static IrParameter Parameter(string declaration, string? collation = null)
@@ -73,19 +73,6 @@ public class ParameterTests
 
         // The IR has no facet for a date's range or a time's fraction; the type, spelt as decision 0041 fixes, says them.
         Assert.Equal("datetime2(7)", Assert.IsType<IrScalar>(Parameter("@at datetime2").Type).Sql);
-
-    [Fact]
-    public void A_table_valued_parameter_is_unknown_with_a_reason()
-    {
-        using var dir = new TempDirectory();
-        dir.File("t.sql", "CREATE TYPE dbo.ids AS TABLE (id int NOT NULL);");
-        dir.File("p.sql", "CREATE PROCEDURE dbo.p @ids dbo.ids READONLY AS SELECT 1 AS one;");
-        var project = SqlProject.Load(dir.Path);
-        var doc = project.Infer(project.Select([ObjectPattern.Parse("dbo.p")]).Procedures, HaruspexConfig.None(".")).Expected();
-
-        Assert.IsType<IrUnknownType>(Assert.Single(doc.Objects[0].Parameters).Type);
-        Assert.Contains(doc.Unknowns, u => u.Path == "parameters.@ids");
-    }
 
     [Fact]
     public void A_table_valued_parameter_may_be_left_out()

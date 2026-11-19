@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, and (0.25) where each field's value came from. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, and (0.26) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.25 for a document that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.26 for a document that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
+        "0.26",
         "0.25",
         "0.24",
         "0.23"
@@ -148,6 +149,14 @@
         "$ref": "#/$defs/objectType"
       }
     },
+    "tableTypes": {
+      "description": "The table types the parameters take, by the key a parameter's tableType names (0.26). Given exactly when irVersion is 0.26.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/tableType"
+      }
+    },
     "unknowns": {
       "type": "array",
       "items": {
@@ -191,6 +200,11 @@
             ]
           }
         }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
       }
     },
     {
@@ -203,6 +217,11 @@
             "baseline"
           ]
         }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
       }
     },
     {
@@ -215,6 +234,11 @@
             "baseline"
           ]
         }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
       }
     },
     {
@@ -274,7 +298,89 @@
             }
           }
         }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
       }
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "required": [
+            "baseline"
+          ]
+        }
+      },
+      "required": [
+        "tableTypes"
+      ]
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "not": {
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "additionalProperties": {
+            "properties": {
+              "fields": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "items": {
+            "properties": {
+              "results": {
+                "items": {
+                  "properties": {
+                    "absentBecause": {
+                      "items": {
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "tableTypes"
+      ]
     }
   ],
   "$defs": {
@@ -433,6 +539,10 @@
         "type": {
           "$ref": "#/$defs/type"
         },
+        "tableType": {
+          "description": "For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.",
+          "type": "string"
+        },
         "hasDefault": {
           "description": "Whether the caller may omit it.",
           "type": "boolean"
@@ -579,6 +689,10 @@
           "description": "The query the type belongs to.",
           "type": "string"
         },
+        "tableType": {
+          "description": "The tableType the type belongs to.",
+          "type": "string"
+        },
         "path": {
           "description": "The path to the type, in the IR's path syntax.",
           "type": "string"
@@ -616,8 +730,140 @@
           "required": [
             "query"
           ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tableType": true
+          },
+          "required": [
+            "tableType"
+          ]
         }
       ]
+    },
+    "tableType": {
+      "description": "A table type's definition (0.26): what a table-valued parameter of it takes.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "description": "The schema it is defined in.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name within its schema.",
+          "type": "string"
+        },
+        "at": {
+          "description": "Where it is defined, as path:line:column.",
+          "type": "string"
+        },
+        "columns": {
+          "description": "Its columns in the order declared, which is the order a client sends them in.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/tableColumn"
+          }
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tableKey"
+          }
+        },
+        "checks": {
+          "description": "Its CHECK constraints' conditions, each as written, on one line.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "name",
+        "at",
+        "columns",
+        "keys",
+        "checks"
+      ],
+      "additionalProperties": false
+    },
+    "tableColumn": {
+      "description": "A column of a table type.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Its name as declared.",
+          "type": "string"
+        },
+        "sql": {
+          "description": "Its type as the database spells it; left out only for a computed column.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/scalar"
+        },
+        "nullable": {
+          "description": "Whether a row may hold NULL in it.",
+          "type": "boolean"
+        },
+        "generated": {
+          "enum": [
+            "identity",
+            "computed",
+            "rowversion"
+          ]
+        },
+        "collation": {
+          "description": "The collation its strings compare under, when known; left out otherwise.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "sql"
+          ]
+        },
+        {
+          "properties": {
+            "generated": {
+              "const": "computed"
+            }
+          },
+          "required": [
+            "generated"
+          ]
+        }
+      ]
+    },
+    "tableKey": {
+      "description": "A key of a table type: columns whose values no two rows may share.",
+      "type": "object",
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignoresDuplicates": {
+          "description": "Whether a row whose key another has is dropped without an error; left out when false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "columns"
+      ],
+      "additionalProperties": false
     },
     "field": {
       "description": "A field of an object type.",

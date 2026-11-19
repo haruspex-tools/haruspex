@@ -8,7 +8,7 @@ HAR1003
 crane.dacpac: warning HAR1003: crane.dacpac refers to quay.dacpac, a package of the same database, which isn't found: looked for at quay.dacpac, /tmp/tmp.m6Q5SKYaDN/projects/quay/bin/Debug/quay.dacpac. Put it beside crane.dacpac, or name its folder in "references" in the config file.
 
 HAR1004
-atelier.dacpac: note HAR1004: atelier.dacpac holds elements haruspex doesn't model, which are passed over: 1 SqlTableType.
+WideWorldImporters.dacpac: note HAR1004: WideWorldImporters.dacpac holds elements haruspex doesn't model, which are passed over: 26 SqlSequence.
 
 HAR1005
 broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.
@@ -355,6 +355,9 @@ haruspex.json: error HAR5202: The function of sql/label.sql must declare @label 
 HAR5203
 haruspex: error HAR5203: A result set of s.p is named __proto__, which as a key of the object its function returns sets its prototype rather than adding a key; rename the set.
 
+HAR5204
+haruspex: error HAR5204: The function of s.p must declare the column qty of the table type s.lines to the driver, and its type gives no driver type to declare it as.
+
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.
 
@@ -443,7 +446,7 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.

@@ -64,16 +64,30 @@ public static class SchemaRules
                 // An unqualified name resolves in the caller's default schema and then in dbo, and the source does not
                 // say whose. With exactly one type of that name in the project, a script that deployed used that one.
                 // CLR types count, so that one can't be mistaken for an alias of the same name.
-                var named = type.Schema is { } schema
-                    ? model.FindUserType(new ObjectName(schema, type.Name))
-                    : SchemaNames.Resolve(model.UserTypes, type.Name) is OneObject { Named: UserType one } ? one : null;
-                if (named is not AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias)
+                if (FindUserType(model, type) is not AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias)
                     return null;
                 return new ResolvedType(builtIn, alias.Name.ToString(), alias.Nullability);
             default:
                 return null;
         }
     }
+
+    /// <summary>
+    /// The table type a parameter or variable is declared with, found as an alias type is (<see cref="ResolveType"/>): by its
+    /// schema when it names one, and otherwise when exactly one type of that name is defined; null when it is no table type the
+    /// model defines.
+    /// </summary>
+    public static TableType? ResolveTableType(DatabaseModel model, SqlType? type)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        return type is { Kind: SqlTypeKind.Named } ? FindUserType(model, type) as TableType : null;
+    }
+
+    /// <summary>The user type a name refers to, by its schema or as the only one of that name; null when there is none or several.</summary>
+    private static UserType? FindUserType(DatabaseModel model, SqlType type) =>
+        type.Schema is { } schema
+            ? model.FindUserType(new ObjectName(schema, type.Name))
+            : SchemaNames.Resolve(model.UserTypes, type.Name) is OneObject { Named: UserType one } ? one : null;
 
     /// <summary>What a type alone guarantees about its values: a string's length, an exact number's digits and range.</summary>
     /// <param name="type">The resolved type.</param>
@@ -125,14 +139,16 @@ public static class SchemaRules
 
     /// <summary>
     /// The collation a column's strings compare under: its own <c>COLLATE</c>, or for a table of the schema the database's default
-    /// (<see cref="DatabaseModel.DefaultCollation"/>); null when neither is known. A body's own table (<c>#totals</c>, <c>@rows</c>)
-    /// takes no default here: a temporary table's columns take <c>tempdb</c>'s, which the model doesn't know.
+    /// (<see cref="DatabaseModel.DefaultCollation"/>); null when neither is known. A table type's columns take the database's too,
+    /// fixed when the type is created there, and so do a parameter's and a variable's of the type (observed:
+    /// <c>A_table_type_s_column_takes_the_database_s_collation</c>). A body's own table (<c>#totals</c>, <c>@rows</c>) takes no
+    /// default here: a temporary table's columns take <c>tempdb</c>'s, which the model doesn't know.
     /// </summary>
     public static string? EffectiveCollation(DatabaseModel model, ITable table, Column column)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(column);
-        return column.Collation ?? (table is Table ? model.DefaultCollation : null);
+        return column.Collation ?? (table is Table or TableType or DeclaredTable { Type: not null } ? model.DefaultCollation : null);
     }
 
     /// <summary>

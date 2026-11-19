@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// one call is reported and left out. Each case infers the same procedure from two versions of its SQL, as a change to a database
 /// would; <c>CombinedTypesTests</c>, in the differential tests, calls pairs like them through the combined functions on a server.
 /// </summary>
-public class IrCombinationTests
+public partial class IrCombinationTests
 {
     private const string Orders = """
         CREATE TABLE shop.orders (
@@ -71,7 +71,7 @@ public class IrCombinationTests
         // Every field as both give it, so no field repeats it as its sides.
         Assert.Empty(combined.Findings);
         Assert.Equal(document with { Source = document.Source with { Baseline = document.Source } }, combined.Document);
-        Assert.Equal(IrDocument.CurrentVersion, combined.Document.Version);
+        Assert.Equal(IrDocument.SourcesVersion, combined.Document.Version);
     }
 
     [Fact]

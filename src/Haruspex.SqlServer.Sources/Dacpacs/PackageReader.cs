@@ -61,6 +61,10 @@ internal static class PackageReader
                     into.Define(into.Tables, table.Name, table, table.Span.Start);
                     into.CascadingKeys.AddRange(keys);
                     break;
+                case ModelXml.SqlTableType:
+                    var tableType = tables.ReadType(element);
+                    into.Define(into.UserTypes, tableType.Name, tableType, tableType.Span.Start);
+                    break;
                 case ModelXml.SqlUserDefinedDataType or ModelXml.SqlUserDefinedType:
                     var userType = UserType(element, package.Name);
                     into.Define(into.UserTypes, userType.Name, userType, userType.Span.Start);

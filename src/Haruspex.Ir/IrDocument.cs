@@ -4,8 +4,8 @@ namespace Haruspex.Ir;
 
 /// <summary>The inferred shapes of a set of database objects.</summary>
 /// <remarks>
-/// Two documents are equal when the IR's JSON says the same of them: the same source, objects, named types, unknowns, overrides
-/// and folds, in any order where the file's order is a sort (<see cref="IrDocumentOrder"/>), with each record compared by
+/// Two documents are equal when the IR's JSON says the same of them: the same source, objects, named types, unknowns, overrides,
+/// folds and table types, in any order where the file's order is a sort (<see cref="IrDocumentOrder"/>), with each record compared by
 /// value. So a document read back from its file equals the one written, and that is the round trip the format promises.
 /// </remarks>
 /// <param name="Source">Where the shapes were inferred from.</param>
@@ -19,12 +19,18 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that says where a field's value came from is written in (0.25): a
-    /// field's source columns (<see cref="IrField.From"/>) and, combined, each database's field (<see cref="IrField.Sides"/>).
-    /// The IR is versioned separately from the tool, because it is a file that other programs read: a change that would break a
-    /// reader changes this.
+    /// The newest IR format version, the one a document that defines a table type is written in (0.26,
+    /// <see cref="TableTypes"/>). The IR is versioned separately from the tool, because it is a file that other programs read: a
+    /// change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.25";
+    public const string CurrentVersion = "0.26";
+
+    /// <summary>
+    /// The version a document that defines no table type but says where a field's value came from is written in (0.25): a
+    /// field's source columns (<see cref="IrField.From"/>) and, combined, each database's field (<see cref="IrField.Sides"/>).
+    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md.
+    /// </summary>
+    public const string SourcesVersion = "0.25";
 
     /// <summary>
     /// The version a document that combines two databases and says nothing of where its fields came from is written in: 0.24
@@ -42,26 +48,35 @@ public sealed record IrDocument(
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.24 and 0.23, every document of which is a 0.25
-    /// document that says nothing of where its fields came from, meaning the same. 0.23 added a result set's name
-    /// (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.25, 0.24 and 0.23, every document of which is a
+    /// 0.26 document that defines no table type and says no more than its version could, meaning the same. 0.23 added a result
+    /// set's name (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
     /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
     /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when a field says where its value came from, which a document inferred from SQL almost always
-    /// does; else <see cref="CombinedVersion"/> when it combines two databases; else <see cref="OneDatabaseVersion"/>.
-    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md.
+    /// <see cref="CurrentVersion"/> when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
+    /// value came from, which a document inferred from SQL almost always does; else <see cref="CombinedVersion"/> when it combines
+    /// two databases; else <see cref="OneDatabaseVersion"/>.
+    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md and
+    /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
+        TableTypes.Count > 0 ? CurrentVersion
+        : Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
             || Source.Path is not null || Source.Baseline?.Path is not null
-            ? CurrentVersion
+            ? SourcesVersion
         : Source.Baseline is null ? OneDatabaseVersion
         : CombinedVersion;
+
+    /// <summary>
+    /// The table types the document's table-valued parameters take, by the key a parameter names (<see cref="IrParameter.TableType"/>),
+    /// the type's name as the source writes it (<c>sales.line_list</c>) (0.26). Empty when no parameter is of one.
+    /// </summary>
+    public EquatableMap<string, IrTableType> TableTypes { get; init; } = [];
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override
@@ -85,7 +100,8 @@ public sealed record IrDocument(
         && Types.All(t => other.Types.TryGetValue(t.Key, out var type) && t.Value == type)
         && IrDocumentOrder.Unknowns(this).SequenceEqual(IrDocumentOrder.Unknowns(other))
         && IrDocumentOrder.Overrides(this).SequenceEqual(IrDocumentOrder.Overrides(other))
-        && Folds == other.Folds;
+        && Folds == other.Folds
+        && TableTypes == other.TableTypes;
 
     /// <summary>A hash that ignores order, as equality does: from what the document holds, not where.</summary>
     public override int GetHashCode() =>

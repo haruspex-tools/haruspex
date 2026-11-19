@@ -13,7 +13,7 @@ internal static class FunctionPlanner
     /// The names the module binds besides its functions and what it imports, which no function may take. The printer writes them
     /// (<c>MssqlPrinter</c>); a test holds the two lists together.
     /// </summary>
-    public static IReadOnlyList<string> ModuleNames { get; } = ["sql", "types", "Queryable", "Issue", "ParameterError", "ResultError", "Checks", "checked", "where", "forJson", "readJson", "readRows"];
+    public static IReadOnlyList<string> ModuleNames { get; } = ["sql", "types", "Queryable", "Issue", "ParameterError", "ResultError", "Checks", "checked", "where", "forJson", "readJson", "readRows", "table", "cell"];
 
     /// <summary>
     /// The names <c>sp_executesql</c> gives its own parameters, which a query file's parameters, passed to it by name beside them,
@@ -65,15 +65,43 @@ internal static class FunctionPlanner
             }
 
             (string Text, string Declaration)? batch = obj.Kind == IrObjectKind.Query ? Batch(obj, refusals) : null;
-            functions.Add(Function(name, obj) with { Batch = batch });
+            functions.Add(Function(name, obj, document, refusals) with { Batch = batch });
         }
 
         return Outcome.Of<IReadOnlyList<MssqlFunction>>(functions, refusals);
     }
 
-    /// <summary>The function of <paramref name="obj"/>, named <paramref name="name"/>: what it binds and how it reads each result set.</summary>
-    public static MssqlFunction Function(string name, IrObject obj) =>
-        new(name, obj, [.. obj.Parameters.Select(Bind)], obj.Results is { } results ? [.. results.Select(r => r.Encoding)] : null);
+    /// <summary>
+    /// The function of <paramref name="obj"/>, named <paramref name="name"/>: what it binds and how it reads each result set. Its
+    /// table-valued parameters' tables come from <paramref name="document"/>; without it, as for the function's shape alone, none
+    /// is planned.
+    /// </summary>
+    public static MssqlFunction Function(string name, IrObject obj, IrDocument? document = null, List<Diagnostic>? refusals = null) =>
+        new(name, obj, [.. obj.Parameters.Select(p => Bind(p) with { Table = document is null ? null : Table(obj, p, document, refusals) })], obj.Results is { } results ? [.. results.Select(r => r.Encoding)] : null);
+
+    /// <summary>
+    /// The table a table-valued parameter's rows are sent as: its type's name, and each column of its row, in the row's order,
+    /// declared as a scalar parameter of its type is (<see cref="DriverTypes"/>); null for any other parameter, and for a
+    /// column that can't be declared, which is refused.
+    /// </summary>
+    private static TableValue? Table(IrObject obj, IrParameter parameter, IrDocument document, List<Diagnostic>? refusals)
+    {
+        if (parameter is not { TableType: { } key, Type: IrArray { Items: IrRef row } } || !document.TableTypes.TryGetValue(key, out var definition))
+            return null;
+        var columns = new List<(string, DriverType)>();
+        foreach (var field in document.Types[row.Name].Fields)
+        {
+            if (DriverTypes.Of(field.Type) is not { } type)
+            {
+                refusals?.Add(MssqlCodes.TableColumnCannotBeDeclared.At(null, $"The function of {obj.Id} must declare the column {field.Name} of the table type {key} to the driver, and its type gives no driver type to declare it as."));
+                return null;
+            }
+
+            columns.Add((field.Name, type));
+        }
+
+        return new TableValue(definition.Schema, definition.Name, [.. columns]);
+    }
 
     /// <summary>
     /// What a query file's function sends <c>sp_executesql</c>: its text, and each parameter declared by its name and its type's

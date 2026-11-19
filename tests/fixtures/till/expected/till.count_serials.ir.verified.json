@@ -1,0 +1,158 @@
+{
+  "irVersion": "0.26",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/count_serials.sql": "608a6d7cb1b598717df5fdddd26345bf4b088594d6c6c7bf69156df27df1528f"
+    }
+  },
+  "objects": [
+    {
+      "id": "till.count_serials",
+      "name": "CountSerials",
+      "kind": "procedure",
+      "at": "procedures/count_serials.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@serials",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-sql-type"
+          },
+          "tableType": "till.serial_list",
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountSerialsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CountSerialsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.count_serials",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "serials",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/count_serials.sql:5:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.serial_list": {
+      "schema": "till",
+      "name": "serial_list",
+      "at": "types/serial_list.sql:2:1",
+      "columns": [
+        {
+          "name": "serial",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "nullable": false,
+          "generated": "identity"
+        },
+        {
+          "name": "label",
+          "sql": "nvarchar(20)",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "shout",
+          "nullable": true,
+          "generated": "computed"
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "serial"
+          ]
+        }
+      ],
+      "checks": []
+    }
+  },
+  "unknowns": [
+    {
+      "object": "till.count_serials",
+      "path": "parameters.@serials",
+      "reason": "unsupported-sql-type",
+      "detail": "The table type till.serial_list has an identity column, serial, so no row can be sent in it (error 1077, even for none); the parameter can only be left out.",
+      "at": "procedures/count_serials.sql:3:5"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

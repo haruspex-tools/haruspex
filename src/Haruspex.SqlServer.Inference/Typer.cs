@@ -97,7 +97,7 @@ internal sealed partial class Typer(
     /// <summary>A procedure's declared parameters and their types.</summary>
     public static IReadOnlyList<ParameterShape> Parameters(DatabaseModel model, Procedure procedure) =>
     [
-        .. procedure.Parameters.Select(p => new ParameterShape(
+        .. procedure.Parameters.Select(p => TableTypes.Parameter(model, p) ?? new ParameterShape(
             p.Name,
             SqlTypes.ToParameterShape(model, p.Type, p.At),
             // A table-valued parameter left out is an empty table (ParameterObservationTests), so READONLY is a default.

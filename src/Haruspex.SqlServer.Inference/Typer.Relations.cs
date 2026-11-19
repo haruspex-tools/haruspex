@@ -26,10 +26,43 @@ internal sealed partial class Typer
     };
 
     /// <summary>What a table variable holds as declared; JSON written to it is in the state (<see cref="Holding"/>).</summary>
-    internal LocalRelationValues TableVariableValues(DeclaredTable definition) => new(
-        [.. definition.Columns.Select(c => c.Name)],
-        [.. definition.Columns.Select(c => DeclaredValue(definition, c, definition.Name, temporary: false))],
-        null);
+    /// <remarks>
+    /// <para>
+    /// One of a table type, a table-valued parameter among them, has the type's keys, which SQL Server enforces on every row sent
+    /// or written (observed: <c>A_table_valued_parameter_s_key_refuses_a_duplicate_row</c>), so a query that fixes one reads at
+    /// most one row, as of a table. One declared with its own columns claims none yet, which only claims less.
+    /// </para>
+    /// <para>
+    /// Its columns are the type's, so a value read from one names the type's column, as a table's does (<c>sales.line_list.note</c>),
+    /// both in its reasons and as where it came from (<see cref="LocalRelationValues.From"/>), which <c>haruspex explain</c> starts a
+    /// derivation at.
+    /// </para>
+    /// </remarks>
+    internal LocalRelationValues TableVariableValues(DeclaredTable definition)
+    {
+        var named = definition.Type?.Name.ToString() ?? definition.Name;
+        return new([.. definition.Columns.Select(c => c.Name)], [.. definition.Columns.Select(c => DeclaredValue(definition, c, named, temporary: false))], null)
+        {
+            Keys = definition.Type is null ? [] : [.. TableKeys(definition)],
+            From = definition.Type is { } type ? [.. type.Columns.Select(c => (EquatableArray<IrSourceColumn>)[TypeColumn(type, c)])] : null,
+        };
+    }
+
+    /// <summary>A table type's column as a source of a value, named as a table's column is (<c>sales.line_list.note</c>).</summary>
+    internal IrSourceColumn TypeColumn(TableType type, Column column) =>
+        new($"{type.Name}.{column.Name}", column.IsComputed ? null : (ColumnShape(type, type.Name.ToString(), column) as ScalarShape)?.Type.Sql, column.At.ToString());
+
+    /// <summary>A body's table's enforced keys, by its columns' places, each typed for comparing it with a value in its own type.</summary>
+    private IEnumerable<RelationKey> TableKeys(DeclaredTable table)
+    {
+        foreach (var key in SchemaRules.EnforcedKeys(table))
+        {
+            var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(d => d.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
+            var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type).ToList();
+            if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
+                yield return new RelationKey([.. ordinals], [.. types.OfType<BuiltInType>()]);
+        }
+    }
 
     /// <summary>A variable's or parameter's type: every value it holds has been converted to it, so the type's facets hold.</summary>
     internal Shape DeclaredShape(SqlType? type, SourceLocation at, LocalName name, out bool live)

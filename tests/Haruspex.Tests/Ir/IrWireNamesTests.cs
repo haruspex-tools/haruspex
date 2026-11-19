@@ -35,8 +35,13 @@ public class IrWireNamesTests
 
     [Fact]
     public void Type_owners_keep_their_names() => Assert.Equal(
-        ["procedure", "function", "query"],
+        ["procedure", "function", "query", "tableType"],
         Names<IrTypeOwner>(IrWireNames.Of));
+
+    [Fact]
+    public void Column_generations_keep_their_names() => Assert.Equal(
+        ["identity", "computed", "rowversion"],
+        Names<IrColumnGeneration>(IrWireNames.Of));
 
     [Fact]
     public void Encodings_keep_their_names() => Assert.Equal(

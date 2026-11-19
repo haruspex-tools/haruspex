@@ -23,6 +23,10 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
     private readonly HashSet<string> reserved = new(StringComparer.Ordinal);
     private readonly List<IrUnknown> unknowns = [];
 
+    /// <summary>The table types the parameters take, by name, and the key given to each one's row, once its type is written.</summary>
+    private readonly Dictionary<string, IrTableType> tableTypes = new(StringComparer.Ordinal);
+    private readonly Dictionary<ObjectName, string> rowNames = [];
+
     /// <summary>The key given to each recursive function's node, once its type is written.</summary>
     private readonly Dictionary<ObjectName, string> nodeNames = [];
 
@@ -49,8 +53,10 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
             var owner = new Owner(ownerKind, id);
 
             var parameters = analysis.Parameters
-                .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput))
+                .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput) { TableType = p.TableType?.Key })
                 .ToList();
+            foreach (var (key, definition) in analysis.Parameters.Select(p => p.TableType).OfType<(string, IrTableType)>())
+                tableTypes.TryAdd(key, definition);
 
             List<IrResult>? results = null;
             if (analysis.Results is { } shapes)
@@ -69,7 +75,10 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
             objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results]) { Text = text, ReturnsCode = analysis.ReturnsCode });
         }
 
-        return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns]));
+        return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns])
+        {
+            TableTypes = tableTypes.ToEquatableMap(t => t.Key, t => t.Value),
+        });
     }
 
     /// <summary>
@@ -90,6 +99,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         // json_query makes the text live, if it does.
         JsonTextShape text => new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, owner, id, path + "<json>")),
         RecursiveShape recursive => Node(recursive.Function, id),
+        TableRowShape row => Row(row),
         NeverShape never => Reported(id, path, IrUnknownReason.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString()),
         ArrayShape array => Array(array, Convert(array.Items, owner, id, path + "[]")),
 
@@ -151,6 +161,23 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         if (enclosingNodes.Count == 0)
             ListNodeUnknowns(id, name);
         return new IrRef(name);
+    }
+
+    /// <summary>
+    /// A table type's row: one named type for the whole document, owned by the type and shared by every parameter of it, written
+    /// the first time it is met. Its columns are all known (an unknown one makes the parameter unknown: <see cref="TableTypes"/>),
+    /// so it has no unknowns to list.
+    /// </summary>
+    private IrRef Row(TableRowShape row)
+    {
+        if (!rowNames.TryGetValue(row.Type, out var key))
+        {
+            var owner = new Owner(IrTypeOwner.TableType, row.Type.ToString());
+            key = Object(row.Row, owner, owner.Object, $"<{row.Type}>").Name;
+            rowNames[row.Type] = key;
+        }
+
+        return new IrRef(key);
     }
 
     /// <summary>Lists, under the object <paramref name="id"/>, the unknowns of a node and of every node it reaches.</summary>

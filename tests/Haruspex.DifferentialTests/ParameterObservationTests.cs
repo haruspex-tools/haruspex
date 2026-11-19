@@ -10,7 +10,7 @@ namespace Haruspex.DifferentialTests;
 /// makes of a value before sending it, rest on these (decisions 0054 and 0055); <c>ParameterAcceptanceTests</c> holds the
 /// generated schemas to the server value by value.
 /// </summary>
-public class ParameterObservationTests(SqlServerFixture server)
+public partial class ParameterObservationTests(SqlServerFixture server)
 {
     /// <summary>
     /// What <c>@v</c> of type <paramref name="declared"/> held when <paramref name="value"/> was sent to it, as text: a date and

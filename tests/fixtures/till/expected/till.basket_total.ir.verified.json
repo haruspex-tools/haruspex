@@ -1,0 +1,179 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/basket_total.sql": "9bf676fcf048646447d282d36be93e9f8d9787f826e4a663c03b0caa9d450857",
+      "types/line_list.sql": "ac9f536ee88f783fc3443c4f5920769c7aaa2e5a39c618b3575d5df5f3f2708b"
+    }
+  },
+  "objects": [
+    {
+      "id": "till.basket_total",
+      "name": "BasketTotal",
+      "kind": "procedure",
+      "at": "procedures/basket_total.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BasketTotalRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BasketTotalRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.basket_total",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.product_id",
+              "sql": "int",
+              "at": "types/line_list.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "types/line_list.sql:4:32"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.quantity",
+              "sql": "smallint",
+              "at": "types/line_list.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.line_list.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.line_list.note",
+              "sql": "nvarchar(200)",
+              "at": "types/line_list.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

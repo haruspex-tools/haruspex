@@ -68,6 +68,8 @@ internal static class ParameterLowering
     /// </remarks>
     private static ZodExpression Property(IrParameter parameter, TypeLowering types)
     {
+        if (parameter is { TableType: { } tableType, Type: IrArray { Items: IrRef row } })
+            return TableValued(tableType, row);
         var value = Value(parameter.Type, types);
         if (parameter.Type is not IrUnknownType)
             value = value.Then("nullable");
@@ -78,9 +80,35 @@ internal static class ParameterLowering
             : value;
     }
 
-    private static ZodExpression Value(IrType type, TypeLowering types) => type switch
+    /// <summary>
+    /// A table-valued parameter: an array of its type's rows, which may be left out (the procedure then reads no rows) but not
+    /// null, which the server refuses (error 206, observed: <c>A_table_valued_parameter_can_be_left_out_or_empty_but_not_null</c>).
+    /// </summary>
+    private static Noted TableValued(string tableType, IrRef row) =>
+        new(
+            Z("array", new Name(ZodModule.SchemaOf(row.Name))).Then("optional"),
+            new ZodNote($"Rows of the table type {tableType}, sent as a table-valued parameter: left out, it is no rows; it can't be null."));
+
+    /// <summary>
+    /// A table type's row (<see cref="IrTypeOwner.TableType"/>): a strict object of every column, in the type's order, each
+    /// checked as a parameter of its type is. Every key is required, since every column is sent and a column's default never
+    /// applies to a row sent (observed: <c>A_default_never_applies_to_a_row_a_table_valued_parameter_is_sent</c>); a nullable
+    /// column takes NULL. Strict, as the parameters are, so a misspelt column is an error rather than a column sent as NULL
+    /// (<c>docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md</c>).
+    /// </summary>
+    public static ZodDeclaration TableRow(string name, IrObjectType row, TypeLowering types)
     {
-        IrScalar { Kind: IrScalarKind.String } scalar => Text(scalar),
+        var properties = row.Fields.Select(f => new ZodProperty(f.Name, f.Nullable ? Value(f.Type, types, inTable: true).Then("nullable") : Value(f.Type, types, inTable: true)));
+        var summary = row.Identity is { Object: var tableType } ? $"A row of the table type {tableType}, as a table-valued parameter sends it." : null;
+        return new ZodDeclaration(name, summary, new ObjectSchema([.. properties], Strict: true));
+    }
+
+    /// <param name="type">The parameter's type, or a table type's column's.</param>
+    /// <param name="types">How a type the parameter doesn't check itself is checked.</param>
+    /// <param name="inTable">Whether it is a column of a table-valued parameter's row, which the server refuses otherwise.</param>
+    private static ZodExpression Value(IrType type, TypeLowering types, bool inTable = false) => type switch
+    {
+        IrScalar { Kind: IrScalarKind.String } scalar => Text(scalar, inTable),
         IrScalar { Kind: IrScalarKind.Number, Format: IrFormat.Int64 } => BigInt(),
         IrScalar { Kind: IrScalarKind.Number } scalar => Number(scalar),
         IrScalar { Kind: IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime } scalar => DateTimes.Of(scalar),
@@ -122,22 +150,29 @@ internal static class ParameterLowering
     /// counts once, where SQL Server counts two code units, and a value of <c>n</c> code points but more code units would pass
     /// and be cut short (<c>ParameterAcceptanceTests</c>).
     /// </remarks>
-    private static ZodExpression Text(IrScalar scalar)
+    /// <remarks>
+    /// In a table-valued parameter's row the column's length is declared to the server with the table, which refuses a longer
+    /// value (error 8037, observed: <c>A_value_longer_than_its_column_fails_the_call_with_8037</c>), so the note says that.
+    /// </remarks>
+    private static ZodExpression Text(IrScalar scalar, bool inTable)
     {
         if (scalar.Facets?.Length is not { } length)
             return Z("string");
         var sql = scalar.Sql ?? "the string";
         var n = length.Value.ToString(CultureInfo.InvariantCulture);
         if (length is { Unit: IrLengthUnit.Bytes, Encoding: IrByteEncoding.Utf8 })
-            return Z("string").Then("refine", new Utf8BytesAtMost(length.Value), Error($"More than {n} bytes of UTF-8, which {sql} would cut short"));
+            return Z("string").Then("refine", new Utf8BytesAtMost(length.Value), Error($"More than {n} bytes of UTF-8, which {sql} {(inTable ? "doesn't hold" : "would cut short")}"));
 
-        var code = Z("string").Then("refine", new UnitsAtMost(length.Value), Error($"More than {n} UTF-16 code units, which {sql} would cut short"));
+        var code = Z("string").Then("refine", new UnitsAtMost(length.Value), Error($"More than {n} UTF-16 code units, which {sql} {(inTable ? "doesn't hold" : "would cut short")}"));
+        var sent = inTable
+            ? $"its function sends it in a column of {sql}, and the server refuses it (error 8037)."
+            : $"its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short.";
         var note = (length.Unit, length.Encoding) switch
         {
             (IrLengthUnit.Utf16, _) => null,
             (_, IrByteEncoding.SingleByte) => $"{sql} holds only its collation's code page, and replaces any other character without an error.",
-            (_, IrByteEncoding.DoubleByte) => $"{sql} counts bytes of a double-byte code page, so a value of {n} characters or fewer may take more; its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short. A character the code page lacks is replaced.",
-            _ => $"{sql} counts bytes and its collation isn't declared, so a value of {n} characters or fewer may take more; its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short. A character its code page lacks is replaced.",
+            (_, IrByteEncoding.DoubleByte) => $"{sql} counts bytes of a double-byte code page, so a value of {n} characters or fewer may take more; {sent} A character the code page lacks is replaced.",
+            _ => $"{sql} counts bytes and its collation isn't declared, so a value of {n} characters or fewer may take more; {sent} A character its code page lacks is replaced.",
         };
         return note is null ? code : new Noted(code, new ZodNote(note));
     }

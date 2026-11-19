@@ -101,10 +101,16 @@ public enum IrChangeKind
     SqlTypeChanged,
 
     /// <summary>
-    /// A type the IR names but doesn't hold the definition of, such as a table type or an <c>xml</c> schema collection, so it
-    /// can't be shown the same in both documents, though named alike. Only <see cref="IrFit"/> finds it.
+    /// A type the IR names but doesn't hold the definition of, such as an <c>xml</c> schema collection or a CLR type, so it can't
+    /// be shown the same in both documents, though named alike. Only <see cref="IrFit"/> finds it.
     /// </summary>
     TypeUnproven,
+
+    /// <summary>
+    /// A table type's definition changed under its name (0.26): a column, a key, a condition, how a column is filled or its
+    /// collation, as the definitions the two documents carry say.
+    /// </summary>
+    TableTypeChanged,
 
     /// <summary>A string's maximum or fixed length changed.</summary>
     LengthChanged,

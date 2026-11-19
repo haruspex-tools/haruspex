@@ -16,8 +16,12 @@ internal static class MssqlDriver
     /// returns what the driver handed over for each call.
     /// </summary>
     /// <param name="module">A generated module, written beside the script, whose schemas the calls' checks name; or null.</param>
+    /// <param name="committed">
+    /// When given, the calls run in this database of the test's own, with what it already holds committed, as a table type a
+    /// table-valued parameter is sent as must be (see <see cref="GeneratedFunctions.RunAsync"/>).
+    /// </param>
     public static async Task<IReadOnlyList<Response>> RunAsync(
-        SqlServerFixture server, string? module, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token)
+        SqlServerFixture server, string? module, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, ScratchDatabase? committed = null)
     {
         server.Require();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the mssql driver was not run");
@@ -34,18 +38,25 @@ internal static class MssqlDriver
                 JsonSerializer.Serialize(new { module = module is null ? null : "module.zod.ts", setup, calls }, Json),
                 token).ConfigureAwait(false);
 
-            using (var session = await server.DriverAsync(token).ConfigureAwait(false))
+            if (committed is not null)
             {
-                Assert.True(
-                    EmitCheckPackage.TryRun(
-                        "node",
-                        [Path.Combine("src", "driver.mjs"), folder],
-                        RepositoryPaths.EmitCheck,
-                        new Dictionary<string, string> { ["HARUSPEX_DRIVER_CONFIG"] = session.Config },
-                        out var output,
-                        out var why),
-                    $"The mssql driver script failed ({why}):\n{output}");
+                Run(committed.DriverConfig);
             }
+            else
+            {
+                using var session = await server.DriverAsync(token).ConfigureAwait(false);
+                Run(session.Config);
+            }
+
+            void Run(string config) => Assert.True(
+                EmitCheckPackage.TryRun(
+                    "node",
+                    [Path.Combine("src", "driver.mjs"), folder],
+                    RepositoryPaths.EmitCheck,
+                    new Dictionary<string, string> { ["HARUSPEX_DRIVER_CONFIG"] = config },
+                    out var output,
+                    out var why),
+                $"The mssql driver script failed ({why}):\n{output}");
 
             var observed = await File.ReadAllTextAsync(Path.Combine(folder, "observed.json"), token).ConfigureAwait(false);
             return JsonSerializer.Deserialize<Observed>(observed, Json)!.Calls;
@@ -76,6 +87,15 @@ internal static class MssqlDriver
     /// <c>"MAX"</c> is <c>sql.MAX</c>. A value JSON can't hold is a <see cref="JsValue"/>.
     /// </summary>
     public sealed record Typed(string Type, object? Value, IReadOnlyList<object>? Args = null);
+
+    /// <summary>A table-valued parameter: the table type by its schema and name, its columns in order, and its rows' values.</summary>
+    public sealed record Table(string Schema, string Name, IReadOnlyList<TableColumn> Columns, IReadOnlyList<IReadOnlyList<object?>> Rows);
+
+    /// <summary>A column of a <see cref="Table"/>: its name and the driver's type it is declared as, <c>sql[Type](...Args)</c>.</summary>
+    public sealed record TableColumn(string Name, string Type, IReadOnlyList<object>? Args = null);
+
+    /// <summary>How a <see cref="Table"/> is written for the script: <c>{ "table": … }</c>.</summary>
+    public sealed record TableValue(Table Table);
 
     /// <summary>A JavaScript value JSON can't hold, by name (<c>NaN</c> or <c>Infinity</c>), which the script reads as <c>{ "js": … }</c>.</summary>
     public sealed record JsValue(string Js);
@@ -109,7 +129,7 @@ internal static class MssqlDriver
     /// An error the driver threw, with its code (<c>EJSON</c> for JSON it could not parse, <c>EPARAM</c> for a value its own
     /// check of a type refused, <c>EREQUEST</c> for the server's error) and, for the server's, its number.
     /// </summary>
-    public sealed record Error(string? Code, int? Number, string Message);
+    public sealed record Error(string? Code, int? Number, string Message, IReadOnlyList<int> Preceding);
 
     /// <summary>Whether the schema accepted what the application read, and its first issues when not.</summary>
     public sealed record CheckOutcome(bool Success, IReadOnlyList<string> Issues);

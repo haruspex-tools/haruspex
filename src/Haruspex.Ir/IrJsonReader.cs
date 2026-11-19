@@ -56,6 +56,7 @@ public static class IrJsonReader
             var document = Document(IrJsonObject.At(parsed.RootElement, "$"));
             RequireReferencesResolve(parsed.RootElement, "$", document.Types);
             RequireFoldsResolve(parsed.RootElement, "$", document.Folds);
+            RequireTableTypesResolve(document);
             return document;
         }
     }
@@ -141,15 +142,22 @@ public static class IrJsonReader
         {
             throw new IrFormatException(
                 json.PathOf("irVersion"),
-                $"is \"{version}\", and this reader reads IR {string.Join(" and ", IrDocument.ReadableVersions)} only. Run haruspex generate again to write the file in this version.");
+                $"is \"{version}\", and this reader reads IR {string.Join(", ", IrDocument.ReadableVersions.SkipLast(1))} and {IrDocument.ReadableVersions[^1]} only. Run haruspex generate again to write the file in this version.");
         }
 
+        // A document is labelled by what it says (IrDocument.Version), so a label that disagrees with it is refused by the path
+        // of what disagrees.
         var source = json.Object("source");
         var baseline = source.OptionalObject("baseline");
         if (baseline is not null && version == IrDocument.OneDatabaseVersion)
-            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion} or {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
         if (baseline is null && version == IrDocument.CombinedVersion)
-            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion} or {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
+        var tableTypes = json.OptionalObject("tableTypes");
+        if (tableTypes is not null && version != IrDocument.CurrentVersion)
+            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.CurrentVersion}.");
+        if (tableTypes is null && version == IrDocument.CurrentVersion)
+            throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
 
         var document = new IrDocument(
             DocumentSource(source) with { Baseline = baseline is null ? null : Baseline(baseline) },
@@ -159,14 +167,111 @@ public static class IrJsonReader
         {
             Overrides = [.. json.Array("overrides").Select(o => Override(IrJsonObject.At(o.Item, o.Path)))],
             Folds = Folds(json.Object("folds")),
+            TableTypes = tableTypes is null ? [] : TableTypes(tableTypes),
         };
         source.End();
         json.End();
         if (baseline is null)
             OneDatabase(document);
-        if (version != IrDocument.CurrentVersion)
+        if (version is not (IrDocument.CurrentVersion or IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
         return document;
+    }
+
+    /// <summary>
+    /// Every table type a parameter or a type's identity names is defined in <c>tableTypes</c>, and none is defined that nothing
+    /// names, as for <c>types</c>: a parameter whose definition is missing can't be sent or compared.
+    /// </summary>
+    private static void RequireTableTypesResolve(IrDocument document)
+    {
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (obj, i) in document.Objects.Select((o, i) => (o, i)))
+        {
+            foreach (var (parameter, j) in obj.Parameters.Select((p, j) => (p, j)))
+            {
+                var at = $"$.objects[{i}].parameters[{j}]";
+                if (parameter.TableType is { } key && !document.TableTypes.ContainsKey(key))
+                    throw new IrFormatException(at + ".tableType", $"is \"{key}\", which names no table type in $.tableTypes.");
+                if (parameter.TableType is not null)
+                    named.Add(parameter.TableType);
+
+                // A parameter refers to a named type only as a table-valued one does, to its type's rows.
+                var rows = parameter.Type is IrArray { Items: IrRef row } && document.Types.TryGetValue(row.Name, out var type) && type.Identity is { Owner: IrTypeOwner.TableType } identity
+                    && identity.Object == parameter.TableType;
+                if (IrTypeTree.References(parameter.Type).Any() && !rows)
+                    throw new IrFormatException(at + ".type", $"refers to a named type, which only a table-valued parameter does: an array of the rows of the table type its tableType names.");
+            }
+        }
+
+        foreach (var (name, type) in document.Types)
+        {
+            if (type.Identity is not { Owner: IrTypeOwner.TableType, Object: var key })
+                continue;
+            if (!document.TableTypes.ContainsKey(key))
+                throw new IrFormatException($"$.types{IrPath.Key(name)}.identity.tableType", $"is \"{key}\", which names no table type in $.tableTypes.");
+            if (type.Fields.Select((f, i) => (f, i)).FirstOrDefault(p => p.f.Type is not IrScalar) is ({ } field, var i))
+                throw new IrFormatException($"$.types{IrPath.Key(name)}.fields[{i}].type", $"is not a scalar, but {field.Name} is a column of a table type's row, which is one.");
+        }
+
+        if (document.TableTypes.Keys.FirstOrDefault(k => !named.Contains(k)) is { } unused)
+            throw new IrFormatException("$.tableTypes" + IrPath.Key(unused), "is a table type no parameter takes; a document defines only those its parameters take.");
+    }
+
+    private static EquatableMap<string, IrTableType> TableTypes(IrJsonObject json)
+    {
+        var types = json.Names.ToList().ToEquatableMap(name => name, name => TableType(json.Object(name)));
+        json.End();
+        return types;
+    }
+
+    private static IrTableType TableType(IrJsonObject json)
+    {
+        var type = new IrTableType(
+            json.String("schema"),
+            json.String("name"),
+            [.. json.Array("columns").Select(c => TableColumn(IrJsonObject.At(c.Item, c.Path)))],
+            json.String("at"))
+        {
+            Keys = [.. json.Array("keys").Select(k => TableKey(IrJsonObject.At(k.Item, k.Path)))],
+            Checks = [.. json.Array("checks").Select(c => IrJsonObject.AsString(c.Item, c.Path))],
+        };
+        if (type.Columns.Count == 0)
+            throw new IrFormatException(json.PathOf("columns"), "is empty, but a table type has at least one column.");
+        var names = type.Columns.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (names.Count != type.Columns.Count)
+            throw new IrFormatException(json.PathOf("columns"), "names a column twice; a table type's columns are named apart, ignoring case.");
+        foreach (var (key, i) in type.Keys.Select((k, i) => (k, i)))
+        {
+            if (key.Columns.Count == 0 || key.Columns.Any(c => !names.Contains(c)))
+                throw new IrFormatException($"{json.PathOf("keys")}[{i}].columns", "names no column, or a column the type doesn't have.");
+        }
+
+        json.End();
+        return type;
+    }
+
+    private static IrTableColumn TableColumn(IrJsonObject json)
+    {
+        var column = new IrTableColumn(json.String("name"), json.OptionalString("sql"), json.Boolean("nullable"))
+        {
+            Type = json.OptionalObject("type") is { } type ? Type(type) as IrScalar ?? throw new IrFormatException(type.Path, "is not a scalar; a table type's column is one, or leaves its type out.") : null,
+            Generated = json.OptionalName<IrColumnGeneration>("generated", IrWireNames.TryParse, "how a column is filled"),
+            Collation = json.OptionalString("collation"),
+        };
+        if (column.Sql is null && column.Generated != IrColumnGeneration.Computed)
+            throw new IrFormatException(json.PathOf("sql"), "is missing: only a computed column declares no type.");
+        json.End();
+        return column;
+    }
+
+    private static IrTableKey TableKey(IrJsonObject json)
+    {
+        var key = new IrTableKey([.. json.Array("columns").Select(c => IrJsonObject.AsString(c.Item, c.Path))])
+        {
+            IgnoresDuplicates = json.OptionalBoolean("ignoresDuplicates") ?? false,
+        };
+        json.End();
+        return key;
     }
 
     /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
@@ -197,22 +302,22 @@ public static class IrJsonReader
     private static void SaysNothingOfSources(IrDocument document, string version)
     {
         if (document.Source.Path is not null)
-            throw new IrFormatException("$.source.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.SourcesVersion}.");
         if (document.Source.Baseline?.Path is not null)
-            throw new IrFormatException("$.source.baseline.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.baseline.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.SourcesVersion}.");
         if (document.Source.Files.Count > 0)
-            throw new IrFormatException("$.source.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.SourcesVersion}.");
         if (document.Source.Baseline?.Files.Count > 0)
-            throw new IrFormatException("$.source.baseline.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.baseline.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.SourcesVersion}.");
         foreach (var (name, type) in document.Types)
         {
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
             {
                 var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
                 if (field.From.Count > 0)
-                    throw new IrFormatException(at + ".from", $"is given in a document of IR {version}: a field's source columns are IR {IrDocument.CurrentVersion}.");
+                    throw new IrFormatException(at + ".from", $"is given in a document of IR {version}: a field's source columns are IR {IrDocument.SourcesVersion}.");
                 if (field.Sides is not null)
-                    throw new IrFormatException(at + ".sides", $"is given in a document of IR {version}: a combined field's sides are IR {IrDocument.CurrentVersion}.");
+                    throw new IrFormatException(at + ".sides", $"is given in a document of IR {version}: a combined field's sides are IR {IrDocument.SourcesVersion}.");
             }
         }
     }
@@ -297,7 +402,10 @@ public static class IrJsonReader
 
     private static IrParameter Parameter(IrJsonObject json)
     {
-        var parameter = new IrParameter(json.String("name"), Type(json.Object("type")), json.Boolean("hasDefault"), json.Boolean("output"));
+        var parameter = new IrParameter(json.String("name"), Type(json.Object("type")), json.Boolean("hasDefault"), json.Boolean("output"))
+        {
+            TableType = json.OptionalString("tableType"),
+        };
         json.End();
         return parameter;
     }

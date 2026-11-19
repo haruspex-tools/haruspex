@@ -579,6 +579,23 @@ column Warehouse.VehicleTemperatures.RecordedWhen datetime2(7) at Warehouse/Tabl
 column Warehouse.VehicleTemperatures.Temperature decimal(10,2) at Warehouse/Tables/VehicleTemperatures.sql:6:5
 column Warehouse.VehicleTemperatures.VehicleRegistration nvarchar(20) at Warehouse/Tables/VehicleTemperatures.sql:3:5
 column Warehouse.VehicleTemperatures.VehicleTemperatureID bigint at Warehouse/Tables/VehicleTemperatures.sql:2:5
+column Website.OrderIDList.OrderID int at Website/User Defined Types/OrderIDList.sql:2:5
+column Website.OrderLineList.Description nvarchar(100) at Website/User Defined Types/OrderLineList.sql:4:5
+column Website.OrderLineList.OrderReference int at Website/User Defined Types/OrderLineList.sql:2:5
+column Website.OrderLineList.Quantity int at Website/User Defined Types/OrderLineList.sql:5:5
+column Website.OrderLineList.StockItemID int at Website/User Defined Types/OrderLineList.sql:3:5
+column Website.OrderList.Comments nvarchar(MAX) at Website/User Defined Types/OrderList.sql:8:5
+column Website.OrderList.ContactPersonID int at Website/User Defined Types/OrderList.sql:4:5
+column Website.OrderList.CustomerID int at Website/User Defined Types/OrderList.sql:3:5
+column Website.OrderList.CustomerPurchaseOrderNumber nvarchar(20) at Website/User Defined Types/OrderList.sql:6:5
+column Website.OrderList.DeliveryInstructions nvarchar(MAX) at Website/User Defined Types/OrderList.sql:9:5
+column Website.OrderList.ExpectedDeliveryDate date at Website/User Defined Types/OrderList.sql:5:5
+column Website.OrderList.IsUndersupplyBackordered bit at Website/User Defined Types/OrderList.sql:7:5
+column Website.OrderList.OrderReference int at Website/User Defined Types/OrderList.sql:2:5
+column Website.SensorDataList.ColdRoomSensorNumber int at Website/User Defined Types/SensorDataList.sql:3:5
+column Website.SensorDataList.RecordedWhen datetime2(7) at Website/User Defined Types/SensorDataList.sql:4:5
+column Website.SensorDataList.SensorDataListID int at Website/User Defined Types/SensorDataList.sql:2:5
+column Website.SensorDataList.Temperature decimal(18,2) at Website/User Defined Types/SensorDataList.sql:5:5
 column dbo.SampleVersion.MajorSampleVersion int at dbo/Tables/SampleVersion.sql:3:2
 column dbo.SampleVersion.MinSQLServerBuild nvarchar(25) at dbo/Tables/SampleVersion.sql:5:2
 column dbo.SampleVersion.MinorSampleVersion int at dbo/Tables/SampleVersion.sql:4:2
@@ -643,6 +660,9 @@ key Warehouse.StockItemTransactions PK_Warehouse_StockItemTransactions (StockIte
 key Warehouse.StockItems PK_Warehouse_StockItems (StockItemID) at Warehouse/Tables/StockItems.sql:27:5
 key Warehouse.StockItems UQ_Warehouse_StockItems_StockItemName (StockItemName) at Warehouse/Tables/StockItems.sql:33:5
 key Warehouse.VehicleTemperatures PK_Warehouse_VehicleTemperatures (VehicleTemperatureID) at Warehouse/Tables/VehicleTemperatures.sql:10:5
+key Website.OrderIDList unnamed (OrderID) at Website/User Defined Types/OrderIDList.sql:3:5
+key Website.OrderList unnamed (OrderReference) at Website/User Defined Types/OrderList.sql:10:5
+key Website.SensorDataList unnamed (SensorDataListID) at Website/User Defined Types/SensorDataList.sql:6:5
 key dbo.SampleVersion uq_SampleVersion_RowCount (RowCount) at dbo/Tables/SampleVersion.sql:7:2
 named function Application.DetermineCustomerAccess
 named function DataLoadSimulation.GetAreaCode
@@ -1142,6 +1162,10 @@ table Warehouse.StockItems at Warehouse/Tables/StockItems.sql:1:1
 table Warehouse.StockItems_Archive at Warehouse/Tables/StockItems_Archive.sql:1:1
 table Warehouse.VehicleTemperatures at Warehouse/Tables/VehicleTemperatures.sql:1:1
 table dbo.SampleVersion at dbo/Tables/SampleVersion.sql:1:1
+type Website.OrderIDList table at Website/User Defined Types/OrderIDList.sql:1:1
+type Website.OrderLineList table at Website/User Defined Types/OrderLineList.sql:1:1
+type Website.OrderList table at Website/User Defined Types/OrderList.sql:1:1
+type Website.SensorDataList table at Website/User Defined Types/SensorDataList.sql:1:1
 view WebApi.BuyingGroups at WebApi/Views/BuyingGroups.sql:1:1
 view WebApi.Cities at WebApi/Views/Cities.sql:1:1
 view WebApi.Colors at WebApi/Views/Colors.sql:1:1

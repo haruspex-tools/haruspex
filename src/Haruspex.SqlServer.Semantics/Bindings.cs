@@ -45,7 +45,7 @@ public sealed class Bindings(DatabaseModel model)
         var key = body ?? (object)parameters;
         if (!declarations.TryGetValue(key, out var found))
         {
-            found = body is null ? BodyDeclarations.Of(parameters) : BodyDeclarations.Read(parameters, body, returnTable, source);
+            found = body is null ? BodyDeclarations.Of(Model, parameters) : BodyDeclarations.Read(Model, parameters, body, returnTable, source);
             declarations[key] = found;
         }
 

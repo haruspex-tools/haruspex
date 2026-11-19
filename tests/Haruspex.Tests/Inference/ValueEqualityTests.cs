@@ -277,6 +277,7 @@ public class ValueEqualityTests
             UnknownShape unknown => unknown with { Detail = unknown.Detail + " changed" },
             NeverShape never => never with { At = never.At with { Line = never.At.Line + 1 } },
             RecursiveShape => new RecursiveShape(new ObjectName("dbo", "other")),
+            TableRowShape row => row with { Type = new ObjectName("dbo", "other") },
             ArrayShape array => array with { Items = Changed(array.Items) },
             TupleShape { Items.Count: 0 } => new TupleShape([new ElementShape(new NeverShape(Places[0]), [])]),
             TupleShape tuple => new TupleShape([tuple.Items[0] with { Type = Changed(tuple.Items[0].Type) }, .. tuple.Items.Skip(1)]),

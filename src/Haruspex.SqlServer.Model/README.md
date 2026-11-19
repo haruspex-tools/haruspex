@@ -6,7 +6,8 @@ DacFx: linters, diff tools, documentation generators, code generators.
 fills it from a folder of `.sql` scripts or from a DACPAC.
 
 It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys and
-CHECK constraints; alias and CLR types (`CREATE TYPE`); stored procedures, functions of each kind, views and DML triggers,
+CHECK constraints; alias, CLR and table types (`CREATE TYPE`), a table type with its columns, keys and CHECK constraints as a
+table has them; stored procedures, functions of each kind, views and DML triggers,
 with their parameters, return types and options as data and their bodies as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) statements and expressions; synonyms
 with the name each stands for; and foreign keys whose actions change the referencing table (`CascadingKey`). A column
@@ -26,14 +27,16 @@ flowchart LR
     sources["Sources reads scripts"] --> model["DatabaseModel"]
     model --> tables["Table: Column, UniqueKey, CheckConstraint, CascadingKey"]
     model --> code["Module: Procedure, Function, View, Trigger"]
-    model --> types["UserType: AliasType, ClrType"]
+    model --> types["UserType: AliasType, ClrType, TableType"]
     model --> named["Synonym: the name it stands for"]
     model -.->|changed after its definition| redefinition["Redefinition"]
 ```
 
 [Haruspex.SqlServer.Syntax](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Syntax/README.md)
 reads a table definition as written (`SyntaxReader.Table`), and a body's own tables (`CREATE TABLE #t`,
-`DECLARE @t TABLE`, a function's return table) the same way (`SyntaxReader.Declared`). Those are a `DeclaredTable`, named as
+`DECLARE @t TABLE`, a function's return table) the same way (`SyntaxReader.Declared`), and a table type's definition too
+(`SyntaxReader.TableType`); a table-valued parameter or a variable of a table type is the type's columns under the body's name
+(`TableType.As`). Those are a `DeclaredTable`, named as
 the body writes them and in no schema, not a `Table`: the schema's rules read either through `ITable`.
 
 ## Example
@@ -47,7 +50,7 @@ foreach (var table in model.Tables)
 ## What it guarantees
 
 - **One of several is a closed set of kinds.** A function is a `ScalarFunction`, an `InlineFunction` or a `TableFunction`, a
-  body a `SqlBody`, a `ClrBody`, a `NoBody` or an `EncryptedBody` (text the source doesn't hold), a user type an `AliasType` or a `ClrType`: a reader matches on the kind and gets
+  body a `SqlBody`, a `ClrBody`, a `NoBody` or an `EncryptedBody` (text the source doesn't hold), a user type an `AliasType`, a `ClrType` or a `TableType`: a reader matches on the kind and gets
   exactly its fields, and no other assembly can add one
   ([decision 0031](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md)).
 - **ScriptDom only in code.** ScriptDom's types appear only as bodies and expressions; names, types, parameters and options

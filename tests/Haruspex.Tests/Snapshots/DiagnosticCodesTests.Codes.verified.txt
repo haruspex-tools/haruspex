@@ -124,6 +124,7 @@ HAR5101 E One name for two definitions [Haruspex.Emit.JsonSchema.JsonSchemaCodes
 HAR5201 E A procedure's function can't take its name [Haruspex.Emit.Mssql.MssqlCodes.FunctionNameTaken]
 HAR5202 E A query file's parameter can't be declared [Haruspex.Emit.Mssql.MssqlCodes.QueryParameterCannotBeDeclared]
 HAR5203 E A result set's name can't be a key of the function's object [Haruspex.Emit.Mssql.MssqlCodes.SetNameUnusable]
+HAR5204 E A table type's column can't be declared to the driver [Haruspex.Emit.Mssql.MssqlCodes.TableColumnCannotBeDeclared]
 HAR6001 E The command line doesn't parse [Haruspex.Cli.CliCodes.BadCommandLine]
 HAR6002 E The config file isn't there [Haruspex.Cli.CliCodes.ConfigNotFound]
 HAR6003 E No source is given [Haruspex.Cli.CliCodes.NoSource]

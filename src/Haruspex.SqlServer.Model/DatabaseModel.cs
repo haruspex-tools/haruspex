@@ -35,7 +35,7 @@ public sealed class DatabaseModel
 
     /// <summary>Creates a model.</summary>
     /// <param name="tables">The tables.</param>
-    /// <param name="userTypes">The alias and CLR types (<c>CREATE TYPE</c>).</param>
+    /// <param name="userTypes">The alias, CLR and table types (<c>CREATE TYPE</c>).</param>
     /// <param name="procedures">The procedures.</param>
     /// <param name="functions">The user-defined functions.</param>
     /// <param name="views">The views.</param>
@@ -127,7 +127,7 @@ public sealed class DatabaseModel
     /// <summary>The tables, in source order.</summary>
     public IReadOnlyList<Table> Tables { get; }
 
-    /// <summary>The alias and CLR types, in source order.</summary>
+    /// <summary>The alias, CLR and table types, in source order.</summary>
     public IReadOnlyList<UserType> UserTypes { get; }
 
     /// <summary>The procedures, in source order.</summary>
@@ -154,7 +154,7 @@ public sealed class DatabaseModel
     /// <summary>The table with this name, or null.</summary>
     public Table? FindTable(ObjectName name) => tables.GetValueOrDefault(name);
 
-    /// <summary>The alias or CLR type with this name, or null.</summary>
+    /// <summary>The alias, CLR or table type with this name, or null.</summary>
     public UserType? FindUserType(ObjectName name) => userTypes.GetValueOrDefault(name);
 
     /// <summary>The procedure with this name, or null.</summary>

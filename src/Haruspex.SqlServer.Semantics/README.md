@@ -29,7 +29,9 @@ flowchart LR
   `SystemProcedures` lists (data: what each returns, its return code and its parameters) binds to its entry
   (`SystemProcedureCall`). A source that is not a table of the schema reads a
   `RelationSymbol`: a CTE, a derived table (bound with its query, so the whole is a tree, `BoundQuery`), a `VALUES` list, a
-  view, a table-valued function's call, a `#temp` table, a table variable, each with its columns' names. The names a body
+  view, a table-valued function's call, a `#temp` table, a table variable, each with its columns' names. A table-valued parameter
+  and a variable declared with a table type are table variables of the type's definition (`BodyDeclarations`,
+  `SchemaRules.ResolveTableType`), so a query reads either as it reads a table variable declared with its own columns. The names a body
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).
   `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a column or star qualified by
   its table's schema and name (`shop.orders.order_id`) names the source exposed under that name (`ExposedName`), as the

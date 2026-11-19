@@ -85,7 +85,7 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read
 |---|---:|---:|---:|---:|
 | `dynamic-sql` | 0 | 0 | 18 | 0 |
 | `unsupported-query` | 0 | 5 | 0 | 0 |
-| `unsupported-sql-type` | 3 | 0 | 0 | 4 |
+| `unsupported-sql-type` | 3 | 0 | 0 | 1 |
 | `unsupported-statement` | 0 | 0 | 5 | 0 |
 
 ### Scripts left out

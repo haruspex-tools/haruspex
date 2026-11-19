@@ -9,7 +9,7 @@ reads (`IrVersionTests`). The reader refuses rather than migrates; the guide's c
 [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md) says why.
 
 Each file is named for its version (`0.15.ir.json`) and holds the IR of the invented procedure `sales.get_order` from the
-`orders` fixture, exactly as haruspex wrote it at the commit that set that version:
+`orders` fixture, exactly as haruspex wrote it at the commit that set that version, but where the table says otherwise:
 
 | Version | Commit |
 |---|---|
@@ -38,6 +38,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.23 | `5bfdbcbd` |
 | 0.24 | `c4093e7d`; a document of one database is still written as 0.23, so this file is `sales.get_order` combined with a baseline in which it didn't return `isPriority` |
 | 0.25 | the commit that adds `IrSourceColumn`, on `feature/explain`: each field says the columns it is read from (`from`) |
+| 0.26 | the commit that merges `main` into H3 (table types, first set at `645af81a` as 0.25, renumbered when 7b took 0.25); a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

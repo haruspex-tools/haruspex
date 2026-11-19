@@ -66,7 +66,7 @@ public class GenerateBaselineTests
         Assert.Equal(new IrSource("tsql") { Path = "release/db", Files = document.Source.Baseline!.Files }, document.Source.Baseline);
         Assert.Equal("db", document.Source.Path);
         Assert.Equal(["procedures.sql", "tables.sql"], document.Source.Baseline.Files.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(IrDocument.CurrentVersion, document.Version);
+        Assert.Equal(IrDocument.SourcesVersion, document.Version);
         var zod = Written(folder, HaruspexCli.ZodFileName);
         Assert.Contains("channel: z.string().max(10).nullable().optional()", zod, StringComparison.Ordinal);
         Assert.Contains("One of \"open\", \"closed\", \"held\", as the database compares strings.", zod, StringComparison.Ordinal);
@@ -80,7 +80,7 @@ public class GenerateBaselineTests
 
         Assert.Equal(0, Run(folder, "generate").ExitCode);
 
-        Assert.StartsWith($"{{\n  \"irVersion\": \"{IrDocument.CurrentVersion}\",\n", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
+        Assert.StartsWith($"{{\n  \"irVersion\": \"{IrDocument.SourcesVersion}\",\n", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
         Assert.DoesNotContain("baseline", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
         Assert.DoesNotContain("Combined", Written(folder, HaruspexCli.ZodFileName), StringComparison.Ordinal);
     }

@@ -16,7 +16,7 @@ namespace Haruspex.DifferentialTests;
 /// The procedures are invented here, in schema <c>blend</c>, which no fixture uses. Every call of a run is made in the same
 /// transaction, so the pairs are deployed together, one database for the baselines and one for the candidates.
 /// </remarks>
-public class CombinedTypesTests(SqlServerFixture server)
+public partial class CombinedTypesTests(SqlServerFixture server)
 {
     private const string Schema = "IF SCHEMA_ID(N'blend') IS NULL EXEC (N'CREATE SCHEMA blend');";
 

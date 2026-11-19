@@ -33,6 +33,7 @@ public class ZodPlannerTests
         [.. plan.Entries.Select(e => e switch
         {
             ZodPlanEntry.NamedType named => named.Name,
+            ZodPlanEntry.TableRow row => row.Name,
             ZodPlanEntry.Procedure procedure => procedure.Object.Id,
         })];
 

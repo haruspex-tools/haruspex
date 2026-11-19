@@ -114,6 +114,50 @@ Each value is then sent with the driver's type for the declared one: `nvarchar(4
 precision and scale. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be
 left out, and it is then not sent at all, so that its default applies.
 
+## Table-valued parameters
+
+A `READONLY` parameter of a table type is an array of the type's rows. For this type and procedure:
+
+```sql
+create type shop.line_list as table (
+    product_id int not null,
+    qty smallint not null check (qty > 0),
+    note nvarchar(200) null,
+    primary key (product_id)
+);
+create procedure shop.add_lines @order_id int, @lines shop.line_list readonly as
+    select l.product_id, l.qty from @lines as l join shop.product as p on p.product_id = l.product_id;
+```
+
+the function takes the rows as objects, one key per column:
+
+```ts
+const added = await addLines(pool, {
+  order_id: 42,
+  lines: [{ product_id: 7, qty: 2, note: null }, { product_id: 9, qty: 1, note: 'gift' }],
+})
+```
+
+The row's schema, `LineListRowSchema`, is named after the type and shared by every procedure that takes it (in the shared file
+when two modules do). It checks what a client can, as for any parameter
+([decision 0076](decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)):
+
+- **every column, always**: a row sends every column of the type, so each key is required, even a nullable column's or one with
+  a default, which SQL Server never applies to a row sent; `null` only where the column takes NULL. A key the type doesn't have
+  is an error, as for the parameters;
+- **each value as a parameter of the column's type**: lengths, ranges, places and the forms of dates and times, and the values a
+  CHECK of the type allows where it says so (here `qty` above 0);
+- **the array itself**: it may be left out, and the procedure then reads no rows, or be empty, but not `null`, which the server
+  refuses.
+
+The function sends the rows as the driver's `sql.Table` of the type, named by its schema and name, every column declared in the
+type's order, since SQL Server matches the columns by place, not by name. What a row's schema can't check, such as two rows that
+share a key, is refused by the server: the driver's `RequestError` then has no number of its own, and the server's errors, the
+key's 2627 and then 8061, are in its `precedingErrors`. A type with an identity, computed or `rowversion` column can't be sent at
+all, not even with no rows, so its parameter is unknown and can only be left out. `haruspex check --baseline` compares a table
+type's definition in the two IR files: a type changed so that a row the running application sends may be refused, or land in
+another column, fails the check.
+
 ## When a call fails
 
 A function fails in one of three ways, each thrown

@@ -61,6 +61,19 @@ public static class IrJsonWriter
 
             json.WriteEndObject();
 
+            // Left out when no parameter takes a table type, so that such a document reads as it did in 0.24.
+            if (document.TableTypes.Count > 0)
+            {
+                json.WriteStartObject("tableTypes");
+                foreach (var (key, type) in document.TableTypes.OrderBy(t => t.Key, StringComparer.Ordinal))
+                {
+                    json.WritePropertyName(key);
+                    WriteTableType(json, type);
+                }
+
+                json.WriteEndObject();
+            }
+
             json.WriteStartArray("unknowns");
             foreach (var unknown in IrDocumentOrder.Unknowns(document))
             {
@@ -108,6 +121,56 @@ public static class IrJsonWriter
         }
 
         return Encoding.UTF8.GetString(buffer.ToArray()) + "\n";
+    }
+
+    /// <summary>A table type's definition (0.26): its name, columns in their order, keys and conditions.</summary>
+    private static void WriteTableType(Utf8JsonWriter json, IrTableType type)
+    {
+        json.WriteStartObject();
+        json.WriteString("schema", type.Schema);
+        json.WriteString("name", type.Name);
+        json.WriteString("at", type.At);
+        json.WriteStartArray("columns");
+        foreach (var column in type.Columns)
+        {
+            json.WriteStartObject();
+            json.WriteString("name", column.Name);
+            if (column.Sql is not null)
+                json.WriteString("sql", column.Sql);
+            if (column.Type is not null)
+            {
+                json.WritePropertyName("type");
+                WriteType(json, column.Type);
+            }
+
+            json.WriteBoolean("nullable", column.Nullable);
+            if (column.Generated is { } generated)
+                json.WriteString("generated", IrWireNames.Of(generated));
+            if (column.Collation is not null)
+                json.WriteString("collation", column.Collation);
+            json.WriteEndObject();
+        }
+
+        json.WriteEndArray();
+        json.WriteStartArray("keys");
+        foreach (var key in type.Keys)
+        {
+            json.WriteStartObject();
+            json.WriteStartArray("columns");
+            foreach (var column in key.Columns)
+                json.WriteStringValue(column);
+            json.WriteEndArray();
+            if (key.IgnoresDuplicates)
+                json.WriteBoolean("ignoresDuplicates", true);
+            json.WriteEndObject();
+        }
+
+        json.WriteEndArray();
+        json.WriteStartArray("checks");
+        foreach (var check in type.Checks)
+            json.WriteStringValue(check);
+        json.WriteEndArray();
+        json.WriteEndObject();
     }
 
     /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
@@ -183,6 +246,8 @@ public static class IrJsonWriter
             json.WriteString("name", parameter.Name);
             json.WritePropertyName("type");
             WriteType(json, parameter.Type);
+            if (parameter.TableType is { } tableType)
+                json.WriteString("tableType", tableType);
             json.WriteBoolean("hasDefault", parameter.HasDefault);
             json.WriteBoolean("output", parameter.IsOutput);
             json.WriteEndObject();
@@ -268,7 +333,7 @@ public static class IrJsonWriter
         json.WriteEndObject();
     }
 
-    /// <summary>A field's source columns (0.25), left out when it has none, so that a document without them reads as before.</summary>
+    /// <summary>A field's source columns (0.26), left out when it has none, so that a document without them reads as before.</summary>
     private static void WriteFrom(Utf8JsonWriter json, EquatableArray<IrSourceColumn> from)
     {
         if (from.Count == 0)
@@ -287,7 +352,7 @@ public static class IrJsonWriter
         json.WriteEndArray();
     }
 
-    /// <summary>One database's field in a combined one (0.25), left out where that database doesn't return the key.</summary>
+    /// <summary>One database's field in a combined one (0.26), left out where that database doesn't return the key.</summary>
     private static void WriteSide(Utf8JsonWriter json, string name, IrFieldSide? side)
     {
         if (side is null)

@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// one the database's procedure takes. Each case infers the same procedure from two versions of its SQL, as a change to a
 /// database would; <c>BaselineFitTests</c>, in the differential tests, calls pairs like them through the old functions on a server.
 /// </summary>
-public class IrFitTests
+public partial class IrFitTests
 {
     private const string Orders = """
         CREATE TABLE shop.orders (
@@ -471,13 +471,11 @@ public class IrFitTests
     [InlineData("shop.blob", null)] // an alias type the IR resolves to varbinary(16), which it names
     [InlineData("xml", "xml")] // the IR doesn't say whether it has a schema collection
     [InlineData("xml(shop.sc)", "xml")]
-    [InlineData("shop.lines READONLY", "shop.lines")]
-    [InlineData("shop.hierarchyid READONLY", "shop.hierarchyid")] // a table type of a built-in type's name
     [InlineData("image", "image")]
     public void A_parameter_of_the_same_unknown_type_both_sides_fits_only_when_its_name_is_all_of_its_definition(string type, string? named)
     {
-        // Observed: a table type that gains a column fails the old call (500), and an xml collection that narrows an element
-        // fails it (6926), each under the same name; a built-in type's name is all there is to it.
+        // Observed: an xml collection that narrows an element fails the old call (6926) under the same name; a built-in type's
+        // name is all there is to it. A table type's definition is in the IR, and judged by it (IrFitTests.TableTypes.cs).
         var document = Infer($"CREATE PROCEDURE shop.find_orders @at {type} AS SELECT o.order_id FROM shop.orders AS o;", Orders + "\n" + Types);
 
         Assert.Equal(named is null ? [] : [$"refused: shop.find_orders parameters[\"@at\"]: type {named} can't be shown unchanged"], Fit(document, document));
@@ -489,7 +487,7 @@ public class IrFitTests
         const string Find = "CREATE PROCEDURE shop.find_orders @at {0} AS SELECT o.order_id FROM shop.orders AS o;";
         static IrDocument Taking(string type) => Infer(string.Format(System.Globalization.CultureInfo.InvariantCulture, Find, type), Orders + "\n" + Types);
 
-        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: SQL type changed from hierarchyid to shop.hierarchyid"], Fit(Taking("hierarchyid"), Taking("shop.hierarchyid READONLY")));
+        Assert.Equal(["refused: shop.find_orders parameters[\"@at\"]: now a table type, [shop].[hierarchyid] (a int not null)"], Fit(Taking("hierarchyid"), Taking("shop.hierarchyid READONLY")));
         Assert.Empty(Fit(Taking("hierarchyid"), Taking("HierarchyID"))); // a built-in type's name, in any case
     }
 

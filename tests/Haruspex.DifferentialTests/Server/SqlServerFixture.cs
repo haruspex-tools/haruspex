@@ -358,7 +358,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// spelling SqlClient's builder writes, so the parts are handed over one by one. Only SQL logins: the test servers
     /// (a container, or the developer's own, CONTRIBUTING.md) use one.
     /// </summary>
-    private static string MssqlConfig(string connectionString)
+    internal static string MssqlConfig(string connectionString)
     {
         var builder = new SqlConnectionStringBuilder(connectionString);
         var source = builder.DataSource.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase) ? builder.DataSource[4..] : builder.DataSource;

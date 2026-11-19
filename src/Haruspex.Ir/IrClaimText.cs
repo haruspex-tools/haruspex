@@ -12,6 +12,19 @@ public static class IrClaimText
     /// <summary>The most items of a value set listed; a set past it is cut short, saying how many more there are.</summary>
     private const int ItemsListed = 10;
 
+    /// <summary>
+    /// A table type's definition in one line: <c>[sales].[line_list] (product_id int not null, note nvarchar(200); key (product_id);
+    /// check (quantity &gt; 0))</c>.
+    /// </summary>
+    public static string TableType(IrTableType type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        var columns = type.Columns.Select(c => $"{c.Name} {(c.Generated is { } generated ? IrWireNames.Of(generated) : c.Sql)}{(c.Nullable ? "" : " not null")}{(c.Collation is { } collation ? " collate " + collation : "")}");
+        var keys = type.Keys.Select(k => $"{(k.IgnoresDuplicates ? "key ignoring duplicates" : "key")} ({string.Join(", ", k.Columns)})");
+        var checks = type.Checks.Select(c => $"check ({c})");
+        return $"{type.Bracketed} ({string.Join("; ", new[] { string.Join(", ", columns) }.Concat(keys).Concat(checks))})";
+    }
+
     /// <summary>A type node, without what lies behind a reference: <c>string</c>, <c>number (int32)</c>, <c>an array of the object OrderRow</c>.</summary>
     public static string Type(IrType type) => type switch
     {

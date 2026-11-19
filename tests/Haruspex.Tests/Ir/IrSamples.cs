@@ -14,12 +14,14 @@ internal static class IrSamples
 
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "sales.orders.note");
 
-    /// <summary>A column a field is read from (0.25), with no SQL type, as a column of a type the IR doesn't type would have.</summary>
+    /// <summary>A column a field is read from (0.26), with no SQL type, as a column of a type the IR doesn't type would have.</summary>
     private static readonly IrSourceColumn OrderId = new("sales.orders.order_id", null, "tables/orders.sql:2:5");
 
     private static readonly IrSourceColumn Channel = new("sales.orders.channel", "varchar(10)", "tables/orders.sql:6:5");
 
     private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
+
+    private static readonly IrScalar Note = new(IrScalarKind.String, null, "nvarchar(40)", new IrFacets(Length: new IrLength(40, IsFixed: false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, FromType)));
 
     /// <summary>The document.</summary>
     public static IrDocument Everything { get; } = new(
@@ -202,6 +204,45 @@ internal static class IrSamples
                     }),
             ],
         }),
+    };
+
+    /// <summary>
+    /// <see cref="Derived"/> with a table-valued parameter (0.26): its table type's definition, with a column of every kind,
+    /// and its row, so that it holds every property of the format.
+    /// </summary>
+    public static IrDocument Whole { get; } = Derived with
+    {
+        Objects =
+        [
+            .. Derived.Objects.Select(o => o.Id != "sales.get_order" ? o : o with
+            {
+                Parameters = [.. o.Parameters, new IrParameter("@lines", new IrArray(new IrRef("LineListRow")), HasDefault: true, IsOutput: false) { TableType = "sales.line_list" }],
+            }),
+        ],
+        Types = new Dictionary<string, IrObjectType>(Derived.Types)
+        {
+            ["LineListRow"] = new([new IrField("sku", Int, IrPresence.Always, []), new IrField("note", Note, IrPresence.Always, [new IrNullReason(IrNullRule.NullableColumn, "sales.line_list.note")])])
+            {
+                Identity = new IrTypeIdentity(IrTypeOwner.TableType, "sales.line_list", "<sales.line_list>"),
+            },
+        },
+        TableTypes = new Dictionary<string, IrTableType>
+        {
+            ["sales.line_list"] = new(
+                "sales",
+                "line_list",
+                [
+                    new IrTableColumn("sku", "int", Nullable: false) { Type = Int },
+                    new IrTableColumn("note", "nvarchar(40)", Nullable: true) { Type = Note, Collation = "Latin1_General_100_CI_AS" },
+                    new IrTableColumn("serial", "int", Nullable: false) { Type = Int, Generated = IrColumnGeneration.Identity },
+                    new IrTableColumn("loud", null, Nullable: true) { Generated = IrColumnGeneration.Computed },
+                ],
+                "types/line_list.sql:1:1")
+            {
+                Keys = [new IrTableKey(["sku"]) { IgnoresDuplicates = true }, new IrTableKey(["serial"])],
+                Checks = ["sku > 0"],
+            },
+        }.ToEquatableMap(t => t.Key, t => t.Value),
     };
 
     /// <summary>Every type node in a document, nested ones included, each once per place it appears.</summary>

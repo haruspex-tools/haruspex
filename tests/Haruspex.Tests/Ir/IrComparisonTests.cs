@@ -7,7 +7,7 @@ namespace Haruspex.Tests.Ir;
 /// claim, with where it is and how it changed, and nothing for what only says where a claim came from (a location, a
 /// reason, a hash). Most cases infer the same procedure from two versions of its SQL, as a change to a database would.
 /// </summary>
-public class IrComparisonTests
+public partial class IrComparisonTests
 {
     private const string Orders = """
         CREATE TABLE shop.orders (

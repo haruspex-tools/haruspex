@@ -74,10 +74,11 @@ internal sealed record CorpusFigures(
             byReason[reason] = new Reason(reason, f + fields, r + results, p + procedures, a + parameters);
         }
 
-        // The type table: each leaf field once.
+        // The type table: each leaf field once. A table type's row is what a client sends, a parameter's, not a field a result
+        // returns, so it isn't counted here; its parameter is counted among the parameters.
         var untypedTypes = new HashSet<string>(StringComparer.Ordinal);
         int fields = 0, typed = 0, jsonText = 0;
-        foreach (var (name, type) in document.Types)
+        foreach (var (name, type) in document.Types.Where(t => t.Value.Identity?.Owner != IrTypeOwner.TableType))
         {
             foreach (var field in type.Fields.Where(f => IsField(f.Type)))
             {

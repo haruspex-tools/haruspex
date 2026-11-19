@@ -161,14 +161,9 @@ public static class SyntaxReader
         // (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
         // CREATE UNIQUE INDEX is not read, which only claims less; ALTER TABLE … ADD CONSTRAINT is read by the folder's reader.
         var keys = definition.ColumnDefinitions
-            .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => new UniqueKey(
-                u.ConstraintIdentifier?.Value, [c.ColumnIdentifier.Value], u.IsPrimaryKey, span.At(u))))
+            .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => ColumnKey(u, c.ColumnIdentifier.Value, span)))
             .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => Key(u, span)))
-            .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => new UniqueKey(
-                i.Name?.Value,
-                [.. i.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
-                false,
-                span.At(i))))
+            .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => IndexKey(i, span)))
             .ToList();
 
         return new Table(name, span, [.. columns], [.. primaryKey], [.. checks], [.. keys]) { IsGraph = isGraph };
@@ -185,7 +180,42 @@ public static class SyntaxReader
             key.ConstraintIdentifier?.Value,
             [.. key.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)],
             key.IsPrimaryKey,
-            span.At(key));
+            span.At(key))
+        {
+            IgnoresDuplicates = IgnoresDuplicates(key.IndexOptions),
+        };
+    }
+
+    /// <summary>A primary key or unique constraint declared on a column.</summary>
+    private static UniqueKey ColumnKey(UniqueConstraintDefinition key, string column, SourceSpan span) =>
+        new(key.ConstraintIdentifier?.Value, [column], key.IsPrimaryKey, span.At(key)) { IgnoresDuplicates = IgnoresDuplicates(key.IndexOptions) };
+
+    /// <summary>A unique index declared in the table (<c>INDEX … UNIQUE</c>).</summary>
+    private static UniqueKey IndexKey(IndexDefinition index, SourceSpan span) =>
+        new(index.Name?.Value, [.. index.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)], false, span.At(index))
+        {
+            IgnoresDuplicates = IgnoresDuplicates(index.IndexOptions),
+        };
+
+    /// <summary>Whether a key's or index's options say <c>IGNORE_DUP_KEY = ON</c> (<see cref="UniqueKey.IgnoresDuplicates"/>).</summary>
+    private static bool IgnoresDuplicates(IEnumerable<IndexOption> options) =>
+        options.OfType<IgnoreDupKeyIndexOption>().Any(o => o.OptionState == OptionState.On);
+
+    /// <summary>
+    /// Reads a table type's definition (<c>CREATE TYPE … AS TABLE</c>) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool)"/>
+    /// reads a table's: its columns, keys and CHECK constraints are declared in the same grammar.
+    /// </summary>
+    /// <param name="name">The type's name.</param>
+    /// <param name="definition">Its columns and constraints.</param>
+    /// <param name="span">Where the statement that defines it is.</param>
+    public static TableType TableType(ObjectName name, TableDefinition definition, SourceSpan span)
+    {
+        var table = Table(name, definition, span);
+
+        // Only a table type's columns record a default: a table's would be read past either way, and a package keeps a table's
+        // defaults apart from it, where its reader doesn't look.
+        var columns = table.Columns.Select((c, i) => c with { HasDefault = definition.ColumnDefinitions[i].DefaultConstraint is not null });
+        return new TableType(name, table.Span, [.. columns], table.PrimaryKey, table.Checks, table.UniqueKeys);
     }
 
     /// <summary>

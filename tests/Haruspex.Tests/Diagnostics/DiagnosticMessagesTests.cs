@@ -1,5 +1,6 @@
 using System.Text;
 using Haruspex.Cli;
+using Haruspex.Collections;
 using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Zod;
@@ -189,7 +190,7 @@ public class DiagnosticMessagesTests
         (1001, () => Cli(["CREATE PROCEDURE lib.p AS SELECT FROM;"])),
         (1002, () => Cli([GetBook, GetBook])),
         (1003, () => Package("harbour", "crane.dacpac", "dock.*")),
-        (1004, () => Package("atelier", "atelier.dacpac", "studio.list_pots")),
+        (1004, () => Package("corpus", "WideWorldImporters.dacpac", "Website.SearchForPeople")),
         (1005, () => Cli([GetBook], args: ["broken.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("broken.dacpac", "not a zip"))),
         (1007, () => Project("<ItemGroup><ProjectReference Include=\"..\\shelf\\shelf.sqlproj\" /></ItemGroup>")),
         (1008, () => Project("<PropertyGroup><DefaultCollation>$(LibraryCollation)</DefaultCollation></PropertyGroup>")),
@@ -322,6 +323,14 @@ public class DiagnosticMessagesTests
         (5007, () => Emitted(Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])))),
         (5203, () => MssqlEmitter.Emit(
             Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])),
+            new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
+        (5204, () => MssqlEmitter.Emit(
+            Document(
+                new() { ["LinesRow"] = new([new IrField("qty", new IrScalar(IrScalarKind.Number, null, "numeric"), IrPresence.Always, [])]) { Identity = new IrTypeIdentity(IrTypeOwner.TableType, "s.lines", "<s.lines>") } },
+                new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@t", new IrArray(new IrRef("LinesRow")), true, false) { TableType = "s.lines" }], [])) with
+            {
+                TableTypes = new Dictionary<string, IrTableType> { ["s.lines"] = new("s", "lines", [new IrTableColumn("qty", "numeric", false)], "t.sql:1:1") }.ToEquatableMap(t => t.Key, t => t.Value),
+            },
             new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
         (5201, () => MssqlEmitter.Emit(
             Document([], new IrObject("shop.delete", "Delete", IrObjectKind.Procedure, "p.sql:1:1", [], [])),

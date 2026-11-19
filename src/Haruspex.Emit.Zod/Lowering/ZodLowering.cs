@@ -46,6 +46,7 @@ internal static class ZodLowering
             .. plan.Entries.SelectMany(entry => entry switch
             {
                 ZodPlanEntry.NamedType named => Named(named, plan, types, shared, shapes, hosted),
+                ZodPlanEntry.TableRow row => [new PlacedDeclaration(ParameterLowering.TableRow(row.Name, row.Type, types), null, [row.Name])],
 
                 // What a caller sends, then what comes back: the results, and the OUTPUT parameters.
                 ZodPlanEntry.Procedure procedure => new[]

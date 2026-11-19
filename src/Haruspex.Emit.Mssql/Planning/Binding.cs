@@ -8,4 +8,8 @@ namespace Haruspex.Emit.Mssql.Planning;
 /// Whether it is bound only when the caller gives it. A parameter with a default left out is not bound at all: bound as
 /// <c>undefined</c>, the driver sends NULL, which overrides the default (observed).
 /// </param>
-internal sealed record Binding(string Key, DriverType? Type, bool IsOutput, bool OnlyWhenGiven);
+internal sealed record Binding(string Key, DriverType? Type, bool IsOutput, bool OnlyWhenGiven)
+{
+    /// <summary>For a table-valued parameter, the table its rows are sent as; null for every other parameter.</summary>
+    public TableValue? Table { get; init; }
+}

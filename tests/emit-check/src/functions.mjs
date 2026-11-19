@@ -6,15 +6,17 @@
 // It is called with a folder holding functions.json:
 //
 //   { "setup": ["<batch>", …],
-//     "calls": [{ "name", "function", "params" (or absent), "parseJson", "db": "transaction" or "untouchable" }],
+//     "calls": [{ "name", "function", "params" (or absent), "parseJson", "db": "transaction" or "untouchable", "timeZone" (or absent) }],
 //     "functions": ["<functions file>", …] (haruspex.mssql.ts when absent) }
 //
 // Everything runs in one transaction, which is rolled back at the end, and each call is given the transaction as its
-// connection, or, with "untouchable", an object whose request() throws, to prove nothing touched it. A parameter's value
-// written { "bigInt": "<digits>" } is passed as a JavaScript bigint. The connection is given in HARUSPEX_DRIVER_CONFIG.
+// connection, or, with "untouchable", an object whose request() throws, to prove nothing touched it. A call with a "timeZone" runs
+// with the process's TZ set to it, which is where the driver would turn a date it is given as one into the server's. A parameter's value
+// written { "bigInt": "<digits>" }, at any depth, is passed as a JavaScript bigint. The connection is given in HARUSPEX_DRIVER_CONFIG.
 //
 // It writes observed.json beside: { "calls": [{ "name", "value" or "error" }] }, an error as { "name", "kind", "message",
-// "procedure", "part", "issues", "number", "procName", "isRequestError" }.
+// "procedure", "part", "issues", "number", "procName", "isRequestError", "preceding" }: "preceding" the numbers of the server's
+// errors the driver's error carries before it (precedingErrors), as for a row a table-valued parameter's type refuses.
 import { register } from 'node:module'
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -28,12 +30,15 @@ const { setup, calls, functions: files = ['haruspex.mssql.ts'] } = JSON.parse(aw
 const functions = {}
 for (const file of files) Object.assign(functions, await import(pathToFileURL(path.resolve(folder, file)).href))
 
+// At any depth, so that a table-valued parameter's rows may hold one.
 const argument = (value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? 'bigInt' in value
-      ? BigInt(value.bigInt)
-      : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, argument(v)]))
-    : value
+  Array.isArray(value)
+    ? value.map(argument)
+    : value !== null && typeof value === 'object'
+      ? 'bigInt' in value
+        ? BigInt(value.bigInt)
+        : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, argument(v)]))
+      : value
 
 // A value as JSON can hold it: a Date as its ISO string, a bigint as its digits.
 const plain = (value) => JSON.parse(JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v)))
@@ -45,8 +50,10 @@ const observed = []
 try {
   for (const batch of setup) await new sql.Request(transaction).batch(batch)
 
+  const zone = process.env.TZ
   for (const call of calls) {
     pool.config.parseJSON = call.parseJson ?? false
+    process.env.TZ = call.timeZone ?? zone
     const db = call.db === 'untouchable' ? { request: () => { throw new Error('the connection was touched') } } : transaction
     const entry = { name: call.name }
     try {
@@ -67,6 +74,7 @@ try {
         number: typeof error.number === 'number' ? error.number : null,
         procName: error.procName ?? null,
         isRequestError: error instanceof sql.RequestError,
+        preceding: Array.isArray(error.precedingErrors) ? error.precedingErrors.map((e) => e.number) : [],
       }
     }
 

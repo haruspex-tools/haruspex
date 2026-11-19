@@ -1,0 +1,482 @@
+{
+  "irVersion": "0.26",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/echo_echoes.sql": "8020648765633e8796d929849e4cbd380b2c9d5c8d3fc88f37094f5a919344da",
+      "types/echo_list.sql": "e3d175d85d18443eb8c16ff540b85f919965e0df60e82d12c2b7c4fa389525f6",
+      "types/odd_names.sql": "9ed369d9daf19b6df77d025ebd0d003eaa81df1c7d9cc7e758b932fe38aacb5b"
+    }
+  },
+  "objects": [
+    {
+      "id": "till.echo_echoes",
+      "name": "EchoEchoes",
+      "kind": "procedure",
+      "at": "procedures/echo_echoes.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@echoes",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "EchoListRow"
+            }
+          },
+          "tableType": "till.echo_list",
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@odd",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OddListRow"
+            }
+          },
+          "tableType": "till.odd list",
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "EchoEchoesResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "EchoEchoesResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "EchoEchoesResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.echo_echoes",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "k",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.echo_list.k",
+              "sql": "int",
+              "at": "types/echo_list.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "v",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.echo_list.v"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.echo_list.v",
+              "sql": "int",
+              "at": "types/echo_list.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "EchoEchoesResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "till.echo_echoes",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "first col",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.odd list.first col",
+              "sql": "int",
+              "at": "types/odd_names.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "select",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.odd list.select"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.odd list.select",
+              "sql": "nvarchar(10)",
+              "at": "types/odd_names.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "EchoListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.echo_list",
+        "path": "<till.echo_list>"
+      },
+      "fields": [
+        {
+          "name": "k",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.echo_list.k",
+              "sql": "int",
+              "at": "types/echo_list.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "v",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.echo_list.v"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.echo_list.v",
+              "sql": "int",
+              "at": "types/echo_list.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "OddListRow": {
+      "kind": "object",
+      "identity": {
+        "tableType": "till.odd list",
+        "path": "<till.odd list>"
+      },
+      "fields": [
+        {
+          "name": "first col",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.odd list.first col",
+              "sql": "int",
+              "at": "types/odd_names.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "select",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "till.odd list.select"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.odd list.select",
+              "sql": "nvarchar(10)",
+              "at": "types/odd_names.sql:4:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "tableTypes": {
+    "till.echo_list": {
+      "schema": "till",
+      "name": "echo_list",
+      "at": "types/echo_list.sql:2:1",
+      "columns": [
+        {
+          "name": "k",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "v",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "nullable": true
+        }
+      ],
+      "keys": [
+        {
+          "columns": [
+            "k"
+          ],
+          "ignoresDuplicates": true
+        }
+      ],
+      "checks": []
+    },
+    "till.odd list": {
+      "schema": "till",
+      "name": "odd list",
+      "at": "types/odd_names.sql:2:1",
+      "columns": [
+        {
+          "name": "first col",
+          "sql": "int",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "nullable": false
+        },
+        {
+          "name": "select",
+          "sql": "nvarchar(10)",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "nullable": true
+        }
+      ],
+      "keys": [],
+      "checks": []
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

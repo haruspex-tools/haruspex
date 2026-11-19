@@ -93,7 +93,14 @@ a `Date` a rowset result handed over is sent back as its `toISOString()` without
 since a type without an offset would drop the `Z` without an error. A `bigint` is a safe integer, a JavaScript `bigint`, or the
 string of digits a rowset hands over.
 Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`; one with a default, or an `OUTPUT` one, may be
-left out. A table-valued parameter is `z.unknown()` for now, and a `json` one a string.
+left out. A `json` one is a string.
+
+**A table-valued parameter** is an optional array of its table type's rows, never `null`, which the server refuses. A row's schema
+is named after the type (`LineListRowSchema`) and declared once for every procedure that takes it, before the first: a strict
+object of every column, in the type's order, each a required key checked as a parameter of the column's type, and `null` only
+where the column takes it. A type no row can be sent in (an identity, computed or `rowversion` column) is `z.unknown()`, as its IR
+parameter is
+([decision 0076](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
 
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them

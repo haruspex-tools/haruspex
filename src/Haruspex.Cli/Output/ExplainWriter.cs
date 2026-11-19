@@ -147,13 +147,13 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
     /// Whether the IR says where its fields came from: false for one written before 0.25, which has the reasons but neither the
     /// columns nor the files' hashes.
     /// </summary>
-    private bool Derived => document.Version == IrDocument.CurrentVersion;
+    private bool Derived => document.Version is IrDocument.CurrentVersion or IrDocument.SourcesVersion;
 
     /// <summary>For an IR written before 0.25, why no column is shown and no line, and what writes one that has them.</summary>
     private void SayIfNotDerived(TextWriter output)
     {
         if (!Derived)
-            Say(output, $"  this IR is {document.Version}, which doesn't say where a field came from: run haruspex generate to write it as {IrDocument.CurrentVersion}");
+            Say(output, $"  this IR is {document.Version}, which doesn't say where a field came from: run haruspex generate to write it as {IrDocument.SourcesVersion}");
     }
 
     /// <summary>The unknowns at the field's place, with their detail and where.</summary>

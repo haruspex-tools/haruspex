@@ -358,9 +358,35 @@ public class DacpacReaderTests
     [Fact]
     public void Elements_not_modelled_are_counted_in_one_note()
     {
-        var note = Assert.Single(Atelier.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
+        var note = Assert.Single(WideWorldImporters.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
 
-        Assert.Contains("1 SqlTableType", note.Message, StringComparison.Ordinal);
+        Assert.Contains("SqlSequence", note.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("SqlTableType", note.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_table_type_is_read_from_its_own_element_with_its_parts()
+    {
+        // In a package a table type's column says IsNullable only when nullable, the reverse of a table's; its constraints and
+        // defaults are entries of its own element. Built from tests/fixtures/till.
+        var model = DacpacReader.Read(Path.Combine(Packages, "fixtures", "till.dacpac")).Model;
+        TableType Type(string name) => Assert.IsType<TableType>(model.FindUserType(new ObjectName("till", name)));
+
+        Assert.Equal([DeclaredNullability.NotNull, DeclaredNullability.NotNull, DeclaredNullability.Null], Type("line_list").Columns.Select(c => c.Nullability));
+        Assert.Equal("quantity", Assert.Single(Type("line_list").Checks).Column);
+        Assert.Equal([false, true], Type("tag_list").Columns.Select(c => c.HasDefault));
+        Assert.Equal([["tag"]], Type("tag_list").UniqueKeys.Select(k => k.Columns.ToArray()));
+        Assert.True(Assert.Single(Type("echo_list").UniqueKeys).IgnoresDuplicates);
+        Assert.Equal([(true, false), (false, false), (false, true)], Type("serial_list").Columns.Select(c => (c.IsIdentity, c.IsComputed)));
+        Assert.Equal(["first col", "select"], Type("odd list").Columns.Select(c => c.Name));
+    }
+
+    [Fact]
+    public void A_package_whose_every_element_is_read_has_no_note_of_what_isn_t()
+    {
+        // atelier's one element of a kind once passed over, its table type, is read now.
+        Assert.DoesNotContain(Atelier.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
+        Assert.IsType<TableType>(Atelier.Value.Model.FindUserType(new ObjectName("studio", "firing")));
     }
 
     [Fact]

@@ -81,6 +81,14 @@ public static class IrComparison
     /// </summary>
     private sealed class ObjectWalk(IrDocument before, IrDocument after, string id, List<IrChange> changes)
     {
+        private IrDocument Before => before;
+
+        private IrDocument After => after;
+
+        /// <summary>The definition of a table-valued parameter's type in <paramref name="document"/>, or null for any other parameter.</summary>
+        private static IrTableType? TableTypeOf(IrDocument document, IrParameter parameter) =>
+            parameter.TableType is { } key && document.TableTypes.TryGetValue(key, out var type) ? type : null;
+
         private readonly HashSet<(string Before, string After)> followed = [];
 
         public void Object(IrObject was, IrObject now)
@@ -109,6 +117,8 @@ public static class IrComparison
             void Parameter(IrPathSegment[] path, IrParameter before, IrParameter after)
             {
                 Type(path, before.Type, after.Type);
+                if (TableTypeOf(Before, before) is var was && TableTypeOf(After, after) is var now && !(was is null ? now is null : now is not null && was.Defines(now)))
+                    Add(IrChangeKind.TableTypeChanged, path, was is null ? null : IrClaimText.TableType(was), now is null ? null : IrClaimText.TableType(now));
                 if (before.HasDefault != after.HasDefault)
                     Add(IrChangeKind.ParameterDefaultChanged, path, Flag(before.HasDefault), Flag(after.HasDefault));
                 if (before.IsOutput != after.IsOutput)

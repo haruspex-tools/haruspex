@@ -8,7 +8,7 @@ namespace Haruspex.Tests.Ir;
 /// and on that document's file broken one way at a time: each refusal names the path, and nothing is read with a default.
 /// The round trip over real output (every fixture, both corpora) is in <c>IrRoundTripTests</c>.
 /// </summary>
-public class IrJsonReaderTests
+public partial class IrJsonReaderTests
 {
     /// <summary>The document's JSON with <paramref name="change"/> made to it, read: the refusal the reader gives.</summary>
     private static IrFormatException Refused(Action<JsonObject> change)
@@ -232,7 +232,7 @@ public class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.25 and 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]
