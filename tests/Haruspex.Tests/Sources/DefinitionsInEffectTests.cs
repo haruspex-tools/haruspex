@@ -66,14 +66,24 @@ public class DefinitionsInEffectTests
     [Theory]
     [InlineData("if object_id(N'shop.archive_orders', N'V') is not null drop procedure shop.archive_orders;")]
     [InlineData("if object_id(N'shop.archive_orders', N'PC') is not null drop procedure shop.archive_orders;")]
-    [InlineData("if object_id(N'archive_orders') is not null drop procedure shop.archive_orders;")]
     public void A_drop_under_an_object_id_test_that_may_not_find_the_object_dropped_is_a_doubt(string drop)
     {
-        // OBJECT_ID with a type finds only an object of that type (a view's V, a CLR procedure's PC, not a procedure's P), and an
-        // unqualified name means the caller's default schema, which needn't be the one the drop names.
+        // OBJECT_ID with a type finds only an object of that type: a view's V, a CLR procedure's PC, not a procedure's P.
         var read = Read(("archive_orders.sql", $"{Stub}\nGO\n{drop}\nGO\n{Altered.Replace("alter", "create", StringComparison.Ordinal)}"));
 
         Assert.Equal(RedefiningStatement.DropProcedure, Archive(read).Redefinition?.Statement);
+    }
+
+    [Theory]
+    [InlineData("if object_id(N'archive_orders') is not null drop procedure dbo.archive_orders;")]
+    [InlineData("if object_id(N'dbo.archive_orders') is not null drop procedure archive_orders;")]
+    public void A_drop_whose_guard_names_its_object_with_a_schema_only_on_one_side_is_a_doubt(string drop)
+    {
+        // An unqualified name means the caller's default schema, which needn't be dbo: the guard may test another object.
+        var read = Read(("archive_orders.sql", $"create procedure dbo.archive_orders as return 0;\nGO\n{drop}\nGO\ncreate procedure dbo.archive_orders @before date as select @before as before;"));
+
+        var archive = read.Model.FindProcedure(new ObjectName("dbo", "archive_orders"))!;
+        Assert.Equal(RedefiningStatement.DropProcedure, archive.Redefinition?.Statement);
     }
 
     [Fact]
