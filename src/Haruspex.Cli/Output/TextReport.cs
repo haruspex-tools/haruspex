@@ -116,7 +116,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (module.Since is SinceLastRun.Compared { Nothing: true })
             return $"haruspex: nothing changed since the last run: {OneLine(module, counted)}.";
 
-        var lines = new List<string> { $"haruspex: {counted}. Wrote {EnglishList.Of([.. module.Written.Select(Shown)])}." };
+        var lines = new List<string> { $"haruspex: {counted}. Wrote {WrittenFiles(module)}." };
         switch (module.Since)
         {
             case SinceLastRun.Compared compared:
@@ -303,4 +303,16 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
     /// <summary><paramref name="count"/> and the noun, plural unless it is one: <c>1 procedure</c>, <c>6 procedures</c>.</summary>
     internal static string Counted(int count, string noun) =>
         string.Create(CultureInfo.InvariantCulture, $"{count} {noun}{(count == 1 ? "" : "s")}");
+
+    /// <summary>
+    /// What a run wrote: each file, as one module's few files are said; or, for output split into modules, how many files, where,
+    /// and the modules, since a file per emitter per module would make a line nobody reads.
+    /// </summary>
+    private string WrittenFiles(ModuleReport module)
+    {
+        if (module.Modules.Count == 0 || module.Out is not { } folder)
+            return EnglishList.Of([.. module.Written.Select(Shown)]);
+        var shared = module.Written.Any(w => Path.GetFileName(w).StartsWith(IrModules.Shared + ".", StringComparison.Ordinal));
+        return $"{Counted(module.Written.Count, "file")} to {Shown(folder)}: the IR and the modules {EnglishList.Of([.. module.Modules])}{(shared ? ", with what they share" : "")}";
+    }
 }

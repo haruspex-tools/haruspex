@@ -42,6 +42,22 @@
       "type": "string",
       "minLength": 1
     },
+    "split": {
+      "description": "Splits the output into modules, each the files one config writes, named after the module (sales.zod.ts, sales.mssql.ts, sales.jsonschema.json), with what two or more modules share in shared.zod.ts and shared.jsonschema.json; the IR stays one file. \"schema\" gives a module per schema of the selected procedures; an object names each module and the schemas it holds, a selected procedure in no listed schema being an error. A query file is in the module its -- @module comment names, or else in \"queries\". Without it, one module, as before. Every name is the same either way.",
+      "anyOf": [
+        { "const": "schema" },
+        {
+          "type": "object",
+          "propertyNames": { "pattern": "^(?![Ss][Hh][Aa][Rr][Ee][Dd]$)[A-Za-z][A-Za-z0-9_-]*$" },
+          "additionalProperties": {
+            "description": "The schemas whose procedures the module holds, each in one module; [] for a module of query files alone.",
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          }
+        }
+      ]
+    },
     "schemas": {
       "description": "Settings per schema, keyed by the schema's name exactly as in the database (no brackets; dots allowed). Nothing is selected unless its schema has a block with include. A key that names no schema of the project is an error.",
       "type": "object",

@@ -19,6 +19,7 @@ otherwise silently do nothing.
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
+  "split": "schema",                        // a module per schema; see "Splitting the output into modules"
 
   "emit": ["zod"],                          // and "json-schema", "mssql", "mapping"; see "What is written"
   "serverOnly": false,                      // true: the functions import 'server-only'; see "What is written"
@@ -359,6 +360,62 @@ module's page has [the Vitest configuration for each](database-module.md#where-t
 
 `emit` lists at least one, each once. `check` compares each file it names with the one in the output folder, and fails when one is
 missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.
+
+## Splitting the output into modules: `split`
+
+Without `split`, `generate` writes one module: one file per emitter, which every reader imports whole. `split` writes a module
+per group of schemas instead, each the files one config writes, named after the module, so that code imports only the part it
+uses and a change to one schema's procedures shows in that schema's files
+([decision 0074](decisions/0074-a-config-may-split-its-output-into-modules.md)):
+
+```jsonc
+"split": "schema"                                          // sales.zod.ts, shop.zod.ts, admin.zod.ts, …
+```
+
+```jsonc
+"split": { "sales": ["sales", "shop"], "admin": ["admin"] }   // sales.zod.ts holds both schemas' procedures
+```
+
+With `"schema"`, each schema of the selected procedures is a module of its own, named as the schema is. A list names each module
+and the schemas whose procedures it holds, compared ignoring case as SQL Server compares schema names; a schema is in one module,
+and a selected procedure whose schema no module lists is an error naming it ([HAR4008](diagnostics/HAR4008.md)). A module's name
+starts with a letter and has only letters, digits, `_` and `-`, since it names files, and isn't `shared`; with `"schema"`, a schema
+whose name can't be a module's needs a list ([HAR3024](diagnostics/HAR3024.md)).
+
+**Query files** are in the module their `-- @module` comment names, or else in the module `queries`:
+
+```sql
+-- @module sales
+SELECT o.order_id, o.total FROM sales.orders AS o WHERE o.placed >= @since;
+```
+
+The comment names one of the modules, or `queries`; a list may hold a module of query files alone, with an empty list of
+schemas. Without `split`, the comment is a warning ([HAR4009](diagnostics/HAR4009.md)), since it does nothing.
+
+**What is written.** For each module, each emitter's file, named after the module: `sales.zod.ts`, `sales.jsonschema.json`,
+`sales.mssql.ts`. A definition two or more modules use is written once, in `shared.zod.ts` and `shared.jsonschema.json`, which the
+modules import from or refer to; a shared file is written only when something is shared
+([decision 0075](decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)). The IR stays one file,
+`haruspex.ir.json`, and so does `haruspex.mapping.ts`. Each `sales.mssql.ts` imports its own module's `sales.zod.ts`.
+
+- **Every name is the one the unsplit output gives**, unique across the whole config, so switching `split` on, or moving a schema
+  to another module, renames nothing: an import changes the file it names, not what it imports.
+- **A shape declared by name** (a `name` in `paths`) that two modules share is exported from `shared.zod.ts`, under that name.
+  A shape named by its structure, `shape3f2a9c`, is exported there marked `@internal` so that the modules can import it; it is
+  not a public name, and no module re-exports it. Import a type by its own name from its own module, as `ListStaffRow` from
+  `shop.zod.ts`.
+- **In JSON Schema**, a module's document refers to the shared one by a `$ref` relative to its own name,
+  `shared.jsonschema.json#/$defs/PartNode`: add each document to the validator under its file name, as
+  `ajv.addSchema(document, "sales.jsonschema.json")`.
+- **There is no `index.ts`** that re-exports every module, which would make every reader import everything again.
+- **Each module's functions are self-contained**, with their own error classes, as the functions of several config files are:
+  tell a failure apart by its `name` and `kind` ([when a call fails](database-module.md#when-a-call-fails)).
+- **A module that is gone leaves its files**: `generate` writes the modules the config gives and removes nothing, as for an
+  emitter taken off `emit`. Remove the old module's files yourself.
+
+`check` compares every file as it compares one module's, and fails when one is missing. A procedure added to one schema changes
+the IR and its module's files, and the shared file only when it shares a definition with another module; that module's file then
+imports the shape it shares, its own types keeping their names.
 
 ## Results policy: `objects`
 

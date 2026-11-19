@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.JsonSchema.Lowering;
 using Haruspex.Emit.JsonSchema.Planning;
@@ -35,5 +36,20 @@ public static class JsonSchemaEmitter
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
         return JsonSchemaPlanner.Plan(document, options).Select(plan => JsonSchemaPrinter.Print(JsonSchemaLowering.Lower(plan)));
+    }
+
+    /// <summary>
+    /// Emits the document split into a document per module of <paramref name="modules"/>, with the named types two or more of them
+    /// reach in one more, under <see cref="IrModules.Shared"/>, which the modules refer to by <see cref="JsonSchemaOptions.SharedDocument"/>
+    /// (<c>docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md</c>).
+    /// </summary>
+    /// <returns>Each document's text by its module; or every refusal, as for one document.</returns>
+    public static Outcome<EquatableMap<string, string>> Emit(IrDocument document, JsonSchemaOptions options, IrModules modules)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(modules);
+        return JsonSchemaPlanner.Plan(document, options)
+            .Select(plan => JsonSchemaLowering.Lower(plan, modules).ToEquatableMap(m => m.Key, m => JsonSchemaPrinter.Print(m.Value)));
     }
 }

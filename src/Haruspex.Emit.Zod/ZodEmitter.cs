@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod.Lowering;
 using Haruspex.Emit.Zod.Planning;
@@ -38,5 +39,21 @@ public static class ZodEmitter
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(options);
         return ZodPlanner.Plan(document, options).Select(plan => ZodPrinter.Print(ZodLowering.Lower(plan)));
+    }
+
+    /// <summary>
+    /// Emits the module split into a file per module of <paramref name="modules"/>, with what two or more of them share in one
+    /// more file, under <see cref="IrModules.Shared"/>, which each module imports from by <see cref="ZodOptions.SharedModule"/>.
+    /// Every name is the one the unsplit module gives
+    /// (<c>docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md</c>).
+    /// </summary>
+    /// <returns>Each file's text by its module; or every refusal, as for one module.</returns>
+    public static Outcome<EquatableMap<string, string>> Emit(IrDocument document, ZodOptions options, IrModules modules)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(modules);
+        return ZodPlanner.Plan(document, options)
+            .Select(plan => ZodSplit.Lower(plan, modules, options.SharedModule).ToEquatableMap(m => m.Key, m => ZodPrinter.Print(m.Value)));
     }
 }

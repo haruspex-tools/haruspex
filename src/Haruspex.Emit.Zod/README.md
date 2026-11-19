@@ -101,6 +101,18 @@ breaking them
 `ZodObjects.Strict` makes them `z.strictObject`. The output is deterministic, with stable ordering and LF line endings, so
 a CI check can compare it byte for byte.
 
+## A module split into files
+
+`ZodEmitter.Emit(document, options, modules)` writes the module split into a file per module of an `IrModules`, the
+document's objects grouped as the config file's `split` says, with what two or more modules share in one more file, under
+`IrModules.Shared`, which each module imports by `ZodOptions.SharedModule` (`./shared.zod.js`). The whole module is planned and
+lowered once, as for one file (`ZodLowering.Placed`), so every name and every shared shape is what one file would have; then
+`ZodSplit` puts each declaration in the file of the module that alone reaches it, or else in the shared one. A module refers
+only to its own declarations and the shared file's, and the shared file only to its own, so no module imports another. A shape
+named by its structure is exported from the shared file marked `@internal`, with no type, since it is no public name; each file
+defines the helpers it calls and imports only the application's names it uses, so each passes the linter alone
+([decision 0075](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
+
 ## The mapping helper
 
 `MappingModule` holds `haruspex.mapping.ts`, which `"mapping"` in `"emit"` writes beside the module: TypeScript types, the same

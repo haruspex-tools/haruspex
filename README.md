@@ -322,7 +322,9 @@ from its alias type `Name`, and `unit` is exactly three characters because `ncha
   release, would fail on, and passes one it can take, such as a new column
   ([checking against a baseline](docs/command-line.md#checking-against-a-baseline), with recipes for both sides' CI).
 - **Several modules**: plugins or sub-applications each have a `haruspex.json` of their own, sharing nothing, and
-  `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy).
+  `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy). One
+  application's output can be split too, into a module per schema with a shared file for what they share, so that code imports
+  only what it uses ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)).
 
 ## What it guarantees, and what it can't see
 

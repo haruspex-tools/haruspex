@@ -11,7 +11,11 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// <param name="types">The document's named types, whose keys a union's object variants are told apart by.</param>
 /// <param name="unknowns">What the document says about each unknown, for the note on its schema.</param>
 /// <param name="declared">The claims the config file made, for the note on the field each is at.</param>
-internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, UnknownDetails unknowns, DeclaredClaims declared)
+/// <param name="documentOf">
+/// The document a named type is defined in, relative to the one being written, or null for that one itself; every type is in
+/// it when this is null. A document split into modules defines some types in a shared document.
+/// </param>
+internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> types, UnknownDetails unknowns, DeclaredClaims declared, Func<string, string?>? documentOf = null)
 {
     /// <summary>The schema of a value of <paramref name="type"/> that is not null.</summary>
     /// <param name="place">Where the value is, for an unknown's note; null when the type has no place in the IR (built by hand).</param>
@@ -24,7 +28,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
             .With(Keyword.AdditionalProperties, new SchemaValue.Nested(Nullable(Type(record.Values, place?.Then(new IrPathValues())), record.ValuesNullableBecause)))
             .Noted(new SchemaNote("An object whose keys are data.")),
         IrUnion union => Union(union, place),
-        IrRef reference => Schema.Reference(reference.Name),
+        IrRef reference => Schema.Reference(documentOf?.Invoke(reference.Name), reference.Name),
         IrImport import => Schema.Any.Noted(new SchemaNote(
             $"Declared by the config file to be {import.Name} from {import.From}, an application's schema this document can't refer to, so any value is accepted here.")),
         IrJsonText text => JsonText(text, place),

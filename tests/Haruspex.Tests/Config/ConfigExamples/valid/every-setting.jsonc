@@ -6,6 +6,7 @@
   "collation": "Latin1_General_100_CI_AS",
   "queries": ["sql", "reports/**/*.sql"],
   "out": "generated",
+  "split": { "sales": ["sales", "shop"], "admin": ["admin"] },
   "objects": "strip",
   "emit": ["zod", "json-schema"],
   "check": { "unknowns": "fail" },

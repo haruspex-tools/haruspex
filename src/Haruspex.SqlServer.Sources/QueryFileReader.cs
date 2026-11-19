@@ -75,12 +75,13 @@ public static partial class QueryFileReader
 
         var declared = Declarations(script, relative, statements, problems);
         var sets = Sets(script, relative, problems);
+        var module = Module(script, relative, problems);
         if (problems.Count > 0)
             return new Failed<QueryFile>([.. problems]);
 
         var end = SyntaxReader.Span(relative, batch);
         var span = new SourceSpan(relative, 1, 1, end.EndLine, end.EndColumn);
-        return new Succeeded<QueryFile>(new QueryFile(relative, span, text, statements, [.. declared]) { Sets = sets?.Names, SetsAt = sets?.At });
+        return new Succeeded<QueryFile>(new QueryFile(relative, span, text, statements, [.. declared]) { Sets = sets?.Names, SetsAt = sets?.At, Module = module?.Name, ModuleAt = module?.At });
     }
 
     /// <summary>
@@ -109,6 +110,35 @@ public static partial class QueryFileReader
         }
 
         return sets;
+    }
+
+    /// <summary>
+    /// The module the file's module comment puts it in, for a config file that splits its output into modules: a line comment that
+    /// starts <c>@module</c>, then one word, written once in the file. Null when there is none. Whether the word can name a module,
+    /// and whether the config file has one so named, is the config layer's to check
+    /// (<c>docs/decisions/0074-a-config-may-split-its-output-into-modules.md</c>).
+    /// </summary>
+    private static (string Name, SourceLocation At)? Module(TSqlScript script, string file, List<Diagnostic> problems)
+    {
+        (string Name, SourceLocation At)? module = null;
+        foreach (var token in script.ScriptTokenStream.Where(t => t.TokenType == TSqlTokenType.SingleLineComment))
+        {
+            var comment = token.Text[2..].Trim();
+            if (!ModuleKeyword().IsMatch(comment))
+                continue;
+
+            var at = new SourceLocation(file, token.Line, token.Column);
+            void Refuse(string why) => problems.Add(SourceCodes.BadModuleDeclaration.At(at, $"-- {comment}: {why}"));
+            var words = comment["@module".Length..].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (module is { } earlier)
+                Refuse($"the module is named already, at line {earlier.At.Line}; name it once.");
+            else if (words is not [var name])
+                Refuse("the module is named by one word, such as -- @module reports.");
+            else
+                module = (name, at);
+        }
+
+        return module;
     }
 
     /// <summary>
@@ -193,6 +223,10 @@ public static partial class QueryFileReader
     /// <summary>A comment that names the sets, or is meant to: <c>@sets</c> as a word of its own at its start.</summary>
     [GeneratedRegex(@"^@sets(\s|$)", RegexOptions.CultureInvariant)]
     private static partial Regex SetsKeyword();
+
+    /// <summary>A comment that names the module, or is meant to: <c>@module</c> as a word of its own at its start.</summary>
+    [GeneratedRegex(@"^@module(\s|$)", RegexOptions.CultureInvariant)]
+    private static partial Regex ModuleKeyword();
 
     /// <summary>A comment that is a declaration, or meant as one: <c>@param</c> as a word of its own at its start.</summary>
     [GeneratedRegex(@"^@param(\s|$)", RegexOptions.CultureInvariant)]

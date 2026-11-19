@@ -1,3 +1,4 @@
+using Haruspex.Collections;
 using Haruspex.Emit.JsonSchema.Model;
 using Haruspex.Emit.JsonSchema.Planning;
 using Haruspex.Ir;
@@ -15,27 +16,72 @@ internal static class JsonSchemaLowering
     public static JsonSchemaDocument Lower(JsonSchemaPlan plan)
     {
         ArgumentNullException.ThrowIfNull(plan);
+        return Lower(plan, plan.Entries, null, "Each procedure's results are the schema in $defs under its name, and each named type is there too.");
+    }
+
+    /// <summary>
+    /// The document split into a document per module (<see cref="IrModules"/>), by module, with <see cref="IrModules.Shared"/>'s
+    /// when two or more modules reach a named type: a procedure is defined in its module's document, and a named type in that of the
+    /// one module that reaches it, or else in the shared one, which a module refers to relative to its own name
+    /// (<c>docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md</c>). Every definition is the one the
+    /// unsplit document has, but for where a reference points.
+    /// </summary>
+    public static EquatableMap<string, JsonSchemaDocument> Lower(JsonSchemaPlan plan, IrModules modules)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(modules);
+        var shared = plan.Options.SharedDocument;
+        var placed = plan.Entries.Select(entry => (Entry: entry, Home: entry switch
+        {
+            JsonSchemaPlanEntry.NamedType named => modules.HomeOf(named.Name),
+            JsonSchemaPlanEntry.Procedure procedure => modules.Of(procedure.Object),
+        })).ToList();
+        return placed.Select(p => p.Home).Distinct(StringComparer.Ordinal).ToEquatableMap(file => file, file =>
+        {
+            var entries = placed.Where(p => p.Home == file).Select(p => p.Entry).ToList();
+            var refersToShared = entries.SelectMany(Reached).Any(type => modules.HomeOf(type) != file);
+            var what = file == IrModules.Shared
+                ? $"The named types two or more modules of this config share, each defined once in $defs under its name; the modules refer to them by a $ref relative to their own names: {shared}#/$defs/ and the type's name."
+                : refersToShared
+                    ? $"Each procedure's results are the schema in $defs under its name, and each named type that only this module's procedures reach is there too; one that other modules' procedures reach as well is in {shared}, beside this document, referred to by a $ref relative to its name."
+                    : "Each procedure's results are the schema in $defs under its name, and each named type is there too.";
+            return Lower(plan, entries, type => modules.HomeOf(type) == file ? null : shared, what);
+        });
+    }
+
+    /// <summary>The named types an entry's own schema refers to directly.</summary>
+    private static IEnumerable<string> Reached(JsonSchemaPlanEntry entry) => entry switch
+    {
+        JsonSchemaPlanEntry.NamedType named => named.Type.Fields.SelectMany(f => IrTypeTree.References(f.Type)),
+        JsonSchemaPlanEntry.Procedure procedure => (procedure.Object.Results ?? []).SelectMany(r => IrTypeTree.References(r.Type))
+            .Concat(procedure.Object.Parameters.SelectMany(p => IrTypeTree.References(p.Type))),
+    };
+
+    /// <summary>The document of <paramref name="entries"/>, its description's second line <paramref name="what"/>.</summary>
+    private static JsonSchemaDocument Lower(JsonSchemaPlan plan, IEnumerable<JsonSchemaPlanEntry> entries, Func<string, string?>? documentOf, string what)
+    {
         var unknowns = new UnknownDetails(plan.Document);
-        var types = new TypeLowering(plan.Document.Types, unknowns, new DeclaredClaims(plan.Document));
+        var types = new TypeLowering(plan.Document.Types, unknowns, new DeclaredClaims(plan.Document), documentOf);
         List<SchemaProperty> definitions =
         [
-            .. plan.Entries.Select(entry => entry switch
+            .. entries.Select(entry => entry switch
             {
                 JsonSchemaPlanEntry.NamedType named => new SchemaProperty(named.Name, ObjectType(named.Type, plan.Options, types)),
                 JsonSchemaPlanEntry.Procedure procedure => new SchemaProperty(procedure.Name, Procedure(procedure.Object, types, unknowns)),
             }),
         ];
-        return new JsonSchemaDocument([.. Description(plan.Document.Source, definitions)], [.. definitions]);
+        return new JsonSchemaDocument([.. Description(plan.Document.Source, what, definitions)], [.. definitions]);
     }
 
     /// <summary>
-    /// The document's description: what made it, how to find a procedure's schema, what every value is described as, what the
-    /// callers' sessions were declared to set, and once each, the shared facts its notes rest on (<see cref="JsonSchemaCaveat"/>).
+    /// The document's description: what made it, how to find a procedure's schema (<paramref name="what"/>), what every value is
+    /// described as, what the callers' sessions were declared to set, and once each, the shared facts its notes rest on
+    /// (<see cref="JsonSchemaCaveat"/>).
     /// </summary>
-    private static IEnumerable<string> Description(IrSource source, IEnumerable<SchemaProperty> definitions)
+    private static IEnumerable<string> Description(IrSource source, string what, IEnumerable<SchemaProperty> definitions)
     {
         yield return $"Generated by haruspex from IR {IrDocument.CurrentVersion}. Do not edit.";
-        yield return "Each procedure's results are the schema in $defs under its name, and each named type is there too.";
+        yield return what;
         yield return "Every value is described as SQL Server's FOR JSON writes it, a rowset's rows as an array of objects as FOR JSON PATH, INCLUDE_NULL_VALUES writes them, every column a key, null where it is null.";
 
         // A schema is only as true as what it assumed, so a declared session is said where the schema is read; with none

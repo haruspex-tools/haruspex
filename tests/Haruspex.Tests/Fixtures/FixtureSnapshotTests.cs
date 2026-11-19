@@ -16,15 +16,14 @@ public class FixtureSnapshotTests
 {
     private static readonly IReadOnlyList<Fixture> Fixtures = [.. Fixture.All.Where(f => !f.IsProject)];
 
-    /// <summary>The files <c>haruspex generate</c> writes with a project fixture's config, which its <c>expected/</c> holds: the IR and what it emits.</summary>
-    private static IEnumerable<(string Written, string Snapshot, string Extension)> ProjectOutputs(Fixture project) =>
-        ConfigReader.Read(project.Config!).Expected().Emitters.Select(emitter => emitter switch
-        {
-            Emitter.Zod => (HaruspexCli.ZodFileName, "haruspex.zod", "ts"),
-            Emitter.JsonSchema => (HaruspexCli.JsonSchemaFileName, "haruspex.jsonschema", "json"),
-            Emitter.Mssql => (HaruspexCli.MssqlFileName, "haruspex.mssql", "ts"),
-            Emitter.Mapping => (HaruspexCli.MappingFileName, "haruspex.mapping", "ts"),
-        }).Prepend((HaruspexCli.IrFileName, "haruspex.ir", "json"));
+    /// <summary>
+    /// The files <c>haruspex generate</c> wrote for a project fixture, which its <c>expected/</c> holds: the IR and what it emits,
+    /// each snapshot named for its file (<c>haruspex.zod.ts</c> as <c>haruspex.zod.verified.ts</c>, a split module's
+    /// <c>sales.zod.ts</c> as <c>sales.zod.verified.ts</c>).
+    /// </summary>
+    private static IEnumerable<(string Written, string Snapshot, string Extension)> ProjectOutputs(string folder) =>
+        Directory.GetFiles(folder).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal)
+            .Select(file => (file, Path.GetFileNameWithoutExtension(file), Path.GetExtension(file).TrimStart('.')));
 
     /// <summary>What each of a procedure's snapshots ends with: its IR, its Zod and its JSON Schema.</summary>
     private static readonly string[] SnapshotSuffixes = [".ir.verified.json", ".zod.verified.ts", ".jsonschema.verified.json"];
@@ -72,11 +71,10 @@ public class FixtureSnapshotTests
         var exitCode = HaruspexCli.Run(["generate", "--out", outDir.Path], output, error, project.Folder);
 
         Assert.True(exitCode == 0, error.ToString());
-        foreach (var (written, snapshot, extension) in ProjectOutputs(project))
-            Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, written)), project.Expected, snapshot, extension);
-        Assert.Equal(
-            ProjectOutputs(project).Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal),
-            Reviewed(project.Expected));
+        var written = ProjectOutputs(outDir.Path).ToList();
+        foreach (var (file, snapshot, extension) in written)
+            Snapshot.Match(File.ReadAllText(Path.Combine(outDir.Path, file)), project.Expected, snapshot, extension);
+        Assert.Equal(written.Select(o => $"{o.Snapshot}.verified.{o.Extension}").Order(StringComparer.Ordinal), Reviewed(project.Expected));
     }
 
     // A snapshot is named for what it holds, the IR or the Zod of one procedure, not for the test that checks it, so that

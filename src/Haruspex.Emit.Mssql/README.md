@@ -37,6 +37,13 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
     File.WriteAllText("haruspex.mssql.ts", module);
 ```
 
+## A module split into files
+
+`MssqlEmitter.Emit(document, options, modules, schemaModule)` writes a functions file per module of an `IrModules`: the file this
+emitter writes for the module's procedures and query files alone, importing the schemas of its own module's schema file, whose
+specifier `schemaModule` gives (`./sales.zod.js`). Each file is self-contained, with its own error classes and helpers, as the
+files of several config files are ([decision 0074](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0074-a-config-may-split-its-output-into-modules.md)).
+
 ## What it guarantees
 
 - **A function takes a connection; it never owns one.** Its first argument is anything with `request()`, an mssql

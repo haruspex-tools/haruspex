@@ -1,0 +1,25 @@
+column admin.users.login varchar(30) at tables/users.sql:3:5
+column admin.users.retired bit at tables/users.sql:4:5
+column admin.users.user_id int at tables/users.sql:2:5
+column sales.orders.order_id int at tables/orders.sql:2:5
+column sales.orders.placed date at tables/orders.sql:4:5
+column sales.orders.product_id int at tables/orders.sql:3:5
+column sales.orders.total decimal(9,2) at tables/orders.sql:5:5
+column shop.products.name nvarchar(60) at tables/products.sql:3:5
+column shop.products.price decimal(9,2) at tables/products.sql:4:5
+column shop.products.product_id int at tables/products.sql:2:5
+key admin.users unnamed (user_id) at tables/users.sql:2:26
+key sales.orders unnamed (order_id) at tables/orders.sql:2:27
+key shop.products unnamed (product_id) at tables/products.sql:2:29
+parameter sales.get_order @order_id at procedures/get_order.sql:1:34
+parameter sales.list_orders @placed at procedures/list_orders.sql:1:36
+parameter shop.get_product @product_id at procedures/get_product.sql:2:35
+procedure admin.list_retired_users at procedures/list_retired_users.sql:1:1
+procedure admin.list_users at procedures/list_users.sql:1:1
+procedure sales.get_order at procedures/get_order.sql:1:1
+procedure sales.list_orders at procedures/list_orders.sql:1:1
+procedure shop.get_product at procedures/get_product.sql:2:1
+procedure shop.list_staff at procedures/list_staff.sql:2:1
+table admin.users at tables/users.sql:1:1
+table sales.orders at tables/orders.sql:1:1
+table shop.products at tables/products.sql:1:1

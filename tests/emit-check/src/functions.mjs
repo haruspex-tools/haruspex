@@ -1,11 +1,13 @@
-// Calls procedures through the functions haruspex generates (haruspex.mssql.ts, with the Zod module beside it), as an
+// Calls procedures through the functions haruspex generates (haruspex.mssql.ts, with the Zod module beside it, or each module's
+// functions file of a split module, with its Zod file and the shared one beside them), as an
 // application does: the differential tests' end-to-end check of the database module (GeneratedFunctionTests) and of its
 // failures (MssqlFunctionTests) run through this.
 //
 // It is called with a folder holding functions.json:
 //
 //   { "setup": ["<batch>", …],
-//     "calls": [{ "name", "function", "params" (or absent), "parseJson", "db": "transaction" or "untouchable" }] }
+//     "calls": [{ "name", "function", "params" (or absent), "parseJson", "db": "transaction" or "untouchable" }],
+//     "functions": ["<functions file>", …] (haruspex.mssql.ts when absent) }
 //
 // Everything runs in one transaction, which is rolled back at the end, and each call is given the transaction as its
 // connection, or, with "untouchable", an object whose request() throws, to prove nothing touched it. A parameter's value
@@ -22,8 +24,9 @@ import sql from 'mssql'
 register('./ts-resolve.mjs', import.meta.url)
 
 const folder = process.argv[2]
-const { setup, calls } = JSON.parse(await readFile(path.join(folder, 'functions.json'), 'utf8'))
-const functions = await import(pathToFileURL(path.resolve(folder, 'haruspex.mssql.ts')).href)
+const { setup, calls, functions: files = ['haruspex.mssql.ts'] } = JSON.parse(await readFile(path.join(folder, 'functions.json'), 'utf8'))
+const functions = {}
+for (const file of files) Object.assign(functions, await import(pathToFileURL(path.resolve(folder, file)).href))
 
 const argument = (value) =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

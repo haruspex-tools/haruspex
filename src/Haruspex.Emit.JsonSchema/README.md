@@ -148,6 +148,16 @@ A line's price is more than 0 with two places, so at least 0.01, and its places 
 }
 ```
 
+## A document split into modules
+
+`JsonSchemaEmitter.Emit(document, options, modules)` writes a document per module of an `IrModules`: a module's procedures, and
+the named types its procedures alone reach, each defined as in the one document. A named type the procedures of two or more
+modules reach is defined in the shared document, under `IrModules.Shared`, which a module refers to by a `$ref` relative to its
+own name, `shared.jsonschema.json#/$defs/PartNode` (`JsonSchemaOptions.SharedDocument`). Shapes aren't shared in JSON Schema, so
+the shared document holds only types that are one type, such as a recursive function's node. A consumer adds each document under
+its file name, so that a relative reference resolves
+([decision 0075](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
+
 ## What it guarantees
 
 **It claims everything the IR states, and nothing more**

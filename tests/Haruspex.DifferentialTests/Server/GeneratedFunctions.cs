@@ -19,8 +19,12 @@ internal static class GeneratedFunctions
     /// back, holding the database alone meanwhile, and returns what each call gave or threw. With <paramref name="strict"/>, the
     /// module is written as <c>"objects": "strict"</c> writes it.
     /// </summary>
+    /// <param name="modules">
+    /// When given, the module is written split into these modules, each a Zod file and a functions file named after it with the
+    /// shared Zod file beside them, as a config file's <c>split</c> writes them; every module's functions are called.
+    /// </param>
     public static async Task<IReadOnlyList<Response>> RunAsync(
-        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false)
+        SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false, IrModules? modules = null)
     {
         server.Require();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated functions were not run");
@@ -30,9 +34,25 @@ internal static class GeneratedFunctions
         Directory.CreateDirectory(folder);
         try
         {
-            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.zod.ts"), ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip }).Expected(), token).ConfigureAwait(false);
-            await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.mssql.ts"), MssqlEmitter.Emit(document, new MssqlOptions { RefusesExtraResultSets = strict }).Expected(), token).ConfigureAwait(false);
-            await File.WriteAllTextAsync(Path.Combine(folder, "functions.json"), JsonSerializer.Serialize(new { setup, calls }, Json), token).ConfigureAwait(false);
+            var zod = new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip };
+            var mssql = new MssqlOptions { RefusesExtraResultSets = strict };
+            string[] functions;
+            if (modules is null)
+            {
+                await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.zod.ts"), ZodEmitter.Emit(document, zod).Expected(), token).ConfigureAwait(false);
+                await File.WriteAllTextAsync(Path.Combine(folder, "haruspex.mssql.ts"), MssqlEmitter.Emit(document, mssql).Expected(), token).ConfigureAwait(false);
+                functions = ["haruspex.mssql.ts"];
+            }
+            else
+            {
+                foreach (var (module, text) in ZodEmitter.Emit(document, zod, modules).Expected())
+                    await File.WriteAllTextAsync(Path.Combine(folder, $"{module}.zod.ts"), text, token).ConfigureAwait(false);
+                foreach (var (module, text) in MssqlEmitter.Emit(document, mssql, modules, m => $"./{m}.zod.js").Expected())
+                    await File.WriteAllTextAsync(Path.Combine(folder, $"{module}.mssql.ts"), text, token).ConfigureAwait(false);
+                functions = [.. modules.Names.Select(m => $"{m}.mssql.ts")];
+            }
+
+            await File.WriteAllTextAsync(Path.Combine(folder, "functions.json"), JsonSerializer.Serialize(new { setup, calls, functions }, Json), token).ConfigureAwait(false);
 
             using (var session = await server.DriverAsync(token).ConfigureAwait(false))
             {

@@ -88,4 +88,10 @@ public static class SourceCodes
     /// commas, or is written a second time.
     /// </summary>
     public static DiagnosticCode BadSetsDeclaration { get; } = new(1018, DiagnosticSeverity.Error, "A query file's sets comment can't be taken");
+
+    /// <summary>
+    /// A query file's module comment (<c>-- @module reports</c>) that can't be taken: it names no module, names more than one, or
+    /// is written a second time.
+    /// </summary>
+    public static DiagnosticCode BadModuleDeclaration { get; } = new(1019, DiagnosticSeverity.Error, "A query file's module comment can't be taken");
 }

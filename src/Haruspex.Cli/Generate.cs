@@ -42,6 +42,7 @@ internal static class Generate
             Out = written.Module.Out,
             Document = written.Module.Document,
             Written = written.Paths,
+            Modules = written.Module.Modules,
             Unknowns = written.Unknowns,
             Since = since,
             Acknowledged = acknowledged,

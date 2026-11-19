@@ -51,6 +51,12 @@ public sealed record HaruspexConfig
     /// <summary>The folder to write to, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
     public string? Out { get; init; }
 
+    /// <summary>
+    /// How the output is split into modules (<c>split</c>), or null for one module, as without the setting: every file then is
+    /// what it always was.
+    /// </summary>
+    public ModuleSplit? Split { get; init; }
+
     /// <summary>The settings of each schema (<c>schemas</c>), in the order written: selection, prefix and naming.</summary>
     public EquatableArray<SchemaSettings> Schemas { get; init; } = [];
 

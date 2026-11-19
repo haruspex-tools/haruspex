@@ -35,6 +35,21 @@ public class ConfigReaderTests
     }
 
     [Fact]
+    public void The_output_is_one_module_unless_split_by_schema_or_into_listed_modules()
+    {
+        var none = Read("{}").Expected();
+        var bySchema = Read("""{ "split": "schema" }""").Expected();
+        var listed = Read("""{ "split": { "sales": ["sales", "shop"], "admin": ["admin"], "reports": [] } }""").Expected();
+
+        Assert.Null(none.Split);
+        Assert.True(bySchema.Split?.BySchema);
+        var modules = listed.Split?.Modules ?? [];
+        Assert.Equal(["sales", "admin", "reports"], modules.Select(m => m.Name));
+        Assert.Equal(["sales", "shop"], modules[0].Schemas);
+        Assert.Empty(modules[2].Schemas);
+    }
+
+    [Fact]
     public void A_baseline_is_read_as_a_path_from_the_file_s_folder_whatever_it_names()
     {
         var directory = Path.Combine(Path.GetTempPath(), "project");
@@ -193,8 +208,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "baseline": "" }""", "haruspex.json:1:15: error HAR3005: baseline: must not be empty." },
@@ -226,6 +241,15 @@ public class ConfigReaderTests
         { """{ "session": { "ansiWarnings": "on" } }""", "haruspex.json:1:32: error HAR3005: session.ansiWarnings: must be true or false; leave the option out when it is not known." },
         { """{ "session": { "arithAbort": null } }""", "haruspex.json:1:30: error HAR3005: session.arithAbort: must be true or false; leave the option out when it is not known." },
         { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull, numericRoundAbort." },
+
+        // The split into modules.
+        { """{ "split": "table" }""", "haruspex.json:1:12: error HAR3005: split: must be \"schema\", for a module per schema, or an object naming each module and the schemas it holds, such as { \"sales\": [\"sales\", \"shop\"] }." },
+        { """{ "split": { "sales": "sales" } }""", "haruspex.json:1:23: error HAR3005: split.sales: must be an array of the schemas the module holds, such as [\"sales\", \"shop\"]; [] for a module of query files alone." },
+        { """{ "split": { "sales": [""] } }""", "haruspex.json:1:24: error HAR3005: split.sales[0]: must not be empty." },
+        { """{ "split": { "sales team": ["sales"] } }""", "haruspex.json:1:14: error HAR3024: split[\"sales team\"]: 'sales team' can't name a module: a module's name starts with a letter and has only letters, digits, '_' and '-', since it names the module's files." },
+        { """{ "split": { "Shared": ["sales"] } }""", "haruspex.json:1:14: error HAR3024: split.Shared: 'Shared' can't name a module: it is the name of the files that hold what modules share. Name the module otherwise." },
+        { "{ \"split\": {\n\"sales\": [\"sales\"],\n\"Sales\": [\"shop\"] } }", "haruspex.json:3:1: error HAR3024: split.Sales: 'Sales' can't name a module: the module sales, at line 2, has the name in another case, and a file system that ignores case would hold one file for both." },
+        { "{ \"split\": {\n\"sales\": [\"sales\"],\n\"shop\": [\"Sales\"] } }", "haruspex.json:3:10: error HAR3025: split.shop[0]: the schema Sales is in the module sales already, at line 2; a schema's procedures are in one module. Schema names are compared ignoring case, as SQL Server compares them." },
 
         // Schemas and selection.
         { """{ "schemas": [] }""", "haruspex.json:1:14: error HAR3005: schemas: must be an object." },

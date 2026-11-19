@@ -21,6 +21,11 @@ imports the schemas as `./haruspex.zod.js`, the name of the file it compiles to,
 `.ts`. Node's own type stripping doesn't, so the functions run where the application's TypeScript is compiled or bundled
 ([decision 0058](decisions/0058-the-functions-are-a-file-of-their-own-named-for-their-driver.md)).
 
+A config file that splits its output ([`split`](configuration.md#splitting-the-output-into-modules-split)) writes these two
+files for each module, named after it: `sales.zod.ts` and `sales.mssql.ts`, whose functions import `./sales.zod.js`, with what
+two or more modules' schemas share in `shared.zod.ts`. Import a function from its module's file, and a type from the file of the
+module it belongs to; every name is the one the unsplit module gives.
+
 ## Calling a procedure
 
 A function takes anything with `request()` first (an mssql `ConnectionPool`, a `Transaction`, or a test double) and the

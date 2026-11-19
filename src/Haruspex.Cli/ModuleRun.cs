@@ -264,6 +264,22 @@ internal static class ModuleRun
     private static Outcome<EmittedModule> Emit((Plan Plan, SqlProject Project, IrDocument Document) inferred)
     {
         var (plan, project, document) = inferred;
+
+        // A config file that splits its output writes a module's files per module, which SplitModules names.
+        var files = SplitModules.Assigned(plan.Config, project, document).Then(assigned =>
+        {
+            if (plan.Config.Split is null)
+                return OneModule(plan, document).Select(one => (Files: one, Modules: (EquatableArray<string>)[]));
+            var modules = IrModules.Of(document, assigned);
+            return SplitModules.Emit(plan.Config, document, modules).Select(split => (Files: split, Modules: modules.Names));
+        });
+        return Located(files, plan.Config.Location)
+            .Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted.Files) { Modules = emitted.Modules });
+    }
+
+    /// <summary>Each emitter's one file, in the config file's order, as a config file that doesn't split its output writes them.</summary>
+    private static Outcome<EquatableArray<EmittedFile>> OneModule(Plan plan, IrDocument document)
+    {
         var strict = plan.Config.Objects == ObjectsPolicy.Strict;
         var files = plan.Config.Emitters.Select(emitter => emitter switch
         {
@@ -280,7 +296,7 @@ internal static class ModuleRun
                 .Select(text => new EmittedFile(HaruspexCli.MssqlFileName, text)),
             Emitter.Mapping => new Succeeded<EmittedFile>(new EmittedFile(HaruspexCli.MappingFileName, MappingModule.Text)),
         });
-        return Located(Outcome.All(files), plan.Config.Location).Select(emitted => new EmittedModule(plan.Config, plan.Out, project, document, emitted));
+        return Outcome.All(files);
     }
 
     /// <summary>

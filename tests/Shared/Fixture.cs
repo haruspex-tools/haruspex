@@ -36,6 +36,7 @@ internal sealed class Fixture
         queryIr = new(() => Queries is null ? null : InferQuery.Module(Folder, Database, QueryFolder));
         configRead = Config is { } config ? ConfigReader.Read(config) : null;
         IsProject = configRead?.OrDefault()?.Source is not null;
+        IsSplit = configRead?.OrDefault()?.Split is not null;
     }
 
     /// <summary>Every fixture, in ordinal order of name.</summary>
@@ -57,8 +58,12 @@ internal sealed class Fixture
     /// The committed IR files in <see cref="Expected"/>, each with the Zod snapshot generated from it: one pair per procedure,
     /// or for a project the pair the CLI writes.
     /// </summary>
+    /// <remarks>
+    /// A project whose config file splits its output has no such pair: its files are a module's each, which
+    /// <c>SplitThroughTheFileTests</c> emits from its IR file instead.
+    /// </remarks>
     public IEnumerable<(string Ir, string Zod)> Snapshots =>
-        Directory.EnumerateFiles(Expected, "*" + IrSnapshot)
+        IsSplit ? [] : Directory.EnumerateFiles(Expected, "*" + IrSnapshot)
             .Order(StringComparer.Ordinal)
             .Select(ir => (ir, ir[..^IrSnapshot.Length] + ".zod.verified.ts"));
 
@@ -95,6 +100,9 @@ internal sealed class Fixture
     /// procedures and names them, so its expected output is the CLI's two files rather than one snapshot per procedure.
     /// </summary>
     public bool IsProject { get; }
+
+    /// <summary>Whether the fixture's config file splits its output into modules (<c>split</c>), a project's files then being a module's each.</summary>
+    public bool IsSplit { get; }
 
     /// <summary>The fixture's database, read once.</summary>
     public SqlProject Project => project.Value;

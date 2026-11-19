@@ -33,6 +33,15 @@ public sealed record QueryFile(string Path, SourceSpan Span, string Text, Statem
     /// <summary>Where its sets comment is, when it has one.</summary>
     public SourceLocation? SetsAt { get; init; }
 
+    /// <summary>
+    /// The module its module comment puts it in (<c>-- @module reports</c>), as written, for a config file that splits its output
+    /// into modules; null when it has none. Whether the config file has such a module is the config layer's to check.
+    /// </summary>
+    public string? Module { get; init; }
+
+    /// <summary>Where its module comment is, when it has one.</summary>
+    public SourceLocation? ModuleAt { get; init; }
+
     /// <summary>The file's path.</summary>
     public override string ToString() => Path;
 }

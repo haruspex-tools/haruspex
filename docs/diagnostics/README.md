@@ -30,6 +30,7 @@ reason.
 | [HAR1016](HAR1016.md) | error | A query file uses a variable before declaring it |
 | [HAR1017](HAR1017.md) | error | A query file returns a value |
 | [HAR1018](HAR1018.md) | error | A query file's sets comment can't be taken |
+| [HAR1019](HAR1019.md) | error | A query file's module comment can't be taken |
 
 ## Inference
 
@@ -88,6 +89,8 @@ reason.
 | [HAR3021](HAR3021.md) | error | A references folder isn't there |
 | [HAR3022](HAR3022.md) | error | A queries entry outside the config file's folder |
 | [HAR3023](HAR3023.md) | error | Set names that can't be used |
+| [HAR3024](HAR3024.md) | error | A module that can't be named so |
+| [HAR3025](HAR3025.md) | error | A schema in two modules |
 | [HAR3101](HAR3101.md) | error | A rowset isn't declared by one row's schema |
 | [HAR3102](HAR3102.md) | error | A rowset's required leaves a column out |
 | [HAR3103](HAR3103.md) | error | A rowset's column isn't a scalar |
@@ -117,6 +120,8 @@ reason.
 | [HAR4005](HAR4005.md) | error | An --include matches nothing |
 | [HAR4006](HAR4006.md) | error | An --include selects only excluded procedures |
 | [HAR4007](HAR4007.md) | error | A queries entry names no query file |
+| [HAR4008](HAR4008.md) | error | An object in no module |
+| [HAR4009](HAR4009.md) | warning | A module comment where the output isn't split |
 | [HAR4101](HAR4101.md) | error | An override of a procedure the project doesn't have |
 | [HAR4102](HAR4102.md) | error | An override of a procedure that isn't selected |
 | [HAR4103](HAR4103.md) | error | Two overrides of one procedure |

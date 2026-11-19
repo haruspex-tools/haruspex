@@ -1,0 +1,5 @@
+CREATE SCHEMA sales;
+GO
+CREATE SCHEMA shop;
+GO
+CREATE SCHEMA admin;

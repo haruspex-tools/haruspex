@@ -67,6 +67,12 @@ internal static class ZodPrinter
 
         """;
 
+    /// <summary>
+    /// The TSDoc tag on a binding exported only for the modules beside it: TypeScript's <c>stripInternal</c> and API tools
+    /// leave such a name out of what a package offers.
+    /// </summary>
+    private const string InternalTag = "@internal";
+
     /// <summary>The module as text.</summary>
     public static string Print(ZodModule module)
     {
@@ -98,10 +104,16 @@ internal static class ZodPrinter
         {
             output.Append('\n');
             // A declaration's own schema may carry notes too (a result that is unknown, or JSON text): they follow its summary.
-            output.Append(Documentation([.. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(), .. ZodNotes.Of(declaration.Schema).Select(n => n.Text)], ""));
+            output.Append(Documentation(
+                [
+                    .. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(),
+                    .. ZodNotes.Of(declaration.Schema).Select(n => n.Text),
+                    .. declaration.Internal ? [InternalTag] : Array.Empty<string>(),
+                ],
+                ""));
             if (!declaration.Exported)
             {
-                output.Append("const ").Append(declaration.Name).Append(" = ").Append(Expression(declaration.Schema)).Append('\n');
+                output.Append(declaration.Internal ? "export const " : "const ").Append(declaration.Name).Append(" = ").Append(Expression(declaration.Schema)).Append('\n');
                 continue;
             }
 

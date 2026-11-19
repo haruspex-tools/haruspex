@@ -45,6 +45,12 @@ public static class ConfigCodes
     /// <summary>A claim (declared results, <c>nullable</c>, exact values) without the <c>why</c> that says what proves it.</summary>
     public static DiagnosticCode ClaimWithoutWhy { get; } = new(3011, Error, "A claim without why");
 
+    /// <summary>A module's name that can't name its files, is the shared file's, or differs from another's only in case.</summary>
+    public static DiagnosticCode BadModuleName { get; } = new(3024, Error, "A module that can't be named so");
+
+    /// <summary>A schema a split lists in two modules, whose procedures would then be in both.</summary>
+    public static DiagnosticCode SchemaInTwoModules { get; } = new(3025, Error, "A schema in two modules");
+
     /// <summary>A setting that needs another beside it: a replacement's pattern and with, an override's type and import.</summary>
     public static DiagnosticCode NeedsAnother { get; } = new(3012, Error, "A setting needs another beside it");
 
@@ -164,6 +170,12 @@ public static class ConfigCodes
     /// meant without anyone noticing. A file below a folder with a config file of its own is that module's, not this one's.
     /// </summary>
     public static DiagnosticCode QueriesMatchNothing { get; } = new(4007, Error, "A queries entry names no query file");
+
+    /// <summary>A selected procedure whose schema no module of the split lists, or a query file naming a module the split doesn't have.</summary>
+    public static DiagnosticCode NoModule { get; } = new(4008, Error, "An object in no module");
+
+    /// <summary>A query file's module comment when the config file doesn't split its output, where it does nothing.</summary>
+    public static DiagnosticCode ModuleUnsplit { get; } = new(4009, Warning, "A module comment where the output isn't split");
 
     /// <summary>An override of a procedure the project doesn't have.</summary>
     public static DiagnosticCode NoSuchProcedure { get; } = new(4101, Error, "An override of a procedure the project doesn't have");

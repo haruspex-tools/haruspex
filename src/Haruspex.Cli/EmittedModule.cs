@@ -26,6 +26,9 @@ internal sealed class EmittedModule(HaruspexConfig config, string @out, SqlProje
     /// <summary>The files the config file's emitters give, in its order (<see cref="HaruspexConfig.Emitters"/>).</summary>
     public EquatableArray<EmittedFile> Files { get; } = files;
 
+    /// <summary>The modules the config file splits the output into, in ordinal order; empty when it doesn't split it.</summary>
+    public EquatableArray<string> Modules { get; init; } = [];
+
     /// <summary>Where the IR is written.</summary>
     public string IrPath => Path.Join(Out, HaruspexCli.IrFileName);
 

@@ -21,7 +21,13 @@ internal sealed record Schema(EquatableMap<string, SchemaValue> Keywords, Equata
     public static Schema OfType(string type) => Any.With(Keyword.Type, new SchemaValue.Text(type));
 
     /// <summary>A reference to a definition in the same document: <c>{ "$ref": "#/$defs/OrderRow" }</c>.</summary>
-    public static Schema Reference(string name) => Any.With(Keyword.Ref, new SchemaValue.Text(Keyword.DefinitionsPointer + name));
+    public static Schema Reference(string name) => Reference(null, name);
+
+    /// <summary>
+    /// A reference to a definition in <paramref name="document"/>, relative to the referring document's own name, or in the same
+    /// document when null: <c>{ "$ref": "shared.jsonschema.json#/$defs/OrderTotal" }</c>.
+    /// </summary>
+    public static Schema Reference(string? document, string name) => Any.With(Keyword.Ref, new SchemaValue.Text(document + Keyword.DefinitionsPointer + name));
 
     /// <summary>This schema with <paramref name="keyword"/> set to <paramref name="value"/>.</summary>
     public Schema With(string keyword, SchemaValue value) => this with { Keywords = Keywords.SetItem(keyword, value) };

@@ -46,6 +46,9 @@ sql/q.sql:1:18: error HAR1017: a batch run through sp_executesql may RETURN, but
 HAR1018
 sql/q.sql:2:1: error HAR1018: -- @sets titles: the sets are named already, at line 1; name them once.
 
+HAR1019
+sql/q.sql:1:1: error HAR1019: -- @module lending desk: the module is named by one word, such as -- @module reports.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -113,7 +116,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -171,6 +174,12 @@ haruspex.json:1:88: error HAR3022: queries: "../shared/sql" reaches outside the 
 
 HAR3023
 haruspex.json:1:129: error HAR3023: procedures["lib.get_book"].sets[1]: 'output' can't name a set: the function already returns its OUTPUT parameters under it.
+
+HAR3024
+haruspex.json:1:88: error HAR3024: split["lending desk"]: 'lending desk' can't name a module: a module's name starts with a letter and has only letters, digits, '_' and '-', since it names the module's files.
+
+HAR3025
+haruspex.json:1:116: error HAR3025: split.stock[0]: the schema LIB is in the module loans already, at line 1; a schema's procedures are in one module. Schema names are compared ignoring case, as SQL Server compares them.
 
 HAR3101
 haruspex.json:1:127: error HAR3101: procedures["lib.p"].results.rowset: a rowset is declared by the schema of one row: an object with "properties", one for each column.
@@ -243,6 +252,12 @@ haruspex: error HAR4006: --include 'lib.get_book' matches only procedures that s
 
 HAR4007
 haruspex.json:1:88: error HAR4007: queries: "sql/**/*.query" names no query file of this module. Correct it, or remove it.
+
+HAR4008
+haruspex.json:1:86: error HAR4008: split: the procedure lib.get_book is in no module: no module lists its schema, lib. Add the schema to a module's list, or leave the procedure out of the selection.
+
+HAR4009
+sql/q.sql:1:1: warning HAR4009: -- @module loans: the config file doesn't split its output into modules, so the comment does nothing. Add "split" to the config file, or remove the comment.
 
 HAR4101
 haruspex.json:1:93: error HAR4101: procedures["lib.lost_book"]: there is no procedure lib.lost_book in the project.

@@ -35,7 +35,9 @@ flowchart LR
 - **Select** picks the procedures to type, and finds and reads the query files `queries` names (`QuerySelection`,
   `QueryFileReader`), reporting what is wrong with both at once.
 - **Infer** infers their results, the query files' too, and applies the config file: overrides, declared results, names.
-- **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both.
+- **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both. When the
+  config file has `split`, it first puts each object in its module (`ModuleAssignment`), and each emitter writes a file per
+  module and a shared one (`SplitModules`); the IR is still one document, and the steps after it see only more files.
 - **Write** puts the IR and each emitted file in place.
 - **Noted** lists each unknown in what was written, with its note.
 - **Report** prints what was found, in the format and at the detail asked for. It is no step of the pipeline: the command

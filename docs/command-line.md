@@ -36,6 +36,13 @@ What each code means: https://github.com/sharpblue/haruspex/blob/main/docs/diagn
 haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, …
 ```
 
+Output split into modules ([`split`](configuration.md#splitting-the-output-into-modules-split)) is a file per emitter per
+module, so the first line counts them and names the modules instead:
+
+```text
+haruspex: 6 procedures, 2 query files, no unknowns. Wrote 15 files to src/db: the IR and the modules admin, queries, sales and shop, with what they share.
+```
+
 **A run that changes nothing**, which is most runs, is one line:
 
 ```text

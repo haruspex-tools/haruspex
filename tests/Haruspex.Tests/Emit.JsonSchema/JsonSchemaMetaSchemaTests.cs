@@ -23,6 +23,9 @@ public class JsonSchemaMetaSchemaTests
                 folder.File($"{f.Name}.strict.jsonschema.json", JsonSchemaEmitter.Emit(f.Ir, new JsonSchemaOptions { Objects = JsonSchemaObjects.Strict }).Expected()),
             })
             .Concat(Fixture.All.SelectMany(f => f.JsonSchemaSnapshots).Select(s => s.JsonSchema))
+
+            // A split project's documents, each a module's; that their references resolve together is JsonSchemaModulesTests'.
+            .Concat(Fixture.All.Where(f => f.IsSplit).SelectMany(f => Directory.GetFiles(f.Expected, "*.jsonschema.verified.json")).Order(StringComparer.Ordinal))
             .ToArray();
 
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);

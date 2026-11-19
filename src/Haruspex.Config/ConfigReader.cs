@@ -127,6 +127,9 @@ public static class ConfigReader
                         if (NonEmpty(member.Value, path) is { } output)
                             config = config with { Out = Path.GetFullPath(Path.Combine(directory, output)) };
                         break;
+                    case "split":
+                        config = config with { Split = Split(member.Value, path) };
+                        break;
                     case "schemas":
                         config = config with { Schemas = [.. Schemas(member.Value, path)] };
                         break;
@@ -167,7 +170,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
                         break;
                 }
             }
@@ -175,6 +178,76 @@ public static class ConfigReader
             if (serverOnlyAt is not null && !config.Emitters.Contains(Emitter.Mssql))
                 Report(ConfigCodes.NeedsAnother, serverOnlyAt, "serverOnly", "is about the functions' file, which \"emit\" writes when it names \"mssql\"; it names none here.");
             return config;
+        }
+
+        /// <summary>
+        /// How the output is split into modules: <c>"schema"</c>, or an object of modules, each an array of the schemas it holds.
+        /// Each module's name names its files, so it is checked as one (<see cref="ModuleNames"/>), and two names differing only in
+        /// case are refused; a schema is in one module, compared ignoring case as SQL Server compares schema names. Null when the
+        /// value is wrong, which is reported.
+        /// </summary>
+        private ModuleSplit? Split(JsonValue value, string path)
+        {
+            var at = At(value, path);
+            if (value is JsonStringValue { Value: "schema" })
+                return new ModuleSplit(null, at);
+            if (value is not JsonObjectValue block)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must be \"schema\", for a module per schema, or an object naming each module and the schemas it holds, such as { \"sales\": [\"sales\", \"shop\"] }.");
+                return null;
+            }
+
+            var modules = new List<SplitModule>();
+            var schemaIn = new Dictionary<string, SplitModule>(StringComparer.OrdinalIgnoreCase);
+            var valid = true;
+            foreach (var member in block.Members)
+            {
+                var modulePath = Child(path, member.Name);
+                var moduleAt = new JsonLocation(file, modulePath, member.Line, member.Column);
+                var problem = ModuleNames.Problem(member.Name)
+                    ?? (modules.FirstOrDefault(m => string.Equals(m.Name, member.Name, StringComparison.OrdinalIgnoreCase)) is { } same
+                        ? $"the module {same.Name}, at line {same.At.Line}, has the name in another case, and a file system that ignores case would hold one file for both."
+                        : null);
+                if (problem is not null)
+                {
+                    Problems.Add(ConfigCodes.BadModuleName.At(moduleAt, $"'{member.Name}' can't name a module: {problem}"));
+                    valid = false;
+                    continue;
+                }
+
+                if (member.Value is not JsonArrayValue array)
+                {
+                    Report(ConfigCodes.WrongKind, member.Value, modulePath, "must be an array of the schemas the module holds, such as [\"sales\", \"shop\"]; [] for a module of query files alone.");
+                    valid = false;
+                    continue;
+                }
+
+                var module = new SplitModule(member.Name, [], moduleAt);
+                var schemas = new List<string>();
+                for (var i = 0; i < array.Items.Count; i++)
+                {
+                    var itemPath = Index(modulePath, i);
+                    if (NonEmpty(array.Items[i], itemPath) is not { } schema)
+                    {
+                        valid = false;
+                    }
+                    else if (schemaIn.TryGetValue(schema, out var earlier))
+                    {
+                        Report(ConfigCodes.SchemaInTwoModules, array.Items[i], itemPath,
+                            $"the schema {schema} is in the module {earlier.Name} already, at line {earlier.At.Line}; a schema's procedures are in one module. Schema names are compared ignoring case, as SQL Server compares them.");
+                        valid = false;
+                    }
+                    else
+                    {
+                        schemaIn[schema] = module;
+                        schemas.Add(schema);
+                    }
+                }
+
+                modules.Add(module with { Schemas = [.. schemas] });
+            }
+
+            return valid ? new ModuleSplit([.. modules], at) : null;
         }
 
         /// <summary>

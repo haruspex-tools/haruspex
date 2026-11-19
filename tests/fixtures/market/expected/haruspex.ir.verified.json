@@ -1,0 +1,793 @@
+{
+  "irVersion": "0.23",
+  "source": {
+    "dialect": "tsql"
+  },
+  "objects": [
+    {
+      "id": "admin.list_retired_users",
+      "name": "ListRetiredUsers",
+      "kind": "procedure",
+      "at": "procedures/list_retired_users.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListRetiredUsersRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "admin.list_users",
+      "name": "ListUsers",
+      "kind": "procedure",
+      "at": "procedures/list_users.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListUsersRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "queries/order_count.sql",
+      "name": "OrderCount",
+      "kind": "query",
+      "at": "queries/order_count.sql:1:1",
+      "text": "SELECT COUNT_BIG(*) AS orders FROM sales.orders AS o WHERE o.placed >= @since;\n",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@since",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderCountRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "queries/top_products.sql",
+      "name": "TopProducts",
+      "kind": "query",
+      "at": "queries/top_products.sql:1:1",
+      "text": "-- @module shop\nSELECT TOP (@take) p.product_id, p.name FROM shop.products AS p ORDER BY p.price DESC;\n",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@take",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "TopProductsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "sales.get_order",
+      "name": "GetOrder",
+      "kind": "procedure",
+      "at": "procedures/get_order.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderTotal"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    },
+    {
+      "id": "sales.list_orders",
+      "name": "ListOrders",
+      "kind": "procedure",
+      "at": "procedures/list_orders.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@placed",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListOrdersRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "shop.get_product",
+      "name": "GetProduct",
+      "kind": "procedure",
+      "at": "procedures/get_product.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "name": "product",
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetProductProductRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        },
+        {
+          "name": "orders",
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetProductOrdersRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "shop.list_staff",
+      "name": "ListStaff",
+      "kind": "procedure",
+      "at": "procedures/list_staff.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListStaffRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetProductOrdersRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.get_product",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetProductProductRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.get_product",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListOrdersRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.list_orders",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListRetiredUsersRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "admin.list_retired_users",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "login",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListStaffRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.list_staff",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "login",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ListUsersRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "admin.list_users",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "login",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderCountRow": {
+      "kind": "object",
+      "identity": {
+        "query": "queries/order_count.sql",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "orders",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderTotal": {
+      "kind": "object",
+      "nameDeclared": true,
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": -9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "TopProductsRow": {
+      "kind": "object",
+      "identity": {
+        "query": "queries/top_products.sql",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

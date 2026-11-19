@@ -257,6 +257,25 @@ and typescript-eslint's strict and stylistic sets, any warning failing (`EmitChe
 [decision 0062](../decisions/0062-generated-files-pass-typescript-eslint-s-strict-rules-with-no-disable-header.md)); and the example application, which imports a
 generated module and uses its schemas and types as a team would, is compiled in CI (`ExampleAppTests`).
 
+## One document, several files
+
+A config file may split its output into modules ([decision 0074](../decisions/0074-a-config-may-split-its-output-into-modules.md)).
+The tempting way is to cut the document into one document per module and run the emitter on each. It gives the wrong answer:
+the same shape in two modules would be declared twice, a shape shared across them would get a name in each, and which modules a
+type belongs to would be decided by nobody. So the emitter still plans and lowers the whole document once, exactly as for one
+file, and only then decides where each declaration goes.
+
+That last step needs one fact per type: which modules reach it. `IrModules`, beside `IrTypeGraph` in the IR project, takes the
+document and each object's module, follows the graph from each object's results and parameters, and records the modules that
+reach each named type. A type one module reaches is that module's; one that two or more reach is *shared*. A declaration that
+rests on several types, such as a shape they share, goes where all of them are reached. Because a type refers only to types
+reachable from it, everything a module's declaration refers to is in that module or shared, and everything a shared declaration
+refers to is shared: the files form a star, the shared file at its centre, and no module ever imports another. The Zod split
+checks this as it writes the imports, and fails loudly rather than write a file that imports a sibling.
+
+JSON Schema asks `IrModules` the same question and gets the same answer; the functions' emitter needs only which objects are in
+each module, since every name a function imports is its own procedure's.
+
 ## Two targets from one IR
 
 The second emitter, `JsonSchemaEmitter`, writes the same IR as a JSON Schema document (draft 2020-12). It is the test the

@@ -1,0 +1,26 @@
+// The config file of an invented market, used end to end by FixtureSnapshotTests: its output split into a module per schema,
+// with what two modules share in a shared file.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "generated",
+  "queries": "queries",
+  "emit": ["zod", "json-schema", "mssql", "mapping"],
+
+  // sales.zod.ts, shop.zod.ts, admin.zod.ts and the rest; query files are in the module their -- @module comment names, or
+  // else in queries.
+  "split": "schema",
+
+  "schemas": {
+    "sales": { "include": ["*"] },
+    "shop": { "include": ["*"] },
+    "admin": { "include": ["*"] },
+  },
+
+  "procedures": {
+    // The rows of an order's total, which the sales procedures and shop.get_product's orders share: one shape across two
+    // modules, declared once under this name in the shared file.
+    "sales.get_order": { "paths": { "[]": { "name": "OrderTotal" } } },
+    "shop.get_product": { "sets": ["product", "orders"] },
+  },
+}
