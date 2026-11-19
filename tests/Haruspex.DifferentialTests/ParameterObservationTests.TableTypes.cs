@@ -134,6 +134,29 @@ public partial class ParameterObservationTests
         Assert.Equal([8037, 8061], response.Error?.Preceding);
     }
 
+    [Fact]
+    public async Task A_binary_column_is_sent_as_varbinary_of_its_length_padded_to_a_fixed_one_and_a_longer_value_fails_the_call()
+    {
+        // As a generated function declares it (decision 0082): VarBinary(n), whose value the server pads to binary(n), no bytes
+        // too, and refuses when it is longer than the column.
+        static MssqlDriver.BytesValue Bytes(params byte[] value) => new(Convert.ToBase64String(value));
+        string[] blobs =
+        [
+            "CREATE TYPE obs.blobs AS TABLE (k int NOT NULL, fixed_bytes binary(4) NULL, some_bytes varbinary(10) NULL);",
+            "CREATE PROCEDURE obs.read_blobs @t obs.blobs READONLY AS SELECT k, CONVERT(varchar(30), fixed_bytes, 1) AS f, CONVERT(varchar(30), some_bytes, 1) AS v FROM @t ORDER BY k;",
+        ];
+        (string, string)[] columns = [("k", "Int"), ("fixed_bytes", "VarBinary(4)"), ("some_bytes", "VarBinary(10)")];
+        var fits = Assert.Single(await SentTables(blobs, Sending("fits", "obs.read_blobs", Table("blobs", columns, [1, Bytes(1, 2), Bytes(1, 2, 3)], [2, Bytes(), null]))));
+
+        // Each alone: the refusal rolls back the transaction the calls share.
+        var fixedTooLong = Assert.Single(await SentTables(blobs, Sending("fixed too long", "obs.read_blobs", Table("blobs", columns, [1, Bytes(1, 2, 3, 4, 5, 6), null]))));
+        var varyingTooLong = Assert.Single(await SentTables(blobs, Sending("varying too long", "obs.read_blobs", Table("blobs", columns, [1, null, Bytes(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)]))));
+
+        Assert.Equal("""[{"k":1,"f":"0x01020000","v":"0x010203"},{"k":2,"f":"0x00000000","v":null}]""", Rows(fits));
+        Assert.Equal([8037, 8061], fixedTooLong.Error?.Preceding);
+        Assert.Equal([8037, 8061], varyingTooLong.Error?.Preceding);
+    }
+
     [Theory]
     [InlineData("an identity column", "id int IDENTITY", "Int", 1077)]
     [InlineData("a computed column", "doubled AS v * 2", "Int", 271)]

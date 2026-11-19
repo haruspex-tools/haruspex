@@ -407,8 +407,10 @@ internal sealed partial class Typer
         // (observed in CatalogueSweepGridTests; the chart is ConversionChart).
         if (from is not null && ConversionChart.Of(from.Type.Type, to.Type) == ConversionKind.Refused)
             return NotModelled(call, $"SQL Server refuses to convert {from.Type.Text} to {to.Text}.");
+        // Into a binary type a style says only how text is read as hex, and text that isn't is an error (8114), never NULL, but under
+        // TRY_CONVERT (observed: Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert).
         var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? Conversions.Fits(literal, to, negative) : null)
-            ?? (from is not null && Conversions.Converts(from, to, styled));
+            ?? (from is not null && Conversions.Converts(from, to, styled && (attempt || !to.IsBinary)));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };

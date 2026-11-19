@@ -136,6 +136,13 @@ public static class SchemaRules
 
         var collation = EffectiveCollation(model, table, column);
         var facts = TypeFacts(type, collation);
+
+        // A nullable binary(n) column of a table created with ANSI_PADDING off stores its values with their trailing zeros cut,
+        // and the source doesn't say which tables were (a script may set it off before a CREATE TABLE, and a session before a
+        // temporary table): so such a column is at most n bytes. A column that is never null is padded under either setting
+        // (observed: A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads).
+        if (facts.Length is { IsFixed: true } length && type.Scalar is { IsBinary: true } && !IsNeverNull(model, table, column))
+            facts = facts with { Length = length with { IsFixed = false } };
         foreach (var check in table.Checks)
         {
             if (CheckReader.Read(table, column, type, check, collation) is { } proved)

@@ -20,4 +20,16 @@ internal enum ConversionCondition
 
     /// <summary>When the target decimal holds the source's integer digits, and one more if it rounds to fewer places.</summary>
     DecimalDigitsFit,
+
+    /// <summary>
+    /// Unless <c>CONVERT</c> gives a style that reads the source as something it may not be: text read as hex into a binary type,
+    /// which fails for text that isn't (an error, NULL under <c>TRY_CONVERT</c>).
+    /// </summary>
+    Unstyled,
+
+    /// <summary>
+    /// When the source isn't of max length: past 8000 bytes a binary value into a number or a GUID is an error (8152), whatever the
+    /// options, which <c>TRY_CAST</c> isn't shown to keep from NULL.
+    /// </summary>
+    SourceNotMax,
 }

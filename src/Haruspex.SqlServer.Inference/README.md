@@ -1710,7 +1710,12 @@ before it (`For_json_writes_a_binary_value_as_padded_base64_on_one_line`, `An_im
 `The_driver_hands_over_every_binary_type_as_a_buffer_and_sends_one_of_its_declared_length`), which each emitter checks in its
 form ([decision 0082](../../docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)). A `rowversion`
 column declared with neither `NULL` nor `NOT NULL` is never null, whatever the ANSI settings
-(`A_rowversion_column_declared_without_null_is_not_null_whatever_the_ansi_settings`, `SchemaRules.IsNeverNull`). Observed in
+(`A_rowversion_column_declared_without_null_is_not_null_whatever_the_ansi_settings`, `SchemaRules.IsNeverNull`). A nullable
+`binary(n)` column is at most n bytes, not exactly: one of a table created with `ANSI_PADDING` off (a script's own `SET` before its
+`CREATE TABLE`, or the caller's session for a temporary table a procedure creates) keeps its values with their trailing zeros cut,
+which the source doesn't show, and so is a column `SELECT … INTO` makes; a column that is never null is padded either way
+(`A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads`, `SchemaRules.ColumnFacts`).
+Observed in
 `BinaryObservationTests`; the unit tests are `BinaryTests`, and the fixture `tests/fixtures/gallery`.
 
 The expressions that make a binary value of others, each for `binary` and `varbinary` alone (a `rowversion` counts as 40 bytes
@@ -1722,6 +1727,12 @@ over either they stay unknown):
   long (`A_binary_type_without_a_length_is_30_bytes_long_in_a_conversion`). Between binary types a longer value is cut short and a
   shorter one padded to a fixed length, under any options, never NULL
   (`Converting_between_binary_types_cuts_or_pads_without_an_error_or_null_under_any_options`, a row of `Conversions.Table`).
+  Into a binary type from text, an integer, `bit`, a decimal, money, `datetime`, `smalldatetime` or a GUID, and out of one into
+  text, an integer, `bit`, money or a GUID, no value gives NULL under any options (rows of `Conversions.Table`, observed at the
+  edges), but for two: past 8000 bytes a binary value into a number or a GUID is an error (8152), so a `max` one isn't a row; and
+  under a style text is read as hex, which text that isn't fails (8114), NULL under `TRY_CONVERT`
+  (`Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert`). Into a decimal a binary value may
+  overflow (8115), and into a date or time it is an error (210): no rows.
   `OPENJSON`'s binary column decodes base64 and refuses any other text, or a longer value, with an error, never NULL
   (`Openjson_reads_a_binary_column_from_base64_and_refuses_any_other_text`).
 - **`COALESCE`, `CASE`, `IIF`, `CHOOSE` and set operations**, "Combining types" above; **`ISNULL`** is its first argument's

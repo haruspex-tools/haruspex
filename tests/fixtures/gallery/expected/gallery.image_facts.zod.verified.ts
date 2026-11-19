@@ -10,31 +10,17 @@ export const ImageFactsRowSchema = z.object({
   image_id: z.int32(),
   /**
    * Its type is varbinary(30), where gallery.product_image.image_id is int: what it is computed with makes it another type.
-   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
-   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
    * Why: haruspex explain gallery.image_facts id_bytes
    */
-  id_bytes: z.instanceof(Buffer).check(z.maxLength(30)).nullable(),
-  /**
-   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
-   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
-   * Why: haruspex explain gallery.image_facts from_hex
-   */
-  from_hex: z.instanceof(Buffer).check(z.maxLength(4)).nullable(),
-  /**
-   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
-   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
-   * Why: haruspex explain gallery.image_facts from_bare_hex
-   */
-  from_bare_hex: z.instanceof(Buffer).nullable(),
+  id_bytes: z.instanceof(Buffer).check(z.maxLength(30)),
+  from_hex: z.instanceof(Buffer).check(z.maxLength(4)),
+  from_bare_hex: z.instanceof(Buffer),
   /**
    * varchar(66) counts bytes and its collation isn't declared, so the length is at most 66.
    * Its type is varchar(66), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type.
-   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
-   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
    * Why: haruspex explain gallery.image_facts checksum_hex
    */
-  checksum_hex: z.string().max(66).nullable(),
+  checksum_hex: z.string().max(66),
   /**
    * Its type is varbinary(4), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type.
    * Why: haruspex explain gallery.image_facts checksum_head

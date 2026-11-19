@@ -51,6 +51,26 @@ public partial class BinaryTests
     }
 
     [Fact]
+    public void A_nullable_binary_column_or_one_a_body_makes_is_at_most_its_length()
+    {
+        // A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads: the source doesn't say
+        // which tables were created with ANSI_PADDING off, nor which caller's session a temporary table is made in.
+        var doc = Procedure("""
+            CREATE TABLE #c (stamp binary(4) NULL, kept binary(4) NOT NULL);
+            DECLARE @v TABLE (stamp binary(4) NULL);
+            SELECT checksum AS made INTO #t FROM shop.product_image;
+            SELECT p.checksum, c.stamp, c.kept, v.stamp AS variable_stamp, t.made
+            FROM shop.product_image AS p CROSS JOIN #c AS c CROSS JOIN @v AS v CROSS JOIN #t AS t;
+            """);
+
+        Assert.Equal("binary(32) exactly 32", Typed(doc, "checksum"));
+        Assert.Equal("binary(4) at most 4", Typed(doc, "stamp"));
+        Assert.Equal("binary(4) exactly 4", Typed(doc, "kept"));
+        Assert.Equal("binary(4) at most 4", Typed(doc, "variable_stamp"));
+        Assert.Equal("binary(32) at most 32", Typed(doc, "made"));
+    }
+
+    [Fact]
     public void An_image_column_is_bytes_of_no_length()
     {
         // An_image_value_arrives_as_varbinary_max_s_does: a Buffer from the driver, base64 in FOR JSON.
@@ -143,6 +163,27 @@ public partial class BinaryTests
         Assert.Empty(Field(doc, "cut").NullableBecause);
         Assert.Empty(Field(doc, "padded").NullableBecause);
     }
+
+    [Theory]
+    // Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types: between binary and these kinds none is NULL.
+    [InlineData("CAST(image_id AS varbinary(4))")]
+    [InlineData("CAST(code AS binary(4))")]
+    [InlineData("CONVERT(varbinary(4), code, 1)")]
+    [InlineData("CAST(checksum AS int)")]
+    [InlineData("CAST(checksum AS varchar(10))")]
+    [InlineData("CAST(checksum AS uniqueidentifier)")]
+    public void A_conversion_between_binary_and_another_kind_the_table_lists_is_never_null(string expression) =>
+        Assert.Empty(Field(Procedure($"SELECT {expression} AS v FROM shop.product_image WHERE code IS NOT NULL;"), "v").NullableBecause);
+
+    [Theory]
+    // Into a decimal a binary value may overflow (8115), NULL under the caller's options; text not written as hex is NULL
+    // under TRY_CONVERT (Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert).
+    [InlineData("CAST(checksum AS decimal(10,2))", IrNullRule.ArithmeticOverflow)]
+    [InlineData("TRY_CONVERT(varbinary(4), code, 1)", IrNullRule.FailedConversion)]
+    // Past 8000 bytes a binary value into a number is an error (8152), which TRY_CAST isn't shown to keep from NULL.
+    [InlineData("TRY_CAST(original AS int)", IrNullRule.FailedConversion)]
+    public void A_conversion_that_may_fail_keeps_its_reason(string expression, IrNullRule rule) =>
+        Assert.Contains(rule, Rules(Procedure($"SELECT {expression} AS v FROM shop.product_image WHERE code IS NOT NULL;"), "v"));
 
     // ---- combining types -----------------------------------------------------------------------------------------------
 

@@ -83,13 +83,7 @@
             }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "arithmetic-overflow",
-              "at": "procedures/image_facts.sql:4:5"
-            }
-          ],
+          "nullable": false,
           "from": [
             {
               "column": "gallery.product_image.image_id",
@@ -112,13 +106,7 @@
             }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "arithmetic-overflow",
-              "at": "procedures/image_facts.sql:5:5"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "from_bare_hex",
@@ -127,13 +115,7 @@
             "sql": "varbinary(max)"
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "arithmetic-overflow",
-              "at": "procedures/image_facts.sql:6:5"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "checksum_hex",
@@ -149,13 +131,7 @@
             }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "arithmetic-overflow",
-              "at": "procedures/image_facts.sql:7:5"
-            }
-          ],
+          "nullable": false,
           "from": [
             {
               "column": "gallery.product_image.checksum",

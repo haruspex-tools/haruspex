@@ -75,6 +75,15 @@ internal static class Conversions
         // A binary value is cut short or padded with zeros, under any options (observed:
         // Converting_between_binary_types_cuts_or_pads_without_an_error_or_null_under_any_options).
         new([.. Binaries], [.. Binaries], ConversionCondition.Always, [AtTheEdges]),
+
+        // Into a binary type every value is its bytes, cut short or padded; out of one, the bytes read as the type, the last ones
+        // when there are more. Under the caller's ANSI_WARNINGS and ARITHABORT off none is NULL (observed at the edges): a style
+        // reads text as hex, and text that isn't is an error (8114); past 8000 bytes a binary value into a number or a GUID is an
+        // error (8152). Out of binary into a decimal overflows (8115), and into a date or time is an error (210), so neither is a row.
+        new([.. Binaries], [.. Strings], ConversionCondition.Unstyled, [AtTheEdges]),
+        new([.. Binaries], [.. Integers, BuiltInType.Bit, .. Decimals, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.UniqueIdentifier], ConversionCondition.Always, [AtTheEdges]),
+        new([.. Strings], [.. Binaries], ConversionCondition.Always, [AtTheEdges]),
+        new([.. Integers, BuiltInType.Bit, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.UniqueIdentifier], [.. Binaries], ConversionCondition.SourceNotMax, [AtTheEdges]),
         new([.. Strings], [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, [AtTheEdges]),
         new([.. Integers], [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
         new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], [.. Decimals], ConversionCondition.IntegerPartFits, [AtTheEdges]),
@@ -116,6 +125,8 @@ internal static class Conversions
             ConversionCondition.WiderInteger => to.IntegerDigits >= from.IntegerDigits,
             ConversionCondition.IntegerPartFits => from.Precision - from.Scale <= to.IntegerDigits - 1,
             ConversionCondition.DecimalDigitsFit => DecimalDigitsFit(operand, to),
+            ConversionCondition.Unstyled => !styled,
+            ConversionCondition.SourceNotMax => !from.IsMax,
             _ => false,
         };
     }

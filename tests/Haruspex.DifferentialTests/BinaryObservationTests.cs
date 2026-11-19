@@ -43,6 +43,19 @@ public class BinaryObservationTests(SqlServerFixture server)
         Assert.Equal("t1,t2,pad: 0x0102,0x0102,0x01000000", (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; " + Converted)).ToString());
     }
 
+    [Fact]
+    public async Task Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert()
+    {
+        // Under the caller's ANSI_WARNINGS and ARITHABORT off as well: an error, never NULL, but for TRY_CONVERT.
+        Assert.Equal(" ! 8114", (await Run("SELECT CONVERT(varbinary(4), '0xZZ', 1) AS b;")).ToString());
+        Assert.Equal(" ! 8114", (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT CONVERT(varbinary(4), 'ZZ', 2) AS b;")).ToString());
+        Assert.Equal("b: null", (await Run("SELECT TRY_CONVERT(varbinary(4), '0xZZ', 1) AS b;")).ToString());
+        Assert.Equal("b: 0x0A0B", (await Run("SELECT CONVERT(varchar(10), CONVERT(varbinary(4), '0A0B', 2), 1) AS b;")).ToString());
+
+        // Out of binary into text a style writes hex, cut short to whole bytes where the text is too short, never NULL.
+        Assert.Equal("a,b: 0x,01", (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT CONVERT(varchar(3), 0x0102030405, 1) AS a, CONVERT(nvarchar(3), 0x0102030405, 2) AS b;")).ToString());
+    }
+
     // ---- combining types -----------------------------------------------------------------------------------------------
 
     [Fact]
@@ -197,6 +210,25 @@ public class BinaryObservationTests(SqlServerFixture server)
                 "SET ANSI_NULL_DFLT_OFF ON; CREATE TABLE #b (r rowversion);",
                 "CREATE TABLE #c (r rowversion NULL);",
             ]));
+    }
+
+    [Fact]
+    public async Task A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads()
+    {
+        // The setting is the one in force when the table is created: a script's own SET before its CREATE TABLE, or, for a
+        // temporary table a procedure makes, the caller's session. A table variable's column is padded whatever it is.
+        var outcome = await Run(
+            "SET ANSI_PADDING OFF; EXEC dbo.obs_padded; SET ANSI_PADDING ON; EXEC dbo.obs_padded; INSERT INTO dbo.obs_pad (b, bn) VALUES (0x01, 0x01); SELECT DATALENGTH(b) AS n, DATALENGTH(bn) AS nn FROM dbo.obs_pad;",
+            "SET ANSI_PADDING OFF; CREATE TABLE dbo.obs_pad (b binary(4) NULL, bn binary(4) NOT NULL); SET ANSI_PADDING ON;",
+            """
+            CREATE PROCEDURE dbo.obs_padded AS
+            SELECT CAST(CASE WHEN 1 = 1 THEN 0x01 END AS binary(4)) AS b INTO #t;
+            DECLARE @v TABLE (b binary(4) NULL);
+            INSERT INTO @v VALUES (0x01);
+            SELECT (SELECT DATALENGTH(b) FROM #t) AS made, (SELECT DATALENGTH(b) FROM @v) AS variable;
+            """);
+
+        Assert.Equal("made,variable: 1,4 | made,variable: 4,4 | n,nn: 1,4", outcome.ToString());
     }
 
     // ---- JSON ----------------------------------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 **Decision.** The IR has a scalar kind for a string of bytes, `bytes`, which SQL Server's `binary(n)`, `varbinary(n)`,
 `varbinary(max)` and `rowversion` (its old name `timestamp`) are. Its only facet is its length, `length` for a fixed one and
 `maxLength` for a most, counted in bytes with no encoding, since the bytes are the value and encode no text: `binary(32)` is
-exactly 32 bytes, `varbinary(8000)` at most 8,000, `rowversion` exactly 8, and `varbinary(max)` has none. It has no format, no
+exactly 32 bytes (a nullable `binary(32)` column at most 32, since one created with `ANSI_PADDING` off cuts trailing zeros), `varbinary(8000)` at most 8,000, `rowversion` exactly 8, and `varbinary(max)` has none. It has no format, no
 minimum length, no digits, no bounds and no value set, and a reader refuses a binary value that says any of them. A document that
 holds a binary value anywhere (a parameter, a result, a field or a table type's column, however deeply nested) is IR 0.27, and one
 that holds none is labelled as before, by the rest of what it says (decision 0072's labelling by content); a reader of 0.27 reads

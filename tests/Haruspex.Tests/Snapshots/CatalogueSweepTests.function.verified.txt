@@ -4755,8 +4755,8 @@ TRY_CAST(dt23 AS int) -> unknown unsupported-expression: TRY_CAST(dt23 AS int): 
 TRY_CAST(sdt AS int) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
 TRY_CAST(dto3 AS int) -> unknown unsupported-expression: TRY_CAST(dto3 AS int): SQL Server refuses to convert datetimeoffset(3) to int.
 TRY_CAST(u AS int) -> unknown unsupported-expression: TRY_CAST(u AS int): SQL Server refuses to convert uniqueidentifier to int.
-TRY_CAST(bin4 AS int) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
-TRY_CAST(vb10 AS int) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
+TRY_CAST(bin4 AS int) -> int number/int32 {[-2147483648 2147483647]}
+TRY_CAST(vb10 AS int) -> int number/int32 {[-2147483648 2147483647]}
 TRY_CAST(x AS int) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 TRY_CAST(sv AS int) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRY_CAST(j AS int) -> unknown (no unknown recorded)
@@ -4795,8 +4795,8 @@ CONVERT(varchar(30), dt23, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), sdt, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), dto3, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), u, 1) -> varchar(30) string null:arithmetic-overflow {length<=30}
-CONVERT(varchar(30), bin4, 1) -> varchar(30) string null:arithmetic-overflow {length<=30}
-CONVERT(varchar(30), vb10, 1) -> varchar(30) string null:arithmetic-overflow {length<=30}
+CONVERT(varchar(30), bin4, 1) -> varchar(30) string {length<=30}
+CONVERT(varchar(30), vb10, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 CONVERT(varchar(30), sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONVERT(varchar(30), j, 1) -> unknown (no unknown recorded)
@@ -4835,8 +4835,8 @@ TRY_CONVERT(int, dt23) -> unknown unsupported-expression: TRY_CONVERT(int, dt23)
 TRY_CONVERT(int, sdt) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
 TRY_CONVERT(int, dto3) -> unknown unsupported-expression: TRY_CONVERT(int, dto3): SQL Server refuses to convert datetimeoffset(3) to int.
 TRY_CONVERT(int, u) -> unknown unsupported-expression: TRY_CONVERT(int, u): SQL Server refuses to convert uniqueidentifier to int.
-TRY_CONVERT(int, bin4) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
-TRY_CONVERT(int, vb10) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
+TRY_CONVERT(int, bin4) -> int number/int32 {[-2147483648 2147483647]}
+TRY_CONVERT(int, vb10) -> int number/int32 {[-2147483648 2147483647]}
 TRY_CONVERT(int, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 TRY_CONVERT(int, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRY_CONVERT(int, j) -> unknown (no unknown recorded)

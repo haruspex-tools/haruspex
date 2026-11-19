@@ -11,7 +11,9 @@
 | a parameter, and a table-valued parameter's column | a `Buffer`, sent with the driver's `VarBinary(n)`, which the server pads to a fixed length, and `VarBinary(MAX)` without a length | `z.instanceof(Buffer).check(z.maxLength(n))`: a fixed length is a maximum too, since a shorter value is padded | as a result's, a maximum only |
 
 A parameter longer than its type is refused before anything is sent, as a string is (decision 0054): sent as `VarBinary(n)` the
-server would fail the call with error 8016 (observed). The driver's `sql.Binary(n)` would pad and cut a value itself, without an
+server would fail the call with error 8016 (observed). A table-valued parameter's binary column is declared as `VarBinary(n)`
+with the table, and the server pads a shorter value to a fixed length and refuses a longer one (8037; observed:
+`A_binary_column_is_sent_as_varbinary_of_its_length_padded_to_a_fixed_one_and_a_longer_value_fails_the_call`). The driver's `sql.Binary(n)` would pad and cut a value itself, without an
 error, but its type declarations (`@types/mssql` 12.3.0) give `sql.Binary` no length, so the functions couldn't be compiled with it.
 
 **Context.** The driver hands over every binary type as a `Buffer`, and refuses a plain `Uint8Array` as a parameter ("Invalid
