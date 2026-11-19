@@ -166,7 +166,7 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition in another script (`ALTER PROCEDURE`, `DROP PROCEDURE`), or that changes a table anywhere (`ALTER TABLE …
   ALTER COLUMN`, `DROP TABLE`), is recorded as a `Redefinition`, not applied. Only a script's own procedures, functions and
-  views are played in its order; an `ALTER` that no other script names stands
+  views are played in its order; an `ALTER PROCEDURE` or `ALTER VIEW` that no other script names stands
   ([decision 0080](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0080-the-last-definition-in-a-script-stands.md)). Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
   SQL, are not seen.
 - **No name resolution or typing.** What a reference in a body points to, and what type an expression has, are questions

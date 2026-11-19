@@ -21,9 +21,20 @@ namespace Haruspex.SqlServer.Sources;
 /// </remarks>
 /// <typeparam name="T">A procedure, a function, or a view's definition.</typeparam>
 /// <param name="diagnostics">Where a second <c>CREATE</c> in the script is reported.</param>
-internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics)
+/// <param name="sameKind">
+/// Whether a definition may replace another in place. A function's kind (scalar, inline or multi-statement) can't change by
+/// <c>ALTER</c> or <c>CREATE OR ALTER</c>: the server refuses it (2010) and the earlier definition stands (observed:
+/// A_function_s_kind_cannot_change_by_alter). A procedure or a view has no kind.
+/// </param>
+internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics, Func<T, T, bool> sameKind)
     where T : class
 {
+    /// <summary>For a procedure or a view, which any definition may replace.</summary>
+    public ScriptDefinitions(List<Diagnostic> diagnostics)
+        : this(diagnostics, (_, _) => true)
+    {
+    }
+
     /// <summary>Each object the script names, in the order it first names it.</summary>
     private readonly Dictionary<ObjectName, State> objects = [];
 
@@ -31,7 +42,7 @@ internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics)
     public void Create(ObjectName name, T definition, SourceLocation at, bool orAlter)
     {
         var state = Of(name);
-        if (orAlter || state.Standing is null)
+        if (state.Standing is null || (orAlter && sameKind(state.Standing, definition)))
         {
             Set(name, state with { Standing = definition, At = at, Established = true, Dropped = false, Doubt = null, MaybeDropped = null });
         }
@@ -45,17 +56,21 @@ internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics)
             // Only altered so far: if the ALTER ran, the CREATE is refused; if it didn't, the CREATE stands.
             Set(name, state with { Established = true, Doubt = state.Why });
         }
-        else
+        else if (!orAlter)
         {
             diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at));
         }
+
+        // Otherwise a CREATE OR ALTER that would change a function's kind, which is refused: the earlier definition stands.
     }
 
     /// <summary>An <c>ALTER</c> of <paramref name="name"/>, which <paramref name="why"/> records.</summary>
     public void Alter(ObjectName name, T definition, SourceLocation at, Redefinition why)
     {
         var state = Of(name);
-        if (state.Dropped)
+
+        // After a drop it is refused, as it is when it would change a function's kind: either way, what stood stands.
+        if (state.Dropped || (state.Standing is { } standing && !sameKind(standing, definition)))
             return;
 
         // Whatever stood, or may have, the ALTER replaces it; if nothing did, it is refused and there is none. So it stands.

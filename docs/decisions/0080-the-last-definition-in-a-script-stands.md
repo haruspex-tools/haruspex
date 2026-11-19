@@ -6,13 +6,19 @@
 is the last one that runs: a stub created and then altered is its `ALTER`; one dropped (by `DROP`, `DROP … IF EXISTS`, or a
 drop under `IF OBJECT_ID(N'name') IS NOT NULL` naming it) and created again is its last `CREATE`; `CREATE OR ALTER` twice is its
 second. A second `CREATE` of a name that stands is refused by the server, so the first stands and the second is reported
-([HAR1002](../diagnostics/HAR1002.md)), as across scripts. A drop under any other condition may not run, so a `CREATE` after
+([HAR1002](../diagnostics/HAR1002.md)), as across scripts. A function's kind (scalar, inline or multi-statement) can't change
+in place: an `ALTER` or `CREATE OR ALTER` of another kind is refused, and the earlier definition stands. A drop under any other condition may not run, so a `CREATE` after
 it leaves which definition stands in doubt, recorded as a `Redefinition`.
 
 Across scripts nothing changes: a folder doesn't say the order its scripts run in, so a definition in one and an `ALTER` or
-`DROP` in another is a doubt, and two definitions are HAR1002. **One exception:** an `ALTER` that no other script's statement
-names stands, with no doubt, as the `ALTER` of a stub made where the reader can't see, by dynamic SQL
-(`exec sp_executesql N'create procedure … as return 0'` under `IF OBJECT_ID(…) IS NULL`).
+`DROP` in another is a doubt, and two definitions are HAR1002. **One exception:** an `ALTER PROCEDURE` (or `ALTER VIEW`) that
+no other script's statement names stands, with no doubt, as the `ALTER` of a stub made where the reader can't see, by dynamic
+SQL (`exec sp_executesql N'create procedure … as return 0'` under `IF OBJECT_ID(…) IS NULL`). An `ALTER FUNCTION` alone stays
+a doubt: the stub it alters may be of another kind, which would refuse it, and an unseen stub's kind is unknown.
+
+Like everything read from a script, this assumes the script deploys without error. A statement the server refuses for any
+other reason (an `ALTER` whose body names a column that doesn't exist fails with 207, observed, and leaves the stub) is not
+foreseen, as a `CREATE` that fails isn't: a deployment that reports errors has not deployed the project.
 
 The earlier definitions are passed over, not modelled and not reported: the object's location is the one that stands, which
 `haruspex explain` shows. Tables are not read this way (an `ALTER TABLE` that could change a column stays a doubt wherever it
@@ -25,13 +31,15 @@ fixes it. The harvest counted 16 procedures, all of them stubs made by dynamic S
 What the server does was observed (`ExecObservationTests.Definitions.cs`): an `ALTER` replaces the whole definition, parameters
 included; an `ALTER` of a name that doesn't exist is refused (208) and leaves none; a second `CREATE` is refused (2714) and the
 first stands; each `DROP` form leaves none; an `ALTER` keeps the `ANSI_NULLS` setting in force when it runs, not the stub's; a
-function and a view follow the same rules.
+function and a view follow the same rules, except that a function's kind can't change by `ALTER` or `CREATE OR ALTER` (2010),
+and the earlier definition stands.
 
 **Alternatives.**
 - *Keep every second definition a doubt.* Sound, but it throws away what the script fixes, which "claim everything the
   engine guarantees" ([decision 0005](0005-claim-everything-the-engine-guarantees.md)) forbids.
-- *An `ALTER` alone is a doubt.* The stub it alters is unseen, but whatever stood before, the `ALTER` replaces it whole, and if
-  nothing stood it fails and there is no object to call. The only thing that could make the `ALTER`'s definition wrong is a
+- *An `ALTER` alone is a doubt.* Kept for a function, whose `ALTER` the unseen stub's kind may refuse. For a procedure: the stub
+  it alters is unseen, but whatever stood before, the `ALTER` replaces it whole, and if nothing stood it fails and there is no
+  object to call. The only thing that could make the `ALTER`'s definition wrong is a
   statement that runs after it, which is the same doubt a lone `CREATE` carries: dynamic SQL elsewhere, which the reader never
   sees. So an `ALTER` alone is as good evidence as a `CREATE` alone.
 - *Report each earlier definition as a note.* Every deployment script would report its stubs, which is the idiom working as

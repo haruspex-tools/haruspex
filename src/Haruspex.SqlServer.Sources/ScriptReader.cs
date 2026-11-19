@@ -33,8 +33,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// <summary>The procedures this script defines, alters or drops, played in its order (<see cref="ScriptDefinitions{T}"/>).</summary>
     private readonly ScriptDefinitions<Procedure> procedures = new(into.Diagnostics);
 
-    /// <summary>The functions this script defines, alters or drops, played in its order.</summary>
-    private readonly ScriptDefinitions<Function> functions = new(into.Diagnostics);
+    /// <summary>The functions this script defines, alters or drops, played in its order; one never replaces another of another kind.</summary>
+    private readonly ScriptDefinitions<Function> functions = new(into.Diagnostics, (standing, replacing) => standing.GetType() == replacing.GetType());
 
     /// <summary>The views this script defines, alters or drops, played in its order.</summary>
     private readonly ScriptDefinitions<ViewDefinition> views = new(into.Diagnostics);

@@ -10,21 +10,24 @@ namespace Haruspex.SqlServer.Sources;
 /// <remarks>
 /// A folder doesn't say the order its scripts run in, so of a definition in one script and an <c>ALTER</c> or <c>DROP</c> in
 /// another, which is in effect is unknown. The model records the doubt (<see cref="Redefinition"/>) rather than guess an order.
-/// One script's <c>ALTER</c> of an object no other script names stands: it replaces whatever stood before it, and nothing the
-/// project holds runs after it (<c>docs/decisions/0080-the-last-definition-in-a-script-stands.md</c>).
+/// One script's <c>ALTER</c> of a procedure or view no other script names stands: it replaces whatever stood before it, and
+/// nothing the project holds runs after it. A function's doesn't: what stood may be of another kind, which the server refuses to
+/// change (2010), and an unseen stub's kind is unknown (<c>docs/decisions/0080-the-last-definition-in-a-script-stands.md</c>).
 /// </remarks>
 internal static class DefinitionsInEffect
 {
     /// <summary>
     /// The procedures or functions: one a script defines and another changes keeps its definition for its parameters, with the
-    /// first change recorded. One only altered, by one script, is its <c>ALTER</c>; by more, or also dropped, it is listed with
+    /// first change recorded. One only altered, by one script, is its <c>ALTER</c> when <paramref name="alterAloneStands"/>; by
+    /// more, or also dropped, or a function, it is listed with
     /// its first <c>ALTER</c> when that is the first change, so that selecting it can report why its definition is not trusted.
     /// One only dropped is not listed.
     /// </summary>
     /// <param name="created">The definitions scripts make, one per object.</param>
     /// <param name="changes">Each script's change to each object.</param>
     /// <param name="changed">A definition with its change recorded.</param>
-    public static IEnumerable<T> Modules<T>(Dictionary<ObjectName, T> created, Dictionary<ObjectName, List<Change<T>>> changes, Func<T, Redefinition, T> changed)
+    /// <param name="alterAloneStands">Whether one script's <c>ALTER</c> alone stands: for a procedure, not a function.</param>
+    public static IEnumerable<T> Modules<T>(Dictionary<ObjectName, T> created, Dictionary<ObjectName, List<Change<T>>> changes, Func<T, Redefinition, T> changed, bool alterAloneStands)
         where T : Module
     {
         foreach (var (name, definition) in created)
@@ -33,7 +36,7 @@ internal static class DefinitionsInEffect
         {
             if (created.ContainsKey(name))
                 continue;
-            if (each is [{ Altered: { } only }])
+            if (alterAloneStands && each is [{ Altered: { } only }])
                 yield return only;
             else if (each[0].Altered is { } altered)
                 yield return changed(altered, each[0].Why);

@@ -156,6 +156,33 @@ public class DefinitionsInEffectTests
         Assert.Equal(9, view.Span.Start.Line);
     }
 
+    [Theory]
+    [InlineData("alter")]
+    [InlineData("create or alter")]
+    public void A_function_altered_to_another_kind_is_refused_so_the_earlier_definition_stands(string change)
+    {
+        // A function's kind can't change in place (2010, observed: A_function_s_kind_cannot_change_by_alter).
+        var read = Read(("order_total.sql", $"""
+            create function shop.order_total(@order_id int) returns int as begin return 0; end
+            GO
+            {change} function shop.order_total(@order_id int) returns table as return select 1 as total;
+            """));
+
+        var total = Assert.Single(read.Model.Functions);
+        Assert.IsType<ScalarFunction>(total);
+        Assert.Null(total.Redefinition);
+        Assert.Equal(1, total.Span.Start.Line);
+    }
+
+    [Fact]
+    public void A_function_only_altered_is_a_doubt_since_the_kind_of_what_it_alters_is_unseen()
+    {
+        // Unlike a procedure's, a function's ALTER may be refused by what stood before it: a stub of another kind (2010).
+        var read = Read(("order_total.sql", "if object_id(N'shop.order_total') is null exec sp_executesql N'create function shop.order_total() returns int as begin return 0; end';\nGO\nalter function shop.order_total() returns table as return select 1 as total;"));
+
+        Assert.Equal(RedefiningStatement.AlterFunction, Assert.Single(read.Model.Functions).Redefinition?.Statement);
+    }
+
     [Fact]
     public void A_view_created_and_altered_in_one_script_is_its_alter_and_in_two_scripts_a_doubt()
     {

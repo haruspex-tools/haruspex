@@ -84,8 +84,9 @@ Between scripts, nothing applies an order, because nothing tells the reader one.
 in another has two definitions, and which is in effect on a server depends on the order the scripts ran there, which the
 folder doesn't record. Guessing an order would make a claim haruspex can't support, so the model keeps the `CREATE` (for the
 procedure's parameters) and records the doubt as a `Redefinition`; inference then says the procedure's results are unknown
-(`redefined`), and why. An `ALTER` that no other script's statement names is the one exception: whatever stood before it, it
-replaces, and nothing the project holds runs after it, so it stands. That covers a stub made by dynamic SQL, which the reader
+(`redefined`), and why. An `ALTER PROCEDURE` that no other script's statement names is the one exception: whatever stood
+before it, it replaces, and nothing the project holds runs after it, so it stands. (A function's isn't: the server refuses an
+`ALTER` that would change a function's kind, and an unseen stub's kind is unknown.) That covers a stub made by dynamic SQL, which the reader
 can't see (`exec sp_executesql N'create procedure … as return 0'` under `IF OBJECT_ID(…) IS NULL`), followed by its `ALTER`
 ([decision 0080](../decisions/0080-the-last-definition-in-a-script-stands.md)).
 

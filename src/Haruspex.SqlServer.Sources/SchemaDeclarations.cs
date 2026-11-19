@@ -126,8 +126,8 @@ internal sealed class SchemaDeclarations
     public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null) => new(
         [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, KeyDisables))],
         UserTypes.Values,
-        DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }),
-        DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }),
+        DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }, alterAloneStands: true),
+        DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }, alterAloneStands: false),
         DefinitionsInEffect.Views(Views),
         Synonyms.Values,
         Triggers,

@@ -74,6 +74,24 @@ public partial class ExecObservationTests
         Assert.Equal("equal: 1", (await Run([Stub, "SET ANSI_NULLS OFF;", Compare, "SET ANSI_NULLS ON;"], "EXEC dbo.obs_archive;")).ToString());
     }
 
+    [Theory]
+    [InlineData("ALTER FUNCTION dbo.obs_total() RETURNS TABLE AS RETURN SELECT 2 AS total;", "SELECT dbo.obs_total() AS total;")]
+    [InlineData("CREATE OR ALTER FUNCTION dbo.obs_total() RETURNS TABLE AS RETURN SELECT 2 AS total;", "SELECT dbo.obs_total() AS total;")]
+    [InlineData("ALTER FUNCTION dbo.obs_lines() RETURNS @t TABLE (total int) AS BEGIN INSERT @t VALUES (2); RETURN; END", "SELECT total FROM dbo.obs_lines();")]
+    public async Task A_function_s_kind_cannot_change_by_alter(string change, string read)
+    {
+        // Scalar to inline, or inline to multi-statement, by ALTER or CREATE OR ALTER: refused (2010), and the earlier stands.
+        string[] stubs =
+        [
+            "CREATE FUNCTION dbo.obs_total() RETURNS int AS BEGIN RETURN 1; END",
+            "CREATE FUNCTION dbo.obs_lines() RETURNS TABLE AS RETURN SELECT 1 AS total;",
+        ];
+        var outcome = await Run(stubs, $"BEGIN TRY EXEC sp_executesql N'{change.Replace("'", "''", StringComparison.Ordinal)}'; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS refused; END CATCH; {read}");
+
+        // Only the result sets are compared, as above.
+        Assert.Equal(["refused: 2010", "total: 1"], outcome.Sets);
+    }
+
     [Fact]
     public async Task A_function_and_a_view_altered_or_recreated_in_their_script_have_their_last_definition()
     {
