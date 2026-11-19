@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/counts.sql": "60e00db9fac35d21b424c1f529416bb2d900c406a15545216064dd0edbf017fc",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa",
+      "tables/session.sql": "2e673b75743badf5d4ac0edbae6200fd834a4775d3f53b65b6c60720fc92d102"
+    }
   },
   "objects": [
     {

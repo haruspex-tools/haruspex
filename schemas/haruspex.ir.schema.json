@@ -46,6 +46,16 @@
             "type": "boolean"
           }
         },
+        "files": {
+          "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "description": "The file's SHA-256.",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
         "baseline": {
           "description": "For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.",
           "type": "object",
@@ -77,6 +87,16 @@
               "minProperties": 1,
               "additionalProperties": {
                 "type": "boolean"
+              }
+            },
+            "files": {
+              "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "description": "The file's SHA-256.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
               }
             }
           },

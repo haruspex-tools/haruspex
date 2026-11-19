@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/tab_lines_list.sql": "1780c0d05d0bb72b7adad53b475730cea9ebd142bd05f31342a568c5aa836250"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,20 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/basket_line#.sql": "a050bad73d894f8f72b77871bc25f9dbff43164f746c25c4a94e161325c063be",
+      "procedures/get_basket.sql": "565be146f8b55885532aed20ca19285be144862e4477fcd6f787e374b52c06be",
+      "procedures/list_products.sql": "df0898bcb6be2df95e5298c9825c6ac35dcf26d25262ee0ffa7044d0e34350b3",
+      "procedures/order_summary.sql": "5d7b3af9e25a43bd31c8afc0d67006c3ead3286ed672b1ae74e664b91895b6ae",
+      "procedures/report_sales.sql": "666bb52c8f025a7cfccfbdfc6f776c6c73dc9d6f8aae01dc5a546e308e6c57c6",
+      "procedures/report_stock.sql": "b6419a2a0880693a86ee16d26a7a4c360f861117c04d6a8bfcc1ef9194f261e5",
+      "queries/basket_card.sql": "0833636db9e0f52fb5fcf2607f18f8d493742cd9b1e372c8208ce329dfa3d7db",
+      "queries/products_under.sql": "71b2e2799ca39d7aa6fd6045e9bc6473191f8a8ae35c58e350ad2f00f7518bf3",
+      "tables/basket.sql": "1840fc50242dab28c45db99e94517342aea7478217c08c3d1d1dcca465352c40",
+      "tables/order_line.sql": "5eeb47c39e4a11475a262fdeb0a12fa913f6dc30ddb4fec66129fcec6c7e7eb2",
+      "tables/product.sql": "1e2bcd84093b9be9cf53f59e2fd16ac9dc952fb88bb2180862c342027a59a7ab"
+    }
   },
   "objects": [
     {

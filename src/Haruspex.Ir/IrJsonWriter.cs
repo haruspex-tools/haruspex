@@ -123,6 +123,15 @@ public static class IrJsonWriter
                 json.WriteBoolean(option.Name, option.On);
             json.WriteEndObject();
         }
+
+        if (source.Files.Count > 0)
+        {
+            // Left out when there are none (a package's document), so that one reads as it did before 0.25.
+            json.WriteStartObject("files");
+            foreach (var (path, sha256) in source.Files.OrderBy(f => f.Key, StringComparer.Ordinal))
+                json.WriteString(path, sha256);
+            json.WriteEndObject();
+        }
     }
 
     /// <summary>

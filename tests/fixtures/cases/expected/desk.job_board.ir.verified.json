@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/job_board.sql": "3703828fea0732306dfca5b265b341bfb5d2dd602d61fcc4000be5c46ba48625",
+      "tables/customer.sql": "f9f4bc694f8bfffe8b31f2a986010c3384e4ac40438c9f1e527998c4f23800fc",
+      "tables/job.sql": "610c9bb033c599b4c9f87c632f0c1a6d6c8e5e1ef591a98b080ed3cfcd173728",
+      "tables/job_note.sql": "3b06c5dc272d25ef1d55bb1f3ec2467b26d09da2731e1ad8fc9e0321d164f4ce"
+    }
   },
   "objects": [
     {

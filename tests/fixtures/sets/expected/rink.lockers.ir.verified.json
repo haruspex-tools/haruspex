@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/lockers.sql": "e940dfd54724d31811a27e31637a1bf314345ec70320e0417d51fb1af3129abb",
+      "tables/locker.sql": "909241766432f149e80b400409297bd8445d0cee0df50dddbcd1b2c8de886c53",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {

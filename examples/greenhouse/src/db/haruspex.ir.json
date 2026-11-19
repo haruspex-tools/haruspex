@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_plant.sql": "e17f461310e52ff8b16968b50676b3f9acdf7711d41c0d1bcb876467d8782bc2",
+      "procedures/list_plants.sql": "3c306073d65409b9c8a54d4a2718d99848c2baa3e5a80e37b0ece79fbd830b3f",
+      "queries/thirsty_plants.sql": "3fcb5f806266473e5aa12bc24d3192ea990a339b8cf2ed43e3a00277662956c7",
+      "tables/plants.sql": "835477c0723e251de24ffeb38543ced30a33f0aa7d289f6664ec1e64d7777116"
+    }
   },
   "objects": [
     {

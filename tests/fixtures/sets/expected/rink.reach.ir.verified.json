@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reach.sql": "5b71c90fb9b543ccd3f1b2ae751b5eecafb47169b85352d6104622201ccb3e17",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {

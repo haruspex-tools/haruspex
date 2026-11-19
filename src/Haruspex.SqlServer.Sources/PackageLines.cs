@@ -42,8 +42,8 @@ public static class PackageLines
                 .Where(e => string.Equals((string?)e.Attribute("Name"), objectName, StringComparison.Ordinal))
                 .Select(ModuleTextReader.Text)
                 .FirstOrDefault(t => t is not null);
-            var lines = text?.ReplaceLineEndings("\n").Split('\n');
-            return lines is not null && line >= 1 && line <= lines.Length ? lines[line - 1] : null;
+            var lines = text is null ? null : SourceLines.Of(text);
+            return lines is not null && line >= 1 && line <= lines.Count ? lines[line - 1] : null;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or XmlException)
         {

@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reading_rooms.sql": "1ce75faa9e3ec2c49a73fa4ef9f4db19723b9936f0673aa9c44aafe346d79f72",
+      "tables/reading_room.sql": "f55ae1c1c8d38330281662e556f09a296a02c3644b9d94a679f76a912f3e9c76"
+    }
   },
   "objects": [
     {

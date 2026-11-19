@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_tickets.sql": "4463c23448db1dc2c9e175abacee2a57997cde42fdedcf662364dc175cae9cff",
+      "tables/owner.sql": "c28e3f62c2f2b7dcb94a264049a6a7abd1aa713a630ae92bb75f0194a6e8e330",
+      "tables/ticket.sql": "52bbff4157b63a697ee5773a9876a307c0b4ca003c5ec29cf6f51c1a7e7dc28c",
+      "tables/ticket_event.sql": "dd507156f8eea7ce61e5cbe935051722b07f97d0090263daa823fd2d5d1b549d"
+    }
   },
   "objects": [
     {

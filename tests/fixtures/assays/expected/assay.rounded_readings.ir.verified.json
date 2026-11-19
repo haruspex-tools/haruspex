@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/rounded_readings.sql": "7900e9e02b8fa111e0baeb41cf2cf5306e61ea6b4fdf1caa6bcfb62aace52c88",
+      "tables/sample.sql": "bb75d2130abf24b69dc2bf0fe1cc4ae9bb13abf1bdda441cd5047de2d6e9b6ba"
+    }
   },
   "objects": [
     {

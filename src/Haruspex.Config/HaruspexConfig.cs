@@ -1,6 +1,6 @@
-using Haruspex.Ir;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;

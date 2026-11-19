@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reviews_by_book.sql": "b733583e5131893cb78ea3580e8c58706dc08ec25f1c48339885c95d8bd7c71c",
+      "tables/review.sql": "e80882ca6ef847eb41aaa1a61b78847e576e2e1ce0a254ad4a23f3ba44cf2985"
+    }
   },
   "objects": [
     {

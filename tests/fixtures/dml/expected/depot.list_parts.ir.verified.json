@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_parts.sql": "596ac3ea2a469cdbed83efacdc521b6d003ab1b0de731671f2ef1a90cbb826b4",
+      "tables/part.sql": "d65fb7578bd8e26f30758695674ffc8de2d4f9898044d1a048226964bccfa17c",
+      "tables/stock.sql": "72e25f2965ac8f03d6764da97a5b6a08a21e885b9f5375d301928675d3b9eedf"
+    }
   },
   "objects": [
     {

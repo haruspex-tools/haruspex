@@ -180,7 +180,7 @@
       "type": "object",
       "properties": {
         "share_or_flag": {
-          "description": "Not known (unsupported-expression): This set operation's column: its type depends on whether SQL Server folds IIF(1 = 1, 1, 2) to a constant, whose digits it would count. May be null: unknown (procedures/mixed.sql:48:8). Unknown: an expression or function is not modelled yet (unsupported-expression). To change it: declare the results in the config file's \"results\". Why: haruspex explain bazaar.mixed '#6.share_or_flag'"
+          "description": "Not known (unsupported-expression): This set operation's column: its type depends on whether SQL Server folds IIF(1 = 1, 1, 2) to a constant, whose digits it would count. May be null: unknown (procedures/mixed.sql:48:8). To change it: declare the results in the config file's \"results\". Why: haruspex explain bazaar.mixed '#6.share_or_flag'"
         }
       },
       "required": [

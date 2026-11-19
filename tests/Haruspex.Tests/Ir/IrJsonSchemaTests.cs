@@ -34,6 +34,7 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Overrides), "", "overrides"),
         (typeof(IrSource), nameof(IrSource.Dialect), "document.source", "dialect"),
         (typeof(IrSource), nameof(IrSource.Session), "document.source", "session"),
+        (typeof(IrSource), nameof(IrSource.Files), "document.source", "files"),
         (typeof(IrSessionOption), nameof(IrSessionOption.Name), "document.source", null), // a key of the session
         (typeof(IrSessionOption), nameof(IrSessionOption.On), "document.source", null), // that key's value
         (typeof(IrSource), nameof(IrSource.Package), "document.source", null), // its two parts, package and sha256

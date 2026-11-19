@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_vats.sql": "52e70d0cfcf6585f6b9099cdb9b96459aa28f6aec3cb73e5a850e82a3274e148",
+      "tables/vat.sql": "744b5668414e9cc317f1c66e8a6bc62d023614ea590236b75aaedfeaf1c3fe09"
+    }
   },
   "objects": [
     {

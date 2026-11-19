@@ -23,11 +23,9 @@ public static class IrFieldText
 
         var lines = new List<string>();
         var ways = new List<string>();
+        // An unknown's code is already in the note every emitter writes on it; its way out is this comment's to give.
         if (field.Type is IrUnknownType unknown)
-        {
-            lines.Add($"Unknown: {IrReasons.Text(unknown.Reason)} ({IrWireNames.Of(unknown.Reason)}).");
             ways.Add(IrReasons.WayOut(unknown.Reason));
-        }
 
         if (IrSurprises.TypeDiffers(field) && field.Type is IrScalar { Sql: { } sql })
         {

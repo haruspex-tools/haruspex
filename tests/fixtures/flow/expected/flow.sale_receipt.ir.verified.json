@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/sale_receipt.sql": "ef8f3c0c0b0ee910bf70a6dec7b050012fc5cda66e6f6c5c5fb68408ee174c30",
+      "tables/sale.sql": "5c69103893aea0ad11a260ee56728fa1ea0d177912fc9634867b4b086e4c9818"
+    }
   },
   "objects": [
     {

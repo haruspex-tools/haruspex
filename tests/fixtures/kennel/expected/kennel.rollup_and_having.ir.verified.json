@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/rollup_and_having.sql": "6cfeb643ef38a525a5bd98e42e0cc1072916dbedc82a0afbd353fecf2e4af346",
+      "tables/dog.sql": "ddbcb250c1f978c9889883c1a4f3816525aa55f02a3d1f422a71236742f8b34e",
+      "tables/owner.sql": "4c67f020520b0784ee98ceaae027ad10e384bd26b8dbfe70c6c2691d526cf7a9"
+    }
   },
   "objects": [
     {

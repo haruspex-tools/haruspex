@@ -5,6 +5,10 @@
     "session": {
       "ansiWarnings": true,
       "arithAbort": false
+    },
+    "files": {
+      "procedures/running_totals.sql": "b1eee5fb95eabc8c8c8ee727a8d5ed33889b2764e7d4839ddd16483a04e84817",
+      "tables/reading.sql": "8ce119c523780ae80a42aa174c7e13c877b4a0ee1a727c3bafd54dcf257b1b66"
     }
   },
   "objects": [

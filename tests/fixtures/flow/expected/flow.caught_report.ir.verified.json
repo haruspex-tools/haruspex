@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/caught_report.sql": "3448dd33ea6f3ed7cc2e718927f478d0ea6ed396ea70467fbb43582531df8aa5",
+      "tables/part.sql": "2e35daca3a4c0f9c8d45077142a91dfcda06a892997b480f91070ff85d88cacd",
+      "tables/region.sql": "e600cc893d20cbf0f5bc5b9952789be22aced5b86511e39a0dd6da04f1a8f321",
+      "tables/sale.sql": "5c69103893aea0ad11a260ee56728fa1ea0d177912fc9634867b4b086e4c9818"
+    }
   },
   "objects": [
     {

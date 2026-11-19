@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/open_loans.sql": "99b647308c21e3690670d80005bf66d071cec1509c7b355fbffe2c1eb295e7ea",
+      "tables/loan.sql": "9a5da1e60a3c0ce431203d09e423f7e05e4c63a5c1fbf3abf7991a3270aa7ddf",
+      "tables/member.sql": "0fb6c0b89bdd6a6248e3fbcbab2aca647577f8135561da12b7e7b8dec8391554"
+    }
   },
   "objects": [
     {

@@ -28,10 +28,11 @@ public class IrReaderSchemaAgreementTests
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
 
     /// <summary>
-    /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c>: its keys are the classes' names, any
-    /// string, so no key is one the format lacks.
+    /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c> and a source's <c>files</c>: their keys are
+    /// names and paths, any string, so no key is one the format lacks.
     /// </summary>
-    public static TheoryData<string> AllObjects { get; } = [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal))];
+    public static TheoryData<string> AllObjects { get; } =
+        [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal) && !l.EndsWith("/files", StringComparison.Ordinal))];
 
     [Theory]
     [MemberData(nameof(Properties))]
@@ -77,8 +78,8 @@ public class IrReaderSchemaAgreementTests
             return;
         }
 
-        // Sides that name neither database, their one side taken away, are refused as a whole.
-        if (location.EndsWith("/sides", StringComparison.Ordinal) && target.Count == 0)
+        // Sides that name neither database, or a source's files with none left, are refused as a whole.
+        if ((location.EndsWith("/sides", StringComparison.Ordinal) || location.EndsWith("/files", StringComparison.Ordinal)) && target.Count == 0)
         {
             Assert.NotEmpty(schemaErrors);
             Assert.Equal(ReaderPath(location), refusal?.Path);

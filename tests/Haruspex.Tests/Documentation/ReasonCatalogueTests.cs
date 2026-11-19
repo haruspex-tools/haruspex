@@ -52,7 +52,7 @@ public partial class ReasonCatalogueTests
         var pages = Directory.EnumerateFiles(Folder, "*.md").Select(Path.GetFileNameWithoutExtension).Where(n => n != "README").ToHashSet(StringComparer.Ordinal);
         var index = File.ReadAllText(Path.Combine(Folder, "README.md"));
 
-        Assert.Equal(codes.Order(StringComparer.Ordinal), pages.Order(StringComparer.Ordinal)!);
+        Assert.Equal(codes.Order(StringComparer.Ordinal), pages.Order(StringComparer.Ordinal));
         Assert.All(codes, code => Assert.Contains($"[`{code}`]({code}.md)", index, StringComparison.Ordinal));
     }
 

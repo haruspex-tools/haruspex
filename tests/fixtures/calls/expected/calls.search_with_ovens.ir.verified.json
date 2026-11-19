@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/search_with_ovens.sql": "4f165c62261a9ac57152c30419a7f11d6fcaa41fbdd441193a6ab4b93c995935",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {

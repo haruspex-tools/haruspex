@@ -36,11 +36,22 @@ public class IrFieldSourceTests
         var e = Refused(IrSamples.Derived, json =>
         {
             json["irVersion"] = "0.24";
+            json["source"]!.AsObject().Remove("files");
             FindOrdersRowField(json, 0).Remove("sides");
             FindOrdersRowField(json, 1).Remove("sides");
         });
 
         Assert.Equal("$.types.FindOrdersRow.fields[0].from is given in a document of IR 0.24: a field's source columns are IR 0.25.", e.Message);
+    }
+
+    [Fact]
+    public void A_source_s_file_hashes_in_a_document_labelled_0_24_are_refused_and_an_empty_list_of_them_too()
+    {
+        var labelled = Refused(IrSamples.Combined with { Source = IrSamples.Derived.Source }, json => json["irVersion"] = "0.24");
+        var empty = Refused(IrSamples.Derived, json => json["source"]!["files"] = new JsonObject());
+
+        Assert.Equal("$.source.files is given in a document of IR 0.24: a source's files are IR 0.25.", labelled.Message);
+        Assert.Equal("$.source.files is empty: a source that points into no script leaves it out.", empty.Message);
     }
 
     [Fact]

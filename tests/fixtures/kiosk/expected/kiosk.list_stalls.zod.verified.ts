@@ -19,7 +19,6 @@ export const ListStallsRowSchema = z.object({
   kind: z.string().max(10),
   /**
    * Not known (sqlcmd-variable); the IR's unknowns say why.
-   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
    * To change it: declare the results in the config file's "results".
    * Why: haruspex explain kiosk.list_stalls reach
    */

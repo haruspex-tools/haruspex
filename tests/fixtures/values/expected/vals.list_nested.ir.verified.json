@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_nested.sql": "ae7ddb0a0e8d6349b51120efdcc9e108df94cc20d948d9cd4217905312ef9aaf",
+      "tables/sample.sql": "e57f5cf6bf3327c0e79b4c7cb07e2b87a32e06b402105f52c360da0ed785a239",
+      "tables/sample_tag.sql": "5e8b349240b227eaac9dd04fee5c3726fee1a83230c0c4bc4d20740040528567"
+    }
   },
   "objects": [
     {

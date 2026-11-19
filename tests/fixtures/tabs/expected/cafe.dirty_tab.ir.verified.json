@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/dirty_tab.sql": "a7dd9c956d3954fd3c56310b5f06bf388ac138910f6dee30215de0d6630e7851",
+      "tables/tab.sql": "71c74a73d81b7ffa52d4a792f643c53d5e4820d80ae8c52b703ad3dcf47cd312"
+    }
   },
   "objects": [
     {

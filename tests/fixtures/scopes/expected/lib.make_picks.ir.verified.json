@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/make_picks.sql": "d02bfade210eb28663aa9a43915dad4394dfd1087067375019ede01bab149b38"
+    }
   },
   "objects": [
     {

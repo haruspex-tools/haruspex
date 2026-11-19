@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_stalls.sql": "00031c2298cfff3f724ddac9a6d633e9be1843966cf892602e0cb2d33f0a63b0",
+      "tables/stall.sql": "75a6027e2a6d0751f72bf6d738f3e0e881d35e621f31b36b37efcbd2362c6181"
+    }
   },
   "objects": [
     {

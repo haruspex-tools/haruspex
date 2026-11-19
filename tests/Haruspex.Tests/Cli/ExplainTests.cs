@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Haruspex.Cli;
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Cli;
@@ -147,7 +148,7 @@ public class ExplainTests
         var (exitCode, output, _) = Run(folder, "explain", "shop.order_summary", "@order_id");
 
         Assert.Equal(0, exitCode);
-        Assert.StartsWith("shop.order_summary @order_id: number (int32), int, nullable\n  declared in shop.order_summary, at procedures.sql:1:1; a caller may pass it as null\n", output, StringComparison.Ordinal);
+        Assert.Equal("shop.order_summary @order_id: number (int32), int, nullable\n  a parameter of shop.order_summary, which is defined at procedures.sql:1:1; a caller may pass it as null\n", output);
     }
 
     [Theory]
@@ -210,7 +211,7 @@ public class ExplainTests
 
         Assert.Equal(0, exitCode);
         Assert.Contains("  baseline (the baseline): doesn't return the key\n", output, StringComparison.Ordinal);
-        Assert.Contains("  candidate (db): datetime2(0), always, never null\n    from shop.customer_order.placed_at (datetime2(0)), declared at tables.sql:3:5\n", output, StringComparison.Ordinal);
+        Assert.Contains("  candidate (the source): datetime2(0), always, never null\n    from shop.customer_order.placed_at (datetime2(0)), declared at tables.sql:3:5\n", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -219,7 +220,11 @@ public class ExplainTests
         using var folder = Generated();
         var ir = Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName);
         var old = IrJsonReader.Read(File.ReadAllText(ir));
-        var stripped = old with { Types = old.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }) };
+        var stripped = old with
+        {
+            Source = old.Source with { Files = [] },
+            Types = old.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
+        };
         folder.File("release/haruspex.ir.json", IrJsonWriter.Write(stripped));
         Assert.Equal(IrDocument.OneDatabaseVersion, stripped.Version);
         Assert.Equal(0, Run(folder, "generate", "--baseline", "release/haruspex.ir.json").ExitCode);
@@ -227,5 +232,125 @@ public class ExplainTests
         var (_, output, _) = Run(folder, "explain", "shop.order_summary", "last_shipped");
 
         Assert.Contains("  baseline (the baseline): datetime2(0), always, may be null\n    the baseline was read from an IR older than 0.25, which doesn't say where its fields came from\n", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_output_parameter_is_said_to_be_one()
+    {
+        using var folder = Generated(OrderSummary + "\nGO\nCREATE PROCEDURE shop.count_lines @order_id int, @lines int OUTPUT AS SELECT @lines = count(*) FROM shop.order_line AS l WHERE l.order_id = @order_id;");
+
+        var output = Run(folder, "explain", "shop.count_lines", "@lines").Output;
+
+        Assert.Contains("  an OUTPUT parameter: the procedure may set it, and its function returns the value it ends with, which may be null\n", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_script_edited_since_the_ir_was_written_shows_no_line_only_the_reference()
+    {
+        using var folder = Generated();
+        folder.File("db/procedures.sql", "-- A line added above the procedure moves every line of it down.\n" + OrderSummary);
+
+        var (exitCode, output, _) = Run(folder, "explain", "shop.order_summary", "last_shipped");
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("  null unmatched-row at procedures.sql:7:11: it comes from the optional side of an outer join, which has no row when nothing matches\n  null empty-aggregate", output, StringComparison.Ordinal);
+        Assert.Contains("    | shipped_at datetime2(0) NULL,\n", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_location_outside_the_project_or_absolute_is_never_followed_even_with_its_hash_recorded()
+    {
+        using var folder = Generated();
+        using var outside = new TempDirectory();
+        var secret = outside.File("secret.sql", "the line nobody should see");
+        var ir = Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName);
+        var document = IrJsonReader.Read(File.ReadAllText(ir));
+        var relative = Path.GetRelativePath(Path.Combine(folder.Path, "db"), secret).Replace('\\', '/');
+        var hash = Assert.IsType<string>(ScriptFiles.Sha256(secret));
+        string[] places = [relative, secret.Replace('\\', '/')];
+        foreach (var place in places)
+        {
+            var edited = document with
+            {
+                Source = document.Source with { Files = document.Source.Files.Concat([new KeyValuePair<string, string>(place, hash)]).ToEquatableMap(f => f.Key, f => f.Value) },
+                Types = document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { NullableBecause = [.. f.NullableBecause.Select(r => r with { At = place + ":1:1" })] })] }),
+            };
+            File.WriteAllText(ir, IrJsonWriter.Write(edited));
+
+            var output = Run(folder, "explain", "shop.order_summary", "last_shipped").Output;
+
+            Assert.DoesNotContain("nobody", output, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void A_control_character_from_the_sql_is_printed_as_an_escape_never_raw()
+    {
+        using var folder = Generated(OrderSummary.Replace("max(l.shipped_at) AS last_shipped,", "max(l.shipped_at) AS last_shipped, -- \u001b]0;title\u0007\u001b[31m", StringComparison.Ordinal));
+
+        var output = Run(folder, "explain", "shop.order_summary", "last_shipped").Output;
+
+        Assert.Contains("| max(l.shipped_at) AS last_shipped, -- \\x1B]0;title\\x07\\x1B[31m\n", output, StringComparison.Ordinal);
+        Assert.DoesNotContain('\u001b', output);
+    }
+
+    [Fact]
+    public void An_ir_written_before_0_25_is_said_to_say_nothing_of_where_its_fields_came_from()
+    {
+        using var folder = Generated();
+        var ir = Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName);
+        var document = IrJsonReader.Read(File.ReadAllText(ir));
+        File.WriteAllText(ir, IrJsonWriter.Write(document with
+        {
+            Source = document.Source with { Files = [] },
+            Types = document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
+        }));
+
+        var output = Run(folder, "explain", "shop.order_summary", "last_shipped").Output;
+
+        Assert.Contains("  this IR is 0.23, which doesn't say where a field came from: run haruspex generate to write it as 0.25\n", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("|", output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("[shop].[order_summary]")]
+    [InlineData("Shop.Order_Summary")]
+    [InlineData("OrderSummary")]
+    public void An_object_is_named_as_sql_server_reads_a_name_in_brackets_or_any_case_or_by_its_generated_name(string name)
+    {
+        using var folder = Generated();
+
+        var (exitCode, output, _) = Run(folder, "explain", name, "line_count");
+
+        Assert.Equal(0, exitCode);
+        Assert.StartsWith("shop.order_summary line_count: ", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Two_objects_that_differ_only_in_case_are_refused_by_a_name_that_matches_both_as_written_by_neither()
+    {
+        // A case-sensitive database could hold both; this one can't, so the IR is given the second by hand.
+        using var folder = Generated();
+        var ir = Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName);
+        var document = IrJsonReader.Read(File.ReadAllText(ir));
+        File.WriteAllText(ir, IrJsonWriter.Write(document with { Objects = [.. document.Objects, document.Objects[0] with { Id = "shop.Order_Summary", Name = "OrderSummaryAgain" }] }));
+
+        var (exitCode, _, error) = Run(folder, "explain", "SHOP.ORDER_SUMMARY");
+
+        Assert.Equal(HaruspexCli.ExitCodes.Usage, exitCode);
+        Assert.Contains("error HAR6038: SHOP.ORDER_SUMMARY names shop.Order_Summary and shop.order_summary, which differ only in case.", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_combined_field_both_databases_give_alike_is_said_to_be_so()
+    {
+        using var folder = Generated();
+        folder.File("release/db/tables.sql", Tables);
+        folder.File("release/db/procedures.sql", OrderSummary);
+        Assert.Equal(0, Run(folder, "generate", "--baseline", "release/db").ExitCode);
+
+        var output = Run(folder, "explain", "shop.order_summary", "line_count").Output;
+
+        Assert.Contains("  both databases (the baseline and the source) give it exactly as it is\n", output, StringComparison.Ordinal);
     }
 }

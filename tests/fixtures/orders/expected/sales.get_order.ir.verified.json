@@ -1,7 +1,15 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_order.sql": "822c904930a317372c140ae97625c03954402009ecc38feb360e3c27866785f0",
+      "tables/customer.sql": "dcda07f5d6ddc377ea551994b7cb8a5e2ee4df72324309e2a100c496b8f2db2f",
+      "tables/order.sql": "e71a5e2f97b2fc372e26b3cb9c18470be574f018dd25a66016b0f56158d96ff2",
+      "tables/order_line.sql": "c8c0aa4806cffe7b7171145ac79b2355a4d3722ef06aec8a01b0a9b772e0ccc5",
+      "tables/product.sql": "019259ac39c63bfd58dcb160f8920b89c40458807eaebeca000ae1cf12f3872b",
+      "tables/salesperson.sql": "be132999ce43be9f1461c90fe3eff7c5a2181da3b9dd6d570c905d184605f680"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/kit_badges.sql": "1855492a959e5ded62d53830f5517c7ded0ce10005417a5f857b32633f346f1b",
+      "tables/kit_part.sql": "db783c1f9b53e1a02da1dafb564148f162023c957d18b5573d51901b75423212"
+    }
   },
   "objects": [
     {

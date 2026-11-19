@@ -236,11 +236,11 @@ public static partial class IrCombination
         private IrField Field(string id, IrPathSegment[] path, IrField was, IrField now)
         {
             var type = Join(id, path, was.Type, now.Type);
-            return Joined(was, now) with
-            {
-                From = [.. was.From.Concat(now.From).Distinct()],
-                Sides = new IrFieldSides(IrFieldSide.Of(was), IrFieldSide.Of(now)),
-            };
+            var joined = Joined(was, now) with { From = [.. was.From.Concat(now.From).Distinct()], Sides = null };
+
+            // Where both databases give the field exactly as combined, the sides would only repeat it, so they are left out.
+            var (before, after) = (IrFieldSide.Of(was), IrFieldSide.Of(now));
+            return before == after && after == IrFieldSide.Of(joined) ? joined : joined with { Sides = new IrFieldSides(before, after) };
 
             IrField Joined(IrField was, IrField now) => (was.Presence, now.Presence) switch
             {

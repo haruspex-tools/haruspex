@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_nested_with_nulls.sql": "f00e7b97ab7d66c21ab3113fe24e71c1a73ac6507216adc0596adc13c435433a",
+      "tables/sample.sql": "e57f5cf6bf3327c0e79b4c7cb07e2b87a32e06b402105f52c360da0ed785a239",
+      "tables/sample_tag.sql": "5e8b349240b227eaac9dd04fee5c3726fee1a83230c0c4bc4d20740040528567"
+    }
   },
   "objects": [
     {

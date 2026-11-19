@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/swap_tally_types.sql": "d6bc60ff7307d0865c1baf9a32c2e55d673f4f4b3fc6490d25bc2731ce6ffe95",
+      "tables/swap_tally.sql": "7066fb942552541da2ee335287f3fc4c29038d81a9b0ec08c092424c37cb6d9d"
+    }
   },
   "objects": [
     {

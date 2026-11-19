@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/lenient.sql": "9a49996dfcc1c0752374f177cc2f2f9855f1d87ca3756e6e0d57544d869de7bb",
+      "tables/line.sql": "7f1c37c9b158c930c2d9878b97c37daf1d0b7afdbb9f95d850a76db6684f97ea"
+    }
   },
   "objects": [
     {

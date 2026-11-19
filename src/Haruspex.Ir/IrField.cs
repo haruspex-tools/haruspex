@@ -25,7 +25,8 @@ public sealed record IrField(string Name, IrType Type, IrPresence Presence, Equa
 
     /// <summary>
     /// In a document combining two databases (<see cref="IrSource.Baseline"/>), the field as each gave it, before they were
-    /// combined (0.25); null in a document of one database. Where a claim came from, not a claim.
+    /// combined (0.25); null in a document of one database, and in a combined one where both gave the field exactly as it is
+    /// here, which the sides would only repeat. Where a claim came from, not a claim.
     /// </summary>
     public IrFieldSides? Sides { get; init; }
 }

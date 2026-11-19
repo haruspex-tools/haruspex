@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/merge_two_actions.sql": "f8cbceeb8618933ca4ee6efd2c70a307fa472a1faeb3753941a05d796fa10052",
+      "tables/booking.sql": "1e069376bb56d71ce24e4dd4e62b1a2ae2d2264859236e6bbe1c17c79d5a4bd8"
+    }
   },
   "objects": [
     {

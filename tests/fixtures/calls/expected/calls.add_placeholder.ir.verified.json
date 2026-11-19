@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/add_placeholder.sql": "d13541041ed3b871fc3aae2465e5936d263de206cb0077ed2da9f1a67cfc912a"
+    }
   },
   "objects": [
     {

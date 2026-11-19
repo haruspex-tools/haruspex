@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/low_floor.sql": "b5863af4a31150aef5a747619c7696bab379e8d0bd7a84fd3568ccebf76961de"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/restock.sql": "091f2293a3a5347da8286fc5592a7d54d498fb6939a92f5fc4ed5a1f407d285a"
+    }
   },
   "objects": [
     {

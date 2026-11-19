@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_card.sql": "fb99b5b49cc3377f17a854bfa76ebccb4d979b3b14263030740afb10838f0c7d",
+      "tables/orders.sql": "84f55e6612314f00a777b396a85b539c5c845fe031ca99cbb977f3c41d767e8c"
+    }
   },
   "objects": [
     {

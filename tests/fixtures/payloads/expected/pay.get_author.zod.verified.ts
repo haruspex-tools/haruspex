@@ -41,7 +41,6 @@ export const GetAuthorAuthorSchema = z.object({
   bio: z.string().max(200).nullable(),
   /**
    * Not known (json-shape-unknown); the IR's unknowns say why.
-   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
    * To change it: type it in the config file with "type" and "import".
    * Why: haruspex explain pay.get_author author.profile
    */

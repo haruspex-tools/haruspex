@@ -114,7 +114,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.25"` when a field has `from` or `sides`,
+- must write `irVersion` as the oldest version that says all the document says: `"0.25"` when a field has `from` or `sides`, or
+  a source has `files`,
   else `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), else `"0.23"`; and a document
   that this page and the schema allow;
 - must write `text` on an object exactly when its kind is `query`;
@@ -130,7 +131,8 @@ of program handle one.
 - must read `irVersion` first and must refuse a document of any version but 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
-  is `not-in-both` and a field's `sides`; and must refuse a field's `from` or `sides` in a document labelled 0.23 or 0.24;
+  is `not-in-both` and a field's `sides`; and must refuse a field's `from` or `sides`, and a source's `files`, in a document
+  labelled 0.23 or 0.24;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
   type, a count that is negative or past 2,147,483,647, a number in a
@@ -306,8 +308,11 @@ only tested (a `WHEN`, a condition), only ordering or partitioning a window, or 
 where it applied, it is the field's derivation, which `haruspex explain` shows without the SQL
 ([decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)). In a combined document, `sides` gives the
 field as each database gave it before they were combined, `{ "baseline"?, "candidate"? }`, each
-`{ "presence", "nullable", "nullableBecause"?, "sql"?, "from"? }`, a side left out where that database doesn't return the key.
-Neither is a claim: a comparison reports no change in them.
+`{ "presence", "nullable", "nullableBecause"?, "sql"?, "from"? }`, a side left out where that database doesn't return the key;
+`sides` is left out where both databases give the field exactly as it is, which it would only repeat.
+A source's `files` (0.25) gives the SHA-256 of each script file the document's locations point into, by its path as a location
+writes it, of its text with LF line endings in UTF-8, so that a reader can tell the file in front of it is the one a location
+was written from, as `sha256` tells a package. None of these is a claim: a comparison reports no change in them.
 
 **Logical kinds.** `string`, `number`, `boolean`, `date` (no time, no zone), `time` (no date, no zone), `datetime`, and
 `uuid` (8-4-4-4-12 hex digits, not necessarily an RFC 9562 UUID). `format` refines a `number` as `uint8`, `int16`,
@@ -530,8 +535,9 @@ The format's versions, newest first. While the version is 0.x, every change a re
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
 
-**0.25** (19 Nov 2026, where a field came from). A field's `from`, the table columns its value is read from, and, in a combined
-document, its `sides`, the field as each database gave it
+**0.25** (19 Nov 2026, where a field came from). A field's `from`, the table columns its value is read from; in a combined
+document, its `sides`, the field as each database gave it, where they differ; and a source's `files`, the hash of each script
+file its locations point into
 ([decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)). A document is labelled 0.25 when a field
 has either, which a document inferred from SQL almost always does; one that says neither is labelled 0.24 or 0.23 as before, and
 this reader reads all three.

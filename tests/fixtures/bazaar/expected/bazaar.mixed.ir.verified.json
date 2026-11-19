@@ -1,7 +1,14 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/mixed.sql": "89a3a5d9160cf191d4610bdcb415cb8990af0d9979c24ed9715c361b4fd1c1cf",
+      "tables/auction_lot.sql": "30c43a29fde2b419aa8a2921633583c58e181acbc8947a2efe6f8e6bd9bf0e09",
+      "tables/barter.sql": "2d5a74dddd7d14a21b8fe6386eb9247c87ffb06e8373d61bfc97f996a411a13d",
+      "tables/stall_sale.sql": "8f4eae7710a7b324922d103af91e9e45c29c3a15b6f4c7ba4c8b1437b8430efb",
+      "tables/web_order.sql": "d54f2a292f1dc0bda5a30adcfc3f642874761cf6b0c9ef691ba7aae315ad97c0"
+    }
   },
   "objects": [
     {

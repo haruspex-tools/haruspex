@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/visit_money.sql": "ad2cf0a84b94a39daef03786774441f1da9d5dc6b4e7625ebfa0c27e4946b86c",
+      "tables/member.sql": "d72487a56f612ee74455c6c78b67a60d1f45f029765899149be19f4b6d46381c",
+      "tables/visit.sql": "29d53ac2ea982602701c5a3ba25e90a8dea3ffb23be4ebc2e6b0b4e497262616"
+    }
   },
   "objects": [
     {

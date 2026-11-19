@@ -38,7 +38,7 @@
           "maxLength": 200
         },
         "profile": {
-          "description": "Not known (json-shape-unknown): pay.author.profile is a json column: its shape is in the data, not the schema. May be null: nullable-column (pay.author.profile). Unknown: the JSON's shape is in the data, not the code (json-shape-unknown). To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain pay.get_author author.profile"
+          "description": "Not known (json-shape-unknown): pay.author.profile is a json column: its shape is in the data, not the schema. May be null: nullable-column (pay.author.profile). To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain pay.get_author author.profile"
         },
         "books": {
           "description": "May be null: empty-aggregate (procedures/get_author.sql:14:23). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain pay.get_author author.books",

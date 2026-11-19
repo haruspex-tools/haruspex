@@ -5,6 +5,11 @@
     "session": {
       "ansiWarnings": true,
       "arithAbort": false
+    },
+    "files": {
+      "procedures/usage_summary.sql": "ee9c6b43b21546dab9142eb80c07193029bdd7264894caa33f1e43805d74e114",
+      "tables/meter.sql": "3f868426d419b958839467d2a08c1d9fb44b069a7a635feaf55a7aaa45c75b66",
+      "tables/reading.sql": "8ce119c523780ae80a42aa174c7e13c877b4a0ee1a727c3bafd54dcf257b1b66"
     }
   },
   "objects": [

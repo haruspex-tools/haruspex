@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Ir;
 
 namespace Haruspex.Emit.Zod.Model;
 
@@ -13,7 +14,7 @@ namespace Haruspex.Emit.Zod.Model;
 internal sealed record ZodProperty(string Key, ZodExpression Value, bool Getter = false)
 {
     /// <summary>
-    /// Why the field is what it is, a sentence a line (<see cref="Haruspex.Ir.IrFieldText"/>), written after the value's notes in
+    /// Why the field is what it is, a sentence a line (<see cref="IrFieldText"/>), written after the value's notes in
     /// the comment above the property; none when the setting asks for none.
     /// </summary>
     public EquatableArray<string> Explanation { get; init; } = [];

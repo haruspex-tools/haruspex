@@ -1,7 +1,7 @@
-using Haruspex.Collections;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Cli.Output;
@@ -43,38 +43,44 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
         }
 
         var field = place.Field;
-        output.WriteLine($"{target} {place.Path}: {IrClaimText.Value(field.Type, field.Nullable)}{Presence(field)}");
+        Say(output, $"{target} {place.Path}: {IrClaimText.Value(field.Type, field.Nullable)}{Presence(field)}");
         Steps(output, field.From, field.NullableBecause, baseline: false, "  ");
         if (IrSurprises.TypeDiffers(field) && field.Type is IrScalar { Sql: { } own })
-            output.WriteLine($"  type {own}: what it is computed with makes it another type than its column's");
+            Say(output, $"  type {own}: what it is computed with makes it another type than its column's");
         if (field.Type is IrUnknownType unknown)
         {
-            output.WriteLine($"  unknown {IrWireNames.Of(unknown.Reason)}: {IrReasons.Text(unknown.Reason)}");
+            Say(output, $"  unknown {IrWireNames.Of(unknown.Reason)}: {IrReasons.Text(unknown.Reason)}");
             foreach (var found in Unknowns(place))
             {
-                output.WriteLine($"    at {found.At}: {found.Detail}");
+                Say(output, $"    at {found.At}: {found.Detail}");
                 Shown(output, found.At, baseline: false, "    ");
             }
         }
 
         if (field.Presence == IrPresence.Optional)
-            output.WriteLine("  absent: one of the two databases doesn't return the key, or leaves it out when null where the other sends null");
+            Say(output, "  absent: one of the two databases doesn't return the key, or leaves it out when null where the other sends null");
         else if (IrSurprises.AbsentWhenNull(field))
-            output.WriteLine("  absent when null: FOR JSON leaves out a key whose value is null");
+            Say(output, "  absent when null: FOR JSON leaves out a key whose value is null");
 
         if (Override(place) is { } claim)
-            output.WriteLine($"  declared {IrWireNames.Of(claim.Setting)} in the config file{(claim.Why is { } why ? $": {why}" : "")}");
+            Say(output, $"  declared {IrWireNames.Of(claim.Setting)} in the config file{(claim.Why is { } why ? $": {why}" : "")}");
         if (field.Sides is { } sides)
         {
             Side(output, sides.Baseline, baseline: true);
             Side(output, sides.Candidate, baseline: false);
-            output.WriteLine($"  combined: {Combined(field)}");
+            Say(output, $"  combined: {Combined(field)}");
+        }
+        else if (document.Source.Baseline is not null)
+        {
+            Say(output, $"  both databases ({sources.SourceOf(baseline: true)} and {sources.SourceOf(baseline: false)}) give it exactly as it is");
         }
 
+        SayIfNotDerived(output);
+
         foreach (var way in WaysOut(field))
-            output.WriteLine($"  to change it: {way}");
+            Say(output, $"  to change it: {way}");
         foreach (var code in Codes(field))
-            output.WriteLine($"  page {code}: {IrReasons.Page(code)}");
+            Say(output, $"  page {code}: {IrReasons.Page(code)}");
     }
 
     /// <summary>
@@ -85,13 +91,13 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
     {
         foreach (var column in from)
         {
-            output.WriteLine($"{indent}from {column.Column}{(column.Sql is { } sql ? $" ({sql})" : "")}, declared at {column.At}");
+            Say(output, $"{indent}from {column.Column}{(column.Sql is { } sql ? $" ({sql})" : "")}, declared at {column.At}");
             Shown(output, column.At, baseline, indent + "  ");
         }
 
         foreach (var reason in because)
         {
-            output.WriteLine($"{indent}null {IrWireNames.Of(reason.Rule)} at {reason.At}: {IrReasons.Text(reason.Rule)}");
+            Say(output, $"{indent}null {IrWireNames.Of(reason.Rule)} at {reason.At}: {IrReasons.Text(reason.Rule)}");
             Shown(output, Located(reason, from), baseline, indent + "  ");
         }
     }
@@ -100,7 +106,7 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
     private void Shown(TextWriter output, string at, bool baseline, string indent)
     {
         if (sources.Line(at, baseline) is { } line)
-            output.WriteLine($"{indent}| {line.Trim()}");
+            Say(output, $"{indent}| {line.Trim().Replace('\t', ' ')}");
     }
 
     /// <summary>Where a reason applied: its own location, or for a column it names, where that column is declared.</summary>
@@ -114,13 +120,13 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
         var source = sources.SourceOf(baseline);
         if (side is null)
         {
-            output.WriteLine($"  {name} ({source}): doesn't return the key");
+            Say(output, $"  {name} ({source}): doesn't return the key");
             return;
         }
 
-        output.WriteLine($"  {name} ({source}): {side.Sql ?? "not a scalar"}, {IrWireNames.Of(side.Presence)}, {(side.NullableBecause.Count == 0 ? "never null" : "may be null")}");
+        Say(output, $"  {name} ({source}): {side.Sql ?? "not a scalar"}, {IrWireNames.Of(side.Presence)}, {(side.NullableBecause.Count == 0 ? "never null" : "may be null")}");
         if (baseline && BaselineSaysNoSources)
-            output.WriteLine("    the baseline was read from an IR older than 0.25, which doesn't say where its fields came from");
+            Say(output, "    the baseline was read from an IR older than 0.25, which doesn't say where its fields came from");
         Steps(output, side.From, side.NullableBecause, baseline, "    ");
     }
 
@@ -135,6 +141,19 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
             var sides = document.Types.Values.SelectMany(t => t.Fields).Select(f => f.Sides).OfType<IrFieldSides>().ToList();
             return sides.Any(s => s.Candidate is { From.Count: > 0 }) && !sides.Any(s => s.Baseline is { From.Count: > 0 });
         }
+    }
+
+    /// <summary>
+    /// Whether the IR says where its fields came from: false for one written before 0.25, which has the reasons but neither the
+    /// columns nor the files' hashes.
+    /// </summary>
+    private bool Derived => document.Version == IrDocument.CurrentVersion;
+
+    /// <summary>For an IR written before 0.25, why no column is shown and no line, and what writes one that has them.</summary>
+    private void SayIfNotDerived(TextWriter output)
+    {
+        if (!Derived)
+            Say(output, $"  this IR is {document.Version}, which doesn't say where a field came from: run haruspex generate to write it as {IrDocument.CurrentVersion}");
     }
 
     /// <summary>The unknowns at the field's place, with their detail and where.</summary>
@@ -181,10 +200,12 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
             return;
         }
 
-        output.WriteLine($"{obj.Id} {parameter.Name}: {IrClaimText.Value(parameter.Type, nullable: true)}");
-        output.WriteLine($"  declared in {obj.Id}, at {obj.At}; a caller may pass it as null{(parameter.HasDefault ? ", or leave it out for its default" : "")}");
+        Say(output, $"{obj.Id} {parameter.Name}: {IrClaimText.Value(parameter.Type, nullable: true)}");
+        Say(output, $"  a parameter of {obj.Id}, which is defined at {obj.At}; a caller may pass it as null{(parameter.HasDefault ? ", or leave it out for its default" : "")}");
+        if (parameter.IsOutput)
+            Say(output, "  an OUTPUT parameter: the procedure may set it, and its function returns the value it ends with, which may be null");
         if (parameter.Type is IrUnknownType unknown)
-            output.WriteLine($"  unknown {IrWireNames.Of(unknown.Reason)}: {IrReasons.Text(unknown.Reason)}");
+            Say(output, $"  unknown {IrWireNames.Of(unknown.Reason)}: {IrReasons.Text(unknown.Reason)}");
     }
 
     private void Surprises(string target, IReadOnlyList<IrFieldPlace> places, IReadOnlyList<IrUnknown> unknowns, TextWriter output)
@@ -217,11 +238,12 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
 
         if (surprises.Count == 0 && unknowns.Count == 0)
         {
-            output.WriteLine($"{target}: every field is what its columns declare.");
+            Say(output, $"{target}: every field is what its columns declare.");
+            SayIfNotDerived(output);
             return;
         }
 
-        output.WriteLine(surprises.Count switch
+        Say(output, surprises.Count switch
         {
             0 => $"{target}: no field differs from what its columns declare.",
             1 => $"{target}: 1 field differs from what its columns declare.",
@@ -229,12 +251,19 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
         });
         var width = surprises.Count == 0 ? 0 : surprises.Max(p => p.Path.Length);
         foreach (var place in surprises)
-            output.WriteLine($"  {place.Path.PadRight(width)}  {Summary(place.Field)}");
+            Say(output, $"  {place.Path.PadRight(width)}  {Summary(place.Field)}");
         foreach (var unknown in unknowns)
-            output.WriteLine($"  unknown {unknown.Path} ({IrWireNames.Of(unknown.Reason)}) at {unknown.At}: {unknown.Detail}");
+            Say(output, $"  unknown {unknown.Path} ({IrWireNames.Of(unknown.Reason)}) at {unknown.At}: {unknown.Detail}");
         if (surprises.Count > 0)
-            output.WriteLine($"Run haruspex explain {target} <field> for a field in full.");
+            Say(output, $"Run haruspex explain {IrFieldPlaces.ShellWord(target)} <field> for a field in full.");
+        SayIfNotDerived(output);
     }
+
+    /// <summary>
+    /// A line of text, with every control character in it written as an escape (<see cref="Visible"/>): a SQL line, a name or an
+    /// unknown's detail may hold one, and printed raw an escape character would drive the terminal.
+    /// </summary>
+    private static void Say(TextWriter output, string line) => output.WriteLine(Visible.Of(line));
 
     /// <summary>A field's surprises on one line: <c>may be null: unmatched-row, empty-aggregate</c>.</summary>
     private static string Summary(IrField field)
@@ -287,6 +316,10 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
                 SideJson(w, "baseline", sides.Baseline, baseline: true);
                 SideJson(w, "candidate", sides.Candidate, baseline: false);
                 w.WriteEndObject();
+            }
+            else if (document.Source.Baseline is not null)
+            {
+                w.WriteBoolean("sameInBoth", true);
             }
 
             w.WriteStartArray("waysOut");
@@ -372,13 +405,14 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
             w.WriteEndObject();
     }
 
-    private static void Json(TextWriter output, Action<Utf8JsonWriter> body)
+    private void Json(TextWriter output, Action<Utf8JsonWriter> body)
     {
         using var buffer = new MemoryStream();
         using (var w = new Utf8JsonWriter(buffer, Options))
         {
             w.WriteStartObject();
             w.WriteNumber("version", Version);
+            w.WriteBoolean("derived", Derived);
             body(w);
             w.WriteEndObject();
         }

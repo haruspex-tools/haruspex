@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/variable_and_temp_of_one_name.sql": "d171c85d39a847e3e95cdf941e85e11512b20b4f4d905864f650ee1b3714eead"
+    }
   },
   "objects": [
     {

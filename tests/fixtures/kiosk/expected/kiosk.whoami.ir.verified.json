@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/whoami.sql": "514ff5c3cf223a4c948d49ce83fc39ad3502c5e214c83c447f339a927b394af6"
+    }
   },
   "objects": [
     {

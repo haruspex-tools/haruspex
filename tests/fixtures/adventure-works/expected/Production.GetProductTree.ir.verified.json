@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/GetComponents.sql": "fb6bcf532dd91813d758591d73cba739576c7c140ca2fc7429c095f768856f7a",
+      "procedures/GetProductTree.sql": "3859aee428a657364105d977dcdd1f1e0a37f5fbc3a37a42e7124148bc0c76f4",
+      "tables/BillOfMaterials.sql": "a0d74bc85a647695baa9c2a2b264ec2d757718660a046b039811a9a5e123e89c",
+      "tables/Product.sql": "8cf5b79a3f26bd6890522f412026a44c122cde244163046680c34753113841df"
+    }
   },
   "objects": [
     {

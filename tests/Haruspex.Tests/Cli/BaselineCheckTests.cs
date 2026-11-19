@@ -75,13 +75,14 @@ public class BaselineCheckTests
     public void A_refused_change_points_to_explain_in_each_database_and_the_baseline_s_from_its_ir_file()
     {
         using var folder = Released(ListOrders, Edit(ListOrders, "o.customer", "o.note AS customer"));
-        Assert.Equal(0, Run(folder, "generate", "release/db", "--out", "release/out").ExitCode);
+        Assert.Equal(0, Run(folder, "generate", "release/db", "--out", "release/the out").ExitCode);
 
-        var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/out/haruspex.ir.json");
+        var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/the out/haruspex.ir.json");
 
+        // The baseline's path as the config file's folder names it, quoted: it holds a space.
         Assert.Equal(1, exitCode);
         Assert.Contains(
-            "Why: haruspex explain shop.list_orders customer, once generated, and in the baseline haruspex explain shop.list_orders customer --ir release/out/haruspex.ir.json.",
+            "Why: haruspex explain shop.list_orders customer, once generated, and in the baseline haruspex explain shop.list_orders customer --ir 'release/the out/haruspex.ir.json'.",
             error,
             StringComparison.Ordinal);
     }

@@ -39,7 +39,7 @@ public static class IrFieldPlaces
     public static string Command(IrDocument document, string typeName, IrField field)
     {
         var (target, path) = Of(document, typeName, field);
-        return $"haruspex explain {Quoted(target)} {Quoted(path)}";
+        return $"haruspex explain {ShellWord(target)} {ShellWord(path)}";
     }
 
     /// <summary>
@@ -56,14 +56,14 @@ public static class IrFieldPlaces
             return null;
         }
 
-        return $"haruspex explain {Quoted(obj.Id)} {Quoted(place.Path)}";
+        return $"haruspex explain {ShellWord(obj.Id)} {ShellWord(place.Path)}";
     }
 
     /// <summary>The <c>haruspex explain</c> command that explains an object's results.</summary>
     public static string Command(IrObject obj)
     {
         ArgumentNullException.ThrowIfNull(obj);
-        return $"haruspex explain {Quoted(obj.Id)}";
+        return $"haruspex explain {ShellWord(obj.Id)}";
     }
 
     /// <summary>
@@ -125,9 +125,16 @@ public static class IrFieldPlaces
     /// <summary>A path without its <c>[]</c>, which a person may leave out.</summary>
     private static string Loose(string path) => path.Replace("[]", "", StringComparison.Ordinal).TrimStart('.');
 
-    /// <summary>A word as a shell takes it: as it is when it holds nothing a shell reads, and in single quotes otherwise.</summary>
-    private static string Quoted(string word) =>
-        word.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '/' or '-' or '@')
+    /// <summary>
+    /// A word as a shell takes it, so that a command written in a comment or a message runs as written: as it is when it holds
+    /// nothing a shell reads, and otherwise in single quotes. A <c>*/</c> inside is split as <c>*'"/"'</c>, the same word to a shell,
+    /// so that the command never ends the comment it is written in, nor needs the escape a comment would give it.
+    /// </summary>
+    public static string ShellWord(string word)
+    {
+        ArgumentNullException.ThrowIfNull(word);
+        return word.Length > 0 && word.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '/' or '-' or '@')
             ? word
-            : "'" + word.Replace("'", "'\\''", StringComparison.Ordinal) + "'";
+            : "'" + word.Replace("'", "'\\''", StringComparison.Ordinal).Replace("*/", "*'\"/\"'", StringComparison.Ordinal) + "'";
+    }
 }

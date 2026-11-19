@@ -1,7 +1,14 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/tab_receipt.sql": "883755a08c3996accc583843f55fcc0ebd78c6bbad6de7cd6a835f1cafc0f98d",
+      "tables/guest.sql": "95d4b894e7de812fbd9b4f3f78bec6c083f142a491900acd736f730ffdf35bc8",
+      "tables/menu_item.sql": "d6222261529ace2cef6a6371a3c88a424c23d403224596d3e5fa9637aee92fbc",
+      "tables/tab.sql": "71c74a73d81b7ffa52d4a792f643c53d5e4820d80ae8c52b703ad3dcf47cd312",
+      "tables/tab_item.sql": "2060b0c1504f32d76a6ce8bafdf8afbafbad2200aab76e682d858cff82824dcd"
+    }
   },
   "objects": [
     {

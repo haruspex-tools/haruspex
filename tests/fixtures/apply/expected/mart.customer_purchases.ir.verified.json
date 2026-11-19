@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/customer_purchases.sql": "fb9547c3e5a4fc488df8fe74223ba3dc96a0d1e37e47a011ddea5d42b05ec2ee",
+      "tables/customer.sql": "4ded542c4942d575d8b3145f64f3d4f23e3ccea30c114f462db40fbe76c5709e",
+      "tables/purchase.sql": "dec637e5b630fcd45b92ad1a1d098abda3f4a2ac6a70601cdfa8c177012196e1"
+    }
   },
   "objects": [
     {

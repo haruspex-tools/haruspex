@@ -1,4 +1,3 @@
-using Haruspex.Cli.Output;
 using Haruspex.Ir;
 
 namespace Haruspex.Cli;
@@ -7,7 +6,8 @@ namespace Haruspex.Cli;
 /// The end of a message from <c>check</c> about a field whose claim changed: the <c>haruspex explain</c> command that says why it
 /// is so, for each side whose IR there is, so that a refused change leads straight to its reason
 /// (<c>docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md</c>). <c>check</c> writes no IR, so the module's side
-/// is explained once <c>generate</c> has written it; a baseline given as an IR file is explained from that file.
+/// is explained once <c>generate</c> has written it; a baseline given as an IR file is explained from that file, named relative to
+/// the config file's folder, where the module's commands run, and quoted as a shell takes it.
 /// </summary>
 internal static class ExplainPointer
 {
@@ -26,7 +26,7 @@ internal static class ExplainPointer
     {
         var candidate = IrFieldPlaces.Command(module.Database, change.Object, change.Path);
         var baseline = module.Baseline is { IsIr: true } given && IrFieldPlaces.Command(given.Document, change.Object, change.Path) is { } command
-            ? $"{command} --ir {DisplayPath.From(module.Config.Directory, given.Path)}"
+            ? $"{command} --ir {IrFieldPlaces.ShellWord(Path.GetRelativePath(module.Config.Directory, given.Path).Replace('\\', '/'))}"
             : null;
         return (candidate, baseline) switch
         {

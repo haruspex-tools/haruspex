@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/delete_returns.sql": "18458df3b92270b3d825c560c1278a8f09308dc8c3d3a3d038ce8946ef064138",
+      "tables/book.sql": "e2460d3ded01bf7e62e881e791e0c17c2bd4ee521de80f2c06ad5d20c3a6c32c"
+    }
   },
   "objects": [
     {

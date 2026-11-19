@@ -1,7 +1,14 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/category_contents.sql": "7624463994c928c03329ab8bd7ed3f06ce75a6573b3c0320b7598ac8a563577c",
+      "functions/category_tree.sql": "9b24293d1f9f603685e03e0f9875e27c0941ccd75d71e817d4f590d01a0164b4",
+      "procedures/get_category.sql": "29b1af9829645b29779907a21015139c268d548ae4a5db9514ddc4d6dbf0f51a",
+      "tables/category.sql": "f089fe73634a02fe864657c61aebf883dd20aa229e45aba9461731aa64da6285",
+      "tables/item.sql": "e2bf3b9cca9a36eeaea57202b363ef4352768123ffd92a7021ed8c6719aab343"
+    }
   },
   "objects": [
     {

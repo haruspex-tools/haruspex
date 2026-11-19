@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/peek_parts.sql": "612d9e68ce42c2b5af2b2e220d7367b8eb3ce17fdf182a70beafc4a5f5c4fb13"
+    }
   },
   "objects": [
     {

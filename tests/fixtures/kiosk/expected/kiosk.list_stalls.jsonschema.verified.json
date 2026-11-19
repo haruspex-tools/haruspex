@@ -31,7 +31,7 @@
           "maxLength": 10
         },
         "reach": {
-          "description": "Not known (sqlcmd-variable): The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. May be null: unknown (procedures/list_stalls.sql:8:61). Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable). To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.list_stalls reach"
+          "description": "Not known (sqlcmd-variable): The literal '$(Region)' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. May be null: unknown (procedures/list_stalls.sql:8:61). To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.list_stalls reach"
         }
       },
       "required": [

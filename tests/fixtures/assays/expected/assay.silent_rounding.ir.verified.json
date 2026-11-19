@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/silent_rounding.sql": "9be97f89141c37410011ec8b0eb5fe91ec56b5b16d66180119174800fa999188",
+      "tables/sample.sql": "bb75d2130abf24b69dc2bf0fe1cc4ae9bb13abf1bdda441cd5047de2d6e9b6ba"
+    }
   },
   "objects": [
     {

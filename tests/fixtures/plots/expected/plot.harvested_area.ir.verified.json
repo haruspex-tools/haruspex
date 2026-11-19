@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "harvest.sql": "49c1fe0b4391bf49791210c749b8bd4cf00f9e28988872132371e2ee1139395a",
+      "plots.sql": "16afa0b6069fb941bf0c83868e8304b75ef207942e219f982ddf3b90caf0fa8a"
+    }
   },
   "objects": [
     {

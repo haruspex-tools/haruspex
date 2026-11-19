@@ -163,7 +163,8 @@ public partial class JsonConstructorTests
         var plain = Procedure("SELECT json_object('id': t.id) AS v FROM dbo.t AS t FOR JSON PATH;");
         var returning = Procedure("SELECT json_object('id': t.id RETURNING json) AS v FROM dbo.t AS t FOR JSON PATH;");
 
-        Assert.Equal(IrJsonWriter.Write(plain), IrJsonWriter.Write(returning));
+        // The two scripts differ, so their files' hashes do; everything the document claims is the same.
+        Assert.Equal(IrJsonWriter.Write(plain), IrJsonWriter.Write(returning with { Source = plain.Source }));
         Assert.Empty(returning.Unknowns);
     }
 

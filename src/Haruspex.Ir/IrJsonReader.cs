@@ -175,6 +175,7 @@ public static class IrJsonReader
         var source = new IrSource(json.String("dialect"))
         {
             Session = Session(json.OptionalObject("session")),
+            Files = Files(json.OptionalObject("files")),
             Package = Package(json),
             References = References(json),
         };
@@ -194,6 +195,10 @@ public static class IrJsonReader
     /// </summary>
     private static void SaysNothingOfSources(IrDocument document, string version)
     {
+        if (document.Source.Files.Count > 0)
+            throw new IrFormatException("$.source.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.CurrentVersion}.");
+        if (document.Source.Baseline?.Files.Count > 0)
+            throw new IrFormatException("$.source.baseline.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.CurrentVersion}.");
         foreach (var (name, type) in document.Types)
         {
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
@@ -595,6 +600,19 @@ public static class IrJsonReader
     }
 
     /// <summary>The package a source was read from, or none when the file leaves <c>package</c> out; its hash comes with it.</summary>
+    /// <summary>
+    /// The SHA-256 of each script file the locations point into (0.25); none when the file leaves <c>files</c> out. An empty object
+    /// is refused: the writer leaves it out, so there is one way to say "none".
+    /// </summary>
+    private static EquatableMap<string, string> Files(IrJsonObject? json)
+    {
+        if (json is null)
+            return [];
+        var files = json.Names.ToList().ToEquatableMap(name => name, json.String);
+        json.End();
+        return files.Count > 0 ? files : throw new IrFormatException(json.Path, "is empty: a source that points into no script leaves it out.");
+    }
+
     private static IrPackage? Package(IrJsonObject source)
     {
         if (source.Optional("package") is null)

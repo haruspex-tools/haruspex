@@ -44,7 +44,10 @@ internal static class Explain
         }
 
         var writer = new ExplainWriter(document, new ExplainSources(document, ModuleRun.ConfigOf(request), workingDirectory), json);
-        var obj = document.Objects.FirstOrDefault(o => o.Id == target) ?? document.Objects.FirstOrDefault(o => o.Name == target);
+        var named = Named(document, target);
+        if (named.Count > 1)
+            return Refused(error, CliCodes.ExplainNotFound.At(null, $"{target} names {EnglishList.Of([.. named.Select(o => o.Id)])}, which differ only in case. Name one as it is written."), HaruspexCli.ExitCodes.Usage);
+        var obj = named.SingleOrDefault();
         if (obj is null && !document.Types.ContainsKey(target))
         {
             return Refused(error, CliCodes.ExplainNotFound.At(null, $"{target} is neither an object nor a type in {shown}. Name a procedure as schema.name, a query file by its path, or a generated type by its name."), HaruspexCli.ExitCodes.Usage);
@@ -86,9 +89,51 @@ internal static class Explain
         return HaruspexCli.ExitCodes.Success;
     }
 
+    /// <summary>
+    /// The objects <paramref name="target"/> names: the one whose id or generated name it is, as written; else those it names as
+    /// SQL Server reads a name, its parts in brackets or not (<c>[shop].[order_summary]</c>) and in any case, which may be several
+    /// where two differ only in case.
+    /// </summary>
+    private static List<IrObject> Named(IrDocument document, string target)
+    {
+        if (document.Objects.FirstOrDefault(o => o.Id == target || o.Name == target) is { } exact)
+            return [exact];
+        var wanted = WithoutBrackets(target);
+        return [.. document.Objects.Where(o => string.Equals(WithoutBrackets(o.Id), wanted, StringComparison.OrdinalIgnoreCase) || string.Equals(o.Name, target, StringComparison.OrdinalIgnoreCase))];
+    }
+
+    /// <summary>A name with each part's brackets taken off (<c>[shop].[order]]s]</c> is <c>shop.order]s</c>).</summary>
+    private static string WithoutBrackets(string name)
+    {
+        var text = new System.Text.StringBuilder(name.Length);
+        var bracketed = false;
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (!bracketed && c == '[')
+            {
+                bracketed = true;
+            }
+            else if (bracketed && c == ']')
+            {
+                if (i + 1 < name.Length && name[i + 1] == ']')
+                    text.Append(name[++i]);
+                else
+                    bracketed = false;
+            }
+            else
+            {
+                text.Append(c);
+            }
+        }
+
+        return text.ToString();
+    }
+
     private static int Refused(TextWriter error, Diagnostic diagnostic, int exitCode)
     {
-        error.WriteLine(diagnostic);
+        // The message may quote names from the IR, which may hold a control character.
+        error.WriteLine(Visible.Of(diagnostic.ToString()));
         return exitCode;
     }
 }

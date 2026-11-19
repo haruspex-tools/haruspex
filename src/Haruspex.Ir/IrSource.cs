@@ -37,6 +37,15 @@ public sealed record IrSource(string Dialect)
     } = [];
 
     /// <summary>
+    /// The SHA-256 of each script file the document's locations point into, by its path as a location writes it (0.25): so that a
+    /// reader of a location (<c>haruspex explain</c>) can tell whether the file in front of it is the one the location was written
+    /// from, as a package's <see cref="Package"/> hash lets it tell a package. Each is of the file's text with its line endings made
+    /// LF, in UTF-8, so that a checkout that writes CRLF hashes the same. Empty for a document that points into no script, such as
+    /// one read from a package, and then the file leaves <c>files</c> out. Where a claim came from, not a claim.
+    /// </summary>
+    public EquatableMap<string, string> Files { get; init; } = [];
+
+    /// <summary>
     /// For a document that combines two databases (0.24), the source of the other: the baseline, the database the application
     /// meets before a change is deployed, whose claims the document's hold for as well as its own source's. Null for a document
     /// of one database, which is every document but one <c>haruspex generate</c> writes with a baseline, and then the file leaves

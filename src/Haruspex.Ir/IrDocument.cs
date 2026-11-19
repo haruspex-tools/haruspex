@@ -57,7 +57,8 @@ public sealed record IrDocument(
     /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md.
     /// </summary>
     public string Version =>
-        Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) ? CurrentVersion
+        Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
+            ? CurrentVersion
         : Source.Baseline is null ? OneDatabaseVersion
         : CombinedVersion;
 

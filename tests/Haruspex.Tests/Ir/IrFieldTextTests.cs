@@ -105,4 +105,14 @@ public class IrFieldTextTests
         Assert.Equal("haruspex explain shop.two '#2.line_id'", IrFieldPlaces.Command(two, "shop.two", "results[1][].line_id"));
         Assert.Null(IrFieldPlaces.Command(two, "shop.two", "results[1][].nothing"));
     }
+
+    [Fact]
+    public void A_name_holding_a_comment_s_end_is_quoted_so_the_command_runs_as_written_and_ends_no_comment()
+    {
+        // To a shell, 'shop.we*'"/"'ird' is the one word shop.we*/ird.
+        Assert.Equal("'shop.we*'\"/\"'ird'", IrFieldPlaces.ShellWord("shop.we*/ird"));
+        Assert.Equal("'#2.it'\\''s'", IrFieldPlaces.ShellWord("#2.it's"));
+        Assert.Equal("shop.order_summary", IrFieldPlaces.ShellWord("shop.order_summary"));
+        Assert.DoesNotContain("*/", IrFieldPlaces.ShellWord("a*/b*/c"), StringComparison.Ordinal);
+    }
 }

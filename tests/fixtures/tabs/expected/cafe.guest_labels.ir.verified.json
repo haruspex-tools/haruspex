@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/guest_labels.sql": "05c13cbd5cba7f2ea755fe114b98a2036deca6bb23787c13af0bc791f23c6317",
+      "tables/guest.sql": "95d4b894e7de812fbd9b4f3f78bec6c083f142a491900acd736f730ffdf35bc8"
+    }
   },
   "objects": [
     {

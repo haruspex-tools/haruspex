@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/shift_times.sql": "6fbdae39f9ebe57d0727f5d8e07da69c96a3c55e24050cf2f3070faf83a84cff"
+    }
   },
   "objects": [
     {

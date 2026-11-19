@@ -1,7 +1,10 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "plots.sql": "16afa0b6069fb941bf0c83868e8304b75ef207942e219f982ddf3b90caf0fa8a"
+    }
   },
   "objects": [
     {

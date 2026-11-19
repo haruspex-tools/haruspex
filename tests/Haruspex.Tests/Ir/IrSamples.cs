@@ -180,6 +180,7 @@ internal static class IrSamples
     /// </summary>
     public static IrDocument Derived { get; } = Combined with
     {
+        Source = Combined.Source with { Files = new Dictionary<string, string> { ["tables/orders.sql"] = Hash('e') }.ToEquatableMap(f => f.Key, f => f.Value) },
         Types = Combined.Types.ToDictionary(t => t.Key, t => t.Key != "FindOrdersRow" ? t.Value : t.Value with
         {
             Fields =

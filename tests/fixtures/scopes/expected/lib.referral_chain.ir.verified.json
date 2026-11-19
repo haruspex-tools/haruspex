@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/referral_chain.sql": "9edaa52c843d94213d8900cf4982fdb75f286a90aa24b2601540a37d191da0f7",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {

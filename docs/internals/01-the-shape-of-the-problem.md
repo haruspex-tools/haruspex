@@ -188,9 +188,12 @@ The IR says what is known (the parameter's type, and the length a value sent to 
 
 ```json haruspex-ir
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "example.sql": "b73a07090a46fd4fff2281e50a518c42a48c11e52ed9011fa02a95e3c1b934e5"
+    }
   },
   "objects": [
     {

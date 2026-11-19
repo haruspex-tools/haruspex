@@ -254,9 +254,11 @@ the right baseline here.
 `haruspex explain` says why a field is what it is, from the committed IR alone: an application's repository keeps the IR beside
 the generated code, and often not the database's SQL ([decision 0078](decisions/0078-the-ir-says-where-each-field-came-from.md)).
 With a field, it prints the field's derivation: the table columns it is read from, then each rule that acted on it, each with
-its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it), the line
-is printed under the reference; a package's line only when its SHA-256 is the one the IR recorded, since a package keeps no file
-names and the line is in its module's own text. Otherwise the reference stands alone, which is no error.
+its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it) and is the
+file the IR was written from (its hash is the one the IR records), the line is printed under the reference; a package's line
+only when its SHA-256 is the one the IR recorded, since a package keeps no file names and the line is in its module's own text.
+Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. A location is
+never followed outside the folder it is looked in, and a control character in a line or a name is printed as an escape.
 
 ```text
 $ haruspex explain shop.order_summary last_shipped
@@ -288,26 +290,28 @@ Run haruspex explain shop.order_summary <field> for a field in full.
 
 | Argument or option | What it is |
 |---|---|
-| `object` | The procedure, as `schema.name`; a query file, by its path; or a generated type, by its name (a type a function owns, which several objects reach). |
+| `object` | The procedure, as `schema.name`, its parts in brackets or not and in any case (`[shop].[Order_Summary]`), two that differ only in case being refused; a query file, by its path; its generated name; or a generated type, by its name (a type a function owns, which several objects reach). |
 | `field` | The field's path in the object's results, as the config file's paths are written (`lines[].qty`; the `[]` may be left out). With several result sets, the set first: by its name (`summary.total`) or, when they have none, its place from 1 (`#2.total`). A parameter with its `@` (`@order_id`). Without it, the object's surprises. |
 | `--ir` | The IR file. By default, `haruspex.ir.json` in the config file's output folder. |
 | `--config`, `-c` | The config file, which says where the IR and the SQL are. By default, found as `generate` finds it. |
 | `--json` | One JSON document for tools, below. |
 
-For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source (the baseline,
-and the candidate), with its own derivation, and how the two were combined. A baseline given as an IR file older than 0.25 says
-nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
+For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source as the IR
+records it (a package by its name, else the baseline and the source), with its own derivation, and how the two were combined;
+a field both give exactly as it is says so. A baseline given as an IR file older than 0.25, or an IR older than 0.25 itself,
+says nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
 [the reasons](reasons/README.md). Asking about something the IR doesn't have is HAR6038, which lists what it has; no IR to read is
 HAR6037.
 
 **`--json`** writes one document: `version`, now 1, which a tool checks, and which is provisional until haruspex 1.0;
-`object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
+`derived`, false for an IR older than 0.25; `object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
 has one, `nullable`, `presence`, whether it is a `surprise`, whether its type differs from its columns' (`typeDiffers`), `from`
 (each `column`, `sql`, `at`, and `line` when the SQL is at hand), `nullableBecause` (each `rule`, its `text` and `page`, `at`,
 `line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
 `text`, `page`), and the `explain` command. A field named in full adds the config file's `override` when there is one, `sides`
 for a combined field (`baseline` and `candidate`, each with its `source`, or `null` where that database doesn't return the
-key, and for the baseline whether it says where its fields came from, `derived`), and its `waysOut`. Without a field, `fields`
+key, and for the baseline whether it says where its fields came from, `derived`) or `sameInBoth` where both give it alike, and
+its `waysOut`. Without a field, `fields`
 lists the surprises and `unknowns` the object's (`path`, `reason`, `detail`, `at`); a parameter gives `parameter` (`name`,
 `value`, `sql`, `hasDefault`, `output`) instead. The vocabulary is the IR's: its codes, its paths and its locations.
 

@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/correlated_two_levels.sql": "918634b89ea6a535cbf9a3023eb53ac6f79f2c1d25c6257e4edddaa9ae09a6cf",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {

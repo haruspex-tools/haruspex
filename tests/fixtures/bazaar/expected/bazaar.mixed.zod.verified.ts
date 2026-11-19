@@ -75,7 +75,6 @@ export type MixedResult5Row = z.infer<typeof MixedResult5RowSchema>
 export const MixedResult6RowSchema = z.object({
   /**
    * Not known (unsupported-expression); the IR's unknowns say why.
-   * Unknown: an expression or function is not modelled yet (unsupported-expression).
    * To change it: declare the results in the config file's "results".
    * Why: haruspex explain bazaar.mixed '#6.share_or_flag'
    */

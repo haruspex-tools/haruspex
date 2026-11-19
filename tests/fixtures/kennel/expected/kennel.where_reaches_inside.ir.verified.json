@@ -1,7 +1,11 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/where_reaches_inside.sql": "9b675d6a0e9efa33280077c5de2d1e89666d9875e0d30141e2f875cd961f7363",
+      "tables/dog.sql": "ddbcb250c1f978c9889883c1a4f3816525aa55f02a3d1f422a71236742f8b34e"
+    }
   },
   "objects": [
     {

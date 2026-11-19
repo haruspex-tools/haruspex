@@ -1,7 +1,13 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/full_name_groups.sql": "11050104d3997c4f0b7f99b8930370675de76f885989176037ca6169918d5299",
+      "tables/book.sql": "e2460d3ded01bf7e62e881e791e0c17c2bd4ee521de80f2c06ad5d20c3a6c32c",
+      "tables/loan.sql": "031cee47332cfeff242554fffa6d7933face3b512914c7c2e6156951539c45ad",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {

@@ -135,6 +135,11 @@ public static class IrJsonSchema
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Node(("type", "boolean"))))),
+            ("files", Node(
+                ("description", "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none."),
+                ("type", "object"),
+                ("minProperties", 1),
+                ("additionalProperties", Sha256("The file's SHA-256.")))),
             .. more,
         ]));
 

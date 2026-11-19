@@ -7,7 +7,6 @@ export const ListParcelsRowSchema = z.object({
   label: z.string().max(20).nullable(),
   /**
    * Not known (unsupported-sql-type); the IR's unknowns say why.
-   * Unknown: a SQL type is not modelled yet (unsupported-sql-type).
    * To change it: declare the results in the config file's "results".
    * Why: haruspex explain shop.list_parcels extras
    */

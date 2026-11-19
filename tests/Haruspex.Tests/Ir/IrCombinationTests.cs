@@ -62,19 +62,15 @@ public class IrCombinationTests
     }
 
     [Fact]
-    public void A_document_combined_with_itself_says_what_it_says_names_its_baseline_and_each_side_of_each_field()
+    public void A_document_combined_with_itself_says_what_it_says_and_names_its_baseline_with_no_field_s_sides_repeated()
     {
         var document = Infer(GetOrder);
 
         var combined = Combine(document, document);
 
+        // Every field as both give it, so no field repeats it as its sides.
         Assert.Empty(combined.Findings);
-        var withoutSides = combined.Document with
-        {
-            Types = combined.Document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { Sides = null })] }),
-        };
-        Assert.Equal(document with { Source = document.Source with { Baseline = document.Source } }, withoutSides);
-        Assert.All(combined.Document.Types.Values.SelectMany(t => t.Fields), f => Assert.Equal(new IrFieldSides(IrFieldSide.Of(f with { Sides = null }), IrFieldSide.Of(f with { Sides = null })), f.Sides));
+        Assert.Equal(document with { Source = document.Source with { Baseline = document.Source } }, combined.Document);
         Assert.Equal(IrDocument.CurrentVersion, combined.Document.Version);
     }
 
@@ -97,7 +93,7 @@ public class IrCombinationTests
     }
 
     [Fact]
-    public void A_combined_field_keeps_each_database_s_side_and_a_key_one_lacks_has_no_side_there()
+    public void A_combined_field_keeps_each_database_s_side_a_key_one_lacks_has_no_side_there_and_one_both_give_alike_has_none()
     {
         var baseline = Infer(GetOrder);
         var candidate = Infer(Edit(GetOrder, "o.status FROM", "o.status, o.channel FROM"));
@@ -109,7 +105,7 @@ public class IrCombinationTests
         Assert.Equal(IrPresence.Always, channel.Sides.Candidate!.Presence);
         Assert.Equal(["shop.orders.channel"], channel.Sides.Candidate.From.Select(c => c.Column));
         var status = Field(combined.Document, "shop.get_order", "status");
-        Assert.Equal(status.Sides!.Baseline!.Sql, status.Sides.Candidate!.Sql);
+        Assert.Null(status.Sides);
         Assert.Equal(["shop.orders.status"], status.From.Select(c => c.Column));
     }
 

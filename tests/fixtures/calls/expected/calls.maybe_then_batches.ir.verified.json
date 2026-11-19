@@ -1,7 +1,12 @@
 {
   "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/maybe_then_batches.sql": "6d83a94ce63066d8b473aea4a1b9fa18b2bbe9404c8497d69a1a9d3203299f85",
+      "tables/batch.sql": "5cb3481c339a7ec8a8eec28baf23de5e0f762f2d5a92514c6cd508aa13e57de4",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/picks_from_a_call.sql": "5587b1d60617869afd44e678a81aeb08525450bc220ad390f7452b9bbb39491b"
+    }
   },
   "objects": [
     {
