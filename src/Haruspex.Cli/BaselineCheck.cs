@@ -24,7 +24,7 @@ internal static class BaselineCheck
         return
         [
             .. findings.Select(f => Said(module, f)),
-            .. Shapes(module, application, database),
+            .. Shapes(module, application, database, baseline),
             .. notChecked.Select(u => At(module, database.Objects.FirstOrDefault(o => o.Id == u.Key), CliCodes.QueryTextUnchecked, u.Value)),
         ];
     }
@@ -78,7 +78,14 @@ internal static class BaselineCheck
     /// <param name="application">The document the application already running was built against.</param>
     /// <param name="now">The document whose functions the application is next built with: the database's own for <c>check</c>, the
     /// combined one for <c>generate</c>.</param>
-    public static IEnumerable<Diagnostic> Shapes(EmittedModule module, IrDocument application, IrDocument now)
+    /// <param name="baseline">The baseline the application's document was read from, which says whether its set names are known.</param>
+    /// <remarks>
+    /// A baseline read from its source takes its set names from the config file of now (<c>HaruspexConfig.AppliedToBaseline</c>),
+    /// which names none of a procedure's sets when it returns more of them than the list names: what the running application
+    /// called them isn't known, so the warning says what the function returns now and how many sets the baseline returns, not a
+    /// shape the application may never have had.
+    /// </remarks>
+    public static IEnumerable<Diagnostic> Shapes(EmittedModule module, IrDocument application, IrDocument now, Baseline baseline)
     {
         if (!module.Config.Emitters.Contains(Emitter.Mssql))
             yield break;
@@ -87,11 +94,13 @@ internal static class BaselineCheck
         {
             var was = MssqlEmitter.ReturnShape(known);
             var shape = MssqlEmitter.ReturnShape(after[known.Id]);
-            if (!shape.KeepsCallersOf(was))
-            {
-                yield return At(module, after[known.Id], CliCodes.ReturnShapeChanged,
-                    $"{known.Id}: its function now returns {shape.Description} where it returned {was.Description}, so each call of it changes when the application is next built; the application already running is unaffected. A procedure whose result sets are named returns the same object whatever sets it gains.");
-            }
+            if (shape.KeepsCallersOf(was))
+                continue;
+            var before = !baseline.IsIr && known.SetNames is null && after[known.Id].SetNames is { } names && known.Results is { } sets && sets.Count > names.Count
+                ? $"; the baseline returns {sets.Count} result sets, more than the config file names, so what the application already running named them isn't known from its source,"
+                : $" where it returned {was.Description},";
+            yield return At(module, after[known.Id], CliCodes.ReturnShapeChanged,
+                $"{known.Id}: its function now returns {shape.Description}{before} so each call of it changes when the application is next built; the application already running is unaffected. A procedure whose result sets are named returns the same object whatever sets it gains.");
         }
     }
 

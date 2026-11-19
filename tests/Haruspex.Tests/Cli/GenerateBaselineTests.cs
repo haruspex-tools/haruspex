@@ -175,6 +175,11 @@ public class GenerateBaselineTests
         Assert.DoesNotContain("HAR4112", error, StringComparison.Ordinal);
         Assert.Equal([.. names.Take(now)], IrJsonReader.Read(Written(folder, HaruspexCli.IrFileName)).Objects.Single().SetNames);
 
+        // A set gone changes the function's shape, but the names the baseline's sets had aren't known from its source.
+        Assert.Equal(
+            now < released ? ["shop.get_sheet: its function now returns { head, lines }; the baseline returns 3 result sets, more than the config file names, so what the application already running named them isn't known from its source, so each call of it changes when the application is next built"] : [],
+            error.Split('\n').Where(l => l.Contains("HAR6028", StringComparison.Ordinal)).Select(l => l[(l.IndexOf("HAR6028: ", StringComparison.Ordinal) + 9)..l.IndexOf("; the application already running is unaffected", StringComparison.Ordinal)]));
+
         // The fit is judged, not stopped: a set gone is one the application already running counts on.
         var (checkExit, _, checkError) = Run(folder, "check", "--baseline", "release/db", "--fit-only");
         Assert.Equal(now < released ? 1 : 0, checkExit);

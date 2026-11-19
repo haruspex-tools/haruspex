@@ -41,7 +41,7 @@ internal static class Generate
     private static ModuleReport Reported(RunRequest request, EquatableArray<Diagnostic> found, Written written, SinceLastRun since)
     {
         var module = written.Module;
-        Diagnostic[] combining = module.Baseline is { } baseline ? [.. module.Combination, .. BaselineCheck.Shapes(module, baseline.Document, module.Document)] : [];
+        Diagnostic[] combining = module.Baseline is { } baseline ? [.. module.Combination, .. BaselineCheck.Shapes(module, baseline.Document, module.Document, baseline)] : [];
         var (kept, acknowledged) = Acknowledgements.Apply([.. found, .. combining], module.Config, sayUnused: request.Include.Count == 0);
         var failures = combining.Where(d => d.IsError).ToList();
         return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
