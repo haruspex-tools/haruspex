@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/region_sales.sql": "0fbdd15b98febbab0114d48847a31d0a3c89f0e68881ccb2b37f4f61b0ee9936"
+    }
   },
   "objects": [
     {

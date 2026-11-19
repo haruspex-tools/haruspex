@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/job_card.sql": "e05623c7f08decd01ea57882a06b258bae65da76135b434a083979b249254791",
+      "tables/job.sql": "610c9bb033c599b4c9f87c632f0c1a6d6c8e5e1ef591a98b080ed3cfcd173728",
+      "tables/part_line.sql": "956796988c472bfe695854e85221ca03299ca8c3165d31fa0c59e79d6447d83d"
+    }
   },
   "objects": [
     {
@@ -76,7 +81,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -109,7 +121,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -142,7 +161,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -166,7 +192,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "line_total",
@@ -197,7 +230,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            },
+            {
+              "column": "desk.part_line.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/part_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "free",
@@ -258,7 +303,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.line_id",
+              "sql": "int",
+              "at": "tables/part_line.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -283,7 +335,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -307,7 +366,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -332,7 +398,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -373,7 +446,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",

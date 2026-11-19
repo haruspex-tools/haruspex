@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/open_contacts.sql": "2485bd1ae4ba54fd4b512e780605617cbab759dcfcf15f5f9642e277bacd5550",
+      "tables/customer.sql": "4ded542c4942d575d8b3145f64f3d4f23e3ccea30c114f462db40fbe76c5709e",
+      "tables/purchase.sql": "dec637e5b630fcd45b92ad1a1d098abda3f4a2ac6a70601cdfa8c177012196e1"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
+          ]
         },
         {
           "name": "placed_on",
@@ -65,7 +77,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.placed_on",
+              "sql": "date",
+              "at": "tables/purchase.sql:4:5"
+            }
+          ]
         },
         {
           "name": "display_name",
@@ -81,7 +100,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.customer.name",
+              "sql": "nvarchar(50)",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -102,6 +128,13 @@
             {
               "rule": "nullable-column",
               "at": "mart.customer.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.customer.email",
+              "sql": "varchar(100)",
+              "at": "tables/customer.sql:4:5"
             }
           ]
         }

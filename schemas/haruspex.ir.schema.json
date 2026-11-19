@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, with (0.25) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, and (0.26) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else: 0.25 for a document that defines a table type, 0.24 for one that combines two databases and defines none, 0.23 for any other.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.26 for a document that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
+        "0.26",
         "0.25",
         "0.24",
         "0.23"
@@ -19,6 +20,10 @@
       "properties": {
         "dialect": {
           "description": "The SQL dialect, such as tsql.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.",
           "type": "string"
         },
         "package": {
@@ -46,12 +51,26 @@
             "type": "boolean"
           }
         },
+        "files": {
+          "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "description": "The file's SHA-256.",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
         "baseline": {
-          "description": "For a document combining two databases (0.24), where the other, the baseline, was read from. Never given when irVersion is 0.23, always when it is 0.24.",
+          "description": "For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.",
           "type": "object",
           "properties": {
             "dialect": {
               "description": "The SQL dialect, such as tsql.",
+              "type": "string"
+            },
+            "path": {
+              "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.",
               "type": "string"
             },
             "package": {
@@ -77,6 +96,16 @@
               "minProperties": 1,
               "additionalProperties": {
                 "type": "boolean"
+              }
+            },
+            "files": {
+              "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "description": "The file's SHA-256.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
               }
             }
           },
@@ -121,7 +150,7 @@
       }
     },
     "tableTypes": {
-      "description": "The table types the parameters take, by the key a parameter's tableType names (0.25). Given exactly when irVersion is 0.25.",
+      "description": "The table types the parameters take, by the key a parameter's tableType names (0.26). Given exactly when irVersion is 0.26.",
       "type": "object",
       "minProperties": 1,
       "additionalProperties": {
@@ -199,6 +228,154 @@
       "properties": {
         "irVersion": {
           "const": "0.25"
+        },
+        "source": {
+          "required": [
+            "baseline"
+          ]
+        }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
+      }
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.25"
+        },
+        "source": {
+          "not": {
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "additionalProperties": {
+            "properties": {
+              "fields": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "items": {
+            "properties": {
+              "results": {
+                "items": {
+                  "properties": {
+                    "absentBecause": {
+                      "items": {
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "required": [
+          "tableTypes"
+        ]
+      }
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "required": [
+            "baseline"
+          ]
+        }
+      },
+      "required": [
+        "tableTypes"
+      ]
+    },
+    {
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "not": {
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "additionalProperties": {
+            "properties": {
+              "fields": {
+                "items": {
+                  "not": {
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "items": {
+            "properties": {
+              "results": {
+                "items": {
+                  "properties": {
+                    "absentBecause": {
+                      "items": {
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -363,7 +540,7 @@
           "$ref": "#/$defs/type"
         },
         "tableType": {
-          "description": "For a table-valued parameter (0.25), the key of its type's definition in tableTypes; left out for any other.",
+          "description": "For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.",
           "type": "string"
         },
         "hasDefault": {
@@ -566,7 +743,7 @@
       ]
     },
     "tableType": {
-      "description": "A table type's definition (0.25): what a table-valued parameter of it takes.",
+      "description": "A table type's definition (0.26): what a table-valued parameter of it takes.",
       "type": "object",
       "properties": {
         "schema": {
@@ -712,11 +889,125 @@
         },
         "nullableBecause": {
           "$ref": "#/$defs/reasons"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "sides": {
+          "description": "In a document combining two databases (0.25), the field as each gave it; a side is left out where that database doesn't return the key.",
+          "type": "object",
+          "properties": {
+            "baseline": {
+              "$ref": "#/$defs/side"
+            },
+            "candidate": {
+              "$ref": "#/$defs/side"
+            }
+          },
+          "additionalProperties": false,
+          "minProperties": 1
         }
       },
       "required": [
         "name",
         "type",
+        "presence",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": true
+            },
+            "nullableBecause": true
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "required": [
+            "nullable"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
+            "required": [
+              "nullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "from": {
+      "description": "The table columns a value is read from, in the order the SQL first reads them (0.25). Left out when it reads none directly.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourceColumn"
+      },
+      "minItems": 1
+    },
+    "sourceColumn": {
+      "description": "A table column a value is read from (0.25).",
+      "type": "object",
+      "properties": {
+        "column": {
+          "description": "The column, as schema.table.column.",
+          "type": "string"
+        },
+        "sql": {
+          "description": "The column's type as a scalar's sql is written; left out when it is not a scalar the IR types.",
+          "type": "string"
+        },
+        "at": {
+          "description": "Where the column is declared, as path:line:column.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "column",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "side": {
+      "description": "A field as one of the two combined databases gives it (0.25).",
+      "type": "object",
+      "properties": {
+        "presence": {
+          "enum": [
+            "always",
+            "omittedWhenNull"
+          ]
+        },
+        "nullable": {
+          "description": "Whether that database's value can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "sql": {
+          "description": "The value's SQL type there, when it is a scalar.",
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        }
+      },
+      "required": [
         "presence",
         "nullable"
       ],

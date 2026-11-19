@@ -71,6 +71,10 @@
         "unchangedUnknowns": 3,
         "rewritten": [
           "haruspex.zod.ts"
+        ],
+        "irRewritten": false,
+        "recorded": [
+          "tables.sql"
         ]
       },
       "diagnostics": [

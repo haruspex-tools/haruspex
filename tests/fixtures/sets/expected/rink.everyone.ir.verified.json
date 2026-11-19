@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/everyone.sql": "f1291793286219a22d38dc854db2674732a12eb5253a6e57e814b6357f37520b",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +89,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "rink.guest.name",
+              "sql": "varchar(30)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "contact",
@@ -97,6 +126,18 @@
             {
               "rule": "nullable-column",
               "at": "rink.guest.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
             }
           ]
         },
@@ -167,6 +208,13 @@
             {
               "rule": "null-literal",
               "at": "procedures/everyone.sql:10:46"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.level",
+              "sql": "varchar(10)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         }

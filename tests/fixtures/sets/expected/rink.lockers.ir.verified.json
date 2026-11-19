@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/lockers.sql": "e940dfd54724d31811a27e31637a1bf314345ec70320e0417d51fb1af3129abb",
+      "tables/locker.sql": "909241766432f149e80b400409297bd8445d0cee0df50dddbcd1b2c8de886c53",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {
@@ -84,6 +89,13 @@
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:8:6"
             }
+          ],
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
           ]
         },
         {
@@ -105,6 +117,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:8:6"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         },
@@ -135,6 +154,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:9:17"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.locker.locker_no",
+              "sql": "int",
+              "at": "tables/locker.sql:2:5"
             }
           ]
         },
@@ -169,6 +195,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:9:17"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.locker.size",
+              "sql": "char(1)",
+              "at": "tables/locker.sql:4:5"
             }
           ]
         }
@@ -203,7 +236,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.locker.locker_no",
+              "sql": "int",
+              "at": "tables/locker.sql:2:5"
+            }
+          ]
         },
         {
           "name": "size",
@@ -231,7 +271,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.locker.size",
+              "sql": "char(1)",
+              "at": "tables/locker.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -252,6 +299,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:13:6"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         }
@@ -292,6 +346,13 @@
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:20:6"
             }
+          ],
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
           ]
         },
         {
@@ -321,6 +382,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/lockers.sql:21:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.locker.locker_no",
+              "sql": "int",
+              "at": "tables/locker.sql:2:5"
             }
           ]
         }

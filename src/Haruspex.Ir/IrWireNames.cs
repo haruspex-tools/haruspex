@@ -186,7 +186,7 @@ public static class IrWireNames
         IrValueMatch.Canonical => "canonical",
     };
 
-    /// <summary>How the server fills a table type's column (<c>generated</c>, 0.25).</summary>
+    /// <summary>How the server fills a table type's column (<c>generated</c>, 0.26).</summary>
     public static string Of(IrColumnGeneration value) => value switch
     {
         IrColumnGeneration.Identity => "identity",

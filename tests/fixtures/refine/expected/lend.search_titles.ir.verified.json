@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/search_titles.sql": "aaeccf9e156765d4f33b26eb24a03d85feec416f5fb8249e46dc93af76c5c9bd",
+      "tables/title.sql": "2f18f36e925dbe4bbb43fdd3691318663926350ff47ee394e85093ce75bab558"
+    }
   },
   "objects": [
     {
@@ -105,7 +109,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.title.title_id",
+              "sql": "int",
+              "at": "tables/title.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -121,7 +132,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.title.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:5:5"
+            }
+          ]
         },
         {
           "name": "author",
@@ -142,6 +160,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.title.author"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.title.author",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:6:5"
             }
           ]
         },
@@ -178,6 +203,13 @@
               "rule": "nullable-column",
               "at": "lend.title.genre"
             }
+          ],
+          "from": [
+            {
+              "column": "lend.title.genre",
+              "sql": "varchar(10)",
+              "at": "tables/title.sql:7:5"
+            }
           ]
         },
         {
@@ -199,6 +231,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.title.isbn"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.title.isbn",
+              "sql": "varchar(13)",
+              "at": "tables/title.sql:4:5"
             }
           ]
         }

@@ -1,7 +1,14 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/guest_spending.sql": "26dede201a99eabf0bb9ce94d76c78e505c708449d1fe1c54a0c3b897a11ae19",
+      "tables/guest.sql": "95d4b894e7de812fbd9b4f3f78bec6c083f142a491900acd736f730ffdf35bc8",
+      "tables/menu_item.sql": "d6222261529ace2cef6a6371a3c88a424c23d403224596d3e5fa9637aee92fbc",
+      "tables/tab.sql": "71c74a73d81b7ffa52d4a792f643c53d5e4820d80ae8c52b703ad3dcf47cd312",
+      "tables/tab_item.sql": "2060b0c1504f32d76a6ce8bafdf8afbafbad2200aab76e682d858cff82824dcd"
+    }
   },
   "objects": [
     {
@@ -56,7 +63,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "tabs",
@@ -80,7 +94,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "spent",
@@ -116,6 +137,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/guest_spending.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
             }
           ]
         },
@@ -158,6 +191,13 @@
               "rule": "unmatched-row",
               "at": "procedures/guest_spending.sql:13:11"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.tip",
+              "sql": "decimal(9,2)",
+              "at": "tables/tab.sql:7:5"
+            }
           ]
         },
         {
@@ -182,7 +222,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.table_no",
+              "sql": "tinyint",
+              "at": "tables/tab.sql:6:5"
+            }
+          ]
         }
       ]
     }

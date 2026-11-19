@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_products.sql": "647a7f9187d71597883977b863e2135fb6dbb612452e3fefa0d1406c01bb19c7",
+      "tables/product.sql": "5e703d1a85a435fcf6fcb8a2686fadd4a819dcccc631e84f277fcef8612bf0e2"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -72,7 +83,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.sku",
+              "sql": "varchar(20)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -88,7 +106,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -109,6 +134,13 @@
             {
               "rule": "nullable-column",
               "at": "mart.product.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.colour",
+              "sql": "nvarchar(20)",
+              "at": "tables/product.sql:6:5"
             }
           ]
         },
@@ -139,6 +171,13 @@
             {
               "rule": "nullable-column",
               "at": "mart.product.width_mm"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.width_mm",
+              "sql": "int",
+              "at": "tables/product.sql:7:5"
             }
           ]
         }

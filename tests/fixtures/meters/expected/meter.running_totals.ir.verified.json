@@ -1,10 +1,14 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql",
     "session": {
       "ansiWarnings": true,
       "arithAbort": false
+    },
+    "files": {
+      "procedures/running_totals.sql": "b1eee5fb95eabc8c8c8ee727a8d5ed33889b2764e7d4839ddd16483a04e84817",
+      "tables/reading.sql": "8ce119c523780ae80a42aa174c7e13c877b4a0ee1a727c3bafd54dcf257b1b66"
     }
   },
   "objects": [
@@ -70,7 +74,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.read_on",
+              "sql": "date",
+              "at": "tables/reading.sql:4:5"
+            }
+          ]
         },
         {
           "name": "read_year",
@@ -94,7 +105,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.read_on",
+              "sql": "date",
+              "at": "tables/reading.sql:4:5"
+            }
+          ]
         },
         {
           "name": "wh",
@@ -118,7 +136,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "kwh_small",
@@ -142,7 +167,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "running_kwh",
@@ -166,7 +198,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "readings",

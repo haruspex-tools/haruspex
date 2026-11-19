@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/rack_counts.sql": "39b72afa7ec0e20420caccbb61e78055b7d7fcdaa983788a260a318899d8c370",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {
@@ -61,6 +65,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
             }
           ]
         }

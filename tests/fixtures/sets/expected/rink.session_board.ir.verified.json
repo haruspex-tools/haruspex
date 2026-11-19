@@ -1,7 +1,14 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/session_board.sql": "b60cd26c4cb787c27c56ac0928779f1a9bc7a99014233de871d9fad6949ad8df",
+      "tables/booking.sql": "252b9a65ecd39b4128cc38e89f847c7a0bcf70f3e097670f8f79ec47a55a026e",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa",
+      "tables/session.sql": "2e673b75743badf5d4ac0edbae6200fd834a4775d3f53b65b6c60720fc92d102"
+    }
   },
   "objects": [
     {
@@ -71,7 +78,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "rink.guest.name",
+              "sql": "varchar(30)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "skates",
@@ -100,6 +119,13 @@
             {
               "rule": "nullable-column",
               "at": "rink.booking.skates"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.booking.skates",
+              "sql": "tinyint",
+              "at": "tables/booking.sql:6:5"
             }
           ]
         }
@@ -134,7 +160,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.session.session_id",
+              "sql": "int",
+              "at": "tables/session.sql:2:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -163,7 +196,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.session.kind",
+              "sql": "varchar(8)",
+              "at": "tables/session.sql:4:5"
+            }
+          ]
         },
         {
           "name": "people",
@@ -216,6 +256,18 @@
               "rule": "nullable-column",
               "at": "rink.guest.phone"
             }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
+            }
           ]
         }
       ]
@@ -249,7 +301,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "reach",

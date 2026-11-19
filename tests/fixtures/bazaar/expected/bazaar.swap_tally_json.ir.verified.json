@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/swap_tally_json.sql": "c282dbf5f2d3eee3385fa034e6201959e98b0017f349f7ac03b23fec21836e43",
+      "tables/swap_tally.sql": "7066fb942552541da2ee335287f3fc4c29038d81a9b0ec08c092424c37cb6d9d"
+    }
   },
   "objects": [
     {
@@ -62,7 +66,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.tally_id",
+              "sql": "int",
+              "at": "tables/swap_tally.sql:5:5"
+            }
+          ]
         },
         {
           "name": "worth",
@@ -93,7 +104,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.worth",
+              "sql": "decimal(18,0)",
+              "at": "tables/swap_tally.sql:6:5"
+            }
+          ]
         },
         {
           "name": "share",
@@ -124,7 +142,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.share",
+              "sql": "numeric(18,0)",
+              "at": "tables/swap_tally.sql:7:5"
+            }
+          ]
         },
         {
           "name": "grade",
@@ -140,7 +165,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.grade",
+              "sql": "char(1)",
+              "at": "tables/swap_tally.sql:8:5"
+            }
+          ]
         },
         {
           "name": "mark",
@@ -156,7 +188,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.mark",
+              "sql": "varchar(1)",
+              "at": "tables/swap_tally.sql:9:5"
+            }
+          ]
         },
         {
           "name": "opened",
@@ -165,7 +204,14 @@
             "sql": "time(7)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.opened",
+              "sql": "time(7)",
+              "at": "tables/swap_tally.sql:10:5"
+            }
+          ]
         },
         {
           "name": "logged",
@@ -175,7 +221,14 @@
             "sql": "datetimeoffset(7)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.logged",
+              "sql": "datetimeoffset(7)",
+              "at": "tables/swap_tally.sql:11:5"
+            }
+          ]
         },
         {
           "name": "counted",
@@ -185,7 +238,14 @@
             "sql": "datetime2(7)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.counted",
+              "sql": "datetime2(7)",
+              "at": "tables/swap_tally.sql:12:5"
+            }
+          ]
         },
         {
           "name": "weight",
@@ -195,7 +255,14 @@
             "sql": "real"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.swap_tally.weight",
+              "sql": "real",
+              "at": "tables/swap_tally.sql:13:5"
+            }
+          ]
         }
       ]
     }

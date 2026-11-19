@@ -24,6 +24,7 @@ are proven runtime-checked there on the `checks` fixture instead (`OverrideAccep
 | `shop.list_products` | yes | `ListProducts` |
 | `shop.[basket_line#]` | yes | `BasketLineRow` (`#$` → `Row`) |
 | `shop.recalculate_internal` | excluded | |
+| `shop.order_summary` | yes | `OrderSummary`: one order's lines counted (`COUNT`, which may overflow), totalled (`SUM`, which widens the price's type) and last shipped (`MAX` over a `LEFT JOIN` without `GROUP BY`), each a surprise that the generated comments and `haruspex explain` say why of |
 | `shop_admin.report_sales` | yes | `AdminSales` (prefix `Admin`, the schema's rule `^report_` → nothing), its rows `PriceListItem` (path override) |
 | `shop_admin.report_stock` | yes | `AdminStock`, its sets `products` and `count` (`sets`), whose rows share `PriceListItem`'s shape |
 | `shop_admin.purge_baskets` | no | |

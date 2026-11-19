@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/coalesce_into_variable.sql": "cf6c86550b8de857bf29a7456e26a673cecb4b8fbc1e5002dec6f22b7f789f1b"
+    }
   },
   "objects": [
     {

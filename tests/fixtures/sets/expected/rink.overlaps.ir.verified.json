@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/overlaps.sql": "425be5bc4979e8ca8066d9929f1fd89217d12572fbbcd4c2cb66f2482b924ef9",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa",
+      "tables/session.sql": "2e673b75743badf5d4ac0edbae6200fd834a4775d3f53b65b6c60720fc92d102"
+    }
   },
   "objects": [
     {
@@ -112,6 +117,13 @@
               "rule": "nullable-column",
               "at": "rink.member.email"
             }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         }
       ]
@@ -150,7 +162,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.session.kind",
+              "sql": "varchar(8)",
+              "at": "tables/session.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -183,7 +202,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         }
       ]
     },

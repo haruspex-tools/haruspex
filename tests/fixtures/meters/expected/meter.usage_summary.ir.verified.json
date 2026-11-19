@@ -1,10 +1,15 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql",
     "session": {
       "ansiWarnings": true,
       "arithAbort": false
+    },
+    "files": {
+      "procedures/usage_summary.sql": "ee9c6b43b21546dab9142eb80c07193029bdd7264894caa33f1e43805d74e114",
+      "tables/meter.sql": "3f868426d419b958839467d2a08c1d9fb44b069a7a635feaf55a7aaa45c75b66",
+      "tables/reading.sql": "8ce119c523780ae80a42aa174c7e13c877b4a0ee1a727c3bafd54dcf257b1b66"
     }
   },
   "objects": [
@@ -60,7 +65,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.meter.meter_id",
+              "sql": "int",
+              "at": "tables/meter.sql:4:5"
+            }
+          ]
         },
         {
           "name": "described",
@@ -76,7 +88,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.meter.label",
+              "sql": "varchar(20)",
+              "at": "tables/meter.sql:5:5"
+            },
+            {
+              "column": "meter.meter.site",
+              "sql": "varchar(20)",
+              "at": "tables/meter.sql:6:5"
+            }
+          ]
         },
         {
           "name": "readings",
@@ -124,7 +148,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "mean_kwh",
@@ -148,7 +179,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "spread_kwh",
@@ -172,7 +210,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "per_reading",
@@ -196,7 +241,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         },
         {
           "name": "peak_kw",
@@ -227,7 +279,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.peak_kw",
+              "sql": "decimal(9,3)",
+              "at": "tables/reading.sql:6:5"
+            }
+          ]
         }
       ]
     }

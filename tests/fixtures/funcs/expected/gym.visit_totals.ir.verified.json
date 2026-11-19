@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/visit_totals.sql": "f52bb6db9b2bdb137f5fa246566b0605efd2862c863f837517d1866eae31cabd",
+      "tables/member.sql": "d72487a56f612ee74455c6c78b67a60d1f45f029765899149be19f4b6d46381c",
+      "tables/visit.sql": "29d53ac2ea982602701c5a3ba25e90a8dea3ffb23be4ebc2e6b0b4e497262616"
+    }
   },
   "objects": [
     {
@@ -96,7 +101,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.plan_name",
+              "sql": "varchar(10)",
+              "at": "tables/member.sql:6:5"
+            }
+          ]
         },
         {
           "name": "nicknames",
@@ -118,6 +130,18 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
           ]
         },
         {
@@ -134,7 +158,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "ids",
@@ -150,7 +181,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -185,6 +223,13 @@
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
           ]
         },
         {
@@ -203,6 +248,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:13:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         },
@@ -225,6 +277,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:14:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         }

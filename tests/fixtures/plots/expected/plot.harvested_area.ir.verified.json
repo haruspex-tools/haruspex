@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "harvest.sql": "49c1fe0b4391bf49791210c749b8bd4cf00f9e28988872132371e2ee1139395a",
+      "plots.sql": "16afa0b6069fb941bf0c83868e8304b75ef207942e219f982ddf3b90caf0fa8a"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.bed.bed_id",
+              "sql": "int",
+              "at": "plots.sql:9:5"
+            }
+          ]
         },
         {
           "name": "area_m2",
@@ -92,6 +103,13 @@
             {
               "rule": "nullable-column",
               "at": "plot.bed.area_m2"
+            }
+          ],
+          "from": [
+            {
+              "column": "plot.bed.area_m2",
+              "sql": "decimal(6,2)",
+              "at": "plots.sql:11:5"
             }
           ]
         }

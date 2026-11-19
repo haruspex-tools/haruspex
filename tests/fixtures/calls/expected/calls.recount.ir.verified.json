@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/recount.sql": "64118d196dee2350e7fe50c7b30c0e6c7d619baa5e9d3193464514be1265b490"
+    }
   },
   "objects": [
     {

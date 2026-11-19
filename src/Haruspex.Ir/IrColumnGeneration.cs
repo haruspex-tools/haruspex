@@ -1,6 +1,6 @@
 namespace Haruspex.Ir;
 
-/// <summary>How the server fills a column of a table type that a row sent can't (0.25).</summary>
+/// <summary>How the server fills a column of a table type that a row sent can't (0.26).</summary>
 public enum IrColumnGeneration
 {
     /// <summary>An identity column, which the server numbers.</summary>

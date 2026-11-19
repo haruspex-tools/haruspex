@@ -1,6 +1,6 @@
 namespace Haruspex.Ir;
 
-/// <summary>A column of a table type's definition (0.25).</summary>
+/// <summary>A column of a table type's definition (0.26).</summary>
 /// <param name="Name">Its name as declared.</param>
 /// <param name="Sql">Its type as the database spells it, such as <c>nvarchar(200)</c>; null for a computed column, which declares none.</param>
 /// <param name="Nullable">Whether a row may hold NULL in it.</param>

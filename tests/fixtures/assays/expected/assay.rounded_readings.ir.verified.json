@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/rounded_readings.sql": "7900e9e02b8fa111e0baeb41cf2cf5306e61ea6b4fdf1caa6bcfb62aace52c88",
+      "tables/sample.sql": "bb75d2130abf24b69dc2bf0fe1cc4ae9bb13abf1bdda441cd5047de2d6e9b6ba"
+    }
   },
   "objects": [
     {
@@ -89,7 +93,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:4:5"
+            }
+          ]
         },
         {
           "name": "concentration_2dp",
@@ -125,6 +136,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:11:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
             }
           ]
         },
@@ -163,6 +181,13 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.dilution",
+              "sql": "decimal(10,2)",
+              "at": "tables/sample.sql:6:5"
+            }
           ]
         },
         {
@@ -199,6 +224,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:13:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.fee",
+              "sql": "money",
+              "at": "tables/sample.sql:8:5"
             }
           ]
         },
@@ -241,6 +273,13 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:14:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.lab_value",
+              "sql": "varchar(20)",
+              "at": "tables/sample.sql:10:5"
+            }
           ]
         },
         {
@@ -277,6 +316,18 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:15:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            },
+            {
+              "column": "assay.sample.reference",
+              "sql": "decimal(38,0)",
+              "at": "tables/sample.sql:7:5"
             }
           ]
         },
@@ -315,6 +366,18 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:16:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            },
+            {
+              "column": "assay.sample.reference",
+              "sql": "decimal(38,0)",
+              "at": "tables/sample.sql:7:5"
+            }
           ]
         },
         {
@@ -352,6 +415,18 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:17:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            },
+            {
+              "column": "assay.sample.reference",
+              "sql": "decimal(38,0)",
+              "at": "tables/sample.sql:7:5"
+            }
           ]
         },
         {
@@ -388,6 +463,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:18:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.ratio",
+              "sql": "decimal(20,10)",
+              "at": "tables/sample.sql:11:5"
             }
           ]
         },
@@ -430,6 +512,13 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:19:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.long_ratio",
+              "sql": "decimal(38,10)",
+              "at": "tables/sample.sql:12:5"
+            }
           ]
         },
         {
@@ -471,6 +560,18 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:20:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.fine_scale",
+              "sql": "decimal(37,14)",
+              "at": "tables/sample.sql:13:5"
+            },
+            {
+              "column": "assay.sample.big_count",
+              "sql": "decimal(35,7)",
+              "at": "tables/sample.sql:14:5"
+            }
           ]
         },
         {
@@ -508,6 +609,13 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:21:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
           ]
         },
         {
@@ -544,6 +652,18 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:22:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.dilution",
+              "sql": "decimal(10,2)",
+              "at": "tables/sample.sql:6:5"
+            },
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
             }
           ]
         },
@@ -665,6 +785,18 @@
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:30:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            },
+            {
+              "column": "assay.sample.reference",
+              "sql": "decimal(38,0)",
+              "at": "tables/sample.sql:7:5"
+            }
           ]
         }
       ]
@@ -698,7 +830,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:4:5"
+            }
+          ]
         },
         {
           "name": "mean_concentration",
@@ -734,6 +873,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/rounded_readings.sql:35:21"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
             }
           ]
         }

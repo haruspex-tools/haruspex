@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/batch_rows.sql": "5ec4399b5935a527a132e6a079f8d80f2d6ae3961b25b3823c3add1dde2aef57",
+      "procedures/ovens_or_batches.sql": "98bde570e00d927f99e7a81b1956298e5d1d4424907ca5516754dd9f3b823b7c",
+      "tables/batch.sql": "5cb3481c339a7ec8a8eec28baf23de5e0f762f2d5a92514c6cd508aa13e57de4",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {
@@ -118,7 +124,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -134,7 +147,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         },
         {
           "name": "rack_count",
@@ -163,6 +183,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
             }
           ]
         }
@@ -197,7 +224,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.batch_id",
+              "sql": "int",
+              "at": "tables/batch.sql:3:5"
+            }
+          ]
         },
         {
           "name": "product",
@@ -213,7 +247,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.product",
+              "sql": "nvarchar(30)",
+              "at": "tables/batch.sql:5:5"
+            }
+          ]
         },
         {
           "name": "weight_g",
@@ -242,6 +283,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.batch.weight_g"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.batch.weight_g",
+              "sql": "int",
+              "at": "tables/batch.sql:7:5"
             }
           ]
         }
@@ -276,7 +324,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -292,7 +347,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         },
         {
           "name": "rack_count",
@@ -321,6 +383,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
             }
           ]
         }

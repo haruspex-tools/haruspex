@@ -10,7 +10,7 @@ namespace Haruspex.Ir;
 public sealed record IrParameter(string Name, IrType Type, bool HasDefault, bool IsOutput)
 {
     /// <summary>
-    /// For a table-valued parameter whose type the document defines (0.25), the key of its definition in
+    /// For a table-valued parameter whose type the document defines (0.26), the key of its definition in
     /// <see cref="IrDocument.TableTypes"/>; null for every other parameter.
     /// </summary>
     public string? TableType { get; init; }

@@ -17,7 +17,6 @@
           "Haruspex.Collections": "[0.0.0-preview, )"
         }
       }
-    },
-    "net10.0/osx-arm64": {}
+    }
   }
 }

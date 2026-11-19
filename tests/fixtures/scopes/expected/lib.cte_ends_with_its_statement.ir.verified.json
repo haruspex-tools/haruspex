@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/cte_ends_with_its_statement.sql": "e55e8fb402f9e0742396f08c35c27fe89f09bd13e957299a7f37dfd0f7044f44",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff",
+      "tables/shelf.sql": "0592ec3939a6f1941b3fef11fd3a9db4d90fa4b071421b0fb3a34f0adc988df0"
+    }
   },
   "objects": [
     {
@@ -67,7 +72,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -83,7 +95,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -116,7 +135,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dbo.shelf.shelf_id",
+              "sql": "int",
+              "at": "tables/shelf.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -132,7 +158,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dbo.shelf.label",
+              "sql": "varchar(10)",
+              "at": "tables/shelf.sql:5:5"
+            }
+          ]
         }
       ]
     }

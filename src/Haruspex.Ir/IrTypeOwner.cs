@@ -16,7 +16,7 @@ public enum IrTypeOwner
     Query,
 
     /// <summary>
-    /// A table type in the document's <see cref="IrDocument.TableTypes"/> (0.25): the type is a row of it, as a client sends one in
+    /// A table type in the document's <see cref="IrDocument.TableTypes"/> (0.26): the type is a row of it, as a client sends one in
     /// a table-valued parameter, shared by every parameter of the type.
     /// </summary>
     TableType,

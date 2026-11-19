@@ -226,7 +226,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         key ??= Key(owner, path);
         var fields = new List<IrField>();
         foreach (var field in obj.Fields)
-            fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause));
+            fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause) { From = field.From });
 
         types[key] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path) };
         return new IrRef(key);

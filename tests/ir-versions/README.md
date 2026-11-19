@@ -2,9 +2,9 @@
 
 One IR file from each version of the format, kept so that the reader is tested against what each version really wrote. The
 current version's file must be read, and round trip to the same bytes; so must 0.24's and 0.23's, the older versions the reader
-still reads, since a document without a table type is still written as 0.24 when it combines two databases and as 0.23 otherwise
+still reads, since a document that says less is still labelled with the oldest version that says all it says
 ([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md),
-[decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)); every other must be refused, naming its version and the versions the reader
+[decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)); every other must be refused, naming its version and the versions the reader
 reads (`IrVersionTests`). The reader refuses rather than migrates; the guide's chapter
 [The IR as a contract](../../docs/internals/10-the-ir-as-a-contract.md) says why.
 
@@ -37,7 +37,8 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.22 | `f63964c` (set at `6aff87d`; `returnsCode` added at `f63964c`, before 0.22 reached `main`) |
 | 0.23 | `5bfdbcbd` |
 | 0.24 | `c4093e7d`; a document of one database is still written as 0.23, so this file is `sales.get_order` combined with a baseline in which it didn't return `isPriority` |
-| 0.25 | `645af81a`; a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
+| 0.25 | the commit that adds `IrSourceColumn`, on `feature/explain`: each field says the columns it is read from (`from`) |
+| 0.26 | the commit that merges `main` into H3 (table types, first set at `645af81a` as 0.25, renumbered when 7b took 0.25); a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

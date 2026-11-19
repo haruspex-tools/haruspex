@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/update_reads_its_target.sql": "126a4da02ff95705ccb7b4249b20ef7275b24347d6013e337c0b6c0d3a48cf0f",
+      "tables/dog.sql": "ddbcb250c1f978c9889883c1a4f3816525aa55f02a3d1f422a71236742f8b34e"
+    }
   },
   "objects": [
     {
@@ -143,7 +147,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     }

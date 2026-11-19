@@ -1,8 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.25
+# Haruspex.Ir: the IR format, version 0.26
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.25, whose documents that define no table type are labelled 0.24 when they combine two databases and 0.23 otherwise
-("Changelog", below): what a document holds, what each part
+version 0.26, whose documents that say less are labelled 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
@@ -15,7 +14,10 @@ reader, the generator of its schema, and the walks every reader needs: `IrTypeTr
 `IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
 types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`;
 `IrFit` whether one document's values fit within another's, for `haruspex check --baseline`; and `IrCombination` combines two
-documents into one whose types hold against both databases, for `haruspex generate --baseline`.
+documents into one whose types hold against both databases, for `haruspex generate --baseline`. `IrReasons` says what each of the
+IR's codes means, in words, `IrSurprises` which fields differ from what their columns declare, `IrFieldText` the lines that
+explain one in generated code, and `IrFieldPlaces` the path a person names a field by, for `haruspex explain`
+([decision 0079](../../docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## How data flows through it
 
@@ -112,9 +114,10 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as `"0.25"` for a document that defines a table type (one with `tableTypes`), as `"0.24"` for any
-  other combining two databases (one whose `source` names a `baseline`), and as `"0.23"` for any other, and a document that this
-  page and the schema allow;
+- must write `irVersion` as the oldest version that says all the document says: `"0.26"` when it defines a table type (one with
+  `tableTypes`), else `"0.25"` when a field has `from` or `sides`, or a source has `path` or `files`,
+  else `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), else `"0.23"`; and a document
+  that this page and the schema allow;
 - must write a table type in `tableTypes` exactly when a parameter names it, and a parameter that refers to a named type only as
   an array of the rows of the table type its `tableType` names ("Table types", below);
 - must write `text` on an object exactly when its kind is `query`;
@@ -127,10 +130,12 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.25, 0.24 and 0.23, older or newer, without
-  reading further; and must refuse a document labelled 0.25 without `tableTypes`, one labelled 0.24 or 0.23 with them, one
-  labelled 0.24 whose `source` names no `baseline`, one labelled 0.23 that names one, and one that names none but has a key
-  whose presence is `optional` or a reason whose rule is `not-in-both`;
+- must read `irVersion` first and must refuse a document of any version but 0.26, 0.25, 0.24 and 0.23, older or newer, without
+  reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
+  one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
+  is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
+  document labelled 0.23 or 0.24; and must refuse a document labelled 0.26 without `tableTypes`, and one labelled otherwise with
+  them;
 - must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
   that refers to a named type other than the rows of its table type, and a table type's row with a field that isn't a scalar;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
@@ -160,8 +165,8 @@ that names no type, and what ties a table-valued parameter to its type's definit
 
 ```jsonc
 {
-  "irVersion": "0.23",                // versioned separately from the tool; a reader checks it first; 0.24 when combined,
-                                      // 0.25 when it defines a table type ("Table types", below)
+  "irVersion": "0.25",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
+                                      // (0.26 when it defines a table type: "Table types", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -185,7 +190,8 @@ that names no type, and what ties a table-valued parameter to its type's definit
       "fields": [
       { "name": "shippedAt", "type": { "kind": "datetime", "format": "offset", "sql": "datetimeoffset(0)" },
         "presence": "omittedWhenNull", "nullable": true,
-        "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }] },
+        "nullableBecause": [{ "rule": "nullable-column", "at": "sales.order.shipped_at" }],
+        "from": [{ "column": "sales.order.shipped_at", "sql": "datetimeoffset(0)", "at": "tables/order.sql:6:5" }] },  // where it is read from
       { "name": "status", "type": { "kind": "string", "sql": "varchar(10)",
           "maxLength": { "value": 10, "unit": "bytes", "encoding": "single-byte", "from": { "type": "varchar(10)" } },
           "values": { "match": "canonical", "items": ["closed", "open"], "from": [{ "check": "sales.ck_order_status" }],
@@ -276,7 +282,7 @@ the names; an emitter should say what was assumed where its output is read, as t
 
 ## Table types
 
-A **table-valued parameter** (0.25) is a parameter of a table type, a type the database defines as a table's columns, keys and
+A **table-valued parameter** (0.26) is a parameter of a table type, a type the database defines as a table's columns, keys and
 CHECK constraints, which a caller sends as a table of rows. Its `type` is an array of a named object type, the type's row, and
 its `tableType` names the type's definition in the document's `tableTypes`. A document has `tableTypes` exactly when a parameter
 names one, and holds only the types its parameters name; it is then labelled 0.25
@@ -303,7 +309,9 @@ names one, and holds only the types its parameters name; it is then labelled 0.2
 
 The **row** is what a client sends: every column of the type, in the type's order, each a key that is always there, typed as a
 parameter of the column's type is ([decision 0054](../../docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)),
-nullable only where the column takes NULL. Its fields must be scalars. A type with a column no row can give (an identity,
+nullable only where the column takes NULL, and each field's `from` is its column, named as a table's column is
+(`sales.line_list.note`), so that its derivation starts there. A result read from a table-valued parameter, or from a table
+variable of a table type, names the type's columns the same way, in its `from` and its reasons. The row's fields must be scalars. A type with a column no row can give (an identity,
 computed or `rowversion` column) has no row: its parameter's `type` is `unknown`, with its reason in `unknowns`, and the
 parameter still names the definition. A table-valued parameter's `hasDefault` is `true`: a caller may leave it out, and the
 procedure then reads no rows.
@@ -335,7 +343,7 @@ A type node is one of these, and nothing else:
 | unknown | `{ "kind": "unknown", "reason" }` | a value of any shape: nothing is claimed. The document's `unknowns` says why, and where |
 
 A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "identity"?, "fields": […] }`; each field is
-`{ "name", "type", "presence", "nullable", "nullableBecause"? }`. `presence` is `always` (the key is there, null or not),
+`{ "name", "type", "presence", "nullable", "nullableBecause"?, "from"?, "sides"? }`. `presence` is `always` (the key is there, null or not),
 `omittedWhenNull` (the key is left out when the value is null), or (0.24) `optional` (the key may be left out whatever its
 value, and when it is there, its value is null only with a reason). Only a combined document has `optional`: one of its
 databases doesn't return the key, or one leaves it out when null where the other sends the null. `recursive` may be left out
@@ -343,6 +351,21 @@ when false. `nameDeclared` (0.23) is `true` when the config file gave the type i
 the naming rules, and may be left out when false: an emitter that declares a shape several types share once declares it under such a
 name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `identity` is left
 out only in a document built by hand.
+
+**Where a field came from** (0.25). `from` lists the table columns the field's value is read from, in the order the SQL first
+reads them, each `{ "column", "sql"?, "at" }`: the column as `schema.table.column` (as a `nullable-column` reason names it), its
+type as a scalar's `sql` is written (left out for a column the IR doesn't type as a scalar), and where it is declared. A column
+only tested (a `WHEN`, a condition), only ordering or partitioning a window, or read in a subquery, is not one of them, and
+`from` is left out when there are none: a literal, a count of rows, a parameter. With the field's null reasons, each a rule and
+where it applied, it is the field's derivation, which `haruspex explain` shows without the SQL
+([decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)). In a combined document, `sides` gives the
+field as each database gave it before they were combined, `{ "baseline"?, "candidate"? }`, each
+`{ "presence", "nullable", "nullableBecause"?, "sql"?, "from"? }`, a side left out where that database doesn't return the key;
+`sides` is left out where both databases give the field exactly as it is, which it would only repeat.
+A source's `path` (0.25) is where it was read from, as the config file names it, relative to that file's folder and
+`/`-separated, so the same on every machine; `explain` labels each side of a combined field with it. A source's `files` (0.25) gives the SHA-256 of each script file the document's locations point into, by its path as a location
+writes it, of its text with LF line endings in UTF-8, so that a reader can tell the file in front of it is the one a location
+was written from, as `sha256` tells a package. None of these is a claim: a comparison reports no change in them.
 
 **Logical kinds.** `string`, `number`, `boolean`, `date` (no time, no zone), `time` (no date, no zone), `datetime`, and
 `uuid` (8-4-4-4-12 hex digits, not necessarily an RFC 9562 UUID). `format` refines a `number` as `uint8`, `int16`,
@@ -447,7 +470,7 @@ its name. A target may reserve some identifiers for itself, and its emitter must
 ## Names and identity
 
 The IR keeps SQL names as the canonical identity: each object's `id`, and each object type's `identity`, the object
-(`procedure`, `query` (0.22), `function` for a recursive function's types, or (0.25) `tableType` for a table type's row) and the
+(`procedure`, `query` (0.22), `function` for a recursive function's types, or (0.26) `tableType` for a table type's row) and the
 path that own it. A query's identity is
 its file's path, since a file has no name in the database. Generated names (`name`, and
 the keys of `types`) come from the config file's naming rules and overrides, applied by Haruspex.Config after
@@ -566,13 +589,20 @@ The format's versions, newest first. While the version is 0.x, every change a re
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
 
-**0.25** (19 Nov 2026, table types). A document's `tableTypes`, the definition of each table type its parameters take; a
+**0.26** (19 Nov 2026, table types). A document's `tableTypes`, the definition of each table type its parameters take; a
 parameter's `tableType`, naming its definition; and the type owner `tableType`, a table type's row, which a table-valued
 parameter's `type` is an array of ("Table types", above;
 [decision 0077](../../docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md)). Only a document that defines a table type
-has any of the three, and only it is labelled 0.25: every 0.24 and 0.23 document is a 0.25 document without one that means the
-same, so this reader reads all three ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), ninth
+has any of the three, and only it is labelled 0.26: every 0.25, 0.24 and 0.23 document is a 0.26 document without one that means
+the same, so this reader reads all four ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), tenth
 amendment).
+
+**0.25** (19 Nov 2026, where a field came from). A field's `from`, the table columns its value is read from; in a combined
+document, its `sides`, the field as each database gave it, where they differ; and a source's `files`, the hash of each script
+file its locations point into
+([decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)). A document is labelled 0.25 when a field
+has either, which a document inferred from SQL almost always does; one that says neither is labelled 0.24 or 0.23 as before, and
+this reader reads all three.
 
 **0.24** (18 Nov 2026, combined documents). A document combining two databases, which `haruspex generate` writes with a
 baseline: `source.baseline`, the baseline's source; the presence `optional`; and the null rule `not-in-both`

@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/open_tabs_json.sql": "c56a68b0603d9f94e2f09f109ccbf6e13d7ee5fd60a06f45dd99ebcfc344cb7e",
+      "procedures/open_tabs_payload.sql": "b50a08ae739a99fd2d09b97ae5fa462ee38d1e403781cbbf3aef89656f9095ea",
+      "tables/tab.sql": "71c74a73d81b7ffa52d4a792f643c53d5e4820d80ae8c52b703ad3dcf47cd312"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "opened_at",
@@ -66,7 +78,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.opened_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:4:5"
+            }
+          ]
         }
       ]
     },

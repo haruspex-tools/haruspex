@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/daily_report.sql": "66244cb9968279c35fa82fe407c9820dc3509fd3d79787d32e2969ca5d7d8988",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {
@@ -86,7 +90,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -102,7 +113,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         },
         {
           "name": "rack_count",
@@ -131,6 +149,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
             }
           ]
         }

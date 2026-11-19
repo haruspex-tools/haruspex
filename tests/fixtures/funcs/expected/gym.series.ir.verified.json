@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/series.sql": "7bcd20fac9c55968ab453360fe373cb984af0efc85d80b81150c7559864fcea2",
+      "tables/visit.sql": "29d53ac2ea982602701c5a3ba25e90a8dea3ffb23be4ebc2e6b0b4e497262616"
+    }
   },
   "objects": [
     {
@@ -136,7 +140,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "seat",

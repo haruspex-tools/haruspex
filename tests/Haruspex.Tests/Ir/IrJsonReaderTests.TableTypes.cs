@@ -3,7 +3,7 @@ using Haruspex.Ir;
 
 namespace Haruspex.Tests.Ir;
 
-/// <summary>What the reader refuses of a document's table types (0.25), which JSON Schema can't see: what ties a parameter to its type.</summary>
+/// <summary>What the reader refuses of a document's table types (0.26), which JSON Schema can't see: what ties a parameter to its type.</summary>
 public partial class IrJsonReaderTests
 {
     /// <summary>The whole sample's JSON with <paramref name="change"/> made to it, read: the refusal the reader gives.</summary>
@@ -46,7 +46,7 @@ public partial class IrJsonReaderTests
     {
         var e = RefusedWhole(json => json["irVersion"] = IrDocument.CombinedVersion);
 
-        Assert.Equal("$.tableTypes is given in a document of IR 0.24: a document that defines a table type is IR 0.25.", e.Message);
+        Assert.Equal("$.tableTypes is given in a document of IR 0.24: a document that defines a table type is IR 0.26.", e.Message);
     }
 
     [Fact]

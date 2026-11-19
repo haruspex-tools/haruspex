@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/sibling_subqueries.sql": "964ebe5ff393537a51d940b61470e8fb81c30cbca8b453db8c79bb25b05f0193",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "donated",

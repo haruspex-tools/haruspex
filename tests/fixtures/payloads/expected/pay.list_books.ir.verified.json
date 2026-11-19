@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_books.sql": "a901bfaab78dafb6d66e5edea8e4cc7713a6a244183e89faf1d5dcface71d5d9",
+      "tables/author.sql": "36962d05f775e75e37619cbcae65312d3973d56786379a515f58e588ca5ab7e7",
+      "tables/book.sql": "053e9977cc318e875367cf0f26854ca6e321d652e00e86da99fbda45ef0589bf",
+      "tables/review.sql": "e80882ca6ef847eb41aaa1a61b78847e576e2e1ce0a254ad4a23f3ba44cf2985"
+    }
   },
   "objects": [
     {
@@ -102,7 +108,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         },
         {
           "name": "stars",
@@ -126,7 +139,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -159,7 +179,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         },
         {
           "name": "stars",
@@ -183,7 +210,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -216,7 +250,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         },
         {
           "name": "stars",
@@ -240,7 +281,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -472,7 +520,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.book_id",
+              "sql": "int",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
         },
         {
           "name": "pair",
@@ -533,7 +588,19 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.book_id",
+              "sql": "int",
+              "at": "tables/book.sql:3:5"
+            },
+            {
+              "column": "pay.book.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/book.sql:7:5"
+            }
+          ]
         },
         {
           "name": "labels",
@@ -570,7 +637,19 @@
             "maxItems": 2
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.title",
+              "sql": "nvarchar(60)",
+              "at": "tables/book.sql:5:5"
+            },
+            {
+              "column": "pay.book.isbn",
+              "sql": "char(13)",
+              "at": "tables/book.sql:6:5"
+            }
+          ]
         },
         {
           "name": "slots",
@@ -627,7 +706,24 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.title",
+              "sql": "nvarchar(60)",
+              "at": "tables/book.sql:5:5"
+            },
+            {
+              "column": "pay.book.isbn",
+              "sql": "char(13)",
+              "at": "tables/book.sql:6:5"
+            },
+            {
+              "column": "pay.book.published",
+              "sql": "date",
+              "at": "tables/book.sql:8:5"
+            }
+          ]
         },
         {
           "name": "reviews",
@@ -712,7 +808,19 @@
             "ref": "ListBooksMeta"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.author_id",
+              "sql": "int",
+              "at": "tables/author.sql:4:5"
+            },
+            {
+              "column": "pay.author.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/author.sql:5:5"
+            }
+          ]
         }
       ]
     }

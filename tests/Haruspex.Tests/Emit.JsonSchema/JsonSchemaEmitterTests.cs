@@ -19,8 +19,9 @@ public partial class JsonSchemaEmitterTests
 
     private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
 
+    /// <summary>The document, by default without the explanations of surprises, so that a description holds the notes alone (JsonSchemaEmitterTests.Comments.cs has those).</summary>
     private static JsonNode Emit(IrDocument document, JsonSchemaOptions? options = null) =>
-        JsonNode.Parse(JsonSchemaEmitter.Emit(document, options ?? new JsonSchemaOptions()).Expected())!;
+        JsonNode.Parse(JsonSchemaEmitter.Emit(document, options ?? new JsonSchemaOptions { Comments = IrComments.None }).Expected())!;
 
     private static JsonNode Definition(JsonNode document, string name) => document["$defs"]![name]!;
 

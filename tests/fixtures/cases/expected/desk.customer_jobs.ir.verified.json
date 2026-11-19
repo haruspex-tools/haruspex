@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/customer_jobs.sql": "e132ff7e7d9466ccbb5c4da1c0f206ac120df796050431742f7a3f4bddea1917",
+      "tables/customer.sql": "f9f4bc694f8bfffe8b31f2a986010c3384e4ac40438c9f1e527998c4f23800fc",
+      "tables/job.sql": "610c9bb033c599b4c9f87c632f0c1a6d6c8e5e1ef591a98b080ed3cfcd173728"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -89,7 +101,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -119,7 +138,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.status",
+              "sql": "char(1)",
+              "at": "tables/job.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -152,7 +178,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:2:5"
+            }
+          ]
         },
         {
           "name": "jobs",

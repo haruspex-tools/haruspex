@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/lenient.sql": "ef3b99dd4160fb61567721270a6d165d5e2c7d21e847ce67192f36915446cb7a",
+      "tables/visit.sql": "29d53ac2ea982602701c5a3ba25e90a8dea3ffb23be4ebc2e6b0b4e497262616"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "room_before",
@@ -86,6 +97,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -101,6 +119,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         },
@@ -143,6 +168,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:9:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            },
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -162,6 +199,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         }

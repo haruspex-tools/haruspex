@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/counts.sql": "60e00db9fac35d21b424c1f529416bb2d900c406a15545216064dd0edbf017fc",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa",
+      "tables/session.sql": "2e673b75743badf5d4ac0edbae6200fd834a4775d3f53b65b6c60720fc92d102"
+    }
   },
   "objects": [
     {
@@ -135,7 +141,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "contact",
@@ -151,7 +169,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -184,7 +214,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.session.session_id",
+              "sql": "int",
+              "at": "tables/session.sql:2:5"
+            }
+          ]
         },
         {
           "name": "coach_id",
@@ -213,6 +250,13 @@
             {
               "rule": "nullable-column",
               "at": "rink.session.coach_id"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.session.coach_id",
+              "sql": "int",
+              "at": "tables/session.sql:5:5"
             }
           ]
         },

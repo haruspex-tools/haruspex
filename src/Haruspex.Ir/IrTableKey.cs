@@ -2,7 +2,7 @@ using Haruspex.Collections;
 
 namespace Haruspex.Ir;
 
-/// <summary>A key of a table type (0.25): columns whose values no two rows may share.</summary>
+/// <summary>A key of a table type (0.26): columns whose values no two rows may share.</summary>
 /// <param name="Columns">The key's columns, by name, in key order.</param>
 public sealed record IrTableKey(EquatableArray<string> Columns)
 {

@@ -1,7 +1,24 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "path": "database",
+    "files": {
+      "procedures/get_order.sql": "774608d210ea4784b5a4368df7b2e750ccc4c9b1dfa8b04b2fc10aea3baa4190",
+      "procedures/get_prefs.sql": "d1ade94cae21eedba757671bf6b4947795259955a5b2a7759b1b66bdb1693740",
+      "procedures/get_product.sql": "84c7cc7ef3ac000a2116c09d32cb182ea285d107805372615080ffce77818b16",
+      "procedures/list_orders.sql": "2e913d459f2840446049aa350d43506cf30c6dbcbea2443200cd43484207f222",
+      "procedures/list_products.sql": "3acf0086fe21ffe1aa0ace31ab5bce133de8361db9263d4f56e297302e2ff9fd",
+      "procedures/list_retired_users.sql": "43114b89d91b26b6cc7b3fab02c4b7daa8eafa3d106b801f3dee62a10bc500f7",
+      "procedures/list_staff.sql": "65ab293e82197f3195f298bfed89cbefb44a7eb12b200d72594907b39d9ea46b",
+      "procedures/list_users.sql": "fac5a3e57771b7fc150d63c8a348c1d6754bc3b9614496cba379644a4dd93822",
+      "procedures/order_feed.sql": "544ffa10988d55a509ade5ab1629d6ebf618245c9810c8c3cf376619eee09d98",
+      "queries/order_count.sql": "b63582724dfa4d8796e69698e7570cea3540a3fa45c59af03ffe519fe55e42ba",
+      "queries/top_products.sql": "af1a499d27043cc7fddb79fbee2340adde818bfed6e7909fc9794d309b1c5c86",
+      "tables/orders.sql": "bd4a7bd11973666612087a9ca284fa114634b6f8a32389870303e1c1271c7c61",
+      "tables/products.sql": "c1bf37a9751b13ae03fd48ec294b37bf4febfa70f282ffcde3e10483f0fb7f2b",
+      "tables/users.sql": "311619f7b7aeaec781d1740868c316f2de15e1fd375dc416a15d3f5db759b544"
+    }
   },
   "objects": [
     {
@@ -407,7 +424,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "prefs",
@@ -422,6 +446,12 @@
             {
               "rule": "nullable-column",
               "at": "admin.users.prefs"
+            }
+          ],
+          "from": [
+            {
+              "column": "admin.users.prefs",
+              "at": "tables/users.sql:5:5"
             }
           ]
         }
@@ -456,7 +486,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -487,7 +524,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -520,7 +564,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -536,7 +587,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/products.sql:3:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -567,7 +625,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/products.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -600,7 +665,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -631,7 +703,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -664,7 +743,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -697,7 +783,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "orders",
@@ -751,7 +844,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -767,7 +867,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -800,7 +907,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -816,7 +930,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -849,7 +970,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -865,7 +993,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -931,7 +1066,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -962,7 +1104,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.status",
+              "sql": "varchar(10)",
+              "at": "tables/orders.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -996,7 +1145,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -1027,7 +1183,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -1060,7 +1223,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -1076,7 +1246,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/products.sql:3:5"
+            }
+          ]
         }
       ]
     }

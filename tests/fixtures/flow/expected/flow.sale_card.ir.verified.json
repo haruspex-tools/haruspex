@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/sale_card.sql": "2860810221bc72dd9875dfb316a76d85c174649f61ce6fcc91ecf584b665d3d4"
+    }
   },
   "objects": [
     {

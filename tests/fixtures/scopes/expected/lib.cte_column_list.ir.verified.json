@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/cte_column_list.sql": "06ced96feb5330bd474a712f7ba3f61b8c0d6ae4ff59beea14a69ec08d4d952f",
+      "tables/loan.sql": "031cee47332cfeff242554fffa6d7933face3b512914c7c2e6156951539c45ad"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.loan.member_id",
+              "sql": "int",
+              "at": "tables/loan.sql:4:5"
+            }
+          ]
         },
         {
           "name": "loans",

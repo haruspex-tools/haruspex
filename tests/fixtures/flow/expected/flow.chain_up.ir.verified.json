@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/chain_up.sql": "424a4d1de7641e6257020bf67bd3b1eacb4bff838f6b54dbd6820fc808b9374d"
+    }
   },
   "objects": [
     {

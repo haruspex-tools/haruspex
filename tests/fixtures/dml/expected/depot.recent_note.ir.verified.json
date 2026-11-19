@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/recent_note.sql": "8acbca03e9e641a3a41b08ff1aa58fa1c87534c4482f20f3990c3afb64a3b806",
+      "tables/part.sql": "d65fb7578bd8e26f30758695674ffc8de2d4f9898044d1a048226964bccfa17c"
+    }
   },
   "objects": [
     {
@@ -64,7 +68,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.part.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/part.sql:6:5"
+            }
+          ]
         }
       ]
     }

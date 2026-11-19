@@ -155,6 +155,11 @@ internal sealed class JsonReport(string workingDirectory)
                 foreach (var file in compared.Rewritten)
                     json.WriteStringValue(file);
                 json.WriteEndArray();
+                json.WriteBoolean("irRewritten", compared.IrRewritten);
+                json.WriteStartArray("recorded");
+                foreach (var file in compared.Recorded)
+                    json.WriteStringValue(file);
+                json.WriteEndArray();
                 json.WriteEndObject();
                 break;
             case SinceLastRun.NotCompared { Why: var why }:

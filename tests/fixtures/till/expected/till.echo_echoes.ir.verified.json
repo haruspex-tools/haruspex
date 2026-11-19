@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.26",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/echo_echoes.sql": "8020648765633e8796d929849e4cbd380b2c9d5c8d3fc88f37094f5a919344da",
+      "types/echo_list.sql": "e3d175d85d18443eb8c16ff540b85f919965e0df60e82d12c2b7c4fa389525f6",
+      "types/odd_names.sql": "9ed369d9daf19b6df77d025ebd0d003eaa81df1c7d9cc7e758b932fe38aacb5b"
+    }
   },
   "objects": [
     {
@@ -92,7 +97,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.echo_list.k",
+              "sql": "int",
+              "at": "types/echo_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "v",
@@ -120,7 +132,14 @@
           "nullableBecause": [
             {
               "rule": "nullable-column",
-              "at": "@echoes.v"
+              "at": "till.echo_list.v"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.echo_list.v",
+              "sql": "int",
+              "at": "types/echo_list.sql:4:5"
             }
           ]
         }
@@ -155,7 +174,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.odd list.first col",
+              "sql": "int",
+              "at": "types/odd_names.sql:3:5"
+            }
+          ]
         },
         {
           "name": "select",
@@ -175,7 +201,14 @@
           "nullableBecause": [
             {
               "rule": "nullable-column",
-              "at": "@odd.select"
+              "at": "till.odd list.select"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.odd list.select",
+              "sql": "nvarchar(10)",
+              "at": "types/odd_names.sql:4:5"
             }
           ]
         }
@@ -210,7 +243,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.echo_list.k",
+              "sql": "int",
+              "at": "types/echo_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "v",
@@ -239,6 +279,13 @@
             {
               "rule": "nullable-column",
               "at": "till.echo_list.v"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.echo_list.v",
+              "sql": "int",
+              "at": "types/echo_list.sql:4:5"
             }
           ]
         }
@@ -273,7 +320,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.odd list.first col",
+              "sql": "int",
+              "at": "types/odd_names.sql:3:5"
+            }
+          ]
         },
         {
           "name": "select",
@@ -294,6 +348,13 @@
             {
               "rule": "nullable-column",
               "at": "till.odd list.select"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.odd list.select",
+              "sql": "nvarchar(10)",
+              "at": "types/odd_names.sql:4:5"
             }
           ]
         }

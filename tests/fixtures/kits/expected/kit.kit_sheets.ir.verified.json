@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/kit_sheets.sql": "d7c59be8df0b0cbbc141e0146e86ac1e492831a760c6c295cdd9ee1dd1bb082c",
+      "tables/kit_part.sql": "db783c1f9b53e1a02da1dafb564148f162023c957d18b5573d51901b75423212"
+    }
   },
   "objects": [
     {
@@ -109,7 +113,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -151,7 +162,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -176,7 +194,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -200,7 +225,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -319,7 +351,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -361,7 +400,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },

@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/line_functions.sql": "2307488a95942017706e287ef716e59d713f9cc97bb42517a078902acaf9de2a",
+      "tables/line.sql": "7f1c37c9b158c930c2d9878b97c37daf1d0b7afdbb9f95d850a76db6684f97ea"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.line_id",
+              "sql": "int",
+              "at": "tables/line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "round_kept",
@@ -87,7 +98,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "round_cut",
@@ -118,7 +136,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "round_units",
@@ -142,7 +167,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
+          ]
         },
         {
           "name": "round_score",
@@ -157,6 +189,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.score"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
             }
           ]
         },
@@ -195,6 +234,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.small_fee"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/line.sql:13:5"
+            }
           ]
         },
         {
@@ -226,7 +272,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
+          ]
         },
         {
           "name": "floor_price",
@@ -257,7 +310,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "ceiling_frac",
@@ -288,7 +348,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            }
+          ]
         },
         {
           "name": "floor_small_fee",
@@ -325,6 +392,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.small_fee"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/line.sql:13:5"
+            }
           ]
         },
         {
@@ -340,6 +414,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.score"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
             }
           ]
         },
@@ -370,6 +451,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.delta"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.delta",
+              "sql": "smallint",
+              "at": "tables/line.sql:18:5"
             }
           ]
         },
@@ -402,7 +490,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
+          ]
         },
         {
           "name": "abs_small_fee",
@@ -439,6 +534,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.small_fee"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/line.sql:13:5"
+            }
           ]
         },
         {
@@ -470,7 +572,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            }
+          ]
         },
         {
           "name": "sign_fee",
@@ -501,7 +610,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
+          ]
         },
         {
           "name": "sign_qty",
@@ -525,7 +641,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "sign_discount",
@@ -561,6 +684,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.discount"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.discount",
+              "sql": "numeric(5,4)",
+              "at": "tables/line.sql:9:5"
             }
           ]
         },
@@ -599,6 +729,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.discount"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.discount",
+              "sql": "numeric(5,4)",
+              "at": "tables/line.sql:9:5"
+            }
           ]
         },
         {
@@ -623,7 +760,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
+          ]
         },
         {
           "name": "flag_squared",
@@ -633,7 +777,14 @@
             "sql": "float"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.flag",
+              "sql": "bit",
+              "at": "tables/line.sql:17:5"
+            }
+          ]
         },
         {
           "name": "sqrt_units",
@@ -643,7 +794,14 @@
             "sql": "float"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
+          ]
         },
         {
           "name": "sqrt_score",
@@ -663,6 +821,13 @@
               "rule": "domain-error",
               "at": "procedures/line_functions.sql:27:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
+            }
           ]
         },
         {
@@ -673,7 +838,14 @@
             "sql": "float"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
+          ]
         },
         {
           "name": "square_score",
@@ -689,6 +861,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.score"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
+            }
           ]
         },
         {
@@ -699,7 +878,14 @@
             "sql": "float"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
+          ]
         },
         {
           "name": "exp_discount",
@@ -714,6 +900,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.discount"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.discount",
+              "sql": "numeric(5,4)",
+              "at": "tables/line.sql:9:5"
             }
           ]
         },
@@ -735,6 +928,13 @@
               "rule": "domain-error",
               "at": "procedures/line_functions.sql:32:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
           ]
         },
         {
@@ -755,6 +955,13 @@
               "rule": "domain-error",
               "at": "procedures/line_functions.sql:33:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
           ]
         },
         {
@@ -774,6 +981,13 @@
             {
               "rule": "domain-error",
               "at": "procedures/line_functions.sql:34:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
             }
           ]
         }

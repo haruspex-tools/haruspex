@@ -1,7 +1,14 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/parts_of.sql": "58b7660651db68e5fbe6a567b6b576e694806d383eb09782844106d52658338c",
+      "procedures/kit_routes.sql": "0c1dadffb1e368ec42c56c64e9875bcc090f655b009e7201f90c1743a4e40bc7",
+      "tables/kit.sql": "4c7965b2df831ed2cfd857b29d687bbe9d3269c01e8ad97c95792228106365f7",
+      "tables/kit_part.sql": "db783c1f9b53e1a02da1dafb564148f162023c957d18b5573d51901b75423212",
+      "views/kit_card.sql": "d64ce4f661e1c00f785d93c2f631241c9153b49a95cc1e52a703a82b38727726"
+    }
   },
   "objects": [
     {
@@ -152,7 +159,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -173,6 +187,13 @@
             {
               "rule": "nullable-column",
               "at": "kit.kit_part.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "kit.kit_part.colour",
+              "sql": "nvarchar(10)",
+              "at": "tables/kit_part.sql:7:5"
             }
           ]
         }
@@ -232,7 +253,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.kit_id",
+              "sql": "int",
+              "at": "tables/kit.sql:3:5"
+            }
+          ]
         },
         {
           "name": "view_parts",
@@ -258,7 +286,19 @@
             "ref": "KitRoutesViewSummary"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/kit.sql:4:5"
+            },
+            {
+              "column": "kit.kit.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/kit.sql:5:5"
+            }
+          ]
         },
         {
           "name": "inline_parts",
@@ -309,7 +349,14 @@
             "ref": "KitRoutesCtePrice"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/kit.sql:5:5"
+            }
+          ]
         },
         {
           "name": "derived_card",
@@ -317,7 +364,14 @@
             "ref": "KitRoutesDerivedCard"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.kit_id",
+              "sql": "int",
+              "at": "tables/kit.sql:3:5"
+            }
+          ]
         },
         {
           "name": "into_summary",
@@ -350,7 +404,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -374,7 +435,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -399,7 +467,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -423,7 +498,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },

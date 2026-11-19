@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reprice.sql": "2907c3197f3f7a803598239436a15d68211e172e0cd79129f5d9258eec377773",
+      "tables/parcel.sql": "1f2e14684c85bf665489917f5c8ab79a5338c3de1c883952621f18155c1e9f06"
+    }
   },
   "objects": [
     {

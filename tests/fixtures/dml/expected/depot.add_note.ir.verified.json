@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/add_note.sql": "70a2dcac98c6d5af35722bdba2c50188a091c8602244bc7380785b9fa1cc6ada"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/unqualified_reaches_out.sql": "46f63a423efb8eeb8590a89a00565b3b9125382d85878d1ebcf78ef2fb0d5d07",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "borrower",

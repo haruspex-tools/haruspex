@@ -1,5 +1,6 @@
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Config;
@@ -74,6 +75,12 @@ public sealed record HaruspexConfig
 
     /// <summary>How result objects treat keys their type does not list.</summary>
     public ObjectsPolicy Objects { get; init; } = ObjectsPolicy.Strip;
+
+    /// <summary>
+    /// Which fields the generated code explains in a comment (<c>comments</c>): the surprises unless the file says otherwise
+    /// (<c>docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md</c>).
+    /// </summary>
+    public IrComments Comments { get; init; } = IrComments.Surprises;
 
     /// <summary>
     /// What is written beside the IR (<c>emit</c>), in the order the file names them, each once: the Zod module unless the file

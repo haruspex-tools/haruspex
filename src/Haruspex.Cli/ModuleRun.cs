@@ -255,7 +255,10 @@ internal static class ModuleRun
     {
         var plan = selection.Loaded.Plan;
         var project = selection.Loaded.Project;
-        var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
+        // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine.
+        var path = Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
+        var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out)
+            .Select(document => document with { Source = document.Source with { Path = path } });
         return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
     }
 
@@ -326,16 +329,16 @@ internal static class ModuleRun
         var strict = plan.Config.Objects == ObjectsPolicy.Strict;
         var files = plan.Config.Emitters.Select(emitter => emitter switch
         {
-            Emitter.Zod => ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip })
+            Emitter.Zod => ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip, Comments = plan.Config.Comments })
                 .Select(text => new EmittedFile(HaruspexCli.ZodFileName, text)),
-            Emitter.JsonSchema => JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip })
+            Emitter.JsonSchema => JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip, Comments = plan.Config.Comments })
                 .Select(text => new EmittedFile(HaruspexCli.JsonSchemaFileName, text)),
 
             // TypeScript's reserved words are the Zod emitter's knowledge, handed to this one as they are to the config's naming.
             // "objects": "strict" refuses a result set the functions don't know, as it refuses a key the schemas don't.
             Emitter.Mssql => MssqlEmitter.Emit(
                     document,
-                    new MssqlOptions { SchemaModule = HaruspexCli.ZodModuleSpecifier, ServerOnly = plan.Config.ServerOnly, IsReserved = TypeScriptNames.IsReserved, RefusesExtraResultSets = strict })
+                    new MssqlOptions { SchemaModule = HaruspexCli.ZodModuleSpecifier, ServerOnly = plan.Config.ServerOnly, IsReserved = TypeScriptNames.IsReserved, RefusesExtraResultSets = strict, Comments = plan.Config.Comments })
                 .Select(text => new EmittedFile(HaruspexCli.MssqlFileName, text)),
             Emitter.Mapping => new Succeeded<EmittedFile>(new EmittedFile(HaruspexCli.MappingFileName, MappingModule.Text)),
         });
@@ -350,6 +353,13 @@ internal static class ModuleRun
         ReadConfig(request) is Succeeded<Settings> { Value: var settings } && Out(request, settings) is Succeeded<string> { Value: var folder }
             ? folder
             : null;
+
+    /// <summary>
+    /// The config file <paramref name="request"/> reads, as a run would find it, or null when there is none or it can't be read,
+    /// which a run itself reports: what <c>explain</c> finds the IR and the SQL by.
+    /// </summary>
+    public static HaruspexConfig? ConfigOf(RunRequest request) =>
+        ReadConfig(request) is Succeeded<Settings> { Value: { Path: not null } settings } ? settings.Config : null;
 
     /// <summary>
     /// Each unknown in <paramref name="document"/>, with the note it is reported by: its reason's code, where it is and why, so

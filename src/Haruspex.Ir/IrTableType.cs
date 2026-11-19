@@ -3,7 +3,7 @@ using Haruspex.Collections;
 namespace Haruspex.Ir;
 
 /// <summary>
-/// A user-defined table type's definition (0.25): what a table-valued parameter of it takes, as the database defines it, so that
+/// A user-defined table type's definition (0.26): what a table-valued parameter of it takes, as the database defines it, so that
 /// a document says what its parameters accept without the database at hand, and two documents' parameters can be compared.
 /// </summary>
 /// <remarks>

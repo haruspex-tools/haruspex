@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_card.sql": "fb99b5b49cc3377f17a854bfa76ebccb4d979b3b14263030740afb10838f0c7d",
+      "tables/orders.sql": "84f55e6612314f00a777b396a85b539c5c845fe031ca99cbb977f3c41d767e8c"
+    }
   },
   "objects": [
     {
@@ -84,7 +88,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
         },
         {
           "name": "customer",
@@ -100,7 +111,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.customer",
+              "sql": "nvarchar(40)",
+              "at": "tables/orders.sql:4:5"
+            }
+          ]
         },
         {
           "name": "placed_on",
@@ -109,7 +127,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.placed_on",
+              "sql": "date",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -130,6 +155,13 @@
             {
               "rule": "nullable-column",
               "at": "shop.orders.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.orders.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/orders.sql:6:5"
             }
           ]
         }

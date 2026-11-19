@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/basket_total.sql": "9bf676fcf048646447d282d36be93e9f8d9787f826e4a663c03b0caa9d450857",
+      "types/line_list.sql": "ac9f536ee88f783fc3443c4f5920769c7aaa2e5a39c618b3575d5df5f3f2708b"
+    }
   },
   "objects": [
     {
@@ -97,7 +101,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.product_id",
+              "sql": "int",
+              "at": "types/line_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -121,7 +132,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.quantity",
+              "sql": "smallint",
+              "at": "types/line_list.sql:4:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -141,7 +159,14 @@
           "nullableBecause": [
             {
               "rule": "nullable-column",
-              "at": "@basket.note"
+              "at": "till.line_list.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.line_list.note",
+              "sql": "nvarchar(200)",
+              "at": "types/line_list.sql:5:5"
             }
           ]
         }

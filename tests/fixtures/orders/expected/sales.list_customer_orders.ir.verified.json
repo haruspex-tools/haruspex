@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_customer_orders.sql": "8e27443546bcbe50af08814622831c6849d64257383bffe21cc401805f1cf3cb",
+      "tables/customer.sql": "dcda07f5d6ddc377ea551994b7cb8a5e2ee4df72324309e2a100c496b8f2db2f",
+      "tables/order.sql": "e71a5e2f97b2fc372e26b3cb9c18470be574f018dd25a66016b0f56158d96ff2"
+    }
   },
   "objects": [
     {
@@ -60,6 +65,13 @@
               "rule": "nullable-column",
               "at": "sales.customer.region_code"
             }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.region_code",
+              "sql": "char(2)",
+              "at": "tables/customer.sql:7:5"
+            }
           ]
         }
       ]
@@ -93,7 +105,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
         },
         {
           "name": "placedAt",
@@ -103,7 +122,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.placed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/order.sql:7:5"
+            }
+          ]
         },
         {
           "name": "shippedAt",
@@ -118,6 +144,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.order.shipped_at"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order.shipped_at",
+              "sql": "datetimeoffset(0)",
+              "at": "tables/order.sql:8:5"
             }
           ]
         },
@@ -150,7 +183,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.total",
+              "sql": "decimal(19,2)",
+              "at": "tables/order.sql:11:5"
+            }
+          ]
         }
       ]
     },
@@ -183,7 +223,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -199,7 +246,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.name",
+              "sql": "nvarchar(100)",
+              "at": "tables/customer.sql:4:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -220,6 +274,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.customer.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.email",
+              "sql": "nvarchar(256)",
+              "at": "tables/customer.sql:5:5"
             }
           ]
         },

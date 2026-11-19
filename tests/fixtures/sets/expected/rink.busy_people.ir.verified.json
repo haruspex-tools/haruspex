@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/busy_people.sql": "cd2467f462b58e7bd2a8e913bc3cfff53c667a1d6f809f1175ae994c2fccde42"
+    }
   },
   "objects": [
     {

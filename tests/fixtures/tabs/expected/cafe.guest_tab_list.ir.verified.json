@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/guest_tab_list.sql": "f0d430a0c70bf704462bacab241f83dc176137ab98de32c942494c6084160150",
+      "tables/tab.sql": "71c74a73d81b7ffa52d4a792f643c53d5e4820d80ae8c52b703ad3dcf47cd312"
+    }
   },
   "objects": [
     {
@@ -81,7 +85,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "opened_at",
@@ -91,7 +102,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.opened_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:4:5"
+            }
+          ]
         },
         {
           "name": "closed_at",
@@ -106,6 +124,13 @@
             {
               "rule": "nullable-column",
               "at": "cafe.tab.closed_at"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.closed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:5:5"
             }
           ]
         },
@@ -123,7 +148,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.closed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:5:5"
+            }
+          ]
         }
       ]
     }

@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_author.sql": "f3e5203ab51b69b0c494b5cb42a507fa678fd26433fed550b5cd9dca0be4c0cd",
+      "tables/author.sql": "36962d05f775e75e37619cbcae65312d3973d56786379a515f58e588ca5ab7e7",
+      "tables/review.sql": "e80882ca6ef847eb41aaa1a61b78847e576e2e1ce0a254ad4a23f3ba44cf2985"
+    }
   },
   "objects": [
     {
@@ -323,7 +328,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         },
         {
           "name": "stars",
@@ -347,7 +359,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            }
+          ]
         },
         {
           "name": "comment",
@@ -369,6 +388,13 @@
               "rule": "nullable-column",
               "at": "pay.review.comment"
             }
+          ],
+          "from": [
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            }
           ]
         }
       ]
@@ -386,7 +412,28 @@
             "ref": "GetAuthorAuthor"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.author_id",
+              "sql": "int",
+              "at": "tables/author.sql:4:5"
+            },
+            {
+              "column": "pay.author.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/author.sql:5:5"
+            },
+            {
+              "column": "pay.author.bio",
+              "sql": "nvarchar(200)",
+              "at": "tables/author.sql:6:5"
+            },
+            {
+              "column": "pay.author.profile",
+              "at": "tables/author.sql:7:5"
+            }
+          ]
         }
       ]
     }

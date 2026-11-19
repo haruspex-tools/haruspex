@@ -123,7 +123,7 @@ public static class IrJsonWriter
         return Encoding.UTF8.GetString(buffer.ToArray()) + "\n";
     }
 
-    /// <summary>A table type's definition (0.25): its name, columns in their order, keys and conditions.</summary>
+    /// <summary>A table type's definition (0.26): its name, columns in their order, keys and conditions.</summary>
     private static void WriteTableType(Utf8JsonWriter json, IrTableType type)
     {
         json.WriteStartObject();
@@ -177,6 +177,8 @@ public static class IrJsonWriter
     private static void WriteSource(Utf8JsonWriter json, IrSource source)
     {
         json.WriteString("dialect", source.Dialect);
+        if (source.Path is { } read)
+            json.WriteString("path", read);
         WritePackage(json, source);
         if (source.Session.Count > 0)
         {
@@ -184,6 +186,15 @@ public static class IrJsonWriter
             json.WriteStartObject("session");
             foreach (var option in source.Session.OrderBy(o => o.Name, StringComparer.Ordinal))
                 json.WriteBoolean(option.Name, option.On);
+            json.WriteEndObject();
+        }
+
+        if (source.Files.Count > 0)
+        {
+            // Left out when there are none (a package's document), so that one reads as it did before 0.25.
+            json.WriteStartObject("files");
+            foreach (var (path, sha256) in source.Files.OrderBy(f => f.Key, StringComparer.Ordinal))
+                json.WriteString(path, sha256);
             json.WriteEndObject();
         }
     }
@@ -306,11 +317,54 @@ public static class IrJsonWriter
             json.WriteBoolean("nullable", field.Nullable);
             if (field.Nullable)
                 WriteReasons(json, "nullableBecause", field.NullableBecause);
+            WriteFrom(json, field.From);
+            if (field.Sides is { } sides)
+            {
+                json.WriteStartObject("sides");
+                WriteSide(json, "baseline", sides.Baseline);
+                WriteSide(json, "candidate", sides.Candidate);
+                json.WriteEndObject();
+            }
 
             json.WriteEndObject();
         }
 
         json.WriteEndArray();
+        json.WriteEndObject();
+    }
+
+    /// <summary>A field's source columns (0.26), left out when it has none, so that a document without them reads as before.</summary>
+    private static void WriteFrom(Utf8JsonWriter json, EquatableArray<IrSourceColumn> from)
+    {
+        if (from.Count == 0)
+            return;
+        json.WriteStartArray("from");
+        foreach (var column in from)
+        {
+            json.WriteStartObject();
+            json.WriteString("column", column.Column);
+            if (column.Sql is { } sql)
+                json.WriteString("sql", sql);
+            json.WriteString("at", column.At);
+            json.WriteEndObject();
+        }
+
+        json.WriteEndArray();
+    }
+
+    /// <summary>One database's field in a combined one (0.26), left out where that database doesn't return the key.</summary>
+    private static void WriteSide(Utf8JsonWriter json, string name, IrFieldSide? side)
+    {
+        if (side is null)
+            return;
+        json.WriteStartObject(name);
+        json.WriteString("presence", IrWireNames.Of(side.Presence));
+        json.WriteBoolean("nullable", side.NullableBecause.Count > 0);
+        if (side.NullableBecause.Count > 0)
+            WriteReasons(json, "nullableBecause", side.NullableBecause);
+        if (side.Sql is { } sql)
+            json.WriteString("sql", sql);
+        WriteFrom(json, side.From);
         json.WriteEndObject();
     }
 

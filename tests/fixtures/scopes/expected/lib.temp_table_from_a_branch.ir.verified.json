@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/temp_table_from_a_branch.sql": "6aa4cabc5efd33484757d764b80d91dec791681e869d63dde003a4a7425136e5"
+    }
   },
   "objects": [
     {

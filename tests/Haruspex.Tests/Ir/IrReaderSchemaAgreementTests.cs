@@ -28,10 +28,11 @@ public class IrReaderSchemaAgreementTests
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
 
     /// <summary>
-    /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c>: its keys are the classes' names, any
-    /// string, so no key is one the format lacks.
+    /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c> and a source's <c>files</c>: their keys are
+    /// names and paths, any string, so no key is one the format lacks.
     /// </summary>
-    public static TheoryData<string> AllObjects { get; } = [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal))];
+    public static TheoryData<string> AllObjects { get; } =
+        [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal) && !l.EndsWith("/files", StringComparison.Ordinal))];
 
     [Theory]
     [MemberData(nameof(Properties))]
@@ -62,13 +63,11 @@ public class IrReaderSchemaAgreementTests
 
         // What ties a table-valued parameter to its rows and their type, which the schema can't follow from one place to another:
         // the type a parameter names, the name, and the row's identity; and a column that declares no type, which only a computed
-        // one may, its kind removed. A combined document's claims without its baseline, which the schema can't tie to the source
-        // once the label no longer says it is combined (0.25 says only that a table type is defined).
+        // one may, its kind removed.
         if ((location == "/tableTypes" && File.Contains($"\"tableType\": \"{key}\"", StringComparison.Ordinal))
             || (key == "tableType" && location.Contains("/parameters/", StringComparison.Ordinal))
             || (key == "identity" && At(JsonNode.Parse(File)!, location)["identity"]?["tableType"] is not null)
-            || (key == "generated" && location.StartsWith("/tableTypes/", StringComparison.Ordinal) && target["sql"] is null)
-            || (location == "/source" && key == "baseline"))
+            || (key == "generated" && location.StartsWith("/tableTypes/", StringComparison.Ordinal) && target["sql"] is null))
         {
             Assert.DoesNotContain(schemaErrors, e => !e.Contains("tableTypes", StringComparison.Ordinal));
             Assert.NotNull(refusal);
@@ -80,6 +79,23 @@ public class IrReaderSchemaAgreementTests
         {
             Assert.NotEmpty(schemaErrors);
             Assert.Equal(ReaderPath(location[..location.LastIndexOf('/')]), refusal?.Path);
+            return;
+        }
+
+        // A combined document's fields say how each database gave them (0.25), which a document of one database can't: without its
+        // baseline, the first field's sides are refused.
+        if (location == "/source" && key == "baseline")
+        {
+            Assert.NotEmpty(schemaErrors);
+            Assert.Equal("$.types.FindOrdersRow.fields[0].sides", refusal?.Path);
+            return;
+        }
+
+        // Sides that name neither database, or a source's files with none left, are refused as a whole.
+        if ((location.EndsWith("/sides", StringComparison.Ordinal) || location.EndsWith("/files", StringComparison.Ordinal)) && target.Count == 0)
+        {
+            Assert.NotEmpty(schemaErrors);
+            Assert.Equal(ReaderPath(location), refusal?.Path);
             return;
         }
 

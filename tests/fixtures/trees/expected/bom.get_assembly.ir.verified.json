@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/components.sql": "770d93b5129a970332f28ec06a7684565a0bba2fc2dd97744f7cef62a0dfbb20",
+      "procedures/get_assembly.sql": "9b0464cbcf22745c461f9ad7764dcc097ac9a6fa937540d7e54148be0b36ad46",
+      "tables/component.sql": "23aae410df402ce10754ac35c807cfc068716306320c6f8d520b2c7d47b10435",
+      "tables/part.sql": "753d8c37b114c26b455f25089d437a6987185095824192a391bfe1787748afe8"
+    }
   },
   "objects": [
     {
@@ -85,7 +91,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.component.quantity",
+              "sql": "smallint",
+              "at": "tables/component.sql:6:5"
+            }
+          ]
         },
         {
           "name": "part",
@@ -110,6 +123,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/components.sql:8:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }
@@ -144,7 +164,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -160,7 +187,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -188,7 +222,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.kind",
+              "sql": "varchar(8)",
+              "at": "tables/part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "unitCost",
@@ -225,6 +266,13 @@
               "rule": "nullable-column",
               "at": "bom.part.unit_cost"
             }
+          ],
+          "from": [
+            {
+              "column": "bom.part.unit_cost",
+              "sql": "decimal(9,2)",
+              "at": "tables/part.sql:7:5"
+            }
           ]
         }
       ]
@@ -258,7 +306,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -274,7 +329,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -302,7 +364,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.kind",
+              "sql": "varchar(8)",
+              "at": "tables/part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "components",
@@ -319,6 +388,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/components.sql:8:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }

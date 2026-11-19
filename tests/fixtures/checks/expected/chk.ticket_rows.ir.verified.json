@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/ticket_rows.sql": "0f8375d9312ebc8b52249259a90408907d38c26a04651959f5b1dd5b6cd3aca0",
+      "tables/owner.sql": "c28e3f62c2f2b7dcb94a264049a6a7abd1aa713a630ae92bb75f0194a6e8e330",
+      "tables/ticket.sql": "52bbff4157b63a697ee5773a9876a307c0b4ca003c5ec29cf6f51c1a7e7dc28c"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.ticket.ticket_id",
+              "sql": "int",
+              "at": "tables/ticket.sql:9:5"
+            }
+          ]
         },
         {
           "name": "code",
@@ -72,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.ticket.code",
+              "sql": "nvarchar(8)",
+              "at": "tables/ticket.sql:11:5"
+            }
+          ]
         },
         {
           "name": "alt_code",
@@ -93,6 +112,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.alt_code"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.alt_code",
+              "sql": "nvarchar(8)",
+              "at": "tables/ticket.sql:12:5"
             }
           ]
         },
@@ -125,7 +151,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.ticket.status",
+              "sql": "varchar(10)",
+              "at": "tables/ticket.sql:13:5"
+            }
+          ]
         },
         {
           "name": "priority",
@@ -154,6 +187,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.priority"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.priority",
+              "sql": "tinyint",
+              "at": "tables/ticket.sql:14:5"
             }
           ]
         },
@@ -184,6 +224,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.score"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.score",
+              "sql": "int",
+              "at": "tables/ticket.sql:15:5"
             }
           ]
         },
@@ -225,6 +272,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.level"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.level",
+              "sql": "smallint",
+              "at": "tables/ticket.sql:16:5"
+            }
           ]
         },
         {
@@ -261,6 +315,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.discount"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/ticket.sql:17:5"
             }
           ]
         },
@@ -299,6 +360,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.rate"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.rate",
+              "sql": "decimal(9,4)",
+              "at": "tables/ticket.sql:18:5"
+            }
           ]
         },
         {
@@ -329,6 +397,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.big"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.big",
+              "sql": "bigint",
+              "at": "tables/ticket.sql:19:5"
+            }
           ]
         },
         {
@@ -351,7 +426,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.ticket.title",
+              "sql": "nvarchar(60)",
+              "at": "tables/ticket.sql:20:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -379,6 +461,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.note",
+              "sql": "varchar(30)",
+              "at": "tables/ticket.sql:21:5"
             }
           ]
         },
@@ -416,6 +505,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.region"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.region",
+              "sql": "char(2)",
+              "at": "tables/ticket.sql:22:5"
+            }
           ]
         },
         {
@@ -452,6 +548,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.sigil"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.sigil",
+              "sql": "varchar(6)",
+              "at": "tables/ticket.sql:25:5"
+            }
           ]
         },
         {
@@ -475,6 +578,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.tag_utf8"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.tag_utf8",
+              "sql": "varchar(12)",
+              "at": "tables/ticket.sql:26:5"
+            }
           ]
         },
         {
@@ -497,6 +607,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.pad_utf8"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.pad_utf8",
+              "sql": "char(4)",
+              "at": "tables/ticket.sql:27:5"
             }
           ]
         },
@@ -528,6 +645,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.muted"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.muted",
+              "sql": "int",
+              "at": "tables/ticket.sql:28:5"
+            }
           ]
         },
         {
@@ -557,6 +681,13 @@
             {
               "rule": "nullable-column",
               "at": "chk.ticket.restored"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.restored",
+              "sql": "int",
+              "at": "tables/ticket.sql:31:5"
             }
           ]
         },
@@ -588,6 +719,13 @@
               "rule": "nullable-column",
               "at": "chk.ticket.late"
             }
+          ],
+          "from": [
+            {
+              "column": "chk.ticket.late",
+              "sql": "int",
+              "at": "tables/ticket.sql:33:5"
+            }
           ]
         },
         {
@@ -615,6 +753,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/ticket_rows.sql:28:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.owner.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/owner.sql:4:5"
             }
           ]
         },
@@ -649,6 +794,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/ticket_rows.sql:28:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.owner.grade",
+              "sql": "nchar(1)",
+              "at": "tables/owner.sql:6:5"
             }
           ]
         }

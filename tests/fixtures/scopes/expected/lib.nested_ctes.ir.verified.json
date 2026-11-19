@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/nested_ctes.sql": "67d9a925684bc231b5f53fd21bde81054f4e54aaec4b207a1632568797cc1f61",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "taken",
@@ -136,7 +147,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         }
       ]
     }

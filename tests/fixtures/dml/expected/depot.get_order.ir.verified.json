@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_order.sql": "07c1d99284991ae5e465d9c84b4f772bdb4fd4baa65072c513986b169387fe13",
+      "tables/pick_line.sql": "c335f8776e8ab95b42304b287a5ccec496a87f16afc6723737c769b9c179338a",
+      "tables/pick_order.sql": "2c4514f4bafa6188e4763e643ef31c5a68875fb461683dab0c1f06d413a73620"
+    }
   },
   "objects": [
     {
@@ -84,7 +89,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_line.part_id",
+              "sql": "int",
+              "at": "tables/pick_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -108,7 +120,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_line.qty",
+              "sql": "int",
+              "at": "tables/pick_line.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -141,7 +160,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_order.order_id",
+              "sql": "int",
+              "at": "tables/pick_order.sql:3:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -170,7 +196,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_order.status",
+              "sql": "varchar(10)",
+              "at": "tables/pick_order.sql:5:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -191,6 +224,13 @@
             {
               "rule": "nullable-column",
               "at": "depot.pick_order.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "depot.pick_order.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/pick_order.sql:6:5"
             }
           ]
         },

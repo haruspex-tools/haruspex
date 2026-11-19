@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/bill_of_materials.sql": "455369be46f0e9356dab89ba9dab52073751abd31dc4a020f5bfa3c18a98b1da",
+      "tables/part.sql": "2e35daca3a4c0f9c8d45077142a91dfcda06a892997b480f91070ff85d88cacd"
+    }
   },
   "objects": [
     {
@@ -87,7 +91,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -103,7 +114,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.part.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/part.sql:3:5"
+            }
+          ]
         },
         {
           "name": "unit",
@@ -138,6 +156,13 @@
               "rule": "nullable-column",
               "at": "flow.part.unit"
             }
+          ],
+          "from": [
+            {
+              "column": "flow.part.unit",
+              "sql": "varchar(4)",
+              "at": "tables/part.sql:4:5"
+            }
           ]
         }
       ]
@@ -171,7 +196,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.component.assembly_id",
+              "sql": "int",
+              "at": "tables/part.sql:9:5"
+            }
+          ]
         },
         {
           "name": "part",
@@ -203,7 +235,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.component.quantity",
+              "sql": "smallint",
+              "at": "tables/part.sql:11:5"
+            }
+          ]
         }
       ]
     }

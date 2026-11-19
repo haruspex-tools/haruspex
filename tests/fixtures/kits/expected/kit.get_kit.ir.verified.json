@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_kit.sql": "075a4bd21c532bdec845732c3b403407776b1b529724376c01173de080bf9edf",
+      "tables/kit_part.sql": "db783c1f9b53e1a02da1dafb564148f162023c957d18b5573d51901b75423212"
+    }
   },
   "objects": [
     {
@@ -161,7 +165,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -185,7 +196,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -206,6 +224,13 @@
             {
               "rule": "nullable-column",
               "at": "kit.kit_part.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "kit.kit_part.colour",
+              "sql": "nvarchar(10)",
+              "at": "tables/kit_part.sql:7:5"
             }
           ]
         }
@@ -306,7 +331,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -330,7 +362,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -351,6 +390,13 @@
             {
               "rule": "nullable-column",
               "at": "kit.kit_part.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "kit.kit_part.colour",
+              "sql": "nvarchar(10)",
+              "at": "tables/kit_part.sql:7:5"
             }
           ]
         }
@@ -377,7 +423,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -401,7 +454,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -422,6 +482,13 @@
             {
               "rule": "nullable-column",
               "at": "kit.kit_part.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "kit.kit_part.colour",
+              "sql": "nvarchar(10)",
+              "at": "tables/kit_part.sql:7:5"
             }
           ]
         }

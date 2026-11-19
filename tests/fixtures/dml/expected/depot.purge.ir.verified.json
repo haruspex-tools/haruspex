@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/purge.sql": "fa6e1b4556974344c415f380b4e1dc87c93a30f953bea6cd63c13154bcc48906"
+    }
   },
   "objects": [
     {

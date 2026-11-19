@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/job_board.sql": "3703828fea0732306dfca5b265b341bfb5d2dd602d61fcc4000be5c46ba48625",
+      "tables/customer.sql": "f9f4bc694f8bfffe8b31f2a986010c3384e4ac40438c9f1e527998c4f23800fc",
+      "tables/job.sql": "610c9bb033c599b4c9f87c632f0c1a6d6c8e5e1ef591a98b080ed3cfcd173728",
+      "tables/job_note.sql": "3b06c5dc272d25ef1d55bb1f3ec2467b26d09da2731e1ad8fc9e0321d164f4ce"
+    }
   },
   "objects": [
     {
@@ -56,7 +62,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status_label",
@@ -139,7 +152,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.priority",
+              "sql": "tinyint",
+              "at": "tables/job.sql:5:5"
+            }
+          ]
         },
         {
           "name": "priority_unless_one",
@@ -168,6 +188,13 @@
             {
               "rule": "nullable-column",
               "at": "desk.job.priority"
+            }
+          ],
+          "from": [
+            {
+              "column": "desk.job.priority",
+              "sql": "tinyint",
+              "at": "tables/job.sql:5:5"
             }
           ]
         },
@@ -200,7 +227,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.quoted",
+              "sql": "decimal(9,2)",
+              "at": "tables/job.sql:6:5"
+            }
+          ]
         },
         {
           "name": "late",
@@ -263,6 +297,13 @@
               "rule": "null-literal",
               "at": "procedures/job_board.sql:14:38"
             }
+          ],
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
           ]
         },
         {
@@ -292,7 +333,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.customer.tier",
+              "sql": "tinyint",
+              "at": "tables/customer.sql:5:5"
+            }
+          ]
         },
         {
           "name": "priority_name",
@@ -331,6 +379,13 @@
               "rule": "out-of-range",
               "at": "procedures/job_board.sql:16:8"
             }
+          ],
+          "from": [
+            {
+              "column": "desk.job.priority",
+              "sql": "tinyint",
+              "at": "tables/job.sql:5:5"
+            }
           ]
         },
         {
@@ -365,6 +420,13 @@
               "rule": "out-of-range",
               "at": "procedures/job_board.sql:17:8"
             }
+          ],
+          "from": [
+            {
+              "column": "desk.customer.tier",
+              "sql": "tinyint",
+              "at": "tables/customer.sql:5:5"
+            }
           ]
         },
         {
@@ -390,6 +452,13 @@
             {
               "rule": "null-when-equal",
               "at": "procedures/job_board.sql:18:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "desk.customer.phone",
+              "sql": "varchar(20)",
+              "at": "tables/customer.sql:4:5"
             }
           ]
         },
@@ -421,6 +490,13 @@
               "rule": "null-when-equal",
               "at": "procedures/job_board.sql:19:8"
             }
+          ],
+          "from": [
+            {
+              "column": "desk.job.priority",
+              "sql": "tinyint",
+              "at": "tables/job.sql:5:5"
+            }
           ]
         },
         {
@@ -437,7 +513,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job_note.note",
+              "sql": "nvarchar(100)",
+              "at": "tables/job_note.sql:3:5"
+            }
+          ]
         },
         {
           "name": "note_job",
@@ -461,7 +544,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job_note.job_id",
+              "sql": "int",
+              "at": "tables/job_note.sql:2:5"
+            }
+          ]
         }
       ]
     }

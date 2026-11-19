@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/member_names.sql": "10f0a5243b5f4de86e85a45b2777aef0fdca8e352c3f4463716ff3376d9cbcd5",
+      "tables/member.sql": "d72487a56f612ee74455c6c78b67a60d1f45f029765899149be19f4b6d46381c"
+    }
   },
   "objects": [
     {
@@ -90,7 +94,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "code_left",
@@ -106,7 +117,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.code",
+              "sql": "char(5)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         },
         {
           "name": "code_trimmed",
@@ -122,7 +140,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.code",
+              "sql": "char(5)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         },
         {
           "name": "nickname_trimmed",
@@ -144,6 +169,13 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         },
         {
@@ -160,7 +192,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "code_upper",
@@ -176,7 +215,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.code",
+              "sql": "char(5)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         },
         {
           "name": "nickname_lower",
@@ -198,6 +244,13 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         },
         {
@@ -214,7 +267,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.plan_name",
+              "sql": "varchar(10)",
+              "at": "tables/member.sql:6:5"
+            }
+          ]
         },
         {
           "name": "name_start",
@@ -230,7 +290,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "nickname_end",
@@ -252,6 +319,13 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         },
         {
@@ -268,7 +342,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "prefs_start",
@@ -282,6 +363,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.prefs"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         },
@@ -307,7 +395,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.code",
+              "sql": "char(5)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         },
         {
           "name": "prefs_length",
@@ -336,6 +431,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.prefs"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         },
@@ -367,6 +469,13 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         },
         {
@@ -391,7 +500,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "name_doubled",
@@ -407,7 +523,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "nickname_zeroed",
@@ -429,6 +552,13 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         },
         {
@@ -438,7 +568,14 @@
             "sql": "nvarchar(max)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -454,7 +591,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "custom_label",
@@ -475,6 +624,13 @@
             {
               "rule": "parameter",
               "at": "@format"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         },
@@ -497,6 +653,13 @@
             {
               "rule": "json-null-or-absent",
               "at": "procedures/member_names.sql:25:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         }
@@ -531,7 +694,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "shout",
@@ -547,7 +717,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "tail",
@@ -568,6 +745,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.nickname"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
             }
           ]
         },
@@ -590,6 +774,13 @@
             {
               "rule": "json-null-or-absent",
               "at": "procedures/member_names.sql:32:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         },
@@ -620,6 +811,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.nickname"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
             }
           ]
         }

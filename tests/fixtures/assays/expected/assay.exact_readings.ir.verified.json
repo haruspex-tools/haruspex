@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/exact_readings.sql": "d160ae0abffc6617b86b0a6e0a73d85e90d8169814467ff87c973b3ce5a534d0",
+      "tables/sample.sql": "bb75d2130abf24b69dc2bf0fe1cc4ae9bb13abf1bdda441cd5047de2d6e9b6ba"
+    }
   },
   "objects": [
     {
@@ -67,7 +71,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:4:5"
+            }
+          ]
         },
         {
           "name": "dilution_4dp",
@@ -98,7 +109,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.dilution",
+              "sql": "decimal(10,2)",
+              "at": "tables/sample.sql:6:5"
+            }
+          ]
         },
         {
           "name": "doubled",
@@ -129,7 +147,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.dilution",
+              "sql": "decimal(10,2)",
+              "at": "tables/sample.sql:6:5"
+            }
+          ]
         },
         {
           "name": "standard",
@@ -221,7 +246,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "concentration_money",
@@ -252,7 +284,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "absorbance_2dp",
@@ -289,6 +328,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/exact_readings.sql:14:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.absorbance",
+              "sql": "float",
+              "at": "tables/sample.sql:9:5"
+            }
           ]
         },
         {
@@ -320,7 +366,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.fee",
+              "sql": "money",
+              "at": "tables/sample.sql:8:5"
+            }
+          ]
         },
         {
           "name": "concentration_rounded",
@@ -357,6 +410,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/exact_readings.sql:16:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
           ]
         },
         {
@@ -388,7 +448,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "unit",
@@ -424,6 +491,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/exact_readings.sql:18:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.dilution",
+              "sql": "decimal(10,2)",
+              "at": "tables/sample.sql:6:5"
             }
           ]
         },
@@ -462,6 +536,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/exact_readings.sql:19:8"
             }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.fee",
+              "sql": "money",
+              "at": "tables/sample.sql:8:5"
+            }
           ]
         },
         {
@@ -493,7 +574,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -526,7 +614,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:4:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -557,7 +652,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "mean_fee",
@@ -593,6 +695,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/exact_readings.sql:24:52"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.fee",
+              "sql": "money",
+              "at": "tables/sample.sql:8:5"
             }
           ]
         }

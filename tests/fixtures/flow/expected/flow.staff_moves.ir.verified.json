@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/staff_moves.sql": "2480d5ffd02b75987599bb61cd7cdb66dbaeffc60b21d8f597279ced7874c8fd"
+    }
   },
   "objects": [
     {

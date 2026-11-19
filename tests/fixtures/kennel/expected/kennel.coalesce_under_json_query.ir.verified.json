@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/coalesce_under_json_query.sql": "0fd126d9e0d65c0bd617075becbb6bfb8f5223ba297f7543dca5c913692f7318",
+      "tables/dog.sql": "ddbcb250c1f978c9889883c1a4f3816525aa55f02a3d1f422a71236742f8b34e"
+    }
   },
   "objects": [
     {
@@ -78,7 +82,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.dog_id",
+              "sql": "int",
+              "at": "tables/dog.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -94,7 +105,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -127,7 +145,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.dog_id",
+              "sql": "int",
+              "at": "tables/dog.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -143,7 +168,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     },

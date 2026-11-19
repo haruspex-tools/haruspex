@@ -38,7 +38,9 @@ internal sealed class Baseline(string path, IrDocument document, bool isIr)
 
         var isIr = File.Exists(path) && string.Equals(System.IO.Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
         progress.Step($"reading the baseline {shown}");
-        return (isIr ? ReadIr(path, shown) : Inferred(request, path, progress)).Select(document => new Baseline(path, document, isIr));
+        // An IR file is the baseline's source as the config file names it, which the combined IR labels the baseline's side with.
+        return (isIr ? ReadIr(path, shown).Select(d => d with { Source = d.Source with { Path = System.IO.Path.GetRelativePath(config.Directory, path).Replace('\\', '/') } }) : Inferred(request, path, progress))
+            .Select(document => new Baseline(path, document, isIr));
     }
 
     /// <summary>An IR file as the baseline: of a version this haruspex reads, or refused, since a claim's meaning may differ between versions.</summary>

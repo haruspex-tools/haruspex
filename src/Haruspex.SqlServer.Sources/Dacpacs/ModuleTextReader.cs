@@ -37,16 +37,11 @@ internal static class ModuleTextReader
     public static Module? Read(XElement element, string file, ICollection<Diagnostic> diagnostics)
     {
         var type = ModelXml.TypeOf(element);
-        var textElement = type is ModelXml.SqlScalarFunction or ModelXml.SqlInlineTableValuedFunction or ModelXml.SqlMultiStatementTableValuedFunction
-            ? ModelXml.Elements(element, ModelXml.FunctionBody).FirstOrDefault() ?? element
-            : element;
-        var header = ModelXml.Annotation(textElement, ModelXml.SysCommentsObjectAnnotation) is { } comments ? ModelXml.Property(comments, ModelXml.HeaderContents) : null;
-        var body = ModelXml.Property(textElement, ModelXml.BodyScript) ?? ModelXml.Property(element, ModelXml.QueryScript);
-        if (header is null || body is null)
+        if (Text(element) is not { } text)
             return WithoutText(element, type, file, diagnostics);
 
         var quoted = ModelXml.Property(element, ModelXml.IsQuotedIdentifierOn) != "False";
-        using var reader = new StringReader(header + body);
+        using var reader = new StringReader(text);
         var parsed = new TSql170Parser(quoted).Parse(reader, out var errors);
         foreach (var error in errors)
             diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, new SourceLocation(file, error.Line, error.Column)));
@@ -62,6 +57,21 @@ internal static class ModuleTextReader
             TriggerStatementBody trigger => ModuleReader.Trigger(trigger, file),
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// A module's own text, its header and its body, which a location in it counts lines and columns in
+    /// (<see cref="PackageLocation"/>); null when the package doesn't hold it.
+    /// </summary>
+    public static string? Text(XElement element)
+    {
+        var type = ModelXml.TypeOf(element);
+        var textElement = type is ModelXml.SqlScalarFunction or ModelXml.SqlInlineTableValuedFunction or ModelXml.SqlMultiStatementTableValuedFunction
+            ? ModelXml.Elements(element, ModelXml.FunctionBody).FirstOrDefault() ?? element
+            : element;
+        var header = ModelXml.Annotation(textElement, ModelXml.SysCommentsObjectAnnotation) is { } comments ? ModelXml.Property(comments, ModelXml.HeaderContents) : null;
+        var body = ModelXml.Property(textElement, ModelXml.BodyScript) ?? ModelXml.Property(element, ModelXml.QueryScript);
+        return header is null || body is null ? null : header + body;
     }
 
     /// <summary>

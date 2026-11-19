@@ -50,6 +50,8 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Overrides), "", "overrides"),
         (typeof(IrSource), nameof(IrSource.Dialect), "document.source", "dialect"),
         (typeof(IrSource), nameof(IrSource.Session), "document.source", "session"),
+        (typeof(IrSource), nameof(IrSource.Files), "document.source", "files"),
+        (typeof(IrSource), nameof(IrSource.Path), "document.source", "path"),
         (typeof(IrSessionOption), nameof(IrSessionOption.Name), "document.source", null), // a key of the session
         (typeof(IrSessionOption), nameof(IrSessionOption.On), "document.source", null), // that key's value
         (typeof(IrSource), nameof(IrSource.Package), "document.source", null), // its two parts, package and sha256
@@ -95,6 +97,17 @@ public class IrJsonSchemaTests
         (typeof(IrField), nameof(IrField.Presence), "field", "presence"),
         (typeof(IrField), nameof(IrField.Nullable), "field", "nullable"),
         (typeof(IrField), nameof(IrField.NullableBecause), "field", "nullableBecause"),
+        (typeof(IrField), nameof(IrField.From), "field", "from"),
+        (typeof(IrField), nameof(IrField.Sides), "field", "sides"),
+        (typeof(IrSourceColumn), nameof(IrSourceColumn.Column), "sourceColumn", "column"),
+        (typeof(IrSourceColumn), nameof(IrSourceColumn.Sql), "sourceColumn", "sql"),
+        (typeof(IrSourceColumn), nameof(IrSourceColumn.At), "sourceColumn", "at"),
+        (typeof(IrFieldSides), nameof(IrFieldSides.Baseline), "field", null), // inside the field's sides
+        (typeof(IrFieldSides), nameof(IrFieldSides.Candidate), "field", null),
+        (typeof(IrFieldSide), nameof(IrFieldSide.Presence), "side", "presence"),
+        (typeof(IrFieldSide), nameof(IrFieldSide.NullableBecause), "side", "nullableBecause"),
+        (typeof(IrFieldSide), nameof(IrFieldSide.Sql), "side", "sql"),
+        (typeof(IrFieldSide), nameof(IrFieldSide.From), "side", "from"),
         (typeof(IrNullReason), nameof(IrNullReason.Rule), "reason", "rule"),
         (typeof(IrNullReason), nameof(IrNullReason.At), "reason", "at"),
         (typeof(IrScalar), nameof(IrScalar.Kind), "scalar", "kind"),
@@ -223,7 +236,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]

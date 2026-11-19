@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/current_prices.sql": "d31334ac3186fc39a4f3d3e969c132cb6905ca4951cfe1039d1d2d4afffb74de",
+      "tables/price.sql": "c37d7831921e7c15271d1395943c3505465b025bb337f859ec61278c2ca3c0ff"
+    }
   },
   "objects": [
     {
@@ -48,7 +52,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.price.sku",
+              "sql": "varchar(12)",
+              "at": "tables/price.sql:3:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -79,7 +90,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:4:5"
+            }
+          ]
         }
       ]
     }

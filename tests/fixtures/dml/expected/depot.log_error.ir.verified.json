@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/log_error.sql": "a68f4780753af097ea61c26f1f41d9c7de77fccb21a6cc9c12aeb7eaf06eeee4"
+    }
   },
   "objects": [
     {

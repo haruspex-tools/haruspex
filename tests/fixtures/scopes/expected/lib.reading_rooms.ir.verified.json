@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reading_rooms.sql": "1ce75faa9e3ec2c49a73fa4ef9f4db19723b9936f0673aa9c44aafe346d79f72",
+      "tables/reading_room.sql": "f55ae1c1c8d38330281662e556f09a296a02c3644b9d94a679f76a912f3e9c76"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "[lib.annex].[reading.room].room_id",
+              "sql": "int",
+              "at": "tables/reading_room.sql:6:5"
+            }
+          ]
         },
         {
           "name": "seats",
@@ -80,7 +91,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "[lib.annex].[reading.room].seats",
+              "sql": "tinyint",
+              "at": "tables/reading_room.sql:7:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -96,7 +114,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "[lib.annex].[reading.room].note",
+              "sql": "nvarchar(40)",
+              "at": "tables/reading_room.sql:8:5"
+            }
+          ]
         }
       ]
     }

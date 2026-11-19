@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/part_counts.sql": "386522784f91f9e457085320054c6649d0f805bca30cccc2396f5162170cba37"
+    }
   },
   "objects": [
     {

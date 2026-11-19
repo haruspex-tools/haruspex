@@ -109,7 +109,7 @@
     },
     "compared": {
       "type": "object",
-      "required": ["compared", "changes", "newUnknowns", "resolvedUnknowns", "unchangedUnknowns", "rewritten"],
+      "required": ["compared", "changes", "newUnknowns", "resolvedUnknowns", "unchangedUnknowns", "rewritten", "irRewritten", "recorded"],
       "additionalProperties": false,
       "properties": {
         "compared": { "const": true },
@@ -135,6 +135,15 @@
         "unchangedUnknowns": { "type": "integer", "minimum": 0 },
         "rewritten": {
           "description": "The emitted files whose text changed though no claim did, or that the last run didn't write.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "irRewritten": {
+          "description": "Whether the IR's text changed though no claim did: what it records of where its claims came from, or another version wrote it.",
+          "type": "boolean"
+        },
+        "recorded": {
+          "description": "The script files whose text the IR records anew, by their hash: edited, or newly or no longer pointed into. The IR changes for each though no claim does.",
           "type": "array",
           "items": { "type": "string" }
         }

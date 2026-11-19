@@ -297,8 +297,8 @@ SELECT b.id, b.title, b.status FROM lib.book AS b;
 ```
 
 ```text haruspex-check
-db/project.sql:4:5: error HAR6014: lib.list_books results[0][].title: became nullable
-db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost"
+db/project.sql:4:5: error HAR6014: lib.list_books results[0][].title: became nullable. Why, once generated: haruspex explain lib.list_books title
+db/project.sql:7:1: error HAR6014: lib.list_books results[0][].status: value set grew: added "lost". Why, once generated: haruspex explain lib.list_books status
 haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
 ```
 

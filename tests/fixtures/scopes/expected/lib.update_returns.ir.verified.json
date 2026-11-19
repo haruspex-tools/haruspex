@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/update_returns.sql": "3e7d63600eac98f1923eba54655e895b4ba29d4a8d38c2b7bd33505785f83b3a",
+      "tables/book.sql": "e2460d3ded01bf7e62e881e791e0c17c2bd4ee521de80f2c06ad5d20c3a6c32c"
+    }
   },
   "objects": [
     {
@@ -112,7 +116,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         }
       ]
     }

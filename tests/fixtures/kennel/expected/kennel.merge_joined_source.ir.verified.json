@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/merge_joined_source.sql": "c65d03b9851e543f9e12158cf1f67f07ff140e44d0affb6e1746df897f7ffaca",
+      "tables/booking.sql": "1e069376bb56d71ce24e4dd4e62b1a2ae2d2264859236e6bbe1c17c79d5a4bd8",
+      "tables/dog.sql": "ddbcb250c1f978c9889883c1a4f3816525aa55f02a3d1f422a71236742f8b34e"
+    }
   },
   "objects": [
     {
@@ -115,6 +120,13 @@
               "rule": "missing-for-action",
               "at": "procedures/merge_joined_source.sql:6:1"
             }
+          ],
+          "from": [
+            {
+              "column": "kennel.booking.nights",
+              "sql": "int",
+              "at": "tables/booking.sql:4:5"
+            }
           ]
         },
         {
@@ -136,6 +148,13 @@
             {
               "rule": "missing-for-action",
               "at": "procedures/merge_joined_source.sql:6:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
             }
           ]
         }

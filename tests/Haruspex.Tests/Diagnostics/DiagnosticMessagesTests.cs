@@ -50,6 +50,18 @@ public class DiagnosticMessagesTests
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
+    /// <summary>A run of <c>haruspex explain</c> with <paramref name="args"/>, in a folder whose IR <c>generate</c> wrote to <c>out</c>.</summary>
+    private static string[] Explained(params string[] args)
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/tables.sql", Tables);
+        folder.File("db/p1.sql", GetBook);
+        HaruspexCli.Run(["generate", "db", "--include", "*.*", "--out", "out"], TextWriter.Null, TextWriter.Null, folder.Path);
+        using var error = new StringWriter();
+        HaruspexCli.Run(["explain", .. args], TextWriter.Null, error, folder.Path);
+        return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
+    }
+
     /// <summary>A run of <c>haruspex init</c> in an empty folder arranged by <paramref name="arrange"/>.</summary>
     private static string[] Init(Action<TempDirectory> arrange)
     {
@@ -369,6 +381,8 @@ public class DiagnosticMessagesTests
             HaruspexCli.Run(["generate", "--baseline", "release"], TextWriter.Null, TextWriter.Null, f.Path);
             f.File("release.ir.json", File.ReadAllText(Path.Combine(f.Path, "out", HaruspexCli.IrFileName)));
         })),
+        (6037, () => Explained("lib.get_book")),
+        (6038, () => Explained("lib.get_book", "nothing", "--ir", "out/haruspex.ir.json")),
         (6021, () => Init(f => f.File("haruspex.json", "{}"))),
         (6022, () => Init(_ => { })),
         (6023, () => Init(f =>

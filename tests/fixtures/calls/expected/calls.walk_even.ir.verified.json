@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/walk_even.sql": "3cd2c7a3428ebba85175ef7966191db11069a110a2f88f4ff6dd1ce2c80ff55b",
+      "tables/batch.sql": "5cb3481c339a7ec8a8eec28baf23de5e0f762f2d5a92514c6cd508aa13e57de4",
+      "tables/oven.sql": "9a8c4e32584b5d2f2dd43b1199efff9b60c0c5151f5498aaddad227aa14ddaa3"
+    }
   },
   "objects": [
     {
@@ -92,7 +97,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -108,7 +120,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -141,7 +160,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.batch_id",
+              "sql": "int",
+              "at": "tables/batch.sql:3:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -162,6 +188,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.batch.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.batch.note",
+              "sql": "nvarchar(40)",
+              "at": "tables/batch.sql:8:5"
             }
           ]
         }

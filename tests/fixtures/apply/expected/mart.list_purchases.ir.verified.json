@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_purchases.sql": "75830c6e8cbbe5139a6c4148ba09004d88d6f747171c72bc7f828fba1648b37d",
+      "tables/product.sql": "5e703d1a85a435fcf6fcb8a2686fadd4a819dcccc631e84f277fcef8612bf0e2",
+      "tables/purchase.sql": "dec637e5b630fcd45b92ad1a1d098abda3f4a2ac6a70601cdfa8c177012196e1",
+      "tables/purchase_line.sql": "b0d885deb668356a89e96fc986a3e367cc0965fe7fe72fa9aaf2fb9cf3bda026"
+    }
   },
   "objects": [
     {
@@ -56,7 +62,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.line_no",
+              "sql": "int",
+              "at": "tables/purchase_line.sql:3:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -80,7 +93,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.quantity",
+              "sql": "int",
+              "at": "tables/purchase_line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "unit_price",
@@ -111,7 +131,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/purchase_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "discount",
@@ -148,6 +175,13 @@
               "rule": "nullable-column",
               "at": "mart.purchase_line.discount"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase_line.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/purchase_line.sql:7:5"
+            }
           ]
         },
         {
@@ -164,7 +198,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -197,7 +238,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
+          ]
         },
         {
           "name": "placed_on",
@@ -206,7 +254,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.placed_on",
+              "sql": "date",
+              "at": "tables/purchase.sql:4:5"
+            }
+          ]
         },
         {
           "name": "lines",

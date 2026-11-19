@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/line_values.sql": "a992827f8bc096bbecbc733f4b43fde08080d26510d64d1805b8b19e7c0aae94",
+      "tables/line.sql": "7f1c37c9b158c930c2d9878b97c37daf1d0b7afdbb9f95d850a76db6684f97ea"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.line_id",
+              "sql": "int",
+              "at": "tables/line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "gross",
@@ -87,7 +98,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
+            },
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "rated",
@@ -128,6 +151,18 @@
               "rule": "precision-loss",
               "at": "procedures/line_values.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            },
+            {
+              "column": "ledger.line.rate",
+              "sql": "decimal(19,6)",
+              "at": "tables/line.sql:8:5"
+            }
           ]
         },
         {
@@ -159,7 +194,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "discounted",
@@ -195,6 +237,18 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.discount"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            },
+            {
+              "column": "ledger.line.discount",
+              "sql": "numeric(5,4)",
+              "at": "tables/line.sql:9:5"
             }
           ]
         },
@@ -233,6 +287,13 @@
               "rule": "precision-loss",
               "at": "procedures/line_values.sql:10:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            }
           ]
         },
         {
@@ -264,7 +325,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "per_twentieth",
@@ -295,7 +363,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "per_unit",
@@ -332,6 +407,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/line_values.sql:13:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            },
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
+            }
           ]
         },
         {
@@ -363,7 +450,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "big_mod",
@@ -394,7 +488,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
+          ]
         },
         {
           "name": "qty_mod",
@@ -418,7 +519,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "flagged",
@@ -449,7 +557,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.flag",
+              "sql": "bit",
+              "at": "tables/line.sql:17:5"
+            },
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "quarter_fee",
@@ -480,7 +600,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
+          ]
         },
         {
           "name": "big_negated",
@@ -511,7 +638,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
+          ]
         }
       ]
     }

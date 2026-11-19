@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/search_batches.sql": "626a035edf36393247324b64dc31bb972be61029e922bcc3572e4a8a9c32c7db"
+    }
   },
   "objects": [
     {

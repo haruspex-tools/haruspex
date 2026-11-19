@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/exists_and_in.sql": "3d9eaba49006db78c216a9756212cab3e46cd501a92ccd47db2e5bf88b0347ec",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -77,6 +88,13 @@
             {
               "rule": "nullable-column",
               "at": "lib.member.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "lib.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:6:5"
             }
           ]
         }

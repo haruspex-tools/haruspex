@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.26",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/count_serials.sql": "608a6d7cb1b598717df5fdddd26345bf4b088594d6c6c7bf69156df27df1528f"
+    }
   },
   "objects": [
     {

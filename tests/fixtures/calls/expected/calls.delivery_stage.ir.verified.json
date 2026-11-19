@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/delivery_stage.sql": "dd594ae5b4f7ee18e85e5e3b440ac105fbe7aa2fc145aa31aed7b8e650421784"
+    }
   },
   "objects": [
     {

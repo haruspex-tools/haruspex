@@ -172,9 +172,23 @@ FROM shop.price AS p;
 
 ```ts haruspex-zod
 export const PriceFormsRowSchema = z.object({
+  /**
+   * Its type is decimal(6,2), where shop.price.amount is decimal(5,2): what it is computed with makes it another type.
+   * Why: haruspex explain shop.price_forms wide
+   */
   wide: z.number().min(-9999.99).max(9999.99).multipleOf(1e-2),
+  /**
+   * Its type is decimal(4,2), where shop.price.amount is decimal(5,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain shop.price_forms narrow
+   */
   narrow: z.number().min(-99.99).max(99.99).multipleOf(1e-2).nullable(),
-  /** varchar(7) counts bytes and its collation isn't declared, so the length is at most 7. */
+  /**
+   * varchar(7) counts bytes and its collation isn't declared, so the length is at most 7.
+   * Its type is varchar(7), where shop.price.amount is decimal(5,2): what it is computed with makes it another type.
+   * Why: haruspex explain shop.price_forms text
+   */
   text: z.string().max(7),
 })
 export type PriceFormsRow = z.infer<typeof PriceFormsRowSchema>

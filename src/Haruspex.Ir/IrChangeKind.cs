@@ -107,7 +107,7 @@ public enum IrChangeKind
     TypeUnproven,
 
     /// <summary>
-    /// A table type's definition changed under its name (0.25): a column, a key, a condition, how a column is filled or its
+    /// A table type's definition changed under its name (0.26): a column, a key, a condition, how a column is filled or its
     /// collation, as the definitions the two documents carry say.
     /// </summary>
     TableTypeChanged,

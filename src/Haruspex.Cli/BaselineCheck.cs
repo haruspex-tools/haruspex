@@ -65,7 +65,7 @@ internal static class BaselineCheck
     {
         var obj = module.Database.Objects.FirstOrDefault(o => o.Id == finding.Change.Object);
         return finding.Verdict == IrFitVerdict.Refused
-            ? At(module, obj, CliCodes.BaselineRefused, $"{finding.Change}, and {finding.Why}. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed.")
+            ? At(module, obj, CliCodes.BaselineRefused, $"{finding.Change}, and {finding.Why}. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed.{ExplainPointer.Of(module, finding.Change)}")
             : At(module, obj, CliCodes.BaselineIgnored, $"{finding.Change}, and {finding.Why}. The application already running sets it aside until it is redeployed.");
     }
 

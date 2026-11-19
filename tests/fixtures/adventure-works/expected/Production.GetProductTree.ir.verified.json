@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "functions/GetComponents.sql": "fb6bcf532dd91813d758591d73cba739576c7c140ca2fc7429c095f768856f7a",
+      "procedures/GetProductTree.sql": "3859aee428a657364105d977dcdd1f1e0a37f5fbc3a37a42e7124148bc0c76f4",
+      "tables/BillOfMaterials.sql": "a0d74bc85a647695baa9c2a2b264ec2d757718660a046b039811a9a5e123e89c",
+      "tables/Product.sql": "8cf5b79a3f26bd6890522f412026a44c122cde244163046680c34753113841df"
+    }
   },
   "objects": [
     {
@@ -92,7 +98,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.BillOfMaterials.PerAssemblyQty",
+              "sql": "decimal(8,2)",
+              "at": "tables/BillOfMaterials.sql:13:5"
+            }
+          ]
         },
         {
           "name": "unit",
@@ -108,7 +121,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.BillOfMaterials.UnitMeasureCode",
+              "sql": "nchar(3)",
+              "at": "tables/BillOfMaterials.sql:11:5"
+            }
+          ]
         },
         {
           "name": "product",
@@ -133,6 +153,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/GetComponents.sql:5:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "Production.Product.ProductID",
+              "sql": "int",
+              "at": "tables/Product.sql:5:5"
             }
           ]
         }
@@ -167,7 +194,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.ProductID",
+              "sql": "int",
+              "at": "tables/Product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -183,7 +217,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.Name",
+              "sql": "nvarchar(50)",
+              "at": "tables/Product.sql:6:5"
+            }
+          ]
         },
         {
           "name": "number",
@@ -199,7 +240,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.ProductNumber",
+              "sql": "nvarchar(25)",
+              "at": "tables/Product.sql:7:5"
+            }
+          ]
         },
         {
           "name": "standardCost",
@@ -230,7 +278,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.StandardCost",
+              "sql": "money",
+              "at": "tables/Product.sql:13:5"
+            }
+          ]
         }
       ]
     },
@@ -263,7 +318,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.ProductID",
+              "sql": "int",
+              "at": "tables/Product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -279,7 +341,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.Name",
+              "sql": "nvarchar(50)",
+              "at": "tables/Product.sql:6:5"
+            }
+          ]
         },
         {
           "name": "number",
@@ -295,7 +364,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Production.Product.ProductNumber",
+              "sql": "nvarchar(25)",
+              "at": "tables/Product.sql:7:5"
+            }
+          ]
         },
         {
           "name": "components",
@@ -312,6 +388,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/GetComponents.sql:5:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "Production.Product.ProductID",
+              "sql": "int",
+              "at": "tables/Product.sql:5:5"
             }
           ]
         }

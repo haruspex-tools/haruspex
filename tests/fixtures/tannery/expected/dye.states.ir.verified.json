@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/states.sql": "321577940ac0e774b623a48fb406545af3b91fac8247ed5a1a8d3233a3379a0d",
+      "tables/vat.sql": "744b5668414e9cc317f1c66e8a6bc62d023614ea590236b75aaedfeaf1c3fe09"
+    }
   },
   "objects": [
     {
@@ -67,7 +71,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:8:5"
+            },
+            {
+              "column": "dye.rinse_tank.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:25:5"
+            }
+          ]
         }
       ]
     }

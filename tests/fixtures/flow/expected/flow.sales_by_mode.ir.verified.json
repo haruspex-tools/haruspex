@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/sales_by_mode.sql": "7c1c91b1c51482b00597f81e5c9b10029e07bc236f2872be24abb220cf55f491",
+      "tables/region.sql": "e600cc893d20cbf0f5bc5b9952789be22aced5b86511e39a0dd6da04f1a8f321",
+      "tables/sale.sql": "5c69103893aea0ad11a260ee56728fa1ea0d177912fc9634867b4b086e4c9818"
+    }
   },
   "objects": [
     {
@@ -154,7 +159,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -185,7 +197,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/sale.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -218,7 +237,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.region_id",
+              "sql": "int",
+              "at": "tables/region.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -234,7 +260,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/region.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -267,7 +300,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.region_id",
+              "sql": "int",
+              "at": "tables/region.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -283,7 +323,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/region.sql:4:5"
+            }
+          ]
         },
         {
           "name": "code",
@@ -313,7 +360,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.code",
+              "sql": "char(3)",
+              "at": "tables/region.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -352,7 +406,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.code",
+              "sql": "char(3)",
+              "at": "tables/region.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -368,7 +429,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/region.sql:4:5"
+            }
+          ]
         }
       ]
     }

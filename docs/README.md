@@ -77,6 +77,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | [The generated code](../src/Haruspex.Emit.Zod/README.md) | What the Zod module holds, and how each SQL type arrives: in JSON, and in a row as the mssql driver delivers it. |
 | [Configuration](configuration.md) | Every setting of `haruspex.json`, held to its [JSON Schema](../schemas/haruspex.schema.json) by a test. |
 | [Diagnostics](diagnostics/README.md) | Every code haruspex reports, with a page each: what it means, why, and what to do. |
+| [Why a type is what it is](reasons/README.md) | Every reason the IR gives for a type, a null rule, an unknown reason or a cardinality, with a page each: what it means, and the test it rests on. |
 | [What haruspex models](coverage.md) | Every T-SQL construct and built-in function, and what haruspex does with each; written by a test. |
 | [Corpus figures](corpus-figures.md) | How much of Microsoft's two vendored samples haruspex types; written by a test. |
 | [The harvest](corpus-harvest.md) | The same figures for more public corpora, and what they show haruspex missing, ranked; written by a test. |

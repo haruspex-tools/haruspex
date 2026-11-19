@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/place_order.sql": "ac1d1e5bdc57b6a525c7cdb2afe3be9b8f405a7149464df0106fc5a457a9e1aa"
+    }
   },
   "objects": [
     {

@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/regulars.sql": "7ed8cf2ad3a85f0d8440938a2db86e2df93782c95fd519e8ab0a8254ec48e4ce",
+      "tables/booking.sql": "252b9a65ecd39b4128cc38e89f847c7a0bcf70f3e097670f8f79ec47a55a026e",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {
@@ -114,7 +120,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.booking.member_id",
+              "sql": "int",
+              "at": "tables/booking.sql:4:5"
+            },
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -144,6 +162,13 @@
             {
               "rule": "nullable-column",
               "at": "rink.member.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
             }
           ]
         }
@@ -175,6 +200,18 @@
             {
               "rule": "nullable-column",
               "at": "rink.guest.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
+            },
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
             }
           ]
         }
@@ -209,7 +246,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.booking.member_id",
+              "sql": "int",
+              "at": "tables/booking.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -225,7 +274,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         }
       ]
     }

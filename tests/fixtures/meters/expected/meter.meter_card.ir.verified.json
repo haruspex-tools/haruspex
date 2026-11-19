@@ -1,10 +1,15 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql",
     "session": {
       "ansiWarnings": true,
       "arithAbort": false
+    },
+    "files": {
+      "procedures/meter_card.sql": "1b54a89ce9c41b047a57afb2c0c2bd2bc8937e89c9b0e6b897d44c490065ddf7",
+      "tables/meter.sql": "3f868426d419b958839467d2a08c1d9fb44b069a7a635feaf55a7aaa45c75b66",
+      "tables/reading.sql": "8ce119c523780ae80a42aa174c7e13c877b4a0ee1a727c3bafd54dcf257b1b66"
     }
   },
   "objects": [
@@ -85,7 +90,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.meter.meter_id",
+              "sql": "int",
+              "at": "tables/meter.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -101,7 +113,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.meter.label",
+              "sql": "varchar(20)",
+              "at": "tables/meter.sql:5:5"
+            }
+          ]
         },
         {
           "name": "readings",
@@ -161,7 +180,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.read_on",
+              "sql": "date",
+              "at": "tables/reading.sql:4:5"
+            }
+          ]
         },
         {
           "name": "wh",
@@ -185,7 +211,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "meter.reading.kwh",
+              "sql": "int",
+              "at": "tables/reading.sql:5:5"
+            }
+          ]
         }
       ]
     },

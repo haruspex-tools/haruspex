@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_stalls.sql": "00031c2298cfff3f724ddac9a6d633e9be1843966cf892602e0cb2d33f0a63b0",
+      "tables/stall.sql": "75a6027e2a6d0751f72bf6d738f3e0e881d35e621f31b36b37efcbd2362c6181"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kiosk.stall.stall_id",
+              "sql": "int",
+              "at": "tables/stall.sql:7:5"
+            }
+          ]
         },
         {
           "name": "region",
@@ -72,7 +83,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kiosk.stall.region",
+              "sql": "varchar(40)",
+              "at": "tables/stall.sql:9:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -100,7 +118,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kiosk.stall.kind",
+              "sql": "varchar(10)",
+              "at": "tables/stall.sql:11:5"
+            }
+          ]
         },
         {
           "name": "reach",

@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/status_totals.sql": "453da94f9aa2eb3419df80e5125abeaa3116400c84952a6e35ef6d31bc9378b8",
+      "tables/job.sql": "610c9bb033c599b4c9f87c632f0c1a6d6c8e5e1ef591a98b080ed3cfcd173728",
+      "tables/part_line.sql": "956796988c472bfe695854e85221ca03299ca8c3165d31fa0c59e79d6447d83d"
+    }
   },
   "objects": [
     {
@@ -65,7 +70,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.status",
+              "sql": "char(1)",
+              "at": "tables/job.sql:4:5"
+            }
+          ]
         },
         {
           "name": "filter",
@@ -136,7 +148,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/part_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "most",
@@ -165,6 +184,13 @@
             {
               "rule": "no-branch-matched",
               "at": "procedures/status_totals.sql:12:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
             }
           ]
         }

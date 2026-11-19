@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.26",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/add_lines.sql": "b429580f76a8ae874c230e64f330d1f95ee32d0d44951f12376ac6e1e1180789",
+      "tables/product.sql": "5258eb323c1d258d2152b916e1496163e946ffc0be896c3d8345a754e1b0a22b",
+      "types/line_list.sql": "ac9f536ee88f783fc3443c4f5920769c7aaa2e5a39c618b3575d5df5f3f2708b"
+    }
   },
   "objects": [
     {
@@ -77,7 +82,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.product_id",
+              "sql": "int",
+              "at": "types/line_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -101,7 +113,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.quantity",
+              "sql": "smallint",
+              "at": "types/line_list.sql:4:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -121,7 +140,14 @@
           "nullableBecause": [
             {
               "rule": "nullable-column",
-              "at": "@lines.note"
+              "at": "till.line_list.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.line_list.note",
+              "sql": "nvarchar(200)",
+              "at": "types/line_list.sql:5:5"
             }
           ]
         },
@@ -154,7 +180,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -187,7 +220,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.product_id",
+              "sql": "int",
+              "at": "types/line_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -211,7 +251,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.line_list.quantity",
+              "sql": "smallint",
+              "at": "types/line_list.sql:4:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -232,6 +279,13 @@
             {
               "rule": "nullable-column",
               "at": "till.line_list.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.line_list.note",
+              "sql": "nvarchar(200)",
+              "at": "types/line_list.sql:5:5"
             }
           ]
         }

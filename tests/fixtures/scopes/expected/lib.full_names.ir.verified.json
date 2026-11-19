@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/full_names.sql": "8fa8887d961b6c1936ac2199c39372d5de0175f7a008704783dc576f760bbcde",
+      "tables/book.sql": "e2460d3ded01bf7e62e881e791e0c17c2bd4ee521de80f2c06ad5d20c3a6c32c",
+      "tables/member.sql": "963ea4f6010beb02964d6d45c81bbcdfdc7703864b6b761398b390ce661a2dff"
+    }
   },
   "objects": [
     {
@@ -48,7 +53,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         },
         {
           "name": "pages",
@@ -72,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.pages",
+              "sql": "smallint",
+              "at": "tables/book.sql:5:5"
+            }
+          ]
         },
         {
           "name": "donor",
@@ -93,6 +112,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/full_names.sql:10:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "lib.member.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         },

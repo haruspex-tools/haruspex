@@ -119,7 +119,15 @@ WHERE p.product_id = @product_id;
 ```ts haruspex-zod
 export const SalePriceRowSchema = z.object({
   name: z.string().max(40),
+  /**
+   * Its type is decimal(13,4), where shop.product.price is decimal(9,2): what it is computed with makes it another type.
+   * Why: haruspex explain shop.sale_price listed
+   */
   listed: z.number().min(-999999999.9999).max(999999999.9999).multipleOf(1e-4).nullable(),
+  /**
+   * Its type is decimal(13,4), where shop.product.price is decimal(9,2): what it is computed with makes it another type.
+   * Why: haruspex explain shop.sale_price charged
+   */
   charged: z.number().min(-999999999.9999).max(999999999.9999).multipleOf(1e-4),
 })
 export type SalePriceRow = z.infer<typeof SalePriceRowSchema>

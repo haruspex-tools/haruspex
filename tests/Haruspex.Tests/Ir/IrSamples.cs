@@ -14,6 +14,11 @@ internal static class IrSamples
 
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "sales.orders.note");
 
+    /// <summary>A column a field is read from (0.26), with no SQL type, as a column of a type the IR doesn't type would have.</summary>
+    private static readonly IrSourceColumn OrderId = new("sales.orders.order_id", null, "tables/orders.sql:2:5");
+
+    private static readonly IrSourceColumn Channel = new("sales.orders.channel", "varchar(10)", "tables/orders.sql:6:5");
+
     private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
 
     private static readonly IrScalar Note = new(IrScalarKind.String, null, "nvarchar(40)", new IrFacets(Length: new IrLength(40, IsFixed: false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, FromType)));
@@ -172,19 +177,49 @@ internal static class IrSamples
     };
 
     /// <summary>
-    /// <see cref="Combined"/> with a table-valued parameter (0.25): its table type's definition, with a column of every kind,
+    /// <see cref="Combined"/> saying where its fields came from (0.25): the columns each is read from, and how each database gave it,
+    /// so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Derived { get; } = Combined with
+    {
+        Source = Combined.Source with
+        {
+            Path = "database",
+            Files = new Dictionary<string, string> { ["tables/orders.sql"] = Hash('e') }.ToEquatableMap(f => f.Key, f => f.Value),
+        },
+        Types = Combined.Types.ToDictionary(t => t.Key, t => t.Key != "FindOrdersRow" ? t.Value : t.Value with
+        {
+            Fields =
+            [
+                .. t.Value.Fields.Select(f => f.Name == "channel"
+                    ? f with
+                    {
+                        From = [Channel],
+                        Sides = new IrFieldSides(null, new IrFieldSide(IrPresence.Always, [Column], "varchar(10)") { From = [Channel] }),
+                    }
+                    : f with
+                    {
+                        From = [OrderId],
+                        Sides = new IrFieldSides(IrFieldSide.Of(f) with { From = [OrderId] }, IrFieldSide.Of(f) with { From = [OrderId] }),
+                    }),
+            ],
+        }),
+    };
+
+    /// <summary>
+    /// <see cref="Derived"/> with a table-valued parameter (0.26): its table type's definition, with a column of every kind,
     /// and its row, so that it holds every property of the format.
     /// </summary>
-    public static IrDocument Whole { get; } = Combined with
+    public static IrDocument Whole { get; } = Derived with
     {
         Objects =
         [
-            .. Combined.Objects.Select(o => o.Id != "sales.get_order" ? o : o with
+            .. Derived.Objects.Select(o => o.Id != "sales.get_order" ? o : o with
             {
                 Parameters = [.. o.Parameters, new IrParameter("@lines", new IrArray(new IrRef("LineListRow")), HasDefault: true, IsOutput: false) { TableType = "sales.line_list" }],
             }),
         ],
-        Types = new Dictionary<string, IrObjectType>(Combined.Types)
+        Types = new Dictionary<string, IrObjectType>(Derived.Types)
         {
             ["LineListRow"] = new([new IrField("sku", Int, IrPresence.Always, []), new IrField("note", Note, IrPresence.Always, [new IrNullReason(IrNullRule.NullableColumn, "sales.line_list.note")])])
             {

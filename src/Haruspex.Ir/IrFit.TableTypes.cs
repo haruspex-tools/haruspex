@@ -5,7 +5,7 @@ public static partial class IrFit
     private sealed partial class ObjectWalk
     {
         /// <summary>
-        /// A table-valued parameter, judged by the definitions the two documents carry (0.25): what the application sends, rows of
+        /// A table-valued parameter, judged by the definitions the two documents carry (0.26): what the application sends, rows of
         /// its document's definition, must be what the procedure's takes. Each finding is refused, with the server's error.
         /// </summary>
         /// <remarks>

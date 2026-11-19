@@ -59,20 +59,20 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, with (0.25) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, and (0.26) the table types its parameters take. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else: {IrDocument.CurrentVersion} for a document that defines a table type, {IrDocument.CombinedVersion} for one that combines two databases and defines none, {IrDocument.OneDatabaseVersion} for any other."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
-                ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Never given when irVersion is 0.23, always when it is 0.24.")))),
+                ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
             ("objects", ArrayOf(Ref("object"))),
             ("types", Node(
                 ("description", "The named object types, by name."),
                 ("type", "object"),
                 ("additionalProperties", Ref("objectType")))),
             ("tableTypes", Node(
-                ("description", "The table types the parameters take, by the key a parameter's tableType names (0.25). Given exactly when irVersion is 0.25."),
+                ("description", "The table types the parameters take, by the key a parameter's tableType names (0.26). Given exactly when irVersion is 0.26."),
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Ref("tableType")))),
@@ -85,8 +85,8 @@ public static class IrJsonSchema
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
 
-        // A document is labelled by what it says: 0.25 exactly when it defines a table type, and otherwise 0.24 exactly when it
-        // names a baseline.
+        // A document labelled 0.23 never names a baseline, one labelled 0.24 always does, and one labelled 0.25 or 0.26 may; one of
+        // those that names none says nothing only a combined document says. Only one labelled 0.26 defines table types.
         ("anyOf", new JsonArray(
             Node(
                 ("properties", Node(
@@ -99,9 +99,45 @@ public static class IrJsonSchema
                     ("source", Node(("required", Names("baseline")))))),
                 ("not", Node(("required", Names("tableTypes"))))),
             Node(
-                ("properties", Node(("irVersion", Node(("const", IrDocument.CurrentVersion))))),
-                ("required", Names("tableTypes"))))),
+                ("properties", Node(
+                    ("irVersion", Node(("const", IrDocument.SourcesVersion))),
+                    ("source", Node(("required", Names("baseline")))))),
+                ("not", Node(("required", Names("tableTypes"))))),
+            OneDatabaseOf(IrDocument.SourcesVersion, tableTypes: false),
+            Node(
+                ("properties", Node(
+                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("source", Node(("required", Names("baseline")))))),
+                ("required", Names("tableTypes"))),
+            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: true))),
         ("$defs", Definitions()));
+
+    /// <summary>
+    /// A document of <paramref name="version"/> (0.25 or 0.26) that names no baseline, with table types when <paramref name="tableTypes"/>
+    /// and without them otherwise: then no field has <c>sides</c> or the presence <c>optional</c>,
+    /// and no result is missing for the rule <c>not-in-both</c>, which only a combined document says.
+    /// </summary>
+    private static JsonObject OneDatabaseOf(string version, bool tableTypes)
+    {
+        var field = Node(
+            ("not", Node(("required", Names("sides")))),
+            ("properties", Node(("presence", Not(IrWireNames.Of(IrPresence.Optional))))));
+        var reason = Node(("properties", Node(("rule", Not(IrWireNames.Of(IrNullRule.NotInBoth))))));
+        var result = Properties("absentBecause", Node(("items", reason)));
+        var document = Node(("properties", Node(
+            ("irVersion", Node(("const", version))),
+            ("source", Node(("not", Node(("required", Names("baseline")))))),
+            ("types", Node(("additionalProperties", Properties("fields", Node(("items", field)))))),
+            ("objects", Node(("items", Properties("results", Node(("items", result)))))))));
+
+        // Only a document of 0.26 defines table types, and it always does.
+        document.Add(tableTypes ? "required" : "not", tableTypes ? Names("tableTypes") : Node(("required", Names("tableTypes"))));
+        return document;
+
+        static JsonObject Not(string value) => Node(("not", Node(("const", value))));
+
+        static JsonObject Properties(string name, JsonObject schema) => Node(("properties", Node((name, schema))));
+    }
 
     /// <summary>A source, with the properties every source has and those given (a document's own source has its baseline).</summary>
     private static JsonObject Source(string description, params (string Name, JsonNode Schema)[] more) => Together(["package", "sha256"], Closed(
@@ -109,6 +145,7 @@ public static class IrJsonSchema
         ["dialect"],
         [
             ("dialect", Text("The SQL dialect, such as tsql.")),
+            ("path", Text("Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.")),
             ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
             ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
             ("references", Node(
@@ -121,6 +158,11 @@ public static class IrJsonSchema
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Node(("type", "boolean"))))),
+            ("files", Node(
+                ("description", "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none."),
+                ("type", "object"),
+                ("minProperties", 1),
+                ("additionalProperties", Sha256("The file's SHA-256.")))),
             .. more,
         ]));
 
@@ -152,7 +194,7 @@ public static class IrJsonSchema
             ["name", "type", "hasDefault", "output"],
             ("name", Text("Its name as declared, with its sigil.")),
             ("type", Ref("type")),
-            ("tableType", Text("For a table-valued parameter (0.25), the key of its type's definition in tableTypes; left out for any other.")),
+            ("tableType", Text("For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.")),
             ("hasDefault", Flag("Whether the caller may omit it.")),
             ("output", Flag("Whether it is an output parameter.")))),
         ("result", Agreeing(
@@ -177,7 +219,7 @@ public static class IrJsonSchema
             ("fields", ArrayOf(Ref("field"))))),
         ("identity", Identity()),
         ("tableType", Closed(
-            "A table type's definition (0.25): what a table-valued parameter of it takes.",
+            "A table type's definition (0.26): what a table-valued parameter of it takes.",
             ["schema", "name", "at", "columns", "keys", "checks"],
             ("schema", Text("The schema it is defined in.")),
             ("name", Text("Its name within its schema.")),
@@ -206,7 +248,31 @@ public static class IrJsonSchema
                 ("type", Ref("type")),
                 ("presence", Vocabulary<IrPresence>(IrWireNames.Of)),
                 ("nullable", Flag("Whether the value can be null.")),
-                ("nullableBecause", Ref("reasons"))),
+                ("nullableBecause", Ref("reasons")),
+                ("from", Ref("from")),
+                ("sides", Sides())),
+            "nullable",
+            "nullableBecause")),
+        ("from", Node(
+            ("description", "The table columns a value is read from, in the order the SQL first reads them (0.25). Left out when it reads none directly."),
+            ("type", "array"),
+            ("items", Ref("sourceColumn")),
+            ("minItems", 1))),
+        ("sourceColumn", Closed(
+            "A table column a value is read from (0.25).",
+            ["column", "at"],
+            ("column", Text("The column, as schema.table.column.")),
+            ("sql", Text("The column's type as a scalar's sql is written; left out when it is not a scalar the IR types.")),
+            ("at", Text("Where the column is declared, as path:line:column.")))),
+        ("side", Agreeing(
+            Closed(
+                "A field as one of the two combined databases gives it (0.25).",
+                ["presence", "nullable"],
+                ("presence", Vocabulary(IrWireNames.Of, IrPresence.Optional)),
+                ("nullable", Flag("Whether that database's value can be null.")),
+                ("nullableBecause", Ref("reasons")),
+                ("sql", Text("The value's SQL type there, when it is a scalar.")),
+                ("from", Ref("from"))),
             "nullable",
             "nullableBecause")),
         ("reasons", Node(
@@ -482,6 +548,18 @@ public static class IrJsonSchema
     private static JsonObject Vocabulary<T>(Func<T, string> name, params T[] unnamed)
         where T : struct, Enum =>
         Node(("enum", new JsonArray([.. Enum.GetValues<T>().Where(v => !unnamed.Contains(v)).Select(v => (JsonNode)name(v))])));
+
+    /// <summary>A combined field's sides (0.25): at least one, since a combined field comes from at least one database.</summary>
+    private static JsonObject Sides()
+    {
+        var sides = Closed(
+            "In a document combining two databases (0.25), the field as each gave it; a side is left out where that database doesn't return the key.",
+            [],
+            ("baseline", Ref("side")),
+            ("candidate", Ref("side")));
+        sides.Add("minProperties", 1);
+        return sides;
+    }
 
     private static JsonObject Text(string description) => Node(("description", description), ("type", "string"));
 

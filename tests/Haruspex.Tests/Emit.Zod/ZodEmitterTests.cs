@@ -80,7 +80,8 @@ public partial class ZodEmitterTests
     [Fact]
     public void Emits_an_unknown_with_its_reason_and_never_a_guess()
     {
-        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression)))).Expected();
+        // The notes alone: the explanation of a surprise, which an unknown is, is in ZodEmitterTests.Comments.cs.
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrUnknownType(IrUnknownReason.UnsupportedExpression))), new ZodOptions { Comments = IrComments.None }).Expected();
 
         Assert.Contains("  /** Not known (unsupported-expression); the IR's unknowns say why. */\n  v: z.unknown(),\n", ts, StringComparison.Ordinal);
     }

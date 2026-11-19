@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/prune_prices.sql": "23f0520b2ac42b5ea1f07bbea01b69839abe116de42c9194e9eae1a9f51ab061",
+      "tables/part.sql": "d65fb7578bd8e26f30758695674ffc8de2d4f9898044d1a048226964bccfa17c",
+      "tables/price.sql": "154932d3674f108ea44671162441af9239da4ba9031f3240cf252bcf7c03edcb"
+    }
   },
   "objects": [
     {
@@ -114,6 +119,13 @@
               "rule": "missing-for-action",
               "at": "procedures/prune_prices.sql:7:1"
             }
+          ],
+          "from": [
+            {
+              "column": "depot.price_list.part_id",
+              "sql": "int",
+              "at": "tables/price.sql:10:5"
+            }
           ]
         },
         {
@@ -135,6 +147,13 @@
             {
               "rule": "missing-for-action",
               "at": "procedures/prune_prices.sql:7:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "depot.part.code",
+              "sql": "varchar(20)",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }

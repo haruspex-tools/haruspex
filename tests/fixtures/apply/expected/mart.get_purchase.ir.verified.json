@@ -1,7 +1,13 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_purchase.sql": "bd4488f59e1ff2c6d5123c68ce7fd38532613142fa3ffdbc3a6ff609be3f674b",
+      "tables/product.sql": "5e703d1a85a435fcf6fcb8a2686fadd4a819dcccc631e84f277fcef8612bf0e2",
+      "tables/purchase.sql": "dec637e5b630fcd45b92ad1a1d098abda3f4a2ac6a70601cdfa8c177012196e1",
+      "tables/purchase_line.sql": "b0d885deb668356a89e96fc986a3e367cc0965fe7fe72fa9aaf2fb9cf3bda026"
+    }
   },
   "objects": [
     {
@@ -81,7 +87,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -110,7 +123,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.status",
+              "sql": "varchar(4)",
+              "at": "tables/purchase.sql:5:5"
+            }
+          ]
         },
         {
           "name": "line_count",
@@ -171,6 +191,13 @@
               "rule": "empty-aggregate",
               "at": "procedures/get_purchase.sql:16:40"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase_line.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/purchase_line.sql:6:5"
+            }
           ]
         },
         {
@@ -192,6 +219,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/get_purchase.sql:20:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
             }
           ]
         }

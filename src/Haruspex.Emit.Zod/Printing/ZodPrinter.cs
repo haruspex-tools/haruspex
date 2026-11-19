@@ -108,6 +108,7 @@ internal static class ZodPrinter
                 [
                     .. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(),
                     .. ZodNotes.Of(declaration.Schema).Select(n => n.Text),
+                    .. declaration.Explanation,
                     .. declaration.Internal ? [InternalTag] : Array.Empty<string>(),
                 ],
                 ""));
@@ -168,7 +169,7 @@ internal static class ZodPrinter
         var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : ".object({\n");
         foreach (var property in obj.Properties)
         {
-            text.Append(Documentation([.. ZodNotes.Of(property.Value).Select(n => n.Text)], "  "));
+            text.Append(Documentation([.. ZodNotes.Of(property.Value).Select(n => n.Text), .. property.Explanation], "  "));
 
             if (property.Getter)
                 text.Append("  get ").Append(Key(property.Key)).Append("() { return ").Append(Expression(property.Value)).Append(" },\n");

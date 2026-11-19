@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/vat_card.sql": "e8a9a268fcc7e305e13a16b3584429f864d4a84974c8a1fcb9018b4661ee79d5",
+      "tables/vat.sql": "744b5668414e9cc317f1c66e8a6bc62d023614ea590236b75aaedfeaf1c3fe09"
+    }
   },
   "objects": [
     {
@@ -84,7 +88,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.vat_id",
+              "sql": "int",
+              "at": "tables/vat.sql:6:5"
+            }
+          ]
         },
         {
           "name": "state",
@@ -115,7 +126,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:8:5"
+            }
+          ]
         },
         {
           "name": "shade",
@@ -146,7 +164,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.shade",
+              "sql": "char(4)",
+              "at": "tables/vat.sql:10:5"
+            }
+          ]
         },
         {
           "name": "mode",
@@ -182,6 +207,13 @@
             {
               "rule": "nullable-column",
               "at": "dye.vat.mode"
+            }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.mode",
+              "sql": "varchar(8)",
+              "at": "tables/vat.sql:12:5"
             }
           ]
         }

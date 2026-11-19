@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_parcels.sql": "95e4d14701eb70c493d9c776b1af594b3e877e605dfc596f42f1b4995542fae4",
+      "tables/parcel.sql": "1f2e14684c85bf665489917f5c8ab79a5338c3de1c883952621f18155c1e9f06"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.parcel.parcel_id",
+              "sql": "int",
+              "at": "tables/parcel.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -78,6 +89,13 @@
               "rule": "nullable-column",
               "at": "shop.parcel.label"
             }
+          ],
+          "from": [
+            {
+              "column": "shop.parcel.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/parcel.sql:5:5"
+            }
           ]
         },
         {
@@ -92,6 +110,12 @@
             {
               "rule": "nullable-column",
               "at": "shop.parcel.extras"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.parcel.extras",
+              "at": "tables/parcel.sql:7:5"
             }
           ]
         }

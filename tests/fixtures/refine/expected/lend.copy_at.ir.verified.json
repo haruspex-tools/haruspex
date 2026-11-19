@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/copy_at.sql": "7a640a9084d02809e023fed47f5de9eec56d038c99f4f9214c4a37d8e1c091b5",
+      "tables/copy.sql": "874615cbc9ad8cb774a1c0b0bc4105fd525343c431fbab97816829330f00f70d",
+      "tables/title.sql": "2f18f36e925dbe4bbb43fdd3691318663926350ff47ee394e85093ce75bab558"
+    }
   },
   "objects": [
     {
@@ -105,7 +110,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.copy.branch_id",
+              "sql": "int",
+              "at": "tables/copy.sql:3:5"
+            }
+          ]
         },
         {
           "name": "copy_no",
@@ -129,7 +141,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.copy.copy_no",
+              "sql": "int",
+              "at": "tables/copy.sql:4:5"
+            }
+          ]
         },
         {
           "name": "shelf",
@@ -151,6 +170,13 @@
               "rule": "nullable-column",
               "at": "lend.copy.shelf"
             }
+          ],
+          "from": [
+            {
+              "column": "lend.copy.shelf",
+              "sql": "varchar(8)",
+              "at": "tables/copy.sql:6:5"
+            }
           ]
         },
         {
@@ -167,7 +193,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.title.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:5:5"
+            }
+          ]
         },
         {
           "name": "author",
@@ -188,6 +221,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.title.author"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.title.author",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:6:5"
             }
           ]
         }

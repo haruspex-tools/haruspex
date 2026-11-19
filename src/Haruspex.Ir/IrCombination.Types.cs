@@ -222,8 +222,8 @@ public static partial class IrCombination
             var had = before.ToDictionary(f => f.Name, StringComparer.Ordinal);
             var has = now.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
             var (id, path) = met.TryGetValue((name, was), out var at) ? at : ("", []);
-            var fields = now.Select(field => had.TryGetValue(field.Name, out var old) ? Field(id, [.. path, new IrPathKey(field.Name)], old, field) : OneSided(field)).ToList();
-            fields.AddRange(before.Where(f => !has.Contains(f.Name)).Select(f => OneSided(f with { Type = Adopt(f.Type) })));
+            var fields = now.Select(field => had.TryGetValue(field.Name, out var old) ? Field(id, [.. path, new IrPathKey(field.Name)], old, field) : OneSided(field, baseline: false)).ToList();
+            fields.AddRange(before.Where(f => !has.Contains(f.Name)).Select(f => OneSided(f with { Type = Adopt(f.Type) }, baseline: true)));
 
             var gone = before.Where(f => !has.Contains(f.Name)).Select(f => f.Name).ToList();
             var appeared = candidate.Types.TryGetValue(name, out var own) ? own.Fields.Where(f => !had.ContainsKey(f.Name)).Select(f => f.Name).ToList() : [];
@@ -245,7 +245,13 @@ public static partial class IrCombination
         private IrField Field(string id, IrPathSegment[] path, IrField was, IrField now)
         {
             var type = Join(id, path, was.Type, now.Type);
-            return (was.Presence, now.Presence) switch
+            var joined = Joined(was, now) with { From = [.. was.From.Concat(now.From).Distinct()], Sides = null };
+
+            // Where both databases give the field exactly as combined, the sides would only repeat it, so they are left out.
+            var (before, after) = (IrFieldSide.Of(was), IrFieldSide.Of(now));
+            return before == after && after == IrFieldSide.Of(joined) ? joined : joined with { Sides = new IrFieldSides(before, after) };
+
+            IrField Joined(IrField was, IrField now) => (was.Presence, now.Presence) switch
             {
                 (IrPresence.Always, IrPresence.Always) or (IrPresence.OmittedWhenNull, IrPresence.OmittedWhenNull) =>
                     now with { Type = type, NullableBecause = Reasons(was.NullableBecause, now.NullableBecause) },
@@ -259,10 +265,13 @@ public static partial class IrCombination
         }
 
         /// <summary>A key only one database returns, which may be left out against the other; null where that one may send null.</summary>
-        private static IrField OneSided(IrField field) => field with
+        /// <param name="field">The key as the one database gives it.</param>
+        /// <param name="baseline">Whether that is the baseline.</param>
+        private static IrField OneSided(IrField field, bool baseline) => field with
         {
             Presence = IrPresence.Optional,
             NullableBecause = field.Presence == IrPresence.OmittedWhenNull ? [] : field.NullableBecause,
+            Sides = baseline ? new IrFieldSides(IrFieldSide.Of(field), null) : new IrFieldSides(null, IrFieldSide.Of(field)),
         };
 
         /// <summary>The folds the combined document's value sets name, each as the candidate defines it, or the baseline where it doesn't.</summary>

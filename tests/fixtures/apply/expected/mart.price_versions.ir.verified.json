@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/price_versions.sql": "6901b0660f751841e11af6dd3b2ef03c510ad3f60c1cbdec644148730d841d57",
+      "tables/price.sql": "f35d593dac6e39e3547de7f6cd1420a813594d424b11db64f3d3dcf592119a0a",
+      "tables/product.sql": "5e703d1a85a435fcf6fcb8a2686fadd4a819dcccc631e84f277fcef8612bf0e2"
+    }
   },
   "objects": [
     {
@@ -132,7 +137,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -172,7 +184,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -212,7 +231,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -252,7 +278,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -285,7 +318,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -316,7 +356,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.price.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:5:5"
+            }
+          ]
         }
       ]
     }

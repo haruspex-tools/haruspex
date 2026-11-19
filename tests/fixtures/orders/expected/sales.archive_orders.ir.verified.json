@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/archive_orders.sql": "6c7e4a73572a98866c1a0c863ec41d7b87b647124e0b442e4ea11bb22a3b6753",
+      "tables/order.sql": "e71a5e2f97b2fc372e26b3cb9c18470be574f018dd25a66016b0f56158d96ff2"
+    }
   },
   "objects": [
     {
@@ -67,7 +71,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
         }
       ]
     }

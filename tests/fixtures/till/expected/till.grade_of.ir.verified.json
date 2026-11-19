@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.26",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/grade_of.sql": "298bd7c7e6cda505d33988a2baa231f60a6a4b80109876989c6168d147ed1b16",
+      "types/tag_list.sql": "26cb5d26f6caa2da644cbbd1ce780ee69da1225f4b9e18950884ef76c99b82a1"
+    }
   },
   "objects": [
     {
@@ -95,7 +99,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.grade",
+              "sql": "tinyint",
+              "at": "types/tag_list.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -120,7 +131,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.tag",
+              "sql": "varchar(20)",
+              "at": "types/tag_list.sql:3:5"
+            }
+          ]
         },
         {
           "name": "grade",
@@ -154,7 +172,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.tag_list.grade",
+              "sql": "tinyint",
+              "at": "types/tag_list.sql:4:5"
+            }
+          ]
         }
       ]
     }

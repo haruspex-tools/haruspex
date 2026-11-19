@@ -1,7 +1,15 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/get_order.sql": "822c904930a317372c140ae97625c03954402009ecc38feb360e3c27866785f0",
+      "tables/customer.sql": "dcda07f5d6ddc377ea551994b7cb8a5e2ee4df72324309e2a100c496b8f2db2f",
+      "tables/order.sql": "e71a5e2f97b2fc372e26b3cb9c18470be574f018dd25a66016b0f56158d96ff2",
+      "tables/order_line.sql": "c8c0aa4806cffe7b7171145ac79b2355a4d3722ef06aec8a01b0a9b772e0ccc5",
+      "tables/product.sql": "019259ac39c63bfd58dcb160f8920b89c40458807eaebeca000ae1cf12f3872b",
+      "tables/salesperson.sql": "be132999ce43be9f1461c90fe3eff7c5a2181da3b9dd6d570c905d184605f680"
+    }
   },
   "objects": [
     {
@@ -84,7 +92,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -100,7 +115,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.name",
+              "sql": "nvarchar(100)",
+              "at": "tables/customer.sql:4:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -121,6 +143,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.customer.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.email",
+              "sql": "nvarchar(256)",
+              "at": "tables/customer.sql:5:5"
             }
           ]
         }
@@ -155,7 +184,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.order_line_id",
+              "sql": "int",
+              "at": "tables/order_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -179,7 +215,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.quantity",
+              "sql": "smallint",
+              "at": "tables/order_line.sql:7:5"
+            }
+          ]
         },
         {
           "name": "unitPrice",
@@ -210,7 +253,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/order_line.sql:8:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -231,6 +281,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.order_line.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order_line.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/order_line.sql:9:5"
             }
           ]
         },
@@ -265,7 +322,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.product.sku",
+              "sql": "varchar(20)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -281,7 +345,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.product.name",
+              "sql": "nvarchar(100)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "weightKg",
@@ -318,6 +389,13 @@
               "rule": "nullable-column",
               "at": "sales.product.weight_kg"
             }
+          ],
+          "from": [
+            {
+              "column": "sales.product.weight_kg",
+              "sql": "decimal(9,3)",
+              "at": "tables/product.sql:6:5"
+            }
           ]
         }
       ]
@@ -351,7 +429,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
         },
         {
           "name": "reference",
@@ -360,7 +445,14 @@
             "sql": "uniqueidentifier"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.reference",
+              "sql": "uniqueidentifier",
+              "at": "tables/order.sql:6:5"
+            }
+          ]
         },
         {
           "name": "placedAt",
@@ -370,7 +462,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.placed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/order.sql:7:5"
+            }
+          ]
         },
         {
           "name": "shippedAt",
@@ -386,6 +485,13 @@
               "rule": "nullable-column",
               "at": "sales.order.shipped_at"
             }
+          ],
+          "from": [
+            {
+              "column": "sales.order.shipped_at",
+              "sql": "datetimeoffset(0)",
+              "at": "tables/order.sql:8:5"
+            }
           ]
         },
         {
@@ -400,6 +506,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.order.delivery_time"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order.delivery_time",
+              "sql": "time(0)",
+              "at": "tables/order.sql:9:5"
             }
           ]
         },
@@ -417,7 +530,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.status",
+              "sql": "varchar(20)",
+              "at": "tables/order.sql:10:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -448,7 +568,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.total",
+              "sql": "decimal(19,2)",
+              "at": "tables/order.sql:11:5"
+            }
+          ]
         },
         {
           "name": "isPriority",
@@ -457,7 +584,14 @@
             "sql": "bit"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.is_priority",
+              "sql": "bit",
+              "at": "tables/order.sql:12:5"
+            }
+          ]
         },
         {
           "name": "customer",
@@ -536,6 +670,13 @@
               "rule": "unmatched-row",
               "at": "procedures/get_order.sql:37:15"
             }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.salesperson_id",
+              "sql": "int",
+              "at": "tables/salesperson.sql:3:5"
+            }
           ]
         },
         {
@@ -558,6 +699,13 @@
               "rule": "unmatched-row",
               "at": "procedures/get_order.sql:37:15"
             }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.display_name",
+              "sql": "nvarchar(100)",
+              "at": "tables/salesperson.sql:4:5"
+            }
           ]
         },
         {
@@ -572,6 +720,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/get_order.sql:37:15"
+            }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.hired_on",
+              "sql": "date",
+              "at": "tables/salesperson.sql:5:5"
             }
           ]
         }

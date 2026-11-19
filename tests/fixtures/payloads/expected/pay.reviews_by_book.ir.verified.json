@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reviews_by_book.sql": "b733583e5131893cb78ea3580e8c58706dc08ec25f1c48339885c95d8bd7c71c",
+      "tables/review.sql": "e80882ca6ef847eb41aaa1a61b78847e576e2e1ce0a254ad4a23f3ba44cf2985"
+    }
   },
   "objects": [
     {
@@ -141,7 +145,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.book_id",
+              "sql": "int",
+              "at": "tables/review.sql:4:5"
+            }
+          ]
         },
         {
           "name": "reviews",
@@ -153,7 +164,24 @@
             "minItems": 1
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            },
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            },
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            }
+          ]
         },
         {
           "name": "comments",
@@ -179,7 +207,19 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            },
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            }
+          ]
         },
         {
           "name": "commentList",
@@ -198,7 +238,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            },
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         }
       ]
     }

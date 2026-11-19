@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Inference;
 /// One focused test per construct the front end recognises or refuses. Each refusal is a soundness rule:
 /// the test proves the construct becomes an unknown with its reason, rather than a type that could be wrong.
 /// </summary>
-public class ConstructTests
+public partial class ConstructTests
 {
     private const string Tables = """
         CREATE TABLE dbo.t (id int NOT NULL PRIMARY KEY, name nvarchar(10) NULL, code int NOT NULL);

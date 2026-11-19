@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/find_products.sql": "41775b9e7bcacf9d5cbbc923a64cd66d253fbca793c682219566128adcc99e63",
+      "tables/product.sql": "5258eb323c1d258d2152b916e1496163e946ffc0be896c3d8345a754e1b0a22b"
+    }
   },
   "objects": [
     {
@@ -105,7 +109,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -121,7 +132,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.sku",
+              "sql": "char(8)",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -137,7 +155,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -158,6 +183,13 @@
             {
               "rule": "nullable-column",
               "at": "till.product.label"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.product.label",
+              "sql": "varchar(20)",
+              "at": "tables/product.sql:5:5"
             }
           ]
         }

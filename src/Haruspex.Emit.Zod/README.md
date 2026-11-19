@@ -108,6 +108,15 @@ breaking them
 `ZodObjects.Strict` makes them `z.strictObject`. The output is deterministic, with stable ordering and LF line endings, so
 a CI check can compare it byte for byte.
 
+## Why a field is what it is
+
+A field that would surprise its reader (its nullability, presence or type differs from what its source column declares, or
+it is unknown) has a comment above its property saying why: each reason's short text and code, the way out when there is one,
+and the `haruspex explain` command, in the lines `IrFieldText` gives every emitter. `ZodOptions.Comments` asks for those
+(`IrComments.Surprises`, the default), for every field (`IrComments.All`) or for none. A shape several types share is compared and declared without
+them, so comments never stop it being shared; each type exported as the shape says its own fields' reasons above its export
+([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+
 ## A module split into files
 
 `ZodEmitter.Emit(document, options, modules)` writes the module split into a file per module of an `IrModules`, the

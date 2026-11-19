@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/reach.sql": "5b71c90fb9b543ccd3f1b2ae751b5eecafb47169b85352d6104622201ccb3e17",
+      "tables/guest.sql": "432d1a046baeea30496d1f31150ce56aca2c16ed48e5146bdccccfd3f39fa642",
+      "tables/member.sql": "123c1ac65b175a883526e1b077f66a3888f149b3aff36d963735b7aaea3a91fa"
+    }
   },
   "objects": [
     {
@@ -116,7 +121,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -132,7 +149,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "rink.guest.name",
+              "sql": "varchar(30)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "contact",
@@ -157,6 +186,18 @@
             {
               "rule": "nullable-column",
               "at": "rink.guest.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
             }
           ]
         },
@@ -214,7 +255,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "rink.guest.name",
+              "sql": "varchar(30)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "kind",

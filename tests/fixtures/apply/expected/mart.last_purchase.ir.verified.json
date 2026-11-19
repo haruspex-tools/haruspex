@@ -1,7 +1,12 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/last_purchase.sql": "689c5294cac8a3c243006963ef3932b9af73401a8b148b8b7fcce36c0a6174a7",
+      "tables/customer.sql": "4ded542c4942d575d8b3145f64f3d4f23e3ccea30c114f462db40fbe76c5709e",
+      "tables/purchase.sql": "dec637e5b630fcd45b92ad1a1d098abda3f4a2ac6a70601cdfa8c177012196e1"
+    }
   },
   "objects": [
     {
@@ -56,7 +61,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.customer.name",
+              "sql": "nvarchar(50)",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "purchase_id",
@@ -102,6 +121,13 @@
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
           ]
         },
         {
@@ -116,6 +142,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.placed_on",
+              "sql": "date",
+              "at": "tables/purchase.sql:4:5"
             }
           ]
         },
@@ -151,6 +184,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.status",
+              "sql": "varchar(4)",
+              "at": "tables/purchase.sql:5:5"
             }
           ]
         }

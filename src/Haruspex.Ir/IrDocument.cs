@@ -19,49 +19,62 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that defines a table type is written in (<see cref="TableTypes"/>). The
-    /// IR is versioned separately from the tool, because it is a file that other programs read: a change that would break a
-    /// reader changes this.
+    /// The newest IR format version, the one a document that defines a table type is written in (0.26,
+    /// <see cref="TableTypes"/>). The IR is versioned separately from the tool, because it is a file that other programs read: a
+    /// change that would break a reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.25";
+    public const string CurrentVersion = "0.26";
 
     /// <summary>
-    /// The version a document that combines two databases and defines no table type is written in: 0.24 added only what a
-    /// combined document says (a source's <see cref="IrSource.Baseline"/>, the presence <see cref="IrPresence.Optional"/> and the
-    /// null rule <see cref="IrNullRule.NotInBoth"/>).
+    /// The version a document that defines no table type but says where a field's value came from is written in (0.25): a
+    /// field's source columns (<see cref="IrField.From"/>) and, combined, each database's field (<see cref="IrField.Sides"/>).
+    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md.
+    /// </summary>
+    public const string SourcesVersion = "0.25";
+
+    /// <summary>
+    /// The version a document that combines two databases and says nothing of where its fields came from is written in: 0.24
+    /// added only what a combined document says (a source's <see cref="IrSource.Baseline"/>, the presence
+    /// <see cref="IrPresence.Optional"/> and the null rule <see cref="IrNullRule.NotInBoth"/>).
     /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
     /// </summary>
     public const string CombinedVersion = "0.24";
 
     /// <summary>
-    /// The version a document of one database is written in: 0.24 added only what a combined document says (a source's
-    /// <see cref="IrSource.Baseline"/>, the presence <see cref="IrPresence.Optional"/> and the null rule
-    /// <see cref="IrNullRule.NotInBoth"/>), so a document without them is a 0.23 document that means the same, and is labelled
-    /// so: a run without a baseline writes what it wrote before, and a 0.23 reader still reads it.
+    /// The version a document of one database that says nothing of where its fields came from is written in: a 0.24 or 0.25
+    /// document without what those added means what it meant in 0.23, and is labelled so, so that a 0.23 reader still reads it.
     /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
     /// </summary>
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, 0.24 and 0.23, every document of each of which is a
-    /// 0.25 document without a table type that means the same. 0.23 added a result set's name (<see cref="IrResult.Name"/>),
-    /// which decides the shape of the procedure's function, and whether a type's name was declared
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.25, 0.24 and 0.23, every document of which is a
+    /// 0.26 document that defines no table type and says no more than its version could, meaning the same. 0.23 added a result
+    /// set's name (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
     /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
     /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
-    /// The version this document is written in, the oldest whose reader reads all it says: <see cref="CurrentVersion"/> when it
-    /// defines a table type, <see cref="CombinedVersion"/> when it combines two databases, and <see cref="OneDatabaseVersion"/>
-    /// otherwise, so that a run that uses neither writes what it wrote before.
-    /// Why: docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
+    /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
+    /// <see cref="CurrentVersion"/> when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
+    /// value came from, which a document inferred from SQL almost always does; else <see cref="CombinedVersion"/> when it combines
+    /// two databases; else <see cref="OneDatabaseVersion"/>.
+    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md and
+    /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
-    public string Version => TableTypes.Count > 0 ? CurrentVersion : Source.Baseline is null ? OneDatabaseVersion : CombinedVersion;
+    public string Version =>
+        TableTypes.Count > 0 ? CurrentVersion
+        : Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
+            || Source.Path is not null || Source.Baseline?.Path is not null
+            ? SourcesVersion
+        : Source.Baseline is null ? OneDatabaseVersion
+        : CombinedVersion;
 
     /// <summary>
     /// The table types the document's table-valued parameters take, by the key a parameter names (<see cref="IrParameter.TableType"/>),
-    /// the type's name as the source writes it (<c>sales.line_list</c>) (0.25). Empty when no parameter is of one.
+    /// the type's name as the source writes it (<c>sales.line_list</c>) (0.26). Empty when no parameter is of one.
     /// </summary>
     public EquatableMap<string, IrTableType> TableTypes { get; init; } = [];
 

@@ -139,6 +139,16 @@ Errors and warnings follow in full. Notes are counted, not listed: `--verbose` l
 each, grouped by the procedure or query file it is in, and `--quiet` prints errors only. Paths below the working directory are
 shown from it.
 
+## Why a field is what it is: `explain`
+
+`haruspex explain` (`Explain`) reads the committed IR and nothing else, finds the field by the path a person writes
+(`IrFieldPlaces`), and prints its derivation from the IR's `from` and null reasons, each reason with its short text and page
+(`IrReasons`), as text or, with `--json`, a document for tools (`ExplainWriter`). Under each reference it prints the line of SQL
+when that SQL is at hand and, for a package, unchanged (`ExplainSources`, which reads a package's line through `PackageLines`);
+otherwise the reference alone. `check` ends a message about a changed field with the command (`ExplainPointer`). What it prints,
+and the JSON's shape, are in [the command line's page](../../docs/command-line.md#explain); why it reads the IR alone is
+[decision 0078](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0078-the-ir-says-where-each-field-came-from.md).
+
 ## What it guarantees
 
 - **Every unknown is reported**, as a note with its code, its place in the SQL and its reason, except one only a

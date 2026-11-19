@@ -24,6 +24,7 @@ otherwise silently do nothing.
   "emit": ["zod"],                          // and "json-schema", "mssql", "mapping"; see "What is written"
   "serverOnly": false,                      // true: the functions import 'server-only'; see "What is written"
   "objects": "strip",                       // or "strict"
+  "comments": "surprises",                  // or "none", "all"; see "Comments"
 
   "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
 
@@ -436,6 +437,35 @@ unexpected changes: the types, and what a function returns, are the same under b
 This is the one deliberate exception to haruspex's rule that the generated code claims everything the engine guarantees
 ([decision 0005](decisions/0005-claim-everything-the-engine-guarantees.md)): `FOR JSON` produces exactly the known
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
+
+## Comments: `comments`
+
+Generated code says why a field is what it is where that would surprise its reader: a field whose nullability, presence or
+type differs from what its source column declares, and every unknown. A `COUNT` is nullable, a key is left out when its value
+is null, a `SUM` of a `decimal(9,2)` is a `decimal(38,2)`: each is deliberate, and each looks like a bug without its reason.
+
+```ts
+  /**
+   * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
+   * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
+   * Why: haruspex explain shop.order_summary line_count
+   */
+  line_count: z.int32().nullable(),
+```
+
+Each comment gives the reasons' short texts with their codes (each has a page in [the reasons](reasons/README.md)), the way out
+when there is one, and the [`haruspex explain`](command-line.md#explain) command that shows where in the SQL each reason
+applied. The comments leave the places out, so that they change only when a reason does.
+
+- `"surprises"`, the default: a comment on each surprise.
+- `"all"`: a comment on every field, with the columns it is read from.
+- `"none"`: none of these comments.
+
+The Zod module writes them above each property, and, for a type whose shape another type shares, above its export, so that
+comments never stop a shape being shared. The functions file says why a result set may be missing, or can't be listed; under
+`"all"`, how many rows each returns too. JSON Schema writes the same lines at the end of the property's `description`. The notes
+that state a fact a check rests on (`varchar(n)` counts bytes, a bound JavaScript reads as the nearest double) are written
+whatever this says ([decision 0079](decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## What check fails on: `check`
 

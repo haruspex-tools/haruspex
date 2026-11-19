@@ -1,3 +1,5 @@
+using Haruspex.Collections;
+
 namespace Haruspex.Emit.Zod.Model;
 
 /// <summary>
@@ -17,4 +19,10 @@ internal sealed record ZodDeclaration(string Name, string? Summary, ZodExpressio
 {
     /// <summary>The name the module binds its schema to: <c>OrderSchema</c> for an exported type, an unexported shape's own name.</summary>
     public string Binding => Exported ? ZodModule.SchemaOf(Name) : Name;
+
+    /// <summary>
+    /// Why the fields of a type exported as a shape another type shares are what they are, a line each, field by field: written
+    /// above the export, since the shared schema's own properties can't say it for each type that shares it.
+    /// </summary>
+    public EquatableArray<string> Explanation { get; init; } = [];
 }

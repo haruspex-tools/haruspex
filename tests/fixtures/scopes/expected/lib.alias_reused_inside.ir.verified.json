@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/alias_reused_inside.sql": "9a4d51a74d3543303ada74d8308a21b3f9f472fb43d636b92862f3cbf3652410",
+      "tables/book.sql": "e2460d3ded01bf7e62e881e791e0c17c2bd4ee521de80f2c06ad5d20c3a6c32c"
+    }
   },
   "objects": [
     {
@@ -48,7 +52,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         },
         {
           "name": "pages",
@@ -72,7 +83,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.pages",
+              "sql": "smallint",
+              "at": "tables/book.sql:5:5"
+            }
+          ]
         }
       ]
     }

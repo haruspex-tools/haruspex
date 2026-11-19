@@ -62,7 +62,7 @@ internal static class TableTypes
     private static Shape Rows(TableType type, IrTableType definition, Diagnostics.SourceLocation at)
     {
         var fields = new List<FieldShape>();
-        foreach (var column in definition.Columns)
+        foreach (var (column, declared) in definition.Columns.Zip(type.Columns))
         {
             var why = column.Generated switch
             {
@@ -77,7 +77,11 @@ internal static class TableTypes
 
             // Every column is sent, so every key is there; a nullable column is sent as NULL, never left to its default.
             EquatableArray<IrNullReason> nullable = column.Nullable ? [new IrNullReason(IrNullRule.NullableColumn, $"{type.Name}.{column.Name}")] : [];
-            fields.Add(new FieldShape(column.Name, ScalarShape.FromIr(scalar), IrPresence.Always, nullable));
+            // Each field is its column, which haruspex explain starts its derivation at (decision 0078).
+            fields.Add(new FieldShape(column.Name, ScalarShape.FromIr(scalar), IrPresence.Always, nullable)
+            {
+                From = [new IrSourceColumn($"{type.Name}.{column.Name}", column.Sql, declared.At.ToString())],
+            });
         }
 
         return new ArrayShape(new TableRowShape(type.Name, new ObjectShape([.. fields])), []);

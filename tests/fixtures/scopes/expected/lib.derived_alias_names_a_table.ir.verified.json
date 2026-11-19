@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/derived_alias_names_a_table.sql": "cb872c2f798eb830aacb378dc6710304c8544e2fbb36136f376a94b7cff8d320",
+      "tables/loan.sql": "031cee47332cfeff242554fffa6d7933face3b512914c7c2e6156951539c45ad"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.loan.member_id",
+              "sql": "int",
+              "at": "tables/loan.sql:4:5"
+            }
+          ]
         },
         {
           "name": "last_on",
@@ -65,7 +76,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.loan.loaned_on",
+              "sql": "date",
+              "at": "tables/loan.sql:6:5"
+            }
+          ]
         }
       ]
     }

@@ -1,7 +1,10 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/ring_up.sql": "879ecbb4650fa2059834e63e4050c7243388c3646bd686f0dbd244adb37a89d9"
+    }
   },
   "objects": [
     {

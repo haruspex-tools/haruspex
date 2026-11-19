@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/lenient.sql": "9a49996dfcc1c0752374f177cc2f2f9855f1d87ca3756e6e0d57544d869de7bb",
+      "tables/line.sql": "7f1c37c9b158c930c2d9878b97c37daf1d0b7afdbb9f95d850a76db6684f97ea"
+    }
   },
   "objects": [
     {
@@ -67,7 +71,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.line_id",
+              "sql": "int",
+              "at": "tables/line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "big_doubled",
@@ -103,6 +114,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
             }
           ]
         },
@@ -141,6 +159,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:9:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
           ]
         },
         {
@@ -177,6 +202,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
             }
           ]
         },
@@ -219,6 +251,18 @@
               "rule": "precision-loss",
               "at": "procedures/lenient.sql:11:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            },
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            }
           ]
         },
         {
@@ -255,6 +299,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:12:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            },
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
             }
           ]
         },
@@ -293,6 +349,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:13:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            },
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
+            }
           ]
         },
         {
@@ -322,6 +390,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:14:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
+            },
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
             }
           ]
         },
@@ -359,6 +439,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:15:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
             }
           ]
         },
@@ -401,6 +488,18 @@
               "rule": "precision-loss",
               "at": "procedures/lenient.sql:16:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            },
+            {
+              "column": "ledger.line.flag",
+              "sql": "bit",
+              "at": "tables/line.sql:17:5"
+            }
           ]
         },
         {
@@ -437,6 +536,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:17:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
             }
           ]
         },
@@ -475,6 +581,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:18:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -504,6 +617,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:19:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
             }
           ]
         },
@@ -542,6 +662,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:20:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -579,6 +706,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:21:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -608,6 +742,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:22:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
             }
           ]
         },
@@ -646,6 +787,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:23:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -683,6 +831,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:24:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
           ]
         },
         {
@@ -712,6 +867,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:25:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
             }
           ]
         },
@@ -754,6 +916,13 @@
               "rule": "domain-error",
               "at": "procedures/lenient.sql:26:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
           ]
         },
         {
@@ -769,6 +938,13 @@
             {
               "rule": "domain-error",
               "at": "procedures/lenient.sql:27:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
             }
           ]
         },
@@ -786,6 +962,13 @@
               "rule": "domain-error",
               "at": "procedures/lenient.sql:28:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
           ]
         },
         {
@@ -802,6 +985,13 @@
               "rule": "domain-error",
               "at": "procedures/lenient.sql:29:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -817,6 +1007,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:30:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
             }
           ]
         }
@@ -851,7 +1048,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.account_id",
+              "sql": "int",
+              "at": "tables/line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "avg_big",
@@ -892,6 +1096,13 @@
               "rule": "precision-loss",
               "at": "procedures/lenient.sql:35:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.big",
+              "sql": "decimal(38,0)",
+              "at": "tables/line.sql:10:5"
+            }
           ]
         },
         {
@@ -925,6 +1136,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:36:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
             }
           ]
         }

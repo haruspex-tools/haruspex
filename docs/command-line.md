@@ -1,7 +1,8 @@
 # The command line
 
-The command `haruspex` has three subcommands. `init` writes a starter config file, `generate` writes the module and says
-what changed since the last run, and `check` fails in CI when the module in the output folder (in CI, the committed one) would change. The command is run many
+The command `haruspex` has four subcommands. `init` writes a starter config file, `generate` writes the module and says
+what changed since the last run, `check` fails in CI when the module in the output folder (in CI, the committed one) would change,
+and `explain` says why a field is what it is. The command is run many
 times a day, so by default it says what it did and what needs attention, and counts the rest. Everything else is a flag away.
 This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. How
 a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the output is designed so is
@@ -14,6 +15,7 @@ haruspex generate db --include 'sales.*' --out src/db   # without a config file
 haruspex check --all                                    # in CI: fail if a module in its output folder would change
 haruspex generate --baseline release/Shop.dacpac        # types that work before and after the change is deployed
 haruspex check --baseline release/Shop.dacpac           # and fail if the application already running would break
+haruspex explain shop.order_summary last_shipped        # why a field is what it is, from the committed IR
 ```
 
 ## What a run prints
@@ -141,7 +143,7 @@ and a value is nullable if either's is (the rules are in [the configuration](con
 one function can bridge is an error at its procedure (HAR6033), which the module leaves out, while it is still written for every
 other procedure; the run then fails. A key gone with another appeared is said as a possible rename (HAR6034), a procedure only
 one database has is left out (HAR6035), and a function whose return shape changes is a warning (HAR6028). The IR written is
-the combined one, IR 0.24 (0.25 when a parameter takes a table type), whose `source` names the baseline, and each module's header says it is combined. Without a baseline,
+the combined one, whose `source` names the baseline, and each module's header says it is combined. Without a baseline,
 `generate` writes what it always did.
 
 `check` with the same baseline compares the output folder with the combined module, as `generate` with it writes it, so a
@@ -246,6 +248,78 @@ jobs:
 Here `src/db` is the application's `out`, and `../database/Shop.sqlproj` replaces its `source` for the run. An application
 generated with a baseline commits the combined IR, which says what the application accepts against either database, and is
 the right baseline here.
+
+## `explain`
+
+`haruspex explain` says why a field is what it is, from the committed IR alone: an application's repository keeps the IR beside
+the generated code, and often not the database's SQL ([decision 0078](decisions/0078-the-ir-says-where-each-field-came-from.md)).
+With a field, it prints the field's derivation: the table columns it is read from, then each rule that acted on it, each with
+its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it) and is the
+file the IR was written from (its hash is the one the IR records), the line is printed under the reference; a package's line
+only when its SHA-256 is the one the IR recorded, since a package keeps no file names and the line is in its module's own text.
+Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. So the IR
+records each script's hash, and an edit that changes no type (a comment, a blank line) still changes the IR: `check` passes,
+since it compares claims, and `generate` says "No claim changed since the last run; the IR records the new text of 1 file".
+Run `generate` after such an edit to keep `explain`'s lines. A location is
+never followed outside the folder it is looked in, and a control character in a line or a name is printed as an escape.
+
+```text
+$ haruspex explain shop.order_summary last_shipped
+shop.order_summary last_shipped: datetime (local), datetime2(0), nullable
+  from shop.order_line.shipped_at (datetime2(0)), declared at tables/order_line.sql:12:5
+    | shipped_at  datetime2(0)  NULL,
+  null nullable-column at shop.order_line.shipped_at: the column it reads is declared nullable
+    | shipped_at  datetime2(0)  NULL,
+  null unmatched-row at procedures/order_summary.sql:13:11: it comes from the optional side of an outer join, which has no row when nothing matches
+    | LEFT JOIN shop.order_line AS l ON l.order_id = o.order_id
+  null empty-aggregate at procedures/order_summary.sql:11:8: it is an aggregate without GROUP BY, which is null over no rows
+    | max(l.shipped_at) AS last_shipped
+  to change it: if the data rules it out, declare it in the config file with "nullable": false and why
+  page nullable-column: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/nullable-column.md
+  …
+```
+
+Without a field it lists, a line each, every field of the object whose nullability, presence or type differs from what its
+source column declares, and the object's unknowns:
+
+```text
+$ haruspex explain shop.order_summary
+shop.order_summary: 3 fields differ from what their columns declare.
+  line_count    may be null: count-overflow
+  total         decimal(38,2), not its column's type; may be null: unmatched-row, empty-aggregate
+  last_shipped  may be null: unmatched-row, empty-aggregate
+Run haruspex explain shop.order_summary <field> for a field in full.
+```
+
+| Argument or option | What it is |
+|---|---|
+| `object` | The procedure, as `schema.name`, its parts in brackets or not and in any case (`[shop].[Order_Summary]`), two that differ only in case being refused; a query file, by its path; its generated name; or a generated type, by its name (a type a function owns, which several objects reach). |
+| `field` | The field's path in the object's results, as the config file's paths are written (`lines[].qty`; the `[]` may be left out). With several result sets, the set first: by its name (`summary.total`) or, when they have none, its place from 1 (`#2.total`). A parameter with its `@` (`@order_id`). Without it, the object's surprises. |
+| `--ir` | The IR file. By default, `haruspex.ir.json` in the config file's output folder. |
+| `--config`, `-c` | The config file, which says where the IR and the SQL are. By default, found as `generate` finds it. |
+| `--json` | One JSON document for tools, below. |
+
+For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source as the IR
+records it (as the config file named it, relative to its folder: `release/Shop.dacpac`, `database`), with its own derivation, and how the two were combined;
+a field both give exactly as it is says so. A baseline given as an IR file older than 0.25, or an IR older than 0.25 itself,
+says nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
+[the reasons](reasons/README.md). Asking about something the IR doesn't have is HAR6038, which lists what it has; no IR to read is
+HAR6037.
+
+**`--json`** writes one document: `version`, now 1, which a tool checks, and which is provisional until haruspex 1.0;
+`derived`, false for an IR older than 0.25; `object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
+has one, `nullable`, `presence`, whether it is a `surprise`, whether its type differs from its columns' (`typeDiffers`), `from`
+(each `column`, `sql`, `at`, and `line` when the SQL is at hand), `nullableBecause` (each `rule`, its `text` and `page`, `at`,
+`line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
+`text`, `page`), and the `explain` command. A field named in full adds the config file's `override` when there is one, `sides`
+for a combined field (`baseline` and `candidate`, each with its `source`, or `null` where that database doesn't return the
+key, and for the baseline whether it says where its fields came from, `derived`) or `sameInBoth` where both give it alike, and
+its `waysOut`. Without a field, `fields`
+lists the surprises and `unknowns` the object's (`path`, `reason`, `detail`, `at`); a parameter gives `parameter` (`name`,
+`value`, `sql`, `hasDefault`, `output`) instead. The vocabulary is the IR's: its codes, its paths and its locations.
+
+`check` points here: a change of a field's claim ends with the `explain` command for it, once `generate` has written the new
+IR, and with a baseline given as an IR file, the command that explains the field there too (`--ir`).
 
 ## `init`
 

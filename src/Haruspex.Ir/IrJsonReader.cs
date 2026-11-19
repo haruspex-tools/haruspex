@@ -150,14 +150,14 @@ public static class IrJsonReader
         var source = json.Object("source");
         var baseline = source.OptionalObject("baseline");
         if (baseline is not null && version == IrDocument.OneDatabaseVersion)
-            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion}, or {IrDocument.CurrentVersion} when it defines a table type.");
+            throw new IrFormatException(baseline.Path, $"is given in a document of IR {version}, which describes one database: a document combining two is IR {IrDocument.CombinedVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
         if (baseline is null && version == IrDocument.CombinedVersion)
-            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, or {IrDocument.CurrentVersion} when it defines a table type.");
+            throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or {IrDocument.CurrentVersion}.");
         var tableTypes = json.OptionalObject("tableTypes");
         if (tableTypes is not null && version != IrDocument.CurrentVersion)
             throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.CurrentVersion}.");
         if (tableTypes is null && version == IrDocument.CurrentVersion)
-            throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is IR {IrDocument.CombinedVersion} when it combines two databases and {IrDocument.OneDatabaseVersion} otherwise.");
+            throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
 
         var document = new IrDocument(
             DocumentSource(source) with { Baseline = baseline is null ? null : Baseline(baseline) },
@@ -173,6 +173,8 @@ public static class IrJsonReader
         json.End();
         if (baseline is null)
             OneDatabase(document);
+        if (version is not (IrDocument.CurrentVersion or IrDocument.SourcesVersion))
+            SaysNothingOfSources(document, version);
         return document;
     }
 
@@ -277,7 +279,9 @@ public static class IrJsonReader
     {
         var source = new IrSource(json.String("dialect"))
         {
+            Path = json.OptionalString("path"),
             Session = Session(json.OptionalObject("session")),
+            Files = Files(json.OptionalObject("files")),
             Package = Package(json),
             References = References(json),
         };
@@ -293,12 +297,38 @@ public static class IrJsonReader
     }
 
     /// <summary>
-    /// Refuses, by its path, what only a document combining two databases says (0.24) in one labelled 0.23, which could say
+    /// Refuses, by its path, where a field's value came from (0.25) in a document labelled 0.23 or 0.24, which can't say it.
+    /// </summary>
+    private static void SaysNothingOfSources(IrDocument document, string version)
+    {
+        if (document.Source.Path is not null)
+            throw new IrFormatException("$.source.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.SourcesVersion}.");
+        if (document.Source.Baseline?.Path is not null)
+            throw new IrFormatException("$.source.baseline.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.SourcesVersion}.");
+        if (document.Source.Files.Count > 0)
+            throw new IrFormatException("$.source.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.SourcesVersion}.");
+        if (document.Source.Baseline?.Files.Count > 0)
+            throw new IrFormatException("$.source.baseline.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.SourcesVersion}.");
+        foreach (var (name, type) in document.Types)
+        {
+            foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
+            {
+                var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
+                if (field.From.Count > 0)
+                    throw new IrFormatException(at + ".from", $"is given in a document of IR {version}: a field's source columns are IR {IrDocument.SourcesVersion}.");
+                if (field.Sides is not null)
+                    throw new IrFormatException(at + ".sides", $"is given in a document of IR {version}: a combined field's sides are IR {IrDocument.SourcesVersion}.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Refuses, by its path, what only a document combining two databases says (0.24) in one of one database, which could say
     /// neither: a key that may be left out whatever its value, and a result missing because only one database returns it.
     /// </summary>
     private static void OneDatabase(IrDocument document)
     {
-        const string Why = "which only a document combining two databases (IR 0.24) says";
+        const string Why = "which only a document combining two databases (IR 0.24 or 0.25) says";
         foreach (var (name, type) in document.Types)
         {
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
@@ -306,6 +336,8 @@ public static class IrJsonReader
                 var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
                 if (field.Presence == IrPresence.Optional)
                     throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", {Why}.");
+                if (field.Sides is not null)
+                    throw new IrFormatException(at + ".sides", $"is given, {Why}.");
                 Rules(at + ".nullableBecause", field.NullableBecause);
             }
         }
@@ -470,9 +502,56 @@ public static class IrJsonReader
             json.String("name"),
             Type(json.Object("type")),
             json.Name<IrPresence>("presence", IrWireNames.TryParse, "a presence"),
-            Reasons(json, "nullable", "nullableBecause"));
+            Reasons(json, "nullable", "nullableBecause"))
+        {
+            From = From(json),
+            Sides = json.OptionalObject("sides") is { } sides ? Sides(sides) : null,
+        };
         json.End();
         return field;
+    }
+
+    /// <summary>A field's source columns (0.25); none when the list is left out, and a list given is never empty.</summary>
+    private static EquatableArray<IrSourceColumn> From(IrJsonObject json)
+    {
+        if (!json.Has("from"))
+            return [];
+        EquatableArray<IrSourceColumn> from = [.. json.Array("from").Select(c => SourceColumn(IrJsonObject.At(c.Item, c.Path)))];
+        return from.Count > 0 ? from : throw new IrFormatException(json.PathOf("from"), "is empty: a field that reads no column leaves it out.");
+    }
+
+    private static IrSourceColumn SourceColumn(IrJsonObject json)
+    {
+        var column = new IrSourceColumn(json.String("column"), json.OptionalString("sql"), json.String("at"));
+        json.End();
+        return column;
+    }
+
+    /// <summary>Each database's field in a combined one (0.25): at least one of them gives it.</summary>
+    private static IrFieldSides Sides(IrJsonObject json)
+    {
+        var sides = new IrFieldSides(
+            json.OptionalObject("baseline") is { } baseline ? Side(baseline) : null,
+            json.OptionalObject("candidate") is { } candidate ? Side(candidate) : null);
+        json.End();
+        return sides.Baseline is null && sides.Candidate is null
+            ? throw new IrFormatException(json.Path, "names neither side: a combined field comes from at least one of the two databases.")
+            : sides;
+    }
+
+    private static IrFieldSide Side(IrJsonObject json)
+    {
+        var side = new IrFieldSide(
+            json.Name<IrPresence>("presence", IrWireNames.TryParse, "a presence"),
+            Reasons(json, "nullable", "nullableBecause"),
+            json.OptionalString("sql"))
+        {
+            From = From(json),
+        };
+        json.End();
+        return side.Presence == IrPresence.Optional
+            ? throw new IrFormatException(json.PathOf("presence"), "is \"optional\", which only a combined field is: each side is one database's.")
+            : side;
     }
 
     /// <summary>
@@ -634,6 +713,19 @@ public static class IrJsonReader
     }
 
     /// <summary>The package a source was read from, or none when the file leaves <c>package</c> out; its hash comes with it.</summary>
+    /// <summary>
+    /// The SHA-256 of each script file the locations point into (0.25); none when the file leaves <c>files</c> out. An empty object
+    /// is refused: the writer leaves it out, so there is one way to say "none".
+    /// </summary>
+    private static EquatableMap<string, string> Files(IrJsonObject? json)
+    {
+        if (json is null)
+            return [];
+        var files = json.Names.ToList().ToEquatableMap(name => name, json.String);
+        json.End();
+        return files.Count > 0 ? files : throw new IrFormatException(json.Path, "is empty: a source that points into no script leaves it out.");
+    }
+
     private static IrPackage? Package(IrJsonObject source)
     {
         if (source.Optional("package") is null)

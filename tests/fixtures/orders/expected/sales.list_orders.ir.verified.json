@@ -1,7 +1,14 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_orders.sql": "33ae94d904929aee14e510c5ef8c6c0a5aa7b37bebfba0d9f1cc05c8943f8f99",
+      "tables/customer.sql": "dcda07f5d6ddc377ea551994b7cb8a5e2ee4df72324309e2a100c496b8f2db2f",
+      "tables/order.sql": "e71a5e2f97b2fc372e26b3cb9c18470be574f018dd25a66016b0f56158d96ff2",
+      "tables/product.sql": "019259ac39c63bfd58dcb160f8920b89c40458807eaebeca000ae1cf12f3872b",
+      "tables/salesperson.sql": "be132999ce43be9f1461c90fe3eff7c5a2181da3b9dd6d570c905d184605f680"
+    }
   },
   "objects": [
     {
@@ -81,7 +88,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
         },
         {
           "name": "placed_at",
@@ -91,7 +105,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.placed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/order.sql:7:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -107,7 +128,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.status",
+              "sql": "varchar(20)",
+              "at": "tables/order.sql:10:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -138,7 +166,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.total",
+              "sql": "decimal(19,2)",
+              "at": "tables/order.sql:11:5"
+            }
+          ]
         },
         {
           "name": "customer_name",
@@ -154,7 +189,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.name",
+              "sql": "nvarchar(100)",
+              "at": "tables/customer.sql:4:5"
+            }
+          ]
         },
         {
           "name": "product_legacy_code",
@@ -188,6 +230,13 @@
               "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:19:11"
             }
+          ],
+          "from": [
+            {
+              "column": "sales.product.legacy_code",
+              "sql": "bigint",
+              "at": "tables/product.sql:7:5"
+            }
           ]
         },
         {
@@ -210,6 +259,13 @@
               "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:20:17"
             }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.display_name",
+              "sql": "nvarchar(100)",
+              "at": "tables/salesperson.sql:4:5"
+            }
           ]
         },
         {
@@ -224,6 +280,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/list_orders.sql:20:17"
+            }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.hired_on",
+              "sql": "date",
+              "at": "tables/salesperson.sql:5:5"
             }
           ]
         }

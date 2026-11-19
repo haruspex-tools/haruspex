@@ -1,7 +1,21 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "path": "database",
+    "files": {
+      "procedures/basket_line#.sql": "a050bad73d894f8f72b77871bc25f9dbff43164f746c25c4a94e161325c063be",
+      "procedures/get_basket.sql": "565be146f8b55885532aed20ca19285be144862e4477fcd6f787e374b52c06be",
+      "procedures/list_products.sql": "df0898bcb6be2df95e5298c9825c6ac35dcf26d25262ee0ffa7044d0e34350b3",
+      "procedures/order_summary.sql": "5d7b3af9e25a43bd31c8afc0d67006c3ead3286ed672b1ae74e664b91895b6ae",
+      "procedures/report_sales.sql": "666bb52c8f025a7cfccfbdfc6f776c6c73dc9d6f8aae01dc5a546e308e6c57c6",
+      "procedures/report_stock.sql": "b6419a2a0880693a86ee16d26a7a4c360f861117c04d6a8bfcc1ef9194f261e5",
+      "queries/basket_card.sql": "0833636db9e0f52fb5fcf2607f18f8d493742cd9b1e372c8208ce329dfa3d7db",
+      "queries/products_under.sql": "71b2e2799ca39d7aa6fd6045e9bc6473191f8a8ae35c58e350ad2f00f7518bf3",
+      "tables/basket.sql": "1840fc50242dab28c45db99e94517342aea7478217c08c3d1d1dcca465352c40",
+      "tables/order_line.sql": "5eeb47c39e4a11475a262fdeb0a12fa913f6dc30ddb4fec66129fcec6c7e7eb2",
+      "tables/product.sql": "1e2bcd84093b9be9cf53f59e2fd16ac9dc952fb88bb2180862c342027a59a7ab"
+    }
   },
   "objects": [
     {
@@ -333,6 +347,52 @@
       ]
     },
     {
+      "id": "shop.order_summary",
+      "name": "OrderSummary",
+      "kind": "procedure",
+      "at": "procedures/order_summary.sql:4:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderSummaryRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
       "id": "shop_admin.report_sales",
       "name": "AdminSales",
       "kind": "procedure",
@@ -456,7 +516,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.sku",
+              "sql": "varchar(12)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -487,7 +554,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:10:5"
+            }
+          ]
         }
       ]
     },
@@ -520,7 +594,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.line_no",
+              "sql": "int",
+              "at": "tables/basket.sql:17:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -544,7 +625,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.quantity",
+              "sql": "int",
+              "at": "tables/basket.sql:19:5"
+            }
+          ]
         }
       ]
     },
@@ -599,7 +687,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket.basket_id",
+              "sql": "int",
+              "at": "tables/basket.sql:9:5"
+            }
+          ]
         },
         {
           "name": "lines",
@@ -651,7 +746,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.line_no",
+              "sql": "int",
+              "at": "tables/basket.sql:17:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -668,7 +770,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.sku",
+              "sql": "varchar(12)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -692,7 +801,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.quantity",
+              "sql": "int",
+              "at": "tables/basket.sql:19:5"
+            }
+          ]
         }
       ]
     },
@@ -725,7 +841,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.basket_id",
+              "sql": "int",
+              "at": "tables/basket.sql:16:5"
+            }
+          ]
         },
         {
           "name": "position",
@@ -749,7 +872,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.line_no",
+              "sql": "int",
+              "at": "tables/basket.sql:17:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -773,7 +903,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket_line.quantity",
+              "sql": "int",
+              "at": "tables/basket.sql:19:5"
+            }
+          ]
         }
       ]
     },
@@ -806,7 +943,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.basket.basket_id",
+              "sql": "int",
+              "at": "tables/basket.sql:9:5"
+            }
+          ]
         },
         {
           "name": "customerName",
@@ -822,7 +966,14 @@
             }
           },
           "presence": "omittedWhenNull",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.customer.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/basket.sql:4:5"
+            }
+          ]
         },
         {
           "name": "lines",
@@ -873,7 +1024,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -890,7 +1048,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.sku",
+              "sql": "varchar(12)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -906,7 +1071,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.name",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -935,7 +1107,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.status",
+              "sql": "varchar(8)",
+              "at": "tables/product.sql:7:5"
+            }
+          ]
         },
         {
           "name": "attributes",
@@ -950,6 +1129,12 @@
             {
               "rule": "nullable-column",
               "at": "shop.product.attributes"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.product.attributes",
+              "at": "tables/product.sql:9:5"
             }
           ]
         },
@@ -982,7 +1167,139 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:10:5"
+            }
+          ]
+        }
+      ]
+    },
+    "OrderSummaryRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "shop.order_summary",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "line_count",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/order_summary.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.line_id",
+              "sql": "int",
+              "at": "tables/order_line.sql:10:5"
+            }
+          ]
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,2)",
+            "digits": {
+              "precision": 38,
+              "scale": 2,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "min": {
+              "value": -999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "max": {
+              "value": 999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/order_summary.sql:13:11"
+            },
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/order_summary.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/order_line.sql:13:5"
+            }
+          ]
+        },
+        {
+          "name": "last_shipped",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "shop.order_line.shipped_at"
+            },
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/order_summary.sql:13:11"
+            },
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/order_summary.sql:11:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.shipped_at",
+              "sql": "datetime2(0)",
+              "at": "tables/order_line.sql:12:5"
+            }
+          ]
         }
       ]
     },
@@ -1009,7 +1326,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.sku",
+              "sql": "varchar(12)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -1040,7 +1364,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:10:5"
+            }
+          ]
         }
       ]
     },
@@ -1073,7 +1404,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -1090,7 +1428,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.sku",
+              "sql": "varchar(12)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -1106,7 +1451,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.name",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -1137,7 +1489,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:10:5"
+            }
+          ]
         }
       ]
     }

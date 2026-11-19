@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
-    "dialect": "tsql"
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_customers.sql": "669ddb84d6ff9129376e9ffec93409142b0be3be9eb8ba76bfa8cc205557e35b",
+      "tables/customer.sql": "dcda07f5d6ddc377ea551994b7cb8a5e2ee4df72324309e2a100c496b8f2db2f"
+    }
   },
   "objects": [
     {
@@ -56,7 +60,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +83,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.name",
+              "sql": "nvarchar(100)",
+              "at": "tables/customer.sql:4:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -93,6 +111,13 @@
             {
               "rule": "nullable-column",
               "at": "sales.customer.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.email",
+              "sql": "nvarchar(256)",
+              "at": "tables/customer.sql:5:5"
             }
           ]
         },
@@ -116,6 +141,13 @@
               "rule": "nullable-column",
               "at": "sales.customer.region_code"
             }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.region_code",
+              "sql": "char(2)",
+              "at": "tables/customer.sql:7:5"
+            }
           ]
         },
         {
@@ -126,7 +158,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.created_at",
+              "sql": "datetime2(0)",
+              "at": "tables/customer.sql:8:5"
+            }
+          ]
         }
       ]
     }

@@ -1,4 +1,6 @@
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -13,4 +15,8 @@ namespace Haruspex.SqlServer.Inference;
 /// The select-list expression it was read from, when there is one: a set operation types an integer literal by its digits
 /// and makes a closed set of literals.
 /// </param>
-internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, TableColumn? Origin = null, ScalarExpression? Expression = null);
+internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, TableColumn? Origin = null, ScalarExpression? Expression = null)
+{
+    /// <summary>The table columns its value is read from (<c>Typer.Reads.cs</c>), which the IR writes as the field's <c>from</c>.</summary>
+    public EquatableArray<IrSourceColumn> From { get; init; } = [];
+}
