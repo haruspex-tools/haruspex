@@ -4,10 +4,11 @@
 
 **Decision.** A script's procedures, functions and views are read in the order its batches run, and the definition that stands
 is the last one that runs: a stub created and then altered is its `ALTER`; one dropped (by `DROP`, `DROP … IF EXISTS`, or a
-drop under `IF OBJECT_ID(N'name') IS NOT NULL` naming it) and created again is its last `CREATE`; `CREATE OR ALTER` twice is its
+drop under `IF OBJECT_ID(N'name') IS NOT NULL` naming it, with no type or the type of what stands) and created again is its last `CREATE`; `CREATE OR ALTER` twice is its
 second. A second `CREATE` of a name that stands is refused by the server, so the first stands and the second is reported
 ([HAR1002](../diagnostics/HAR1002.md)), as across scripts. A function's kind (scalar, inline or multi-statement) can't change
-in place: an `ALTER` or `CREATE OR ALTER` of another kind is refused, and the earlier definition stands. A drop under any other condition may not run, so a `CREATE` after
+in place: an `ALTER` or `CREATE OR ALTER` of another kind is refused, and the earlier definition stands. A drop under any other condition may not run (`OBJECT_ID` with a type finds only an object of that type, observed, so `N'FN'`
+guarding the drop of an inline function never drops it), so a `CREATE` after
 it leaves which definition stands in doubt, recorded as a `Redefinition`.
 
 Across scripts nothing changes: a folder doesn't say the order its scripts run in, so a definition in one and an `ALTER` or

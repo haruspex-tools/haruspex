@@ -123,24 +123,41 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// A <c>DROP PROCEDURE</c>, <c>DROP FUNCTION</c> or <c>DROP VIEW</c> of one or more objects, with or without <c>IF EXISTS</c>:
     /// <paramref name="certain"/> when it runs whenever each exists.
     /// </summary>
-    private void ReadModuleDrop(DropObjectsStatement drop, bool certain)
+    /// <param name="drop">The statement.</param>
+    /// <param name="certain">Whether it runs whenever each object exists.</param>
+    /// <param name="type">The type an <c>OBJECT_ID</c> guarding it names, which what stands must have for the drop to run; null for none.</param>
+    private void ReadModuleDrop(DropObjectsStatement drop, bool certain, string? type = null)
     {
+        bool Is(string code) => code.Equals(type?.Trim(), StringComparison.OrdinalIgnoreCase);
         foreach (var name in drop.Objects.Select(SyntaxReader.Name))
         {
             switch (drop)
             {
                 case DropProcedureStatement:
-                    procedures.Drop(name, Changed(name, RedefiningStatement.DropProcedure, drop), certain);
+                    procedures.Drop(name, Changed(name, RedefiningStatement.DropProcedure, drop), certain, type is null ? null : p => Is(p.Body is ClrBody ? "PC" : "P"));
                     break;
                 case DropFunctionStatement:
-                    functions.Drop(name, Changed(name, RedefiningStatement.DropFunction, drop), certain);
+                    functions.Drop(name, Changed(name, RedefiningStatement.DropFunction, drop), certain, type is null ? null : f => Is(TypeOf(f)));
                     break;
                 case DropViewStatement:
-                    views.Drop(name, Changed(name, RedefiningStatement.DropView, drop), certain);
+                    views.Drop(name, Changed(name, RedefiningStatement.DropView, drop), certain, type is null ? null : _ => Is("V"));
                     break;
             }
         }
     }
+
+    /// <summary>
+    /// A function's type as <c>sys.objects</c> and <c>OBJECT_ID</c> name it: <c>FN</c> scalar, <c>IF</c> inline, <c>TF</c>
+    /// multi-statement, and <c>FS</c> and <c>FT</c> for CLR scalar and table-valued.
+    /// </summary>
+    private static string TypeOf(Function function) => function switch
+    {
+        ScalarFunction { Body: ClrBody } => "FS",
+        ScalarFunction => "FN",
+        InlineFunction => "IF",
+        TableFunction { Body: ClrBody } => "FT",
+        TableFunction => "TF",
+    };
 
     /// <summary>
     /// The drops of procedures, functions and views an <c>IF</c> with no <c>ELSE</c> makes, alone or in a block. Under
@@ -157,26 +174,30 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             // An unqualified name means the caller's default schema in both, which needn't be dbo, so both must say the same.
             var certain = exists is { } tested && drop.Objects is [var target]
                 && SyntaxReader.Name(target) == tested.Name && (target.SchemaIdentifier is null) == (tested.Schema is null);
-            ReadModuleDrop(drop, certain);
+            ReadModuleDrop(drop, certain, exists?.Type);
         }
     }
 
     /// <summary>
-    /// The object an <c>OBJECT_ID(N'name'[, type]) IS NOT NULL</c> tests for, and whether its name has a schema; null for any other
-    /// condition, or a name in another database.
+    /// The object an <c>OBJECT_ID(N'name'[, N'type']) IS NOT NULL</c> tests for, whether its name has a schema, and the type it
+    /// names; null for any other condition, a name in another database, or a type that isn't a literal. With a type,
+    /// <c>OBJECT_ID</c> finds only an object of that type (observed: Object_id_with_a_type_finds_only_an_object_of_that_type_so_a_drop_it_guards_may_not_run).
     /// </summary>
-    private static (ObjectName Name, string? Schema)? Existence(BooleanExpression predicate)
+    private static (ObjectName Name, string? Schema, string? Type)? Existence(BooleanExpression predicate)
     {
         if (predicate is not BooleanIsNullExpression { IsNot: true, Expression: FunctionCall { CallTarget: null } call }
             || !call.FunctionName.Value.Equals("OBJECT_ID", StringComparison.OrdinalIgnoreCase)
-            || call.Parameters is not [StringLiteral literal, ..])
+            || call.Parameters is not [StringLiteral literal, ..] || call.Parameters.Count > 2
+            || (call.Parameters.Count == 2 && call.Parameters[1] is not StringLiteral))
         {
             return null;
         }
 
+        var type = call.Parameters is [_, StringLiteral named] ? named.Value : null;
+
         var parsed = new TSql170Parser(initialQuotedIdentifiers: true).ParseSchemaObjectName(new StringReader(literal.Value), out var errors);
         return errors.Count == 0 && parsed is { DatabaseIdentifier: null, ServerIdentifier: null }
-            ? (SyntaxReader.Name(parsed), parsed.SchemaIdentifier?.Value)
+            ? (SyntaxReader.Name(parsed), parsed.SchemaIdentifier?.Value, type)
             : null;
     }
 

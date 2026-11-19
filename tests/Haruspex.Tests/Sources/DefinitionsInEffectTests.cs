@@ -63,6 +63,36 @@ public class DefinitionsInEffectTests
         Assert.Equal(RedefiningStatement.DropProcedure, Archive(read).Redefinition?.Statement);
     }
 
+    [Theory]
+    [InlineData("if object_id(N'shop.archive_orders', N'V') is not null drop procedure shop.archive_orders;")]
+    [InlineData("if object_id(N'shop.archive_orders', N'PC') is not null drop procedure shop.archive_orders;")]
+    [InlineData("if object_id(N'archive_orders') is not null drop procedure shop.archive_orders;")]
+    public void A_drop_under_an_object_id_test_that_may_not_find_the_object_dropped_is_a_doubt(string drop)
+    {
+        // OBJECT_ID with a type finds only an object of that type (a view's V, a CLR procedure's PC, not a procedure's P), and an
+        // unqualified name means the caller's default schema, which needn't be the one the drop names.
+        var read = Read(("archive_orders.sql", $"{Stub}\nGO\n{drop}\nGO\n{Altered.Replace("alter", "create", StringComparison.Ordinal)}"));
+
+        Assert.Equal(RedefiningStatement.DropProcedure, Archive(read).Redefinition?.Statement);
+    }
+
+    [Fact]
+    public void A_function_dropped_under_an_object_id_test_of_another_kind_is_a_doubt_and_of_its_own_kind_is_not()
+    {
+        // OBJECT_ID(…, N'FN') is null for an inline function, so the drop doesn't run and the second CREATE is refused (2714).
+        static Function Total(string type) => Assert.Single(Read(("order_total.sql", $"""
+            create function shop.order_total() returns table as return select 1 as a;
+            GO
+            if object_id(N'shop.order_total', N'{type}') is not null drop function shop.order_total;
+            GO
+            create function shop.order_total() returns table as return select 'x' as b;
+            """)).Model.Functions);
+
+        Assert.Equal(RedefiningStatement.DropFunction, Total("FN").Redefinition?.Statement);
+        Assert.Null(Total("IF").Redefinition);
+        Assert.Equal(5, Total("IF").Span.Start.Line);
+    }
+
     [Fact]
     public void Create_or_alter_twice_in_one_script_is_its_second()
     {
@@ -129,6 +159,7 @@ public class DefinitionsInEffectTests
         var read = Read(("archive_orders.sql", $"set ansi_nulls off;\nGO\n{Stub}\nGO\nset ansi_nulls on;\nGO\n{Altered}"));
 
         Assert.False(Archive(read).AnsiNullsOff);
+        Assert.True(Archive(Read(("archive_orders.sql", $"{Stub}\nGO\nset ansi_nulls off;\nGO\n{Altered}"))).AnsiNullsOff);
     }
 
     [Fact]

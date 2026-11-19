@@ -51,6 +51,20 @@ public partial class ExecObservationTests
         Assert.Equal("before: 7", (await Run(Script(script), "EXEC dbo.obs_archive @before = 7;")).ToString());
     }
 
+    [Theory]
+    [InlineData("dbo.obs_archive', 'V")]
+    [InlineData("dbo.obs_archive', 'PC")]
+    public async Task Object_id_with_a_type_finds_only_an_object_of_that_type_so_a_drop_it_guards_may_not_run(string tested)
+    {
+        // A T-SQL procedure is P: OBJECT_ID(…, 'V') or (…, 'PC') is null for it, the guarded drop doesn't run, and a CREATE after
+        // it is refused (2714), so the first definition stands. Only the result sets are compared, as above.
+        var outcome = await Run(
+            ["CREATE PROCEDURE dbo.obs_archive AS SELECT 0 AS stub;", $"IF OBJECT_ID(N'{tested}') IS NOT NULL DROP PROCEDURE dbo.obs_archive;"],
+            "BEGIN TRY EXEC sp_executesql N'CREATE PROCEDURE dbo.obs_archive AS SELECT 1 AS second;'; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS refused; END CATCH; EXEC dbo.obs_archive;");
+
+        Assert.Equal(["refused: 2714", "stub: 0"], outcome.Sets);
+    }
+
     [Fact]
     public async Task A_second_create_is_refused_so_the_first_stands_and_create_or_alter_replaces_it()
     {

@@ -79,10 +79,13 @@ internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics, Func<T,
 
     /// <summary>
     /// A drop of <paramref name="name"/>, which <paramref name="why"/> records: <paramref name="certain"/> when it runs whenever the
-    /// object exists, false when it is under a condition that may be false.
+    /// object exists, false when it is under a condition that may be false. <paramref name="finds"/>, when given, is the test an
+    /// <c>OBJECT_ID</c> with a type makes of what stands, which must find it for the drop to be certain.
     /// </summary>
-    public void Drop(ObjectName name, Redefinition why, bool certain)
+    public void Drop(ObjectName name, Redefinition why, bool certain, Func<T, bool>? finds = null)
     {
+        if (certain && finds is not null && (objects.GetValueOrDefault(name)?.Standing is not { } standing || !finds(standing)))
+            certain = false;
         if (certain)
         {
             var state = Of(name);
