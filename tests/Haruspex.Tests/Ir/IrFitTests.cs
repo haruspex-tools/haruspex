@@ -456,8 +456,6 @@ public partial class IrFitTests
         CREATE TYPE shop.hierarchyid AS TABLE (a int NOT NULL);
         GO
         CREATE XML SCHEMA COLLECTION shop.sc AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="a" type="xs:string"/></xs:schema>';
-        GO
-        CREATE TYPE shop.blob FROM varbinary(16);
         """;
 
     [Theory]
@@ -465,13 +463,8 @@ public partial class IrFitTests
     [InlineData("geography", null)]
     [InlineData("geometry", null)]
     [InlineData("sql_variant", null)]
-    [InlineData("varbinary(16)", null)]
-    [InlineData("varbinary(max)", null)]
-    [InlineData("binary(4)", null)]
-    [InlineData("shop.blob", null)] // an alias type the IR resolves to varbinary(16), which it names
     [InlineData("xml", "xml")] // the IR doesn't say whether it has a schema collection
     [InlineData("xml(shop.sc)", "xml")]
-    [InlineData("image", "image")]
     public void A_parameter_of_the_same_unknown_type_both_sides_fits_only_when_its_name_is_all_of_its_definition(string type, string? named)
     {
         // Observed: an xml collection that narrows an element fails the old call (6926) under the same name; a built-in type's

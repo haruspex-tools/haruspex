@@ -70,24 +70,6 @@ public partial class ExpressionTests
         Assert.Equal("int", Typed(doc, "i"));
     }
 
-    [Theory]
-    [InlineData("0x0A1B", "varbinary(2)")]
-    [InlineData("0x", "varbinary(1)")]
-    [InlineData("0xA1B", "varbinary(2)")]
-    [InlineData("0X0a", "varbinary(1)")]
-    [InlineData("most", "varbinary(8000)")]
-    [InlineData("past", "varbinary(max)")]
-    public void A_binary_literal_is_read_as_varbinary_of_its_bytes_a_type_not_modelled_yet(string literal, string type)
-    {
-        // A_binary_literal_is_varbinary_of_its_bytes: an odd digit is padded to a byte, 0x is one byte long, past 8000 is max.
-        // The binary types have no kind in the IR, so the value is unknown by its type, as a binary column is.
-        var bytes8000 = "0x" + new string('0', 16000);
-        var written = literal switch { "most" => bytes8000, "past" => bytes8000 + "00", _ => literal };
-        var unknown = Assert.Single(Procedure($"SELECT {written} AS b;").Unknowns);
-        Assert.Equal(IrUnknownReason.UnsupportedSqlType, unknown.Reason);
-        Assert.Equal($"The type {type} is not modelled yet.", unknown.Detail);
-    }
-
     [Fact]
     public void A_varchar_literal_beyond_ascii_is_not_typed()
     {

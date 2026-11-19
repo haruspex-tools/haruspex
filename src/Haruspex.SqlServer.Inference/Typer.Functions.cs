@@ -66,15 +66,18 @@ internal sealed partial class Typer
     /// <c>LEFT</c>, <c>RIGHT</c> and <c>SUBSTRING</c>: the string's type made varying, as long as an integer literal length when
     /// that is shorter (at least 1), max staying max; NULL when an argument is; past the end it is <c>''</c> (observed:
     /// Left_right_and_substring_are_as_long_as_a_literal_length_allows). A length the server folds (<c>1 + 1</c>) is not
-    /// modelled, one reading a column or variable is the string's length. A start or a length wider than int may overflow.
+    /// modelled, one reading a column or variable is the string's length. A start or a length wider than int may overflow. Of a
+    /// binary value, by the same rule, <c>SUBSTRING</c> is varbinary, and <c>LEFT</c> and <c>RIGHT</c>, which convert it to
+    /// varchar first, are varchar (observed:
+    /// Substring_of_a_binary_value_is_varbinary_and_left_and_right_varchar_as_long_as_a_literal_length_allows).
     /// </summary>
     private Value Part(TSqlFragment call, ScalarExpression text, IReadOnlyList<ScalarExpression> others, ScalarExpression length, ReadScope scope)
     {
         var (values, unknown) = Arguments([text, .. others], scope);
         if (unknown is not null)
             return unknown;
-        if (StringOf(values[0]) is not { } type)
-            return NotModelled(call, "a string function of a value that is not a string is not modelled.");
+        if ((StringOf(values[0]) ?? (TypeOf(values[0]) is { IsBinary: true } bytes ? bytes : null)) is not { } type)
+            return NotModelled(call, "a string function of a value that is not a string or binary is not modelled.");
 
         // SUBSTRING's start and length must be an integer or a decimal; LEFT's and RIGHT's length must convert to int implicitly.
         // SQL Server refuses any other when the procedure is created (8116, 206, 260; observed:
@@ -103,7 +106,8 @@ internal sealed partial class Typer
 
         // A start or a length wider than int may overflow it (FitsInt).
         var overflows = others.Select((e, i) => !FitsInt(values[i + 1], e)).Any(o => o);
-        return Typed(ScalarType.CharacterString(type.IsNational, varying: true, n), overflows ? NullReasons.Join(Reasons(values), Overflow(call)) : Reasons(values), call);
+        var part = type.IsBinary && call is FunctionCall ? ScalarType.ByteString(varying: true, n) : ScalarType.CharacterString(type.IsNational, varying: true, n);
+        return Typed(part, overflows ? NullReasons.Join(Reasons(values), Overflow(call)) : Reasons(values), call);
     }
 
     /// <summary>Whether an expression reads a column, a variable or a subquery, so that the server cannot fold it.</summary>
@@ -212,6 +216,11 @@ internal sealed partial class Typer
         // Refused when the procedure is created (8116; observed: Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
         if (from.Type == BuiltInType.UniqueIdentifier)
             return NotModelled(call, "SQL Server refuses STRING_AGG of uniqueidentifier.");
+
+        // Refused too (8116, observed for binary and varbinary over the catalogue sweep, CatalogueSweepGridTests), and not modelled
+        // for the other binary values.
+        if (from.IsBinary || from.Family == TypeFamily.RowVersion || from.Type == BuiltInType.Image)
+            return NotModelled(call, "SQL Server refuses STRING_AGG of a binary value.");
         var type = from.IsString
             ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
             : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);

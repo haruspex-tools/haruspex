@@ -93,6 +93,6 @@ public partial class StatementFlowTests
 
     [Fact]
     public void A_cast_to_a_type_not_modelled_is_not_modelled_yet() =>
-        // Other casts are typed (ExpressionTests); a binary type is not modelled at all.
-        AssertUnknown(Procedure("SELECT CAST(t.id AS varbinary(5)) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReason.UnsupportedExpression);
+        // Other casts are typed (ExpressionTests); sql_variant is not modelled at all.
+        AssertUnknown(Procedure("SELECT CAST(t.id AS sql_variant) AS a FROM dbo.t AS t;"), "results[0][].a", IrUnknownReason.UnsupportedExpression);
 }

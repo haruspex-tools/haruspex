@@ -212,6 +212,12 @@ public class ZodAcceptanceTests(SqlServerFixture server)
             case TimeSpan t:
                 Date(json, "1970-01-01T" + t.ToString(@"hh\:mm\:ss\.fff", CultureInfo.InvariantCulture) + "Z");
                 break;
+            case byte[] bytes:
+                // The driver hands a binary value over as a Buffer, which accept.mjs makes of this.
+                json.WriteStartObject();
+                json.WriteBase64String("$bytes", bytes);
+                json.WriteEndObject();
+                break;
             default:
                 throw new InvalidOperationException($"No driver mapping for {value.GetType()}.");
         }

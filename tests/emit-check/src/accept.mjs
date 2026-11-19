@@ -7,7 +7,8 @@
 // strictModule optional. A value is what a caller
 // would hand the schema: a FOR JSON result's text exactly as SQL Server wrote it (so JSON.parse rounds its numbers
 // as it would in an application), null for an absent one (the IR's reader convention), and rows as the
-// mssql driver delivers them, with dates as { "$date": "…" } turned into Date objects here.
+// mssql driver delivers them, with dates as { "$date": "…" } turned into Date objects here, and binary values as
+// { "$bytes": "<base64>" } into Buffers.
 //
 // A schema must also keep every key of the output: z.object strips the keys it doesn't know, and every key SQL Server
 // writes is one the IR knows, so a dropped key means the parse took the wrong variant of a union (a row of a superset
@@ -22,8 +23,12 @@ import { pathToFileURL } from 'node:url'
 
 const folder = process.argv[2]
 const revive = (_, value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1 && '$date' in value
-    ? new Date(value.$date)
+  value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1
+    ? '$date' in value
+      ? new Date(value.$date)
+      : '$bytes' in value
+        ? Buffer.from(value.$bytes, 'base64')
+        : value
     : value
 const { module, strictModule, cases } = JSON.parse(await readFile(path.join(folder, 'cases.json'), 'utf8'), revive)
 // The generated module is TypeScript; Node strips its types (the module uses only erasable syntax).

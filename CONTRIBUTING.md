@@ -231,6 +231,7 @@ split into parts along the constructs it covers. The families today:
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Precision lost | `PrecisionLossTests` | `PrecisionLossObservationTests`, `PrecisionLossGridTests` | `tests/fixtures/assays` | "Precision lost" |
+| Binary values | `BinaryTests` | `BinaryObservationTests` | `tests/fixtures/gallery` | "Binary values", [decision 0081](docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md) |
 | Canonical value sets | `CanonicalValueSetTests` | `CanonicalValueSetObservationTests`, `CollationFoldGridTests` | `tests/fixtures/tannery` | [decision 0043](docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) |
 | SQLCMD variables | `SqlcmdVariableTests` | `SqlcmdVariableObservationTests` | `tests/fixtures/kiosk` | [decision 0046](docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md) |
 | `SELECT *` | `SelectStarTests` | `SelectStarObservationTests` | `tests/fixtures/haberdashery` | "`SELECT *`", [decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md) |

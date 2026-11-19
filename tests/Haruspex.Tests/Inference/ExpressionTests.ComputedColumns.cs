@@ -11,7 +11,7 @@ public partial class ExpressionTests
             id int NOT NULL PRIMARY KEY, a int NOT NULL, b int NULL, s varchar(10) NOT NULL, code varchar(12) NULL,
             is_high AS (CASE WHEN a > 5 THEN 1 ELSE 0 END), small AS (CAST(a AS tinyint)) PERSISTED, doubled AS (a * 2),
             next_b AS (b + 1), part AS (PARSENAME(REPLACE(code, '-', '.'), 1)), label AS (CONCAT(s, 'x')) PERSISTED NOT NULL,
-            kept AS (b * 2) PERSISTED NOT NULL, blob AS (CAST(s AS varbinary(10))), doc AS (JSON_OBJECT('a': a)));
+            kept AS (b * 2) PERSISTED NOT NULL, blob AS (CAST(s AS sql_variant)), doc AS (JSON_OBJECT('a': a)));
         CREATE TABLE dbo.reading (id int NOT NULL PRIMARY KEY, gauge_id int NULL);
         GO
         """;
@@ -84,12 +84,12 @@ public partial class ExpressionTests
     [Fact]
     public void A_computed_column_whose_expression_is_unknown_is_unknown_with_its_reason()
     {
-        // A conversion to binary isn't modelled, so neither is a column computed as one: its reason is the expression's, where the
+        // A conversion to sql_variant isn't modelled, so neither is a column computed as one: its reason is the expression's, where the
         // table's file writes it. A column computed as JSON nests as JSON in FOR
         // JSON (A_computed_column_of_json_nests_as_json_in_for_json), which is not modelled for a column.
         var doc = Computed("SELECT g.blob, g.doc FROM dbo.gauge AS g;");
         Assert.Contains(doc.Unknowns, u => u.Path.EndsWith(".blob", StringComparison.Ordinal) && u.Reason == IrUnknownReason.UnsupportedExpression
-            && u.Detail.StartsWith("CAST(s AS varbinary(10))", StringComparison.Ordinal) && u.At.StartsWith("tables.sql:", StringComparison.Ordinal));
+            && u.Detail.StartsWith("CAST(s AS sql_variant)", StringComparison.Ordinal) && u.At.StartsWith("tables.sql:", StringComparison.Ordinal));
         Assert.Contains(doc.Unknowns, u => u.Path.EndsWith(".doc", StringComparison.Ordinal) && u.Detail.Contains("JSON", StringComparison.Ordinal));
     }
 

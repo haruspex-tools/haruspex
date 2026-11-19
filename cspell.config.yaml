@@ -301,6 +301,9 @@ overrides:
   # them. Each file's words are listed with it, so a word is excused only where it is meant.
   - filename: "**/tests/Haruspex.DifferentialTests/CaseObservationTests.cs"
     ignoreWords: [cneg, cnull, cdec]
+  # The base64 text FOR JSON writes for the bytes it is given.
+  - filename: "**/tests/Haruspex.DifferentialTests/BinaryObservationTests.cs"
+    ignoreWords: [AQID, AQAAAA, AAAAAAAAAAE, AQAA, AQIDBAUG]
   - filename: "**/tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs"
     ignoreWords: [intadd, cnull, wsnull, wsallnull, wsnullsep, plusnull]
   - filename: "**/tests/Haruspex.DifferentialTests/StatementFlowObservationTests.cs"

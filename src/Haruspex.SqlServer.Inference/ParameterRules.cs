@@ -45,8 +45,11 @@ internal static class ParameterRules
     /// <c>datetime2(0)</c>). Ordering keeps a type of fixed size, but widens a decimal to <c>decimal(38,19)</c>, a string to the longest
     /// of its kind that isn't max (<c>varchar(8000)</c>, <c>nvarchar(4000)</c>, a fixed one to the varying one) while max stays max, and a time, <c>datetime2</c> or <c>datetimeoffset</c> to 7 places. LIKE gives
     /// <c>varchar(8000)</c> or <c>nvarchar(4000)</c> by the operand's kind, max or not. A <c>uniqueidentifier</c> under ordering, and
-    /// anything else not named here, gives nothing. A binary string's rules are the string's (<c>varbinary(8000)</c>, observed), but
-    /// binary strings are not modelled, so no operand is one.
+    /// anything else not named here, gives nothing. A binary value's rules are the string's: equality takes its type, a
+    /// <c>rowversion</c>'s too, and ordering <c>varbinary(8000)</c>, max staying max (observed:
+    /// A_parameter_compared_with_a_binary_value_takes_its_type_under_equality_and_varbinary_8000_under_ordering,
+    /// A_parameter_compared_with_a_binary_column_of_any_kind_takes_its_type_under_equality_and_varbinary_under_ordering); LIKE is not
+    /// modelled.
     /// </remarks>
     public static ScalarType? Compared(ScalarType operand, Comparison how)
     {
@@ -59,6 +62,7 @@ internal static class ParameterRules
                 TypeFamily.Bit or TypeFamily.Integer or TypeFamily.Money or TypeFamily.Approximate => operand,
                 TypeFamily.Decimal => WideDecimal,
                 TypeFamily.String => Varying(operand, max: operand.IsMax),
+                TypeFamily.Binary => ScalarType.ByteString(varying: true, operand.IsMax ? -1 : BuiltInType.MostBytes),
                 TypeFamily.DateAndTime => operand.Type == BuiltInType.Date || operand.Type == BuiltInType.DateTime || operand.Type == BuiltInType.SmallDateTime
                     ? operand
                     : operand with { Precision = 7 },

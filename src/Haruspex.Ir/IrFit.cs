@@ -260,7 +260,7 @@ public static partial class IrFit
     /// <summary>
     /// Whether a type the IR doesn't model is defined by its name alone: a built-in type, with a binary type's length, rather
     /// than one the database defines (a table type, a CLR type, an alias) or <c>xml</c>, which may name a schema collection the
-    /// IR doesn't spell.
+    /// IR doesn't spell. A binary type is a scalar from IR 0.27 on, so only two documents written before it leave one unknown.
     /// </summary>
     private static bool WholeByName(string type) =>
         type.ToUpperInvariant() is "HIERARCHYID" or "GEOGRAPHY" or "GEOMETRY" or "SQL_VARIANT" || BinaryType().IsMatch(type);

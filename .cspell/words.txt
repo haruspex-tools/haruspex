@@ -45,6 +45,7 @@ ltrim
 msoledbsql
 nchar
 nestlevel
+newsequentialid
 nocount
 noexec
 noexpand

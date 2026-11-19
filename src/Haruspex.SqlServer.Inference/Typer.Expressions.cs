@@ -63,8 +63,7 @@ internal sealed partial class Typer
     /// <summary>
     /// A binary literal, <c>0x0A1B</c>: varbinary of its bytes, two hex digits each, an odd digit padded to a byte with a
     /// leading zero; <c>0x</c>, which holds none, is varbinary(1), and past 8000 bytes it is varbinary(max) (observed:
-    /// A_binary_literal_is_varbinary_of_its_bytes). Never null. The binary types have no kind in the IR yet, so its value is
-    /// unknown by that type (<see cref="IrUnknownReason.UnsupportedSqlType"/>), as a binary column's is.
+    /// A_binary_literal_is_varbinary_of_its_bytes). Never null.
     /// </summary>
     private Value FromBinary(BinaryLiteral literal)
     {
@@ -372,7 +371,8 @@ internal sealed partial class Typer
     /// NUMERIC_ROUNDABORT on (<c>precision-loss</c>, <see cref="Rounds"/>), with ANSI_WARNINGS and ARITHABORT off, or for TRY_
     /// whatever they are (observed: Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on). A string
     /// type without a length is 30 long here, where a declaration's is 1 (observed:
-    /// A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration). A conversion to x's own type changes
+    /// A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration), and so is a binary one (observed:
+    /// A_binary_type_without_a_length_is_30_bytes_long_in_a_conversion). A conversion to x's own type changes
     /// nothing, so the value keeps its facts. The format a style gives is not claimed. JSON built here converts by rules of
     /// its own (<see cref="JsonCast"/>, <see cref="FromLiveJson"/>).
     /// </summary>
@@ -383,7 +383,7 @@ internal sealed partial class Typer
         if (resolved?.Type == BuiltInType.Json && Strip(operand) is not NullLiteral)
             return JsonCast(operand, call, scope);
         var to = SqlTypes.Modelled(resolved);
-        if (to is { IsString: true } && type is { Kind: SqlTypeKind.BuiltIn, Arguments.Count: 0 })
+        if (to is { IsString: true } or { IsBinary: true } && type is { Kind: SqlTypeKind.BuiltIn, Arguments.Count: 0 })
             to = to with { Length = BuiltInType.LengthInConversion };
         var shape = to is null ? null : SqlTypes.ToConvertedShape(to, At(call));
         if (to is null || shape is null or UnknownShape)
@@ -430,7 +430,8 @@ internal sealed partial class Typer
 
     /// <summary>
     /// What a value adds to a string built by CONCAT: a string its length (bytes for varchar, characters for nvarchar), an int
-    /// 12 and a bit 1 (observed), the NULL literal (no value) nothing; null for anything else, whose length is not modelled.
+    /// 12 and a bit 1 (observed), the NULL literal (no value) nothing; a binary value its bytes, read as varchar (observed:
+    /// Concat_reads_a_binary_value_as_varchar_of_its_bytes); null for anything else, whose length is not modelled.
     /// </summary>
     private static (ScalarType Type, int Length)? Piece(Value? value)
     {
@@ -439,6 +440,7 @@ internal sealed partial class Typer
         return TypeOf(value) switch
         {
             { IsString: true } s => (s, s.Length),
+            { IsBinary: true } b => (new ScalarType(BuiltInType.VarChar, b.Length), b.Length),
             { } i when i.Type == BuiltInType.Int => (i, 12),
             { IsBit: true } b => (b, 1),
             _ => null,
@@ -466,6 +468,10 @@ internal sealed partial class Typer
         if (pieces.Any(p => p is null))
             return NotModelled(call, "an argument whose length as a string is not modelled yet.");
 
+        // Beside nvarchar the server reads a binary value's bytes as UTF-16, two to a character (observed in the same test).
+        if (values.Any(v => v is not null && TypeOf(v) is { IsBinary: true }) && pieces.Any(p => p is { Type.IsNational: true }))
+            return NotModelled(call, "a binary value beside nvarchar, whose bytes it reads as characters, is not modelled yet.");
+
         var known = pieces.OfType<(ScalarType Type, int Length)>().ToList();
         var parts = separated ? [.. known.Skip(1)] : known;
         var separator = separated ? known[0].Length * (parts.Count - 1) : 0;
@@ -482,9 +488,16 @@ internal sealed partial class Typer
     /// are declared to set it off, an operand never null makes the sum never null. Not known, the claim of either is null holds
     /// under both settings, since off is only less often null.
     /// </summary>
+    /// <remarks>
+    /// Two binary values join as two strings of one byte a character do: binary when both are, else varbinary, as long as both up to
+    /// 8000 bytes, max if either is, and NULL by the same rule (observed:
+    /// Binary_plus_is_as_long_as_both_up_to_8000_bytes_and_fixed_only_when_both_are).
+    /// </remarks>
     private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
         Typed(
-            ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
+            l.IsBinary
+                ? ScalarType.ByteString(varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length)
+                : ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
             summaries.Session.ConcatenatingNullKeepsTheString && (left.NullableBecause.Count == 0 || right.NullableBecause.Count == 0)
                 ? []
                 : NullReasons.Join(left.NullableBecause, right.NullableBecause),
@@ -523,7 +536,7 @@ internal sealed partial class Typer
             return right;
         if (OperandOf(left, binary.FirstExpression) is not { } l || OperandOf(right, binary.SecondExpression) is not { } r)
             return NotModelled(binary, "an operand of this type is not modelled yet.");
-        if (op == '+' && l.Type.IsString && r.Type.IsString)
+        if (op == '+' && ((l.Type.IsString && r.Type.IsString) || (l.Type.IsBinary && r.Type.IsBinary)))
             return Plus(binary, left, right, l.Type, r.Type);
         if (Arithmetic.TypeOf(op, l, r) is not { } type)
             return NotModelled(binary, "arithmetic on these types is not modelled yet.");

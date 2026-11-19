@@ -79,3 +79,9 @@ added or removed (500), one renamed or moved, which the server matches by place,
 CHECK added (547), a key added (2627), a column the server fills, and a collation changed. A column widened or made nullable, a key
 or CHECK removed and a default added or removed fit. `BaselineFitTests` calls each change through the old function. A CLR type and
 `xml` are still refused by name.
+
+**Amended again** (19 Nov 2026, [decision 0081](0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)). A binary value
+is a scalar of its own kind now, so `binary` and `varbinary` of a length are judged by their length in bytes as a string is by
+its: a result that became longer, or lost its fixed length, is refused, and a parameter that became longer fits. A pair of
+documents written before IR 0.27, both of which leave one unknown, still fits by its name. `IrFitTests.Binary.cs` holds the rules,
+and `BaselineFitTests` calls a binary parameter and field through the old function.

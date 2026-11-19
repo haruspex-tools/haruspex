@@ -145,6 +145,41 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task The_driver_hands_over_every_binary_type_as_a_buffer_and_sends_one_of_its_declared_length()
+    {
+        // binary, varbinary of a length and of max, rowversion and image each arrive as a Buffer of their bytes, a fixed length's
+        // zeros included, and none as null; through FOR JSON, base64 text (decision 0082). Sent, a Buffer is cut short by Binary(n)
+        // and padded to it, and fails the call with error 8016 under VarBinary(n); a plain Uint8Array, which a Buffer is, and a
+        // string are refused by the driver itself (EPARAM).
+        var token = TestContext.Current.CancellationToken;
+        static MssqlDriver.Typed Bytes(string type, object? length, params byte[] value) => new(type, new MssqlDriver.BytesValue(Convert.ToBase64String(value)), [length!]);
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            ["CREATE PROCEDURE dbo.obs_driver_binary @v varbinary(4), @b binary(4) AS SELECT CONVERT(varchar(20), @v, 1) AS v, CONVERT(varchar(20), @b, 1) AS b, DATALENGTH(@b) AS n;"],
+            [
+                new("read", ParseJson: false, Batch: "SELECT 0x0102 AS v, CAST(0x01 AS binary(4)) AS b, CAST(0x01 AS rowversion) AS rv, CAST(0x AS varbinary(max)) AS e, CAST(NULL AS varbinary(2)) AS n, CAST(0x0A AS image) AS img;"),
+                new("json", ParseJson: true, Batch: "SELECT 0x0102 AS v FOR JSON PATH;"),
+                new("fits", ParseJson: false, Procedure: "dbo.obs_driver_binary", Parameters: new Dictionary<string, object?> { ["v"] = Bytes("VarBinary", 4, 1, 2, 3), ["b"] = Bytes("Binary", 4, 1, 2) }),
+                new("binary too long", ParseJson: false, Procedure: "dbo.obs_driver_binary", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("VarBinary", null, [4]), ["b"] = Bytes("Binary", 4, 1, 2, 3, 4, 5, 6) }),
+                new("a Uint8Array", ParseJson: false, Procedure: "dbo.obs_driver_binary", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("VarBinary", new MssqlDriver.Uint8ArrayValue("AQI="), [4]), ["b"] = new MssqlDriver.Typed("Binary", null, [4]) }),
+                new("a string", ParseJson: false, Procedure: "dbo.obs_driver_binary", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("VarBinary", "AQI=", [4]), ["b"] = new MssqlDriver.Typed("Binary", null, [4]) }),
+                new("varbinary too long", ParseJson: false, Procedure: "dbo.obs_driver_binary", Parameters: new Dictionary<string, object?> { ["v"] = Bytes("VarBinary", 4, 1, 2, 3, 4, 5, 6), ["b"] = new MssqlDriver.Typed("Binary", null, [4]) }),
+            ],
+            token);
+
+        Assert.Equal(
+            """{"v":{"type":"Buffer","data":[1,2]},"b":{"type":"Buffer","data":[1,0,0,0]},"rv":{"type":"Buffer","data":[1,0,0,0,0,0,0,0]},"e":{"type":"Buffer","data":[]},"n":null,"img":{"type":"Buffer","data":[10]}}""",
+            Compact(OnlyRow(calls[0]).Row));
+        Assert.Equal("""[{"v":"AQI="}]""", Compact(OnlyRow(calls[1]).Row));
+        Assert.Equal("""{"v":"0x010203","b":"0x01020000","n":4}""", Compact(OnlyRow(calls[2]).Row));
+        Assert.Equal("""{"v":null,"b":"0x01020304","n":4}""", Compact(OnlyRow(calls[3]).Row));
+        Assert.Equal("EPARAM", calls[4].Error?.Code);
+        Assert.Equal("EPARAM", calls[5].Error?.Code);
+        Assert.Equal(8016, calls[6].Error?.Number);
+    }
+
+    [Fact]
     public async Task A_procedure_called_by_name_hands_over_the_same()
     {
         // execute, as an application calls a procedure, goes through another path of the driver's code than a batch.

@@ -1,0 +1,137 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_scans.sql": "fe5e5ed5eddfa02ab332227db9cb8b0c980ad2c32fdf8fca711e06d130b74412",
+      "tables/legacy_scan.sql": "49aed7674e26b241840ebcd9945b1bce646ae40dc19443b04b86acea6ef89d1a"
+    }
+  },
+  "objects": [
+    {
+      "id": "gallery.list_scans",
+      "name": "ListScans",
+      "kind": "procedure",
+      "at": "procedures/list_scans.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListScansRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListScansRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gallery.list_scans",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "scan_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.legacy_scan.scan_id",
+              "sql": "int",
+              "at": "tables/legacy_scan.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "scan",
+          "type": {
+            "kind": "bytes",
+            "sql": "image"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gallery.legacy_scan.scan"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.legacy_scan.scan",
+              "sql": "image",
+              "at": "tables/legacy_scan.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "scan_bytes",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gallery.legacy_scan.scan"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.legacy_scan.scan",
+              "sql": "image",
+              "at": "tables/legacy_scan.sql:4:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

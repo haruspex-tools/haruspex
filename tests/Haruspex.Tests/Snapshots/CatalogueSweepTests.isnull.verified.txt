@@ -466,8 +466,8 @@ ISNULL(f, dt23) -> unknown unsupported-expression: ISNULL(f, dt23): SQL Server r
 ISNULL(f, sdt) -> unknown unsupported-expression: ISNULL(f, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
 ISNULL(f, dto3) -> unknown unsupported-expression: ISNULL(f, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
 ISNULL(f, u) -> unknown unsupported-expression: ISNULL(f, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
-ISNULL(f, bin4) -> float number/float
-ISNULL(f, vb10) -> float number/float
+ISNULL(f, bin4) -> unknown unsupported-expression: ISNULL(f, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to float.
+ISNULL(f, vb10) -> unknown unsupported-expression: ISNULL(f, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to float.
 ISNULL(f, x) -> float number/float
 ISNULL(f, sv) -> float number/float
 ISNULL(f, j) -> float number/float
@@ -506,8 +506,8 @@ ISNULL(r, dt23) -> unknown unsupported-expression: ISNULL(r, dt23): SQL Server r
 ISNULL(r, sdt) -> unknown unsupported-expression: ISNULL(r, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to real.
 ISNULL(r, dto3) -> unknown unsupported-expression: ISNULL(r, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to real.
 ISNULL(r, u) -> unknown unsupported-expression: ISNULL(r, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to real.
-ISNULL(r, bin4) -> real number/float
-ISNULL(r, vb10) -> real number/float
+ISNULL(r, bin4) -> unknown unsupported-expression: ISNULL(r, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to real.
+ISNULL(r, vb10) -> unknown unsupported-expression: ISNULL(r, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to real.
 ISNULL(r, x) -> real number/float
 ISNULL(r, sv) -> real number/float
 ISNULL(r, j) -> real number/float
@@ -546,8 +546,8 @@ ISNULL(f24, dt23) -> unknown unsupported-expression: ISNULL(f24, dt23): SQL Serv
 ISNULL(f24, sdt) -> unknown unsupported-expression: ISNULL(f24, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to real.
 ISNULL(f24, dto3) -> unknown unsupported-expression: ISNULL(f24, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to real.
 ISNULL(f24, u) -> unknown unsupported-expression: ISNULL(f24, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to real.
-ISNULL(f24, bin4) -> real number/float
-ISNULL(f24, vb10) -> real number/float
+ISNULL(f24, bin4) -> unknown unsupported-expression: ISNULL(f24, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to real.
+ISNULL(f24, vb10) -> unknown unsupported-expression: ISNULL(f24, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to real.
 ISNULL(f24, x) -> real number/float
 ISNULL(f24, sv) -> real number/float
 ISNULL(f24, j) -> real number/float
@@ -586,8 +586,8 @@ ISNULL(f25, dt23) -> unknown unsupported-expression: ISNULL(f25, dt23): SQL Serv
 ISNULL(f25, sdt) -> unknown unsupported-expression: ISNULL(f25, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
 ISNULL(f25, dto3) -> unknown unsupported-expression: ISNULL(f25, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
 ISNULL(f25, u) -> unknown unsupported-expression: ISNULL(f25, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
-ISNULL(f25, bin4) -> float number/float
-ISNULL(f25, vb10) -> float number/float
+ISNULL(f25, bin4) -> unknown unsupported-expression: ISNULL(f25, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to float.
+ISNULL(f25, vb10) -> unknown unsupported-expression: ISNULL(f25, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to float.
 ISNULL(f25, x) -> float number/float
 ISNULL(f25, sv) -> float number/float
 ISNULL(f25, j) -> float number/float
@@ -866,8 +866,8 @@ ISNULL(dt, dt23) -> date date
 ISNULL(dt, sdt) -> date date
 ISNULL(dt, dto3) -> date date
 ISNULL(dt, u) -> unknown unsupported-expression: ISNULL(dt, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to date.
-ISNULL(dt, bin4) -> date date
-ISNULL(dt, vb10) -> date date
+ISNULL(dt, bin4) -> unknown unsupported-expression: ISNULL(dt, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to date.
+ISNULL(dt, vb10) -> unknown unsupported-expression: ISNULL(dt, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to date.
 ISNULL(dt, x) -> date date
 ISNULL(dt, sv) -> date date
 ISNULL(dt, j) -> date date
@@ -906,8 +906,8 @@ ISNULL(tm3, dt23) -> time(3) time
 ISNULL(tm3, sdt) -> time(3) time
 ISNULL(tm3, dto3) -> time(3) time
 ISNULL(tm3, u) -> unknown unsupported-expression: ISNULL(tm3, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to time(3).
-ISNULL(tm3, bin4) -> time(3) time
-ISNULL(tm3, vb10) -> time(3) time
+ISNULL(tm3, bin4) -> unknown unsupported-expression: ISNULL(tm3, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to time(3).
+ISNULL(tm3, vb10) -> unknown unsupported-expression: ISNULL(tm3, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to time(3).
 ISNULL(tm3, x) -> time(3) time
 ISNULL(tm3, sv) -> time(3) time
 ISNULL(tm3, j) -> time(3) time
@@ -986,8 +986,8 @@ ISNULL(dt23, dt23) -> datetime2(3) datetime/local
 ISNULL(dt23, sdt) -> datetime2(3) datetime/local
 ISNULL(dt23, dto3) -> datetime2(3) datetime/local
 ISNULL(dt23, u) -> unknown unsupported-expression: ISNULL(dt23, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to datetime2(3).
-ISNULL(dt23, bin4) -> datetime2(3) datetime/local
-ISNULL(dt23, vb10) -> datetime2(3) datetime/local
+ISNULL(dt23, bin4) -> unknown unsupported-expression: ISNULL(dt23, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to datetime2(3).
+ISNULL(dt23, vb10) -> unknown unsupported-expression: ISNULL(dt23, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to datetime2(3).
 ISNULL(dt23, x) -> datetime2(3) datetime/local
 ISNULL(dt23, sv) -> datetime2(3) datetime/local
 ISNULL(dt23, j) -> datetime2(3) datetime/local
@@ -1066,8 +1066,8 @@ ISNULL(dto3, dt23) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, sdt) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, dto3) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, u) -> unknown unsupported-expression: ISNULL(dto3, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to datetimeoffset(3).
-ISNULL(dto3, bin4) -> datetimeoffset(3) datetime/offset
-ISNULL(dto3, vb10) -> datetimeoffset(3) datetime/offset
+ISNULL(dto3, bin4) -> unknown unsupported-expression: ISNULL(dto3, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to datetimeoffset(3).
+ISNULL(dto3, vb10) -> unknown unsupported-expression: ISNULL(dto3, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to datetimeoffset(3).
 ISNULL(dto3, x) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, sv) -> datetimeoffset(3) datetime/offset
 ISNULL(dto3, j) -> datetimeoffset(3) datetime/offset
@@ -1118,86 +1118,86 @@ ISNULL(u, 'ab') -> uniqueidentifier uuid
 ISNULL(u, N'ab') -> uniqueidentifier uuid
 ISNULL(u, 1e0) -> unknown unsupported-expression: ISNULL(u, 1e0): SQL Server refuses it: float doesn't convert implicitly to uniqueidentifier.
 ISNULL(u, $1) -> unknown unsupported-expression: ISNULL(u, $1): SQL Server refuses it: money doesn't convert implicitly to uniqueidentifier.
-ISNULL(bin4, bt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, ti) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, si) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, i) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, bi) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, d52) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, d380) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, d3838) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, n102) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, m) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, sm) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, f) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, r) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, f24) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, f25) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, c3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, v10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, vx) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, nc3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, nv10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, nvx) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, dt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, tm3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, dtm) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, dt23) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, sdt) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, dto3) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, u) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, vb10) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, x) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, sv) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, j) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, 1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, 12345) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, 2.50) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, 'ab') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, N'ab') -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, 1e0) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(bin4, $1) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-ISNULL(vb10, bt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, ti) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, si) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, i) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, bi) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, d52) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, d380) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, d3838) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, n102) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, m) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, sm) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, f) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, r) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, f24) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, f25) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, c3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, v10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, vx) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, nc3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, nv10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, nvx) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, dt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, tm3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, dtm) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, dt23) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, sdt) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, dto3) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, u) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, bin4) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, x) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, sv) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, j) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, 1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, 12345) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, 2.50) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, 'ab') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, N'ab') -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, 1e0) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-ISNULL(vb10, $1) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+ISNULL(bin4, bt) -> binary(4) bytes {length=4}
+ISNULL(bin4, ti) -> binary(4) bytes {length=4}
+ISNULL(bin4, si) -> binary(4) bytes {length=4}
+ISNULL(bin4, i) -> binary(4) bytes {length=4}
+ISNULL(bin4, bi) -> binary(4) bytes {length=4}
+ISNULL(bin4, d52) -> binary(4) bytes {length=4}
+ISNULL(bin4, d380) -> binary(4) bytes {length=4}
+ISNULL(bin4, d3838) -> binary(4) bytes {length=4}
+ISNULL(bin4, n102) -> binary(4) bytes {length=4}
+ISNULL(bin4, m) -> binary(4) bytes {length=4}
+ISNULL(bin4, sm) -> binary(4) bytes {length=4}
+ISNULL(bin4, f) -> binary(4) bytes {length=4}
+ISNULL(bin4, r) -> binary(4) bytes {length=4}
+ISNULL(bin4, f24) -> binary(4) bytes {length=4}
+ISNULL(bin4, f25) -> binary(4) bytes {length=4}
+ISNULL(bin4, c3) -> unknown unsupported-expression: ISNULL(bin4, c3): SQL Server refuses it: char(3) doesn't convert implicitly to binary(4).
+ISNULL(bin4, v10) -> unknown unsupported-expression: ISNULL(bin4, v10): SQL Server refuses it: varchar(10) doesn't convert implicitly to binary(4).
+ISNULL(bin4, vx) -> unknown unsupported-expression: ISNULL(bin4, vx): SQL Server refuses it: varchar(max) doesn't convert implicitly to binary(4).
+ISNULL(bin4, nc3) -> unknown unsupported-expression: ISNULL(bin4, nc3): SQL Server refuses it: nchar(3) doesn't convert implicitly to binary(4).
+ISNULL(bin4, nv10) -> unknown unsupported-expression: ISNULL(bin4, nv10): SQL Server refuses it: nvarchar(10) doesn't convert implicitly to binary(4).
+ISNULL(bin4, nvx) -> unknown unsupported-expression: ISNULL(bin4, nvx): SQL Server refuses it: nvarchar(max) doesn't convert implicitly to binary(4).
+ISNULL(bin4, dt) -> unknown unsupported-expression: ISNULL(bin4, dt): SQL Server refuses it: date doesn't convert implicitly to binary(4).
+ISNULL(bin4, tm3) -> unknown unsupported-expression: ISNULL(bin4, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to binary(4).
+ISNULL(bin4, dtm) -> unknown unsupported-expression: ISNULL(bin4, dtm): SQL Server refuses it: datetime doesn't convert implicitly to binary(4).
+ISNULL(bin4, dt23) -> unknown unsupported-expression: ISNULL(bin4, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to binary(4).
+ISNULL(bin4, sdt) -> unknown unsupported-expression: ISNULL(bin4, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to binary(4).
+ISNULL(bin4, dto3) -> unknown unsupported-expression: ISNULL(bin4, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to binary(4).
+ISNULL(bin4, u) -> binary(4) bytes {length=4}
+ISNULL(bin4, bin4) -> binary(4) bytes {length=4}
+ISNULL(bin4, vb10) -> binary(4) bytes {length=4}
+ISNULL(bin4, x) -> binary(4) bytes {length=4}
+ISNULL(bin4, sv) -> binary(4) bytes {length=4}
+ISNULL(bin4, j) -> binary(4) bytes {length=4}
+ISNULL(bin4, 1) -> binary(4) bytes {length=4}
+ISNULL(bin4, 12345) -> binary(4) bytes {length=4}
+ISNULL(bin4, 2.50) -> binary(4) bytes {length=4}
+ISNULL(bin4, 'ab') -> unknown unsupported-expression: ISNULL(bin4, 'ab'): SQL Server refuses it: varchar(2) doesn't convert implicitly to binary(4).
+ISNULL(bin4, N'ab') -> unknown unsupported-expression: ISNULL(bin4, N'ab'): SQL Server refuses it: nvarchar(2) doesn't convert implicitly to binary(4).
+ISNULL(bin4, 1e0) -> binary(4) bytes {length=4}
+ISNULL(bin4, $1) -> binary(4) bytes {length=4}
+ISNULL(vb10, bt) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, ti) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, si) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, i) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, bi) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, d52) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, d380) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, d3838) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, n102) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, m) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, sm) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, f) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, r) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, f24) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, f25) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, c3) -> unknown unsupported-expression: ISNULL(vb10, c3): SQL Server refuses it: char(3) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, v10) -> unknown unsupported-expression: ISNULL(vb10, v10): SQL Server refuses it: varchar(10) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, vx) -> unknown unsupported-expression: ISNULL(vb10, vx): SQL Server refuses it: varchar(max) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, nc3) -> unknown unsupported-expression: ISNULL(vb10, nc3): SQL Server refuses it: nchar(3) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, nv10) -> unknown unsupported-expression: ISNULL(vb10, nv10): SQL Server refuses it: nvarchar(10) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, nvx) -> unknown unsupported-expression: ISNULL(vb10, nvx): SQL Server refuses it: nvarchar(max) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, dt) -> unknown unsupported-expression: ISNULL(vb10, dt): SQL Server refuses it: date doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, tm3) -> unknown unsupported-expression: ISNULL(vb10, tm3): SQL Server refuses it: time(3) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, dtm) -> unknown unsupported-expression: ISNULL(vb10, dtm): SQL Server refuses it: datetime doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, dt23) -> unknown unsupported-expression: ISNULL(vb10, dt23): SQL Server refuses it: datetime2(3) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, sdt) -> unknown unsupported-expression: ISNULL(vb10, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, dto3) -> unknown unsupported-expression: ISNULL(vb10, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, u) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, bin4) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, vb10) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, x) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, sv) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, j) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, 1) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, 12345) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, 2.50) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, 'ab') -> unknown unsupported-expression: ISNULL(vb10, 'ab'): SQL Server refuses it: varchar(2) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, N'ab') -> unknown unsupported-expression: ISNULL(vb10, N'ab'): SQL Server refuses it: nvarchar(2) doesn't convert implicitly to varbinary(10).
+ISNULL(vb10, 1e0) -> varbinary(10) bytes {length<=10}
+ISNULL(vb10, $1) -> varbinary(10) bytes {length<=10}
 ISNULL(x, bt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, ti) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 ISNULL(x, si) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -1546,8 +1546,8 @@ ISNULL(1e0, dt23) -> unknown unsupported-expression: ISNULL(1e0, dt23): SQL Serv
 ISNULL(1e0, sdt) -> unknown unsupported-expression: ISNULL(1e0, sdt): SQL Server refuses it: smalldatetime doesn't convert implicitly to float.
 ISNULL(1e0, dto3) -> unknown unsupported-expression: ISNULL(1e0, dto3): SQL Server refuses it: datetimeoffset(3) doesn't convert implicitly to float.
 ISNULL(1e0, u) -> unknown unsupported-expression: ISNULL(1e0, u): SQL Server refuses it: uniqueidentifier doesn't convert implicitly to float.
-ISNULL(1e0, bin4) -> float number/float
-ISNULL(1e0, vb10) -> float number/float
+ISNULL(1e0, bin4) -> unknown unsupported-expression: ISNULL(1e0, bin4): SQL Server refuses it: binary(4) doesn't convert implicitly to float.
+ISNULL(1e0, vb10) -> unknown unsupported-expression: ISNULL(1e0, vb10): SQL Server refuses it: varbinary(10) doesn't convert implicitly to float.
 ISNULL(1e0, x) -> float number/float
 ISNULL(1e0, sv) -> float number/float
 ISNULL(1e0, j) -> float number/float

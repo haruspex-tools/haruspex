@@ -66,6 +66,10 @@ internal sealed partial class Typer
 
     private const string Tests = "Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null";
 
+    private const string Digested = "Hashbytes_is_varbinary_8000_of_its_algorithms_length_and_null_for_an_algorithm_it_does_not_run";
+
+    private const string Compressed = "Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error";
+
     private const string ZeroOrOne = "Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null";
 
     private const string Expressions = "The_regular_expression_functions_but_regexp_like_are_there_at_every_compatibility_level_and_refuse_what_they_cannot_read";
@@ -168,6 +172,11 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.Translate, (3, 3), "varchar(8000) or nvarchar(4000), max when the string is", [], [Fixed], (a, e, s) => a.Translate(Call(e), s)),
         Typing(ScalarFunctions.Soundex, (1, 1), "varchar(5)", [], [Fixed], (a, e, s) => a.Phonetic(Call(e), new ScalarType(BuiltInType.VarChar, 5), s)),
         Typing(ScalarFunctions.Difference, (2, 2), "int", [], [Fixed], (a, e, s) => a.Phonetic(Call(e), ScalarType.Of(BuiltInType.Int), s)),
+
+        // ---- binary values ----
+        Typing(ScalarFunctions.HashBytes, (2, 2), "varbinary(8000), exactly as long as a literal algorithm's digest", [OutOfRange], [Digested], (a, e, s) => a.HashBytes(Call(e), s)),
+        Typing(ScalarFunctions.Compress, (1, 1), "varbinary(max)", [], [Compressed], (a, e, s) => a.Compression(Call(e), s, decompress: false)),
+        Typing(ScalarFunctions.Decompress, (1, 1), "varbinary(max)", [], [Compressed], (a, e, s) => a.Compression(Call(e), s, decompress: true)),
 
         // ---- numbers ----
         Typing(ScalarFunctions.Round, (2, 3), "the argument's type, widened", [ArithmeticOverflow], [Rounding, "Round_overflows_when_it_carries_into_a_digit_its_type_lacks_unless_it_truncates"], (a, e, s) => a.Numeric(Call(e), s, a.Round, onlyTheSecondCounts: true)),

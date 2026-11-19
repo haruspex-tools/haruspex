@@ -88,7 +88,7 @@ public class GeneratedFunctionTests(SqlServerFixture server)
     /// <summary>A run's argument in the form the parameters' schema takes for <paramref name="type"/>.</summary>
     private static object? Argument(IrType type, object? value) => value switch
     {
-        null => null,
+        null or System.Data.SqlTypes.SqlBinary { IsNull: true } => null,
         DateTime at when type is IrScalar { Kind: IrScalarKind.Date } => at.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         DateTime at => at.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture).TrimEnd('.'),
         TimeSpan time => time.ToString(@"hh\:mm\:ss\.FFFFFFF", CultureInfo.InvariantCulture).TrimEnd('.'),
@@ -96,6 +96,7 @@ public class GeneratedFunctionTests(SqlServerFixture server)
         long big when Math.Abs((decimal)big) > 9007199254740991m => new MssqlDriver.BigIntValue(big.ToString(CultureInfo.InvariantCulture)),
         decimal exact => (double)exact,
         Guid id => id.ToString(),
+        byte[] bytes => new MssqlDriver.BytesValue(Convert.ToBase64String(bytes)),
         _ => value,
     };
 }

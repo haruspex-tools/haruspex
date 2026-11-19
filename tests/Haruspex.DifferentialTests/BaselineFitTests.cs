@@ -266,6 +266,29 @@ public partial class BaselineFitTests(SqlServerFixture server)
         {
             Params = new() { ["p"] = "/1/" },
         },
+        new("a binary result that became longer",
+            "CREATE PROCEDURE drift.get_digest AS SELECT CAST(0x0102 AS varbinary(2)) AS d;",
+            "CREATE PROCEDURE drift.get_digest AS SELECT CAST(0x010203 AS varbinary(4)) AS d;",
+            ["refused: drift.get_digest results[0][].d: length changed from at most 2 bytes to at most 4 bytes"],
+            Ending.ResultRefused),
+        new("a binary parameter that became shorter, which the server cuts short without an error",
+            "CREATE PROCEDURE drift.find_blob @b varbinary(4) AS SELECT CONVERT(varchar(20), @b, 1) AS b;",
+            "CREATE PROCEDURE drift.find_blob @b varbinary(2) AS SELECT CONVERT(varchar(20), @b, 1) AS b;",
+            ["refused: drift.find_blob parameters[\"@b\"]: length changed from at most 4 bytes to at most 2 bytes"],
+            Ending.Returns)
+        {
+            Params = new() { ["b"] = new MssqlDriver.BytesValue(Convert.ToBase64String([1, 2, 3, 4])) },
+            Echoed = "0x01020304",
+        },
+        new("a binary parameter that became longer",
+            "CREATE PROCEDURE drift.find_wide @b varbinary(4) AS SELECT CONVERT(varchar(20), @b, 1) AS b;",
+            "CREATE PROCEDURE drift.find_wide @b varbinary(8) AS SELECT CONVERT(varchar(20), @b, 1) AS b;",
+            [],
+            Ending.Returns)
+        {
+            Params = new() { ["b"] = new MssqlDriver.BytesValue(Convert.ToBase64String([1, 2, 3, 4])) },
+            Echoed = "0x01020304",
+        },
         new("a procedure that is gone",
             "CREATE PROCEDURE drift.retired AS SELECT CAST(1 AS int) AS id;",
             null,

@@ -8,7 +8,7 @@ public partial class ConfigApplicationTests
     [Fact]
     public void A_type_override_imports_a_schema_and_clears_the_unknowns_under_it()
     {
-        const string Body = "CREATE PROCEDURE dbo.p AS SELECT hashbytes('SHA2_256', c.name) AS shout, c.customer_id AS id FROM sales.customer AS c FOR JSON PATH;\nGO\n";
+        const string Body = "CREATE PROCEDURE dbo.p AS SELECT checksum(c.name) AS shout, c.customer_id AS id FROM sales.customer AS c FOR JSON PATH;\nGO\n";
         Assert.Contains(Apply(Body, "{}").Document.Unknowns, u => u.Path == "results[0][].shout");
 
         var doc = Apply(Body, """{ "procedures": { "dbo.p": { "paths": { "[].shout": { "type": "ShoutSchema", "import": "@app/types", "why": "a hash of a name" } } } } }""").Document;

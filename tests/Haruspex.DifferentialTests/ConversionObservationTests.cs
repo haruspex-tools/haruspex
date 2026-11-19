@@ -52,6 +52,8 @@ public class ConversionObservationTests(SqlServerFixture server)
             return [Cast($"REPLICATE(CAST('x' AS {(type.IsNational ? "nvarchar(max)" : "varchar(max)")}), {(type.IsMax ? 9000 : type.Length).ToString(CultureInfo.InvariantCulture)})")];
         if (type.Type == BuiltInType.UniqueIdentifier)
             return [Cast("NEWID()")];
+        if (type.IsBinary)
+            return [Cast($"REPLICATE(CAST(0xFF AS varbinary(max)), {(type.IsMax ? 9000 : type.Length).ToString(CultureInfo.InvariantCulture)})")];
         var fraction = Nines(type.FractionalSeconds);
         return type.Type.Name switch
         {

@@ -27,6 +27,6 @@ public class BuiltInFunctionsTests
         Assert.Same(WindowFunctions.Count, BuiltInFunctions.Named("COUNT", FunctionForm.Window));
         Assert.Same(AggregateFunctions.Count, BuiltInFunctions.Named("count", FunctionForm.Aggregate));
         Assert.Null(BuiltInFunctions.Named("row_number", FunctionForm.Scalar));
-        Assert.Null(BuiltInFunctions.Named("hashbytes", FunctionForm.Scalar));
+        Assert.Null(BuiltInFunctions.Named("checksum", FunctionForm.Scalar));
     }
 }

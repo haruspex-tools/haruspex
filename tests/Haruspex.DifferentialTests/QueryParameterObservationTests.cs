@@ -239,11 +239,7 @@ public class QueryParameterObservationTests(SqlServerFixture server)
     [Theory]
     [InlineData("c.token = @p", "varbinary(16)")]
     [InlineData("c.token > @p", "varbinary(8000)")]
-    public async Task A_binary_string_is_not_modelled_so_a_parameter_used_with_one_is_left_unknown(string condition, string type)
-    {
-        var query = $"SELECT 1 AS one FROM shop.customers AS c WHERE {condition};";
-
-        Assert.Equal(["@p " + type], (await Described(query)).Parameters);
-        Assert.Equal(["@p unknown"], Inferred(query));
-    }
+    [InlineData("c.token <= @p", "varbinary(8000)")]
+    public async Task A_parameter_compared_with_a_binary_value_takes_its_type_under_equality_and_varbinary_8000_under_ordering(string condition, string type) =>
+        await Both($"SELECT 1 AS one FROM shop.customers AS c WHERE {condition};", "@p " + type);
 }

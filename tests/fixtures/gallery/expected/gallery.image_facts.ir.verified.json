@@ -1,0 +1,528 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/image_facts.sql": "2b51579316f7b1de3b37143cd1b70f8fe152661e4d2c3b1a5bae752c6a82b7a9",
+      "tables/product_image.sql": "4235c15ac0434f92a7daa361d817c3851b5cb3c6c2a677a1496850057b951d68"
+    }
+  },
+  "objects": [
+    {
+      "id": "gallery.image_facts",
+      "name": "ImageFacts",
+      "kind": "procedure",
+      "at": "procedures/image_facts.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ImageFactsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ImageFactsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gallery.image_facts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "image_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.image_id",
+              "sql": "int",
+              "at": "tables/product_image.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "id_bytes",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/image_facts.sql:4:5"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.image_id",
+              "sql": "int",
+              "at": "tables/product_image.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "from_hex",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/image_facts.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "from_bare_hex",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/image_facts.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "checksum_hex",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(66)",
+            "maxLength": {
+              "value": 66,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(66)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/image_facts.sql:7:5"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "checksum_head",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "thumbnail_or_checksum",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.thumbnail",
+              "sql": "varbinary(8000)",
+              "at": "tables/product_image.sql:5:5"
+            },
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "thumbnail_or_empty",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.thumbnail",
+              "sql": "varbinary(8000)",
+              "at": "tables/product_image.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "chosen",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(32)",
+            "maxLength": {
+              "value": 32,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(32)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "doubled",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(64)",
+            "length": {
+              "value": 64,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(64)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "joined",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "as_text",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(33)",
+            "maxLength": {
+              "value": 33,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(33)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "checksum_part",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "checksum_left",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(2)",
+            "maxLength": {
+              "value": 2,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "sha512",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "length": {
+              "value": 64,
+              "unit": "bytes",
+              "from": {
+                "engine": "HASHBYTES with SHA2_512"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "md5",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "length": {
+              "value": 16,
+              "unit": "bytes",
+              "from": {
+                "engine": "HASHBYTES with MD5"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/image_facts.sql:18:22"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.image_id",
+              "sql": "int",
+              "at": "tables/product_image.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "chosen_hash",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "out-of-range",
+              "at": "procedures/image_facts.sql:19:5"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "packed",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(max)"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "unpacked",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(max)"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "original_bytes",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gallery.product_image.original"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.original",
+              "sql": "varbinary(max)",
+              "at": "tables/product_image.sql:8:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

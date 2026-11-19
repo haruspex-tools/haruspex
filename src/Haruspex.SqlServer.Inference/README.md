@@ -169,8 +169,8 @@ applies there (`ParameterRules`), each observed in `QueryParameterObservationTes
 Each operand of a use is a use of its own, so `@p IN ('a', 'bb')` or `@p BETWEEN 1 AND 2.5` decides nothing unless its operands
 give one type: the server combines them by rules not observed here (`varchar(8000)`, `decimal(38,19)`). Every other use decides
 nothing: a use inside a larger expression, which the server types from the expression's context
-(`o.total = @x * 2` is `decimal(38,19)` there, from `total`); a `bit` in arithmetic, which the server makes `datetime`; a binary
-string, which isn't modelled; a test of NULL, where the server falls back on `int`; and a use in a query the walk doesn't read,
+(`o.total = @x * 2` is `decimal(38,19)` there, from `total`); a `bit` in arithmetic, which the server makes `datetime`; `LIKE`
+over a binary value; a test of NULL, where the server falls back on `int`; and a use in a query the walk doesn't read,
 such as a subquery under `EXISTS`. Uses that decide one type decide it even where the server refuses to answer, as it does for a
 parameter used twice (error 11508): each alone has the server's answer, and the type is what the call declares, so the walk of
 what runs is true of every call. Uses that decide two types leave the parameter unknown, naming each.
@@ -674,8 +674,8 @@ or a table variable's computed column is still unknown.
 (`-(-2147483648)`, `numeric(38,0)` on the server) is not modelled; `2.50` is `numeric(3,2)`: the scale counts the digits after the point, trailing zeros too, and the
 precision adds those before it, less leading zeros (`A_literals_type_is_its_own_digits_or_characters`). `0x0A1B` is
 `varbinary(2)`, two hex digits a byte, an odd one padded with a leading zero; `0x`, which holds no byte, is `varbinary(1)`, and
-one past 8000 bytes `varbinary(max)` (`A_binary_literal_is_varbinary_of_its_bytes`); the binary types aren't in the IR yet, so
-its value is unknown by its type (`unsupported-sql-type`), as a binary column's is. None is ever null. A
+one past 8000 bytes `varbinary(max)` (`A_binary_literal_is_varbinary_of_its_bytes`), a binary value ("Binary values" below). None
+is ever null. A
 `varchar` literal beyond ASCII, or one with `COLLATE`, is not typed: its length in bytes depends on the code page.
 
 ### SQLCMD variables
@@ -743,7 +743,9 @@ A conversion the server refuses (`CAST` of a `date` to `int`, error 529; `Conver
 has it, observed in `The_conversion_chart_is_what_the_server_allows_implicitly_explicitly_or_not_at_all`) is unknown: a
 procedure with it can't be created. A literal is checked by its value instead (`ISNULL(@d, 0)` into `decimal(10,2)` fits). An assignment to a variable converts
 the same way, so a value assigned to a narrower variable has `arithmetic-overflow` too; so does a table-valued function's
-argument ("Table-valued functions" below). A conversion to a type that is not modelled (binary, `xml`) is not modelled.
+argument ("Table-valued functions" below). A conversion to a type that is not modelled (`xml`, `sql_variant`) is not modelled. A
+binary type without a length is 30 bytes long here too, and a binary value converted to another binary type is cut short or
+padded with zeros, never NULL ("Binary values" below).
 
 **JSON built here** converts by rules of its own (`Typer.JsonCast`, `Typer.FromLiveJson`), observed in
 `Converted_json_stays_json_only_as_its_own_type_or_json` and
@@ -1524,7 +1526,12 @@ where folding did).
   `date`, a `datetime` is `datetime`, though `1` and a `date` alone are refused
   (`A_chain_is_refused_only_when_a_value_cannot_become_its_type`). The column is unknown, and its reason names
   the two types (the refused value and one of the final type): "SQL Server refuses to combine int and uniqueidentifier: there is no implicit conversion between them". A
-  value of a type not modelled (`xml`, binary) is unknown by its own reason, which names it.
+  value of a type not modelled (`xml`, `sql_variant`) is unknown by its own reason, which names it.
+- **Binary values** combine as strings do, with none national: `varbinary` if any varies, of the longest length, `max` if any
+  is (`Binary_values_combine_as_strings_do_varying_if_either_is_as_long_as_the_longer_max_if_either_is`), and a `rowversion` with
+  only others of its type is a `timestamp`. A binary value beside a value of another kind, or a rowversion beside a binary value, takes the
+  other's type by rules not observed for every pair (a `varbinary(10)` beside an `nvarchar(3)` is `nvarchar(10)`), and a chain
+  holding an `image` isn't observed at all, so each is not modelled.
 - **An int constant's digits** (`An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
   int counts 10 integer digits, but one the server treats as a constant counts its own: a literal, also as a derived table's,
   CTE's or view's column or a `VALUES` list's of one row; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
@@ -1690,6 +1697,63 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
   whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s
   `value` as JSON text.
+
+## Binary values
+
+A value of `binary(n)`, `varbinary(n)`, `varbinary(max)`, `rowversion` (`timestamp`) or `image` is a scalar of kind `bytes`, its
+only facet its length in bytes, with no encoding: exactly `n` for `binary(n)`, at most `n` for `varbinary(n)`, exactly 8 for a
+`rowversion`, none for `max` or `image`
+([decision 0081](../../docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md); `SqlTypes`,
+`SchemaRules.TypeFacts`). In a rowset the mssql driver hands each over as a `Buffer` of its bytes, and `FOR JSON` and the JSON
+constructors write it as base64 text, the standard alphabet padded with `=` on one line, `""` for no bytes, past 8,000 bytes as
+before it (`For_json_writes_a_binary_value_as_padded_base64_on_one_line`, `An_image_value_arrives_as_varbinary_max_s_does`,
+`The_driver_hands_over_every_binary_type_as_a_buffer_and_sends_one_of_its_declared_length`), which each emitter checks in its
+form ([decision 0082](../../docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)). A `rowversion`
+column declared with neither `NULL` nor `NOT NULL` is never null, whatever the ANSI settings
+(`A_rowversion_column_declared_without_null_is_not_null_whatever_the_ansi_settings`, `SchemaRules.IsNeverNull`). Observed in
+`BinaryObservationTests`; the unit tests are `BinaryTests`, and the fixture `tests/fixtures/gallery`.
+
+The expressions that make a binary value of others, each for `binary` and `varbinary` alone (a `rowversion` counts as 40 bytes
+under `+` and in `CONCAT`, `A_rowversion_under_plus_or_concat_counts_as_40_bytes`, and an `image` takes almost none of them, so
+over either they stay unknown):
+
+- **Literals** are `varbinary` of their bytes (`A_binary_literal_is_varbinary_of_its_bytes`), "Literals" above.
+- **Conversions.** `CAST` and `CONVERT` are of the target type whatever the style; a binary type without a length is 30 bytes
+  long (`A_binary_type_without_a_length_is_30_bytes_long_in_a_conversion`). Between binary types a longer value is cut short and a
+  shorter one padded to a fixed length, under any options, never NULL
+  (`Converting_between_binary_types_cuts_or_pads_without_an_error_or_null_under_any_options`, a row of `Conversions.Table`).
+  `OPENJSON`'s binary column decodes base64 and refuses any other text, or a longer value, with an error, never NULL
+  (`Openjson_reads_a_binary_column_from_base64_and_refuses_any_other_text`).
+- **`COALESCE`, `CASE`, `IIF`, `CHOOSE` and set operations**, "Combining types" above; **`ISNULL`** is its first argument's
+  type, the second cut or padded to it (`Isnull_cuts_or_pads_a_binary_second_argument_to_the_firsts_type`).
+- **`+`** joins two binary values: `binary` when both are, else `varbinary`, as long as both up to 8000 bytes, `max` if either is;
+  NULL when either is, unless the callers' sessions set `CONCAT_NULL_YIELDS_NULL` off, as for strings
+  (`Binary_plus_is_as_long_as_both_up_to_8000_bytes_and_fixed_only_when_both_are`). A binary value beside a string under `+` is
+  not modelled.
+- **`CONCAT`** reads a binary value as `varchar` of its bytes, so the result is `varchar` as long as the arguments together, never
+  null; beside `nvarchar` it reads the bytes as UTF-16, two to a character, which is not modelled
+  (`Concat_reads_a_binary_value_as_varchar_of_its_bytes`).
+- **`SUBSTRING`** of a binary value is `varbinary` as long as a literal length allows; **`LEFT`** and **`RIGHT`**, which convert it
+  to `varchar` first, are `varchar` by the same rule
+  (`Substring_of_a_binary_value_is_varbinary_and_left_and_right_varchar_as_long_as_a_literal_length_allows`).
+- **`DATALENGTH`** is `int`, `bigint` over `varbinary(max)` (`Datalength_of_a_binary_value_is_int_and_bigint_over_max`), and
+  **`MIN`**, **`MAX`** and the window functions over a value keep its type; `MIN` and `MAX` of an `image` are refused (8117,
+  `Max_and_min_keep_a_binary_or_rowversion_type_and_refuse_an_image`).
+- **`HASHBYTES(algorithm, x)`** of text or a binary value is `varbinary(8000)`, as the server describes it whatever the algorithm,
+  NULL when `x` is. An algorithm written as a literal it runs, in any case and with trailing spaces, gives exactly its digest's
+  bytes, a fact of the engine's (MD4 and MD5 16, SHA and SHA1 20, SHA2_256 32, SHA2_512 64, at every compatibility level from
+  100 to 170); MD2, a name it doesn't know, one with a leading space and one not written as a literal may give NULL
+  (`out-of-range`) (`Hashbytes_is_varbinary_8000_of_its_algorithms_length_and_null_for_an_algorithm_it_does_not_run`,
+  `Typer.HashBytes`).
+- **`COMPRESS`** of text or a binary value and **`DECOMPRESS`** of a binary value are `varbinary(max)`, NULL only when the argument
+  is: bytes `DECOMPRESS` can't read are an error under any options
+  (`Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error`, `Typer.Compression`).
+- **A query file's parameter** compared with a binary value takes its type under equality, a `rowversion`'s `timestamp` too, and
+  `varbinary(8000)` under ordering, `max` staying `max`
+  (`A_parameter_compared_with_a_binary_value_takes_its_type_under_equality_and_varbinary_8000_under_ordering`,
+  `A_parameter_compared_with_a_binary_column_of_any_kind_takes_its_type_under_equality_and_varbinary_under_ordering`).
+
+`NEWSEQUENTIALID`, which a `DEFAULT` alone may call, makes a `uniqueidentifier`, not a binary value.
 
 ## Built-in functions
 
@@ -2094,6 +2158,7 @@ What each kind claims about a JSON value, which the differential tests' validato
 | `datetime`, `local` | `"YYYY-MM-DDThh:mm:ss"`, optionally with a fraction, never an offset |
 | `datetime`, `offset` | the same followed by `Z` or `+hh:mm`/`-hh:mm` |
 | `uuid` | `"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` in hex digits |
+| `bytes` | base64 text, padded with `=`, as long as its bytes take within its length facet: four characters for every three bytes or part of three |
 
 The IR does not claim a precision. SQL Server's exact output was observed on SQL Server 2025 (RTM-CU10) and
 is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs`:
@@ -2108,6 +2173,8 @@ is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs
   full, beyond 2^53; `float` and `real` in exponent form (`1.000000000000000e+000`). All are JSON numbers.
 - `char(n)` and `nchar(n)` arrive padded with spaces to `n`: UTF-16 code units for `nchar`, bytes for `char`, so
   in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`).
+- A binary value is base64 text of the standard alphabet, padded, on one line, `""` for no bytes, whatever its length
+  (`For_json_writes_a_binary_value_as_padded_base64_on_one_line`, in `BinaryObservationTests`).
 
 ### JSON constructors
 

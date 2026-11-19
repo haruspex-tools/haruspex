@@ -65,7 +65,7 @@ read back, except where a scalar comes in from the IR itself, a declared result'
 one type when their `ScalarType` records are equal (`ScalarShape.SameType`), whatever text they were declared with.
 
 **Every type, modelled or not.** The catalogue lists the types haruspex doesn't type a value of (`xml`, `sql_variant`, the
-binary types), because what isn't modelled should be listed rather than found by accident. Which ones Inference models is its
+.NET system types), because what isn't modelled should be listed rather than found by accident. Which ones Inference models is its
 own table, `SqlTypes`, keyed by the catalogue: what each is in the IR. A type outside that table reaches the IR as unknown,
 with the reason `unsupported-sql-type`.
 

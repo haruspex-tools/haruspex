@@ -1,0 +1,211 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/add_image.sql": "e7aa1c1d53a2e85f69fd2a51f7c51c19c6d63ea625a704009c1a0cfeb66e674e",
+      "tables/product_image.sql": "4235c15ac0434f92a7daa361d817c3851b5cb3c6c2a677a1496850057b951d68"
+    }
+  },
+  "objects": [
+    {
+      "id": "gallery.add_image",
+      "name": "AddImage",
+      "kind": "procedure",
+      "at": "procedures/add_image.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@image_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@thumbnail",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@original",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(max)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AddImageRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AddImageRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gallery.add_image",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "image_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.image_id",
+              "sql": "int",
+              "at": "tables/product_image.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "checksum",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(32)",
+            "length": {
+              "value": 32,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(32)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "row_version",
+          "type": {
+            "kind": "bytes",
+            "sql": "timestamp",
+            "length": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "timestamp"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.row_version",
+              "sql": "timestamp",
+              "at": "tables/product_image.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "thumbnail_bytes",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gallery.product_image.thumbnail"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.thumbnail",
+              "sql": "varbinary(8000)",
+              "at": "tables/product_image.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

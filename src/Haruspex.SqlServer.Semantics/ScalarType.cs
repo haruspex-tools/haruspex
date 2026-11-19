@@ -96,8 +96,18 @@ public sealed record ScalarType(BuiltInType Type, int Length = 0, int Precision 
         return new ScalarType(type, length < 0 ? -1 : Math.Min(length, type.MostLength));
     }
 
+    /// <summary>
+    /// A binary type of this length, capped at 8000 bytes as concatenation caps it, or max: <c>binary(n)</c> when fixed,
+    /// <c>varbinary(n)</c> when varying.
+    /// </summary>
+    public static ScalarType ByteString(bool varying, int length) =>
+        new(varying || length < 0 ? BuiltInType.VarBinary : BuiltInType.Binary, length < 0 ? -1 : Math.Min(length, BuiltInType.MostBytes));
+
     /// <summary>The type's family.</summary>
     public TypeFamily Family => Type.Family;
+
+    /// <summary>A binary string: binary or varbinary (not rowversion, nor image, which have rules of their own).</summary>
+    public bool IsBinary => Family == TypeFamily.Binary;
 
     /// <summary>A string: char, varchar, nchar or nvarchar.</summary>
     public bool IsString => Family == TypeFamily.String;

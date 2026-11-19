@@ -93,6 +93,9 @@ scalar.json_object
 scalar.json_array
 scalar.isjson
 scalar.newid
+scalar.hashbytes
+scalar.compress
+scalar.decompress
 scalar.parsename
 scalar.db_name
 scalar.regexp_replace

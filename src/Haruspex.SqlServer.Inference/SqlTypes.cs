@@ -84,6 +84,14 @@ internal static class SqlTypes
         [BuiltInType.SmallDateTime] = (IrScalarKind.Datetime, IrFormat.Local),
         [BuiltInType.DateTimeOffset] = (IrScalarKind.Datetime, IrFormat.Offset),
         [BuiltInType.UniqueIdentifier] = (IrScalarKind.Uuid, null),
+
+        // Bytes, counted in bytes: docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md. An image is
+        // a varbinary(max) as it arrives (observed: An_image_value_arrives_as_varbinary_max_s_does), but no expression rule
+        // that makes a binary value takes one, so an expression over it stays unknown.
+        [BuiltInType.Binary] = (IrScalarKind.Bytes, null),
+        [BuiltInType.VarBinary] = (IrScalarKind.Bytes, null),
+        [BuiltInType.Timestamp] = (IrScalarKind.Bytes, null),
+        [BuiltInType.Image] = (IrScalarKind.Bytes, null),
     };
 
     /// <summary>Whether inference gives a value of this type as a scalar.</summary>

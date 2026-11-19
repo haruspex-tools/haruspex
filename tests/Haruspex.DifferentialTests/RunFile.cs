@@ -124,8 +124,10 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
     /// </summary>
     private static object? Value(JsonElement value, SqlType? type, string where)
     {
+        // A NULL sent with no type is nvarchar, which the server won't convert to a binary type implicitly (257), so a binary
+        // parameter's NULL is typed.
         if (value.ValueKind == JsonValueKind.Null)
-            return null;
+            return type is { Kind: SqlTypeKind.BuiltIn, Name: "binary" or "varbinary" or "image" or "timestamp" or "rowversion" } ? System.Data.SqlTypes.SqlBinary.Null : (object?)null;
 
         // sysname is the built-in alias of nvarchar(128), which is read as a type referred to by name.
         if (type is { Kind: SqlTypeKind.Named, Name: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
@@ -145,6 +147,9 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             "time" => TimeSpan.Parse(value.GetString()!, CultureInfo.InvariantCulture),
             "datetimeoffset" => DateTimeOffset.Parse(value.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None),
             "char" or "varchar" or "nchar" or "nvarchar" => value.GetString(),
+
+            // Written as SQL writes it, 0x and two hex digits a byte.
+            "binary" or "varbinary" or "image" or "timestamp" or "rowversion" => Convert.FromHexString(value.GetString()![2..]),
             _ => Unsupported(),
         } : Unsupported();
 

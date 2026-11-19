@@ -30,8 +30,8 @@ internal static class CatalogueSweep
     /// <summary>A literal of each kind: an integer (which counts its own digits), a decimal, strings, a float and money.</summary>
     public static readonly string[] Literals = ["1", "12345", "2.50", "'ab'", "N'ab'", "1e0", "$1"];
 
-    /// <summary>The types a value is converted to by <c>CAST</c>: each column's, and a string without a length.</summary>
-    public static readonly string[] Targets = [.. Columns.Select(c => c.Type), "varchar", "nvarchar"];
+    /// <summary>The types a value is converted to by <c>CAST</c>: each column's, and a string or binary type without a length.</summary>
+    public static readonly string[] Targets = [.. Columns.Select(c => c.Type), "varchar", "nvarchar", "varbinary"];
 
     /// <summary>The operators the sweep runs, each a snapshot and a theory case of its own.</summary>
     public static readonly string[] Forms = ["add", "subtract", "multiply", "divide", "modulo", "negate", "cast", "isnull", "aggregate", "function", "window"];
@@ -62,6 +62,7 @@ internal static class CatalogueSweep
         "LEFT('abc', {0})", "RIGHT('abc', {0})", "STR({0})", "STR({0}, 5, 2)", "TRANSLATE({0}, 'a', 'b')",
         "SOUNDEX({0})", "DIFFERENCE({0}, 'a')",
         "PARSENAME({0}, 1)", "PARSENAME('a.b', {0})", "DB_NAME()", "DB_NAME({0})",
+        "HASHBYTES('SHA2_256', {0})", "HASHBYTES({0}, 'a')", "COMPRESS({0})", "DECOMPRESS({0})",
         "REGEXP_REPLACE({0}, 'a', 'bb')", "REGEXP_REPLACE('abc', 'b', 'x', {0})", "REGEXP_SUBSTR({0}, '.')", "REGEXP_SUBSTR('abc', {0})",
         "REGEXP_INSTR({0}, 'a')", "REGEXP_INSTR('abc', 'b', 1, 1, {0})", "REGEXP_COUNT({0}, '.')", "REGEXP_COUNT('abc', 'b', {0})",
         "CONCAT({0}, 'x')", "CONCAT_WS(',', {0}, 'x')", "CHOOSE(id, {0}, {0})", "IIF(id > 1, {0}, {0})", "NULLIF({0}, {0})",

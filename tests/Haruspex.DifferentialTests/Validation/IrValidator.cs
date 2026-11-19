@@ -494,6 +494,20 @@ public static partial class IrValidator
         if (scalar.Facets is not { } facets)
             return null;
 
+        // A binary value's length counts its bytes, exactly.
+        if (value.Bytes is { } bytes)
+        {
+            if (facets.Length is { } length)
+            {
+                if (length.IsFixed ? bytes.Length != length.Value : bytes.Length > length.Value)
+                    return $"{(length.IsFixed ? "exactly" : "at most")} {length.Value} bytes ({scalar.Sql})";
+                if (bytes.Length == length.Value)
+                    edge($"length {length.Value}");
+            }
+
+            return null;
+        }
+
         if (value.Text is { } text)
         {
             if (facets.Length is { } length)
@@ -641,6 +655,9 @@ public static partial class IrValidator
             // Without a format the IR does not say whether there is an offset.
             IrScalarKind.Datetime => LocalDatetimeFormat().IsMatch(text) || OffsetDatetimeFormat().IsMatch(text),
             IrScalarKind.Uuid => UuidFormat().IsMatch(text),
+
+            // Padded, on one line, of the standard alphabet: what FOR JSON writes (BinaryObservationTests).
+            IrScalarKind.Bytes => Base64Format().IsMatch(text),
             _ => throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}."),
         };
     }
@@ -677,6 +694,9 @@ public static partial class IrValidator
     [GeneratedRegex(@"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")]
     private static partial Regex UuidFormat();
 
+    [GeneratedRegex(@"^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$")]
+    private static partial Regex Base64Format();
+
     /// <summary>
     /// What the type claims, when a value read by SqlClient breaks it; otherwise null. In a rowset the driver
     /// types each value, so the check is on the .NET type it chose (SqlClient's documented mapping).
@@ -711,6 +731,7 @@ public static partial class IrValidator
                         _ => value is DateTime or DateTimeOffset,
                     },
                     IrScalarKind.Uuid => value is Guid,
+                    IrScalarKind.Bytes => value is byte[],
                     _ => throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}."),
                 };
                 return ok ? null : $"{Name(scalar)} ({scalar.Sql})";
@@ -735,6 +756,7 @@ public static partial class IrValidator
     private static string Describe(object? value) => value switch
     {
         null => "null",
+        byte[] bytes => "0x" + Shorten(Convert.ToHexString(bytes)),
         string s => JsonSerializer.Serialize(Shorten(s)),
         IFormattable f => $"{f.ToString(null, CultureInfo.InvariantCulture)} ({value.GetType().Name})",
         _ => $"{value} ({value.GetType().Name})",

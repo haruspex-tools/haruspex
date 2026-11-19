@@ -103,6 +103,12 @@ internal static class MssqlDriver
     /// <summary>A JavaScript <c>bigint</c>, from its decimal digits, which the script reads as <c>{ "bigInt": … }</c>.</summary>
     public sealed record BigIntValue(string BigInt);
 
+    /// <summary>A Node <c>Buffer</c>, from its bytes in base64, which the scripts read as <c>{ "bytes": … }</c>.</summary>
+    public sealed record BytesValue(string Bytes);
+
+    /// <summary>A plain <c>Uint8Array</c>, not a <c>Buffer</c>, from its bytes in base64, which the driver's script reads as <c>{ "uint8Array": … }</c>.</summary>
+    public sealed record Uint8ArrayValue(string Uint8Array);
+
     /// <summary>
     /// The schema a call's results are parsed with, each result set's encoding, <c>json</c> or <c>rowset</c>, and how the
     /// application reads a JSON result set: the body of a JavaScript function of <c>result</c>, an object whose

@@ -8,10 +8,11 @@
 |---|---|---|---|
 | a rowset, and an `OUTPUT` parameter | the Node `Buffer` the mssql driver hands over for `binary`, `varbinary`, `rowversion` and `image` alike | `z.instanceof(Buffer)`, its length checked with `.check(z.length(n))` when fixed and `.check(z.maxLength(n))` otherwise | the base64 text `FOR JSON` would write, as every rowset value is described (decision 0051) |
 | `FOR JSON` and the JSON constructors | base64 text, the standard alphabet, padded with `=`, on one line, `""` for no bytes, `null` for NULL | `z.base64()`, of exactly or at most four characters for every three bytes or part of three (`.length(44)` for `binary(32)`, `.max(10668)` for `varbinary(8000)`) | `"type": "string"`, `"contentEncoding": "base64"`, the pattern of padded base64, and `minLength` and `maxLength` in characters |
-| a parameter, and a table-valued parameter's column | a `Buffer`, sent with the driver's `Binary(n)` when the type is fixed, `VarBinary(n)` otherwise and `VarBinary(MAX)` without a length | `z.instanceof(Buffer).check(z.maxLength(n))`: a fixed length is a maximum too, since a shorter value is padded | as a result's, a maximum only |
+| a parameter, and a table-valued parameter's column | a `Buffer`, sent with the driver's `VarBinary(n)`, which the server pads to a fixed length, and `VarBinary(MAX)` without a length | `z.instanceof(Buffer).check(z.maxLength(n))`: a fixed length is a maximum too, since a shorter value is padded | as a result's, a maximum only |
 
 A parameter longer than its type is refused before anything is sent, as a string is (decision 0054): sent as `VarBinary(n)` the
-server would fail the call with error 8016, and sent as `Binary(n)` the driver would cut it short without an error (both observed).
+server would fail the call with error 8016 (observed). The driver's `sql.Binary(n)` would pad and cut a value itself, without an
+error, but its type declarations (`@types/mssql` 12.3.0) give `sql.Binary` no length, so the functions couldn't be compiled with it.
 
 **Context.** The driver hands over every binary type as a `Buffer`, and refuses a plain `Uint8Array` as a parameter ("Invalid
 buffer"), though a `Buffer` is one. `FOR JSON` writes a binary value as base64 text of the standard alphabet with padding and no
@@ -34,4 +35,8 @@ result of the same column are different values in JavaScript, as a date's are.
 nothing more. A `Buffer`'s length and a base64 text's are the same fact in two forms, so both are checked.
 
 **In the code:** `Facets.Bytes` and `ParameterLowering` (Zod), `Scalars` and `SentScalars` (JSON Schema), `DriverTypes` (the
-functions); `ZodEmitterTests`, `ZodParametersTests`, `JsonSchemaEmitterTests`, `MssqlEmitterTests`.
+functions); `ZodEmitterTests`, `ZodParametersTests`, `JsonSchemaEmitterTests`, `MssqlEmitterTests`; observed in
+`The_driver_hands_over_every_binary_type_as_a_buffer_and_sends_one_of_its_declared_length` and
+`For_json_writes_a_binary_value_as_padded_base64_on_one_line`, and every run of the fixture `tests/fixtures/gallery` is parsed with
+the generated schemas (`ZodAcceptanceTests`, `JsonSchemaAcceptanceTests`) and called through the generated functions
+(`GeneratedFunctionTests`).

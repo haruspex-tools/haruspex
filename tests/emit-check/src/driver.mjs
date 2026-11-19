@@ -10,7 +10,8 @@
 //
 // A parameter's value is sent as it is, for the driver to choose its type, or given as { "type", "args", "value" } to send it
 // with one of the driver's types, sql[type](...args) with "MAX" for sql.MAX, as a generated function does; a value JSON can't hold is written
-// { "js": "NaN" }, and a bigint { "bigInt": "<digits>" }. A table-valued parameter is given as { "table": { "schema", "name",
+// { "js": "NaN" }, a bigint { "bigInt": "<digits>" }, a Buffer { "bytes": "<base64>" }, and a plain Uint8Array, which a
+// Buffer is, { "uint8Array": "<base64>" }. A table-valued parameter is given as { "table": { "schema", "name",
 // "columns": [{ "name", "type", "args" }], "rows": [[…], …] } }, sent as an sql.Table of those columns, in that order. A call with a "timeZone" runs with the process's TZ set to it, which
 // is where the driver turns a Date into the server's date and time. A call with "accepts": "<schema>" also parses its
 // parameters' values, as an object by name, with that schema of the module, and writes whether it accepted them.
@@ -37,7 +38,15 @@ const schemas = module ? await import(pathToFileURL(path.resolve(folder, module)
 
 // The values JSON can't hold, by name.
 const special = (value) =>
-  value !== null && typeof value === 'object' ? ('js' in value ? { NaN, Infinity }[value.js] : BigInt(value.bigInt)) : value
+  value !== null && typeof value === 'object'
+    ? 'js' in value
+      ? { NaN, Infinity }[value.js]
+      : 'bytes' in value
+        ? Buffer.from(value.bytes, 'base64')
+        : 'uint8Array' in value
+          ? new Uint8Array(Buffer.from(value.uint8Array, 'base64'))
+          : BigInt(value.bigInt)
+    : value
 const plain = (value) => (value !== null && typeof value === 'object' && 'type' in value ? value.value : value)
 const zone = process.env.TZ
 const driverType = (typed) => (typed.args ? sql[typed.type](...typed.args.map((a) => (a === 'MAX' ? sql.MAX : a))) : sql[typed.type])

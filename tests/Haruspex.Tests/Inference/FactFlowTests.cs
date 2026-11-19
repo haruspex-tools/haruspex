@@ -75,7 +75,7 @@ public class FactFlowTests
 
     [Fact]
     public void An_expression_not_modelled_drops_the_facts_with_the_type() =>
-        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT hashbytes('SHA2_256', t.status) AS v FROM dbo.t AS t;"), "PRow", "v").Type);
+        Assert.IsType<IrUnknownType>(Field(Procedure("SELECT checksum(t.status) AS v FROM dbo.t AS t;"), "PRow", "v").Type);
 
     [Theory]
     [InlineData("SELECT t.score + 1 AS v FROM dbo.t AS t;", "-2147483648")]

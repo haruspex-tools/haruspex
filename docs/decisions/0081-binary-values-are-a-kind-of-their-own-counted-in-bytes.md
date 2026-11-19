@@ -14,7 +14,8 @@ wire is each target's, as for every kind: the Node `Buffer` the mssql driver han
 [decision 0082](0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md) gives.
 
 `image`, deprecated since SQL Server 2005 and still found in older schemas, is a binary value too, of no length: the driver hands
-it over as a `Buffer`, and `FOR JSON` writes it as base64, as it does `varbinary(max)` (observed).
+it over as a `Buffer`, and `FOR JSON` writes it as base64, as it does `varbinary(max)` (observed:
+`An_image_value_arrives_as_varbinary_max_s_does`).
 
 **Context.** Before this, the binary types had no kind, so every `binary`, `varbinary` and `rowversion` column, parameter and
 expression was an unknown (`unsupported-sql-type`), and so was a binary literal, though the front end already read its type. A team storing a checksum, a thumbnail or a row's version
@@ -39,5 +40,7 @@ and no target writes one as a JSON string of its characters.
 it exactly, and keeps a binary value's length out of the rules for text, which are about characters. Labelling by content keeps
 every document without one as it was.
 
-**In the code:** `IrScalarKind.Bytes`, `IrDocument.Version`, `IrDocumentScalars`, `IrJsonReader`, `IrJsonSchema`;
-`IrJsonReaderTests.Bytes.cs`, `IrVersionTests`, `IrJsonSchemaTests`.
+**In the code:** `IrScalarKind.Bytes`, `IrDocument.Version`, `IrDocumentScalars`, `IrJsonReader`, `IrJsonSchema`; in the SQL
+Server front end, `SqlTypes`, `SchemaRules.TypeFacts`, `SchemaRules.IsNeverNull`, `TypeChain`, `Conversions.Table` and
+`Typer.HashBytes`, whose rules the inference README's "Binary values" gives; `IrJsonReaderTests.Bytes.cs`, `IrVersionTests`,
+`IrJsonSchemaTests`, `BinaryTests`, `BinaryObservationTests` and the fixture `tests/fixtures/gallery`.

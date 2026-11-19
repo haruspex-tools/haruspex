@@ -15,13 +15,13 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 128 |
-| Not in it, and unknown where they are called | 210 |
+| In the catalogue | 131 |
+| Not in it, and unknown where they are called | 207 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 162 |
+| Modelled, wholly or in part | 163 |
 | Read, changing no result | 29 |
-| Unknown | 314 |
+| Unknown | 313 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -151,7 +151,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Cryptographic functions
 
-0 of 27 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/cryptographic-functions-transact-sql?view=sql-server-ver17).
+1 of 27 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/cryptographic-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -176,7 +176,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `VERIFYSIGNEDBYCERT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `IS_OBJECTSIGNED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `DECRYPTBYKEYAUTOCERT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `HASHBYTES` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `HASHBYTES` | `scalar.hashbytes` | varbinary(8000), exactly as long as a literal algorithm's digest | `out-of-range` | [Hashbytes_is_varbinary_8000_of_its_algorithms_length_and_null_for_an_algorithm_it_does_not_run](../tests/Haruspex.DifferentialTests/BinaryObservationTests.cs) |
 | `CERTENCODED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CERTPRIVATEKEY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CERTPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -501,7 +501,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### System functions
 
-3 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
+5 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -521,7 +521,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `HOST_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `CHECKSUM` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `HOST_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `COMPRESS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `COMPRESS` | `scalar.compress` | varbinary(max) |  | [Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error](../tests/Haruspex.DifferentialTests/BinaryObservationTests.cs) |
 | `ISNULL` | `scalar.isnull` | the first argument's type | `arithmetic-overflow`, `precision-loss` | [Isnull_converts_its_second_argument_to_the_firsts_type_cutting_a_string_short](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Coalesce_takes_the_type_of_highest_precedence_and_isnull_the_first_arguments](../tests/Haruspex.DifferentialTests/ExpressionObservationTests.cs), [Each_function_that_converts_a_decimal_or_averages_one_is_null_when_it_rounds_under_both_others_off](../tests/Haruspex.DifferentialTests/PrecisionLossObservationTests.cs) |
 | `CONNECTIONPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `ISNUMERIC` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -531,7 +531,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `NEWID` | `scalar.newid` | uniqueidentifier, never null |  | [Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.MathsAndLogic.cs) |
 | `CURRENT_TRANSACTION_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `NEWSEQUENTIALID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `DECOMPRESS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `DECOMPRESS` | `scalar.decompress` | varbinary(max) |  | [Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error](../tests/Haruspex.DifferentialTests/BinaryObservationTests.cs) |
 | `ROWCOUNT_BIG` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `ERROR_LINE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SESSION_CONTEXT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -853,7 +853,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 | `$1` | `MoneyLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | money. |
 | `'text' and N'text'` | `StringLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | varchar or nvarchar as long as the text. |
 | `NULL` | `NullLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#literals) | An int that is NULL, until something converts it. |
-| `0x01` | `BinaryLiteral` | unknown, [`unsupported-sql-type`](diagnostics/HAR2007.md) | Read as varbinary of its bytes, a type not modelled yet. |
+| `0x01` | `BinaryLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#binary-values) | Varbinary of its bytes, at least one, never null; past 8000 bytes varbinary(max). |
 | `DEFAULT` | `DefaultLiteral` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column's default, in an INSERT or UPDATE. |
 | `MAX in a type's length` | `MaxLiteral` | part of `CastCall` |  |
 | `a name where a value goes` | `IdentifierLiteral` | part of `FunctionCall` |  |
@@ -906,7 +906,7 @@ These 250 statements aren't modelled: each ends what haruspex can list, so the p
 
 | Syntax | Node | Claim | What it gives |
 |---|---|---|---|
-| `+` | `BinaryExpressionType.Add` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The type of highest precedence, a decimal widened; a string concatenated as long as both; NULL when it overflows under the caller's options. |
+| `+` | `BinaryExpressionType.Add` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | The type of highest precedence, a decimal widened; a string or a binary value concatenated as long as both; NULL when it overflows under the caller's options. |
 | `-` | `BinaryExpressionType.Subtract` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +. |
 | `*` | `BinaryExpressionType.Multiply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +, a decimal of the digits the product needs. |
 | `/` | `BinaryExpressionType.Divide` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#decimal-arithmetic) | As +; NULL when dividing by zero under the caller's options. |

@@ -26,7 +26,7 @@ public class DiagnosticMessagesTests
             status varchar(10) NOT NULL CHECK (status IN ('open', 'lent')),
             copies int NOT NULL CHECK (copies IN (1, 2)),
             extra nvarchar(max) NULL,
-            cover varbinary(max) NULL);
+            cover sql_variant NULL);
         """;
 
     private const string GetBook = "CREATE PROCEDURE lib.get_book AS SELECT b.id, b.title, b.note, b.status, b.copies, b.extra FROM lib.book AS b;";

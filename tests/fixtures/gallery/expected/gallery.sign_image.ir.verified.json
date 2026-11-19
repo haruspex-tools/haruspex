@@ -1,0 +1,81 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/sign_image.sql": "c0b2b54fdde259d500442e407c904894d35f52d01866b4c4bb5e7515ef009135"
+    }
+  },
+  "objects": [
+    {
+      "id": "gallery.sign_image",
+      "name": "SignImage",
+      "kind": "procedure",
+      "at": "procedures/sign_image.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@image_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@expected",
+          "type": {
+            "kind": "bytes",
+            "sql": "timestamp",
+            "length": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "timestamp"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@signature",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(32)",
+            "length": {
+              "value": 32,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(32)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": true
+        }
+      ],
+      "results": []
+    }
+  ],
+  "types": {},
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

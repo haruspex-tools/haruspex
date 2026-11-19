@@ -24,7 +24,24 @@ internal static class TypeChain
     /// regroups or reorders a chain's types before folding them.
     /// </para>
     /// </summary>
-    public static ScalarType? Of(IReadOnlyList<Operand> types) => Clash(types) is null ? Fold(types) : null;
+    /// <remarks>
+    /// A binary value combines with binary values alone, and a rowversion with values of its type alone: beside a value of another kind the
+    /// server takes that kind's type by rules not observed for every pair (a varbinary beside an nvarchar(3) is nvarchar of its
+    /// bytes), so such a chain is not modelled, and neither is one holding an image.
+    /// </remarks>
+    public static ScalarType? Of(IReadOnlyList<Operand> types) => Clash(types) is null && Modelled(types) ? Fold(types) : null;
+
+    /// <summary>
+    /// Whether the chain's kinds are ones the rule is observed for: any but binary, rowversion and image; binary values alone; or
+    /// values of rowversion alone.
+    /// </summary>
+    private static bool Modelled(IReadOnlyList<Operand> operands)
+    {
+        static bool Bytes(ScalarType t) => t.Family is TypeFamily.Binary or TypeFamily.RowVersion || t.Type == BuiltInType.Image;
+        if (!operands.Any(o => Bytes(o.Type)))
+            return true;
+        return operands.All(o => o.Type.IsBinary) || operands.All(o => o.Type.Family == TypeFamily.RowVersion);
+    }
 
     private static ScalarType? Fold(IReadOnlyList<Operand> operands)
     {
@@ -49,7 +66,9 @@ internal static class TypeChain
     /// <item>an integer and money or smallmoney that money type, its digits only (15 or 6): the integer's are gone;</item>
     /// <item>a decimal and an exact number a decimal holding both's integer digits and the larger scale, past 38 digits the
     /// scale cut to 38 less those digits with no floor, named as the first decimal; bit beside it adds nothing;</item>
-    /// <item>two strings national if either is, varying if either is, the longer (cut at 4000 for national), max if either is.</item>
+    /// <item>two strings national if either is, varying if either is, the longer (cut at 4000 for national), max if either is;</item>
+    /// <item>two binary values the same way: varbinary if either is, the longer, max if either is (observed:
+    /// Binary_values_combine_as_strings_do_varying_if_either_is_as_long_as_the_longer_max_if_either_is).</item>
     /// </list>
     /// A pair SQL Server would refuse still gives the higher one: a chain is refused only when a value cannot become the
     /// final type (<see cref="Clash"/>; observed: A_chain_is_refused_only_when_a_value_cannot_become_its_type).
@@ -77,6 +96,9 @@ internal static class TypeChain
             var digits = Math.Max(x.AsDecimal().Precision, y.AsDecimal().Precision);
             return new Operand(wider, digits == wider.IntegerDigits ? null : digits);
         }
+
+        if (a.IsBinary && b.IsBinary)
+            return Operand.OfType(ScalarType.ByteString(a.IsVarying || b.IsVarying, a.IsMax || b.IsMax ? -1 : Math.Max(a.Length, b.Length)));
 
         if (a.IsString && b.IsString)
         {

@@ -24,6 +24,8 @@ internal static class Conversions
             return true;
         if (from.IsString && to.IsString)
             return from.IsNational == to.IsNational && to.IsVarying && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
+        if (from.IsBinary && to.IsBinary)
+            return to.IsVarying && (to.IsMax || (!from.IsMax && to.Length >= from.Length));
         if (!(from.IsInteger || from.IsDecimal || from.IsMoney) || !Converts(operand, to))
             return false;
         if (to.IsInteger || to.IsMoney)
@@ -41,6 +43,8 @@ internal static class Conversions
     private static readonly BuiltInType[] Exact = [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.Money, BuiltInType.SmallMoney];
 
     private static readonly BuiltInType[] Strings = [BuiltInType.Char, BuiltInType.VarChar, BuiltInType.NChar, BuiltInType.NVarChar];
+
+    private static readonly BuiltInType[] Binaries = [BuiltInType.Binary, BuiltInType.VarBinary];
 
     private static readonly BuiltInType[] DatesAndTimes =
         [BuiltInType.Date, BuiltInType.Time, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.DateTime2, BuiltInType.DateTimeOffset];
@@ -67,6 +71,10 @@ internal static class Conversions
     [
         // A string, a date or a time is cut short to fit, as strings are; a number or a GUID must fit whole.
         new([.. Strings], [.. Strings, .. DatesAndTimes], ConversionCondition.Always, [AtTheEdges]),
+
+        // A binary value is cut short or padded with zeros, under any options (observed:
+        // Converting_between_binary_types_cuts_or_pads_without_an_error_or_null_under_any_options).
+        new([.. Binaries], [.. Binaries], ConversionCondition.Always, [AtTheEdges]),
         new([.. Strings], [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, [AtTheEdges]),
         new([.. Integers], [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
         new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], [.. Decimals], ConversionCondition.IntegerPartFits, [AtTheEdges]),

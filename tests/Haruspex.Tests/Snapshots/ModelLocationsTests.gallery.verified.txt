@@ -1,0 +1,27 @@
+column gallery.legacy_scan.scan image at tables/legacy_scan.sql:4:5
+column gallery.legacy_scan.scan_id int at tables/legacy_scan.sql:3:5
+column gallery.product_image.checksum binary(32) at tables/product_image.sql:6:5
+column gallery.product_image.image_id int at tables/product_image.sql:4:5
+column gallery.product_image.original varbinary(max) at tables/product_image.sql:8:5
+column gallery.product_image.row_version rowversion at tables/product_image.sql:7:5
+column gallery.product_image.thumbnail varbinary(8000) at tables/product_image.sql:5:5
+key gallery.legacy_scan pk_legacy_scan (scan_id) at tables/legacy_scan.sql:3:26
+key gallery.product_image pk_product_image (image_id) at tables/product_image.sql:4:27
+parameter gallery.add_image @image_id at procedures/add_image.sql:1:36
+parameter gallery.add_image @original at procedures/add_image.sql:1:79
+parameter gallery.add_image @thumbnail at procedures/add_image.sql:1:51
+parameter gallery.get_image @image_id at procedures/get_image.sql:1:36
+parameter gallery.get_image_json @image_id at procedures/get_image_json.sql:1:41
+parameter gallery.sign_image @expected at procedures/sign_image.sql:1:52
+parameter gallery.sign_image @image_id at procedures/sign_image.sql:1:37
+parameter gallery.sign_image @signature at procedures/sign_image.sql:1:81
+procedure gallery.add_image at procedures/add_image.sql:1:1
+procedure gallery.get_image at procedures/get_image.sql:1:1
+procedure gallery.get_image_json at procedures/get_image_json.sql:1:1
+procedure gallery.image_facts at procedures/image_facts.sql:1:1
+procedure gallery.list_scans at procedures/list_scans.sql:1:1
+procedure gallery.list_scans_json at procedures/list_scans_json.sql:1:1
+procedure gallery.list_versions at procedures/list_versions.sql:1:1
+procedure gallery.sign_image at procedures/sign_image.sql:1:1
+table gallery.legacy_scan at tables/legacy_scan.sql:2:1
+table gallery.product_image at tables/product_image.sql:3:1

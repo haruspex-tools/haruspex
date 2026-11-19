@@ -108,10 +108,12 @@ The schema checks:
   fields, so the string is its `toISOString()` without the `Z`, cut to what the type holds (`.slice(0, 10)` for a `date`,
   `.slice(0, 19)` to the second); a `datetimeoffset` takes `toISOString()` as it is. With `useUTC` off, that recipe sends a
   shifted time ([decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md));
-- **`bigint`**, as a safe integer, a JavaScript `bigint`, or the string of digits a rowset hands over.
+- **`bigint`**, as a safe integer, a JavaScript `bigint`, or the string of digits a rowset hands over;
+- **binary values**, as a Node `Buffer` of at most the type's bytes, which is what a rowset hands over; the driver refuses a plain
+  `Uint8Array` ([decision 0082](decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
 
 Each value is then sent with the driver's type for the declared one: `nvarchar(40)` as `sql.NVarChar(40)`, a decimal with its
-precision and scale. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be
+precision and scale, `binary(32)` as `sql.VarBinary(32)`, which the server pads to its length. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be
 left out, and it is then not sent at all, so that its default applies.
 
 ## Table-valued parameters

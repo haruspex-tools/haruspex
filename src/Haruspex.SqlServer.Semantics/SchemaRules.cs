@@ -18,7 +18,8 @@ public static class SchemaRules
     /// ANSI_NULL_DFLT_OFF it would not be, so nullable is the claim that holds either way. A computed column is
     /// read by the same rules today; its expression is not yet used to prove it non-null.</para>
     /// <para>An alias type's NOT NULL applies whatever the ANSI settings, and an explicit NULL on the column
-    /// overrides it (observed on SQL Server 2025; kept as a differential test). A CHECK constraint never proves a
+    /// overrides it (observed on SQL Server 2025; kept as a differential test). So does a <c>rowversion</c>'s, which the server
+    /// fills in every row (observed: A_rowversion_column_declared_without_null_is_not_null_whatever_the_ansi_settings). A CHECK constraint never proves a
     /// column non-null, because a CHECK passes when its condition is UNKNOWN, as it is for null.</para>
     /// </remarks>
     public static bool IsNeverNull(DatabaseModel model, ITable table, Column column)
@@ -30,7 +31,8 @@ public static class SchemaRules
             || table.IsInPrimaryKey(column.Name)
             || column.IsIdentity
             || (column.Nullability == DeclaredNullability.NotDeclared
-                && ResolveType(model, column.Type)?.AliasNullability == DeclaredNullability.NotNull);
+                && ResolveType(model, column.Type) is { } type
+                && (type.AliasNullability == DeclaredNullability.NotNull || type.Scalar?.Family == TypeFamily.RowVersion));
     }
 
     /// <summary>
@@ -89,7 +91,10 @@ public static class SchemaRules
             ? model.FindUserType(new ObjectName(schema, type.Name))
             : SchemaNames.Resolve(model.UserTypes, type.Name) is OneObject { Named: UserType one } ? one : null;
 
-    /// <summary>What a type alone guarantees about its values: a string's length, an exact number's digits and range.</summary>
+    /// <summary>The bytes of a <c>rowversion</c>, which SQL Server stores as <c>binary(8)</c>.</summary>
+    public static int RowVersionBytes => 8;
+
+    /// <summary>What a type alone guarantees about its values: a string's or binary value's length, an exact number's digits and range.</summary>
     /// <param name="type">The resolved type.</param>
     /// <param name="collation">The collation a column declares, for the encoding of <c>char</c> and <c>varchar</c>; null when none is declared.</param>
     public static ColumnFacts TypeFacts(ResolvedType type, string? collation)
@@ -98,9 +103,12 @@ public static class SchemaRules
         var from = new TypeSource(type.SourceName);
 
         // Floating point has no range worth claiming (any finite double); bit is a boolean in the IR; other kinds have no
-        // facets here, and a string of max no length to claim.
+        // facets here, and a string or binary value of max no length to claim. A binary value's length counts bytes, which
+        // encode nothing, and a rowversion is 8 of them, binary(8) as SQL Server documents it.
         return type.Scalar switch
         {
+            { Family: TypeFamily.Binary, IsMax: false } bytes => new ColumnFacts(type, Length: new LengthFact(bytes.Length, IsFixed: !bytes.IsVarying, TextUnit.Bytes, TextEncoding.Unknown, from)),
+            { Family: TypeFamily.RowVersion } => new ColumnFacts(type, Length: new LengthFact(RowVersionBytes, IsFixed: true, TextUnit.Bytes, TextEncoding.Unknown, from)),
             { IsInteger: true, Type: { Least: { } least, Greatest: { } greatest } } =>
                 new ColumnFacts(type, Min: new BoundFact(least, true, from), Max: new BoundFact(greatest, true, from)),
             { IsDecimal: true } d => Exact(type, from, d.Precision, d.Scale, ExactDecimal.Largest(d.Precision, d.Scale)),

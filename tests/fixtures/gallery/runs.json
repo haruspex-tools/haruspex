@@ -1,0 +1,30 @@
+// The runs of the gallery fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means. A binary argument is written as SQL writes one, 0x and two hex digits a byte.
+{
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "writes": "SET NOCOUNT ON;",
+    "no scans": "DELETE FROM gallery.legacy_scan;"
+  },
+
+  "runs": [
+    { "name": "get_image, the longest thumbnail", "procedure": "gallery.get_image", "parameters": { "@image_id": 1 } },
+    { "name": "get_image, no thumbnail", "procedure": "gallery.get_image", "parameters": { "@image_id": 2 } },
+    { "name": "get_image, no bytes", "procedure": "gallery.get_image", "parameters": { "@image_id": 3 } },
+    { "name": "get_image, no such image", "procedure": "gallery.get_image", "parameters": { "@image_id": 99 } },
+    { "name": "get_image_json, the longest thumbnail", "procedure": "gallery.get_image_json", "parameters": { "@image_id": 1 } },
+    { "name": "get_image_json, no thumbnail", "procedure": "gallery.get_image_json", "parameters": { "@image_id": 2 } },
+    { "name": "get_image_json, no bytes", "procedure": "gallery.get_image_json", "parameters": { "@image_id": 3 } },
+    { "name": "get_image_json, no such image", "procedure": "gallery.get_image_json", "parameters": { "@image_id": 99 } },
+    { "name": "add_image, a thumbnail", "procedure": "gallery.add_image", "setup": "writes", "parameters": { "@image_id": 10, "@thumbnail": "0x0102", "@original": "0xFFFE" } },
+    { "name": "add_image, no thumbnail", "procedure": "gallery.add_image", "setup": "writes", "parameters": { "@image_id": 11, "@thumbnail": null } },
+    { "name": "sign_image, any version", "procedure": "gallery.sign_image", "parameters": { "@image_id": 1, "@signature": null } },
+    { "name": "sign_image, another version", "procedure": "gallery.sign_image", "parameters": { "@image_id": 1, "@expected": "0x0000000000000001", "@signature": null } },
+    { "name": "image_facts", "procedure": "gallery.image_facts" },
+    { "name": "list_versions", "procedure": "gallery.list_versions" },
+    { "name": "list_scans", "procedure": "gallery.list_scans" },
+    { "name": "list_scans_json", "procedure": "gallery.list_scans_json" },
+    { "name": "list_scans_json, no scans", "procedure": "gallery.list_scans_json", "setup": "no scans" }
+  ]
+}

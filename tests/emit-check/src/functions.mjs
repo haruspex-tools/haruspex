@@ -12,7 +12,8 @@
 // Everything runs in one transaction, which is rolled back at the end, and each call is given the transaction as its
 // connection, or, with "untouchable", an object whose request() throws, to prove nothing touched it. A call with a "timeZone" runs
 // with the process's TZ set to it, which is where the driver would turn a date it is given as one into the server's. A parameter's value
-// written { "bigInt": "<digits>" }, at any depth, is passed as a JavaScript bigint. The connection is given in HARUSPEX_DRIVER_CONFIG.
+// written { "bigInt": "<digits>" }, at any depth, is passed as a JavaScript bigint, and one written { "bytes": "<base64>" } as a
+// Buffer. The connection is given in HARUSPEX_DRIVER_CONFIG.
 //
 // It writes observed.json beside: { "calls": [{ "name", "value" or "error" }] }, an error as { "name", "kind", "message",
 // "procedure", "part", "issues", "number", "procName", "isRequestError", "preceding" }: "preceding" the numbers of the server's
@@ -37,11 +38,15 @@ const argument = (value) =>
     : value !== null && typeof value === 'object'
       ? 'bigInt' in value
         ? BigInt(value.bigInt)
-        : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, argument(v)]))
+        : 'bytes' in value
+          ? Buffer.from(value.bytes, 'base64')
+          : Object.fromEntries(Object.entries(value).map(([k, v]) => [k, argument(v)]))
       : value
 
-// A value as JSON can hold it: a Date as its ISO string, a bigint as its digits.
-const plain = (value) => JSON.parse(JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v)))
+// A value as JSON can hold it: a Date as its ISO string, a bigint as its digits, a Buffer as { "bytes": "<base64>" }.
+const plain = (value) =>
+  JSON.parse(JSON.stringify(value, (_, v) =>
+    typeof v === 'bigint' ? v.toString() : v !== null && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data) ? { bytes: Buffer.from(v.data).toString('base64') } : v))
 
 const pool = await new sql.ConnectionPool(JSON.parse(process.env.HARUSPEX_DRIVER_CONFIG)).connect()
 const transaction = new sql.Transaction(pool)

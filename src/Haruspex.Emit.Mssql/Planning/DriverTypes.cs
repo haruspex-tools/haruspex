@@ -47,14 +47,16 @@ internal static class DriverTypes
     };
 
     /// <summary>
-    /// A binary value of its declared length: <c>Binary(n)</c> for a fixed one, which pads a shorter <c>Buffer</c> as the server
-    /// would, <c>VarBinary(n)</c> otherwise, and <c>VarBinary(MAX)</c> with none. The parameters' schema has refused a longer one,
-    /// which <c>VarBinary(n)</c> would fail with error 8016 and <c>Binary(n)</c> cut short (observed in <c>MssqlDriverObservationTests</c>).
+    /// A binary value of its declared length, <c>VarBinary(n)</c>, or <c>VarBinary(MAX)</c> with none. A fixed length is sent as
+    /// <c>VarBinary(n)</c> too, which the server pads to it as it converts any binary value: the driver's <c>Binary</c> takes a length
+    /// at run time, but its type declarations (<c>@types/mssql</c>) give it none, so <c>sql.Binary(32)</c> doesn't compile. The
+    /// parameters' schema has refused a longer value, which <c>VarBinary(n)</c> would fail with error 8016 (observed in
+    /// <c>MssqlDriverObservationTests</c>).
     /// </summary>
     private static DriverType Bytes(IrLength? length) => length switch
     {
         null => new DriverType("VarBinary", ["MAX"]),
-        _ => new DriverType(length.IsFixed ? "Binary" : "VarBinary", [Count(length.Value)]),
+        _ => new DriverType("VarBinary", [Count(length.Value)]),
     };
 
     private static DriverType Plain(string name) => new(name, []);

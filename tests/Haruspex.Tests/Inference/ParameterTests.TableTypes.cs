@@ -80,11 +80,11 @@ public partial class ParameterTests
     {
         var document = WithTypes(
             "CREATE PROCEDURE shop.p @blobs shop.blob_list READONLY AS SELECT 1 AS one;",
-            "CREATE TYPE shop.blob_list AS TABLE (id int NOT NULL, data varbinary(4) NULL);");
+            "CREATE TYPE shop.blob_list AS TABLE (id int NOT NULL, data sql_variant NULL);");
 
         Assert.IsType<IrUnknownType>(Assert.Single(document.Objects[0].Parameters).Type);
         Assert.Equal(
-            "The table type shop.blob_list has its column data, of the type varbinary(4), which is not modelled yet, so a row of it isn't typed.",
+            "The table type shop.blob_list has its column data, of the type sql_variant, which is not modelled yet, so a row of it isn't typed.",
             Assert.Single(document.Unknowns, u => u.Path == "parameters.@blobs").Detail);
     }
 

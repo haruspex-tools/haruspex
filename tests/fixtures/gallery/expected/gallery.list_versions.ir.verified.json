@@ -1,0 +1,81 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/list_versions.sql": "7ee64e474c836320459b71e71afa13135469cfe3017919eb26317b81f8b29a69",
+      "tables/product_image.sql": "4235c15ac0434f92a7daa361d817c3851b5cb3c6c2a677a1496850057b951d68"
+    }
+  },
+  "objects": [
+    {
+      "id": "gallery.list_versions",
+      "name": "ListVersions",
+      "kind": "procedure",
+      "at": "procedures/list_versions.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListVersionsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListVersionsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gallery.list_versions",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "bytes",
+          "type": {
+            "kind": "bytes",
+            "sql": "varbinary(8000)",
+            "maxLength": {
+              "value": 8000,
+              "unit": "bytes",
+              "from": {
+                "type": "varbinary(8000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gallery.product_image.thumbnail"
+            }
+          ],
+          "from": [
+            {
+              "column": "gallery.product_image.checksum",
+              "sql": "binary(32)",
+              "at": "tables/product_image.sql:6:5"
+            },
+            {
+              "column": "gallery.product_image.thumbnail",
+              "sql": "varbinary(8000)",
+              "at": "tables/product_image.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

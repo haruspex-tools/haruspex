@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.27",
   "source": {
     "dialect": "tsql",
     "files": {
@@ -172,8 +172,8 @@
         {
           "name": "picture",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-sql-type"
+            "kind": "bytes",
+            "sql": "varbinary(max)"
           },
           "presence": "always",
           "nullable": true,
@@ -186,6 +186,7 @@
           "from": [
             {
               "column": "sales.product.picture",
+              "sql": "varbinary(max)",
               "at": "tables/product.sql:8:5"
             }
           ]
@@ -222,13 +223,6 @@
       "reason": "json-shape-unknown",
       "detail": "json_query(o.notes) reads JSON that is not built here, so its shape is unknown.",
       "at": "procedures/order_report.sql:8:8"
-    },
-    {
-      "object": "sales.order_report",
-      "path": "results[0][].picture",
-      "reason": "unsupported-sql-type",
-      "detail": "The type varbinary(max) is not modelled yet.",
-      "at": "tables/product.sql:8:5"
     },
     {
       "object": "sales.order_report",

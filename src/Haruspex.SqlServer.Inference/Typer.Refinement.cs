@@ -368,9 +368,12 @@ internal sealed partial class Typer
         if (argument.IsLiveJson || argument.Shape is not ScalarShape)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{name} of a value that is not a scalar is not modelled: {Text(call)}", at));
 
-        // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
+        // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window), and
+        // so is an image (Max_and_min_keep_a_binary_or_rowversion_type_and_refuse_an_image).
         if (TypeOf(argument) is { IsBit: true })
             return NotModelled(call, $"SQL Server refuses {name} of bit.");
+        if (TypeOf(argument) is { } image && image.Type == BuiltInType.Image)
+            return NotModelled(call, $"SQL Server refuses {name} of image.");
         return ProvedAggregate(call, scope)
             ? argument.WithNullableBecause([])
             : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call, scope)]);

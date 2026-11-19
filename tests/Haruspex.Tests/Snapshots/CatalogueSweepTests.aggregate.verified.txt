@@ -280,24 +280,24 @@ VAR(u) -> unknown unsupported-expression: VAR(u): VAR of a value of this type is
 VARP(u) -> unknown unsupported-expression: VARP(u): VARP of a value of this type is not modelled.
 COUNT(bin4) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(bin4) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-SUM(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-AVG(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MAX(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-STDEV(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-STDEVP(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-VAR(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-VARP(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
+SUM(bin4) -> unknown unsupported-expression: SUM(bin4): SUM of a value of this type is not modelled yet.
+AVG(bin4) -> unknown unsupported-expression: AVG(bin4): AVG of a value of this type is not modelled.
+MIN(bin4) -> binary(4) bytes null:empty-aggregate {length=4}
+MAX(bin4) -> binary(4) bytes null:empty-aggregate {length=4}
+STDEV(bin4) -> unknown unsupported-expression: STDEV(bin4): STDEV of a value of this type is not modelled.
+STDEVP(bin4) -> unknown unsupported-expression: STDEVP(bin4): STDEVP of a value of this type is not modelled.
+VAR(bin4) -> unknown unsupported-expression: VAR(bin4): VAR of a value of this type is not modelled.
+VARP(bin4) -> unknown unsupported-expression: VARP(bin4): VARP of a value of this type is not modelled.
 COUNT(vb10) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(vb10) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-SUM(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-AVG(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MAX(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-STDEV(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-STDEVP(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-VAR(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-VARP(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+SUM(vb10) -> unknown unsupported-expression: SUM(vb10): SUM of a value of this type is not modelled yet.
+AVG(vb10) -> unknown unsupported-expression: AVG(vb10): AVG of a value of this type is not modelled.
+MIN(vb10) -> varbinary(10) bytes null:empty-aggregate {length<=10}
+MAX(vb10) -> varbinary(10) bytes null:empty-aggregate {length<=10}
+STDEV(vb10) -> unknown unsupported-expression: STDEV(vb10): STDEV of a value of this type is not modelled.
+STDEVP(vb10) -> unknown unsupported-expression: STDEVP(vb10): STDEVP of a value of this type is not modelled.
+VAR(vb10) -> unknown unsupported-expression: VAR(vb10): VAR of a value of this type is not modelled.
+VARP(vb10) -> unknown unsupported-expression: VARP(vb10): VARP of a value of this type is not modelled.
 COUNT(x) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
@@ -384,10 +384,10 @@ COUNT(*) + MIN(dto3) -> unknown unsupported-expression: COUNT(*) + MIN(dto3): ar
 MIN(dto3) + COUNT(*) -> unknown unsupported-expression: MIN(dto3) + COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) + MIN(u) -> unknown unsupported-expression: COUNT(*) + MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) + COUNT(*) -> unknown unsupported-expression: MIN(u) + COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) + MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) + COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT(*) + MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) + COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) + MIN(bin4) -> unknown unsupported-expression: COUNT(*) + MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) + COUNT(*) -> unknown unsupported-expression: MIN(bin4) + COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) + MIN(vb10) -> unknown unsupported-expression: COUNT(*) + MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) + COUNT(*) -> unknown unsupported-expression: MIN(vb10) + COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) + COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -464,10 +464,10 @@ COUNT(*) - MIN(dto3) -> unknown unsupported-expression: COUNT(*) - MIN(dto3): ar
 MIN(dto3) - COUNT(*) -> unknown unsupported-expression: MIN(dto3) - COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) - MIN(u) -> unknown unsupported-expression: COUNT(*) - MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) - COUNT(*) -> unknown unsupported-expression: MIN(u) - COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) - MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) - COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT(*) - MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) - COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) - MIN(bin4) -> unknown unsupported-expression: COUNT(*) - MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) - COUNT(*) -> unknown unsupported-expression: MIN(bin4) - COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) - MIN(vb10) -> unknown unsupported-expression: COUNT(*) - MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) - COUNT(*) -> unknown unsupported-expression: MIN(vb10) - COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) - COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -544,10 +544,10 @@ COUNT(*) * MIN(dto3) -> unknown unsupported-expression: COUNT(*) * MIN(dto3): ar
 MIN(dto3) * COUNT(*) -> unknown unsupported-expression: MIN(dto3) * COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) * MIN(u) -> unknown unsupported-expression: COUNT(*) * MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) * COUNT(*) -> unknown unsupported-expression: MIN(u) * COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) * MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) * COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT(*) * MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) * COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) * MIN(bin4) -> unknown unsupported-expression: COUNT(*) * MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) * COUNT(*) -> unknown unsupported-expression: MIN(bin4) * COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) * MIN(vb10) -> unknown unsupported-expression: COUNT(*) * MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) * COUNT(*) -> unknown unsupported-expression: MIN(vb10) * COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) * COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -624,10 +624,10 @@ COUNT(*) / MIN(dto3) -> unknown unsupported-expression: COUNT(*) / MIN(dto3): ar
 MIN(dto3) / COUNT(*) -> unknown unsupported-expression: MIN(dto3) / COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) / MIN(u) -> unknown unsupported-expression: COUNT(*) / MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) / COUNT(*) -> unknown unsupported-expression: MIN(u) / COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) / MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) / COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT(*) / MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) / COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) / MIN(bin4) -> unknown unsupported-expression: COUNT(*) / MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) / COUNT(*) -> unknown unsupported-expression: MIN(bin4) / COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) / MIN(vb10) -> unknown unsupported-expression: COUNT(*) / MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) / COUNT(*) -> unknown unsupported-expression: MIN(vb10) / COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) / COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -704,10 +704,10 @@ COUNT(*) % MIN(dto3) -> unknown unsupported-expression: COUNT(*) % MIN(dto3): ar
 MIN(dto3) % COUNT(*) -> unknown unsupported-expression: MIN(dto3) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(u) -> unknown unsupported-expression: COUNT(*) % MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) % COUNT(*) -> unknown unsupported-expression: MIN(u) % COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) % MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) % COUNT(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT(*) % MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) % COUNT(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT(*) % MIN(bin4) -> unknown unsupported-expression: COUNT(*) % MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) % COUNT(*) -> unknown unsupported-expression: MIN(bin4) % COUNT(*): arithmetic on these types is not modelled yet.
+COUNT(*) % MIN(vb10) -> unknown unsupported-expression: COUNT(*) % MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) % COUNT(*) -> unknown unsupported-expression: MIN(vb10) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) % COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -784,10 +784,10 @@ COUNT_BIG(*) + MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(d
 MIN(dto3) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) + MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) + MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT_BIG(*) + MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) + MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) + MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT_BIG(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -864,10 +864,10 @@ COUNT_BIG(*) - MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(d
 MIN(dto3) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) - MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) - MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT_BIG(*) - MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) - MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) - MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT_BIG(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -944,10 +944,10 @@ COUNT_BIG(*) * MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(d
 MIN(dto3) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) * MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) * MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT_BIG(*) * MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) * MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) * MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT_BIG(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1024,10 +1024,10 @@ COUNT_BIG(*) / MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(d
 MIN(dto3) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) / MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) / MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT_BIG(*) / MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) / MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) / MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT_BIG(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1104,10 +1104,10 @@ COUNT_BIG(*) % MIN(dto3) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(d
 MIN(dto3) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(dto3) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(u) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(u): arithmetic on these types is not modelled yet.
 MIN(u) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(u) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) % MIN(bin4) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-MIN(bin4) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type binary(4) is not modelled yet.
-COUNT_BIG(*) % MIN(vb10) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
-MIN(vb10) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type varbinary(10) is not modelled yet.
+COUNT_BIG(*) % MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(bin4): arithmetic on these types is not modelled yet.
+MIN(bin4) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
+COUNT_BIG(*) % MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(vb10): arithmetic on these types is not modelled yet.
+MIN(vb10) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 MIN(x) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
 COUNT_BIG(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
