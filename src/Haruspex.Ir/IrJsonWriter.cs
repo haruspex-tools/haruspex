@@ -114,6 +114,8 @@ public static class IrJsonWriter
     private static void WriteSource(Utf8JsonWriter json, IrSource source)
     {
         json.WriteString("dialect", source.Dialect);
+        if (source.Path is { } read)
+            json.WriteString("path", read);
         WritePackage(json, source);
         if (source.Session.Count > 0)
         {

@@ -2,6 +2,7 @@
   "irVersion": "0.25",
   "source": {
     "dialect": "tsql",
+    "path": "database",
     "files": {
       "procedures/basket_line#.sql": "a050bad73d894f8f72b77871bc25f9dbff43164f746c25c4a94e161325c063be",
       "procedures/get_basket.sql": "565be146f8b55885532aed20ca19285be144862e4477fcd6f787e374b52c06be",

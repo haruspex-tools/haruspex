@@ -174,6 +174,7 @@ public static class IrJsonReader
     {
         var source = new IrSource(json.String("dialect"))
         {
+            Path = json.OptionalString("path"),
             Session = Session(json.OptionalObject("session")),
             Files = Files(json.OptionalObject("files")),
             Package = Package(json),
@@ -195,6 +196,10 @@ public static class IrJsonReader
     /// </summary>
     private static void SaysNothingOfSources(IrDocument document, string version)
     {
+        if (document.Source.Path is not null)
+            throw new IrFormatException("$.source.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.CurrentVersion}.");
+        if (document.Source.Baseline?.Path is not null)
+            throw new IrFormatException("$.source.baseline.path", $"is given in a document of IR {version}: a source's path is IR {IrDocument.CurrentVersion}.");
         if (document.Source.Files.Count > 0)
             throw new IrFormatException("$.source.files", $"is given in a document of IR {version}: a source's files are IR {IrDocument.CurrentVersion}.");
         if (document.Source.Baseline?.Files.Count > 0)

@@ -257,7 +257,10 @@ With a field, it prints the field's derivation: the table columns it is read fro
 its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it) and is the
 file the IR was written from (its hash is the one the IR records), the line is printed under the reference; a package's line
 only when its SHA-256 is the one the IR recorded, since a package keeps no file names and the line is in its module's own text.
-Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. A location is
+Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. So the IR
+records each script's hash, and an edit that changes no type (a comment, a blank line) still changes the IR: `check` passes,
+since it compares claims, and `generate` says "No claim changed since the last run; the IR records the new text of 1 file".
+Run `generate` after such an edit to keep `explain`'s lines. A location is
 never followed outside the folder it is looked in, and a control character in a line or a name is printed as an escape.
 
 ```text
@@ -297,7 +300,7 @@ Run haruspex explain shop.order_summary <field> for a field in full.
 | `--json` | One JSON document for tools, below. |
 
 For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source as the IR
-records it (a package by its name, else the baseline and the source), with its own derivation, and how the two were combined;
+records it (as the config file named it, relative to its folder: `release/Shop.dacpac`, `database`), with its own derivation, and how the two were combined;
 a field both give exactly as it is says so. A baseline given as an IR file older than 0.25, or an IR older than 0.25 itself,
 says nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
 [the reasons](reasons/README.md). Asking about something the IR doesn't have is HAR6038, which lists what it has; no IR to read is

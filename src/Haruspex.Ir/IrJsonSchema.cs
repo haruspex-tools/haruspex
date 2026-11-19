@@ -123,6 +123,7 @@ public static class IrJsonSchema
         ["dialect"],
         [
             ("dialect", Text("The SQL dialect, such as tsql.")),
+            ("path", Text("Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.")),
             ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
             ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
             ("references", Node(

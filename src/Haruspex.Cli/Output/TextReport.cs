@@ -165,9 +165,17 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         {
             yield return $"No claim changed since the last run, but the text of {EnglishList.Of([.. compared.Rewritten])} did: a comment written from a reason, or the output of another version.";
         }
-        else
+        else if (compared.Recorded.Count == 0)
         {
-            yield return "No claim changed since the last run.";
+            yield return compared.IrRewritten
+                ? "No claim changed since the last run, but the IR's record of where they came from did: a location, or the output of another version."
+                : "No claim changed since the last run.";
+        }
+
+        // An edited script changes the IR alone, by its hash, which explain matches the file against before it shows a line of it.
+        if (compared.Claims.Count == 0 && compared.Recorded.Count > 0)
+        {
+            yield return $"{(compared.Rewritten.Count > 0 ? "And the" : "No claim changed since the last run; the")} IR records the new text of {Counted(compared.Recorded.Count, "file")}: {EnglishList.Of([.. compared.Recorded.Select(Visible.Of)])}.";
         }
 
         // An unknown's mark is coloured by what it means, not by + and -: a new unknown is the regression (yellow, a

@@ -99,6 +99,19 @@ public class OutputTests
     }
 
     [Fact]
+    public void A_second_run_after_an_edit_that_changes_no_claim_says_the_ir_records_the_file_s_new_text()
+    {
+        using var folder = Kennel();
+        Printed(folder, null, "generate");
+        folder.File("db/procedures.sql", "-- A comment changes no claim, but the file's hash, which the IR records for explain.\n" + Procedures);
+
+        var printed = Printed(folder, null, "generate");
+
+        Assert.Contains("No claim changed since the last run; the IR records the new text of 1 file: procedures.sql.\n", printed, StringComparison.Ordinal);
+        Assert.DoesNotContain("nothing changed since the last run", printed, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_second_run_that_changes_nothing_says_so_in_one_line()
     {
         using var folder = Kennel();

@@ -63,7 +63,8 @@ public class GenerateBaselineTests
         Assert.Equal("", error);
         Assert.StartsWith("haruspex: 1 procedure, no unknowns. Wrote generated/haruspex.ir.json, generated/haruspex.zod.ts and generated/haruspex.mssql.ts. Its types work against the baseline release/db too.\n", output, StringComparison.Ordinal);
         var document = IrJsonReader.Read(Written(folder, HaruspexCli.IrFileName));
-        Assert.Equal(new IrSource("tsql") { Files = document.Source.Baseline!.Files }, document.Source.Baseline);
+        Assert.Equal(new IrSource("tsql") { Path = "release/db", Files = document.Source.Baseline!.Files }, document.Source.Baseline);
+        Assert.Equal("db", document.Source.Path);
         Assert.Equal(["procedures.sql", "tables.sql"], document.Source.Baseline.Files.Keys.Order(StringComparer.Ordinal));
         Assert.Equal(IrDocument.CurrentVersion, document.Version);
         var zod = Written(folder, HaruspexCli.ZodFileName);

@@ -4,8 +4,9 @@
 
 **Decision.** IR 0.25 records, for each field, the table columns its value is read from (`from`: each column as
 `schema.table.column`, its type, and where it is declared), and, in a document combining two databases, the field as each
-database gave it before they were combined (`sides`), left out where both gave it exactly as combined. Its source records the
-SHA-256 of each script file its locations point into (`files`), as it already recorded a package's, so that a reader can tell
+database gave it before they were combined (`sides`), left out where both gave it exactly as combined. Each source records where it was read from, as the config file names it (`path`, relative to its folder and `/`-separated,
+so the same on every machine), which `explain` labels each side of a combined field with, and the SHA-256 of each script file
+its locations point into (`files`), as it already recorded a package's, so that a reader can tell
 whether the file in front of it is the one a location was written from: `explain` shows a line of SQL only then, and never one
 outside the folder it looks in. With the null reasons the IR already holds, each a rule and where it
 applied, that is the field's derivation: the column it starts from and each rule that acted on it on the way to the result.
@@ -35,9 +36,15 @@ nullable because its column is from one that an outer join made nullable, or say
 who ask for it.
 
 **What it costs.** Each field that reads a column carries one entry per column, its name, type and place: about five lines of
-the file, against twenty or more for a field's type and facets; and the source carries one line per script file. A combined
-document carries each side's presence and reasons again only for a field the two databases give differently. The IR is the
-file the application's repository keeps, so the lines are the price of a derivation it can show.
+the file, against twenty or more for a field's type and facets; and the source carries one line per script file, which in a
+project of many small files costs as much again. A combined document carries each side's presence and reasons again only for a
+field the two databases give differently, and the baseline's files. The IR is the file the application's repository keeps, so
+the lines are the price of a derivation it can show.
+
+*Every edit of a referenced script changes the IR.* Its hash does, though no claim changes: `check`, which compares claims,
+still passes ([decision 0050](0050-check-compares-claims-not-files.md)), and `generate` says the IR records the file's new text.
+An IR not written again after such an edit shows that file's references in `explain` without their lines, which is the right
+answer, since its lines may have moved.
 
 *Hashing files, not lines.* A hash of each referenced line would survive an edit elsewhere in the file, but a line can move
 and still match, showing the right text at the wrong place; a file's hash says the location and the text are the ones the

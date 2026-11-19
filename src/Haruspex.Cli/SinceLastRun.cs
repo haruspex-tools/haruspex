@@ -32,6 +32,19 @@ internal abstract class SinceLastRun
     internal sealed class Compared(EquatableArray<IrChange> claims, EquatableArray<NotedUnknown> added, EquatableArray<IrUnknown> resolved, int unchanged, EquatableArray<string> rewritten)
         : SinceLastRun
     {
+        /// <summary>
+        /// The script files whose text the IR now records anew (<see cref="IrSource.Files"/>): edited, or newly or no longer pointed
+        /// into, by path. The IR changes for each though no claim does, so an edit to a comment inside a procedure changes the
+        /// committed IR, and the run says so rather than that nothing changed.
+        /// </summary>
+        public EquatableArray<string> Recorded { get; init; } = [];
+
+        /// <summary>
+        /// Whether the IR's text differs from the last run's though no claim does: what it records of where its claims came from
+        /// (a location, a source's path, a file's hash) changed, or another version wrote it.
+        /// </summary>
+        public bool IrRewritten { get; init; }
+
         /// <summary>Each change of claim, as <c>check</c> would report it.</summary>
         public EquatableArray<IrChange> Claims { get; } = claims;
 
@@ -51,7 +64,7 @@ internal abstract class SinceLastRun
         public EquatableArray<string> Rewritten { get; } = rewritten;
 
         /// <summary>Whether nothing changed: the same claims, the same unknowns and the same text in every emitted file.</summary>
-        public bool Nothing => Claims.Count == 0 && New.Count == 0 && Resolved.Count == 0 && Rewritten.Count == 0;
+        public bool Nothing => Claims.Count == 0 && New.Count == 0 && Resolved.Count == 0 && Rewritten.Count == 0 && !IrRewritten;
     }
 
     /// <summary>What changed from <paramref name="earlier"/>, the folder before this run, to <paramref name="module"/>, which it wrote.</summary>
@@ -109,7 +122,20 @@ internal abstract class SinceLastRun
         var rewritten = module.Files
             .Where((file, i) => earlier.Files[i] is not { } text || text.Replace("\r\n", "\n", StringComparison.Ordinal) != file.Text)
             .Select(file => file.Name);
-        return new Compared(IrComparison.Compare(before, module.Document), [.. added], [.. resolved], unchanged, [.. rewritten]);
+        var claims = IrComparison.Compare(before, module.Document);
+        return new Compared(claims, [.. added], [.. resolved], unchanged, [.. rewritten])
+        {
+            IrRewritten = claims.Count == 0 && IrJsonWriter.Write(before) != IrJsonWriter.Write(module.Document),
+            Recorded = [.. Rehashed(before.Source, module.Document.Source).Concat(Rehashed(before.Source.Baseline, module.Document.Source.Baseline)).Distinct().Order(StringComparer.Ordinal)],
+        };
+    }
+
+    /// <summary>The script files whose recorded hash differs between two sources, or that only one records.</summary>
+    private static IEnumerable<string> Rehashed(IrSource? before, IrSource? after)
+    {
+        var was = before?.Files ?? [];
+        var now = after?.Files ?? [];
+        return was.Keys.Union(now.Keys).Where(path => !was.TryGetValue(path, out var a) || !now.TryGetValue(path, out var b) || a != b);
     }
 
     /// <summary>What makes two unknowns the same one: where it is in which object, and why. Not its detail, nor its place in the SQL.</summary>

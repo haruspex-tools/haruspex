@@ -21,6 +21,10 @@
           "description": "The SQL dialect, such as tsql.",
           "type": "string"
         },
+        "path": {
+          "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.",
+          "type": "string"
+        },
         "package": {
           "description": "The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.",
           "type": "string"
@@ -62,6 +66,10 @@
           "properties": {
             "dialect": {
               "description": "The SQL dialect, such as tsql.",
+              "type": "string"
+            },
+            "path": {
+              "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.",
               "type": "string"
             },
             "package": {

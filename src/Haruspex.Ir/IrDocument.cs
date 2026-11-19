@@ -58,6 +58,7 @@ public sealed record IrDocument(
     /// </summary>
     public string Version =>
         Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
+            || Source.Path is not null || Source.Baseline?.Path is not null
             ? CurrentVersion
         : Source.Baseline is null ? OneDatabaseVersion
         : CombinedVersion;

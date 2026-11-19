@@ -51,11 +51,13 @@ internal sealed class ExplainSources(IrDocument document, HaruspexConfig? config
     }
 
     /// <summary>
-    /// The source a side of a combined field was read from, as the IR records it: a package by its name, and otherwise the side's
-    /// role, since the IR doesn't record a folder's path.
+    /// The source a side of a combined field was read from, as the IR records it: its path as the config file named it, else a
+    /// package by its name, and the side's role only for an IR that records neither (written before 0.25).
     /// </summary>
     public string SourceOf(bool baseline) =>
-        (baseline ? document.Source.Baseline : document.Source)?.Package?.Name ?? (baseline ? "the baseline" : "the source");
+        (baseline ? document.Source.Baseline : document.Source) is { } source
+            ? source.Path ?? source.Package?.Name ?? (baseline ? "the baseline" : "the source")
+            : baseline ? "the baseline" : "the source";
 
     /// <summary>The SHA-256 the IR records for the package <paramref name="name"/>, the source's own or one it refers to.</summary>
     private static string? Sha256(IrSource source, string name)

@@ -255,7 +255,10 @@ internal static class ModuleRun
     {
         var plan = selection.Loaded.Plan;
         var project = selection.Loaded.Project;
-        var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out);
+        // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine.
+        var path = System.IO.Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
+        var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out)
+            .Select(document => document with { Source = document.Source with { Path = path } });
         return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
     }
 

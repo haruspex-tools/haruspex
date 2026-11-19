@@ -115,7 +115,7 @@ of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
 - must write `irVersion` as the oldest version that says all the document says: `"0.25"` when a field has `from` or `sides`, or
-  a source has `files`,
+  a source has `path` or `files`,
   else `"0.24"` for a document combining two databases (one whose `source` names a `baseline`), else `"0.23"`; and a document
   that this page and the schema allow;
 - must write `text` on an object exactly when its kind is `query`;
@@ -131,8 +131,8 @@ of program handle one.
 - must read `irVersion` first and must refuse a document of any version but 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
-  is `not-in-both` and a field's `sides`; and must refuse a field's `from` or `sides`, and a source's `files`, in a document
-  labelled 0.23 or 0.24;
+  is `not-in-both` and a field's `sides`; and must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
+  document labelled 0.23 or 0.24;
 - must refuse a property this page doesn't list, a property given twice in one object, a name outside its vocabulary, a
   missing required property, an object of kind `query` without `text` or of another kind with it, a value of the wrong JSON
   type, a count that is negative or past 2,147,483,647, a number in a
@@ -310,7 +310,8 @@ where it applied, it is the field's derivation, which `haruspex explain` shows w
 field as each database gave it before they were combined, `{ "baseline"?, "candidate"? }`, each
 `{ "presence", "nullable", "nullableBecause"?, "sql"?, "from"? }`, a side left out where that database doesn't return the key;
 `sides` is left out where both databases give the field exactly as it is, which it would only repeat.
-A source's `files` (0.25) gives the SHA-256 of each script file the document's locations point into, by its path as a location
+A source's `path` (0.25) is where it was read from, as the config file names it, relative to that file's folder and
+`/`-separated, so the same on every machine; `explain` labels each side of a combined field with it. A source's `files` (0.25) gives the SHA-256 of each script file the document's locations point into, by its path as a location
 writes it, of its text with LF line endings in UTF-8, so that a reader can tell the file in front of it is the one a location
 was written from, as `sha256` tells a package. None of these is a claim: a comparison reports no change in them.
 

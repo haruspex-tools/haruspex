@@ -210,8 +210,8 @@ public class ExplainTests
         var (exitCode, output, _) = Run(folder, "explain", "shop.order_summary", "placed_at", "--config", "haruspex.json");
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("  baseline (the baseline): doesn't return the key\n", output, StringComparison.Ordinal);
-        Assert.Contains("  candidate (the source): datetime2(0), always, never null\n    from shop.customer_order.placed_at (datetime2(0)), declared at tables.sql:3:5\n", output, StringComparison.Ordinal);
+        Assert.Contains("  baseline (release/db): doesn't return the key\n", output, StringComparison.Ordinal);
+        Assert.Contains("  candidate (db): datetime2(0), always, never null\n    from shop.customer_order.placed_at (datetime2(0)), declared at tables.sql:3:5\n", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ExplainTests
         var old = IrJsonReader.Read(File.ReadAllText(ir));
         var stripped = old with
         {
-            Source = old.Source with { Files = [] },
+            Source = old.Source with { Files = [], Path = null },
             Types = old.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
         };
         folder.File("release/haruspex.ir.json", IrJsonWriter.Write(stripped));
@@ -231,7 +231,7 @@ public class ExplainTests
 
         var (_, output, _) = Run(folder, "explain", "shop.order_summary", "last_shipped");
 
-        Assert.Contains("  baseline (the baseline): datetime2(0), always, may be null\n    the baseline was read from an IR older than 0.25, which doesn't say where its fields came from\n", output, StringComparison.Ordinal);
+        Assert.Contains("  baseline (release/haruspex.ir.json): datetime2(0), always, may be null\n    the baseline was read from an IR older than 0.25, which doesn't say where its fields came from\n", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class ExplainTests
         var document = IrJsonReader.Read(File.ReadAllText(ir));
         File.WriteAllText(ir, IrJsonWriter.Write(document with
         {
-            Source = document.Source with { Files = [] },
+            Source = document.Source with { Files = [], Path = null },
             Types = document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
         }));
 
@@ -351,6 +351,6 @@ public class ExplainTests
 
         var output = Run(folder, "explain", "shop.order_summary", "line_count").Output;
 
-        Assert.Contains("  both databases (the baseline and the source) give it exactly as it is\n", output, StringComparison.Ordinal);
+        Assert.Contains("  both databases (release/db and db) give it exactly as it is\n", output, StringComparison.Ordinal);
     }
 }

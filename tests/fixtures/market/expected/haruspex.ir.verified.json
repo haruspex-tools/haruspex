@@ -2,6 +2,7 @@
   "irVersion": "0.25",
   "source": {
     "dialect": "tsql",
+    "path": "database",
     "files": {
       "procedures/get_order.sql": "774608d210ea4784b5a4368df7b2e750ccc4c9b1dfa8b04b2fc10aea3baa4190",
       "procedures/get_prefs.sql": "d1ade94cae21eedba757671bf6b4947795259955a5b2a7759b1b66bdb1693740",
