@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "area_m2": {
-          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (plot.bed.area_m2).",
+          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (plot.bed.area_m2). Its type is decimal(38,2), where plot.bed.area_m2 is decimal(6,2): what it is computed with makes it another type. Why: haruspex explain plot.harvested_area area_m2",
           "type": [
             "number",
             "null"

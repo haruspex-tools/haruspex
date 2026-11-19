@@ -21,7 +21,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "read_year": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where meter.reading.read_on is date: what it is computed with makes it another type. Why: haruspex explain meter.running_totals read_year",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
@@ -33,7 +33,7 @@
           "maximum": 2147483647
         },
         "kwh_small": {
-          "description": "SQL type smallint.",
+          "description": "SQL type smallint. Its type is smallint, where meter.reading.kwh is int: what it is computed with makes it another type. Why: haruspex explain meter.running_totals kwh_small",
           "type": "integer",
           "minimum": -32768,
           "maximum": 32767

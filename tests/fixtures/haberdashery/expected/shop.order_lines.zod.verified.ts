@@ -8,10 +8,30 @@ import { z } from 'zod'
 
 export const OrderLinesRowSchema = z.object({
   customer: z.string().max(40),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.order_lines line_id
+   */
   line_id: z.int32().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.order_lines order_id
+   */
   order_id: z.int32().nullable(),
-  /** varchar(12) counts bytes and its collation isn't declared, so the length is at most 12. */
+  /**
+   * varchar(12) counts bytes and its collation isn't declared, so the length is at most 12.
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.order_lines sku
+   */
   sku: z.string().max(12).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.order_lines qty
+   */
   qty: z.int32().nullable(),
 })
 export type OrderLinesRow = z.infer<typeof OrderLinesRowSchema>

@@ -7,13 +7,33 @@
 import { z } from 'zod'
 
 export const WhoamiRowSchema = z.object({
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.whoami region
+   */
   region: z.unknown(),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.whoami region_n
+   */
   region_n: z.unknown(),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.whoami host
+   */
   host: z.unknown(),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.whoami region_length
+   */
   region_length: z.unknown(),
   /** varchar(6) counts bytes and its collation isn't declared, so the length is at most 6. */
   fallback: z.string().max(6),

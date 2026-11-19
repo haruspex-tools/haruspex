@@ -7,7 +7,7 @@ namespace Haruspex.Ir;
 /// <c>number (int32)</c>, a length as <c>at most 50</c>, a value set's items as <c>"open", "held"</c>. Short, and in the IR's own
 /// vocabulary (<see cref="IrWireNames"/>), so a change reads the same as the file it came from.
 /// </summary>
-internal static class IrClaimText
+public static class IrClaimText
 {
     /// <summary>The most items of a value set listed; a set past it is cut short, saying how many more there are.</summary>
     private const int ItemsListed = 10;

@@ -69,7 +69,7 @@
           }
         },
         "job_ids": {
-          "description": "A string holding JSON, which contentSchema describes. May be null: read-twice (procedures/customer_jobs.sql:8:17).",
+          "description": "A string holding JSON, which contentSchema describes. May be null: read-twice (procedures/customer_jobs.sql:8:17). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Why: haruspex explain desk.customer_jobs job_ids",
           "type": [
             "string",
             "null"

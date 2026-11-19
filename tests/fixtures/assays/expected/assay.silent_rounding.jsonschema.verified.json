@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "concentration_2dp": {
-          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: precision-loss (procedures/silent_rounding.sql:7:21).",
+          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: precision-loss (procedures/silent_rounding.sql:7:21). Its type is decimal(10,2), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain assay.silent_rounding concentration_2dp",
           "type": [
             "number",
             "null"

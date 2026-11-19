@@ -35,7 +35,7 @@
           "maxLength": 10
         },
         "nicknames": {
-          "description": "SQL type nvarchar(4000). May be null: nullable-column (gym.member.nickname).",
+          "description": "SQL type nvarchar(4000). May be null: nullable-column (gym.member.nickname). Its type is nvarchar(4000), where gym.member.nickname is nvarchar(20) and gym.member.member_id is int: what it is computed with makes it another type. Why: haruspex explain gym.visit_totals '#1.nicknames'",
           "type": [
             "string",
             "null"
@@ -43,12 +43,12 @@
           "maxLength": 4000
         },
         "names": {
-          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points.",
+          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. Its type is varchar(8000), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.visit_totals '#1.names'",
           "type": "string",
           "maxLength": 8000
         },
         "ids": {
-          "description": "SQL type nvarchar(4000).",
+          "description": "SQL type nvarchar(4000). Its type is nvarchar(4000), where gym.member.member_id is int: what it is computed with makes it another type. Why: haruspex explain gym.visit_totals '#1.ids'",
           "type": "string",
           "maxLength": 4000
         }
@@ -65,7 +65,7 @@
       "type": "object",
       "properties": {
         "minutes_list": {
-          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. May be null: nullable-column (gym.visit.minutes), empty-aggregate (procedures/visit_totals.sql:12:8).",
+          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. May be null: nullable-column (gym.visit.minutes), empty-aggregate (procedures/visit_totals.sql:12:8). Its type is varchar(8000), where gym.visit.minutes is int: what it is computed with makes it another type. May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain gym.visit_totals '#2.minutes_list'",
           "type": [
             "string",
             "null"
@@ -73,14 +73,14 @@
           "maxLength": 8000
         },
         "all_prefs": {
-          "description": "SQL type nvarchar(max). May be null: nullable-column (gym.member.prefs), empty-aggregate (procedures/visit_totals.sql:13:8).",
+          "description": "SQL type nvarchar(max). May be null: nullable-column (gym.member.prefs), empty-aggregate (procedures/visit_totals.sql:13:8). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain gym.visit_totals '#2.all_prefs'",
           "type": [
             "string",
             "null"
           ]
         },
         "visitor_names": {
-          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. May be null: empty-aggregate (procedures/visit_totals.sql:14:8).",
+          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. May be null: empty-aggregate (procedures/visit_totals.sql:14:8). Its type is varchar(8000), where gym.member.name is varchar(40): what it is computed with makes it another type. May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain gym.visit_totals '#2.visitor_names'",
           "type": [
             "string",
             "null"

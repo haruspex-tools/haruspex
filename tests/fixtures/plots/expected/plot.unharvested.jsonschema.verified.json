@@ -20,7 +20,7 @@
           "maxLength": 40
         },
         "crop": {
-          "description": "SQL type nvarchar(30). May be null: unmatched-row (harvest.sql:14:59).",
+          "description": "SQL type nvarchar(30). May be null: unmatched-row (harvest.sql:14:59). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain plot.unharvested crop",
           "type": [
             "string",
             "null"

@@ -12,8 +12,18 @@ export const BranchStatsRowSchema = z.object({
   city: z.string().max(40),
   loans: z.string(),
   borrowers: z.string(),
+  /**
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lend.branch_stats first_borrower
+   */
   first_borrower: z.int32().nullable(),
-  /** varchar(8) counts bytes and its collation isn't declared, so the length is at most 8. */
+  /**
+   * varchar(8) counts bytes and its collation isn't declared, so the length is at most 8.
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lend.branch_stats first_shelf
+   */
   first_shelf: z.string().max(8).nullable(),
 })
 export type BranchStatsRow = z.infer<typeof BranchStatsRowSchema>

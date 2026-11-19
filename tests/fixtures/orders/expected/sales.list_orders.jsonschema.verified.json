@@ -42,7 +42,7 @@
           "maxLength": 100
         },
         "product_legacy_code": {
-          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (sales.product.legacy_code), unmatched-row (procedures/list_orders.sql:19:11).",
+          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (sales.product.legacy_code), unmatched-row (procedures/list_orders.sql:19:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain sales.list_orders product_legacy_code",
           "type": [
             "integer",
             "null"
@@ -51,7 +51,7 @@
           "maximum": 9223372036854775807
         },
         "salesperson_name": {
-          "description": "SQL type nvarchar(100). May be null: unmatched-row (procedures/list_orders.sql:20:17).",
+          "description": "SQL type nvarchar(100). May be null: unmatched-row (procedures/list_orders.sql:20:17). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain sales.list_orders salesperson_name",
           "type": [
             "string",
             "null"
@@ -59,7 +59,7 @@
           "maxLength": 100
         },
         "salesperson_hired_on": {
-          "description": "SQL type date. May be null: unmatched-row (procedures/list_orders.sql:20:17).",
+          "description": "SQL type date. May be null: unmatched-row (procedures/list_orders.sql:20:17). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain sales.list_orders salesperson_hired_on",
           "type": [
             "string",
             "null"

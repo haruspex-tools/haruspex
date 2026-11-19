@@ -16,7 +16,17 @@ export const GetPurchaseRowSchema = z.object({
    */
   status: z.string().max(4),
   line_count: z.string(),
+  /**
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.get_purchase top_price
+   */
   top_price: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.get_purchase first_title
+   */
   first_title: z.string().max(80).nullable(),
 })
 export type GetPurchaseRow = z.infer<typeof GetPurchaseRowSchema>

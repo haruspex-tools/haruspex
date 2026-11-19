@@ -137,6 +137,10 @@ public static class ConfigReader
                         if (Choice(member.Value, path, "strip", "strict") is { } objects)
                             config = config with { Objects = objects == "strict" ? ObjectsPolicy.Strict : ObjectsPolicy.Strip };
                         break;
+                    case "comments":
+                        if (Choice(member.Value, path, "none", "surprises", "all") is { } comments)
+                            config = config with { Comments = comments switch { "none" => IrComments.None, "all" => IrComments.All, _ => IrComments.Surprises } };
+                        break;
                     case "emit":
                         if (Emitters(member.Value, path) is { } emitters)
                             config = config with { Emitters = emitters };
@@ -170,7 +174,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge");
                         break;
                 }
             }

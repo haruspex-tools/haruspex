@@ -1,6 +1,7 @@
 using System.Text;
 using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
+using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.Tests.Config;
@@ -19,6 +20,15 @@ public class ConfigReaderTests
         var result = Read(text);
         Assert.IsType<Failed<HaruspexConfig>>(result);
         return Assert.Single(result.Diagnostics).ToString();
+    }
+
+    [Fact]
+    public void Comments_explain_the_surprises_unless_the_file_asks_for_none_or_all()
+    {
+        Assert.Equal(IrComments.Surprises, Read("{}").Expected().Comments);
+        Assert.Equal(IrComments.None, Read("""{ "comments": "none" }""").Expected().Comments);
+        Assert.Equal(IrComments.All, Read("""{ "comments": "all" }""").Expected().Comments);
+        Assert.Contains("comments", Single("""{ "comments": "some" }"""), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -208,8 +218,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "baseline": "" }""", "haruspex.json:1:15: error HAR3005: baseline: must not be empty." },

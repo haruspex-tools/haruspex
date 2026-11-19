@@ -3,8 +3,23 @@
 import { z } from 'zod'
 
 export const RestockRowSchema = z.object({
+  /**
+   * May be null: it is a variable that may not have been given a value that is never null (variable).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.restock last_part
+   */
   last_part: z.int32().nullable(),
+  /**
+   * May be null: it is a variable that may not have been given a value that is never null (variable).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.restock last_qty
+   */
   last_qty: z.int32().nullable(),
+  /**
+   * May be null: it is a variable that may not have been given a value that is never null (variable).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.restock last_shelf
+   */
   last_shelf: z.string().max(10).nullable(),
 })
 export type RestockRow = z.infer<typeof RestockRowSchema>

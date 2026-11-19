@@ -3,9 +3,19 @@
 import { z } from 'zod'
 
 export const UpdateThroughACteRowSchema = z.object({
-  /** Not known (unsupported-statement); the IR's unknowns say why. */
+  /**
+   * Not known (unsupported-statement); the IR's unknowns say why.
+   * Unknown: a statement it runs is not modelled yet (unsupported-statement).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain lib.update_through_a_cte loan_id
+   */
   loan_id: z.unknown(),
-  /** Not known (unsupported-statement); the IR's unknowns say why. */
+  /**
+   * Not known (unsupported-statement); the IR's unknowns say why.
+   * Unknown: a statement it runs is not modelled yet (unsupported-statement).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain lib.update_through_a_cte returned_on
+   */
   returned_on: z.unknown(),
 })
 export type UpdateThroughACteRow = z.infer<typeof UpdateThroughACteRowSchema>

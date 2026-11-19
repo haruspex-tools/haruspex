@@ -200,3 +200,5 @@ reason.
 | [HAR6034](HAR6034.md) | warning | A key that may have been renamed |
 | [HAR6035](HAR6035.md) | warning | A procedure in only one of the two databases |
 | [HAR6036](HAR6036.md) | error | A combined IR given as a database |
+| [HAR6037](HAR6037.md) | error | No IR to explain |
+| [HAR6038](HAR6038.md) | error | Nothing of that name to explain |

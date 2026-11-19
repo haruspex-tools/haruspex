@@ -11,6 +11,12 @@ export type CustomerTreePurchaseLine = z.infer<typeof CustomerTreePurchaseLineSc
 export const CustomerTreePurchaseSchema = z.object({
   id: z.int32(),
   placed_on: z.iso.date(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.customer_tree 'purchases[].lines'
+   */
   lines: z.array(CustomerTreePurchaseLineSchema).min(1).optional(),
 })
 export type CustomerTreePurchase = z.infer<typeof CustomerTreePurchaseSchema>
@@ -18,6 +24,12 @@ export type CustomerTreePurchase = z.infer<typeof CustomerTreePurchaseSchema>
 export const CustomerTreeRowSchema = z.object({
   id: z.int32(),
   name: z.string().max(50),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.customer_tree purchases
+   */
   purchases: z.array(CustomerTreePurchaseSchema).min(1).optional(),
 })
 export type CustomerTreeRow = z.infer<typeof CustomerTreeRowSchema>

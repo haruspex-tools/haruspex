@@ -41,7 +41,7 @@
           ]
         },
         "level": {
-          "description": "SQL type varchar(10). Facts: values from the check rink.ck_member_level. One of \"coach\", \"novice\", \"skater\", as the database compares strings. varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. May be null: nullable-column (rink.member.level), null-literal (procedures/everyone.sql:10:46).",
+          "description": "SQL type varchar(10). Facts: values from the check rink.ck_member_level. One of \"coach\", \"novice\", \"skater\", as the database compares strings. varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. May be null: nullable-column (rink.member.level), null-literal (procedures/everyone.sql:10:46). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain rink.everyone level",
           "type": [
             "string",
             "null"

@@ -112,7 +112,11 @@ function readRows(set: unknown): unknown {
   return set ?? []
 }
 
-/** Calls garden.get_plant. */
+/**
+ * Calls garden.get_plant.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain garden.get_plant
+ */
 export async function getPlant(db: Queryable, params: types.GetPlantParams): Promise<types.GetPlant> {
   const p = await checked(GetPlantParamsSchema, params, (issues) => new ParameterError('garden.get_plant', issues))
   const request = db.request()

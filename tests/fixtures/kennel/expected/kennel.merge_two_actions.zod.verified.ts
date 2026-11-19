@@ -5,6 +5,10 @@ import { z } from 'zod'
 export const MergeTwoActionsRowSchema = z.object({
   did: z.enum(["INSERT", "UPDATE"]),
   now: z.int32(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain kennel.merge_two_actions before
+   */
   before: z.int32().nullable(),
   booked: z.int32(),
 })

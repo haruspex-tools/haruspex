@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "own_book_borrowed": {
-          "description": "SQL type nvarchar(80). May be null: empty-subquery (procedures/correlated_two_levels.sql:7:8).",
+          "description": "SQL type nvarchar(80). May be null: empty-subquery (procedures/correlated_two_levels.sql:7:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lib.correlated_two_levels own_book_borrowed",
           "type": [
             "string",
             "null"

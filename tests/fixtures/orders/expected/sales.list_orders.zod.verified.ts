@@ -16,8 +16,23 @@ export const ListOrdersRowSchema = z.object({
   /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
   total: z.number().multipleOf(1e-2),
   customer_name: z.string().max(100),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain sales.list_orders product_legacy_code
+   */
   product_legacy_code: z.string().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain sales.list_orders salesperson_name
+   */
   salesperson_name: z.string().max(100).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain sales.list_orders salesperson_hired_on
+   */
   salesperson_hired_on: z.date().nullable(),
 })
 export type ListOrdersRow = z.infer<typeof ListOrdersRowSchema>

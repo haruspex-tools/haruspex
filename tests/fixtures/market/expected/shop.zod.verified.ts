@@ -59,7 +59,12 @@ export type ListProductsOrders = z.infer<typeof ListProductsOrdersSchema>
 
 export const ListProductsRowSchema = z.object({
   product_id: z.int32(),
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.list_products orders
+   */
   orders: jsonText(() => z.array(ListProductsOrdersSchema).min(1)).nullable(),
 })
 export type ListProductsRow = z.infer<typeof ListProductsRowSchema>

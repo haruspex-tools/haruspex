@@ -48,7 +48,7 @@
           "maximum": 9223372036854775807
         },
         "last_placed": {
-          "description": "SQL type date. May be null: empty-aggregate (procedures/customer_activity.sql:15:59).",
+          "description": "SQL type date. May be null: empty-aggregate (procedures/customer_activity.sql:15:59). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.customer_activity '#1.last_placed'",
           "type": [
             "string",
             "null"

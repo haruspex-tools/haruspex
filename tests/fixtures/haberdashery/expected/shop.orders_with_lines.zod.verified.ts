@@ -21,6 +21,10 @@ export const OrdersWithLinesLinesSchema = z.object({
   order_id: z.int32(),
   /** varchar(12) counts bytes and its collation isn't declared, so the length is at most 12. */
   sku: z.string().max(12),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain shop.orders_with_lines 'lines<json>[].qty'
+   */
   qty: z.int32().optional(),
 })
 export type OrdersWithLinesLines = z.infer<typeof OrdersWithLinesLinesSchema>
@@ -30,7 +34,12 @@ export const OrdersWithLinesRowSchema = z.object({
   customer: z.string().max(40),
   placed_on: z.date(),
   note: z.string().max(200),
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.orders_with_lines lines
+   */
   lines: jsonText(() => z.array(OrdersWithLinesLinesSchema).min(1)).nullable(),
 })
 export type OrdersWithLinesRow = z.infer<typeof OrdersWithLinesRowSchema>

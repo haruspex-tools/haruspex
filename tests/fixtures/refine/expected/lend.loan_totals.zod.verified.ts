@@ -3,13 +3,25 @@
 import { z } from 'zod'
 
 export const LoanTotalsResult1RowSchema = z.object({
+  /**
+   * May be null: ROLLUP, CUBE or GROUPING SETS add subtotal rows, which hold null in it (subtotal-row).
+   * Why: haruspex explain lend.loan_totals '#1.branch_id'
+   */
   branch_id: z.int32().nullable(),
+  /**
+   * May be null: ROLLUP, CUBE or GROUPING SETS add subtotal rows, which hold null in it (subtotal-row).
+   * Why: haruspex explain lend.loan_totals '#1.member_id'
+   */
   member_id: z.int32().nullable(),
   loans: z.string(),
 })
 export type LoanTotalsResult1Row = z.infer<typeof LoanTotalsResult1RowSchema>
 
 export const LoanTotalsResult2RowSchema = z.object({
+  /**
+   * May be null: ROLLUP, CUBE or GROUPING SETS add subtotal rows, which hold null in it (subtotal-row).
+   * Why: haruspex explain lend.loan_totals '#2.member_id'
+   */
   member_id: z.int32().nullable(),
   members: z.string(),
 })

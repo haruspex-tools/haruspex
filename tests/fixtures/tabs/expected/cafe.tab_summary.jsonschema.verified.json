@@ -43,13 +43,13 @@
           "maximum": 9223372036854775807
         },
         "subtotal": {
-          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(38,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type. Why: haruspex explain cafe.tab_summary subtotal",
           "type": "number",
           "minimum": -999999999999999999999999999999999999.99,
           "maximum": 999999999999999999999999999999999999.99
         },
         "subtotal_2dp": {
-          "description": "SQL type decimal(19,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(19,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/tab_summary.sql:15:8).",
+          "description": "SQL type decimal(19,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(19,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/tab_summary.sql:15:8). Its type is decimal(19,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain cafe.tab_summary subtotal_2dp",
           "type": [
             "number",
             "null"
@@ -58,13 +58,13 @@
           "maximum": 99999999999999999.99
         },
         "discounts": {
-          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(38,2), where cafe.tab_item.discount is decimal(5,2): what it is computed with makes it another type. Why: haruspex explain cafe.tab_summary discounts",
           "type": "number",
           "minimum": -999999999999999999999999999999999999.99,
           "maximum": 999999999999999999999999999999999999.99
         },
         "due": {
-          "description": "SQL type decimal(20,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(20,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/tab_summary.sql:17:8).",
+          "description": "SQL type decimal(20,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(20,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/tab_summary.sql:17:8). Its type is decimal(20,2), where cafe.tab_item.qty is smallint, cafe.menu_item.price is decimal(9,2) and cafe.tab_item.discount is decimal(5,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain cafe.tab_summary due",
           "type": [
             "number",
             "null"
@@ -73,12 +73,12 @@
           "maximum": 999999999999999999.99
         },
         "opened_on": {
-          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points.",
+          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. Its type is varchar(10), where cafe.tab.opened_at is datetime2(0): what it is computed with makes it another type. Why: haruspex explain cafe.tab_summary opened_on",
           "type": "string",
           "maxLength": 10
         },
         "closed_text": {
-          "description": "SQL type varchar(19). varchar(19) counts bytes and its collation isn't declared, so the length is at most 19 code points. May be null: nullable-column (cafe.tab.closed_at).",
+          "description": "SQL type varchar(19). varchar(19) counts bytes and its collation isn't declared, so the length is at most 19 code points. May be null: nullable-column (cafe.tab.closed_at). Its type is varchar(19), where cafe.tab.closed_at is datetime2(0): what it is computed with makes it another type. Why: haruspex explain cafe.tab_summary closed_text",
           "type": [
             "string",
             "null"

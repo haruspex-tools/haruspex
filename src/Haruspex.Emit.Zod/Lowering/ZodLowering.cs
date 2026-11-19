@@ -119,7 +119,7 @@ internal static class ZodLowering
     {
         if (!shapes.Host.TryGetValue(named.Name, out var host))
         {
-            yield return new PlacedDeclaration(ObjectType(named, plan, types), null, [named.Name]);
+            yield return new PlacedDeclaration(ObjectType(named, plan, types, explained: true), null, [named.Name]);
             yield break;
         }
 
@@ -127,15 +127,16 @@ internal static class ZodLowering
         // rests on every type that shares it, so a split module puts it where all of them are.
         if (hosted.Add(host.Binding))
         {
-            var schema = ObjectType(named, plan, shared).Schema;
+            // Without explanations, which differ between the types that share it: each says its own above its export.
+            var schema = ObjectType(named, plan, shared, explained: false).Schema;
             var declaration = host.Declared is { } declared
-                ? new ZodDeclaration(declared, SharedSummary, schema)
+                ? new ZodDeclaration(declared, SharedSummary, schema) { Explanation = Explanation(plan.Document.Types[declared], declared, plan) }
                 : new ZodDeclaration(host.Binding, SharedSummary, schema, Exported: false);
             yield return new PlacedDeclaration(declaration, null, host.Members);
         }
 
         if (host.Declared != named.Name)
-            yield return new PlacedDeclaration(new ZodDeclaration(named.Name, null, new Name(host.Binding)), null, [named.Name]);
+            yield return new PlacedDeclaration(new ZodDeclaration(named.Name, null, new Name(host.Binding)) { Explanation = Explanation(named.Type, named.Name, plan) }, null, [named.Name]);
     }
 
     /// <summary>What the reader of the module is told of a shape declared once for several types.</summary>
@@ -164,7 +165,7 @@ internal static class ZodLowering
             var next = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (var type in named)
             {
-                var schema = ObjectType(type, plan, lowering).Schema;
+                var schema = ObjectType(type, plan, lowering, explained: false).Schema;
                 next[type.Name] = first.TryGetValue(schema, out var earlier) ? earlier : first[schema] = type.Name;
             }
 
@@ -184,7 +185,7 @@ internal static class ZodLowering
             EquatableArray<string> members = [.. group.Select(t => t.Name)];
             var shape = declared is not null
                 ? new SharedShape(ZodModule.SchemaOf(declared), declared, members)
-                : new SharedShape(shapeNames.Of(ZodPrinter.Expression(ObjectType(group.First(), plan, types).Schema)), null, members);
+                : new SharedShape(shapeNames.Of(ZodPrinter.Expression(ObjectType(group.First(), plan, types, explained: false).Schema)), null, members);
             foreach (var type in group)
             {
                 schemaOf[type.Name] = shape.Binding;
@@ -219,7 +220,14 @@ internal static class ZodLowering
     /// projects that deploy the application first or together, and want an unexpected key to fail
     /// (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). Every object here is part of a result.
     /// </summary>
-    private static ZodDeclaration ObjectType(ZodPlanEntry.NamedType named, ZodPlan plan, TypeLowering types)
+    /// <param name="named">The type.</param>
+    /// <param name="plan">The module's plan.</param>
+    /// <param name="types">How a type is lowered, and its references bound.</param>
+    /// <param name="explained">
+    /// Whether each property says why its field is what it is: not for a shape several types share, which is compared and declared
+    /// without them, so that comments never stop a shape being shared.
+    /// </param>
+    private static ZodDeclaration ObjectType(ZodPlanEntry.NamedType named, ZodPlan plan, TypeLowering types, bool explained)
     {
         // A field that refers back into its own cycle (a tree's children) is a getter, Zod 4's form for recursive objects:
         // the schema it names may not be declared yet, and TypeScript infers the type through a getter without casts. Every
@@ -227,9 +235,21 @@ internal static class ZodLowering
         var properties = named.Type.Fields.Select(field => new ZodProperty(
             field.Name,
             types.Field(field, named.Encoding),
-            Getter: IrTypeTree.References(field.Type).Any(reference => plan.Graph.OnOneCycle(named.Name, reference))));
+            Getter: IrTypeTree.References(field.Type).Any(reference => plan.Graph.OnOneCycle(named.Name, reference)))
+        {
+            Explanation = explained ? [.. IrFieldText.Of(plan.Document, named.Name, field, plan.Options.Comments)] : [],
+        });
         return new ZodDeclaration(named.Name, null, new ObjectSchema([.. properties], plan.Options.Objects == ZodObjects.Strict));
     }
+
+    /// <summary>
+    /// Why each field of a type that shares its shape is what it is, a line each, the field's name first, for the comment above
+    /// its export.
+    /// </summary>
+    private static EquatableArray<string> Explanation(IrObjectType type, string name, ZodPlan plan) =>
+    [
+        .. type.Fields.SelectMany(field => IrFieldText.Of(plan.Document, name, field, plan.Options.Comments).Select(line => $"{field.Name}: {line}")),
+    ];
 
     /// <summary>
     /// A procedure: an object of its result sets by name when they are named, even one

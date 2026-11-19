@@ -29,7 +29,7 @@
           "maxLength": 5
         },
         "sowings": {
-          "description": "Left out when null: empty-subquery (later.sql:14:16).",
+          "description": "Left out when null: empty-subquery (later.sql:14:16). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain plot.bed_json sowings",
           "type": "array",
           "items": {
             "$ref": "#/$defs/BedJsonSowing"
@@ -58,7 +58,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "harvested": {
-          "description": "SQL type date. Left out when null: nullable-column (plot.sowing.harvested).",
+          "description": "SQL type date. Left out when null: nullable-column (plot.sowing.harvested). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain plot.bed_json 'sowings[].harvested'",
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"

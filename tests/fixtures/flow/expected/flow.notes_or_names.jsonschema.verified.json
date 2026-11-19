@@ -46,7 +46,7 @@
           "maximum": 2147483647
         },
         "note": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (flow.sale.note).",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (flow.sale.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.notes_or_names '[].note'",
           "type": "string",
           "maxLength": 40
         }

@@ -91,6 +91,13 @@ nothing), and `MssqlReturnShape.KeepsCallersOf` whether code written against one
 --baseline` uses it to warn when a change to the database changes the shape (HAR6028). The names come from the plan
 (`MssqlFunction.Returned`), which the printer writes too, so the two can't disagree.
 
+## Why a result is what it is
+
+A function's comment says why a result set may be missing, or why its procedure's result sets can't be listed, with the codes
+and the `haruspex explain` command; under `MssqlOptions.Comments` of `IrComments.All`, how many rows each returns too. The fields' reasons are
+the Zod module's comments
+([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+
 ## Testing with a double
 
 A double that stands in for the connection gives `request()`, whose object has `input()`, `output()` and `execute()`. The

@@ -4,7 +4,18 @@ import { z } from 'zod'
 
 export const NestedCtesRowSchema = z.object({
   member_id: z.int32(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.nested_ctes taken
+   */
   taken: z.string().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.nested_ctes most
+   */
   most: z.string().nullable(),
   name: z.string().max(40),
 })

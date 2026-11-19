@@ -7,11 +7,35 @@
 import { z } from 'zod'
 
 export const MixedResult1RowSchema = z.object({
-  /** The driver may round decimal(38,8) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,8) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,8), where bazaar.auction_lot.hammer is decimal(38,10) and bazaar.auction_lot.reserve is decimal(30,0): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain bazaar.mixed '#1.price'
+   */
   price: z.number().multipleOf(1e-8).nullable(),
+  /**
+   * Its type is datetimeoffset(7), where bazaar.barter.opened is time(7) and bazaar.web_order.placed_at is datetimeoffset(3): what it is computed with makes it another type.
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.mixed '#1.at_time'
+   */
   at_time: z.date().nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.mixed '#1.ref'
+   */
   ref: z.guid().nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.mixed '#1.note'
+   */
   note: z.string().nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.mixed '#1.count_of'
+   */
   count_of: z.string().nullable(),
 })
 export type MixedResult1Row = z.infer<typeof MixedResult1RowSchema>
@@ -28,19 +52,33 @@ export const MixedResult3RowSchema = z.object({
 export type MixedResult3Row = z.infer<typeof MixedResult3RowSchema>
 
 export const MixedResult4RowSchema = z.object({
-  /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain bazaar.mixed '#4.band'
+   */
   band: z.number().multipleOf(1).nullable(),
 })
 export type MixedResult4Row = z.infer<typeof MixedResult4RowSchema>
 
 export const MixedResult5RowSchema = z.object({
-  /** The driver may round decimal(38,37) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,37) past its bounds in a row, so they are not checked.
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.mixed '#5.share'
+   */
   share: z.number().multipleOf(1e-37).nullable(),
 })
 export type MixedResult5Row = z.infer<typeof MixedResult5RowSchema>
 
 export const MixedResult6RowSchema = z.object({
-  /** Not known (unsupported-expression); the IR's unknowns say why. */
+  /**
+   * Not known (unsupported-expression); the IR's unknowns say why.
+   * Unknown: an expression or function is not modelled yet (unsupported-expression).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain bazaar.mixed '#6.share_or_flag'
+   */
   share_or_flag: z.unknown(),
 })
 export type MixedResult6Row = z.infer<typeof MixedResult6RowSchema>
@@ -50,7 +88,12 @@ export const MixedResult7RowSchema = z.object({
   voucher_or_ref: z.guid(),
   /** The driver may round money past its bounds in a row, so they are not checked. */
   qty_or_price: z.number().multipleOf(1e-4),
-  /** The driver may round numeric(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round numeric(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain bazaar.mixed '#7.big_or_half'
+   */
   big_or_half: z.number().multipleOf(1).nullable(),
 })
 export type MixedResult7Row = z.infer<typeof MixedResult7RowSchema>

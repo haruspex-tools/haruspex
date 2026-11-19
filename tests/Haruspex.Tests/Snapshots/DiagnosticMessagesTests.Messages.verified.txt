@@ -116,7 +116,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, emit, serverOnly, naming, procedures, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -462,4 +462,10 @@ db/p1.sql:3:1: warning HAR6035: lib.count_books: the baseline's database doesn't
 
 HAR6036
 haruspex: error HAR6036: the baseline release.ir.json is a combined IR, written with a baseline of its own: it says what an application built against two databases accepts, not what one database is. Give the database the application meets before the change, as its source (a .dacpac, a .sqlproj or a folder) or an IR written without a baseline. A combined IR is a baseline for check --fit-only only, which asks whether a database fits an application.
+
+HAR6037
+haruspex: error HAR6037: no IR to read: name it with --ir, or run where haruspex.json names the output folder that holds it.
+
+HAR6038
+haruspex: error HAR6038: lib.get_book has no field nothing; its fields are id, title, note, status, copies and extra.
 

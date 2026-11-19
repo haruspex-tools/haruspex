@@ -8,25 +8,60 @@ import { z } from 'zod'
 
 export const MemberPrefsResult1RowSchema = z.object({
   member_id: z.int32(),
-  /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
+  /**
+   * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Why: haruspex explain rink.member_prefs '#1.theme'
+   */
   theme: z.string().max(10).nullable(),
+  /**
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Why: haruspex explain rink.member_prefs '#1.skate_size'
+   */
   skate_size: z.int().min(0).max(255).nullable(),
-  /** A string holding JSON. */
+  /**
+   * A string holding JSON.
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Why: haruspex explain rink.member_prefs '#1.notify'
+   */
   notify: z.string().nullable(),
 })
 export type MemberPrefsResult1Row = z.infer<typeof MemberPrefsResult1RowSchema>
 
 export const MemberPrefsResult2RowSchema = z.object({
   id: z.int32(),
-  /** Not known (json-shape-unknown); the IR's unknowns say why. */
+  /**
+   * Not known (json-shape-unknown); the IR's unknowns say why.
+   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: type it in the config file with "type" and "import".
+   * Why: haruspex explain rink.member_prefs '#2.notify'
+   */
   notify: z.unknown().optional(),
 })
 export type MemberPrefsResult2Row = z.infer<typeof MemberPrefsResult2RowSchema>
 
 export const MemberPrefsResult3RowSchema = z.object({
   booking_id: z.int32(),
+  /**
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.member_prefs '#3.key'
+   */
   key: z.string().max(4000).nullable(),
+  /**
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.member_prefs '#3.value'
+   */
   value: z.string().nullable(),
+  /**
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.member_prefs '#3.type'
+   */
   type: z.literal([0, 1, 2, 3, 4, 5]).nullable(),
 })
 export type MemberPrefsResult3Row = z.infer<typeof MemberPrefsResult3RowSchema>

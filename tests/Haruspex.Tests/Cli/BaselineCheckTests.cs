@@ -72,6 +72,21 @@ public class BaselineCheckTests
     }
 
     [Fact]
+    public void A_refused_change_points_to_explain_in_each_database_and_the_baseline_s_from_its_ir_file()
+    {
+        using var folder = Released(ListOrders, Edit(ListOrders, "o.customer", "o.note AS customer"));
+        Assert.Equal(0, Run(folder, "generate", "release/db", "--out", "release/out").ExitCode);
+
+        var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/out/haruspex.ir.json");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains(
+            "Why: haruspex explain shop.list_orders customer, once generated, and in the baseline haruspex explain shop.list_orders customer --ir release/out/haruspex.ir.json.",
+            error,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_change_the_running_application_would_fail_on_fails_the_check_at_the_procedure()
     {
         using var folder = Released(ListOrders, Edit(ListOrders, "o.customer", "o.note AS customer"));
@@ -80,7 +95,7 @@ public class BaselineCheckTests
 
         Assert.Equal(1, exitCode);
         Assert.Contains(
-            "db/procedures.sql:1:1: error HAR6026: shop.list_orders results[0][].customer: became nullable, and the application's schema refuses null. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed.\n",
+            "db/procedures.sql:1:1: error HAR6026: shop.list_orders results[0][].customer: became nullable, and the application's schema refuses null. The application already running, built against the baseline, would fail: ship a change it can take first, and this one once it is redeployed. Why, once generated: haruspex explain shop.list_orders customer.\n",
             error,
             StringComparison.Ordinal);
         Assert.Contains("error HAR6026: shop.list_orders results[0][].customer: length changed from at most 50 to at most 200", error, StringComparison.Ordinal);

@@ -16,6 +16,12 @@ export type CoalesceUnderJsonQueryDogsByCaseItem = z.infer<typeof CoalesceUnderJ
 
 export const CoalesceUnderJsonQueryRowSchema = z.object({
   dogs: z.array(CoalesceUnderJsonQueryDogSchema),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain kennel.coalesce_under_json_query dogs_by_case
+   */
   dogs_by_case: z.array(CoalesceUnderJsonQueryDogsByCaseItemSchema).optional(),
 })
 export type CoalesceUnderJsonQueryRow = z.infer<typeof CoalesceUnderJsonQueryRowSchema>

@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "donated": {
-          "description": "SQL type nvarchar(80). May be null: empty-subquery (procedures/sibling_subqueries.sql:7:8).",
+          "description": "SQL type nvarchar(80). May be null: empty-subquery (procedures/sibling_subqueries.sql:7:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lib.sibling_subqueries donated",
           "type": [
             "string",
             "null"
@@ -29,7 +29,7 @@
           "maxLength": 80
         },
         "first_loan": {
-          "description": "SQL type date. May be null: empty-subquery (procedures/sibling_subqueries.sql:8:8).",
+          "description": "SQL type date. May be null: empty-subquery (procedures/sibling_subqueries.sql:8:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lib.sibling_subqueries first_loan",
           "type": [
             "string",
             "null"

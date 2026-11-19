@@ -5,6 +5,11 @@ import { z } from 'zod'
 export const ReferralChainRowSchema = z.object({
   member_id: z.int32(),
   name: z.string().max(40),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain lib.referral_chain depth
+   */
   depth: z.int32().nullable(),
 })
 export type ReferralChainRow = z.infer<typeof ReferralChainRowSchema>

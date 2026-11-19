@@ -17,7 +17,7 @@
       "type": "object",
       "properties": {
         "dog_ids": {
-          "description": "A string holding JSON, which contentSchema describes. May be null: read-twice (procedures/coalesce_into_variable.sql:5:43).",
+          "description": "A string holding JSON, which contentSchema describes. May be null: read-twice (procedures/coalesce_into_variable.sql:5:43). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Why: haruspex explain kennel.coalesce_into_variable dog_ids",
           "type": [
             "string",
             "null"

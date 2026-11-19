@@ -11,6 +11,10 @@ import { z } from 'zod'
 export const SessionBoardResult1PeopleItemSchema = z.object({
   /** varchar(40) counts bytes and its collation isn't declared, so the length is at most 40. */
   name: z.string().max(40),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain rink.session_board '#1.people[].skates'
+   */
   skates: z.int().min(0).max(255).optional(),
 })
 export type SessionBoardResult1PeopleItem = z.infer<typeof SessionBoardResult1PeopleItemSchema>
@@ -22,18 +26,33 @@ export const SessionBoardResult1RowSchema = z.object({
    * varchar(8) counts bytes and its collation isn't declared, so the length is at most 8.
    */
   kind: z.string().max(8),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.session_board '#1.people'
+   */
   people: z.array(SessionBoardResult1PeopleItemSchema).min(1).optional(),
 })
 export type SessionBoardResult1Row = z.infer<typeof SessionBoardResult1RowSchema>
 
 export const SessionBoardResult2ReachSchema = z.object({
-  /** varchar(80) counts bytes and its collation isn't declared, so the length is at most 80. */
+  /**
+   * varchar(80) counts bytes and its collation isn't declared, so the length is at most 80.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain rink.session_board '#2.reach.contact'
+   */
   contact: z.string().max(80).optional(),
 })
 export type SessionBoardResult2Reach = z.infer<typeof SessionBoardResult2ReachSchema>
 
 export const SessionBoardResult2RowSchema = z.object({
   id: z.int32(),
+  /**
+   * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain rink.session_board '#2.reach'
+   */
   reach: SessionBoardResult2ReachSchema.optional(),
 })
 export type SessionBoardResult2Row = z.infer<typeof SessionBoardResult2RowSchema>

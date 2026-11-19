@@ -81,6 +81,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0074](0074-a-config-may-split-its-output-into-modules.md) | 18 Nov 2026 | A config may split its output into modules |
 | [0075](0075-what-several-modules-share-is-written-once-in-a-shared-file.md) | 18 Nov 2026 | What several modules share is written once in a shared file |
 | [0078](0078-the-ir-says-where-each-field-came-from.md) | 19 Nov 2026 | The IR says where each field came from |
+| [0079](0079-a-surprise-is-explained-where-it-is-written.md) | 19 Nov 2026 | A surprise is explained where it is written |
 
 ## Writing a record
 

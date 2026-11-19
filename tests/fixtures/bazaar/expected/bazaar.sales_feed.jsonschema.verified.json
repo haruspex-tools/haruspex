@@ -57,7 +57,7 @@
           "maximum": 9223372036854775807
         },
         "amount": {
-          "description": "SQL type decimal(38,10). At most 10 decimal places, which multipleOf would check inexactly. decimal(38,10) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (views/all_sales.sql:9:47).",
+          "description": "SQL type decimal(38,10). At most 10 decimal places, which multipleOf would check inexactly. decimal(38,10) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (views/all_sales.sql:9:47). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain bazaar.sales_feed '#1.amount'",
           "type": [
             "number",
             "null"
@@ -66,7 +66,7 @@
           "maximum": 9999999999999999999999999999.9999999999
         },
         "method": {
-          "description": "SQL type nvarchar(20). May be null: null-literal (views/all_sales.sql:15:67).",
+          "description": "SQL type nvarchar(20). May be null: null-literal (views/all_sales.sql:15:67). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.sales_feed '#1.method'",
           "type": [
             "string",
             "null"
@@ -74,7 +74,7 @@
           "maxLength": 20
         },
         "memo": {
-          "description": "SQL type nvarchar(max). May be null: nullable-column (bazaar.stall_sale.note), null-literal (views/all_sales.sql:9:75), null-literal (views/all_sales.sql:12:71), nullable-column (bazaar.barter.memo).",
+          "description": "SQL type nvarchar(max). May be null: nullable-column (bazaar.stall_sale.note), null-literal (views/all_sales.sql:9:75), null-literal (views/all_sales.sql:12:71), nullable-column (bazaar.barter.memo). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.sales_feed '#1.memo'",
           "type": [
             "string",
             "null"
@@ -123,7 +123,7 @@
           "maximum": 9223372036854775807
         },
         "amount": {
-          "description": "SQL type decimal(38,10). At most 10 decimal places, which multipleOf would check inexactly. decimal(38,10) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (views/all_sales.sql:9:47).",
+          "description": "SQL type decimal(38,10). At most 10 decimal places, which multipleOf would check inexactly. decimal(38,10) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (views/all_sales.sql:9:47). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].amount'",
           "type": [
             "number",
             "null"
@@ -132,7 +132,7 @@
           "maximum": 9999999999999999999999999999.9999999999
         },
         "method": {
-          "description": "SQL type nvarchar(20). May be null: null-literal (views/all_sales.sql:15:67).",
+          "description": "SQL type nvarchar(20). May be null: null-literal (views/all_sales.sql:15:67). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].method'",
           "type": [
             "string",
             "null"
@@ -140,7 +140,7 @@
           "maxLength": 20
         },
         "memo": {
-          "description": "SQL type nvarchar(max). May be null: nullable-column (bazaar.stall_sale.note), null-literal (views/all_sales.sql:9:75), null-literal (views/all_sales.sql:12:71), nullable-column (bazaar.barter.memo).",
+          "description": "SQL type nvarchar(max). May be null: nullable-column (bazaar.stall_sale.note), null-literal (views/all_sales.sql:9:75), null-literal (views/all_sales.sql:12:71), nullable-column (bazaar.barter.memo). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].memo'",
           "type": [
             "string",
             "null"
@@ -162,7 +162,7 @@
       "type": "object",
       "properties": {
         "feed": {
-          "description": "A string holding JSON, which contentSchema describes. May be null: empty-subquery (procedures/sales_feed.sql:10:8).",
+          "description": "A string holding JSON, which contentSchema describes. May be null: empty-subquery (procedures/sales_feed.sql:10:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain bazaar.sales_feed '#2.feed'",
           "type": [
             "string",
             "null"

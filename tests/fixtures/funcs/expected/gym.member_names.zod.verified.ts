@@ -8,34 +8,99 @@ import { z } from 'zod'
 
 export const MemberNamesResult1RowSchema = z.object({
   member_id: z.int32(),
-  /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
+  /**
+   * varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.
+   * Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.code_left'
+   */
   code_left: z.string().max(5),
-  /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
+  /**
+   * varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.
+   * Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.code_trimmed'
+   */
   code_trimmed: z.string().max(5),
   nickname_trimmed: z.string().max(20).nullable(),
   /** varchar(40) counts bytes and its collation isn't declared, so the length is at most 40. */
   name_unx: z.string().max(40),
-  /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
+  /**
+   * varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.
+   * Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.code_upper'
+   */
   code_upper: z.string().max(5),
   nickname_lower: z.string().max(20).nullable(),
   /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
   plan_lower: z.string().max(10),
-  /** varchar(3) counts bytes and its collation isn't declared, so the length is at most 3. */
+  /**
+   * varchar(3) counts bytes and its collation isn't declared, so the length is at most 3.
+   * Its type is varchar(3), where gym.member.name is varchar(40): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.name_start'
+   */
   name_start: z.string().max(3),
+  /**
+   * Its type is nvarchar(2), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.nickname_end'
+   */
   nickname_end: z.string().max(2).nullable(),
-  /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
+  /**
+   * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
+   * Its type is varchar(10), where gym.member.name is varchar(40): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.name_rest'
+   */
   name_rest: z.string().max(10),
   prefs_start: z.string().nullable(),
+  /**
+   * Its type is int, where gym.member.code is char(5): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.code_length'
+   */
   code_length: z.int32(),
+  /**
+   * Its type is bigint, where gym.member.prefs is nvarchar(max): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.prefs_length'
+   */
   prefs_length: z.string().nullable(),
+  /**
+   * Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.nickname_bytes'
+   */
   nickname_bytes: z.int32().nullable(),
+  /**
+   * Its type is int, where gym.member.joined is date: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.joined_bytes'
+   */
   joined_bytes: z.int32(),
-  /** varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000. */
+  /**
+   * varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000.
+   * Its type is varchar(8000), where gym.member.name is varchar(40): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.name_doubled'
+   */
   name_doubled: z.string().max(8000),
+  /**
+   * Its type is nvarchar(4000), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.nickname_zeroed'
+   */
   nickname_zeroed: z.string().max(4000).nullable(),
+  /**
+   * Its type is nvarchar(max), where gym.member.name is varchar(40): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.name_escaped'
+   */
   name_escaped: z.string(),
+  /**
+   * Its type is nvarchar(4000), where gym.member.name is varchar(40) and gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.label'
+   */
   label: z.string().max(4000),
+  /**
+   * Its type is nvarchar(4000), where gym.member.name is varchar(40): what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_names '#1.custom_label'
+   */
   custom_label: z.string().max(4000).nullable(),
+  /**
+   * Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type.
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Why: haruspex explain gym.member_names '#1.locker'
+   */
   locker: z.string().max(4000).nullable(),
 })
 export type MemberNamesResult1Row = z.infer<typeof MemberNamesResult1RowSchema>
@@ -44,8 +109,24 @@ export const MemberNamesResult2RowSchema = z.object({
   id: z.int32(),
   /** varchar(40) counts bytes and its collation isn't declared, so the length is at most 40. */
   shout: z.string().max(40),
+  /**
+   * Its type is nvarchar(3), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain gym.member_names '#2.tail'
+   */
   tail: z.string().max(3).optional(),
+  /**
+   * Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type.
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain gym.member_names '#2.locker'
+   */
   locker: z.string().max(4000).optional(),
+  /**
+   * Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain gym.member_names '#2.nickname_length'
+   */
   nickname_length: z.int32().optional(),
 })
 export type MemberNamesResult2Row = z.infer<typeof MemberNamesResult2RowSchema>

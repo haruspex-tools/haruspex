@@ -36,7 +36,7 @@
           "maximum": 2147483647
         },
         "avg_qty": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/account_stats.sql:7:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/account_stats.sql:7:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.avg_qty'",
           "type": [
             "integer",
             "null"
@@ -45,7 +45,7 @@
           "maximum": 2147483647
         },
         "avg_units": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/account_stats.sql:8:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/account_stats.sql:8:8). Its type is int, where ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.avg_units'",
           "type": [
             "integer",
             "null"
@@ -54,7 +54,7 @@
           "maximum": 2147483647
         },
         "avg_delta": {
-          "description": "SQL type int. May be null: nullable-column (ledger.line.delta), arithmetic-overflow (procedures/account_stats.sql:9:8).",
+          "description": "SQL type int. May be null: nullable-column (ledger.line.delta), arithmetic-overflow (procedures/account_stats.sql:9:8). Its type is int, where ledger.line.delta is smallint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.avg_delta'",
           "type": [
             "integer",
             "null"
@@ -63,7 +63,7 @@
           "maximum": 2147483647
         },
         "avg_price": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/account_stats.sql:10:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/account_stats.sql:10:8). Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.account_stats '#1.avg_price'",
           "type": [
             "number",
             "null"
@@ -72,7 +72,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "avg_rate": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.rate), precision-loss (procedures/account_stats.sql:11:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.rate), precision-loss (procedures/account_stats.sql:11:8). Its type is decimal(38,6), where ledger.line.rate is decimal(19,6): what it is computed with makes it another type. May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.account_stats '#1.avg_rate'",
           "type": [
             "number",
             "null"
@@ -81,7 +81,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "avg_discount": {
-          "description": "SQL type numeric(38,6). At most 6 decimal places, which multipleOf would check inexactly. numeric(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.discount), precision-loss (procedures/account_stats.sql:12:8).",
+          "description": "SQL type numeric(38,6). At most 6 decimal places, which multipleOf would check inexactly. numeric(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.discount), precision-loss (procedures/account_stats.sql:12:8). Its type is numeric(38,6), where ledger.line.discount is numeric(5,4): what it is computed with makes it another type. May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.account_stats '#1.avg_discount'",
           "type": [
             "number",
             "null"
@@ -90,7 +90,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "avg_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/account_stats.sql:13:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/account_stats.sql:13:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.avg_fee'",
           "type": [
             "number",
             "null"
@@ -99,14 +99,14 @@
           "maximum": 922337203685477.5807
         },
         "avg_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score), arithmetic-overflow (procedures/account_stats.sql:14:8).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score), arithmetic-overflow (procedures/account_stats.sql:14:8). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.avg_score'",
           "type": [
             "number",
             "null"
           ]
         },
         "avg_frac": {
-          "description": "SQL type decimal(38,38). At most 38 decimal places, which multipleOf would check inexactly. decimal(38,38) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/account_stats.sql:15:8), precision-loss (procedures/account_stats.sql:15:8).",
+          "description": "SQL type decimal(38,38). At most 38 decimal places, which multipleOf would check inexactly. decimal(38,38) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/account_stats.sql:15:8), precision-loss (procedures/account_stats.sql:15:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.account_stats '#1.avg_frac'",
           "type": [
             "number",
             "null"
@@ -115,35 +115,35 @@
           "maximum": 0.99999999999999999999999999999999999999
         },
         "sd_price": {
-          "description": "SQL type float. May be null: too-few-values (procedures/account_stats.sql:16:8).",
+          "description": "SQL type float. May be null: too-few-values (procedures/account_stats.sql:16:8). Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: STDEV and VAR are null over fewer than two values (too-few-values). Why: haruspex explain ledger.account_stats '#1.sd_price'",
           "type": [
             "number",
             "null"
           ]
         },
         "sdp_rate": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.rate).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.rate). Its type is float, where ledger.line.rate is decimal(19,6): what it is computed with makes it another type. Why: haruspex explain ledger.account_stats '#1.sdp_rate'",
           "type": [
             "number",
             "null"
           ]
         },
         "var_fee": {
-          "description": "SQL type float. May be null: too-few-values (procedures/account_stats.sql:18:8).",
+          "description": "SQL type float. May be null: too-few-values (procedures/account_stats.sql:18:8). Its type is float, where ledger.line.fee is money: what it is computed with makes it another type. May be null: STDEV and VAR are null over fewer than two values (too-few-values). Why: haruspex explain ledger.account_stats '#1.var_fee'",
           "type": [
             "number",
             "null"
           ]
         },
         "varp_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. Why: haruspex explain ledger.account_stats '#1.varp_score'",
           "type": [
             "number",
             "null"
           ]
         },
         "var_weight": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.weight), too-few-values (procedures/account_stats.sql:20:8), arithmetic-overflow (procedures/account_stats.sql:20:8).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.weight), too-few-values (procedures/account_stats.sql:20:8), arithmetic-overflow (procedures/account_stats.sql:20:8). May be null: STDEV and VAR are null over fewer than two values (too-few-values). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.account_stats '#1.var_weight'",
           "type": [
             "number",
             "null"
@@ -173,7 +173,7 @@
       "type": "object",
       "properties": {
         "avg_price": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: empty-aggregate (procedures/account_stats.sql:25:8), precision-loss (procedures/account_stats.sql:25:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: empty-aggregate (procedures/account_stats.sql:25:8), precision-loss (procedures/account_stats.sql:25:8). Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.account_stats '#2.avg_price'",
           "type": [
             "number",
             "null"
@@ -182,14 +182,14 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "sd_price": {
-          "description": "SQL type float. May be null: empty-aggregate (procedures/account_stats.sql:26:8), too-few-values (procedures/account_stats.sql:26:8).",
+          "description": "SQL type float. May be null: empty-aggregate (procedures/account_stats.sql:26:8), too-few-values (procedures/account_stats.sql:26:8). Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). May be null: STDEV and VAR are null over fewer than two values (too-few-values). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain ledger.account_stats '#2.sd_price'",
           "type": [
             "number",
             "null"
           ]
         },
         "varp_units": {
-          "description": "SQL type float. May be null: empty-aggregate (procedures/account_stats.sql:27:8).",
+          "description": "SQL type float. May be null: empty-aggregate (procedures/account_stats.sql:27:8). Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain ledger.account_stats '#2.varp_units'",
           "type": [
             "number",
             "null"

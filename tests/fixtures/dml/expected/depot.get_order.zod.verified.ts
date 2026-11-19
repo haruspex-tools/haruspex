@@ -21,7 +21,17 @@ export const GetOrderRowSchema = z.object({
    * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
    */
   status: z.string().max(10),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain depot.get_order note
+   */
   note: z.string().max(200).optional(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.get_order lines
+   */
   lines: z.array(GetOrderLineSchema).min(1).optional(),
 })
 export type GetOrderRow = z.infer<typeof GetOrderRowSchema>

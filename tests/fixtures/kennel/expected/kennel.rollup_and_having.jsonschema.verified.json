@@ -28,7 +28,7 @@
       "type": "object",
       "properties": {
         "owner_id": {
-          "description": "SQL type int. May be null: subtotal-row (procedures/rollup_and_having.sql:7:1).",
+          "description": "SQL type int. May be null: subtotal-row (procedures/rollup_and_having.sql:7:1). May be null: ROLLUP, CUBE or GROUPING SETS add subtotal rows, which hold null in it (subtotal-row). Why: haruspex explain kennel.rollup_and_having '#1.owner_id'",
           "type": [
             "integer",
             "null"
@@ -37,7 +37,7 @@
           "maximum": 2147483647
         },
         "dogs": {
-          "description": "SQL type int. May be null: count-overflow (procedures/rollup_and_having.sql:4:20).",
+          "description": "SQL type int. May be null: count-overflow (procedures/rollup_and_having.sql:4:20). May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow). To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\". Why: haruspex explain kennel.rollup_and_having '#1.dogs'",
           "type": [
             "integer",
             "null"

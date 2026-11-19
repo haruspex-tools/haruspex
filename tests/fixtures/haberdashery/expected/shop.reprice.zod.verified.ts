@@ -17,7 +17,12 @@ export type RepriceResult1Row = z.infer<typeof RepriceResult1RowSchema>
 export const RepriceResult2RowSchema = z.object({
   parcel_id: z.int32(),
   label: z.string().max(20).nullable(),
-  /** Not known (unsupported-sql-type); the IR's unknowns say why. */
+  /**
+   * Not known (unsupported-sql-type); the IR's unknowns say why.
+   * Unknown: a SQL type is not modelled yet (unsupported-sql-type).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain shop.reprice '#2.extras'
+   */
   extras: z.unknown(),
 })
 export type RepriceResult2Row = z.infer<typeof RepriceResult2RowSchema>

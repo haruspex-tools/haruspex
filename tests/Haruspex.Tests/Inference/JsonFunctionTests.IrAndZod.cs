@@ -28,7 +28,7 @@ public partial class JsonFunctionTests
     [Fact]
     public void Zod_checks_json_text_against_its_content_and_keeps_it_a_string()
     {
-        var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;")).Expected();
+        var zod = ZodEmitter.Emit(Infer(Children, "SELECT dbo.children(t.id) AS kids FROM dbo.t AS t FOR JSON PATH;"), new ZodOptions { Comments = IrComments.None }).Expected();
 
         Assert.Contains("const jsonText = (content: () => z.ZodType): z.ZodString =>", zod, StringComparison.Ordinal);
         Assert.Contains("  /** A string holding JSON, checked against the schema inside. */\n  kids: jsonText(() => z.array(PKidsSchema).min(1)).optional(),\n", zod, StringComparison.Ordinal);

@@ -28,7 +28,7 @@
           "maximum": 2147483647
         },
         "listed_part": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/prune_prices.sql:7:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/prune_prices.sql:7:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain depot.prune_prices listed_part",
           "type": [
             "integer",
             "null"
@@ -37,7 +37,7 @@
           "maximum": 2147483647
         },
         "code": {
-          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: missing-for-action (procedures/prune_prices.sql:7:1).",
+          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: missing-for-action (procedures/prune_prices.sql:7:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain depot.prune_prices code",
           "type": [
             "string",
             "null"

@@ -14,7 +14,10 @@ reader, the generator of its schema, and the walks every reader needs: `IrTypeTr
 `IrTypeGraph` for what a document's types refer to, which of them lie on a cycle, and an order that puts each after the
 types it refers to. `IrComparison` says what changed between two documents, claim by claim, for `haruspex check`;
 `IrFit` whether one document's values fit within another's, for `haruspex check --baseline`; and `IrCombination` combines two
-documents into one whose types hold against both databases, for `haruspex generate --baseline`.
+documents into one whose types hold against both databases, for `haruspex generate --baseline`. `IrReasons` says what each of the
+IR's codes means, in words, `IrSurprises` which fields differ from what their columns declare, `IrFieldText` the lines that
+explain one in generated code, and `IrFieldPlaces` the path a person names a field by, for `haruspex explain`
+([decision 0079](../../docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## How data flows through it
 

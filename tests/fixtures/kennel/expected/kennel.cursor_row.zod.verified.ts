@@ -9,6 +9,11 @@ import { z } from 'zod'
 export const CursorRowRowSchema = z.object({
   /** varchar(15) counts bytes and its collation isn't declared, so the length is at most 15. */
   chip: z.string().max(15).nullable(),
+  /**
+   * May be null: it is a variable that may not have been given a value that is never null (variable).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain kennel.cursor_row floor
+   */
   floor: z.int32().nullable(),
 })
 export type CursorRowRow = z.infer<typeof CursorRowRowSchema>

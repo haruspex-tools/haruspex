@@ -36,7 +36,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "note": {
-          "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.orders.note).",
+          "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.orders.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain shop.order_card note",
           "type": "string",
           "maxLength": 200
         }

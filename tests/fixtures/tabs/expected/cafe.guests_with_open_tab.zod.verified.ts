@@ -5,7 +5,17 @@ import { z } from 'zod'
 export const GuestsWithOpenTabRowSchema = z.object({
   guest_id: z.int32(),
   name: z.string().max(40),
+  /**
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cafe.guests_with_open_tab open_tab_id
+   */
   open_tab_id: z.int32().nullable(),
+  /**
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cafe.guests_with_open_tab opened_at
+   */
   opened_at: z.date().nullable(),
 })
 export type GuestsWithOpenTabRow = z.infer<typeof GuestsWithOpenTabRowSchema>

@@ -31,7 +31,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "lines": {
-          "description": "Left out when null: empty-subquery (procedures/customer_tree.sql:18:31).",
+          "description": "Left out when null: empty-subquery (procedures/customer_tree.sql:18:31). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.customer_tree 'purchases[].lines'",
           "type": "array",
           "items": {
             "$ref": "#/$defs/CustomerTreePurchaseLine"
@@ -82,7 +82,7 @@
           "maxLength": 50
         },
         "purchases": {
-          "description": "Left out when null: empty-subquery (procedures/customer_tree.sql:12:23).",
+          "description": "Left out when null: empty-subquery (procedures/customer_tree.sql:12:23). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.customer_tree purchases",
           "type": "array",
           "items": {
             "$ref": "#/$defs/CustomerTreePurchase"

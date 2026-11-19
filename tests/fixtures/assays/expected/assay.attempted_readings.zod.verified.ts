@@ -4,7 +4,17 @@ import { z } from 'zod'
 
 export const AttemptedReadingsRowSchema = z.object({
   sample_id: z.int32(),
+  /**
+   * Its type is decimal(10,2), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.attempted_readings attempted_2dp
+   */
   attempted_2dp: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * Its type is decimal(12,4), where assay.sample.dilution is decimal(10,2): what it is computed with makes it another type.
+   * Why: haruspex explain assay.attempted_readings attempted_4dp
+   */
   attempted_4dp: z.number().min(-99999999.9999).max(99999999.9999).multipleOf(1e-4),
 })
 export type AttemptedReadingsRow = z.infer<typeof AttemptedReadingsRowSchema>

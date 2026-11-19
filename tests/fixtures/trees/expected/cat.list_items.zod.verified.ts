@@ -20,9 +20,17 @@ const shape3b579b = z.object({
   category: z.string().max(20),
 })
 
+/**
+ * note: Left out when null, as FOR JSON leaves out a key whose value is null.
+ * note: Why: haruspex explain cat.list_items 'relatedText<json>.note'
+ */
 export const ListItemsRelatedTextSchema = shape3b579b
 export type ListItemsRelatedText = z.infer<typeof ListItemsRelatedTextSchema>
 
+/**
+ * note: Left out when null, as FOR JSON leaves out a key whose value is null.
+ * note: Why: haruspex explain cat.list_items related.note
+ */
 export const ListItemsRelatedSchema = shape3b579b
 export type ListItemsRelated = z.infer<typeof ListItemsRelatedSchema>
 
@@ -46,10 +54,27 @@ export type ListItemsTag = z.infer<typeof ListItemsTagSchema>
 
 export const ListItemsRowSchema = z.object({
   id: z.int32(),
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cat.list_items relatedText
+   */
   relatedText: jsonText(() => ListItemsRelatedTextSchema).optional(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cat.list_items related
+   */
   related: ListItemsRelatedSchema.optional(),
   label: ListItemsLabelSchema,
+  /**
+   * May be null: it calls a function that returns null on null input with an argument that may be null (null-input).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain cat.list_items noteLabel
+   */
   noteLabel: ListItemsNoteLabelSchema.optional(),
   tag: ListItemsTagSchema,
 })

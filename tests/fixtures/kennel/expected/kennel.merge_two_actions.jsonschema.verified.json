@@ -28,7 +28,7 @@
           "maximum": 2147483647
         },
         "before": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/merge_two_actions.sql:6:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/merge_two_actions.sql:6:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_two_actions before",
           "type": [
             "integer",
             "null"

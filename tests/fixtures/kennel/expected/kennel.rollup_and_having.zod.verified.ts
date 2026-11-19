@@ -7,7 +7,16 @@
 import { z } from 'zod'
 
 export const RollupAndHavingResult1RowSchema = z.object({
+  /**
+   * May be null: ROLLUP, CUBE or GROUPING SETS add subtotal rows, which hold null in it (subtotal-row).
+   * Why: haruspex explain kennel.rollup_and_having '#1.owner_id'
+   */
   owner_id: z.int32().nullable(),
+  /**
+   * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
+   * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
+   * Why: haruspex explain kennel.rollup_and_having '#1.dogs'
+   */
   dogs: z.int32().nullable(),
   /** varchar(15) counts bytes and its collation isn't declared, so the length is at most 15. */
   top_chip: z.string().max(15),

@@ -20,7 +20,7 @@
           "maxLength": 40
         },
         "line_id": {
-          "description": "SQL type int. May be null: unmatched-row (procedures/order_lines.sql:8:11).",
+          "description": "SQL type int. May be null: unmatched-row (procedures/order_lines.sql:8:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.order_lines line_id",
           "type": [
             "integer",
             "null"
@@ -29,7 +29,7 @@
           "maximum": 2147483647
         },
         "order_id": {
-          "description": "SQL type int. May be null: unmatched-row (procedures/order_lines.sql:8:11).",
+          "description": "SQL type int. May be null: unmatched-row (procedures/order_lines.sql:8:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.order_lines order_id",
           "type": [
             "integer",
             "null"
@@ -38,7 +38,7 @@
           "maximum": 2147483647
         },
         "sku": {
-          "description": "SQL type varchar(12). varchar(12) counts bytes and its collation isn't declared, so the length is at most 12 code points. May be null: unmatched-row (procedures/order_lines.sql:8:11).",
+          "description": "SQL type varchar(12). varchar(12) counts bytes and its collation isn't declared, so the length is at most 12 code points. May be null: unmatched-row (procedures/order_lines.sql:8:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.order_lines sku",
           "type": [
             "string",
             "null"
@@ -46,7 +46,7 @@
           "maxLength": 12
         },
         "qty": {
-          "description": "SQL type int. May be null: nullable-column (shop.order_line.qty), unmatched-row (procedures/order_lines.sql:8:11).",
+          "description": "SQL type int. May be null: nullable-column (shop.order_line.qty), unmatched-row (procedures/order_lines.sql:8:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.order_lines qty",
           "type": [
             "integer",
             "null"

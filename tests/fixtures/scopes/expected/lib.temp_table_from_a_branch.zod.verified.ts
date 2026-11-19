@@ -3,9 +3,19 @@
 import { z } from 'zod'
 
 export const TempTableFromABranchRowSchema = z.object({
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain lib.temp_table_from_a_branch book_id
+   */
   book_id: z.unknown(),
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain lib.temp_table_from_a_branch title
+   */
   title: z.unknown(),
 })
 export type TempTableFromABranchRow = z.infer<typeof TempTableFromABranchRowSchema>

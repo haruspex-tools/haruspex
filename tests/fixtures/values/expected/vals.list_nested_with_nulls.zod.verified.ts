@@ -34,6 +34,10 @@ export type ListNestedWithNullsDeep = z.infer<typeof ListNestedWithNullsDeepSche
 export const ListNestedWithNullsTagSchema = z.object({
   id: z.int32(),
   name: z.string().max(20),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.list_nested_with_nulls 'tags[].note'
+   */
   note: z.string().max(40).optional(),
 })
 export type ListNestedWithNullsTag = z.infer<typeof ListNestedWithNullsTagSchema>
@@ -43,6 +47,11 @@ export const ListNestedWithNullsRowSchema = z.object({
   when: ListNestedWithNullsWhenSchema,
   meta: ListNestedWithNullsMetaSchema,
   deep: ListNestedWithNullsDeepSchema,
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain vals.list_nested_with_nulls tags
+   */
   tags: z.array(ListNestedWithNullsTagSchema).min(1).nullable(),
 })
 export type ListNestedWithNullsRow = z.infer<typeof ListNestedWithNullsRowSchema>

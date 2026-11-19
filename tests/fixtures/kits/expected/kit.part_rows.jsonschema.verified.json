@@ -83,7 +83,7 @@
           "maxLength": 10
         },
         "colour": {
-          "description": "SQL type nvarchar(10). May be null: json-null-or-absent (procedures/part_rows.sql:12:29).",
+          "description": "SQL type nvarchar(10). May be null: json-null-or-absent (procedures/part_rows.sql:12:29). May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Why: haruspex explain kit.part_rows '#1.colour'",
           "type": [
             "string",
             "null"
@@ -148,7 +148,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "SQL type nvarchar(4000). Left out when null: empty-subquery (procedures/part_rows.sql:7:31).",
+          "description": "SQL type nvarchar(4000). Left out when null: empty-subquery (procedures/part_rows.sql:7:31). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.part_rows '#4.name'",
           "type": "string",
           "maxLength": 4000
         },

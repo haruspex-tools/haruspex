@@ -17,6 +17,11 @@ export const ListBedsRowSchema = z.object({
    * varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.
    */
   soil: z.string().max(5),
+  /**
+   * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
+   * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
+   * Why: haruspex explain plot.list_beds sowings
+   */
   sowings: z.int32().nullable(),
 })
 export type ListBedsRow = z.infer<typeof ListBedsRowSchema>

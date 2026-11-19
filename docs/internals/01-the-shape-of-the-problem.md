@@ -52,6 +52,10 @@ And here is what haruspex generates for it (the module's header is left out):
 export const GetCategoryProductSchema = z.object({
   id: z.int32(),
   name: z.string().max(80),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain shop.get_category 'products[].price'
+   */
   price: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).optional(),
 })
 export type GetCategoryProduct = z.infer<typeof GetCategoryProductSchema>
@@ -59,6 +63,12 @@ export type GetCategoryProduct = z.infer<typeof GetCategoryProductSchema>
 export const GetCategoryRowSchema = z.object({
   id: z.int32(),
   name: z.string().max(40),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.get_category products
+   */
   products: z.array(GetCategoryProductSchema).min(1).optional(),
 })
 export type GetCategoryRow = z.infer<typeof GetCategoryRowSchema>

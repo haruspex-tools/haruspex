@@ -17,7 +17,7 @@
       "type": "object",
       "properties": {
         "last_part": {
-          "description": "SQL type int. May be null: variable (@part_id).",
+          "description": "SQL type int. May be null: variable (@part_id). May be null: it is a variable that may not have been given a value that is never null (variable). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain depot.restock last_part",
           "type": [
             "integer",
             "null"
@@ -26,7 +26,7 @@
           "maximum": 2147483647
         },
         "last_qty": {
-          "description": "SQL type int. May be null: variable (@qty).",
+          "description": "SQL type int. May be null: variable (@qty). May be null: it is a variable that may not have been given a value that is never null (variable). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain depot.restock last_qty",
           "type": [
             "integer",
             "null"
@@ -35,7 +35,7 @@
           "maximum": 2147483647
         },
         "last_shelf": {
-          "description": "SQL type nvarchar(10). May be null: variable (@shelf), nullable-column (depot.stock.shelf).",
+          "description": "SQL type nvarchar(10). May be null: variable (@shelf), nullable-column (depot.stock.shelf). May be null: it is a variable that may not have been given a value that is never null (variable). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain depot.restock last_shelf",
           "type": [
             "string",
             "null"

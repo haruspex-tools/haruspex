@@ -18,6 +18,8 @@ export const EveryoneRowSchema = z.object({
   /**
    * One of "coach", "novice", "skater", as the database compares strings.
    * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain rink.everyone level
    */
   level: z.string().max(10).nullable(),
 })

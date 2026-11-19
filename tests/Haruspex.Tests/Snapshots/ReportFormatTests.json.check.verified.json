@@ -76,7 +76,7 @@
         {
           "code": "HAR6014",
           "severity": "error",
-          "message": "kennel.get_dog results[0][].name: became non-null",
+          "message": "kennel.get_dog results[0][].name: became non-null. Why, once generated: haruspex explain kennel.get_dog name",
           "file": "db/procedures.sql",
           "line": 4,
           "column": 1,
@@ -85,7 +85,7 @@
         {
           "code": "HAR6014",
           "severity": "error",
-          "message": "kennel.list_dogs results[0][].name: became non-null",
+          "message": "kennel.list_dogs results[0][].name: became non-null. Why, once generated: haruspex explain kennel.list_dogs name",
           "file": "db/procedures.sql",
           "line": 1,
           "column": 1,
@@ -94,7 +94,7 @@
         {
           "code": "HAR6014",
           "severity": "error",
-          "message": "kennel.list_dogs results[0][].name: presence changed from omittedWhenNull to always",
+          "message": "kennel.list_dogs results[0][].name: presence changed from omittedWhenNull to always. Why, once generated: haruspex explain kennel.list_dogs name",
           "file": "db/procedures.sql",
           "line": 1,
           "column": 1,

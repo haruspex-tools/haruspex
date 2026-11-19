@@ -14,6 +14,8 @@ export const BillOfMaterialsPartSchema = z.object({
   /**
    * One of "each", "kg", "m", as the database compares strings.
    * varchar(4) counts bytes and its collation isn't declared, so the length is at most 4.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.bill_of_materials part.unit
    */
   unit: z.string().max(4).optional(),
 })

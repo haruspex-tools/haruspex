@@ -9,15 +9,39 @@ import { z } from 'zod'
 export const OrderReportRowSchema = z.object({
   order_id: z.int32(),
   customer_name: z.string().max(100),
-  /** The driver may round numeric(22,3) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round numeric(22,3) past its bounds in a row, so they are not checked.
+   * Its type is numeric(22,3), where sales.order.total is decimal(19,2): what it is computed with makes it another type.
+   * Why: haruspex explain sales.order_report total_with_tax
+   */
   total_with_tax: z.number().multipleOf(1e-3),
-  /** Not known (json-shape-unknown); the IR's unknowns say why. */
+  /**
+   * Not known (json-shape-unknown); the IR's unknowns say why.
+   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
+   * To change it: type it in the config file with "type" and "import".
+   * Why: haruspex explain sales.order_report notes
+   */
   notes: z.unknown(),
-  /** Not known (unresolved-column); the IR's unknowns say why. */
+  /**
+   * Not known (unresolved-column); the IR's unknowns say why.
+   * Unknown: a column can't be found, or is ambiguous, in the tables in scope (unresolved-column).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain sales.order_report nickname
+   */
   nickname: z.unknown(),
-  /** Not known (unsupported-sql-type); the IR's unknowns say why. */
+  /**
+   * Not known (unsupported-sql-type); the IR's unknowns say why.
+   * Unknown: a SQL type is not modelled yet (unsupported-sql-type).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain sales.order_report picture
+   */
   picture: z.unknown(),
-  /** Not known (unresolved-table); the IR's unknowns say why. */
+  /**
+   * Not known (unresolved-table); the IR's unknowns say why.
+   * Unknown: a table it reads is not defined in the project (unresolved-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain sales.order_report voucher_code
+   */
   voucher_code: z.unknown(),
 })
 export type OrderReportRow = z.infer<typeof OrderReportRowSchema>

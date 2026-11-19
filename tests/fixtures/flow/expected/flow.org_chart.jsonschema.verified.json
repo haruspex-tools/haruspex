@@ -25,7 +25,7 @@
           "maximum": 2147483647
         },
         "managerId": {
-          "description": "SQL type int. Left out when null: nullable-column (flow.employee.manager_id).",
+          "description": "SQL type int. Left out when null: nullable-column (flow.employee.manager_id). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.org_chart managerId",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
@@ -36,12 +36,12 @@
           "maxLength": 30
         },
         "title": {
-          "description": "SQL type nvarchar(30). Left out when null: nullable-column (flow.employee.title).",
+          "description": "SQL type nvarchar(30). Left out when null: nullable-column (flow.employee.title). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.org_chart title",
           "type": "string",
           "maxLength": 30
         },
         "lead": {
-          "description": "SQL type nvarchar(30). Left out when null: nullable-column (flow.employee.title).",
+          "description": "SQL type nvarchar(30). Left out when null: nullable-column (flow.employee.title). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.org_chart lead",
           "type": "string",
           "maxLength": 30
         }

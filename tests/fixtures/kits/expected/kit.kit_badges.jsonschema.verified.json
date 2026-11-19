@@ -100,7 +100,7 @@
           "minItems": 2
         },
         "stored": {
-          "description": "Not known (json-shape-unknown): @stored is assigned k.extras at procedures/kit_badges.sql:19:8, which is not JSON built here. Left out when null: unknown (procedures/kit_badges.sql:19:8)."
+          "description": "Not known (json-shape-unknown): @stored is assigned k.extras at procedures/kit_badges.sql:19:8, which is not JSON built here. Left out when null: unknown (procedures/kit_badges.sql:19:8). Unknown: the JSON's shape is in the data, not the code (json-shape-unknown). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges stored"
         },
         "note": {
           "description": "SQL type nvarchar(max).",
@@ -140,7 +140,7 @@
           ]
         },
         "accent": {
-          "description": "Not known (json-shape-unknown): The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here. Left out when null: unknown (procedures/kit_badges.sql:41:19)."
+          "description": "Not known (json-shape-unknown): The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here. Left out when null: unknown (procedures/kit_badges.sql:41:19). Unknown: the JSON's shape is in the data, not the code (json-shape-unknown). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges accent"
         },
         "accent_n": {
           "type": "array",
@@ -171,7 +171,7 @@
       "type": "object",
       "properties": {
         "per_part": {
-          "description": "SQL type int. May be null: count-overflow (procedures/kit_badges.sql:25:56), arithmetic-overflow (procedures/kit_badges.sql:25:50).",
+          "description": "SQL type int. May be null: count-overflow (procedures/kit_badges.sql:25:56), arithmetic-overflow (procedures/kit_badges.sql:25:50). May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\". To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain kit.kit_badges share.per_part",
           "type": [
             "integer",
             "null"

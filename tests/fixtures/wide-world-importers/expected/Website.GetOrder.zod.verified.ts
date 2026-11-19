@@ -8,12 +8,20 @@ import { z } from 'zod'
 
 export const GetOrderSalespersonSchema = z.object({
   name: z.string().max(50),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain Website.GetOrder salesperson.email
+   */
   email: z.string().max(256).optional(),
 })
 export type GetOrderSalesperson = z.infer<typeof GetOrderSalespersonSchema>
 
 export const GetOrderLineStockItemSchema = z.object({
   name: z.string().max(100),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain Website.GetOrder 'lines[].stockItem.brand'
+   */
   brand: z.string().max(50).optional(),
   chilled: z.boolean(),
 })
@@ -22,7 +30,11 @@ export type GetOrderLineStockItem = z.infer<typeof GetOrderLineStockItemSchema>
 export const GetOrderLineSchema = z.object({
   description: z.string().max(100),
   quantity: z.int32(),
-  /** decimal(18,2) runs from -9999999999999999.99 to 9999999999999999.99, which JavaScript reads as the nearest doubles. */
+  /**
+   * decimal(18,2) runs from -9999999999999999.99 to 9999999999999999.99, which JavaScript reads as the nearest doubles.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain Website.GetOrder 'lines[].unitPrice'
+   */
   unitPrice: z.number().min(-10000000000000000).max(10000000000000000).multipleOf(1e-2).optional(),
   stockItem: GetOrderLineStockItemSchema,
 })
@@ -32,8 +44,18 @@ export const GetOrderRowSchema = z.object({
   id: z.int32(),
   orderDate: z.iso.date(),
   expectedDelivery: z.iso.date(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain Website.GetOrder purchaseOrderNumber
+   */
   purchaseOrderNumber: z.string().max(20).optional(),
   salesperson: GetOrderSalespersonSchema,
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain Website.GetOrder lines
+   */
   lines: z.array(GetOrderLineSchema).min(1).optional(),
 })
 export type GetOrderRow = z.infer<typeof GetOrderRowSchema>

@@ -41,10 +41,10 @@ internal static class SplitModules
         var strict = config.Objects == ObjectsPolicy.Strict;
         var files = config.Emitters.Select(emitter => emitter switch
         {
-            Emitter.Zod => Named(ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip, SharedModule = ZodSpecifier(IrModules.Shared) }, modules), ZodSuffix),
-            Emitter.JsonSchema => Named(JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip, SharedDocument = IrModules.Shared + JsonSchemaSuffix }, modules), JsonSchemaSuffix),
+            Emitter.Zod => Named(ZodEmitter.Emit(document, new ZodOptions { Objects = strict ? ZodObjects.Strict : ZodObjects.Strip, SharedModule = ZodSpecifier(IrModules.Shared), Comments = config.Comments }, modules), ZodSuffix),
+            Emitter.JsonSchema => Named(JsonSchemaEmitter.Emit(document, new JsonSchemaOptions { Objects = strict ? JsonSchemaObjects.Strict : JsonSchemaObjects.Strip, SharedDocument = IrModules.Shared + JsonSchemaSuffix, Comments = config.Comments }, modules), JsonSchemaSuffix),
             Emitter.Mssql => Named(
-                MssqlEmitter.Emit(document, new MssqlOptions { ServerOnly = config.ServerOnly, IsReserved = TypeScriptNames.IsReserved, RefusesExtraResultSets = strict }, modules, ZodSpecifier),
+                MssqlEmitter.Emit(document, new MssqlOptions { ServerOnly = config.ServerOnly, IsReserved = TypeScriptNames.IsReserved, RefusesExtraResultSets = strict, Comments = config.Comments }, modules, ZodSpecifier),
                 MssqlSuffix),
             Emitter.Mapping => new Succeeded<EquatableArray<EmittedFile>>([new EmittedFile(HaruspexCli.MappingFileName, MappingModule.Text)]),
         });

@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "described": {
-          "description": "SQL type varchar(44). varchar(44) counts bytes and its collation isn't declared, so the length is at most 44 code points.",
+          "description": "SQL type varchar(44). varchar(44) counts bytes and its collation isn't declared, so the length is at most 44 code points. Its type is varchar(44), where meter.meter.label is varchar(20) and meter.meter.site is varchar(20): what it is computed with makes it another type. Why: haruspex explain meter.usage_summary described",
           "type": "string",
           "maxLength": 44
         },
@@ -56,7 +56,7 @@
           "maximum": 2147483647
         },
         "peak_kw": {
-          "description": "SQL type decimal(5,1). At most 1 decimal place, which multipleOf would check inexactly.",
+          "description": "SQL type decimal(5,1). At most 1 decimal place, which multipleOf would check inexactly. Its type is decimal(5,1), where meter.reading.peak_kw is decimal(9,3): what it is computed with makes it another type. Why: haruspex explain meter.usage_summary peak_kw",
           "type": "number",
           "minimum": -9999.9,
           "maximum": 9999.9

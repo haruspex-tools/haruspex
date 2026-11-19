@@ -15,6 +15,10 @@ const jsonText = (content: () => z.ZodType): z.ZodString =>
 export const ItemRowsRelatedSchema = z.object({
   id: z.int32(),
   title: z.string().max(20),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain cat.item_rows 'related<json>.note'
+   */
   note: z.string().max(20).optional(),
   category: z.string().max(20),
 })
@@ -22,7 +26,12 @@ export type ItemRowsRelated = z.infer<typeof ItemRowsRelatedSchema>
 
 export const ItemRowsRowSchema = z.object({
   id: z.int32(),
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cat.item_rows related
+   */
   related: jsonText(() => ItemRowsRelatedSchema).nullable(),
 })
 export type ItemRowsRow = z.infer<typeof ItemRowsRowSchema>

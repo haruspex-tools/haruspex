@@ -10,16 +10,55 @@ export const JobBoardRowSchema = z.object({
   job_id: z.int32(),
   status_label: z.enum(["Cancelled", "Done", "In work", "New"]),
   priority_label: z.enum(["none", "normal", "urgent"]),
+  /**
+   * Its type is int, where desk.job.priority is tinyint: what it is computed with makes it another type.
+   * Why: haruspex explain desk.job_board priority_value
+   */
   priority_value: z.int32(),
+  /**
+   * Its type is int, where desk.job.priority is tinyint: what it is computed with makes it another type.
+   * Why: haruspex explain desk.job_board priority_unless_one
+   */
   priority_unless_one: z.int32().nullable(),
   quote_shown: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2),
+  /**
+   * May be null: a CASE without ELSE is null when no condition holds (no-branch-matched).
+   * To change it: give the CASE an ELSE.
+   * Why: haruspex explain desk.job_board late
+   */
   late: z.enum(["late"]).nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain desk.job_board live_job
+   */
   live_job: z.int32().nullable(),
+  /**
+   * Its type is varchar(6), where desk.customer.tier is tinyint: what it is computed with makes it another type.
+   * Why: haruspex explain desk.job_board tier_name
+   */
   tier_name: z.enum(["bronze", "gold", "silver"]),
+  /**
+   * Its type is varchar(4), where desk.job.priority is tinyint: what it is computed with makes it another type.
+   * May be null: a function given an index, code or position outside what it reads gives null (out-of-range).
+   * Why: haruspex explain desk.job_board priority_name
+   */
   priority_name: z.enum(["high", "low", "mid"]).nullable(),
+  /**
+   * Its type is varchar(8), where desk.customer.tier is tinyint: what it is computed with makes it another type.
+   * May be null: a function given an index, code or position outside what it reads gives null (out-of-range).
+   * Why: haruspex explain desk.job_board service
+   */
   service: z.enum(["priority", "standard"]).nullable(),
-  /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
+  /**
+   * varchar(20) counts bytes and its collation isn't declared, so the length is at most 20.
+   * May be null: NULLIF is null when its two arguments are equal (null-when-equal).
+   * Why: haruspex explain desk.job_board phone
+   */
   phone: z.string().max(20).nullable(),
+  /**
+   * May be null: NULLIF is null when its two arguments are equal (null-when-equal).
+   * Why: haruspex explain desk.job_board one_unless_priority
+   */
   one_unless_priority: z.int().min(0).max(255).nullable(),
   note: z.string().max(100),
   note_job: z.int32(),

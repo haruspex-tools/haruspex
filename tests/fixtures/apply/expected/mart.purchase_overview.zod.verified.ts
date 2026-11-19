@@ -11,7 +11,12 @@ export const PurchaseOverviewRowSchema = z.object({
   customer_name: z.string().max(50),
   placed_on: z.date(),
   line_count: z.string(),
-  /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
+  /**
+   * varchar(20) counts bytes and its collation isn't declared, so the length is at most 20.
+   * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.purchase_overview first_sku
+   */
   first_sku: z.string().max(20).nullable(),
 })
 export type PurchaseOverviewRow = z.infer<typeof PurchaseOverviewRowSchema>

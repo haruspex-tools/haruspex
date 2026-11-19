@@ -1,3 +1,5 @@
+using Haruspex.Ir;
+
 namespace Haruspex.Emit.Mssql;
 
 /// <summary>
@@ -32,4 +34,11 @@ public sealed record MssqlOptions
     /// from the Zod emitter, as it hands them to the config's naming. Nothing is reserved by default.
     /// </summary>
     public Func<string, bool> IsReserved { get; init; } = _ => false;
+
+    /// <summary>
+    /// What a function's comment explains of its results (<c>"comments"</c> in the config file): why a result set may be missing
+    /// or can't be listed, by default; how many rows each returns too under <see cref="IrComments.All"/>; nothing under
+    /// <see cref="IrComments.None"/> (<c>docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md</c>).
+    /// </summary>
+    public IrComments Comments { get; init; } = IrComments.Surprises;
 }

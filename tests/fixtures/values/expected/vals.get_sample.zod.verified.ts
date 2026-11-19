@@ -11,41 +11,161 @@ import { z } from 'zod'
 export const GetSampleRowSchema = z.object({
   id: z.int32(),
   label: z.string().max(40),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample tiny
+   */
   tiny: z.int().min(0).max(255).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample small
+   */
   small: z.int().min(-32768).max(32767).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample whole
+   */
   whole: z.int32().optional(),
-  /** A bigint, exact only up to 2^53 once parsed. */
+  /**
+   * A bigint, exact only up to 2^53 once parsed.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample big
+   */
   big: z.number().optional(),
-  /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
+  /**
+   * decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dec19_2
+   */
   dec19_2: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2).optional(),
-  /** decimal(38,0) runs from -99999999999999999999999999999999999999 to 99999999999999999999999999999999999999, which JavaScript reads as the nearest doubles. */
+  /**
+   * decimal(38,0) runs from -99999999999999999999999999999999999999 to 99999999999999999999999999999999999999, which JavaScript reads as the nearest doubles.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dec38_0
+   */
   dec38_0: z.number().min(-1e+38).max(1e+38).multipleOf(1).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample num9_3
+   */
   num9_3: z.number().min(-999999.999).max(999999.999).multipleOf(1e-3).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dec5_5
+   */
   dec5_5: z.number().min(-0.99999).max(0.99999).multipleOf(1e-5).optional(),
-  /** money runs from -922337203685477.5808 to 922337203685477.5807, which JavaScript reads as the nearest doubles. */
+  /**
+   * money runs from -922337203685477.5808 to 922337203685477.5807, which JavaScript reads as the nearest doubles.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample cash
+   */
   cash: z.number().min(-922337203685477.6).max(922337203685477.6).multipleOf(1e-4).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample smallCash
+   */
   smallCash: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample approx
+   */
   approx: z.number().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample approxReal
+   */
   approxReal: z.number().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample flag
+   */
   flag: z.boolean().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample day
+   */
   day: z.iso.date().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample t0
+   */
   t0: z.iso.time().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample t3
+   */
   t3: z.iso.time().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample t7
+   */
   t7: z.iso.time().optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dt2_0
+   */
   dt2_0: z.iso.datetime({ local: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dt2_3
+   */
   dt2_3: z.iso.datetime({ local: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dt2_7
+   */
   dt2_7: z.iso.datetime({ local: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dto0
+   */
   dto0: z.iso.datetime({ offset: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dto3
+   */
   dto3: z.iso.datetime({ offset: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample dto7
+   */
   dto7: z.iso.datetime({ offset: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample smallDt
+   */
   smallDt: z.iso.datetime({ local: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample legacyDt
+   */
   legacyDt: z.iso.datetime({ local: true }).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample guid
+   */
   guid: z.guid().optional(),
-  /** char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5. */
+  /**
+   * char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample code
+   */
   code: z.string().max(5).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample ncode
+   */
   ncode: z.string().length(5).optional(),
-  /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
+  /**
+   * varchar(5) counts bytes and its collation isn't declared, so the length is at most 5.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample vcode
+   */
   vcode: z.string().max(5).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain vals.get_sample body
+   */
   body: z.string().optional(),
 })
 export type GetSampleRow = z.infer<typeof GetSampleRowSchema>

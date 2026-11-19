@@ -26,7 +26,7 @@
           "maxLength": 40
         },
         "depth": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/referral_chain.sql:12:33).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/referral_chain.sql:12:33). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain lib.referral_chain depth",
           "type": [
             "integer",
             "null"

@@ -4,6 +4,11 @@ import { z } from 'zod'
 
 export const LoansThroughAViewRowSchema = z.object({
   member_id: z.int32(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.loans_through_a_view loans
+   */
   loans: z.string().nullable(),
 })
 export type LoansThroughAViewRow = z.infer<typeof LoansThroughAViewRowSchema>

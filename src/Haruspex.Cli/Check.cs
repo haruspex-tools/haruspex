@@ -188,8 +188,8 @@ internal static class Check
     /// </summary>
     private static Diagnostic Placed(EmittedModule module, IrChange change, IrObject? obj) =>
         change.NullableBecause.Select(r => module.Project.PlaceOf(r.At)).FirstOrDefault(at => at is not null) is { } reason
-            ? ModuleRun.Rooted(CliCodes.ClaimChanged.At(reason, change.ToString()), module.Project)
-            : At(module, obj, CliCodes.ClaimChanged, change.ToString());
+            ? ModuleRun.Rooted(CliCodes.ClaimChanged.At(reason, change + ExplainPointer.Of(module.Document, change)), module.Project)
+            : At(module, obj, CliCodes.ClaimChanged, change + ExplainPointer.Of(module.Document, change));
 
     /// <summary>A diagnostic at the object's place in the SQL, under the folder it was read from; with no place when there is none.</summary>
     private static Diagnostic At(EmittedModule module, IrObject? obj, DiagnosticCode code, string message) =>

@@ -3,13 +3,33 @@
 import { z } from 'zod'
 
 export const PickedBatchesRowSchema = z.object({
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain calls.picked_batches batch_id
+   */
   batch_id: z.unknown(),
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain calls.picked_batches product
+   */
   product: z.unknown(),
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain calls.picked_batches weight_g
+   */
   weight_g: z.unknown(),
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain calls.picked_batches round_no
+   */
   round_no: z.unknown(),
 })
 export type PickedBatchesRow = z.infer<typeof PickedBatchesRowSchema>

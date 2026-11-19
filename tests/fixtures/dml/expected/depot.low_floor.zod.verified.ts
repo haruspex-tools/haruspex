@@ -4,6 +4,11 @@ import { z } from 'zod'
 
 export const LowFloorRowSchema = z.object({
   part_id: z.int32(),
+  /**
+   * May be null: it is a variable that may not have been given a value that is never null (variable).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.low_floor floor
+   */
   floor: z.int32().nullable(),
 })
 export type LowFloorRow = z.infer<typeof LowFloorRowSchema>

@@ -15,10 +15,10 @@
       "type": "object",
       "properties": {
         "book_id": {
-          "description": "Not known (caller-temp-table): #picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one. May be null: unknown (procedures/temp_table_from_a_branch.sql:14:8)."
+          "description": "Not known (caller-temp-table): #picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one. May be null: unknown (procedures/temp_table_from_a_branch.sql:14:8). Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table). To change it: declare the results in the config file's \"results\". Why: haruspex explain lib.temp_table_from_a_branch book_id"
         },
         "title": {
-          "description": "Not known (caller-temp-table): #picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one. May be null: unknown (procedures/temp_table_from_a_branch.sql:14:19)."
+          "description": "Not known (caller-temp-table): #picked is created on some paths only before procedures/temp_table_from_a_branch.sql:7:1; on the others it is the caller's table of that name, if there is one. May be null: unknown (procedures/temp_table_from_a_branch.sql:14:19). Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table). To change it: declare the results in the config file's \"results\". Why: haruspex explain lib.temp_table_from_a_branch title"
         }
       },
       "required": [

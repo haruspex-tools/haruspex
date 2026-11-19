@@ -5,6 +5,10 @@ import { z } from 'zod'
 export const ReviewsByBookReviewSchema = z.object({
   id: z.int32(),
   stars: z.int().min(1).max(5),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain pay.reviews_by_book 'reviews[].comment'
+   */
   comment: z.string().max(100).optional(),
 })
 export type ReviewsByBookReview = z.infer<typeof ReviewsByBookReviewSchema>

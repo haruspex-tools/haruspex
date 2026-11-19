@@ -8,13 +8,36 @@ import { z } from 'zod'
 
 export const MenuPricesRowSchema = z.object({
   item_id: z.int32(),
+  /**
+   * Its type is nvarchar(45), where cafe.menu_item.title is nvarchar(30) and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.menu_prices label
+   */
   label: z.string().max(45),
+  /**
+   * Its type is numeric(12,3), where cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.menu_prices price_with_tax
+   */
   price_with_tax: z.number().min(-999999999.999).max(999999999.999).multipleOf(1e-3),
+  /**
+   * Its type is int, where cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain cafe.menu_prices pence
+   */
   pence: z.int32().nullable(),
   /** char(4) pads to 4 bytes and its collation isn't declared, so the length is at most 4. */
   code: z.string().max(4),
-  /** varchar(17) counts bytes and its collation isn't declared, so the length is at most 17. */
+  /**
+   * varchar(17) counts bytes and its collation isn't declared, so the length is at most 17.
+   * Its type is varchar(17), where cafe.menu_item.short_code is char(4) and cafe.menu_item.item_id is int: what it is computed with makes it another type.
+   * Why: haruspex explain cafe.menu_prices ref
+   */
   ref: z.string().max(17),
+  /**
+   * Its type is int, where cafe.menu_item.title is nvarchar(30): what it is computed with makes it another type.
+   * May be null: TRY_CAST and TRY_CONVERT give null for a value that doesn't convert (failed-conversion).
+   * Why: haruspex explain cafe.menu_prices title_number
+   */
   title_number: z.int32().nullable(),
 })
 export type MenuPricesRow = z.infer<typeof MenuPricesRowSchema>

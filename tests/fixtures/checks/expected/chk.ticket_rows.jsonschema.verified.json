@@ -167,7 +167,7 @@
           "maximum": 2147483647
         },
         "owner_name": {
-          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code points. May be null: unmatched-row (procedures/ticket_rows.sql:28:11).",
+          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code points. May be null: unmatched-row (procedures/ticket_rows.sql:28:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.ticket_rows owner_name",
           "type": [
             "string",
             "null"
@@ -176,7 +176,7 @@
           "maxLength": 20
         },
         "owner_grade": {
-          "description": "SQL type nchar(1). Facts: values from the check tables/owner.sql:6:38. One of \"A\", \"B\", as the database compares strings. nchar(1) is exactly 1 UTF-16 code units, which is 1 to 1 code points. May be null: unmatched-row (procedures/ticket_rows.sql:28:11).",
+          "description": "SQL type nchar(1). Facts: values from the check tables/owner.sql:6:38. One of \"A\", \"B\", as the database compares strings. nchar(1) is exactly 1 UTF-16 code units, which is 1 to 1 code points. May be null: unmatched-row (procedures/ticket_rows.sql:28:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.ticket_rows owner_grade",
           "type": [
             "string",
             "null"

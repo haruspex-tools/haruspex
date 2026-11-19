@@ -171,7 +171,7 @@ internal static class MssqlPrinter
         if (functions.Any(f => f.Results?.Contains(IrEncoding.Rowset) == true))
             output.Append(RowsReading);
         foreach (var function in functions)
-            Function(output, function, options.RefusesExtraResultSets);
+            Function(output, function, options.RefusesExtraResultSets, IrFieldText.Of(document, function.Procedure, options.Comments));
         return output.ToString();
     }
 
@@ -208,14 +208,22 @@ internal static class MssqlPrinter
     /// driver's own error, a <c>RequestError</c>, passes through as it is. When every parameter may be left out, so may the
     /// parameters' object.
     /// </summary>
-    private static void Function(StringBuilder output, MssqlFunction function, bool refusesExtraSets)
+    /// <param name="output">Where the module is written.</param>
+    /// <param name="function">The function.</param>
+    /// <param name="refusesExtraSets">Whether it refuses a result set after those its procedure lists.</param>
+    /// <param name="explanation">Why its results are what they are, a sentence a line, for its comment (<see cref="IrFieldText"/>).</param>
+    private static void Function(StringBuilder output, MssqlFunction function, bool refusesExtraSets, IReadOnlyList<string> explanation)
     {
         var procedure = function.Procedure;
         var id = Quoted(procedure.Id);
         var name = procedure.Name;
         var fields = Fields(function).ToList();
 
-        output.Append('\n').Append(function.Batch is null ? "/** Calls " : "/** Runs the query file ").Append(Comment(procedure.Id)).Append(". */\n")
+        var what = (function.Batch is null ? "Calls " : "Runs the query file ") + Comment(procedure.Id) + ".";
+        output.Append('\n').Append(explanation.Count == 0
+            ? "/** " + what + " */\n"
+            : "/**\n * " + what + "\n" + string.Concat(explanation.Select(line => " * " + Comment(line) + "\n")) + " */\n");
+        output
             .Append("export async function ").Append(function.Name).Append("(db: Queryable")
             .Append(function.Bindings.Count > 0 ? ", params: types." + SchemaModuleNames.Parameters(name) + (function.Bindings.All(b => b.OnlyWhenGiven) ? " = {}" : "") : "")
             .Append("): Promise<").Append(

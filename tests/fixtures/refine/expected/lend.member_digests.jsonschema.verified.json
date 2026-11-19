@@ -15,7 +15,7 @@
       "type": "object",
       "properties": {
         "nickname": {
-          "description": "SQL type nvarchar(20). Left out when null: nullable-column (lend.member.nickname).",
+          "description": "SQL type nvarchar(20). Left out when null: nullable-column (lend.member.nickname). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain lend.member_digests 'digest<json>.nickname'",
           "type": "string",
           "maxLength": 20
         },

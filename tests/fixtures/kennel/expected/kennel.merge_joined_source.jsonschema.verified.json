@@ -22,7 +22,7 @@
           ]
         },
         "booked": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/merge_joined_source.sql:6:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/merge_joined_source.sql:6:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_joined_source booked",
           "type": [
             "integer",
             "null"
@@ -31,7 +31,7 @@
           "maximum": 2147483647
         },
         "dog": {
-          "description": "SQL type nvarchar(20). May be null: missing-for-action (procedures/merge_joined_source.sql:6:1).",
+          "description": "SQL type nvarchar(20). May be null: missing-for-action (procedures/merge_joined_source.sql:6:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_joined_source dog",
           "type": [
             "string",
             "null"

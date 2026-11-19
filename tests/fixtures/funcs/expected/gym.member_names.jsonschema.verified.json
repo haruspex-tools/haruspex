@@ -39,12 +39,12 @@
           "maximum": 2147483647
         },
         "code_left": {
-          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points.",
+          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points. Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.code_left'",
           "type": "string",
           "maxLength": 5
         },
         "code_trimmed": {
-          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points.",
+          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points. Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.code_trimmed'",
           "type": "string",
           "maxLength": 5
         },
@@ -62,7 +62,7 @@
           "maxLength": 40
         },
         "code_upper": {
-          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points.",
+          "description": "SQL type varchar(5). varchar(5) counts bytes and its collation isn't declared, so the length is at most 5 code points. Its type is varchar(5), where gym.member.code is char(5): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.code_upper'",
           "type": "string",
           "maxLength": 5
         },
@@ -80,12 +80,12 @@
           "maxLength": 10
         },
         "name_start": {
-          "description": "SQL type varchar(3). varchar(3) counts bytes and its collation isn't declared, so the length is at most 3 code points.",
+          "description": "SQL type varchar(3). varchar(3) counts bytes and its collation isn't declared, so the length is at most 3 code points. Its type is varchar(3), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.name_start'",
           "type": "string",
           "maxLength": 3
         },
         "nickname_end": {
-          "description": "SQL type nvarchar(2). May be null: nullable-column (gym.member.nickname).",
+          "description": "SQL type nvarchar(2). May be null: nullable-column (gym.member.nickname). Its type is nvarchar(2), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.nickname_end'",
           "type": [
             "string",
             "null"
@@ -93,7 +93,7 @@
           "maxLength": 2
         },
         "name_rest": {
-          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points.",
+          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. Its type is varchar(10), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.name_rest'",
           "type": "string",
           "maxLength": 10
         },
@@ -105,13 +105,13 @@
           ]
         },
         "code_length": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where gym.member.code is char(5): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.code_length'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "prefs_length": {
-          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (gym.member.prefs).",
+          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (gym.member.prefs). Its type is bigint, where gym.member.prefs is nvarchar(max): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.prefs_length'",
           "type": [
             "integer",
             "null"
@@ -120,7 +120,7 @@
           "maximum": 9223372036854775807
         },
         "nickname_bytes": {
-          "description": "SQL type int. May be null: nullable-column (gym.member.nickname).",
+          "description": "SQL type int. May be null: nullable-column (gym.member.nickname). Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.nickname_bytes'",
           "type": [
             "integer",
             "null"
@@ -129,18 +129,18 @@
           "maximum": 2147483647
         },
         "joined_bytes": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.joined_bytes'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "name_doubled": {
-          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points.",
+          "description": "SQL type varchar(8000). varchar(8000) counts bytes and its collation isn't declared, so the length is at most 8000 code points. Its type is varchar(8000), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.name_doubled'",
           "type": "string",
           "maxLength": 8000
         },
         "nickname_zeroed": {
-          "description": "SQL type nvarchar(4000). May be null: nullable-column (gym.member.nickname).",
+          "description": "SQL type nvarchar(4000). May be null: nullable-column (gym.member.nickname). Its type is nvarchar(4000), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.nickname_zeroed'",
           "type": [
             "string",
             "null"
@@ -148,16 +148,16 @@
           "maxLength": 4000
         },
         "name_escaped": {
-          "description": "SQL type nvarchar(max).",
+          "description": "SQL type nvarchar(max). Its type is nvarchar(max), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.name_escaped'",
           "type": "string"
         },
         "label": {
-          "description": "SQL type nvarchar(4000).",
+          "description": "SQL type nvarchar(4000). Its type is nvarchar(4000), where gym.member.name is varchar(40) and gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.label'",
           "type": "string",
           "maxLength": 4000
         },
         "custom_label": {
-          "description": "SQL type nvarchar(4000). May be null: parameter (@format).",
+          "description": "SQL type nvarchar(4000). May be null: parameter (@format). Its type is nvarchar(4000), where gym.member.name is varchar(40): what it is computed with makes it another type. Why: haruspex explain gym.member_names '#1.custom_label'",
           "type": [
             "string",
             "null"
@@ -165,7 +165,7 @@
           "maxLength": 4000
         },
         "locker": {
-          "description": "SQL type nvarchar(4000). May be null: json-null-or-absent (procedures/member_names.sql:25:8).",
+          "description": "SQL type nvarchar(4000). May be null: json-null-or-absent (procedures/member_names.sql:25:8). Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type. May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Why: haruspex explain gym.member_names '#1.locker'",
           "type": [
             "string",
             "null"
@@ -214,17 +214,17 @@
           "maxLength": 40
         },
         "tail": {
-          "description": "SQL type nvarchar(3). Left out when null: nullable-column (gym.member.nickname).",
+          "description": "SQL type nvarchar(3). Left out when null: nullable-column (gym.member.nickname). Its type is nvarchar(3), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.tail'",
           "type": "string",
           "maxLength": 3
         },
         "locker": {
-          "description": "SQL type nvarchar(4000). Left out when null: json-null-or-absent (procedures/member_names.sql:32:8).",
+          "description": "SQL type nvarchar(4000). Left out when null: json-null-or-absent (procedures/member_names.sql:32:8). Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type. May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.locker'",
           "type": "string",
           "maxLength": 4000
         },
         "nickname_length": {
-          "description": "SQL type int. Left out when null: nullable-column (gym.member.nickname).",
+          "description": "SQL type int. Left out when null: nullable-column (gym.member.nickname). Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.nickname_length'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

@@ -70,6 +70,7 @@ refreshsqlmodule
 refreshview
 releaseapplock
 repeatableread
+replacer
 roundabort
 rowcount
 rowset

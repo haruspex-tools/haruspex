@@ -1,3 +1,5 @@
+using Haruspex.Ir;
+
 namespace Haruspex.Emit.Zod;
 
 /// <summary>
@@ -14,4 +16,11 @@ public sealed record ZodOptions
     /// writes beside the modules. Unused by a module of one file.
     /// </summary>
     public string SharedModule { get; init; } = "./shared.zod.js";
+
+    /// <summary>
+    /// Which fields a comment explains (<c>"comments"</c> in the config file): the surprises by default, every field, or none
+    /// (<c>docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md</c>). The notes that state a fact a check rests on are
+    /// written whatever this says.
+    /// </summary>
+    public IrComments Comments { get; init; } = IrComments.Surprises;
 }

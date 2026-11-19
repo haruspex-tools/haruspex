@@ -4,9 +4,21 @@ import { z } from 'zod'
 
 export const OrgChartRowSchema = z.object({
   id: z.int32(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.org_chart managerId
+   */
   managerId: z.int32().optional(),
   name: z.string().max(30),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.org_chart title
+   */
   title: z.string().max(30).optional(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.org_chart lead
+   */
   lead: z.string().max(30).optional(),
 })
 export type OrgChartRow = z.infer<typeof OrgChartRowSchema>

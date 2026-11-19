@@ -4,6 +4,11 @@ import { z } from 'zod'
 
 export const UnharvestedRowSchema = z.object({
   name: z.string().max(40),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain plot.unharvested crop
+   */
   crop: z.string().max(30).nullable(),
 })
 export type UnharvestedRow = z.infer<typeof UnharvestedRowSchema>

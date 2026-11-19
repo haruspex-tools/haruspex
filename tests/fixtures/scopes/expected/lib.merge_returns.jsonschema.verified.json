@@ -28,7 +28,7 @@
           "maximum": 2147483647
         },
         "was_returned": {
-          "description": "SQL type date. May be null: nullable-column (lib.loan.returned_on), missing-for-action (procedures/merge_returns.sql:6:1).",
+          "description": "SQL type date. May be null: nullable-column (lib.loan.returned_on), missing-for-action (procedures/merge_returns.sql:6:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain lib.merge_returns was_returned",
           "type": [
             "string",
             "null"

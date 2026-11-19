@@ -29,7 +29,7 @@
           "maxLength": 4
         },
         "component_id": {
-          "description": "SQL type int. May be null: unmatched-row (procedures/part_counts.sql:11:14).",
+          "description": "SQL type int. May be null: unmatched-row (procedures/part_counts.sql:11:14). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain flow.part_counts component_id",
           "type": [
             "integer",
             "null"
@@ -38,7 +38,7 @@
           "maximum": 2147483647
         },
         "quantity": {
-          "description": "SQL type smallint. Facts: min from the check flow.ck_component_quantity. May be null: unmatched-row (procedures/part_counts.sql:11:14).",
+          "description": "SQL type smallint. Facts: min from the check flow.ck_component_quantity. May be null: unmatched-row (procedures/part_counts.sql:11:14). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain flow.part_counts quantity",
           "type": [
             "integer",
             "null"

@@ -4,9 +4,21 @@ import { z } from 'zod'
 
 export const StallCardRowSchema = z.object({
   id: z.int32(),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.stall_card labelled
+   */
   labelled: z.unknown().optional(),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.stall_card origin
+   */
   origin: z.unknown().optional(),
 })
 export type StallCardRow = z.infer<typeof StallCardRowSchema>

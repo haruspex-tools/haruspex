@@ -25,7 +25,7 @@
           "maxLength": 15
         },
         "floor": {
-          "description": "SQL type int. May be null: variable (@floor).",
+          "description": "SQL type int. May be null: variable (@floor). May be null: it is a variable that may not have been given a value that is never null (variable). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kennel.cursor_row floor",
           "type": [
             "integer",
             "null"

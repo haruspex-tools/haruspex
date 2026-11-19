@@ -8,7 +8,11 @@ import { z } from 'zod'
 
 export const HarvestedAreaRowSchema = z.object({
   bed_id: z.int32(),
-  /** The driver may round decimal(38,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,2), where plot.bed.area_m2 is decimal(6,2): what it is computed with makes it another type.
+   * Why: haruspex explain plot.harvested_area area_m2
+   */
   area_m2: z.number().multipleOf(1e-2).nullable(),
 })
 export type HarvestedAreaRow = z.infer<typeof HarvestedAreaRowSchema>

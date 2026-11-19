@@ -69,7 +69,7 @@
       "type": "object",
       "properties": {
         "line_id": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/picking.sql:11:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/picking.sql:11:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain shop.picking '#2.line_id'",
           "type": [
             "integer",
             "null"

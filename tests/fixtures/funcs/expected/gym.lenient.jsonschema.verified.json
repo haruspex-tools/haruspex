@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "room_before": {
-          "description": "SQL type tinyint. May be null: arithmetic-overflow (procedures/lenient.sql:7:8).",
+          "description": "SQL type tinyint. May be null: arithmetic-overflow (procedures/lenient.sql:7:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.lenient room_before",
           "type": [
             "integer",
             "null"
@@ -30,14 +30,14 @@
           "maximum": 255
         },
         "heavy": {
-          "description": "SQL type float. May be null: arithmetic-overflow (procedures/lenient.sql:8:8).",
+          "description": "SQL type float. May be null: arithmetic-overflow (procedures/lenient.sql:8:8). Its type is float, where gym.visit.room is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.lenient heavy",
           "type": [
             "number",
             "null"
           ]
         },
         "fee_scaled": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:9:17), arithmetic-overflow (procedures/lenient.sql:9:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:9:17), arithmetic-overflow (procedures/lenient.sql:9:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.lenient fee_scaled",
           "type": [
             "number",
             "null"
@@ -46,7 +46,7 @@
           "maximum": 922337203685477.5807
         },
         "far_future": {
-          "description": "SQL type datetime. May be null: arithmetic-overflow (procedures/lenient.sql:10:40), arithmetic-overflow (procedures/lenient.sql:10:8).",
+          "description": "SQL type datetime. May be null: arithmetic-overflow (procedures/lenient.sql:10:40), arithmetic-overflow (procedures/lenient.sql:10:8). Its type is datetime, where gym.visit.room is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.lenient far_future",
           "type": [
             "string",
             "null"

@@ -4,7 +4,15 @@ import { z } from 'zod'
 
 export const MergeJoinedSourceRowSchema = z.object({
   did: z.enum(["DELETE", "UPDATE"]),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain kennel.merge_joined_source booked
+   */
   booked: z.int32().nullable(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain kennel.merge_joined_source dog
+   */
   dog: z.string().max(20).nullable(),
 })
 export type MergeJoinedSourceRow = z.infer<typeof MergeJoinedSourceRowSchema>

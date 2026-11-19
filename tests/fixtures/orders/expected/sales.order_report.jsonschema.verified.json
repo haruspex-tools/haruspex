@@ -26,22 +26,22 @@
           "maxLength": 100
         },
         "total_with_tax": {
-          "description": "SQL type numeric(22,3). At most 3 decimal places, which multipleOf would check inexactly. numeric(22,3) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type numeric(22,3). At most 3 decimal places, which multipleOf would check inexactly. numeric(22,3) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is numeric(22,3), where sales.order.total is decimal(19,2): what it is computed with makes it another type. Why: haruspex explain sales.order_report total_with_tax",
           "type": "number",
           "minimum": -9999999999999999999.999,
           "maximum": 9999999999999999999.999
         },
         "notes": {
-          "description": "Not known (json-shape-unknown): json_query(o.notes) reads JSON that is not built here, so its shape is unknown. May be null: unknown (procedures/order_report.sql:8:8)."
+          "description": "Not known (json-shape-unknown): json_query(o.notes) reads JSON that is not built here, so its shape is unknown. May be null: unknown (procedures/order_report.sql:8:8). Unknown: the JSON's shape is in the data, not the code (json-shape-unknown). To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain sales.order_report notes"
         },
         "nickname": {
-          "description": "Not known (unresolved-column): The table sales.customer has no column nickname. May be null: unknown (procedures/order_report.sql:9:8)."
+          "description": "Not known (unresolved-column): The table sales.customer has no column nickname. May be null: unknown (procedures/order_report.sql:9:8). Unknown: a column can't be found, or is ambiguous, in the tables in scope (unresolved-column). To change it: declare the results in the config file's \"results\". Why: haruspex explain sales.order_report nickname"
         },
         "picture": {
-          "description": "Not known (unsupported-sql-type): The type varbinary(max) is not modelled yet. May be null: nullable-column (sales.product.picture)."
+          "description": "Not known (unsupported-sql-type): The type varbinary(max) is not modelled yet. May be null: nullable-column (sales.product.picture). Unknown: a SQL type is not modelled yet (unsupported-sql-type). To change it: declare the results in the config file's \"results\". Why: haruspex explain sales.order_report picture"
         },
         "voucher_code": {
-          "description": "Not known (unresolved-table): There is no table sales.voucher in the project. May be null: unknown (procedures/order_report.sql:11:8)."
+          "description": "Not known (unresolved-table): There is no table sales.voucher in the project. May be null: unknown (procedures/order_report.sql:11:8). Unknown: a table it reads is not defined in the project (unresolved-table). To change it: declare the results in the config file's \"results\". Why: haruspex explain sales.order_report voucher_code"
         }
       },
       "required": [

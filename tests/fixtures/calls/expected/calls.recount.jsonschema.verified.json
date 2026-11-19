@@ -15,7 +15,7 @@
       "type": "object",
       "properties": {
         "x": {
-          "description": "Not known (caller-temp-table): #counts is not created by the procedure before this, so it is the caller's, whose shape depends on who calls. May be null: unknown (procedures/recount.sql:6:12)."
+          "description": "Not known (caller-temp-table): #counts is not created by the procedure before this, so it is the caller's, whose shape depends on who calls. May be null: unknown (procedures/recount.sql:6:12). Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table). To change it: declare the results in the config file's \"results\". Why: haruspex explain calls.recount x"
         }
       },
       "required": [

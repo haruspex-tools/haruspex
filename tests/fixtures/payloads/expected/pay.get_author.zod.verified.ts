@@ -9,9 +9,17 @@ import { z } from 'zod'
 export const GetAuthorAuthorBookSchema = z.object({
   id: z.int32(),
   title: z.string().max(60),
-  /** char(13) pads to 13 bytes and its collation isn't declared, so the length is at most 13. */
+  /**
+   * char(13) pads to 13 bytes and its collation isn't declared, so the length is at most 13.
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain pay.get_author 'author.books[].isbn'
+   */
   isbn: z.string().max(13).optional(),
   price: z.number().min(0).max(9999999.99).multipleOf(1e-2),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain pay.get_author 'author.books[].published'
+   */
   published: z.iso.date().optional(),
 })
 export type GetAuthorAuthorBook = z.infer<typeof GetAuthorAuthorBookSchema>
@@ -19,6 +27,10 @@ export type GetAuthorAuthorBook = z.infer<typeof GetAuthorAuthorBookSchema>
 export const GetAuthorAuthorReviewSchema = z.object({
   id: z.int32(),
   stars: z.int().min(1).max(5),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain pay.get_author 'author.reviews[].comment'
+   */
   comment: z.string().max(100).optional(),
 })
 export type GetAuthorAuthorReview = z.infer<typeof GetAuthorAuthorReviewSchema>
@@ -27,9 +39,24 @@ export const GetAuthorAuthorSchema = z.object({
   id: z.int32(),
   name: z.string().max(40),
   bio: z.string().max(200).nullable(),
-  /** Not known (json-shape-unknown); the IR's unknowns say why. */
+  /**
+   * Not known (json-shape-unknown); the IR's unknowns say why.
+   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
+   * To change it: type it in the config file with "type" and "import".
+   * Why: haruspex explain pay.get_author author.profile
+   */
   profile: z.unknown(),
+  /**
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain pay.get_author author.books
+   */
   books: z.array(GetAuthorAuthorBookSchema).min(1).nullable(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain pay.get_author author.reviews
+   */
   reviews: z.array(GetAuthorAuthorReviewSchema).min(1).nullable(),
 })
 export type GetAuthorAuthor = z.infer<typeof GetAuthorAuthorSchema>

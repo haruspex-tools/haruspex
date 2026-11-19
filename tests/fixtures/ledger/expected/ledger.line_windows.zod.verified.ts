@@ -8,15 +8,60 @@ import { z } from 'zod'
 
 export const LineWindowsRowSchema = z.object({
   line_id: z.int32(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.line_windows avg_price
+   */
   avg_price: z.number().multipleOf(1e-6).nullable(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.line_windows avg_qty
+   */
   avg_qty: z.int32().nullable(),
+  /**
+   * Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * Why: haruspex explain ledger.line_windows sd_price
+   */
   sd_price: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.score is real: what it is computed with makes it another type.
+   * Why: haruspex explain ledger.line_windows varp_score
+   */
   varp_score: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type.
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * May be null: a window function over a frame that may hold no row is null there (empty-frame).
+   * Why: haruspex explain ledger.line_windows var_units_before
+   */
   var_units_before: z.number().nullable(),
+  /**
+   * Its type is int, where ledger.line.delta is smallint: what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * May be null: a window function over a frame that may hold no row is null there (empty-frame).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.line_windows avg_delta_after
+   */
   avg_delta_after: z.int32().nullable(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * May be null: a window function over a frame that may hold no row is null there (empty-frame).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.line_windows avg_price_after
+   */
   avg_price_after: z.number().multipleOf(1e-6).nullable(),
+  /**
+   * Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type.
+   * May be null: a window function over a frame that may hold no row is null there (empty-frame).
+   * Why: haruspex explain ledger.line_windows sdp_units_after
+   */
   sdp_units_after: z.number().nullable(),
 })
 export type LineWindowsRow = z.infer<typeof LineWindowsRowSchema>

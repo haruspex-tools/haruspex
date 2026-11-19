@@ -19,7 +19,12 @@ export const OpenTabsPayloadOpenTabsSchema = z.object({
 export type OpenTabsPayloadOpenTabs = z.infer<typeof OpenTabsPayloadOpenTabsSchema>
 
 export const OpenTabsPayloadRowSchema = z.object({
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cafe.open_tabs_payload open_tabs
+   */
   open_tabs: jsonText(() => z.array(OpenTabsPayloadOpenTabsSchema).min(1)).nullable(),
 })
 export type OpenTabsPayloadRow = z.infer<typeof OpenTabsPayloadRowSchema>

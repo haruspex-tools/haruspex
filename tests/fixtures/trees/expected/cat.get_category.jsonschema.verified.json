@@ -7,7 +7,7 @@
       "type": "object",
       "properties": {
         "items": {
-          "description": "Left out when null: empty-subquery (functions/category_contents.sql:7:18).",
+          "description": "Left out when null: empty-subquery (functions/category_contents.sql:7:18). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain CategoryContentsNode items",
           "type": "array",
           "items": {
             "$ref": "#/$defs/CategoryContentsNodeItem"
@@ -15,7 +15,7 @@
           "minItems": 1
         },
         "subcategories": {
-          "description": "Left out when null: empty-subquery (functions/category_tree.sql:6:12).",
+          "description": "Left out when null: empty-subquery (functions/category_tree.sql:6:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain CategoryContentsNode subcategories",
           "type": "array",
           "items": {
             "$ref": "#/$defs/CategoryTreeNode"
@@ -98,7 +98,7 @@
           "maxLength": 20
         },
         "subcategories": {
-          "description": "Left out when null: empty-subquery (functions/category_tree.sql:6:12).",
+          "description": "Left out when null: empty-subquery (functions/category_tree.sql:6:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cat.get_category subcategories",
           "type": "array",
           "items": {
             "$ref": "#/$defs/CategoryTreeNode"

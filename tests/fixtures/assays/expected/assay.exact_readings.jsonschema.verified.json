@@ -34,13 +34,13 @@
           "maximum": 2147483647
         },
         "dilution_4dp": {
-          "description": "SQL type decimal(12,4). At most 4 decimal places, which multipleOf would check inexactly.",
+          "description": "SQL type decimal(12,4). At most 4 decimal places, which multipleOf would check inexactly. Its type is decimal(12,4), where assay.sample.dilution is decimal(10,2): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.dilution_4dp'",
           "type": "number",
           "minimum": -99999999.9999,
           "maximum": 99999999.9999
         },
         "doubled": {
-          "description": "SQL type decimal(11,2). At most 2 decimal places, which multipleOf would check inexactly.",
+          "description": "SQL type decimal(11,2). At most 2 decimal places, which multipleOf would check inexactly. Its type is decimal(11,2), where assay.sample.dilution is decimal(10,2): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.doubled'",
           "type": "number",
           "minimum": -999999999.99,
           "maximum": 999999999.99
@@ -52,7 +52,7 @@
           "maximum": 99999999.99
         },
         "text_standard": {
-          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:11:8).",
+          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:11:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#1.text_standard'",
           "type": [
             "number",
             "null"
@@ -61,19 +61,19 @@
           "maximum": 99999999.99
         },
         "whole_part": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.whole_part'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "concentration_money": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is money, where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.concentration_money'",
           "type": "number",
           "minimum": -922337203685477.5808,
           "maximum": 922337203685477.5807
         },
         "absorbance_2dp": {
-          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:14:8).",
+          "description": "SQL type decimal(10,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:14:8). Its type is decimal(10,2), where assay.sample.absorbance is float: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#1.absorbance_2dp'",
           "type": [
             "number",
             "null"
@@ -82,13 +82,13 @@
           "maximum": 99999999.99
         },
         "fee_4dp": {
-          "description": "SQL type decimal(19,4). At most 4 decimal places, which multipleOf would check inexactly. decimal(19,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(19,4). At most 4 decimal places, which multipleOf would check inexactly. decimal(19,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(19,4), where assay.sample.fee is money: what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.fee_4dp'",
           "type": "number",
           "minimum": -999999999999999.9999,
           "maximum": 999999999999999.9999
         },
         "concentration_rounded": {
-          "description": "SQL type decimal(10,4). At most 4 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:16:8).",
+          "description": "SQL type decimal(10,4). At most 4 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/exact_readings.sql:16:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#1.concentration_rounded'",
           "type": [
             "number",
             "null"
@@ -97,13 +97,13 @@
           "maximum": 999999.9999
         },
         "concentration_squared": {
-          "description": "SQL type decimal(21,8). At most 8 decimal places, which multipleOf would check inexactly. decimal(21,8) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(21,8). At most 8 decimal places, which multipleOf would check inexactly. decimal(21,8) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(21,8), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.concentration_squared'",
           "type": "number",
           "minimum": -9999999999999.99999999,
           "maximum": 9999999999999.99999999
         },
         "unit": {
-          "description": "SQL type decimal(23,13). At most 13 decimal places, which multipleOf would check inexactly. decimal(23,13) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:18:8).",
+          "description": "SQL type decimal(23,13). At most 13 decimal places, which multipleOf would check inexactly. decimal(23,13) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:18:8). Its type is decimal(23,13), where assay.sample.dilution is decimal(10,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#1.unit'",
           "type": [
             "number",
             "null"
@@ -112,7 +112,7 @@
           "maximum": 9999999999.9999999999999
         },
         "fee_squared": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:19:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:19:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#1.fee_squared'",
           "type": [
             "number",
             "null"
@@ -121,7 +121,7 @@
           "maximum": 922337203685477.5807
         },
         "fraction": {
-          "description": "SQL type decimal(5,4). At most 4 decimal places, which multipleOf would check inexactly.",
+          "description": "SQL type decimal(5,4). At most 4 decimal places, which multipleOf would check inexactly. Its type is decimal(5,4), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#1.fraction'",
           "type": "number",
           "minimum": -9.9999,
           "maximum": 9.9999
@@ -155,13 +155,13 @@
           "maximum": 2147483647
         },
         "total": {
-          "description": "SQL type decimal(38,4). At most 4 decimal places, which multipleOf would check inexactly. decimal(38,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(38,4). At most 4 decimal places, which multipleOf would check inexactly. decimal(38,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(38,4), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type. Why: haruspex explain assay.exact_readings '#2.total'",
           "type": "number",
           "minimum": -9999999999999999999999999999999999.9999,
           "maximum": 9999999999999999999999999999999999.9999
         },
         "mean_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:24:52).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/exact_readings.sql:24:52). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain assay.exact_readings '#2.mean_fee'",
           "type": [
             "number",
             "null"

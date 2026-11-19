@@ -31,7 +31,7 @@
           "maximum": 5
         },
         "comment": {
-          "description": "SQL type nvarchar(100). Left out when null: nullable-column (pay.review.comment).",
+          "description": "SQL type nvarchar(100). Left out when null: nullable-column (pay.review.comment). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain pay.reviews_by_book 'reviews[].comment'",
           "type": "string",
           "maxLength": 100
         }

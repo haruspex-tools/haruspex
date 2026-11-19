@@ -8,45 +8,145 @@ import { z } from 'zod'
 
 export const RoundedReadingsResult1RowSchema = z.object({
   sample_id: z.int32(),
+  /**
+   * Its type is decimal(10,2), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.concentration_2dp'
+   */
   concentration_2dp: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * Its type is decimal(10,1), where assay.sample.dilution is decimal(10,2): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.dilution_1dp'
+   */
   dilution_1dp: z.number().min(-999999999.9).max(999999999.9).multipleOf(1e-1).nullable(),
-  /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(19,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(19,2), where assay.sample.fee is money: what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.fee_2dp'
+   */
   fee_2dp: z.number().multipleOf(1e-2).nullable(),
+  /**
+   * Its type is decimal(10,2), where assay.sample.lab_value is varchar(20): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.lab_value_2dp'
+   */
   lab_value_2dp: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
-  /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.coalesced'
+   */
   coalesced: z.number().multipleOf(1).nullable(),
-  /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.by_case'
+   */
   by_case: z.number().multipleOf(1).nullable(),
-  /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.by_iif'
+   */
   by_iif: z.number().multipleOf(1).nullable(),
-  /** The driver may round decimal(38,17) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,17) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,17), where assay.sample.ratio is decimal(20,10): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.ratio_squared'
+   */
   ratio_squared: z.number().multipleOf(1e-17).nullable(),
-  /** The driver may round decimal(38,10) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,10) past its bounds in a row, so they are not checked.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.long_ratio_third'
+   */
   long_ratio_third: z.number().multipleOf(1e-10).nullable(),
-  /** The driver may round decimal(38,10) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,10) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,10), where assay.sample.fine_scale is decimal(37,14) and assay.sample.big_count is decimal(35,7): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.combined'
+   */
   combined: z.number().multipleOf(1e-10).nullable(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.mean_concentration'
+   */
   mean_concentration: z.number().multipleOf(1e-6).nullable(),
+  /**
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.previous_dilution'
+   */
   previous_dilution: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.level_2dp'
+   */
   level_2dp: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#1.reading'
+   */
   reading: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
 })
 export type RoundedReadingsResult1Row = z.infer<typeof RoundedReadingsResult1RowSchema>
 
 export const RoundedReadingsResult2RowSchema = z.object({
-  /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,0) past its bounds in a row, so they are not checked.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#2.level'
+   */
   level: z.number().multipleOf(1).nullable(),
 })
 export type RoundedReadingsResult2Row = z.infer<typeof RoundedReadingsResult2RowSchema>
 
 export const RoundedReadingsResult3RowSchema = z.object({
   sample_id: z.int32(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where assay.sample.concentration is decimal(10,4): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#3.mean_concentration'
+   */
   mean_concentration: z.number().multipleOf(1e-6).nullable(),
 })
 export type RoundedReadingsResult3Row = z.infer<typeof RoundedReadingsResult3RowSchema>
 
 export const RoundedReadingsResult4RowSchema = z.object({
+  /**
+   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain assay.rounded_readings '#4.level'
+   */
   level: z.number().min(-99999999.99).max(99999999.99).multipleOf(1e-2).nullable(),
 })
 export type RoundedReadingsResult4Row = z.infer<typeof RoundedReadingsResult4RowSchema>

@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "borrower": {
-          "description": "SQL type nvarchar(40). May be null: empty-subquery (procedures/unqualified_reaches_out.sql:8:8).",
+          "description": "SQL type nvarchar(40). May be null: empty-subquery (procedures/unqualified_reaches_out.sql:8:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lib.unqualified_reaches_out borrower",
           "type": [
             "string",
             "null"

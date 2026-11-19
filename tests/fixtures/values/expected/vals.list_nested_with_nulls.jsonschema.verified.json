@@ -106,7 +106,7 @@
           "$ref": "#/$defs/ListNestedWithNullsDeep"
         },
         "tags": {
-          "description": "May be null: empty-subquery (procedures/list_nested_with_nulls.sql:15:12).",
+          "description": "May be null: empty-subquery (procedures/list_nested_with_nulls.sql:15:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain vals.list_nested_with_nulls tags",
           "type": [
             "array",
             "null"
@@ -141,7 +141,7 @@
           "maxLength": 20
         },
         "note": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note).",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested_with_nulls 'tags[].note'",
           "type": "string",
           "maxLength": 40
         }

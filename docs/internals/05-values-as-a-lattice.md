@@ -148,7 +148,13 @@ SELECT f.rate FROM flat AS f;
 
 ```ts haruspex-zod
 export const RatesRowSchema = z.object({
-  /** The driver may round decimal(38,28) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,28) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,28), where shop.discount.rate is decimal(38,38): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain shop.rates rate
+   */
   rate: z.number().multipleOf(1e-28).nullable(),
 })
 export type RatesRow = z.infer<typeof RatesRowSchema>
@@ -367,9 +373,19 @@ FROM shop.price AS p;
 
 ```ts haruspex-zod
 export const ChargesRowSchema = z.object({
-  /** The driver may round decimal(19,4) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(19,4) past its bounds in a row, so they are not checked.
+   * Its type is decimal(19,4), where shop.price.units is bigint, shop.price.fee is money and shop.price.amount is decimal(5,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain shop.charges fee_first
+   */
   fee_first: z.number().multipleOf(1e-4).nullable(),
-  /** The driver may round decimal(23,4) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(23,4) past its bounds in a row, so they are not checked.
+   * Its type is decimal(23,4), where shop.price.units is bigint, shop.price.amount is decimal(5,2) and shop.price.fee is money: what it is computed with makes it another type.
+   * Why: haruspex explain shop.charges amount_first
+   */
   amount_first: z.number().multipleOf(1e-4),
 })
 export type ChargesRow = z.infer<typeof ChargesRowSchema>

@@ -63,6 +63,11 @@ SELECT @note AS note, @round AS rounds;
 ```ts haruspex-zod
 export const RestockNoteRowSchema = z.object({
   note: z.string().max(60),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain shop.restock_note rounds
+   */
   rounds: z.int32().nullable(),
 })
 export type RestockNoteRow = z.infer<typeof RestockNoteRowSchema>

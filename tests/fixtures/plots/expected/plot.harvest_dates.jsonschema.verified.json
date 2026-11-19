@@ -20,7 +20,7 @@
           "maxLength": 40
         },
         "crop": {
-          "description": "SQL type nvarchar(30). May be null: unmatched-row (harvest.sql:9:21).",
+          "description": "SQL type nvarchar(30). May be null: unmatched-row (harvest.sql:9:21). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain plot.harvest_dates crop",
           "type": [
             "string",
             "null"
@@ -28,7 +28,7 @@
           "maxLength": 30
         },
         "harvested": {
-          "description": "SQL type date. May be null: nullable-column (plot.sowing.harvested), unmatched-row (harvest.sql:9:21).",
+          "description": "SQL type date. May be null: nullable-column (plot.sowing.harvested), unmatched-row (harvest.sql:9:21). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain plot.harvest_dates harvested",
           "type": [
             "string",
             "null"

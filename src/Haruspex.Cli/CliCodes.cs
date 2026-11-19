@@ -132,6 +132,12 @@ internal static class CliCodes
     /// <summary>A combined IR given as the database to combine with, which describes an application, not a database.</summary>
     public static DiagnosticCode BaselineCombined { get; } = new(6036, DiagnosticSeverity.Error, "A combined IR given as a database");
 
+    /// <summary><c>explain</c> has no IR to read: none named, none in the config file's output folder, or one it can't read.</summary>
+    public static DiagnosticCode ExplainNoIr { get; } = new(6037, DiagnosticSeverity.Error, "No IR to explain");
+
+    /// <summary>What <c>explain</c> is asked about isn't in the IR: no such object or type, field or parameter.</summary>
+    public static DiagnosticCode ExplainNotFound { get; } = new(6038, DiagnosticSeverity.Error, "Nothing of that name to explain");
+
     /// <summary>
     /// The codes with which a run fails though the command line and the config file may be right, so the exit code is 1, not 2:
     /// what <c>check</c> found differs from the files in the output folder, or can't be compared with it, or is incomplete; the

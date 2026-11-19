@@ -309,6 +309,6 @@ public class CheckTests
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("db/procedures.sql:4:11: error HAR6014: shop.list_lines results[0][].sku: became nullable", error, StringComparison.Ordinal);
+        Assert.Contains("db/procedures.sql:4:11: error HAR6014: shop.list_lines results[0][].sku: became nullable. Why, once generated: haruspex explain shop.list_lines sku", error, StringComparison.Ordinal);
     }
 }

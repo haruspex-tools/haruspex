@@ -7,7 +7,7 @@ using Haruspex.Ir;
 namespace Haruspex.Tests.Emit.JsonSchema;
 
 /// <summary>The JSON Schema emitter on hand-built IR, independent of any front end: what each IR fact becomes.</summary>
-public class JsonSchemaEmitterTests
+public partial class JsonSchemaEmitterTests
 {
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "shop.basket.note");
 
@@ -19,8 +19,9 @@ public class JsonSchemaEmitterTests
 
     private static IrField Field(string name, IrType type) => new(name, type, IrPresence.Always, []);
 
+    /// <summary>The document, by default without the explanations of surprises, so that a description holds the notes alone (JsonSchemaEmitterTests.Comments.cs has those).</summary>
     private static JsonNode Emit(IrDocument document, JsonSchemaOptions? options = null) =>
-        JsonNode.Parse(JsonSchemaEmitter.Emit(document, options ?? new JsonSchemaOptions()).Expected())!;
+        JsonNode.Parse(JsonSchemaEmitter.Emit(document, options ?? new JsonSchemaOptions { Comments = IrComments.None }).Expected())!;
 
     private static JsonNode Definition(JsonNode document, string name) => document["$defs"]![name]!;
 

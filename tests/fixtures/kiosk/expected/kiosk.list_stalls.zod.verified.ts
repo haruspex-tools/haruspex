@@ -17,7 +17,12 @@ export const ListStallsRowSchema = z.object({
    * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
    */
   kind: z.string().max(10),
-  /** Not known (sqlcmd-variable); the IR's unknowns say why. */
+  /**
+   * Not known (sqlcmd-variable); the IR's unknowns say why.
+   * Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain kiosk.list_stalls reach
+   */
   reach: z.unknown(),
 })
 export type ListStallsRow = z.infer<typeof ListStallsRowSchema>

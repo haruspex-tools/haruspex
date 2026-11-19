@@ -14,6 +14,8 @@ import {
   BasketParamsSchema,
   BasketSchema,
   ListProductsSchema,
+  OrderSummaryParamsSchema,
+  OrderSummarySchema,
   ProductsUnderParamsSchema,
   ProductsUnderSchema,
 } from './haruspex.zod.js'
@@ -119,7 +121,11 @@ function readRows(set: unknown): unknown {
   return set ?? []
 }
 
-/** Runs the query file queries/basket_card.sql. */
+/**
+ * Runs the query file queries/basket_card.sql.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain queries/basket_card.sql
+ */
 export async function basketCard(db: Queryable, params: types.BasketCardParams): Promise<types.BasketCard> {
   const p = await checked(BasketCardParamsSchema, params, (issues) => new ParameterError('queries/basket_card.sql', issues))
   const request = db.request()
@@ -151,7 +157,11 @@ export async function productsUnder(db: Queryable, params: types.ProductsUnderPa
   return { products: result.products }
 }
 
-/** Calls shop.basket_line#. */
+/**
+ * Calls shop.basket_line#.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain 'shop.basket_line#'
+ */
 export async function basketLineRow(db: Queryable, params: types.BasketLineRowParams): Promise<types.BasketLineRow> {
   const p = await checked(BasketLineRowParamsSchema, params, (issues) => new ParameterError('shop.basket_line#', issues))
   const request = db.request()
@@ -164,7 +174,11 @@ export async function basketLineRow(db: Queryable, params: types.BasketLineRowPa
   return result
 }
 
-/** Calls shop.get_basket. */
+/**
+ * Calls shop.get_basket.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain shop.get_basket
+ */
 export async function basket(db: Queryable, params: types.BasketParams): Promise<types.Basket> {
   const p = await checked(BasketParamsSchema, params, (issues) => new ParameterError('shop.get_basket', issues))
   const request = db.request()
@@ -186,7 +200,23 @@ export async function listProducts(db: Queryable): Promise<types.ListProducts> {
   return result
 }
 
-/** Calls shop_admin.report_sales. */
+/** Calls shop.order_summary. */
+export async function orderSummary(db: Queryable, params: types.OrderSummaryParams): Promise<types.OrderSummary> {
+  const p = await checked(OrderSummaryParamsSchema, params, (issues) => new ParameterError('shop.order_summary', issues))
+  const request = db.request()
+  request.input('order_id', sql.Int, p.order_id)
+  const response = await request.execute('shop.order_summary')
+  const sets = response.recordsets as unknown as readonly unknown[]
+  if (sets.length !== 1) throw new ResultError('shop.order_summary', 'the results', [{ message: `Expected exactly one result set, received ${String(sets.length)}` }])
+  const result = await checked(OrderSummarySchema, readRows(sets[0]), (issues) => new ResultError('shop.order_summary', 'the results', issues))
+  return result
+}
+
+/**
+ * Calls shop_admin.report_sales.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain shop_admin.report_sales
+ */
 export async function adminSales(db: Queryable): Promise<types.AdminSales> {
   const request = db.request()
   const response = await request.execute('shop_admin.report_sales')
@@ -196,7 +226,11 @@ export async function adminSales(db: Queryable): Promise<types.AdminSales> {
   return result
 }
 
-/** Calls shop_admin.report_stock. */
+/**
+ * Calls shop_admin.report_stock.
+ * The result set products may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain shop_admin.report_stock
+ */
 export async function adminStock(db: Queryable): Promise<{ products: types.AdminStock['products']; count: types.AdminStock['count'] }> {
   const request = db.request()
   const response = await request.execute('shop_admin.report_stock')

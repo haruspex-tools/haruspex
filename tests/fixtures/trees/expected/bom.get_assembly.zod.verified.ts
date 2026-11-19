@@ -16,6 +16,10 @@ export const ComponentsNodePartSchema = z.object({
    * varchar(8) counts bytes and its collation isn't declared, so the length is at most 8.
    */
   kind: z.string().max(8),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain ComponentsNodePart unitCost
+   */
   unitCost: z.number().min(0).max(9999999.99).multipleOf(1e-2).optional(),
 })
 export type ComponentsNodePart = z.infer<typeof ComponentsNodePartSchema>
@@ -23,6 +27,12 @@ export type ComponentsNodePart = z.infer<typeof ComponentsNodePartSchema>
 export const ComponentsNodeSchema = z.object({
   quantity: z.int().min(1).max(1000),
   part: ComponentsNodePartSchema,
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain ComponentsNode components
+   */
   get components() { return z.array(ComponentsNodeSchema).min(1).optional() },
 })
 export type ComponentsNode = z.infer<typeof ComponentsNodeSchema>
@@ -35,6 +45,12 @@ export const GetAssemblyRowSchema = z.object({
    * varchar(8) counts bytes and its collation isn't declared, so the length is at most 8.
    */
   kind: z.string().max(8),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain bom.get_assembly components
+   */
   components: z.array(ComponentsNodeSchema).min(1).optional(),
 })
 export type GetAssemblyRow = z.infer<typeof GetAssemblyRowSchema>

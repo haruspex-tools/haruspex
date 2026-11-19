@@ -15,17 +15,45 @@ export const TabSummaryRowSchema = z.object({
   /** varchar(15) counts bytes and its collation isn't declared, so the length is at most 15. */
   phone: z.string().max(15),
   items: z.string(),
-  /** The driver may round decimal(38,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.tab_summary subtotal
+   */
   subtotal: z.number().multipleOf(1e-2),
-  /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(19,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(19,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain cafe.tab_summary subtotal_2dp
+   */
   subtotal_2dp: z.number().multipleOf(1e-2).nullable(),
-  /** The driver may round decimal(38,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,2), where cafe.tab_item.discount is decimal(5,2): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.tab_summary discounts
+   */
   discounts: z.number().multipleOf(1e-2),
-  /** The driver may round decimal(20,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(20,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(20,2), where cafe.tab_item.qty is smallint, cafe.menu_item.price is decimal(9,2) and cafe.tab_item.discount is decimal(5,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain cafe.tab_summary due
+   */
   due: z.number().multipleOf(1e-2).nullable(),
-  /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
+  /**
+   * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
+   * Its type is varchar(10), where cafe.tab.opened_at is datetime2(0): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.tab_summary opened_on
+   */
   opened_on: z.string().max(10),
-  /** varchar(19) counts bytes and its collation isn't declared, so the length is at most 19. */
+  /**
+   * varchar(19) counts bytes and its collation isn't declared, so the length is at most 19.
+   * Its type is varchar(19), where cafe.tab.closed_at is datetime2(0): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.tab_summary closed_text
+   */
   closed_text: z.string().max(19).nullable(),
 })
 export type TabSummaryRow = z.infer<typeof TabSummaryRowSchema>

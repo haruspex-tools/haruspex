@@ -5,6 +5,11 @@ import { z } from 'zod'
 export const FullNamesRowSchema = z.object({
   title: z.string().max(80),
   pages: z.int().min(-32768).max(32767),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.full_names donor
+   */
   donor: z.string().max(40).nullable(),
   loans: z.string(),
 })

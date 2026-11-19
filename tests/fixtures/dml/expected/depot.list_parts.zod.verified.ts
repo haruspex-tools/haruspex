@@ -12,7 +12,17 @@ export const ListPartsRowSchema = z.object({
   code: z.string().max(20),
   name: z.string().max(60),
   note: z.string().max(200).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.list_parts qty
+   */
   qty: z.int32().min(0).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain depot.list_parts shelf
+   */
   shelf: z.string().max(10).nullable(),
 })
 export type ListPartsRow = z.infer<typeof ListPartsRowSchema>

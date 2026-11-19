@@ -40,8 +40,16 @@ export type KitSheetsResult1CopiedItem = z.infer<typeof KitSheetsResult1CopiedIt
 
 export const KitSheetsResult1RowSchema = z.object({
   kit_id: z.int32(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain kit.kit_sheets '#1.parts'
+   */
   parts: z.array(KitSheetsResult1PartSchema).optional(),
   card: KitSheetsResult1CardSchema,
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain kit.kit_sheets '#1.copied'
+   */
   copied: z.array(KitSheetsResult1CopiedItemSchema).optional(),
 })
 export type KitSheetsResult1Row = z.infer<typeof KitSheetsResult1RowSchema>

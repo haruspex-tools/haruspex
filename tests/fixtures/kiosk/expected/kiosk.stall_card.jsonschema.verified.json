@@ -25,10 +25,10 @@
           "maximum": 2147483647
         },
         "labelled": {
-          "description": "Not known (sqlcmd-variable): The key '$(Label)' of json_object holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the object's keys are not known. Left out when null: unknown (procedures/stall_card.sql:6:20)."
+          "description": "Not known (sqlcmd-variable): The key '$(Label)' of json_object holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the object's keys are not known. Left out when null: unknown (procedures/stall_card.sql:6:20). Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card labelled"
         },
         "origin": {
-          "description": "Not known (sqlcmd-variable): The literal '{\"region\":\"$(Region)\"}' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. Left out when null: unknown (procedures/stall_card.sql:7:19)."
+          "description": "Not known (sqlcmd-variable): The literal '{\"region\":\"$(Region)\"}' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. Left out when null: unknown (procedures/stall_card.sql:7:19). Unknown: it holds a SQLCMD variable, which a deployment replaces with its value (sqlcmd-variable). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card origin"
         }
       },
       "required": [

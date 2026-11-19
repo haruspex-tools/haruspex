@@ -23,9 +23,22 @@ export const SalesFeedResult1RowSchema = z.object({
   sale_id: z.int32(),
   sold_at: z.date(),
   units: z.string(),
-  /** The driver may round decimal(38,10) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,10) past its bounds in a row, so they are not checked.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.sales_feed '#1.amount'
+   */
   amount: z.number().multipleOf(1e-10).nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.sales_feed '#1.method'
+   */
   method: z.string().max(20).nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.sales_feed '#1.memo'
+   */
   memo: z.string().nullable(),
 })
 export type SalesFeedResult1Row = z.infer<typeof SalesFeedResult1RowSchema>
@@ -36,15 +49,33 @@ export const SalesFeedResult2FeedSchema = z.object({
   sold_at: z.iso.datetime({ offset: true }),
   /** A bigint, exact only up to 2^53 once parsed. */
   units: z.number(),
-  /** decimal(38,10) runs from -9999999999999999999999999999.9999999999 to 9999999999999999999999999999.9999999999, which JavaScript reads as the nearest doubles. */
+  /**
+   * decimal(38,10) runs from -9999999999999999999999999999.9999999999 to 9999999999999999999999999999.9999999999, which JavaScript reads as the nearest doubles.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].amount'
+   */
   amount: z.number().min(-1e+28).max(1e+28).multipleOf(1e-10).nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].method'
+   */
   method: z.string().max(20).nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain bazaar.sales_feed '#2.feed<json>[].memo'
+   */
   memo: z.string().nullable(),
 })
 export type SalesFeedResult2Feed = z.infer<typeof SalesFeedResult2FeedSchema>
 
 export const SalesFeedResult2RowSchema = z.object({
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain bazaar.sales_feed '#2.feed'
+   */
   feed: jsonText(() => z.array(SalesFeedResult2FeedSchema).min(1)).nullable(),
 })
 export type SalesFeedResult2Row = z.infer<typeof SalesFeedResult2RowSchema>

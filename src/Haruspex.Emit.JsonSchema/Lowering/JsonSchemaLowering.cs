@@ -66,7 +66,7 @@ internal static class JsonSchemaLowering
         [
             .. entries.Select(entry => entry switch
             {
-                JsonSchemaPlanEntry.NamedType named => new SchemaProperty(named.Name, ObjectType(named.Type, plan.Options, types)),
+                JsonSchemaPlanEntry.NamedType named => new SchemaProperty(named.Name, ObjectType(named.Name, named.Type, plan, types)),
                 JsonSchemaPlanEntry.Procedure procedure => new SchemaProperty(procedure.Name, Procedure(procedure.Object, types, unknowns)),
             }),
         ];
@@ -148,11 +148,18 @@ internal static class JsonSchemaLowering
     /// allowed by default, so a column the database adds before the application redeploys doesn't fail validation; strict objects
     /// forbid them (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). Its description says where it comes from.
     /// </summary>
-    private static Schema ObjectType(IrObjectType type, JsonSchemaOptions options, TypeLowering types)
+    /// <remarks>A property's description ends with why its field is what it is, as <c>"comments"</c> asks (<see cref="IrFieldText"/>).</remarks>
+    private static Schema ObjectType(string name, IrObjectType type, JsonSchemaPlan plan, TypeLowering types)
     {
+        var options = plan.Options;
         var place = Place.Of(type);
         var schema = Schema.OfType("object")
-            .With(Keyword.Properties, new SchemaValue.Properties([.. type.Fields.Select(f => new SchemaProperty(f.Name, types.Field(f, place)))]));
+            .With(Keyword.Properties, new SchemaValue.Properties(
+            [
+                .. type.Fields.Select(f => new SchemaProperty(
+                    f.Name,
+                    types.Field(f, place).Noted(IrFieldText.Of(plan.Document, name, f, options.Comments).Select(line => new SchemaNote(line))))),
+            ]));
         var required = type.Fields.Where(TypeLowering.IsRequired).Select(f => (SchemaValue)new SchemaValue.Text(f.Name)).ToList();
         if (required.Count > 0)
             schema = schema.With(Keyword.Required, new SchemaValue.List([.. required]));

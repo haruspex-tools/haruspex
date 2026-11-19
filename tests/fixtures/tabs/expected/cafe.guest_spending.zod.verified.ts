@@ -8,10 +8,29 @@ import { z } from 'zod'
 
 export const GuestSpendingRowSchema = z.object({
   guest_id: z.int32(),
+  /**
+   * Its type is bigint, where cafe.tab.tab_id is int: what it is computed with makes it another type.
+   * Why: haruspex explain cafe.guest_spending tabs
+   */
   tabs: z.string(),
-  /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(19,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(19,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain cafe.guest_spending spent
+   */
   spent: z.number().multipleOf(1e-2).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain cafe.guest_spending best_tip
+   */
   best_tip: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * Its type is int, where cafe.tab.table_no is tinyint: what it is computed with makes it another type.
+   * Why: haruspex explain cafe.guest_spending last_table
+   */
   last_table: z.int32(),
 })
 export type GuestSpendingRow = z.infer<typeof GuestSpendingRowSchema>

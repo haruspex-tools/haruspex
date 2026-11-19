@@ -5,6 +5,10 @@ import { z } from 'zod'
 export const MergeReturnsRowSchema = z.object({
   did: z.enum(["INSERT", "UPDATE"]),
   loan_id: z.int32(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain lib.merge_returns was_returned
+   */
   was_returned: z.date().nullable(),
   title: z.string().max(80),
 })

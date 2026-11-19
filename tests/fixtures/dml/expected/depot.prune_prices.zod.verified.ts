@@ -9,8 +9,16 @@ import { z } from 'zod'
 export const PrunePricesRowSchema = z.object({
   change: z.enum(["DELETE", "UPDATE"]),
   part: z.int32(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.prune_prices listed_part
+   */
   listed_part: z.int32().nullable(),
-  /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
+  /**
+   * varchar(20) counts bytes and its collation isn't declared, so the length is at most 20.
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.prune_prices code
+   */
   code: z.string().max(20).nullable(),
 })
 export type PrunePricesRow = z.infer<typeof PrunePricesRowSchema>

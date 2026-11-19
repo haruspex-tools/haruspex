@@ -10,7 +10,11 @@ export const GuestTabListRowSchema = z.object({
   tab_id: z.int32(),
   opened_at: z.date(),
   closed_at: z.date().nullable(),
-  /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
+  /**
+   * varchar(10) counts bytes and its collation isn't declared, so the length is at most 10.
+   * Its type is varchar(10), where cafe.tab.closed_at is datetime2(0): what it is computed with makes it another type.
+   * Why: haruspex explain cafe.guest_tab_list state
+   */
   state: z.string().max(10),
 })
 export type GuestTabListRow = z.infer<typeof GuestTabListRowSchema>

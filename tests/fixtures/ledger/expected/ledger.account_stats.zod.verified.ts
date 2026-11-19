@@ -8,32 +8,130 @@ import { z } from 'zod'
 
 export const AccountStatsResult1RowSchema = z.object({
   account_id: z.int32(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.avg_qty'
+   */
   avg_qty: z.int32().nullable(),
+  /**
+   * Its type is int, where ledger.line.units is tinyint: what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.avg_units'
+   */
   avg_units: z.int32().nullable(),
+  /**
+   * Its type is int, where ledger.line.delta is smallint: what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.avg_delta'
+   */
   avg_delta: z.int32().nullable(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.account_stats '#1.avg_price'
+   */
   avg_price: z.number().multipleOf(1e-6).nullable(),
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where ledger.line.rate is decimal(19,6): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.account_stats '#1.avg_rate'
+   */
   avg_rate: z.number().multipleOf(1e-6).nullable(),
-  /** The driver may round numeric(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round numeric(38,6) past its bounds in a row, so they are not checked.
+   * Its type is numeric(38,6), where ledger.line.discount is numeric(5,4): what it is computed with makes it another type.
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.account_stats '#1.avg_discount'
+   */
   avg_discount: z.number().multipleOf(1e-6).nullable(),
-  /** The driver may round money past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round money past its bounds in a row, so they are not checked.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.avg_fee'
+   */
   avg_fee: z.number().multipleOf(1e-4).nullable(),
+  /**
+   * Its type is float, where ledger.line.score is real: what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.avg_score'
+   */
   avg_score: z.number().nullable(),
-  /** The driver may round decimal(38,38) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,38) past its bounds in a row, so they are not checked.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.account_stats '#1.avg_frac'
+   */
   avg_frac: z.number().multipleOf(1e-38).nullable(),
+  /**
+   * Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * Why: haruspex explain ledger.account_stats '#1.sd_price'
+   */
   sd_price: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.rate is decimal(19,6): what it is computed with makes it another type.
+   * Why: haruspex explain ledger.account_stats '#1.sdp_rate'
+   */
   sdp_rate: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.fee is money: what it is computed with makes it another type.
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * Why: haruspex explain ledger.account_stats '#1.var_fee'
+   */
   var_fee: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.score is real: what it is computed with makes it another type.
+   * Why: haruspex explain ledger.account_stats '#1.varp_score'
+   */
   varp_score: z.number().nullable(),
+  /**
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain ledger.account_stats '#1.var_weight'
+   */
   var_weight: z.number().nullable(),
 })
 export type AccountStatsResult1Row = z.infer<typeof AccountStatsResult1RowSchema>
 
 export const AccountStatsResult2RowSchema = z.object({
-  /** The driver may round decimal(38,6) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,6) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,6), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
+   * Why: haruspex explain ledger.account_stats '#2.avg_price'
+   */
   avg_price: z.number().multipleOf(1e-6).nullable(),
+  /**
+   * Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type.
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * May be null: STDEV and VAR are null over fewer than two values (too-few-values).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain ledger.account_stats '#2.sd_price'
+   */
   sd_price: z.number().nullable(),
+  /**
+   * Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type.
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain ledger.account_stats '#2.varp_units'
+   */
   varp_units: z.number().nullable(),
 })
 export type AccountStatsResult2Row = z.infer<typeof AccountStatsResult2RowSchema>

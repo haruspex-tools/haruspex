@@ -101,12 +101,12 @@ holds up to trailing spaces is a `pattern`:
       "maxLength": 8
     },
     "note": {
-      "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.basket.note).",
+      "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.basket.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain shop.get_basket note",
       "type": "string",
       "maxLength": 200
     },
     "lines": {
-      "description": "Left out when null: empty-subquery (example.sql:17:8).",
+      "description": "Left out when null: empty-subquery (example.sql:17:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \u0022nullable\u0022: false and why. Why: haruspex explain shop.get_basket lines",
       "type": "array",
       "items": {
         "$ref": "#/$defs/GetBasketLine"
@@ -147,6 +147,12 @@ A line's price is more than 0 with two places, so at least 0.01, and its places 
   ]
 }
 ```
+
+## Why a field is what it is
+
+A property's `description` ends with the lines that explain its field when it is a surprise, the same lines the Zod module's
+comments give (`IrFieldText`), as `JsonSchemaOptions.Comments` asks
+([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## A document split into modules
 

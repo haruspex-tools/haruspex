@@ -34,7 +34,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "state": {
-          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points.",
+          "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. Its type is varchar(10), where cafe.tab.closed_at is datetime2(0): what it is computed with makes it another type. Why: haruspex explain cafe.guest_tab_list state",
           "type": "string",
           "maxLength": 10
         }

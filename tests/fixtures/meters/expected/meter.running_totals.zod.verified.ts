@@ -5,8 +5,16 @@ import { z } from 'zod'
 
 export const RunningTotalsRowSchema = z.object({
   read_on: z.date(),
+  /**
+   * Its type is int, where meter.reading.read_on is date: what it is computed with makes it another type.
+   * Why: haruspex explain meter.running_totals read_year
+   */
   read_year: z.int32(),
   wh: z.int32(),
+  /**
+   * Its type is smallint, where meter.reading.kwh is int: what it is computed with makes it another type.
+   * Why: haruspex explain meter.running_totals kwh_small
+   */
   kwh_small: z.int().min(-32768).max(32767),
   running_kwh: z.int32(),
   readings: z.int32(),

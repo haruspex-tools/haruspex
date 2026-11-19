@@ -78,7 +78,7 @@
           "maximum": 2147483647
         },
         "title": {
-          "description": "SQL type nvarchar(80). May be null: unmatched-row (procedures/full_name_groups.sql:11:11).",
+          "description": "SQL type nvarchar(80). May be null: unmatched-row (procedures/full_name_groups.sql:11:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lib.full_name_groups '#2.title'",
           "type": [
             "string",
             "null"

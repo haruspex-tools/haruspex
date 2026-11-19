@@ -100,6 +100,7 @@ public class SplitBaselineTests
         var errors = checkError.ToString().ReplaceLineEndings("\n").Split('\n').Where(l => l.Contains(": error ", StringComparison.Ordinal)).ToList();
         Assert.Equal(3, errors.Count);
         Assert.All(errors, e => Assert.Contains("error HAR6026: ", e, StringComparison.Ordinal));
-        Assert.DoesNotContain("generated", checkError.ToString(), StringComparison.Ordinal);
+        // Nothing about a file of the output folder: each error ends with explain's "once generated", which is no file.
+        Assert.DoesNotContain("generated/", checkError.ToString(), StringComparison.Ordinal);
     }
 }

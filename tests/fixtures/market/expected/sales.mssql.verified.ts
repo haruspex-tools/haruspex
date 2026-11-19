@@ -136,7 +136,11 @@ export async function listOrders(db: Queryable, params: types.ListOrdersParams):
   return result
 }
 
-/** Calls sales.order_feed. */
+/**
+ * Calls sales.order_feed.
+ * Its result may be missing: the query returns nothing when no rows match (no-rows).
+ * Why: haruspex explain sales.order_feed
+ */
 export async function orderFeed(db: Queryable): Promise<types.OrderFeed> {
   const request = db.request()
   const response = await request.execute('sales.order_feed')

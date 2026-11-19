@@ -59,8 +59,18 @@ export const TicketRowsRowSchema = z.object({
   muted: z.int32().nullable(),
   restored: z.int32().gt(0).nullable(),
   late: z.int32().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain chk.ticket_rows owner_name
+   */
   owner_name: z.string().min(2).max(20).nullable(),
-  /** One of "A", "B", as the database compares strings. */
+  /**
+   * One of "A", "B", as the database compares strings.
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain chk.ticket_rows owner_grade
+   */
   owner_grade: z.string().length(1).nullable(),
 })
 export type TicketRowsRow = z.infer<typeof TicketRowsRowSchema>

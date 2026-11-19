@@ -191,6 +191,14 @@ those. One fact is not about any property: what the callers' sessions were decla
 (`IrSource.Session`). Every claim about an overflow or a loss of precision rests on it, so the header says it, and says nothing
 when nothing was declared ([decision 0038](../decisions/0038-the-callers-session-is-declared.md)).
 
+**A surprise says why.** A note states a fact; a field whose nullability, presence or type differs from what its column
+declares needs a reason, or it reads as a bug. The IR records each field's derivation (the columns it is read from, and each
+null rule with where it applied), so the emitter can say the reason in the IR's own words: a line per rule, with its code, the
+way out when there is one, and the `haruspex explain` command that shows the rest. The places are left out, so that moving a
+query down its file changes no comment. A comment is not part of what makes two shapes the same: shapes are compared without
+them, and a type that shares its shape says its fields' reasons above its own export
+([decision 0079](../decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+
 **A check the schema already makes is not repeated.** `z.int32()` checks an `int`'s range, so an `int` with one bound of its
 own from a CHECK constraint is `z.int32().gt(0)`, not `z.int().gt(0).max(2147483647)`; with both bounds its own, `z.int()`
 and the two bounds say it all. A union leaves out a variant that another variant accepts every value of:

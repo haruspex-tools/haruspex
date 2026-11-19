@@ -9,13 +9,31 @@
 import { z } from 'zod'
 
 export const LockersResult1RowSchema = z.object({
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#1.member_id'
+   */
   member_id: z.int32().nullable(),
-  /** varchar(40) counts bytes and its collation isn't declared, so the length is at most 40. */
+  /**
+   * varchar(40) counts bytes and its collation isn't declared, so the length is at most 40.
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#1.name'
+   */
   name: z.string().max(40).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#1.locker_no'
+   */
   locker_no: z.int32().nullable(),
   /**
    * One of "S", "L", as the database compares strings.
    * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#1.size'
    */
   size: z.string().max(1).nullable(),
 })
@@ -28,13 +46,28 @@ export const LockersResult2RowSchema = z.object({
    * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
    */
   size: z.string().max(1),
-  /** varchar(40) counts bytes and its collation isn't declared, so the length is at most 40. */
+  /**
+   * varchar(40) counts bytes and its collation isn't declared, so the length is at most 40.
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#2.name'
+   */
   name: z.string().max(40).nullable(),
 })
 export type LockersResult2Row = z.infer<typeof LockersResult2RowSchema>
 
 export const LockersResult3RowSchema = z.object({
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#3.member_id'
+   */
   member_id: z.int32().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain rink.lockers '#3.locker_no'
+   */
   locker_no: z.int32().nullable(),
 })
 export type LockersResult3Row = z.infer<typeof LockersResult3RowSchema>

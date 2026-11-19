@@ -4,8 +4,23 @@ import { z } from 'zod'
 
 export const BedWithCropsRowSchema = z.object({
   name: z.string().max(40),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain plot.bed_with_crops crop
+   */
   crop: z.string().max(30).nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain plot.bed_with_crops sown
+   */
   sown: z.date().nullable(),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain plot.bed_with_crops harvested
+   */
   harvested: z.date().nullable(),
 })
 export type BedWithCropsRow = z.infer<typeof BedWithCropsRowSchema>

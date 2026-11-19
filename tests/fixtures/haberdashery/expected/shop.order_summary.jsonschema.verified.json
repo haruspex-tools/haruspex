@@ -47,7 +47,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "note": {
-          "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.orders.note).",
+          "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.orders.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain shop.order_summary '#1.card<json>.note'",
           "type": "string",
           "maxLength": 200
         }
@@ -63,7 +63,7 @@
       "type": "object",
       "properties": {
         "card": {
-          "description": "A string holding JSON, which contentSchema describes. May be null: empty-subquery (functions/order_json.sql:6:12).",
+          "description": "A string holding JSON, which contentSchema describes. May be null: empty-subquery (functions/order_json.sql:6:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.order_summary '#1.card'",
           "type": [
             "string",
             "null"

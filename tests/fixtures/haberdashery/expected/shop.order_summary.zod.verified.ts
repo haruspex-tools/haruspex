@@ -20,12 +20,21 @@ export const OrderSummaryResult1CardSchema = z.object({
   order_id: z.int32(),
   customer: z.string().max(40),
   placed_on: z.iso.date(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain shop.order_summary '#1.card<json>.note'
+   */
   note: z.string().max(200).optional(),
 })
 export type OrderSummaryResult1Card = z.infer<typeof OrderSummaryResult1CardSchema>
 
 export const OrderSummaryResult1RowSchema = z.object({
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain shop.order_summary '#1.card'
+   */
   card: jsonText(() => OrderSummaryResult1CardSchema).nullable(),
 })
 export type OrderSummaryResult1Row = z.infer<typeof OrderSummaryResult1RowSchema>

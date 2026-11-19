@@ -4,6 +4,11 @@ import { z } from 'zod'
 
 export const UnqualifiedReachesOutRowSchema = z.object({
   member_id: z.int32(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.unqualified_reaches_out borrower
+   */
   borrower: z.string().max(40).nullable(),
 })
 export type UnqualifiedReachesOutRow = z.infer<typeof UnqualifiedReachesOutRowSchema>

@@ -23,7 +23,7 @@
           ]
         },
         "new_stay": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_every_action new_stay",
           "type": [
             "integer",
             "null"
@@ -32,7 +32,7 @@
           "maximum": 2147483647
         },
         "old_nights": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_every_action old_nights",
           "type": [
             "integer",
             "null"
@@ -41,7 +41,7 @@
           "maximum": 2147483647
         },
         "booked": {
-          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1).",
+          "description": "SQL type int. May be null: missing-for-action (procedures/merge_every_action.sql:7:1). May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action). Why: haruspex explain kennel.merge_every_action booked",
           "type": [
             "integer",
             "null"

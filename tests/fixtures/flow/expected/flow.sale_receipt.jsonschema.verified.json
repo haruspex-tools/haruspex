@@ -42,7 +42,7 @@
           "maximum": 9999999.99
         },
         "note": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (flow.sale.note).",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (flow.sale.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.sale_receipt '#1.receipt<json>.note'",
           "type": "string",
           "maxLength": 40
         }
@@ -80,7 +80,7 @@
       "type": "object",
       "properties": {
         "amount_after": {
-          "description": "SQL type decimal(9,2). Facts: min from the check flow.ck_sale_amount. At most 2 decimal places, which multipleOf would check inexactly. May be null: read-twice (procedures/sale_receipt.sql:10:15).",
+          "description": "SQL type decimal(9,2). Facts: min from the check flow.ck_sale_amount. At most 2 decimal places, which multipleOf would check inexactly. May be null: read-twice (procedures/sale_receipt.sql:10:15). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Why: haruspex explain flow.sale_receipt '#2.amount_after'",
           "type": [
             "number",
             "null"

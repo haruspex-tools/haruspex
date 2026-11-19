@@ -48,7 +48,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "shippedAt": {
-          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at).",
+          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.list_customer_orders 'orders[].shippedAt'",
           "type": "string",
           "format": "date-time",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
@@ -93,7 +93,7 @@
           "$ref": "#/$defs/ListCustomerOrdersAddress"
         },
         "orders": {
-          "description": "May be null: empty-subquery (procedures/list_customer_orders.sql:10:8).",
+          "description": "May be null: empty-subquery (procedures/list_customer_orders.sql:10:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain sales.list_customer_orders orders",
           "type": [
             "array",
             "null"

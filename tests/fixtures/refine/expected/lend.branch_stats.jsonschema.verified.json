@@ -43,7 +43,7 @@
           "maximum": 9223372036854775807
         },
         "first_borrower": {
-          "description": "SQL type int. May be null: empty-aggregate (procedures/branch_stats.sql:17:16).",
+          "description": "SQL type int. May be null: empty-aggregate (procedures/branch_stats.sql:17:16). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.branch_stats first_borrower",
           "type": [
             "integer",
             "null"
@@ -52,7 +52,7 @@
           "maximum": 2147483647
         },
         "first_shelf": {
-          "description": "SQL type varchar(8). varchar(8) counts bytes and its collation isn't declared, so the length is at most 8 code points. May be null: empty-aggregate (procedures/branch_stats.sql:18:16).",
+          "description": "SQL type varchar(8). varchar(8) counts bytes and its collation isn't declared, so the length is at most 8 code points. May be null: empty-aggregate (procedures/branch_stats.sql:18:16). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.branch_stats first_shelf",
           "type": [
             "string",
             "null"

@@ -44,6 +44,13 @@ export const KitBadgesLatest2Schema = shape596336
 export type KitBadgesLatest2 = z.infer<typeof KitBadgesLatest2Schema>
 
 export const KitBadgesShareSchema = z.object({
+  /**
+   * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain kit.kit_badges share.per_part
+   */
   per_part: z.int32().nullable(),
 })
 export type KitBadgesShare = z.infer<typeof KitBadgesShareSchema>
@@ -52,12 +59,24 @@ export const KitBadgesRowSchema = z.object({
   badge: KitBadgesBadgeSchema,
   tally: z.array(KitBadgesTallyItemSchema),
   tiers: z.tuple([KitBadgesTiersSchema, KitBadgesTiers2Schema]),
-  /** Not known (json-shape-unknown); the IR's unknowns say why. */
+  /**
+   * Not known (json-shape-unknown); the IR's unknowns say why.
+   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: type it in the config file with "type" and "import".
+   * Why: haruspex explain kit.kit_badges stored
+   */
   stored: z.unknown().optional(),
   note: z.string(),
   latest: z.union([KitBadgesLatestSchema.extend({ sku: z.never().optional() }), KitBadgesLatest2Schema.extend({ none: z.never().optional() })]),
   share: z.union([KitBadgesShareSchema, z.tuple([])]),
-  /** Not known (json-shape-unknown); the IR's unknowns say why. */
+  /**
+   * Not known (json-shape-unknown); the IR's unknowns say why.
+   * Unknown: the JSON's shape is in the data, not the code (json-shape-unknown).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: type it in the config file with "type" and "import".
+   * Why: haruspex explain kit.kit_badges accent
+   */
   accent: z.unknown().optional(),
   accent_n: z.tuple([z.enum(["ā"])]),
 })

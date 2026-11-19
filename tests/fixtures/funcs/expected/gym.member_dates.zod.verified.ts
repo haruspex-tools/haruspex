@@ -4,26 +4,72 @@ import { z } from 'zod'
 
 export const MemberDatesRowSchema = z.object({
   member_id: z.int32(),
+  /**
+   * Its type is int, where gym.member.joined is date and gym.member.last_seen is datetime: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates days_member
+   */
   days_member: z.int32().nullable(),
+  /**
+   * Its type is bigint, where gym.member.born is smalldatetime and gym.member.joined is date: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates minutes_alive
+   */
   minutes_alive: z.string().nullable(),
+  /**
+   * Its type is int, where gym.member.joined is date: what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain gym.member_dates day_number
+   */
   day_number: z.int32().nullable(),
   renews_on: z.date(),
   seen_later: z.date().nullable(),
   adult_on: z.date().nullable(),
   shifted: z.date().nullable(),
   from_text: z.date(),
+  /**
+   * Its type is int, where gym.member.joined is date: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates joined_quarter
+   */
   joined_quarter: z.int32(),
+  /**
+   * Its type is int, where gym.member.joined is date: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates joined_year
+   */
   joined_year: z.int32(),
+  /**
+   * Its type is int, where gym.member.last_seen is datetime: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates seen_month
+   */
   seen_month: z.int32().nullable(),
+  /**
+   * Its type is int, where gym.member.born is smalldatetime: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates born_day
+   */
   born_day: z.int32().nullable(),
+  /**
+   * Its type is nvarchar(30), where gym.member.joined is date: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates joined_weekday
+   */
   joined_weekday: z.string().max(30),
   month_end: z.date(),
   month_end_shifted: z.date(),
+  /**
+   * Its type is date, where gym.member.last_seen is datetime: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates seen_month_end
+   */
   seen_month_end: z.date().nullable(),
+  /**
+   * May be null: it is, or may be, the NULL literal (null-literal).
+   * Why: haruspex explain gym.member_dates joined_if_seen
+   */
   joined_if_seen: z.date().nullable(),
   year_start: z.date(),
   offset_month: z.date().nullable(),
   opening: z.date(),
+  /**
+   * Its type is time(0), where gym.member.born is smalldatetime: what it is computed with makes it another type.
+   * Why: haruspex explain gym.member_dates born_hour
+   */
   born_hour: z.date().nullable(),
   now_local: z.date(),
   now_old: z.date(),

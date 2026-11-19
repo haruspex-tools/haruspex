@@ -29,7 +29,7 @@
           "maxLength": 20
         },
         "extras": {
-          "description": "Not known (unsupported-sql-type): The type xml is not modelled yet. May be null: nullable-column (shop.parcel.extras)."
+          "description": "Not known (unsupported-sql-type): The type xml is not modelled yet. May be null: nullable-column (shop.parcel.extras). Unknown: a SQL type is not modelled yet (unsupported-sql-type). To change it: declare the results in the config file's \"results\". Why: haruspex explain shop.list_parcels extras"
         }
       },
       "required": [

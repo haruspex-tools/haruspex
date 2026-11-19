@@ -155,9 +155,13 @@ internal sealed record WorkedExample(string File, int Line, string Sql, IReadOnl
     public static string MssqlShown(string module, string shown)
     {
         var lines = module.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').ToList();
-        var first = shown.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n')[0];
-        var start = lines.IndexOf(first);
-        return start < 0 ? module : string.Join('\n', lines.Skip(start));
+        var shownLines = shown.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+
+        // Found by the excerpt's first line that is code, not a comment: a comment of several lines starts with /**, as every
+        // helper's does, so the excerpt starts as many lines before that code as it shows.
+        var anchor = Array.FindIndex(shownLines, l => l.Length > 0 && !l.StartsWith("/**", StringComparison.Ordinal) && !l.StartsWith(" *", StringComparison.Ordinal));
+        var at = anchor < 0 ? -1 : lines.IndexOf(shownLines[anchor]);
+        return at < anchor ? module : string.Join('\n', lines.Skip(at - anchor));
     }
 
     /// <summary>What the IR, the Zod or the JSON Schema should be, and where the documentation says so.</summary>

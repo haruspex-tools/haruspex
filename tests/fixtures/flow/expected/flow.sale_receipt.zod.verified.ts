@@ -21,6 +21,10 @@ const jsonText = (content: () => z.ZodType): z.ZodString =>
 export const SaleReceiptResult1ReceiptSchema = z.object({
   sale_id: z.int32(),
   amount: z.number().min(0).max(9999999.99).multipleOf(1e-2),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.sale_receipt '#1.receipt<json>.note'
+   */
   note: z.string().max(40).optional(),
 })
 export type SaleReceiptResult1Receipt = z.infer<typeof SaleReceiptResult1ReceiptSchema>
@@ -37,6 +41,10 @@ export const SaleReceiptResult1RowSchema = z.object({
 export type SaleReceiptResult1Row = z.infer<typeof SaleReceiptResult1RowSchema>
 
 export const SaleReceiptResult2RowSchema = z.object({
+  /**
+   * May be null: COALESCE reads its argument a second time, which may then be null (read-twice).
+   * Why: haruspex explain flow.sale_receipt '#2.amount_after'
+   */
   amount_after: z.number().min(0).max(9999999.99).multipleOf(1e-2).nullable(),
 })
 export type SaleReceiptResult2Row = z.infer<typeof SaleReceiptResult2RowSchema>

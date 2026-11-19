@@ -7,28 +7,75 @@
 import { z } from 'zod'
 
 export const LenientResult1RowSchema = z.object({
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#1.fee'
+   */
   fee: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#1.moment'
+   */
   moment: z.date().nullable(),
+  /**
+   * Its type is int, where bazaar.stall_sale.ticket is varchar(12): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#1.ticket'
+   */
   ticket: z.int32().nullable(),
 })
 export type LenientResult1Row = z.infer<typeof LenientResult1RowSchema>
 
 export const LenientResult2RowSchema = z.object({
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#2.day'
+   */
   day: z.date().nullable(),
 })
 export type LenientResult2Row = z.infer<typeof LenientResult2RowSchema>
 
 export const LenientResult3RowSchema = z.object({
-  /** The driver may round decimal(19,4) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(19,4) past its bounds in a row, so they are not checked.
+   * Its type is decimal(19,4), where bazaar.barter.units is bigint, bazaar.web_order.price is money and bazaar.stall_sale.unit_price is decimal(9,2): what it is computed with makes it another type.
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#3.amount'
+   */
   amount: z.number().multipleOf(1e-4).nullable(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#3.fee'
+   */
   fee: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#3.bids'
+   */
   bids: z.int().min(0).max(255).nullable(),
 })
 export type LenientResult3Row = z.infer<typeof LenientResult3RowSchema>
 
 export const LenientResult4RowSchema = z.object({
   barter_id: z.int32(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#4.fee_or_big'
+   */
   fee_or_big: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain bazaar.lenient '#4.fee_or_default'
+   */
   fee_or_default: z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4).nullable(),
 })
 export type LenientResult4Row = z.infer<typeof LenientResult4RowSchema>

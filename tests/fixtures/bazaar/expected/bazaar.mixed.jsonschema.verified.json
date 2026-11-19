@@ -58,7 +58,7 @@
       "type": "object",
       "properties": {
         "price": {
-          "description": "SQL type decimal(38,8). At most 8 decimal places, which multipleOf would check inexactly. decimal(38,8) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:8:8), null-literal (procedures/mixed.sql:14:8), null-literal (procedures/mixed.sql:17:8), null-literal (procedures/mixed.sql:20:8).",
+          "description": "SQL type decimal(38,8). At most 8 decimal places, which multipleOf would check inexactly. decimal(38,8) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:8:8), null-literal (procedures/mixed.sql:14:8), null-literal (procedures/mixed.sql:17:8), null-literal (procedures/mixed.sql:20:8). Its type is decimal(38,8), where bazaar.auction_lot.hammer is decimal(38,10) and bazaar.auction_lot.reserve is decimal(30,0): what it is computed with makes it another type. May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). May be null: it is, or may be, the NULL literal (null-literal). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain bazaar.mixed '#1.price'",
           "type": [
             "number",
             "null"
@@ -67,7 +67,7 @@
           "maximum": 999999999999999999999999999999.99999999
         },
         "at_time": {
-          "description": "SQL type datetimeoffset(7). May be null: null-literal (procedures/mixed.sql:8:32), null-literal (procedures/mixed.sql:11:19), null-literal (procedures/mixed.sql:20:14).",
+          "description": "SQL type datetimeoffset(7). May be null: null-literal (procedures/mixed.sql:8:32), null-literal (procedures/mixed.sql:11:19), null-literal (procedures/mixed.sql:20:14). Its type is datetimeoffset(7), where bazaar.barter.opened is time(7) and bazaar.web_order.placed_at is datetimeoffset(3): what it is computed with makes it another type. May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#1.at_time'",
           "type": [
             "string",
             "null"
@@ -76,7 +76,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "ref": {
-          "description": "SQL type uniqueidentifier. May be null: null-literal (procedures/mixed.sql:8:66), null-literal (procedures/mixed.sql:11:25), null-literal (procedures/mixed.sql:14:24), nullable-column (bazaar.web_order.voucher).",
+          "description": "SQL type uniqueidentifier. May be null: null-literal (procedures/mixed.sql:8:66), null-literal (procedures/mixed.sql:11:25), null-literal (procedures/mixed.sql:14:24), nullable-column (bazaar.web_order.voucher). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#1.ref'",
           "type": [
             "string",
             "null"
@@ -85,14 +85,14 @@
           "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
         },
         "note": {
-          "description": "SQL type nvarchar(max). May be null: null-literal (procedures/mixed.sql:8:95), nullable-column (bazaar.barter.memo), null-literal (procedures/mixed.sql:20:31).",
+          "description": "SQL type nvarchar(max). May be null: null-literal (procedures/mixed.sql:8:95), nullable-column (bazaar.barter.memo), null-literal (procedures/mixed.sql:20:31). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#1.note'",
           "type": [
             "string",
             "null"
           ]
         },
         "count_of": {
-          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: null-literal (procedures/mixed.sql:20:37).",
+          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: null-literal (procedures/mixed.sql:20:37). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#1.count_of'",
           "type": [
             "integer",
             "null"
@@ -144,7 +144,7 @@
       "type": "object",
       "properties": {
         "band": {
-          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:34:8).",
+          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:34:8). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain bazaar.mixed '#4.band'",
           "type": [
             "integer",
             "null"
@@ -162,7 +162,7 @@
       "type": "object",
       "properties": {
         "share": {
-          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: null-literal (procedures/mixed.sql:42:13).",
+          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: null-literal (procedures/mixed.sql:42:13). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#5.share'",
           "type": [
             "number",
             "null"
@@ -180,7 +180,7 @@
       "type": "object",
       "properties": {
         "share_or_flag": {
-          "description": "Not known (unsupported-expression): This set operation's column: its type depends on whether SQL Server folds IIF(1 = 1, 1, 2) to a constant, whose digits it would count. May be null: unknown (procedures/mixed.sql:48:8)."
+          "description": "Not known (unsupported-expression): This set operation's column: its type depends on whether SQL Server folds IIF(1 = 1, 1, 2) to a constant, whose digits it would count. May be null: unknown (procedures/mixed.sql:48:8). Unknown: an expression or function is not modelled yet (unsupported-expression). To change it: declare the results in the config file's \"results\". Why: haruspex explain bazaar.mixed '#6.share_or_flag'"
         }
       },
       "required": [
@@ -210,7 +210,7 @@
           "maximum": 922337203685477.5807
         },
         "big_or_half": {
-          "description": "SQL type numeric(38,0). numeric(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:57:8).",
+          "description": "SQL type numeric(38,0). numeric(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: precision-loss (procedures/mixed.sql:57:8). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain bazaar.mixed '#7.big_or_half'",
           "type": [
             "integer",
             "null"

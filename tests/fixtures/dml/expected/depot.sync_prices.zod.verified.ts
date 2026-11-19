@@ -4,9 +4,25 @@ import { z } from 'zod'
 
 export const SyncPricesRowSchema = z.object({
   change: z.enum(["DELETE", "INSERT", "UPDATE"]),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.sync_prices new_part
+   */
   new_part: z.int32().nullable(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.sync_prices old_part
+   */
   old_part: z.int32().nullable(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.sync_prices new_amount
+   */
   new_amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable(),
+  /**
+   * May be null: a MERGE's OUTPUT has no value for it for some of its actions (missing-for-action).
+   * Why: haruspex explain depot.sync_prices listed_amount
+   */
   listed_amount: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).nullable(),
 })
 export type SyncPricesRow = z.infer<typeof SyncPricesRowSchema>

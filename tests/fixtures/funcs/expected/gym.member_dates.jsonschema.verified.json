@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "days_member": {
-          "description": "SQL type int. May be null: nullable-column (gym.member.last_seen).",
+          "description": "SQL type int. May be null: nullable-column (gym.member.last_seen). Its type is int, where gym.member.joined is date and gym.member.last_seen is datetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates days_member",
           "type": [
             "integer",
             "null"
@@ -30,7 +30,7 @@
           "maximum": 2147483647
         },
         "minutes_alive": {
-          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (gym.member.born).",
+          "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. May be null: nullable-column (gym.member.born). Its type is bigint, where gym.member.born is smalldatetime and gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_dates minutes_alive",
           "type": [
             "integer",
             "null"
@@ -39,7 +39,7 @@
           "maximum": 9223372036854775807
         },
         "day_number": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/member_dates.sql:7:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/member_dates.sql:7:8). Its type is int, where gym.member.joined is date: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.member_dates day_number",
           "type": [
             "integer",
             "null"
@@ -84,19 +84,19 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "joined_quarter": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_dates joined_quarter",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "joined_year": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_dates joined_year",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "seen_month": {
-          "description": "SQL type int. May be null: nullable-column (gym.member.last_seen).",
+          "description": "SQL type int. May be null: nullable-column (gym.member.last_seen). Its type is int, where gym.member.last_seen is datetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates seen_month",
           "type": [
             "integer",
             "null"
@@ -105,7 +105,7 @@
           "maximum": 2147483647
         },
         "born_day": {
-          "description": "SQL type int. May be null: nullable-column (gym.member.born).",
+          "description": "SQL type int. May be null: nullable-column (gym.member.born). Its type is int, where gym.member.born is smalldatetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates born_day",
           "type": [
             "integer",
             "null"
@@ -114,7 +114,7 @@
           "maximum": 2147483647
         },
         "joined_weekday": {
-          "description": "SQL type nvarchar(30).",
+          "description": "SQL type nvarchar(30). Its type is nvarchar(30), where gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_dates joined_weekday",
           "type": "string",
           "maxLength": 30
         },
@@ -131,7 +131,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "seen_month_end": {
-          "description": "SQL type date. May be null: nullable-column (gym.member.last_seen).",
+          "description": "SQL type date. May be null: nullable-column (gym.member.last_seen). Its type is date, where gym.member.last_seen is datetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates seen_month_end",
           "type": [
             "string",
             "null"
@@ -140,7 +140,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "joined_if_seen": {
-          "description": "SQL type date. May be null: null-literal (procedures/member_dates.sql:21:38).",
+          "description": "SQL type date. May be null: null-literal (procedures/member_dates.sql:21:38). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain gym.member_dates joined_if_seen",
           "type": [
             "string",
             "null"
@@ -169,7 +169,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "born_hour": {
-          "description": "SQL type time(0). May be null: nullable-column (gym.member.born).",
+          "description": "SQL type time(0). May be null: nullable-column (gym.member.born). Its type is time(0), where gym.member.born is smalldatetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates born_hour",
           "type": [
             "string",
             "null"

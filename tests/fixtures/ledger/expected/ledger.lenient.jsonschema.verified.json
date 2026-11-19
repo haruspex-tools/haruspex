@@ -34,7 +34,7 @@
           "maximum": 2147483647
         },
         "big_doubled": {
-          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:8:8).",
+          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:8:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.big_doubled'",
           "type": [
             "integer",
             "null"
@@ -43,7 +43,7 @@
           "maximum": 99999999999999999999999999999999999999
         },
         "big_negated": {
-          "description": "SQL type numeric(38,1). At most 1 decimal place, which multipleOf would check inexactly. numeric(38,1) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:9:8).",
+          "description": "SQL type numeric(38,1). At most 1 decimal place, which multipleOf would check inexactly. numeric(38,1) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:9:8). Its type is numeric(38,1), where ledger.line.big is decimal(38,0): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.big_negated'",
           "type": [
             "number",
             "null"
@@ -52,7 +52,7 @@
           "maximum": 9999999999999999999999999999999999999.9
         },
         "big_tenth": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:10:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:10:8). Its type is decimal(38,6), where ledger.line.big is decimal(38,0): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.big_tenth'",
           "type": [
             "number",
             "null"
@@ -61,7 +61,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "big_scaled": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:11:8), precision-loss (procedures/lenient.sql:11:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:11:8), precision-loss (procedures/lenient.sql:11:8). Its type is decimal(38,6), where ledger.line.big is decimal(38,0) and ledger.line.frac is decimal(38,38): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.lenient '#1.big_scaled'",
           "type": [
             "number",
             "null"
@@ -70,7 +70,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "per_unit": {
-          "description": "SQL type decimal(23,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(23,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:12:8).",
+          "description": "SQL type decimal(23,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(23,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:12:8). Its type is decimal(23,6), where ledger.line.unit_price is decimal(19,2) and ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.per_unit'",
           "type": [
             "number",
             "null"
@@ -79,7 +79,7 @@
           "maximum": 99999999999999999.999999
         },
         "price_mod": {
-          "description": "SQL type decimal(5,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/lenient.sql:13:8).",
+          "description": "SQL type decimal(5,2). At most 2 decimal places, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/lenient.sql:13:8). Its type is decimal(5,2), where ledger.line.unit_price is decimal(19,2) and ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.price_mod'",
           "type": [
             "number",
             "null"
@@ -88,7 +88,7 @@
           "maximum": 999.99
         },
         "qty_mod": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:14:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:14:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.qty_mod'",
           "type": [
             "integer",
             "null"
@@ -97,7 +97,7 @@
           "maximum": 2147483647
         },
         "big_mod_tenths": {
-          "description": "SQL type numeric(2,1). At most 1 decimal place, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/lenient.sql:15:8).",
+          "description": "SQL type numeric(2,1). At most 1 decimal place, which multipleOf would check inexactly. May be null: arithmetic-overflow (procedures/lenient.sql:15:8). Its type is numeric(2,1), where ledger.line.big is decimal(38,0): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.big_mod_tenths'",
           "type": [
             "number",
             "null"
@@ -106,7 +106,7 @@
           "maximum": 9.9
         },
         "frac_flagged": {
-          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:16:8), precision-loss (procedures/lenient.sql:16:8).",
+          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:16:8), precision-loss (procedures/lenient.sql:16:8). Its type is decimal(38,37), where ledger.line.frac is decimal(38,38) and ledger.line.flag is bit: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.lenient '#1.frac_flagged'",
           "type": [
             "number",
             "null"
@@ -115,7 +115,7 @@
           "maximum": 9.9999999999999999999999999999999999999
         },
         "round_price": {
-          "description": "SQL type decimal(19,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(19,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:17:8).",
+          "description": "SQL type decimal(19,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(19,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:17:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.round_price'",
           "type": [
             "number",
             "null"
@@ -124,7 +124,7 @@
           "maximum": 99999999999999999.99
         },
         "round_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:18:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:18:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.round_fee'",
           "type": [
             "number",
             "null"
@@ -133,7 +133,7 @@
           "maximum": 922337203685477.5807
         },
         "round_qty": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:19:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:19:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.round_qty'",
           "type": [
             "integer",
             "null"
@@ -142,7 +142,7 @@
           "maximum": 2147483647
         },
         "floor_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:20:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:20:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.floor_fee'",
           "type": [
             "number",
             "null"
@@ -151,7 +151,7 @@
           "maximum": 922337203685477.5807
         },
         "ceiling_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:21:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:21:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.ceiling_fee'",
           "type": [
             "number",
             "null"
@@ -160,7 +160,7 @@
           "maximum": 922337203685477.5807
         },
         "abs_qty": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:22:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:22:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.abs_qty'",
           "type": [
             "integer",
             "null"
@@ -169,7 +169,7 @@
           "maximum": 2147483647
         },
         "abs_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:23:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:23:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.abs_fee'",
           "type": [
             "number",
             "null"
@@ -178,7 +178,7 @@
           "maximum": 922337203685477.5807
         },
         "price_cubed": {
-          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:24:8).",
+          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:24:8). Its type is decimal(38,2), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.price_cubed'",
           "type": [
             "number",
             "null"
@@ -187,7 +187,7 @@
           "maximum": 999999999999999999999999999999999999.99
         },
         "qty_squared": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:25:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:25:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.qty_squared'",
           "type": [
             "integer",
             "null"
@@ -196,7 +196,7 @@
           "maximum": 2147483647
         },
         "price_root": {
-          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:26:8), domain-error (procedures/lenient.sql:26:8).",
+          "description": "SQL type decimal(38,2). At most 2 decimal places, which multipleOf would check inexactly. decimal(38,2) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:26:8), domain-error (procedures/lenient.sql:26:8). Its type is decimal(38,2), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.price_root'",
           "type": [
             "number",
             "null"
@@ -205,28 +205,28 @@
           "maximum": 999999999999999999999999999999999999.99
         },
         "sqrt_price": {
-          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:27:8).",
+          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:27:8). Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.sqrt_price'",
           "type": [
             "number",
             "null"
           ]
         },
         "log_price": {
-          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:28:8).",
+          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:28:8). Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.log_price'",
           "type": [
             "number",
             "null"
           ]
         },
         "log10_fee": {
-          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:29:8).",
+          "description": "SQL type float. May be null: domain-error (procedures/lenient.sql:29:8). Its type is float, where ledger.line.fee is money: what it is computed with makes it another type. May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.log10_fee'",
           "type": [
             "number",
             "null"
           ]
         },
         "exp_price": {
-          "description": "SQL type float. May be null: arithmetic-overflow (procedures/lenient.sql:30:8).",
+          "description": "SQL type float. May be null: arithmetic-overflow (procedures/lenient.sql:30:8). Its type is float, where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#1.exp_price'",
           "type": [
             "number",
             "null"
@@ -271,7 +271,7 @@
           "maximum": 2147483647
         },
         "avg_big": {
-          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:35:8), precision-loss (procedures/lenient.sql:35:8).",
+          "description": "SQL type decimal(38,6). At most 6 decimal places, which multipleOf would check inexactly. decimal(38,6) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/lenient.sql:35:8), precision-loss (procedures/lenient.sql:35:8). Its type is decimal(38,6), where ledger.line.big is decimal(38,0): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's \"session\". Why: haruspex explain ledger.lenient '#2.avg_big'",
           "type": [
             "number",
             "null"
@@ -280,7 +280,7 @@
           "maximum": 99999999999999999999999999999999.999999
         },
         "avg_qty_thousands": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:36:12), arithmetic-overflow (procedures/lenient.sql:36:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:36:12), arithmetic-overflow (procedures/lenient.sql:36:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.lenient '#2.avg_qty_thousands'",
           "type": [
             "integer",
             "null"

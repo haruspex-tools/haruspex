@@ -56,7 +56,12 @@ JOIN sale ON sale.product_id = p.product_id;
 export const BestSellersRowSchema = z.object({
   name: z.string().max(40),
   sold: z.string(),
-  /** Not known (caller-temp-table); the IR's unknowns say why. */
+  /**
+   * Not known (caller-temp-table); the IR's unknowns say why.
+   * Unknown: it reads a temporary table its caller may create, whose shape depends on who calls (caller-temp-table).
+   * To change it: declare the results in the config file's "results".
+   * Why: haruspex explain shop.best_sellers picked_note
+   */
   picked_note: z.unknown(),
 })
 export type BestSellersRow = z.infer<typeof BestSellersRowSchema>

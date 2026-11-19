@@ -16,6 +16,11 @@ export const PickingResult1RowSchema = z.object({
 export type PickingResult1Row = z.infer<typeof PickingResult1RowSchema>
 
 export const PickingResult2RowSchema = z.object({
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain shop.picking '#2.line_id'
+   */
   line_id: z.int32().nullable(),
   order_id: z.int32(),
   /** varchar(12) counts bytes and its collation isn't declared, so the length is at most 12. */

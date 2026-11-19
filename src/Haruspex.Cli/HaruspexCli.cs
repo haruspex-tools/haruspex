@@ -70,7 +70,8 @@ internal static class HaruspexCli
         var version = terminal ?? Terminal.Plain;
         foreach (var option in root.Options.OfType<VersionOption>())
             option.Action = new PrintVersion(output, version.Version);
-        var parsed = root.Parse(args);
+        // No response files: an argument starting with @ is a parameter's name to explain (@order_id), never a file to read.
+        var parsed = root.Parse(args, new ParserConfiguration { ResponseFileTokenReplacer = null });
 
         // System.CommandLine exits with 1 on a parse error; usage errors are 2 here, and 1 is kept for failures.
         if (parsed.Errors.Count > 0)
@@ -105,6 +106,7 @@ internal static class HaruspexCli
               haruspex check --all                                   in CI: fail if a module in its output folder would change
               haruspex generate --baseline release/Shop.dacpac       types that work before and after the change is deployed
               haruspex check --baseline release/Shop.dacpac          fail if the application already running would break
+              haruspex explain shop.order_summary last_shipped       why a field is what it is, from the committed IR
 
             Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
             More: https://github.com/sharpblue/haruspex/blob/main/docs/command-line.md
@@ -123,7 +125,54 @@ internal static class HaruspexCli
                 CommandName.Check,
                 Check.Run,
                 new Streams(output, error, workingDirectory, terminal)),
+            ExplainCommand(new Streams(output, error, workingDirectory, terminal)),
         };
+
+    /// <summary><c>haruspex explain</c>, which says why a field is what it is, from the committed IR.</summary>
+    private static Command ExplainCommand(Streams streams)
+    {
+        var target = new Argument<string>("object")
+        {
+            Description = "The procedure (schema.name), the query file (its path) or a generated type's name.",
+        };
+        var field = new Argument<string?>("field")
+        {
+            Description = "A field's path (lines[].qty; a named set's first: summary.total; or by place: #2.total), or a parameter (@order_id). Without it, every field that differs from what its columns declare.",
+            Arity = ArgumentArity.ZeroOrOne,
+        };
+        var ir = new Option<string?>("--ir")
+        {
+            Description = $"The IR file to read; by default, {IrFileName} in the config file's output folder.",
+            HelpName = "file",
+        };
+        var config = new Option<string?>("--config", "-c")
+        {
+            Description = $"The config file; by default, {HaruspexConfig.FileName} here or in the nearest folder above.",
+            HelpName = "file",
+        };
+        var json = new Option<bool>("--json")
+        {
+            Description = "Write one JSON document for tools (version 1, provisional until 1.0).",
+        };
+        var explain = new Command("explain", "Say why a field is what it is: the columns it is read from and each rule that acted on it, from the committed IR.")
+        {
+            target,
+            field,
+            ir,
+            config,
+            json,
+        };
+        explain.SetAction(parsed => Explain.Run(
+            parsed.GetRequiredValue(target),
+            parsed.GetValue(field),
+            parsed.GetValue(ir),
+            parsed.GetValue(config),
+            parsed.GetValue(json),
+            streams.Output,
+            streams.Error,
+            streams.WorkingDirectory));
+        return explain;
+    }
 
     /// <summary><c>haruspex init</c>, which writes a starter config file.</summary>
     private static Command InitCommand(Streams streams)

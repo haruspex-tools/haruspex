@@ -33,20 +33,20 @@
           "maximum": 99999999999999999.99
         },
         "round_units": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where ledger.line.units is tinyint: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions round_units",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "round_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions round_score",
           "type": [
             "number",
             "null"
           ]
         },
         "round_small_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee). Its type is money, where ledger.line.small_fee is smallmoney: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions round_small_fee",
           "type": [
             "number",
             "null"
@@ -61,19 +61,19 @@
           "maximum": 922337203685477.5807
         },
         "floor_price": {
-          "description": "SQL type decimal(19,0). decimal(19,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(19,0). decimal(19,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(19,0), where ledger.line.unit_price is decimal(19,2): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions floor_price",
           "type": "integer",
           "minimum": -9999999999999999999,
           "maximum": 9999999999999999999
         },
         "ceiling_frac": {
-          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(38,0). decimal(38,0) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(38,0), where ledger.line.frac is decimal(38,38): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions ceiling_frac",
           "type": "integer",
           "minimum": -99999999999999999999999999999999999999,
           "maximum": 99999999999999999999999999999999999999
         },
         "floor_small_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee). Its type is money, where ledger.line.small_fee is smallmoney: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions floor_small_fee",
           "type": [
             "number",
             "null"
@@ -82,14 +82,14 @@
           "maximum": 922337203685477.5807
         },
         "ceiling_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions ceiling_score",
           "type": [
             "number",
             "null"
           ]
         },
         "abs_delta": {
-          "description": "SQL type int. May be null: nullable-column (ledger.line.delta).",
+          "description": "SQL type int. May be null: nullable-column (ledger.line.delta). Its type is int, where ledger.line.delta is smallint: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions abs_delta",
           "type": [
             "integer",
             "null"
@@ -104,7 +104,7 @@
           "maximum": 99999999999999999999999999999999999999
         },
         "abs_small_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.small_fee). Its type is money, where ledger.line.small_fee is smallmoney: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions abs_small_fee",
           "type": [
             "number",
             "null"
@@ -113,7 +113,7 @@
           "maximum": 922337203685477.5807
         },
         "sign_frac": {
-          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type decimal(38,37). At most 37 decimal places, which multipleOf would check inexactly. decimal(38,37) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is decimal(38,37), where ledger.line.frac is decimal(38,38): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions sign_frac",
           "type": "number",
           "minimum": -9.9999999999999999999999999999999999999,
           "maximum": 9.9999999999999999999999999999999999999
@@ -140,7 +140,7 @@
           "maximum": 9.9999
         },
         "discount_squared": {
-          "description": "SQL type numeric(38,4). At most 4 decimal places, which multipleOf would check inexactly. numeric(38,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.discount).",
+          "description": "SQL type numeric(38,4). At most 4 decimal places, which multipleOf would check inexactly. numeric(38,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (ledger.line.discount). Its type is numeric(38,4), where ledger.line.discount is numeric(5,4): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions discount_squared",
           "type": [
             "number",
             "null"
@@ -149,64 +149,64 @@
           "maximum": 9999999999999999999999999999999999.9999
         },
         "units_cubed": {
-          "description": "SQL type int.",
+          "description": "SQL type int. Its type is int, where ledger.line.units is tinyint: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions units_cubed",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "flag_squared": {
-          "description": "SQL type float.",
+          "description": "SQL type float. Its type is float, where ledger.line.flag is bit: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions flag_squared",
           "type": "number"
         },
         "sqrt_units": {
-          "description": "SQL type float.",
+          "description": "SQL type float. Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions sqrt_units",
           "type": "number"
         },
         "sqrt_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score), domain-error (procedures/line_functions.sql:27:8).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score), domain-error (procedures/line_functions.sql:27:8). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.line_functions sqrt_score",
           "type": [
             "number",
             "null"
           ]
         },
         "square_big": {
-          "description": "SQL type float.",
+          "description": "SQL type float. Its type is float, where ledger.line.big is decimal(38,0): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions square_big",
           "type": "number"
         },
         "square_score": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.score).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.score). Its type is float, where ledger.line.score is real: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions square_score",
           "type": [
             "number",
             "null"
           ]
         },
         "exp_units": {
-          "description": "SQL type float.",
+          "description": "SQL type float. Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. Why: haruspex explain ledger.line_functions exp_units",
           "type": "number"
         },
         "exp_discount": {
-          "description": "SQL type float. May be null: nullable-column (ledger.line.discount).",
+          "description": "SQL type float. May be null: nullable-column (ledger.line.discount). Its type is float, where ledger.line.discount is numeric(5,4): what it is computed with makes it another type. Why: haruspex explain ledger.line_functions exp_discount",
           "type": [
             "number",
             "null"
           ]
         },
         "log_units": {
-          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:32:12), domain-error (procedures/line_functions.sql:32:8).",
+          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:32:12), domain-error (procedures/line_functions.sql:32:8). Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.line_functions log_units",
           "type": [
             "number",
             "null"
           ]
         },
         "log2_units": {
-          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:33:12), domain-error (procedures/line_functions.sql:33:8).",
+          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:33:12), domain-error (procedures/line_functions.sql:33:8). Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.line_functions log2_units",
           "type": [
             "number",
             "null"
           ]
         },
         "log10_units": {
-          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:34:14), domain-error (procedures/line_functions.sql:34:8).",
+          "description": "SQL type float. May be null: arithmetic-overflow (procedures/line_functions.sql:34:14), domain-error (procedures/line_functions.sql:34:8). Its type is float, where ledger.line.units is tinyint: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). May be null: a math function outside its domain is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (domain-error). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain ledger.line_functions log10_units",
           "type": [
             "number",
             "null"

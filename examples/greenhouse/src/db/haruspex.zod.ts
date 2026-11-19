@@ -17,6 +17,12 @@ export const GetPlantRowSchema = z.object({
   name: z.string().max(60),
   /** One of "herb", "shrub", "tree", as the database compares strings. */
   kind: z.string().max(10),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain garden.get_plant water_log
+   */
   water_log: z.array(GetPlantWaterLogItemSchema).min(1).optional(),
 })
 export type GetPlantRow = z.infer<typeof GetPlantRowSchema>
@@ -47,6 +53,11 @@ export type ListPlants = z.infer<typeof ListPlantsSchema>
 export const ThirstyPlantsRowSchema = z.object({
   plant_id: z.int32(),
   name: z.string().max(60),
+  /**
+   * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain queries/thirsty_plants.sql last_watered
+   */
   last_watered: z.date().nullable(),
 })
 export type ThirstyPlantsRow = z.infer<typeof ThirstyPlantsRowSchema>

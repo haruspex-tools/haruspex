@@ -38,7 +38,7 @@
           "maximum": 9223372036854775807
         },
         "first_sku": {
-          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: unmatched-lateral-row (views/purchase_summary.sql:13:13).",
+          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: unmatched-lateral-row (views/purchase_summary.sql:13:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.purchase_overview first_sku",
           "type": [
             "string",
             "null"

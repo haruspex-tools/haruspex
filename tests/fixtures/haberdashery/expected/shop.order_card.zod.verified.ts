@@ -6,6 +6,10 @@ export const OrderCardRowSchema = z.object({
   order_id: z.int32(),
   customer: z.string().max(40),
   placed_on: z.iso.date(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain shop.order_card note
+   */
   note: z.string().max(200).optional(),
 })
 export type OrderCardRow = z.infer<typeof OrderCardRowSchema>

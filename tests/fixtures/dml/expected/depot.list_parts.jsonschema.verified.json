@@ -39,7 +39,7 @@
           "maxLength": 200
         },
         "qty": {
-          "description": "SQL type int. Facts: min from the check tables/stock.sql:5:22. May be null: unmatched-row (procedures/list_parts.sql:10:15).",
+          "description": "SQL type int. Facts: min from the check tables/stock.sql:5:22. May be null: unmatched-row (procedures/list_parts.sql:10:15). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain depot.list_parts qty",
           "type": [
             "integer",
             "null"
@@ -48,7 +48,7 @@
           "maximum": 2147483647
         },
         "shelf": {
-          "description": "SQL type nvarchar(10). May be null: nullable-column (depot.stock.shelf), unmatched-row (procedures/list_parts.sql:10:15).",
+          "description": "SQL type nvarchar(10). May be null: nullable-column (depot.stock.shelf), unmatched-row (procedures/list_parts.sql:10:15). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain depot.list_parts shelf",
           "type": [
             "string",
             "null"

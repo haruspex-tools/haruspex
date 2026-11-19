@@ -4,6 +4,10 @@ import { z } from 'zod'
 
 export const NotesOrNamesRowSchema = z.object({
   id: z.int32(),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain flow.notes_or_names '[].note'
+   */
   note: z.string().max(40).optional(),
 })
 export type NotesOrNamesRow = z.infer<typeof NotesOrNamesRowSchema>

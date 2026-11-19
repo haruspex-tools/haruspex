@@ -53,13 +53,22 @@ export const UspGetBillOfMaterialsRowSchema = z.object({
   ProductAssemblyID: z.int32(),
   ComponentID: z.int32(),
   ComponentDesc: z.string().max(50),
-  /** The driver may round decimal(38,2) past its bounds in a row, so they are not checked. */
+  /**
+   * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
+   * Its type is decimal(38,2), where Production.BillOfMaterials.PerAssemblyQty is decimal(8,2): what it is computed with makes it another type.
+   * Why: haruspex explain dbo.uspGetBillOfMaterials TotalQuantity
+   */
   TotalQuantity: z.number().multipleOf(1e-2),
   /** The driver may round money past its bounds in a row, so they are not checked. */
   StandardCost: z.number().multipleOf(1e-4),
   /** The driver may round money past its bounds in a row, so they are not checked. */
   ListPrice: z.number().multipleOf(1e-4),
   BOMLevel: z.int().min(-32768).max(32767),
+  /**
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
+   * Why: haruspex explain dbo.uspGetBillOfMaterials RecursionLevel
+   */
   RecursionLevel: z.int32().nullable(),
 })
 export type UspGetBillOfMaterialsRow = z.infer<typeof UspGetBillOfMaterialsRowSchema>
@@ -76,7 +85,9 @@ export const UspGetBillOfMaterialsSchema = z.array(UspGetBillOfMaterialsRowSchem
 export type UspGetBillOfMaterials = z.infer<typeof UspGetBillOfMaterialsSchema>
 ```
 
-Each line has its reason in the SQL:
+Each line has its reason in the SQL. Where a field differs from what its column declares (`TotalQuantity` and
+`RecursionLevel` here), a comment says why, with the command that shows where in the SQL each reason applied:
+`dotnet run --project src/Haruspex.Cli -- explain dbo.uspGetBillOfMaterials RecursionLevel --ir out/haruspex.ir.json`.
 
 - **`ProductAssemblyID` is never null**, although the column allows NULL. Every row the procedure returns passed a
   comparison of that column with a value (`= @StartProductID`, or `= cte.[ComponentID]` in the recursive step), and a

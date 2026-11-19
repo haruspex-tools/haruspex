@@ -19,6 +19,12 @@ export const GetComponentsNodeSchema = z.object({
   quantity: z.number().min(1).max(999999.99).multipleOf(1e-2),
   unit: z.string().length(3),
   product: GetComponentsNodeProductSchema,
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain GetComponentsNode components
+   */
   get components() { return z.array(GetComponentsNodeSchema).min(1).optional() },
 })
 export type GetComponentsNode = z.infer<typeof GetComponentsNodeSchema>
@@ -27,6 +33,12 @@ export const GetProductTreeRowSchema = z.object({
   id: z.int32(),
   name: z.string().max(50),
   number: z.string().max(25),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain Production.GetProductTree components
+   */
   components: z.array(GetComponentsNodeSchema).min(1).optional(),
 })
 export type GetProductTreeRow = z.infer<typeof GetProductTreeRowSchema>

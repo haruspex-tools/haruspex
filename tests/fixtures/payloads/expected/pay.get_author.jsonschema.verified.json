@@ -38,10 +38,10 @@
           "maxLength": 200
         },
         "profile": {
-          "description": "Not known (json-shape-unknown): pay.author.profile is a json column: its shape is in the data, not the schema. May be null: nullable-column (pay.author.profile)."
+          "description": "Not known (json-shape-unknown): pay.author.profile is a json column: its shape is in the data, not the schema. May be null: nullable-column (pay.author.profile). Unknown: the JSON's shape is in the data, not the code (json-shape-unknown). To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain pay.get_author author.profile"
         },
         "books": {
-          "description": "May be null: empty-aggregate (procedures/get_author.sql:14:23).",
+          "description": "May be null: empty-aggregate (procedures/get_author.sql:14:23). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain pay.get_author author.books",
           "type": [
             "array",
             "null"
@@ -52,7 +52,7 @@
           "minItems": 1
         },
         "reviews": {
-          "description": "May be null: empty-subquery (procedures/get_author.sql:25:34).",
+          "description": "May be null: empty-subquery (procedures/get_author.sql:25:34). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain pay.get_author author.reviews",
           "type": [
             "array",
             "null"
@@ -88,7 +88,7 @@
           "maxLength": 60
         },
         "isbn": {
-          "description": "SQL type char(13). char(13) pads to 13 bytes and its collation isn't declared, so the length is 4 to 13 code points. Left out when null: nullable-column (pay.book.isbn).",
+          "description": "SQL type char(13). char(13) pads to 13 bytes and its collation isn't declared, so the length is 4 to 13 code points. Left out when null: nullable-column (pay.book.isbn). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain pay.get_author 'author.books[].isbn'",
           "type": "string",
           "minLength": 4,
           "maxLength": 13
@@ -100,7 +100,7 @@
           "maximum": 9999999.99
         },
         "published": {
-          "description": "SQL type date. Left out when null: nullable-column (pay.book.published).",
+          "description": "SQL type date. Left out when null: nullable-column (pay.book.published). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain pay.get_author 'author.books[].published'",
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
@@ -129,7 +129,7 @@
           "maximum": 5
         },
         "comment": {
-          "description": "SQL type nvarchar(100). Left out when null: nullable-column (pay.review.comment).",
+          "description": "SQL type nvarchar(100). Left out when null: nullable-column (pay.review.comment). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain pay.get_author 'author.reviews[].comment'",
           "type": "string",
           "maxLength": 100
         }

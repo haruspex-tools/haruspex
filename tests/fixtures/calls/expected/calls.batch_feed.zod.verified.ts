@@ -5,11 +5,19 @@ import { z } from 'zod'
 export const BatchFeedResult1RowSchema = z.object({
   id: z.int32(),
   name: z.string().max(30),
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain calls.batch_feed '#1.grams'
+   */
   grams: z.int32().optional(),
 })
 export type BatchFeedResult1Row = z.infer<typeof BatchFeedResult1RowSchema>
 
 export const BatchFeedResult2RowSchema = z.object({
+  /**
+   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Why: haruspex explain calls.batch_feed '#2.size'
+   */
   size: z.int32().optional(),
 })
 export type BatchFeedResult2Row = z.infer<typeof BatchFeedResult2RowSchema>

@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "paid": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (gym.visit.tip), arithmetic-overflow (procedures/visit_money.sql:4:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: nullable-column (gym.visit.tip), arithmetic-overflow (procedures/visit_money.sql:4:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money paid",
           "type": [
             "number",
             "null"
@@ -30,7 +30,7 @@
           "maximum": 922337203685477.5807
         },
         "double_fee": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:5:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:5:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money double_fee",
           "type": [
             "number",
             "null"
@@ -39,7 +39,7 @@
           "maximum": 922337203685477.5807
         },
         "fee_per_room": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:6:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:6:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money fee_per_room",
           "type": [
             "number",
             "null"
@@ -48,7 +48,7 @@
           "maximum": 922337203685477.5807
         },
         "tip_per_room": {
-          "description": "SQL type smallmoney. At most 4 decimal places, which multipleOf would check inexactly. May be null: nullable-column (gym.visit.tip), arithmetic-overflow (procedures/visit_money.sql:7:8).",
+          "description": "SQL type smallmoney. At most 4 decimal places, which multipleOf would check inexactly. May be null: nullable-column (gym.visit.tip), arithmetic-overflow (procedures/visit_money.sql:7:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money tip_per_room",
           "type": [
             "number",
             "null"
@@ -57,34 +57,34 @@
           "maximum": 214748.3647
         },
         "fee_plus": {
-          "description": "SQL type numeric(20,4). At most 4 decimal places, which multipleOf would check inexactly. numeric(20,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles.",
+          "description": "SQL type numeric(20,4). At most 4 decimal places, which multipleOf would check inexactly. numeric(20,4) has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. Its type is numeric(20,4), where gym.visit.fee is money: what it is computed with makes it another type. Why: haruspex explain gym.visit_money fee_plus",
           "type": "number",
           "minimum": -9999999999999999.9999,
           "maximum": 9999999999999999.9999
         },
         "effort": {
-          "description": "SQL type float. May be null: nullable-column (gym.visit.weight), nullable-column (gym.visit.minutes), arithmetic-overflow (procedures/visit_money.sql:9:8).",
+          "description": "SQL type float. May be null: nullable-column (gym.visit.weight), nullable-column (gym.visit.minutes), arithmetic-overflow (procedures/visit_money.sql:9:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money effort",
           "type": [
             "number",
             "null"
           ]
         },
         "rating_up": {
-          "description": "SQL type real. May be null: nullable-column (gym.visit.rating), arithmetic-overflow (procedures/visit_money.sql:10:8).",
+          "description": "SQL type real. May be null: nullable-column (gym.visit.rating), arithmetic-overflow (procedures/visit_money.sql:10:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money rating_up",
           "type": [
             "number",
             "null"
           ]
         },
         "mixed": {
-          "description": "SQL type float. May be null: nullable-column (gym.visit.rating), nullable-column (gym.visit.weight), arithmetic-overflow (procedures/visit_money.sql:11:8).",
+          "description": "SQL type float. May be null: nullable-column (gym.visit.rating), nullable-column (gym.visit.weight), arithmetic-overflow (procedures/visit_money.sql:11:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money mixed",
           "type": [
             "number",
             "null"
           ]
         },
         "refund": {
-          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:12:8).",
+          "description": "SQL type money. At most 4 decimal places, which multipleOf would check inexactly. money has more digits than a double holds, so a validator that reads numbers as doubles checks it on the nearest doubles. May be null: arithmetic-overflow (procedures/visit_money.sql:12:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money refund",
           "type": [
             "number",
             "null"
@@ -100,7 +100,7 @@
           ]
         },
         "room_down": {
-          "description": "SQL type smallint.",
+          "description": "SQL type smallint. Its type is smallint, where gym.visit.room is tinyint: what it is computed with makes it another type. Why: haruspex explain gym.visit_money room_down",
           "type": "integer",
           "minimum": -32768,
           "maximum": 32767
@@ -116,7 +116,7 @@
           "maximum": 922337203685477.5807
         },
         "seen_next_day": {
-          "description": "SQL type datetime. May be null: nullable-column (gym.member.last_seen), arithmetic-overflow (procedures/visit_money.sql:17:8).",
+          "description": "SQL type datetime. May be null: nullable-column (gym.member.last_seen), arithmetic-overflow (procedures/visit_money.sql:17:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money seen_next_day",
           "type": [
             "string",
             "null"
@@ -124,7 +124,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "born_noon": {
-          "description": "SQL type smalldatetime. May be null: nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:18:8).",
+          "description": "SQL type smalldatetime. May be null: nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:18:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money born_noon",
           "type": [
             "string",
             "null"
@@ -132,7 +132,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "seen_since_born": {
-          "description": "SQL type datetime. May be null: nullable-column (gym.member.last_seen), nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:19:8).",
+          "description": "SQL type datetime. May be null: nullable-column (gym.member.last_seen), nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:19:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money seen_since_born",
           "type": [
             "string",
             "null"

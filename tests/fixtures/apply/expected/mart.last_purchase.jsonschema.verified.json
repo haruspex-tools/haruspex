@@ -26,7 +26,7 @@
           "maxLength": 50
         },
         "purchase_id": {
-          "description": "SQL type int. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13).",
+          "description": "SQL type int. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.last_purchase purchase_id",
           "type": [
             "integer",
             "null"
@@ -35,7 +35,7 @@
           "maximum": 2147483647
         },
         "placed_on": {
-          "description": "SQL type date. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13).",
+          "description": "SQL type date. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.last_purchase placed_on",
           "type": [
             "string",
             "null"
@@ -44,7 +44,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "status": {
-          "description": "SQL type varchar(4). Facts: values from the check mart.ck_purchase_status. One of \"open\", \"paid\", \"sent\", as the database compares strings. varchar(4) counts bytes and its collation isn't declared, so the length is at most 4 code points. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13).",
+          "description": "SQL type varchar(4). Facts: values from the check mart.ck_purchase_status. One of \"open\", \"paid\", \"sent\", as the database compares strings. varchar(4) counts bytes and its collation isn't declared, so the length is at most 4 code points. May be null: unmatched-lateral-row (procedures/last_purchase.sql:13:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain mart.last_purchase status",
           "type": [
             "string",
             "null"

@@ -11,6 +11,11 @@ export const CustomerActivityResult1RowSchema = z.object({
   /** varchar(100) counts bytes and its collation isn't declared, so the length is at most 100. */
   contact: z.string().max(100).nullable(),
   purchases: z.string(),
+  /**
+   * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain mart.customer_activity '#1.last_placed'
+   */
   last_placed: z.date().nullable(),
 })
 export type CustomerActivityResult1Row = z.infer<typeof CustomerActivityResult1RowSchema>

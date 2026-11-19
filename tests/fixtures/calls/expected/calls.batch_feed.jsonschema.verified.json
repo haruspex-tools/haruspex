@@ -49,7 +49,7 @@
           "maxLength": 30
         },
         "grams": {
-          "description": "SQL type int. Left out when null: nullable-column (#stage.grams).",
+          "description": "SQL type int. Left out when null: nullable-column (#stage.grams). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain calls.batch_feed '#1.grams'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
@@ -65,7 +65,7 @@
       "type": "object",
       "properties": {
         "size": {
-          "description": "SQL type int. Left out when null: nullable-column (calls.oven.rack_count).",
+          "description": "SQL type int. Left out when null: nullable-column (calls.oven.rack_count). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain calls.batch_feed '#2.size'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

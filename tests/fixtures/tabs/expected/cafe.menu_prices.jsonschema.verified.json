@@ -21,18 +21,18 @@
           "maximum": 2147483647
         },
         "label": {
-          "description": "SQL type nvarchar(45).",
+          "description": "SQL type nvarchar(45). Its type is nvarchar(45), where cafe.menu_item.title is nvarchar(30) and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type. Why: haruspex explain cafe.menu_prices label",
           "type": "string",
           "maxLength": 45
         },
         "price_with_tax": {
-          "description": "SQL type numeric(12,3). At most 3 decimal places, which multipleOf would check inexactly.",
+          "description": "SQL type numeric(12,3). At most 3 decimal places, which multipleOf would check inexactly. Its type is numeric(12,3), where cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type. Why: haruspex explain cafe.menu_prices price_with_tax",
           "type": "number",
           "minimum": -999999999.999,
           "maximum": 999999999.999
         },
         "pence": {
-          "description": "SQL type int. May be null: arithmetic-overflow (procedures/menu_prices.sql:11:8).",
+          "description": "SQL type int. May be null: arithmetic-overflow (procedures/menu_prices.sql:11:8). Its type is int, where cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain cafe.menu_prices pence",
           "type": [
             "integer",
             "null"
@@ -47,12 +47,12 @@
           "maxLength": 4
         },
         "ref": {
-          "description": "SQL type varchar(17). varchar(17) counts bytes and its collation isn't declared, so the length is at most 17 code points.",
+          "description": "SQL type varchar(17). varchar(17) counts bytes and its collation isn't declared, so the length is at most 17 code points. Its type is varchar(17), where cafe.menu_item.short_code is char(4) and cafe.menu_item.item_id is int: what it is computed with makes it another type. Why: haruspex explain cafe.menu_prices ref",
           "type": "string",
           "maxLength": 17
         },
         "title_number": {
-          "description": "SQL type int. May be null: failed-conversion (procedures/menu_prices.sql:14:8).",
+          "description": "SQL type int. May be null: failed-conversion (procedures/menu_prices.sql:14:8). Its type is int, where cafe.menu_item.title is nvarchar(30): what it is computed with makes it another type. May be null: TRY_CAST and TRY_CONVERT give null for a value that doesn't convert (failed-conversion). Why: haruspex explain cafe.menu_prices title_number",
           "type": [
             "integer",
             "null"

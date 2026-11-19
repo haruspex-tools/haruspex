@@ -37,7 +37,11 @@ export const CustomerJobsRowSchema = z.object({
   customer_id: z.int32(),
   /** A string holding JSON, checked against the schema inside. */
   jobs: jsonText(() => z.array(CustomerJobsJobsSchema)),
-  /** A string holding JSON, checked against the schema inside. */
+  /**
+   * A string holding JSON, checked against the schema inside.
+   * May be null: COALESCE reads its argument a second time, which may then be null (read-twice).
+   * Why: haruspex explain desk.customer_jobs job_ids
+   */
   job_ids: jsonText(() => z.array(CustomerJobsJobIdsSchema)).nullable(),
 })
 export type CustomerJobsRow = z.infer<typeof CustomerJobsRowSchema>

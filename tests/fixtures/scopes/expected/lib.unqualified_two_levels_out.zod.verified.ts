@@ -8,8 +8,18 @@ import { z } from 'zod'
 
 export const UnqualifiedTwoLevelsOutRowSchema = z.object({
   member_id: z.int32(),
-  /** varchar(80) counts bytes and its collation isn't declared, so the length is at most 80. */
+  /**
+   * varchar(80) counts bytes and its collation isn't declared, so the length is at most 80.
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.unqualified_two_levels_out borrower_email
+   */
   borrower_email: z.string().max(80).nullable(),
+  /**
+   * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
+   * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
+   * Why: haruspex explain lib.unqualified_two_levels_out donated
+   */
   donated: z.string().max(80).nullable(),
   any_title: z.string().max(80),
 })
