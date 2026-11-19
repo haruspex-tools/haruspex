@@ -137,11 +137,7 @@ public static class SchemaRules
         var collation = EffectiveCollation(model, table, column);
         var facts = TypeFacts(type, collation);
 
-        // A nullable binary(n) column of a table created with ANSI_PADDING off stores its values with their trailing zeros cut,
-        // and the source doesn't say which tables were (a script may set it off before a CREATE TABLE, and a session before a
-        // temporary table): so such a column is at most n bytes. A column that is never null is padded under either setting
-        // (observed: A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads).
-        if (facts.Length is { IsFixed: true } length && type.Scalar is { IsBinary: true } && !IsNeverNull(model, table, column))
+        if (facts.Length is { IsFixed: true } length && MayCutPadding(model, table, column, type))
             facts = facts with { Length = length with { IsFixed = false } };
         foreach (var check in table.Checks)
         {
@@ -151,6 +147,20 @@ public static class SchemaRules
 
         return FilterValues(facts);
     }
+
+    /// <summary>
+    /// Whether a column of <c>char(n)</c> or <c>binary(n)</c> may hold values shorter than n, its padding cut: a nullable one of a
+    /// table created while <c>ANSI_PADDING</c> is off does (<see cref="ScalarType.IsPaddingCutWithoutAnsiPadding"/>), and the
+    /// source doesn't say which tables were. A script may set it off before a <c>CREATE TABLE</c>, and the caller's session
+    /// decides it for a temporary table a body makes. A column that is never null pads under either setting, and so do a table
+    /// type's columns and a table variable's, of a type or not (observed:
+    /// A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns,
+    /// A_nullable_char_column_a_body_creates_is_cut_under_its_callers_ansi_padding_off_but_a_table_variable_s_pads).
+    /// </summary>
+    private static bool MayCutPadding(DatabaseModel model, ITable table, Column column, ResolvedType type) =>
+        type.Scalar is { IsPaddingCutWithoutAnsiPadding: true }
+        && table is not (TableType or DeclaredTable { IsVariable: true })
+        && !IsNeverNull(model, table, column);
 
     /// <summary>
     /// The collation a column's strings compare under: its own <c>COLLATE</c>, or for a table of the schema the database's default

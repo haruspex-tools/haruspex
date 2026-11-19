@@ -30,3 +30,10 @@ INSERT INTO chk.ticket_event (event_id, ticket_id, kind, minutes)
 VALUES (-2147483648, -2147483648, N'open', 1),
        (2, -2147483648, N'note', NULL),
        (2147483647, 2147483647, N'done', 32767);
+
+-- chk.legacy_tag, created with ANSI_PADDING off: short values (cut in code and stamp, padded in kept and wide), full ones,
+-- null in every nullable column, and the key's edges.
+INSERT INTO chk.legacy_tag (tag_id, code, kept, wide, stamp)
+VALUES (-2147483648, 'a', 'a', N'a', 0x01),
+       (2, 'abcd', 'abcd', N'abcd', 0x01020304),
+       (2147483647, NULL, '', NULL, NULL);

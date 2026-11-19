@@ -871,7 +871,7 @@
           "type": {
             "kind": "string",
             "sql": "char(5)",
-            "length": {
+            "maxLength": {
               "value": 5,
               "unit": "bytes",
               "from": {

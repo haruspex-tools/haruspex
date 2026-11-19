@@ -96,7 +96,7 @@ export const ListBooksRowSchema = z.object({
   id: z.int32(),
   pair: z.tuple([z.int32(), z.number().min(0).max(9999999.99).multipleOf(1e-2)]),
   labels: z.array(z.string().max(60)).min(1).max(2),
-  /** char(13) pads to 13 bytes and its collation isn't declared, so the length is at most 13. */
+  /** char(13) counts bytes and its collation isn't declared, so the length is at most 13. */
   slots: z.tuple([z.string().max(60), z.string().max(13).nullable(), z.iso.date().nullable()]),
   reviews: ListBooksReviewsSchema,
   /**

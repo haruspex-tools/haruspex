@@ -1713,8 +1713,11 @@ column declared with neither `NULL` nor `NOT NULL` is never null, whatever the A
 (`A_rowversion_column_declared_without_null_is_not_null_whatever_the_ansi_settings`, `SchemaRules.IsNeverNull`). A nullable
 `binary(n)` column is at most n bytes, not exactly: one of a table created with `ANSI_PADDING` off (a script's own `SET` before its
 `CREATE TABLE`, or the caller's session for a temporary table a procedure creates) keeps its values with their trailing zeros cut,
-which the source doesn't show, and so is a column `SELECT … INTO` makes; a column that is never null is padded either way
-(`A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads`, `SchemaRules.ColumnFacts`).
+which the source doesn't show, and so is a column `SELECT … INTO` makes; a column that is never null is padded either way, and
+so are a table variable's and a table type's
+(`A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads`,
+`A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns`, `SchemaRules.ColumnFacts`). A nullable
+`char(n)` column follows the same rule, its trailing spaces cut (`ScalarType.IsPaddingCutWithoutAnsiPadding`).
 Observed in
 `BinaryObservationTests`; the unit tests are `BinaryTests`, and the fixture `tests/fixtures/gallery`.
 
@@ -2185,7 +2188,10 @@ is kept as tests in `tests/Haruspex.DifferentialTests/ForJsonObservationTests.cs
 - `decimal`, `numeric`, `money` and `smallmoney` keep their scale (`12.50`, `12.5000`); `bigint` is written in
   full, beyond 2^53; `float` and `real` in exponent form (`1.000000000000000e+000`). All are JSON numbers.
 - `char(n)` and `nchar(n)` arrive padded with spaces to `n`: UTF-16 code units for `nchar`, bytes for `char`, so
-  in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`).
+  in a UTF-8 collation `char(3)` holding `é` arrives as `"é "` (kept as a test in `CheckConstraintObservationTests`). A nullable
+  `char(n)` column of a table created while `ANSI_PADDING` is off is the exception: its values arrive with their trailing
+  spaces cut (`A_nullable_char_column_created_with_ansi_padding_off_cuts_trailing_spaces_but_nchar_and_not_null_pad`), so it is
+  at most n, as a nullable `binary(n)` column is ("Binary values").
 - A binary value is base64 text of the standard alphabet, padded, on one line, `""` for no bytes, whatever its length
   (`For_json_writes_a_binary_value_as_padded_base64_on_one_line`, in `BinaryObservationTests`).
 

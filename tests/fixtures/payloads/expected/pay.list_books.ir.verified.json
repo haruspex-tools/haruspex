@@ -623,7 +623,7 @@
                 {
                   "kind": "string",
                   "sql": "char(13)",
-                  "length": {
+                  "maxLength": {
                     "value": 13,
                     "unit": "bytes",
                     "from": {
@@ -674,7 +674,7 @@
                 "type": {
                   "kind": "string",
                   "sql": "char(13)",
-                  "length": {
+                  "maxLength": {
                     "value": 13,
                     "unit": "bytes",
                     "from": {

@@ -10,7 +10,7 @@ export const ListCustomersRowSchema = z.object({
   id: z.int32(),
   name: z.string().max(100),
   email: z.string().max(256).nullable(),
-  /** char(2) pads to 2 bytes and its collation isn't declared, so the length is at most 2. */
+  /** char(2) counts bytes and its collation isn't declared, so the length is at most 2. */
   region: z.string().max(2).nullable(),
   createdAt: z.date(),
 })

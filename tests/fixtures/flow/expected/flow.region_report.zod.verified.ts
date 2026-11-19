@@ -13,7 +13,7 @@ import { z } from 'zod'
 export const RegionReportRegionSchema = z.object({
   /**
    * One of "NTH", "STH", "EST", "WST", as the database compares strings.
-   * char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3.
+   * char(3) counts bytes and its collation isn't declared, so the length is at most 3.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * Left out when null, as FOR JSON leaves out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

@@ -135,7 +135,6 @@
         "region": {
           "description": "SQL type char(2). Facts: values from the check tables/ticket.sql:22:70. One of \"NE\", \"SW\", as the database compares strings (canonical under Latin1_General_100_CI_AS.codepage, a fold JSON Schema can't apply). Left out when null: nullable-column (chk.ticket.region).",
           "type": "string",
-          "minLength": 2,
           "maxLength": 2
         },
         "sigil": {
@@ -150,9 +149,8 @@
           "maxLength": 12
         },
         "padUtf8": {
-          "description": "SQL type char(4). char(4) pads to 4 bytes and UTF-8 takes up to four a character, so the length is 1 to 4 code points. Left out when null: nullable-column (chk.ticket.pad_utf8).",
+          "description": "SQL type char(4). char(4) counts bytes and UTF-8 takes up to four a character, so the length is at most 4 code points. Left out when null: nullable-column (chk.ticket.pad_utf8).",
           "type": "string",
-          "minLength": 1,
           "maxLength": 4
         },
         "muted": {

@@ -72,12 +72,11 @@
           "maxLength": 40
         },
         "code": {
-          "description": "SQL type char(5). char(5) pads to 5 bytes and its collation isn't declared, so the length is 2 to 5 code points. May be null: nullable-column (vals.sample.code).",
+          "description": "SQL type char(5). char(5) counts bytes and its collation isn't declared, so the length is at most 5 code points. May be null: nullable-column (vals.sample.code).",
           "type": [
             "string",
             "null"
           ],
-          "minLength": 2,
           "maxLength": 5
         }
       },

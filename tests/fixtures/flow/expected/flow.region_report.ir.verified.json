@@ -65,7 +65,7 @@
           "type": {
             "kind": "string",
             "sql": "char(3)",
-            "length": {
+            "maxLength": {
               "value": 3,
               "unit": "bytes",
               "from": {

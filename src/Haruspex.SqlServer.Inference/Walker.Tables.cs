@@ -118,17 +118,17 @@ internal sealed partial class Walker
     /// Select_into_makes_nvarchar_max_of_built_json_and_json_of_returning_json).
     /// </param>
     /// <remarks>
-    /// A fixed-length binary value stored here is at most its length: the column the statement makes may be nullable whatever the
-    /// value (the server decides), and a nullable <c>binary(n)</c> column of a temporary table made while the caller's session has
-    /// ANSI_PADDING off keeps its values with their trailing zeros cut (observed:
-    /// A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads).
+    /// A <c>char(n)</c> or <c>binary(n)</c> value stored here is at most its length: the column the statement makes may be
+    /// nullable whatever the value (the server decides), and a nullable column of either type, of a temporary table made while
+    /// the caller's session has ANSI_PADDING off, keeps its values with their padding cut
+    /// (<see cref="ScalarType.IsPaddingCutWithoutAnsiPadding"/>).
     /// </remarks>
     private static Value Stored(Value value, string column, SourceLocation at, ScalarExpression? expression = null) => value.IsLiveJson
         ? expression is not null && BuiltAsText(expression) && value.Shape is not UnknownShape
             ? new Value(new JsonTextShape(value.Shape), value.NullableBecause)
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"JSON stored in {column} is text unless its SQL type is json, which is not tracked yet.", at))
-        : value.Shape is ScalarShape { BuiltIn.IsBinary: true, Type.Facets: { Length: { IsFixed: true } length } facets } binary
-            ? value with { Shape = binary.WithFacets(facets with { Length = length with { IsFixed = false } }) }
+        : value.Shape is ScalarShape { BuiltIn.IsPaddingCutWithoutAnsiPadding: true, Type.Facets: { Length: { IsFixed: true } length } facets } padded
+            ? value with { Shape = padded.WithFacets(facets with { Length = length with { IsFixed = false } }) }
             : value;
 
     // ---- writes to temporary tables -------------------------------------------------------------------------------

@@ -88,9 +88,8 @@
           "maxLength": 60
         },
         "isbn": {
-          "description": "SQL type char(13). char(13) pads to 13 bytes and its collation isn't declared, so the length is 4 to 13 code points. Left out when null: nullable-column (pay.book.isbn).",
+          "description": "SQL type char(13). char(13) counts bytes and its collation isn't declared, so the length is at most 13 code points. Left out when null: nullable-column (pay.book.isbn).",
           "type": "string",
-          "minLength": 4,
           "maxLength": 13
         },
         "price": {

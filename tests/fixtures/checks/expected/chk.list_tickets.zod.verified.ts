@@ -85,7 +85,7 @@ export const ListTicketsRowSchema = z.object({
   sigil: z.string().regex(/^(?:a\u002eb|c\u002bd|\u0028x\u0029)\u0020*$/).max(6).optional(),
   /** varchar(12) counts bytes and UTF-8 takes up to four a character, so the length is at most 12. */
   tagUtf8: z.string().max(12).optional(),
-  /** char(4) pads to 4 bytes and UTF-8 takes up to four a character, so the length is at most 4. */
+  /** char(4) counts bytes and UTF-8 takes up to four a character, so the length is at most 4. */
   padUtf8: z.string().max(4).optional(),
   muted: z.int32().optional(),
   restored: z.int32().gt(0).optional(),

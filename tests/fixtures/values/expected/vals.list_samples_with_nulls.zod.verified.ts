@@ -41,7 +41,7 @@ export const ListSamplesWithNullsRowSchema = z.object({
   smallDt: z.iso.datetime({ local: true }).nullable(),
   legacyDt: z.iso.datetime({ local: true }).nullable(),
   guid: z.guid().nullable(),
-  /** char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5. */
+  /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).nullable(),
   ncode: z.string().length(5).nullable(),
   /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */

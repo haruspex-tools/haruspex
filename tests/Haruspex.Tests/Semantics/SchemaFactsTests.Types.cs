@@ -1,3 +1,4 @@
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.Tests.Semantics;
@@ -57,8 +58,8 @@ public partial class SchemaFactsTests
     [InlineData("nchar(5) NULL", 5, true, TextUnit.Utf16, TextEncoding.Unknown)]
     [InlineData("nchar NULL", 1, true, TextUnit.Utf16, TextEncoding.Unknown)]
     [InlineData("varchar(5) NULL", 5, false, TextUnit.Bytes, TextEncoding.Unknown)]
-    [InlineData("char(5) NULL", 5, true, TextUnit.Bytes, TextEncoding.Unknown)]
-    [InlineData("char(5) COLLATE Latin1_General_100_CI_AS NULL", 5, true, TextUnit.Bytes, TextEncoding.SingleByte)]
+    [InlineData("char(5) NOT NULL", 5, true, TextUnit.Bytes, TextEncoding.Unknown)]
+    [InlineData("char(5) COLLATE Latin1_General_100_CI_AS NOT NULL", 5, true, TextUnit.Bytes, TextEncoding.SingleByte)]
     [InlineData("varchar(5) COLLATE SQL_Latin1_General_CP1_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.SingleByte)]
     [InlineData("varchar(5) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL", 5, false, TextUnit.Bytes, TextEncoding.Utf8)]
     [InlineData("varchar(5) COLLATE Japanese_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.DoubleByte)]
@@ -71,6 +72,32 @@ public partial class SchemaFactsTests
         var fact = Column(definition).Length!;
 
         Assert.Equal((length, isFixed, unit, encoding), (fact.Value, fact.IsFixed, fact.Unit, fact.Encoding));
+    }
+
+    [Theory]
+    // A_nullable_char_column_created_with_ansi_padding_off_cuts_trailing_spaces_but_nchar_and_not_null_pad: the source doesn't say
+    // which tables were created with ANSI_PADDING off (a script may set it before a CREATE TABLE), so a nullable char(n) or
+    // binary(n) column is at most n, in every collation. nchar(n), and a column that is never null, pad whatever the setting.
+    [InlineData("char(5) NULL", false)]
+    [InlineData("char(5) COLLATE Latin1_General_100_CI_AS NULL", false)]
+    [InlineData("char(5) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL", false)]
+    [InlineData("char(5) COLLATE Chinese_PRC_CI_AS NULL", false)]
+    [InlineData("char(5)", false)]
+    [InlineData("binary(5) NULL", false)]
+    [InlineData("char(5) NOT NULL", true)]
+    [InlineData("binary(5) NOT NULL", true)]
+    [InlineData("nchar(5) NULL", true)]
+    public void A_nullable_char_or_binary_column_of_a_table_is_at_most_its_length(string definition, bool isFixed) =>
+        Assert.Equal((5, isFixed), (Column(definition).Length!.Value, Column(definition).Length!.IsFixed));
+
+    [Fact]
+    public void A_table_type_s_nullable_char_and_binary_columns_pad_to_their_length()
+    {
+        // A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns.
+        var model = Model("CREATE TYPE dbo.t AS TABLE (c char(4) NULL, b binary(4) NULL);");
+        var type = (TableType)model.FindUserType(new ObjectName("dbo", "t"))!;
+
+        Assert.All(type.Columns, c => Assert.True(SchemaRules.ColumnFacts(model, type, c).Length!.IsFixed));
     }
 
     [Fact]

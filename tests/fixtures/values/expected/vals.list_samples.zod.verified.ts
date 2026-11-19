@@ -43,7 +43,7 @@ export const ListSamplesRowSchema = z.object({
   smallDt: z.iso.datetime({ local: true }).optional(),
   legacyDt: z.iso.datetime({ local: true }).optional(),
   guid: z.guid().optional(),
-  /** char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5. */
+  /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).optional(),
   ncode: z.string().length(5).optional(),
   /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */

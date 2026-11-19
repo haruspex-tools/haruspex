@@ -476,7 +476,7 @@
           "type": {
             "kind": "string",
             "sql": "char(2)",
-            "length": {
+            "maxLength": {
               "value": 2,
               "unit": "bytes",
               "encoding": "single-byte",
@@ -592,7 +592,7 @@
           "type": {
             "kind": "string",
             "sql": "char(4)",
-            "length": {
+            "maxLength": {
               "value": 4,
               "unit": "bytes",
               "encoding": "utf-8",

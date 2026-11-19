@@ -16,7 +16,7 @@ export type ListNestedWhen = z.infer<typeof ListNestedWhenSchema>
 
 export const ListNestedMetaSchema = z.object({
   label: z.string().max(40),
-  /** char(5) pads to 5 bytes and its collation isn't declared, so the length is at most 5. */
+  /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).optional(),
 })
 export type ListNestedMeta = z.infer<typeof ListNestedMetaSchema>

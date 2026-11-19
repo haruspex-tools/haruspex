@@ -43,7 +43,10 @@ flowchart LR
 - **Schema rules.** `SchemaRules` and `CheckReader` turn declarations into facts about values: whether a column is never
   null (declared `NOT NULL`, in the primary key, or `IDENTITY`), which keys every row satisfies, what an alias type stands
   for, and what a type and its CHECK constraints guarantee about a column's non-null values (lengths, digits, ranges,
-  minimum lengths and closed value sets).
+  minimum lengths and closed value sets). A fixed length is claimed only where the server pads to it: a nullable `char(n)` or
+  `binary(n)` column of a table created while `ANSI_PADDING` is off keeps its values with their padding cut, and the source
+  doesn't say which tables were, so such a column is at most n. `nchar(n)`, a column that is never null, a table type's and a
+  table variable's pad whatever the setting (`SchemaRules.ColumnFacts`, observed in `CheckConstraintObservationTests`).
 - **SQL Server's type system, as data.** `BuiltInType` is the catalogue of every built-in type, with its family, its place
   in data type precedence, its digits, range and defaults; `ScalarType` is a type with its arguments (`decimal(19,2)`); and
   `ConversionChart` says which conversions the server allows, implicitly or only explicitly. Each row is observed against a

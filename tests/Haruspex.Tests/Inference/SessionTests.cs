@@ -211,4 +211,29 @@ public class SessionTests
         Assert.Equal([new IrSessionOption("ansiWarnings", true), new IrSessionOption("concatNullYieldsNull", false)], declared.Source.Session);
         Assert.Empty(none.Source.Session);
     }
+
+    [Fact]
+    public void A_nullable_char_column_a_body_creates_is_at_most_its_length_but_a_table_variable_s_is_padded()
+    {
+        // A_nullable_char_column_a_body_creates_is_cut_under_its_callers_ansi_padding_off_but_a_table_variable_s_pads, and
+        // A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns: a temporary table takes the
+        // caller's ANSI_PADDING, which isn't declared; a table variable, a table type's and a table-valued parameter's columns pad.
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("tables.sql", Tables + "\nCREATE TYPE dbo.codes AS TABLE (code char(4) NULL, stamp binary(4) NULL);\nGO\n"),
+            ("p.sql", """
+                CREATE PROCEDURE dbo.p @listed dbo.codes READONLY AS
+                CREATE TABLE #c (code char(4) NULL, kept char(4) NOT NULL);
+                DECLARE @v TABLE (code char(4) NULL, stamp binary(4) NULL);
+                DECLARE @typed dbo.codes;
+                SELECT code AS made INTO #t FROM dbo.t;
+                SELECT c.code, c.kept, t.made, v.code AS variable_code, v.stamp AS variable_stamp, y.code AS typed_code,
+                       l.code AS listed_code, l.stamp AS listed_stamp
+                FROM #c AS c CROSS JOIN #t AS t CROSS JOIN @v AS v CROSS JOIN @typed AS y CROSS JOIN @listed AS l;
+                """));
+
+        Assert.Equal(
+            "code at most 4, kept exactly 4, made at most 4, variable_code exactly 4, variable_stamp exactly 4, typed_code exactly 4, listed_code exactly 4, listed_stamp exactly 4",
+            string.Join(", ", Fields(doc).Select(f => f.Name + (((IrScalar)f.Type).Facets!.Length is { } length ? (length.IsFixed ? " exactly " : " at most ") + length.Value : ""))));
+    }
 }

@@ -118,6 +118,14 @@ public sealed record ScalarType(BuiltInType Type, int Length = 0, int Precision 
     /// <summary>Whether its length varies.</summary>
     public bool IsVarying => Type.IsVarying;
 
+    /// <summary>
+    /// Whether a nullable column of it, created while <c>ANSI_PADDING</c> is off, keeps its values with their padding cut:
+    /// <c>char(n)</c> its trailing spaces, in every collation, and <c>binary(n)</c> its trailing zeros. <c>nchar(n)</c> pads
+    /// whatever the setting (observed: A_nullable_char_column_created_with_ansi_padding_off_cuts_trailing_spaces_but_nchar_and_not_null_pad,
+    /// A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads).
+    /// </summary>
+    public bool IsPaddingCutWithoutAnsiPadding => !IsVarying && !IsMax && (IsBinary || (IsString && !IsNational));
+
     /// <summary>Whether it is of max length.</summary>
     public bool IsMax => Length < 0;
 

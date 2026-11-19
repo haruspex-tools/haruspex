@@ -11,7 +11,7 @@
 import { z } from 'zod'
 
 export const ListCustomerOrdersAddressSchema = z.object({
-  /** char(2) pads to 2 bytes and its collation isn't declared, so the length is at most 2. */
+  /** char(2) counts bytes and its collation isn't declared, so the length is at most 2. */
   region: z.string().max(2).nullable(),
 })
 export type ListCustomerOrdersAddress = z.infer<typeof ListCustomerOrdersAddressSchema>

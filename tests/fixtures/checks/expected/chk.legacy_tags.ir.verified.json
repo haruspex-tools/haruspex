@@ -1,0 +1,190 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/legacy_tags.sql": "5e85815e4f3eddd26687ef9d24e9896cfaf89b743fd5286b97f974510a031875",
+      "tables/legacy_tag.sql": "3f3d0440366651dde322dd366a44f1beac4643a2a1971ff465fa3603c4386e71"
+    }
+  },
+  "objects": [
+    {
+      "id": "chk.legacy_tags",
+      "name": "LegacyTags",
+      "kind": "procedure",
+      "at": "procedures/legacy_tags.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LegacyTagsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LegacyTagsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "chk.legacy_tags",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.legacy_tag.tag_id",
+              "sql": "int",
+              "at": "tables/legacy_tag.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "char(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.legacy_tag.code"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.legacy_tag.code",
+              "sql": "char(4)",
+              "at": "tables/legacy_tag.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "kept",
+          "type": {
+            "kind": "string",
+            "sql": "char(4)",
+            "length": {
+              "value": 4,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "char(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.legacy_tag.kept",
+              "sql": "char(4)",
+              "at": "tables/legacy_tag.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "wide",
+          "type": {
+            "kind": "string",
+            "sql": "nchar(4)",
+            "length": {
+              "value": 4,
+              "unit": "utf16",
+              "from": {
+                "type": "nchar(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.legacy_tag.wide"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.legacy_tag.wide",
+              "sql": "nchar(4)",
+              "at": "tables/legacy_tag.sql:10:5"
+            }
+          ]
+        },
+        {
+          "name": "stamp",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "chk.legacy_tag.stamp"
+            }
+          ],
+          "from": [
+            {
+              "column": "chk.legacy_tag.stamp",
+              "sql": "binary(4)",
+              "at": "tables/legacy_tag.sql:11:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

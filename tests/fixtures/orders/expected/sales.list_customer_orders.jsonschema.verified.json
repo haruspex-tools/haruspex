@@ -19,12 +19,11 @@
       "type": "object",
       "properties": {
         "region": {
-          "description": "SQL type char(2). char(2) pads to 2 bytes and its collation isn't declared, so the length is 1 to 2 code points. May be null: nullable-column (sales.customer.region_code).",
+          "description": "SQL type char(2). char(2) counts bytes and its collation isn't declared, so the length is at most 2 code points. May be null: nullable-column (sales.customer.region_code).",
           "type": [
             "string",
             "null"
           ],
-          "minLength": 1,
           "maxLength": 2
         }
       },

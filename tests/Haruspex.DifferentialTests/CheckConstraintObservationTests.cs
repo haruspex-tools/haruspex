@@ -93,6 +93,71 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_nullable_char_column_created_with_ansi_padding_off_cuts_trailing_spaces_but_nchar_and_not_null_pad()
+    {
+        // The setting is the one in force when a table is created: a script's own SET before its CREATE TABLE. Under it a
+        // nullable char(n) column keeps its values with their trailing spaces cut, in a single-byte, a UTF-8 and a double-byte
+        // collation alike, and an empty string or one of spaces keeps one space; nchar(n), and a column that is never null, pad.
+        var outcome = await ObservedCall.Run(
+            server,
+            [
+                """
+                SET ANSI_PADDING OFF;
+                CREATE TABLE dbo.obs_pad (
+                    c char(4) COLLATE Latin1_General_100_CI_AS NULL, kept char(4) COLLATE Latin1_General_100_CI_AS NOT NULL,
+                    n nchar(4) NULL, u char(4) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL, d char(4) COLLATE Chinese_PRC_CI_AS NULL);
+                SET ANSI_PADDING ON;
+                """,
+            ],
+            """
+            INSERT INTO dbo.obs_pad VALUES ('a', 'a', N'a', 'a', 'a'), ('', '', N'', '', '');
+            SELECT DATALENGTH(c) AS c, DATALENGTH(kept) AS kept, DATALENGTH(n) AS n, DATALENGTH(u) AS u, DATALENGTH(d) AS d FROM dbo.obs_pad;
+            """);
+
+        Assert.Equal("c,kept,n,u,d: 1,4,8,1,1;1,4,8,1,1", outcome.ToString());
+    }
+
+    [Fact]
+    public async Task A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns()
+    {
+        // Its columns report is_ansi_padded whatever the setting. Created and committed first, in a database of its own: a type
+        // created in the transaction that declares it deadlocks (1205, observed).
+        var token = TestContext.Current.CancellationToken;
+        await using var database = await server.ScratchAsync();
+        await database.ExecuteAsync("SET ANSI_PADDING OFF; EXEC (N'CREATE TYPE dbo.obs_pad_list AS TABLE (c char(4) NULL, b binary(4) NULL)'); SET ANSI_PADDING ON;", token);
+        await using var connection = await database.OpenAsync(token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SET ANSI_PADDING OFF; DECLARE @listed dbo.obs_pad_list; INSERT INTO @listed VALUES ('a', 0x01); SELECT CONCAT(DATALENGTH(c), ',', DATALENGTH(b)) FROM @listed;";
+
+        Assert.Equal("4,4", await command.ExecuteScalarAsync(token));
+    }
+
+    [Fact]
+    public async Task A_nullable_char_column_a_body_creates_is_cut_under_its_callers_ansi_padding_off_but_a_table_variable_s_pads()
+    {
+        // A temporary table, made by CREATE TABLE or by SELECT … INTO, takes the caller's session's setting; a table variable's
+        // column pads whatever it is, and so does the table a multi-statement function returns, created under it too.
+        var outcome = await ObservedCall.Run(
+            server,
+            [
+                "SET ANSI_PADDING OFF; EXEC (N'CREATE FUNCTION dbo.obs_returned() RETURNS @r TABLE (c char(4) NULL) AS BEGIN INSERT INTO @r VALUES (''a''); RETURN; END'); SET ANSI_PADDING ON;",
+                """
+                CREATE PROCEDURE dbo.obs_padded AS
+                CREATE TABLE #c (c char(4) NULL);
+                INSERT INTO #c VALUES ('a');
+                SELECT CAST(CASE WHEN 1 = 1 THEN 'a' END AS char(4)) AS c INTO #t;
+                DECLARE @v TABLE (c char(4) NULL);
+                INSERT INTO @v VALUES ('a');
+                SELECT (SELECT DATALENGTH(c) FROM #c) AS created, (SELECT DATALENGTH(c) FROM #t) AS made, (SELECT DATALENGTH(c) FROM @v) AS variable,
+                       (SELECT DATALENGTH(c) FROM dbo.obs_returned()) AS returned;
+                """,
+            ],
+            "SET ANSI_PADDING OFF; EXEC dbo.obs_padded; SET ANSI_PADDING ON; EXEC dbo.obs_padded;");
+
+        Assert.Equal("created,made,variable,returned: 1,1,4,4 | created,made,variable,returned: 4,4,4,4", outcome.ToString());
+    }
+
+    [Fact]
     public async Task Varchar_in_a_utf8_collation_counts_bytes()
     {
         const string table = "CREATE TABLE dbo.obs (c varchar(3) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL);";

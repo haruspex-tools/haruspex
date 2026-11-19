@@ -17,6 +17,11 @@ check chk.ticket ck_ticket_title at tables/ticket.sql:20:41
 check chk.ticket unnamed at tables/ticket.sql:22:70
 check chk.ticket_event ck_ticket_event_kind at tables/ticket_event.sql:5:35
 check chk.ticket_event ck_ticket_event_minutes at tables/ticket_event.sql:6:31
+column chk.legacy_tag.code char(4) at tables/legacy_tag.sql:8:5
+column chk.legacy_tag.kept char(4) at tables/legacy_tag.sql:9:5
+column chk.legacy_tag.stamp binary(4) at tables/legacy_tag.sql:11:5
+column chk.legacy_tag.tag_id int at tables/legacy_tag.sql:7:5
+column chk.legacy_tag.wide nchar(4) at tables/legacy_tag.sql:10:5
 column chk.owner.grade nchar(1) at tables/owner.sql:6:5
 column chk.owner.name nvarchar(20) at tables/owner.sql:4:5
 column chk.owner.owner_id int at tables/owner.sql:3:5
@@ -45,11 +50,14 @@ column chk.ticket_event.event_id int at tables/ticket_event.sql:3:5
 column chk.ticket_event.kind nchar(4) at tables/ticket_event.sql:5:5
 column chk.ticket_event.minutes smallint at tables/ticket_event.sql:6:5
 column chk.ticket_event.ticket_id int at tables/ticket_event.sql:4:5
+key chk.legacy_tag pk_legacy_tag (tag_id) at tables/legacy_tag.sql:7:33
 key chk.owner pk_owner (owner_id) at tables/owner.sql:3:38
 key chk.ticket pk_ticket (ticket_id) at tables/ticket.sql:9:41
 key chk.ticket_event pk_ticket_event (event_id) at tables/ticket_event.sql:3:35
+procedure chk.legacy_tags at procedures/legacy_tags.sql:2:1
 procedure chk.list_tickets at procedures/list_tickets.sql:3:1
 procedure chk.ticket_rows at procedures/ticket_rows.sql:2:1
+table chk.legacy_tag at tables/legacy_tag.sql:5:1
 table chk.owner at tables/owner.sql:1:1
 table chk.ticket at tables/ticket.sql:7:1
 table chk.ticket_event at tables/ticket_event.sql:1:1

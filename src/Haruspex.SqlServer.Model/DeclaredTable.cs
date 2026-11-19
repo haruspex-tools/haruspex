@@ -30,6 +30,12 @@ public sealed record DeclaredTable(
     /// </summary>
     public TableType? Type { get; init; }
 
+    /// <summary>
+    /// Whether it is a table variable: one a body declares, a table-valued parameter or the table a multi-statement function
+    /// returns, each named with <c>@</c>; not a temporary table, nor a CLR function's table.
+    /// </summary>
+    public bool IsVariable => Name.StartsWith('@');
+
     /// <summary>Never: a body's tables can't be graph tables.</summary>
     public bool IsGraph => false;
 

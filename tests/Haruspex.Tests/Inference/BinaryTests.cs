@@ -51,10 +51,11 @@ public partial class BinaryTests
     }
 
     [Fact]
-    public void A_nullable_binary_column_or_one_a_body_makes_is_at_most_its_length()
+    public void A_nullable_binary_column_or_one_a_body_makes_is_at_most_its_length_but_a_table_variable_s_pads()
     {
         // A_nullable_binary_column_created_with_ansi_padding_off_cuts_trailing_zeros_and_a_not_null_one_pads: the source doesn't say
-        // which tables were created with ANSI_PADDING off, nor which caller's session a temporary table is made in.
+        // which tables were created with ANSI_PADDING off, nor which caller's session a temporary table is made in. A table
+        // variable's column pads whatever the setting.
         var doc = Procedure("""
             CREATE TABLE #c (stamp binary(4) NULL, kept binary(4) NOT NULL);
             DECLARE @v TABLE (stamp binary(4) NULL);
@@ -66,7 +67,7 @@ public partial class BinaryTests
         Assert.Equal("binary(32) exactly 32", Typed(doc, "checksum"));
         Assert.Equal("binary(4) at most 4", Typed(doc, "stamp"));
         Assert.Equal("binary(4) exactly 4", Typed(doc, "kept"));
-        Assert.Equal("binary(4) at most 4", Typed(doc, "variable_stamp"));
+        Assert.Equal("binary(4) exactly 4", Typed(doc, "variable_stamp"));
         Assert.Equal("binary(32) at most 32", Typed(doc, "made"));
     }
 

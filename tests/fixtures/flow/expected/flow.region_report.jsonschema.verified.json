@@ -19,9 +19,8 @@
       "type": "object",
       "properties": {
         "code": {
-          "description": "SQL type char(3). Facts: values from the check flow.ck_region_code. One of \"NTH\", \"STH\", \"EST\", \"WST\", as the database compares strings. char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points. Left out when null: unmatched-row (procedures/region_report.sql:14:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain flow.region_report region.code",
+          "description": "SQL type char(3). Facts: values from the check flow.ck_region_code. One of \"NTH\", \"STH\", \"EST\", \"WST\", as the database compares strings. char(3) counts bytes and its collation isn't declared, so the length is at most 3 code points. Left out when null: unmatched-row (procedures/region_report.sql:14:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain flow.region_report region.code",
           "type": "string",
-          "minLength": 1,
           "maxLength": 3
         },
         "name": {

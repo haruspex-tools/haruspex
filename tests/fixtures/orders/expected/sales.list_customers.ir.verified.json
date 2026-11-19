@@ -126,7 +126,7 @@
           "type": {
             "kind": "string",
             "sql": "char(2)",
-            "length": {
+            "maxLength": {
               "value": 2,
               "unit": "bytes",
               "from": {

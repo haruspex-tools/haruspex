@@ -110,7 +110,6 @@
             "string",
             "null"
           ],
-          "minLength": 2,
           "maxLength": 2
         },
         "sigil": {
@@ -131,12 +130,11 @@
           "maxLength": 12
         },
         "pad_utf8": {
-          "description": "SQL type char(4). char(4) pads to 4 bytes and UTF-8 takes up to four a character, so the length is 1 to 4 code points. May be null: nullable-column (chk.ticket.pad_utf8).",
+          "description": "SQL type char(4). char(4) counts bytes and UTF-8 takes up to four a character, so the length is at most 4 code points. May be null: nullable-column (chk.ticket.pad_utf8).",
           "type": [
             "string",
             "null"
           ],
-          "minLength": 1,
           "maxLength": 4
         },
         "muted": {

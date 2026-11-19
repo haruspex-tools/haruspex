@@ -11,7 +11,7 @@ import { z } from 'zod'
 export const GetAuthorAuthorBookSchema = z.object({
   id: z.int32(),
   title: z.string().max(60),
-  /** char(13) pads to 13 bytes and its collation isn't declared, so the length is at most 13. */
+  /** char(13) counts bytes and its collation isn't declared, so the length is at most 13. */
   isbn: z.string().max(13).optional(),
   price: z.number().min(0).max(9999999.99).multipleOf(1e-2),
   published: z.iso.date().optional(),
