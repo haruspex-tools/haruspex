@@ -135,7 +135,7 @@
       "type": "object",
       "properties": {
         "label": {
-          "description": "SQL type nvarchar(40). Left out when null: parameter (@label). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain queries/basket_card.sql label",
+          "description": "SQL type nvarchar(40). Left out when null: parameter (@label).",
           "type": "string",
           "maxLength": 40
         },

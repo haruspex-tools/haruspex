@@ -32,7 +32,7 @@
           "maxLength": 12
         },
         "qty": {
-          "description": "SQL type int. Left out when null: nullable-column (shop.order_line.qty). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain shop.orders_with_lines 'lines<json>[].qty'",
+          "description": "SQL type int. Left out when null: nullable-column (shop.order_line.qty).",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

@@ -52,10 +52,6 @@ And here is what haruspex generates for it (the module's header is left out):
 export const GetCategoryProductSchema = z.object({
   id: z.int32(),
   name: z.string().max(80),
-  /**
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
-   * Why: haruspex explain shop.get_category 'products[].price'
-   */
   price: z.number().min(-9999999.99).max(9999999.99).multipleOf(1e-2).optional(),
 })
 export type GetCategoryProduct = z.infer<typeof GetCategoryProductSchema>

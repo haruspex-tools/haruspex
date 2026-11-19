@@ -35,7 +35,7 @@
           "maximum": 99999999999999999.99
         },
         "discount": {
-          "description": "SQL type decimal(5,2). At most 2 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (cafe.tab_item.discount). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain cafe.tab_receipt 'items[].discount'",
+          "description": "SQL type decimal(5,2). At most 2 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (cafe.tab_item.discount).",
           "type": "number",
           "minimum": -999.99,
           "maximum": 999.99

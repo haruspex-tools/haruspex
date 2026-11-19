@@ -32,7 +32,7 @@ internal static class ZodSplit
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(modules);
         var placed = ZodLowering.Placed(plan)
-            .Select(p => (p.Declaration, Home: p.Object is { } obj ? modules.Of(obj) : modules.HomeOf(p.Types)))
+            .Select(p => (p.Declaration, p.Types, Home: p.Object is { } obj ? modules.Of(obj) : modules.HomeOf(p.Types)))
             .ToList();
         var declaredIn = placed.ToDictionary(p => p.Declaration.Binding, p => p.Home, StringComparer.Ordinal);
         return placed.Select(p => p.Home).Distinct(StringComparer.Ordinal).ToEquatableMap(file => file, file =>
@@ -56,7 +56,8 @@ internal static class ZodSplit
             if (elsewhere.Count > 0)
                 imports.Add(new ZodImport(sharedModule, [.. elsewhere]));
             var folds = expressions.OfType<ZodExpression.Canonical>().Select(c => c.Fold).ToHashSet(StringComparer.Ordinal);
-            var header = ZodLowering.Header(plan.Document.Source, plan.Document.Version, declarations).ToList();
+            var leavesOutNullKeys = ZodLowering.LeavesOutNullKeys(plan.Document, placed.Where(p => p.Home == file).SelectMany(p => p.Types));
+            var header = ZodLowering.Header(plan.Document.Source, plan.Document.Version, declarations, leavesOutNullKeys).ToList();
             if (isShared)
                 header.Insert(1, SharedHeader);
             return new ZodModule(

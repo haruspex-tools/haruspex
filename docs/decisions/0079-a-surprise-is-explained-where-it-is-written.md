@@ -4,7 +4,8 @@
 
 **Decision.** Generated code says why a field is what it is when that is a surprise: a field whose nullability, presence or type
 differs from what its source column declares (a reason beside a nullable column, a parameter or a declaration; a key left out
-when null; a scalar of a type none of its columns has), and every unknown. The comment gives each reason's short text and code,
+whatever its value; a scalar of a type none of its columns has), and every unknown (a key left out when null: see the amendment
+below). The comment gives each reason's short text and code,
 the way out when there is one (`COUNT_BIG`, a `"nullable": false` override with its reason), and the `haruspex explain`
 command that shows the rest. `"comments"` in the config file chooses `"none"`, `"surprises"` (the default) or `"all"`. The Zod
 and mssql modules write comments; JSON Schema writes the same lines in the property's `description`. The notes that state a
@@ -34,6 +35,18 @@ reader of the generated file is the person who needs it, at the moment they meet
 
 **Reason.** The reason belongs where the surprise is met. The default changes every user's generated code once, before 1.0,
 for comments on the fields they would otherwise ask about.
+
+**Amended** (19 Nov 2026, Richard). A key left out of `FOR JSON` output when null is a surprise only through a reason the
+declarations don't give: a NOT NULL column made nullable by an outer join, an aggregate, a subquery or any other rule, whose
+comment says why it may be null and that the key is then left out. A key left out only because its column, a parameter or the
+config file says it may be null is not one, since that is what `FOR JSON` does with every null; the Zod module's header says so
+once, for every such key, and JSON Schema's description of each property says it already. A key left out whatever its value, in
+a combined document, still is. `"all"` still comments every field.
+
+On a large application's procedures, such keys were nearly half the fields the default explained, and their comments more than
+doubled the Zod module, each repeating what the type already says: `.optional()` on a nullable column's key is that column
+as declared, through a rule the header can state once. A comment on every field that is as its column declares is what the
+first alternative above rejects, and these were that.
 
 **In the code:** `IrReasons`, `IrSurprises`, `IrFieldText`, `IrFieldPlaces`, `IrComments`; `ZodOptions.Comments`,
 `MssqlOptions.Comments`, `JsonSchemaOptions.Comments`; `Explain` in the CLI; `ReasonCatalogueTests`.

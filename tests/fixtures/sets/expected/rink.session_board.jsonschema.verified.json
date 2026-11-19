@@ -43,7 +43,7 @@
           "maxLength": 40
         },
         "skates": {
-          "description": "SQL type tinyint. Left out when null: nullable-column (rink.booking.skates). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain rink.session_board '#1.people[].skates'",
+          "description": "SQL type tinyint. Left out when null: nullable-column (rink.booking.skates).",
           "type": "integer",
           "minimum": 0,
           "maximum": 255
@@ -87,7 +87,7 @@
       "type": "object",
       "properties": {
         "contact": {
-          "description": "SQL type varchar(80). varchar(80) counts bytes and its collation isn't declared, so the length is at most 80 code points. Left out when null: nullable-column (rink.member.email), nullable-column (rink.guest.phone). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain rink.session_board '#2.reach.contact'",
+          "description": "SQL type varchar(80). varchar(80) counts bytes and its collation isn't declared, so the length is at most 80 code points. Left out when null: nullable-column (rink.member.email), nullable-column (rink.guest.phone).",
           "type": "string",
           "maxLength": 80
         }

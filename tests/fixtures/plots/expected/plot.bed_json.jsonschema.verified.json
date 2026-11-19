@@ -58,7 +58,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "harvested": {
-          "description": "SQL type date. Left out when null: nullable-column (plot.sowing.harvested). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain plot.bed_json 'sowings[].harvested'",
+          "description": "SQL type date. Left out when null: nullable-column (plot.sowing.harvested).",
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"

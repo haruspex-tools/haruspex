@@ -54,7 +54,7 @@
           "maxLength": 8
         },
         "colour": {
-          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain kit.kit_routes 'inline_parts[].colour'",
+          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour).",
           "type": "string",
           "maxLength": 10
         }

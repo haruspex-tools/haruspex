@@ -26,7 +26,7 @@
           "maxLength": 20
         },
         "note": {
-          "description": "SQL type nvarchar(20). Left out when null: nullable-column (cat.item.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain cat.item_rows 'related<json>.note'",
+          "description": "SQL type nvarchar(20). Left out when null: nullable-column (cat.item.note).",
           "type": "string",
           "maxLength": 20
         },

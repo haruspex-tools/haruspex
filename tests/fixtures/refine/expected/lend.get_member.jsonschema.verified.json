@@ -46,12 +46,12 @@
           "maxLength": 60
         },
         "nickname": {
-          "description": "SQL type nvarchar(20). Left out when null: nullable-column (lend.member.nickname). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain lend.get_member nickname",
+          "description": "SQL type nvarchar(20). Left out when null: nullable-column (lend.member.nickname).",
           "type": "string",
           "maxLength": 20
         },
         "email": {
-          "description": "SQL type varchar(80). varchar(80) counts bytes and its collation isn't declared, so the length is at most 80 code points. Left out when null: nullable-column (lend.member.email). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain lend.get_member email",
+          "description": "SQL type varchar(80). varchar(80) counts bytes and its collation isn't declared, so the length is at most 80 code points. Left out when null: nullable-column (lend.member.email).",
           "type": "string",
           "maxLength": 80
         },

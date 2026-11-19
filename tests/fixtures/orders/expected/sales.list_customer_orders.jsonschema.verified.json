@@ -48,7 +48,7 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "shippedAt": {
-          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.list_customer_orders 'orders[].shippedAt'",
+          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at).",
           "type": "string",
           "format": "date-time",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"

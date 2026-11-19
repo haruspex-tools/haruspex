@@ -24,7 +24,7 @@
           "maxLength": 50
         },
         "email": {
-          "description": "SQL type varchar(100). varchar(100) counts bytes and its collation isn't declared, so the length is at most 100 code points. Left out when null: nullable-column (mart.customer.email). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain mart.purchases_json customer.email",
+          "description": "SQL type varchar(100). varchar(100) counts bytes and its collation isn't declared, so the length is at most 100 code points. Left out when null: nullable-column (mart.customer.email).",
           "type": "string",
           "maxLength": 100
         }

@@ -30,7 +30,7 @@
           "maxLength": 100
         },
         "email": {
-          "description": "SQL type nvarchar(256). Left out when null: nullable-column (sales.customer.email). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.get_order customer.email",
+          "description": "SQL type nvarchar(256). Left out when null: nullable-column (sales.customer.email).",
           "type": "string",
           "maxLength": 256
         }
@@ -63,7 +63,7 @@
           "maximum": 99999999999999999.99
         },
         "note": {
-          "description": "SQL type nvarchar(200). Left out when null: nullable-column (sales.order_line.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.get_order 'lines[].note'",
+          "description": "SQL type nvarchar(200). Left out when null: nullable-column (sales.order_line.note).",
           "type": "string",
           "maxLength": 200
         },
@@ -93,7 +93,7 @@
           "maxLength": 100
         },
         "weightKg": {
-          "description": "SQL type decimal(9,3). At most 3 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (sales.product.weight_kg). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.get_order 'lines[].product.weightKg'",
+          "description": "SQL type decimal(9,3). At most 3 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (sales.product.weight_kg).",
           "type": "number",
           "minimum": -999999.999,
           "maximum": 999999.999
@@ -126,13 +126,13 @@
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },
         "shippedAt": {
-          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.get_order shippedAt",
+          "description": "SQL type datetimeoffset(0). Left out when null: nullable-column (sales.order.shipped_at).",
           "type": "string",
           "format": "date-time",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "deliveryTime": {
-          "description": "SQL type time(0). Left out when null: nullable-column (sales.order.delivery_time). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain sales.get_order deliveryTime",
+          "description": "SQL type time(0). Left out when null: nullable-column (sales.order.delivery_time).",
           "type": "string",
           "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         },

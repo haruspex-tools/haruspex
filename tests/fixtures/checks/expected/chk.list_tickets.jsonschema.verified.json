@@ -31,7 +31,7 @@
           "maxLength": 4
         },
         "minutes": {
-          "description": "SQL type smallint. Facts: min from the check chk.ck_ticket_event_minutes. Left out when null: nullable-column (chk.ticket_event.minutes). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets 'events[].minutes'",
+          "description": "SQL type smallint. Facts: min from the check chk.ck_ticket_event_minutes. Left out when null: nullable-column (chk.ticket_event.minutes).",
           "type": "integer",
           "minimum": 1,
           "maximum": 32767
@@ -76,7 +76,7 @@
           "maxLength": 8
         },
         "altCode": {
-          "description": "SQL type nvarchar(8). Facts: maxLength from the type chk.short_code. Left out when null: nullable-column (chk.ticket.alt_code). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets altCode",
+          "description": "SQL type nvarchar(8). Facts: maxLength from the type chk.short_code. Left out when null: nullable-column (chk.ticket.alt_code).",
           "type": "string",
           "maxLength": 8
         },
@@ -86,36 +86,36 @@
           "maxLength": 10
         },
         "priority": {
-          "description": "SQL type tinyint. Facts: min and max from the check chk.ck_ticket_priority. Left out when null: nullable-column (chk.ticket.priority). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets priority",
+          "description": "SQL type tinyint. Facts: min and max from the check chk.ck_ticket_priority. Left out when null: nullable-column (chk.ticket.priority).",
           "type": "integer",
           "minimum": 1,
           "maximum": 5
         },
         "score": {
-          "description": "SQL type int. Facts: min and max from the check chk.ck_ticket_score. Left out when null: nullable-column (chk.ticket.score). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets score",
+          "description": "SQL type int. Facts: min and max from the check chk.ck_ticket_score. Left out when null: nullable-column (chk.ticket.score).",
           "type": "integer",
           "minimum": -10,
           "maximum": 99
         },
         "level": {
-          "description": "SQL type smallint. Facts: values from the check chk.ck_ticket_level. Left out when null: nullable-column (chk.ticket.level). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets level",
+          "description": "SQL type smallint. Facts: values from the check chk.ck_ticket_level. Left out when null: nullable-column (chk.ticket.level).",
           "enum": [1,2,4
           ]
         },
         "discount": {
-          "description": "SQL type decimal(5,2). Facts: digits from the type chk.pct; min and max from the check chk.ck_ticket_discount. At most 2 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (chk.ticket.discount). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets discount",
+          "description": "SQL type decimal(5,2). Facts: digits from the type chk.pct; min and max from the check chk.ck_ticket_discount. At most 2 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (chk.ticket.discount).",
           "type": "number",
           "minimum": 0,
           "maximum": 100
         },
         "rate": {
-          "description": "SQL type decimal(9,4). Facts: min and max from the check chk.ck_ticket_rate. At most 4 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (chk.ticket.rate). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets rate",
+          "description": "SQL type decimal(9,4). Facts: min and max from the check chk.ck_ticket_rate. At most 4 decimal places, which multipleOf would check inexactly. Left out when null: nullable-column (chk.ticket.rate).",
           "type": "number",
           "minimum": 0.0001,
           "maximum": 0.9999
         },
         "big": {
-          "description": "SQL type bigint. Facts: min from the check chk.ck_ticket_big. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. Left out when null: nullable-column (chk.ticket.big). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets big",
+          "description": "SQL type bigint. Facts: min from the check chk.ck_ticket_big. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles. Left out when null: nullable-column (chk.ticket.big).",
           "type": "integer",
           "minimum": 0,
           "maximum": 9223372036854775807
@@ -127,48 +127,48 @@
           "maxLength": 60
         },
         "note": {
-          "description": "SQL type varchar(30). Facts: minLength from the check chk.ck_ticket_note. Left out when null: nullable-column (chk.ticket.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets note",
+          "description": "SQL type varchar(30). Facts: minLength from the check chk.ck_ticket_note. Left out when null: nullable-column (chk.ticket.note).",
           "type": "string",
           "minLength": 1,
           "maxLength": 30
         },
         "region": {
-          "description": "SQL type char(2). Facts: values from the check tables/ticket.sql:22:70. One of \"NE\", \"SW\", as the database compares strings (canonical under Latin1_General_100_CI_AS.codepage, a fold JSON Schema can't apply). Left out when null: nullable-column (chk.ticket.region). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets region",
+          "description": "SQL type char(2). Facts: values from the check tables/ticket.sql:22:70. One of \"NE\", \"SW\", as the database compares strings (canonical under Latin1_General_100_CI_AS.codepage, a fold JSON Schema can't apply). Left out when null: nullable-column (chk.ticket.region).",
           "type": "string",
           "minLength": 2,
           "maxLength": 2
         },
         "sigil": {
-          "description": "SQL type varchar(6). Facts: values from the check chk.ck_ticket_sigil. Left out when null: nullable-column (chk.ticket.sigil). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets sigil",
+          "description": "SQL type varchar(6). Facts: values from the check chk.ck_ticket_sigil. Left out when null: nullable-column (chk.ticket.sigil).",
           "type": "string",
           "pattern": "^(?:a\\.b|c\\+d|\\(x\\)) *$",
           "maxLength": 6
         },
         "tagUtf8": {
-          "description": "SQL type varchar(12). varchar(12) counts bytes and UTF-8 takes up to four a character, so the length is at most 12 code points. Left out when null: nullable-column (chk.ticket.tag_utf8). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets tagUtf8",
+          "description": "SQL type varchar(12). varchar(12) counts bytes and UTF-8 takes up to four a character, so the length is at most 12 code points. Left out when null: nullable-column (chk.ticket.tag_utf8).",
           "type": "string",
           "maxLength": 12
         },
         "padUtf8": {
-          "description": "SQL type char(4). char(4) pads to 4 bytes and UTF-8 takes up to four a character, so the length is 1 to 4 code points. Left out when null: nullable-column (chk.ticket.pad_utf8). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets padUtf8",
+          "description": "SQL type char(4). char(4) pads to 4 bytes and UTF-8 takes up to four a character, so the length is 1 to 4 code points. Left out when null: nullable-column (chk.ticket.pad_utf8).",
           "type": "string",
           "minLength": 1,
           "maxLength": 4
         },
         "muted": {
-          "description": "SQL type int. Left out when null: nullable-column (chk.ticket.muted). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets muted",
+          "description": "SQL type int. Left out when null: nullable-column (chk.ticket.muted).",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "restored": {
-          "description": "SQL type int. Facts: min from the check chk.ck_ticket_restored. Left out when null: nullable-column (chk.ticket.restored). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets restored",
+          "description": "SQL type int. Facts: min from the check chk.ck_ticket_restored. Left out when null: nullable-column (chk.ticket.restored).",
           "type": "integer",
           "minimum": 1,
           "maximum": 2147483647
         },
         "late": {
-          "description": "SQL type int. Left out when null: nullable-column (chk.ticket.late). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets late",
+          "description": "SQL type int. Left out when null: nullable-column (chk.ticket.late).",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

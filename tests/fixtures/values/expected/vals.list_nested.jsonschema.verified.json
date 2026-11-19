@@ -23,7 +23,7 @@
           "description": "Left out when null: all-fields-null (procedures/list_nested.sql:13:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep.inner"
         },
         "guid": {
-          "description": "SQL type uniqueidentifier. Left out when null: nullable-column (vals.sample.guid). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep.guid",
+          "description": "SQL type uniqueidentifier. Left out when null: nullable-column (vals.sample.guid).",
           "type": "string",
           "format": "uuid",
           "pattern": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
@@ -35,13 +35,13 @@
       "type": "object",
       "properties": {
         "whole": {
-          "description": "SQL type int. Left out when null: nullable-column (vals.sample.whole). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep.inner.whole",
+          "description": "SQL type int. Left out when null: nullable-column (vals.sample.whole).",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "flag": {
-          "description": "SQL type bit. Left out when null: nullable-column (vals.sample.flag). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep.inner.flag",
+          "description": "SQL type bit. Left out when null: nullable-column (vals.sample.flag).",
           "type": "boolean"
         }
       }
@@ -56,7 +56,7 @@
           "maxLength": 40
         },
         "code": {
-          "description": "SQL type char(5). char(5) pads to 5 bytes and its collation isn't declared, so the length is 2 to 5 code points. Left out when null: nullable-column (vals.sample.code). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested meta.code",
+          "description": "SQL type char(5). char(5) pads to 5 bytes and its collation isn't declared, so the length is 2 to 5 code points. Left out when null: nullable-column (vals.sample.code).",
           "type": "string",
           "minLength": 2,
           "maxLength": 5
@@ -117,7 +117,7 @@
           "maxLength": 20
         },
         "note": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested 'tags[].note'",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note).",
           "type": "string",
           "maxLength": 40
         }
@@ -132,13 +132,13 @@
       "type": "object",
       "properties": {
         "day": {
-          "description": "SQL type date. Left out when null: nullable-column (vals.sample.day). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested when.day",
+          "description": "SQL type date. Left out when null: nullable-column (vals.sample.day).",
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "time": {
-          "description": "SQL type time(0). Left out when null: nullable-column (vals.sample.t0). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested when.time",
+          "description": "SQL type time(0). Left out when null: nullable-column (vals.sample.t0).",
           "type": "string",
           "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
         }

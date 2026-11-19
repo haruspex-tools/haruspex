@@ -141,7 +141,7 @@
           "maxLength": 20
         },
         "note": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested_with_nulls 'tags[].note'",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (vals.sample_tag.note).",
           "type": "string",
           "maxLength": 40
         }

@@ -36,7 +36,7 @@
           "maxLength": 4
         },
         "mode": {
-          "description": "SQL type varchar(8). Facts: values from the check dye.ck_vat_mode. One of \"Hot\", \"cold\", \"hot\", as the database compares strings (canonical under Latin1_General_100_CS_AS.codepage, a fold JSON Schema can't apply). Left out when null: nullable-column (dye.vat.mode). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain dye.vat_card mode",
+          "description": "SQL type varchar(8). Facts: values from the check dye.ck_vat_mode. One of \"Hot\", \"cold\", \"hot\", as the database compares strings (canonical under Latin1_General_100_CS_AS.codepage, a fold JSON Schema can't apply). Left out when null: nullable-column (dye.vat.mode).",
           "type": "string",
           "maxLength": 8
         }

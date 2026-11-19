@@ -30,7 +30,7 @@
           "maxLength": 30
         },
         "unit": {
-          "description": "SQL type varchar(4). Facts: values from the check flow.ck_part_unit. One of \"each\", \"kg\", \"m\", as the database compares strings. varchar(4) counts bytes and its collation isn't declared, so the length is at most 4 code points. Left out when null: nullable-column (flow.part.unit). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain flow.bill_of_materials part.unit",
+          "description": "SQL type varchar(4). Facts: values from the check flow.ck_part_unit. One of \"each\", \"kg\", \"m\", as the database compares strings. varchar(4) counts bytes and its collation isn't declared, so the length is at most 4 code points. Left out when null: nullable-column (flow.part.unit).",
           "type": "string",
           "maxLength": 4
         }

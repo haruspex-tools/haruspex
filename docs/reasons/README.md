@@ -14,7 +14,8 @@ The codes that start with HAR are something else: what a run reports, each with 
 - **In generated code.** By default (`"comments": "surprises"` in [the configuration](../configuration.md#comments-comments)),
   a field whose nullability, presence or type differs from what its source column declares, and every unknown, has a comment
   with each reason's short text and code, the way out when there is one, and the command that explains it. JSON Schema
-  writes the same lines in the property's `description`.
+  writes the same lines in the property's `description`. A key `FOR JSON` leaves out only because its column is nullable has
+  none: the module's header says that rule once.
 - **From `haruspex explain`**, which reads the committed IR and prints a field's derivation: the columns it is read from, each
   rule with where in the SQL it applied, and the page of each code ([the command line](../command-line.md#explain)).
 

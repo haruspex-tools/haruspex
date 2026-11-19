@@ -68,7 +68,7 @@
           "maximum": 255
         },
         "colour": {
-          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain kit.get_kit 'either.parts[].colour'",
+          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour).",
           "type": "string",
           "maxLength": 10
         }
@@ -127,7 +127,7 @@
           "maximum": 255
         },
         "colour": {
-          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain kit.get_kit 'kit.parts[].colour'",
+          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour).",
           "type": "string",
           "maxLength": 10
         }
@@ -153,7 +153,7 @@
           "maximum": 255
         },
         "colour": {
-          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain kit.get_kit 'parts[].colour'",
+          "description": "SQL type nvarchar(10). Left out when null: nullable-column (kit.kit_part.colour).",
           "type": "string",
           "maxLength": 10
         }

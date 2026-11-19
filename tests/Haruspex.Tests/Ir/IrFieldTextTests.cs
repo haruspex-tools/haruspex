@@ -34,17 +34,42 @@ public class IrFieldTextTests
     }
 
     [Fact]
-    public void A_field_as_its_column_declares_is_no_surprise_and_a_rule_a_widening_or_a_key_left_out_is()
+    public void A_field_as_its_column_declares_is_no_surprise_and_a_rule_or_a_widening_is()
     {
         var document = Infer();
-        var json = Infer("CREATE PROCEDURE shop.order_note AS SELECT o.order_id, o.note FROM shop.customer_order AS o FOR JSON PATH;");
 
         Assert.False(IrSurprises.Of(Place(document, "note").Field));
         Assert.False(IrSurprises.Of(Place(document, "placed_at").Field));
         Assert.True(IrSurprises.Of(Place(document, "line_count").Field));
         Assert.True(IrSurprises.TypeDiffers(Place(document, "total").Field));
-        Assert.True(IrSurprises.Of(Place(json, "note", "shop.order_note").Field));
-        Assert.True(IrSurprises.AbsentWhenNull(Place(json, "note", "shop.order_note").Field));
+    }
+
+    [Fact]
+    public void A_key_left_out_because_its_column_is_nullable_is_no_surprise_but_one_a_rule_made_nullable_is()
+    {
+        // FOR JSON leaves out every null key, which the module's header says once; only a rule that made a NOT NULL column
+        // nullable on its way to the key is particular to the field.
+        var json = Infer("""
+            CREATE PROCEDURE shop.order_note AS
+            SELECT o.order_id, o.note, l.shipped_at, l.line_id AS first_line
+            FROM shop.customer_order AS o LEFT JOIN shop.order_line AS l ON l.order_id = o.order_id FOR JSON PATH;
+            """);
+        var note = Place(json, "note", "shop.order_note").Field;
+        var line = Place(json, "first_line", "shop.order_note").Field;
+
+        Assert.True(IrSurprises.AbsentWhenNull(note));
+        Assert.False(IrSurprises.Of(note));
+        Assert.True(IrSurprises.Of(Place(json, "shipped_at", "shop.order_note").Field));
+        Assert.True(IrSurprises.Of(line));
+        var lines = Lines(json, "first_line", id: "shop.order_note");
+        Assert.Equal(
+            [
+                "May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).",
+                "Left out when null, as FOR JSON leaves out a key whose value is null.",
+            ],
+            lines.Take(2));
+        Assert.Equal("Why: haruspex explain shop.order_note first_line", lines[^1]);
+        Assert.Contains("Left out when null, as FOR JSON leaves out a key whose value is null.", Lines(json, "note", IrComments.All, "shop.order_note"));
     }
 
     [Fact]

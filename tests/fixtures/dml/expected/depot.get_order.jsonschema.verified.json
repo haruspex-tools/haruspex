@@ -52,7 +52,7 @@
           "maxLength": 10
         },
         "note": {
-          "description": "SQL type nvarchar(200). Left out when null: nullable-column (depot.pick_order.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain depot.get_order note",
+          "description": "SQL type nvarchar(200). Left out when null: nullable-column (depot.pick_order.note).",
           "type": "string",
           "maxLength": 200
         },

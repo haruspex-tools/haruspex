@@ -101,7 +101,7 @@ holds up to trailing spaces is a `pattern`:
       "maxLength": 8
     },
     "note": {
-      "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.basket.note). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain shop.get_basket note",
+      "description": "SQL type nvarchar(200). Left out when null: nullable-column (shop.basket.note).",
       "type": "string",
       "maxLength": 200
     },
