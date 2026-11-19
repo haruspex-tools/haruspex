@@ -84,6 +84,11 @@ internal static class Conversions
         new([.. Binaries], [.. Integers, BuiltInType.Bit, .. Decimals, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.DateTime, BuiltInType.SmallDateTime, BuiltInType.UniqueIdentifier], ConversionCondition.Always, [AtTheEdges]),
         new([.. Strings], [.. Binaries], ConversionCondition.Always, [AtTheEdges]),
         new([.. Integers, BuiltInType.Bit, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.UniqueIdentifier], [.. Binaries], ConversionCondition.SourceNotMax, [AtTheEdges]),
+
+        // A rowversion is 8 bytes, which convert as a binary(8)'s do: into binary of any length, an integer, bit, money or varchar,
+        // never NULL. Into a decimal or a date and time it overflows (8115), and into nvarchar, a GUID or a float the server refuses
+        // it (529), so none of those is a row.
+        new([.. Binaries, .. Integers, BuiltInType.Bit, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.Char, BuiltInType.VarChar], [BuiltInType.Timestamp], ConversionCondition.Always, [AtTheEdges]),
         new([.. Strings], [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, [AtTheEdges]),
         new([.. Integers], [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
         new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], [.. Decimals], ConversionCondition.IntegerPartFits, [AtTheEdges]),

@@ -22,6 +22,12 @@ export const ImageFactsRowSchema = z.object({
    */
   checksum_hex: z.string().max(66),
   /**
+   * varchar(18) counts bytes and its collation isn't declared, so the length is at most 18.
+   * Its type is varchar(18), where gallery.product_image.row_version is timestamp: what it is computed with makes it another type.
+   * Why: haruspex explain gallery.image_facts version_hex
+   */
+  version_hex: z.string().max(18),
+  /**
    * Its type is varbinary(4), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type.
    * Why: haruspex explain gallery.image_facts checksum_head
    */

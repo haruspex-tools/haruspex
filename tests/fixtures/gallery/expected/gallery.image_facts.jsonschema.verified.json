@@ -45,6 +45,11 @@
           "type": "string",
           "maxLength": 66
         },
+        "version_hex": {
+          "description": "SQL type varchar(18). varchar(18) counts bytes and its collation isn't declared, so the length is at most 18 code points. Its type is varchar(18), where gallery.product_image.row_version is timestamp: what it is computed with makes it another type. Why: haruspex explain gallery.image_facts version_hex",
+          "type": "string",
+          "maxLength": 18
+        },
         "checksum_head": {
           "description": "SQL type varbinary(4). Its type is varbinary(4), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type. Why: haruspex explain gallery.image_facts checksum_head",
           "type": "string",
@@ -114,7 +119,7 @@
           "contentEncoding": "base64"
         },
         "md5": {
-          "description": "SQL type varbinary(8000). Facts: length from the engine (HASHBYTES with MD5). May be null: arithmetic-overflow (procedures/image_facts.sql:18:22). Its type is varbinary(8000), where gallery.product_image.image_id is int: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gallery.image_facts md5",
+          "description": "SQL type varbinary(8000). Facts: length from the engine (HASHBYTES with MD5). May be null: arithmetic-overflow (procedures/image_facts.sql:19:22). Its type is varbinary(8000), where gallery.product_image.image_id is int: what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gallery.image_facts md5",
           "type": [
             "string",
             "null"
@@ -125,7 +130,7 @@
           "contentEncoding": "base64"
         },
         "chosen_hash": {
-          "description": "SQL type varbinary(8000). May be null: out-of-range (procedures/image_facts.sql:19:5). Its type is varbinary(8000), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type. May be null: a function given an index, code or position outside what it reads gives null (out-of-range). Why: haruspex explain gallery.image_facts chosen_hash",
+          "description": "SQL type varbinary(8000). May be null: out-of-range (procedures/image_facts.sql:20:5). Its type is varbinary(8000), where gallery.product_image.checksum is binary(32): what it is computed with makes it another type. May be null: a function given an index, code or position outside what it reads gives null (out-of-range). Why: haruspex explain gallery.image_facts chosen_hash",
           "type": [
             "string",
             "null"
@@ -162,6 +167,7 @@
         "from_hex",
         "from_bare_hex",
         "checksum_hex",
+        "version_hex",
         "checksum_head",
         "thumbnail_or_checksum",
         "thumbnail_or_empty",

@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/image_facts.sql": "2b51579316f7b1de3b37143cd1b70f8fe152661e4d2c3b1a5bae752c6a82b7a9",
+      "procedures/image_facts.sql": "5060a7ebf4ae32a5cecb6939e0bc57b50f6e916ac5c90044ed48e84cb58ab33f",
       "tables/product_image.sql": "4235c15ac0434f92a7daa361d817c3851b5cb3c6c2a677a1496850057b951d68"
     }
   },
@@ -137,6 +137,29 @@
               "column": "gallery.product_image.checksum",
               "sql": "binary(32)",
               "at": "tables/product_image.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "version_hex",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(18)",
+            "maxLength": {
+              "value": 18,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(18)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "gallery.product_image.row_version",
+              "sql": "timestamp",
+              "at": "tables/product_image.sql:7:5"
             }
           ]
         },
@@ -386,7 +409,7 @@
           "nullableBecause": [
             {
               "rule": "arithmetic-overflow",
-              "at": "procedures/image_facts.sql:18:22"
+              "at": "procedures/image_facts.sql:19:22"
             }
           ],
           "from": [
@@ -415,7 +438,7 @@
           "nullableBecause": [
             {
               "rule": "out-of-range",
-              "at": "procedures/image_facts.sql:19:5"
+              "at": "procedures/image_facts.sql:20:5"
             }
           ],
           "from": [

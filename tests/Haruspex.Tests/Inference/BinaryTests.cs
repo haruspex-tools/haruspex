@@ -176,6 +176,29 @@ public partial class BinaryTests
         Assert.Empty(Field(Procedure($"SELECT {expression} AS v FROM shop.product_image WHERE code IS NOT NULL;"), "v").NullableBecause);
 
     [Theory]
+    // Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types: a rowversion's 8 bytes convert to binary of any
+    // length (cut or padded), an integer, bit, money or varchar without NULL or an error, under any options.
+    [InlineData("CONVERT(varchar(18), CONVERT(binary(8), row_version), 1)", "string varchar(18)")]
+    [InlineData("CONVERT(binary(8), row_version)", "binary(8) exactly 8")]
+    [InlineData("CAST(row_version AS varbinary(4))", "varbinary(4) at most 4")]
+    [InlineData("CAST(row_version AS bigint)", "number bigint")]
+    [InlineData("CAST(row_version AS varchar(18))", "string varchar(18)")]
+    public void A_rowversion_converted_to_binary_an_integer_or_varchar_is_never_null(string expression, string type)
+    {
+        var doc = Procedure($"SELECT {expression} AS v FROM shop.product_image;");
+
+        Assert.Equal(type, Typed(doc, "v"));
+        Assert.Empty(Field(doc, "v").NullableBecause);
+    }
+
+    [Theory]
+    // Into a decimal or a date and time a rowversion overflows: an error, NULL under the caller's options.
+    [InlineData("CAST(row_version AS decimal(20,0))")]
+    [InlineData("CAST(row_version AS datetime)")]
+    public void A_rowversion_converted_to_a_decimal_or_a_date_may_overflow(string expression) =>
+        Assert.Contains(IrNullRule.ArithmeticOverflow, Rules(Procedure($"SELECT {expression} AS v FROM shop.product_image;"), "v"));
+
+    [Theory]
     // Into a decimal a binary value may overflow (8115), NULL under the caller's options; text not written as hex is NULL
     // under TRY_CONVERT (Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert).
     [InlineData("CAST(checksum AS decimal(10,2))", IrNullRule.ArithmeticOverflow)]

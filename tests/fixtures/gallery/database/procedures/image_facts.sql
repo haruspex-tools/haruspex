@@ -5,6 +5,7 @@ SELECT
     CONVERT(varbinary(4), '0x0A0B', 1) AS from_hex,
     CONVERT(varbinary(max), 'CAFE', 2) AS from_bare_hex,
     CONVERT(varchar(66), p.checksum, 1) AS checksum_hex,
+    CONVERT(varchar(18), CONVERT(binary(8), p.row_version), 1) AS version_hex,
     CAST(p.checksum AS varbinary(4)) AS checksum_head,
     COALESCE(p.thumbnail, p.checksum) AS thumbnail_or_checksum,
     ISNULL(p.thumbnail, 0x) AS thumbnail_or_empty,
