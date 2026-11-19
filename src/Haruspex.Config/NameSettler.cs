@@ -60,7 +60,8 @@ internal sealed class NameSettler(
         : TrySplit(id, out var schema, out _) && config.NamingLocation(schema) is { } at ? at : config.Location;
 
     /// <summary>What holds a name: the object it belongs to, a description for errors, whether it is a type, and the setting to change.</summary>
-    private sealed record Holder(string Owner, string Description, bool IsType, JsonLocation? At);
+    /// <param name="IsTableRow">Whether it is a table type's row, named after the type, which no setting names otherwise.</param>
+    private sealed record Holder(string Owner, string Description, bool IsType, JsonLocation? At, bool IsTableRow = false);
 
     /// <summary>
     /// The setting a clash or a naming problem of <paramref name="id"/> points at: its name override, or else its schema's
@@ -296,7 +297,7 @@ internal sealed class NameSettler(
         }
 
         var name = generated + "Row";
-        Claim(name, new Holder(tableType, $"the rows of the table type {tableType}", true, SettingFor(tableType)));
+        Claim(name, new Holder(tableType, $"the rows of the table type {tableType}", true, SettingFor(tableType), IsTableRow: true));
         named[key] = name;
     }
 
@@ -357,6 +358,11 @@ internal sealed class NameSettler(
     {
         if (!reportedClashes.Add(name))
             return;
+        if (first.IsTableRow || second.IsTableRow)
+        {
+            TableRowClash(name, first, second);
+            return;
+        }
 
         var schema = TrySplit(first.Owner, out var a, out _) ? a : "";
         var sameSchema = !IsQuery(first.Owner) && !IsQuery(second.Owner)
@@ -374,6 +380,25 @@ internal sealed class NameSettler(
         var noFile = ConfigFile.Length == 0 ? " These settings go in a haruspex.json beside the project, which it doesn't have yet." : "";
         problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)second.At ?? (DiagnosticLocation?)first.At ?? config.Location,
             $"\"{name}\" {named}. Generated names must not clash: {string.Join(", or ", ways)}.{noFile}"));
+    }
+
+    /// <summary>
+    /// A clash with a table type's row, whose name is the type's and which no setting names otherwise: a schema that holds only
+    /// table types can't be given a prefix (no procedure of it is selected), so the other is the one renamed, or failing that, a
+    /// table type.
+    /// </summary>
+    private void TableRowClash(string name, Holder first, Holder second)
+    {
+        var other = first.IsTableRow ? second : first;
+        List<string> ways = other switch
+        {
+            { IsTableRow: true } => ["rename one of the table types, since a table type's rows are named after it and no setting names them otherwise"],
+            _ when IsQuery(other.Owner) => ["rename the query file"],
+            { IsType: true } => ["give the type its own name with a \"paths\" override of its procedure in \"procedures\"", "give its procedure's schema a \"prefix\" in \"schemas\""],
+            _ => ["give the procedure its own name with a \"name\" override in \"procedures\"", "give its schema a \"prefix\" in \"schemas\""],
+        };
+        problems.Add(ConfigCodes.NamesClash.At((DiagnosticLocation?)other.At ?? config.Location,
+            $"\"{name}\" would name both {first.Description} and {second.Description}. Generated names must not clash: {string.Join(", or ", ways)}."));
     }
 
     /// <summary>A procedure's or query file's name, given or generated, without reporting anything about it; null when it has none.</summary>

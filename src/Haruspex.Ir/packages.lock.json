@@ -5,6 +5,7 @@
       "haruspex.collections": {
         "type": "Project"
       }
-    }
+    },
+    "net10.0/osx-arm64": {}
   }
 }

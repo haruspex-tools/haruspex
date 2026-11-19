@@ -39,6 +39,7 @@ public partial class IrFitTests
         { "a key that now ignores duplicates", Edit(Lines, "PRIMARY KEY (id)", "PRIMARY KEY (id) WITH (IGNORE_DUP_KEY = ON)"), null },
         { "a column the server fills added", Edit(Lines, "note nvarchar(20) NULL,", "note nvarchar(20) NULL, serial int IDENTITY,"), "can't be shown to take" },
         { "a collation given", Edit(Lines, "note nvarchar(20) NULL", "note nvarchar(20) COLLATE Latin1_General_100_BIN2 NULL"), "another collation" },
+        { "a number that became a string", Edit(Lines, "qty smallint NOT NULL", "qty nvarchar(10) COLLATE Latin1_General_100_BIN2 NOT NULL"), "type changed from number (int16) to string" },
     };
 
     [Theory]

@@ -147,19 +147,24 @@ internal static class JsonSchemaLowering
     /// A named object type: an object with a property per field, the keys that are always there <c>required</c>. Other keys are
     /// allowed by default, so a column the database adds before the application redeploys doesn't fail validation; strict objects
     /// forbid them (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). A table type's row, which a client sends,
-    /// forbids them always. Its description says where it comes from.
+    /// forbids them always, and its values are described as a client sends them, not as <c>FOR JSON</c> writes them
+    /// (<see cref="SentScalars"/>). Its description says where it comes from.
     /// </summary>
     private static Schema ObjectType(IrObjectType type, JsonSchemaOptions options, TypeLowering types)
     {
         var place = Place.Of(type);
+        var row = type.Identity is { Owner: IrTypeOwner.TableType };
+
+        // A table type's row is sent, not read, so its values take the forms a client sends (SentScalars); its fields are scalars.
         var schema = Schema.OfType("object")
-            .With(Keyword.Properties, new SchemaValue.Properties([.. type.Fields.Select(f => new SchemaProperty(f.Name, types.Field(f, place)))]));
+            .With(Keyword.Properties, new SchemaValue.Properties([.. type.Fields.Select(f => new SchemaProperty(
+                f.Name,
+                row && f.Type is IrScalar scalar ? TypeLowering.Nullable(SentScalars.Of(scalar), f.NullableBecause) : types.Field(f, place)))]));
         var required = type.Fields.Where(TypeLowering.IsRequired).Select(f => (SchemaValue)new SchemaValue.Text(f.Name)).ToList();
         if (required.Count > 0)
             schema = schema.With(Keyword.Required, new SchemaValue.List([.. required]));
-        // A table type's row is sent, not read, so it is strict whatever the setting, as the parameters are: a key it doesn't list
-        // is a misspelt column, which would otherwise be sent as NULL (decision 0076).
-        var row = type.Identity is { Owner: IrTypeOwner.TableType };
+        // A table type's row is strict whatever the setting, as the parameters are: a key it doesn't list is a misspelt column,
+        // which would otherwise be sent as NULL (decision 0076).
         if (options.Objects == JsonSchemaObjects.Strict || row)
             schema = schema.With(Keyword.AdditionalProperties, new SchemaValue.Boolean(false));
         return type.Identity switch

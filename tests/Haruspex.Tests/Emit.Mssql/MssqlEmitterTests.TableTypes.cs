@@ -45,6 +45,21 @@ public partial class MssqlEmitterTests
         Assert.Contains("function cell(", ts, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("date", IrScalarKind.Date, null)]
+    [InlineData("time(3)", IrScalarKind.Time, null)]
+    [InlineData("datetime2(0)", IrScalarKind.Datetime, IrFormat.Local)]
+    [InlineData("datetime", IrScalarKind.Datetime, IrFormat.Local)]
+    [InlineData("smalldatetime", IrScalarKind.Datetime, IrFormat.Local)]
+    [InlineData("datetimeoffset(7)", IrScalarKind.Datetime, IrFormat.Offset)]
+    public void A_table_type_s_date_or_time_column_is_declared_to_the_driver_as_text(string sql, IrScalarKind kind, IrFormat? format)
+    {
+        // As the driver's own date types, a value would be read in the process's time zone (decision 0055).
+        var ts = MssqlEmitter.Emit(WithTableValued(Document(), ("at", new IrScalar(kind, format, sql)))).Expected();
+
+        Assert.Contains("[['at', sql.VarChar(sql.MAX)]]", ts, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void A_module_that_sends_no_table_has_no_helper_to_build_one() =>
 

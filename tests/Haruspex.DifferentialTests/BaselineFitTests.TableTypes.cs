@@ -86,6 +86,26 @@ public partial class BaselineFitTests
     }
 
     [Fact]
+    public async Task A_key_that_ignored_duplicates_and_now_refuses_them_is_refused_and_fails_the_old_call()
+    {
+        // The application may send rows that share a key, which the old type dropped without an error and the new refuses (2627).
+        var token = TestContext.Current.CancellationToken;
+        var ignoring = Edit(TableLines, "PRIMARY KEY (a)", "PRIMARY KEY (a) WITH (IGNORE_DUP_KEY = ON)");
+        var baseline = Take(ignoring, ReadLines);
+
+        Assert.Contains("error 2627", Assert.Single(IrFit.Of(baseline, Take(TableLines, ReadLines), new IrFitOptions())).Why, StringComparison.Ordinal);
+
+        await using var database = await server.ScratchAsync();
+        await database.ExecuteAsync("CREATE SCHEMA drift;", token);
+        await database.ExecuteAsync(TableLines, token);
+        await database.ExecuteAsync(ReadLines, token);
+        var response = Assert.Single(await GeneratedFunctions.RunAsync(
+            server, baseline, [], [new GeneratedFunctions.Call("twice", "readLines", new Dictionary<string, object?> { ["lines"] = new[] { Row(1, 2, null), Row(1, 3, null) } })], token, committed: database));
+
+        Assert.Equal([2627, 8061], response.Error?.Preceding);
+    }
+
+    [Fact]
     public async Task Another_table_type_of_the_same_columns_is_refused_and_fails_the_old_call()
     {
         var token = TestContext.Current.CancellationToken;

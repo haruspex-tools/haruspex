@@ -77,7 +77,8 @@ public static partial class IrFit
                     return $"the server matches columns by place, so the application's {sent.Name} would be taken as {taken.Name} without an error";
                 if (taken.Generated is not null && sent.Generated is null)
                     return $"its column {taken.Name} is now one the server fills, so no row can be sent";
-                if (sent.Collation != taken.Collation)
+                // Only a column that holds strings on both sides has a collation to compare; one that changed kind is judged by its type.
+                if (sent.Collation != taken.Collation && IsString(sent) && IsString(taken))
                     return $"its column {taken.Name} compares strings under another collation, which may change what a key refuses or what a character becomes";
             }
 
@@ -92,5 +93,7 @@ public static partial class IrFit
 
             return null;
         }
+
+        private static bool IsString(IrTableColumn column) => column.Type is { Kind: IrScalarKind.String };
     }
 }

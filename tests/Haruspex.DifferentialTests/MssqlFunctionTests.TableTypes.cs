@@ -22,6 +22,9 @@ public partial class MssqlFunctionTests
         return await GeneratedFunctions.RunAsync(server, Module([.. types, .. procedures]), procedures, calls, token, committed: database);
     }
 
+    /// <summary>JSON as written, a <c>+</c> left as it is.</summary>
+    private static readonly JsonSerializerOptions Relaxed = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     private const string LineList = """
         CREATE TYPE outlet.line_list AS TABLE (
             product_id int NOT NULL,
@@ -184,6 +187,57 @@ public partial class MssqlFunctionTests
             responses.Take(3).Select(r => JsonSerializer.Serialize(r.Value)));
         Assert.Equal("""{"result1":[{"k":1,"v":1}],"result2":[{"first col":1,"select":"x"}]}""", JsonSerializer.Serialize(responses[4].Value));
         Assert.Equal("""[{"serials":0}]""", JsonSerializer.Serialize(responses[5].Value));
+    }
+
+    [Theory]
+    [InlineData("UTC")]
+    [InlineData("America/New_York")]
+    [InlineData("Asia/Tokyo")]
+    public async Task A_table_type_s_dates_and_times_arrive_as_sent_whatever_the_process_s_time_zone(string zone)
+    {
+        // Declared to the driver as one of its date types, a value would be read in the process's time zone and arrive shifted
+        // (observed: 10:20:30 as 15:20:30 under America/New_York); as text the server converts it exactly (decision 0055).
+        const string Times = """
+            CREATE TYPE outlet.time_list AS TABLE (
+                d date NOT NULL, t time(3) NOT NULL, dt datetime2(0) NOT NULL, old datetime NOT NULL, small smalldatetime NOT NULL,
+                stamped datetimeoffset(0) NOT NULL);
+            """;
+        const string Echo = """
+            CREATE PROCEDURE outlet.echo_times @times outlet.time_list READONLY AS
+            SELECT CONVERT(varchar(40), d, 126) AS d, CONVERT(varchar(40), t, 126) AS t, CONVERT(varchar(40), dt, 126) AS dt,
+                CONVERT(varchar(40), old, 126) AS old, CONVERT(varchar(40), small, 126) AS small, CONVERT(varchar(40), stamped, 126) AS stamped
+            FROM @times;
+            """;
+        var row = new Dictionary<string, object?>
+        {
+            ["d"] = "2026-11-19",
+            ["t"] = "10:20:30.125",
+            ["dt"] = "2026-11-19T10:20:30",
+            ["old"] = "2026-11-19T10:20:30.997",
+            ["small"] = "2026-11-19T10:20:00",
+            ["stamped"] = "2026-11-19T10:20:30+05:30",
+        };
+
+        var response = Assert.Single(await RunWithTypes([Times], [Echo], new GeneratedFunctions.Call(zone, "echoTimes", Params(("times", new[] { row })), TimeZone: zone)));
+
+        Assert.Null(response.Error);
+        Assert.Equal(
+            """[{"d":"2026-11-19","t":"10:20:30.125","dt":"2026-11-19T10:20:30","old":"2026-11-19T10:20:30.997","small":"2026-11-19T10:20:00","stamped":"2026-11-19T10:20:30+05:30"}]""",
+            JsonSerializer.Serialize(response.Value, Relaxed));
+    }
+
+    [Fact]
+    public async Task A_bigint_past_2_to_the_53_in_a_row_arrives_exact()
+    {
+        // The row's bigint is a JavaScript bigint, which the function sends as the string of its digits.
+        const string Totals = "CREATE TYPE outlet.total_list AS TABLE (total bigint NOT NULL);";
+        const string Echo = "CREATE PROCEDURE outlet.echo_totals @totals outlet.total_list READONLY AS SELECT CAST(total AS varchar(20)) AS total FROM @totals;";
+        var row = new Dictionary<string, object?> { ["total"] = new MssqlDriver.BigIntValue("9223372036854775807") };
+
+        var response = Assert.Single(await RunWithTypes([Totals], [Echo], new GeneratedFunctions.Call("max", "echoTotals", Params(("totals", new[] { row })))));
+
+        Assert.Null(response.Error);
+        Assert.Equal("""[{"total":"9223372036854775807"}]""", JsonSerializer.Serialize(response.Value));
     }
 
     [Fact]

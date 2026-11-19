@@ -160,7 +160,9 @@ its file name, so that a relative reference resolves
 
 A document describes results, not parameters, but it defines every named type of the IR, a table type's row among them (the
 rows a client sends in a table-valued parameter): strict whatever the `objects` setting, with every column required, since a row
-sent has every column and a key it doesn't list is a misspelt column.
+sent has every column and a key it doesn't list is a misspelt column. Its values are described as a client sends them, by the
+parameters' rules, not as `FOR JSON` writes them (`SentScalars`): a date or time is a string of exactly the form its type holds
+(no finer fraction, which the server would round without an error), and a `bigint` a number or the string of its digits.
 
 ## What it guarantees
 

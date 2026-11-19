@@ -35,6 +35,23 @@ public partial class ConfigApplicationTests
     }
 
     [Fact]
+    public void A_table_type_s_rows_that_clash_with_a_procedure_s_type_are_parted_by_renaming_the_procedure_s()
+    {
+        // ref holds only the table type, so it can't be given a prefix: the advice is what can be set.
+        const string Procedures = """
+            CREATE TYPE ref.implicit AS TABLE (id int NOT NULL);
+            GO
+            CREATE PROCEDURE sales.implicit @rows ref.implicit READONLY AS SELECT 1 AS one;
+            """;
+
+        var problem = Assert.Single(Apply(Procedures, "{}", include: "sales.*").Problems, p => p.Contains("HAR4303", StringComparison.Ordinal));
+
+        Assert.EndsWith(
+            "\"ImplicitRow\" would name both the type at results[0][] in sales.implicit and the rows of the table type ref.implicit. Generated names must not clash: give the type its own name with a \"paths\" override of its procedure in \"procedures\", or give its procedure's schema a \"prefix\" in \"schemas\".",
+            problem, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Naming_rules_apply_to_the_procedure_and_its_types()
     {
         var doc = Apply(GetCustomer, """{ "naming": { "case": "camel" } }""").Document;

@@ -94,7 +94,8 @@ internal static class GeneratedFunctions
     /// <param name="Params">Its parameters' object, or null for a function that takes none; a <see cref="MssqlDriver.BigIntValue"/> is a JavaScript bigint.</param>
     /// <param name="ParseJson">The pool's parseJSON setting for the call.</param>
     /// <param name="Db"><c>transaction</c>, or <c>untouchable</c> for a connection whose <c>request()</c> throws.</param>
-    public sealed record Call(string Name, string Function, IReadOnlyDictionary<string, object?>? Params = null, bool ParseJson = false, string Db = "transaction");
+    /// <param name="TimeZone">The time zone the call runs in (its process's <c>TZ</c>), or null for the machine's.</param>
+    public sealed record Call(string Name, string Function, IReadOnlyDictionary<string, object?>? Params = null, bool ParseJson = false, string Db = "transaction", string? TimeZone = null);
 
 #pragma warning disable CA1812 // Made by the JSON reader, from what the script wrote, never by code.
 
