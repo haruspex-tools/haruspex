@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -136,7 +136,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "seat",

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -175,6 +175,13 @@
             {
               "rule": "missing-for-action",
               "at": "procedures/merge_every_action.sql:7:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "kennel.booking.nights",
+              "sql": "int",
+              "at": "tables/booking.sql:4:5"
             }
           ]
         }

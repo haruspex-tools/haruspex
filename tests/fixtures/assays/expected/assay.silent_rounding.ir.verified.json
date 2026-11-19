@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "assay.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:4:5"
+            }
+          ]
         },
         {
           "name": "concentration_2dp",
@@ -92,6 +99,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/silent_rounding.sql:7:21"
+            }
+          ],
+          "from": [
+            {
+              "column": "assay.sample.concentration",
+              "sql": "decimal(10,4)",
+              "at": "tables/sample.sql:5:5"
             }
           ]
         }

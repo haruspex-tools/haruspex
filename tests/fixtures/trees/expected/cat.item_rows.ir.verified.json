@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.item.item_id",
+              "sql": "int",
+              "at": "tables/item.sql:3:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -72,7 +79,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.item.title",
+              "sql": "nvarchar(20)",
+              "at": "tables/item.sql:5:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -94,6 +108,13 @@
               "rule": "nullable-column",
               "at": "cat.item.note"
             }
+          ],
+          "from": [
+            {
+              "column": "cat.item.note",
+              "sql": "nvarchar(20)",
+              "at": "tables/item.sql:6:5"
+            }
           ]
         },
         {
@@ -110,7 +131,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/category.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -143,7 +171,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.item.item_id",
+              "sql": "int",
+              "at": "tables/item.sql:3:5"
+            }
+          ]
         },
         {
           "name": "related",
@@ -159,6 +194,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/item_card.sql:7:17"
+            }
+          ],
+          "from": [
+            {
+              "column": "cat.item.related_item_id",
+              "sql": "int",
+              "at": "tables/item.sql:7:5"
             }
           ]
         }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -76,7 +76,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -109,7 +116,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -142,7 +156,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -166,7 +187,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "line_total",
@@ -197,7 +225,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            },
+            {
+              "column": "desk.part_line.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/part_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "free",
@@ -258,7 +298,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.line_id",
+              "sql": "int",
+              "at": "tables/part_line.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -283,7 +330,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -307,7 +361,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -332,7 +393,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.part",
+              "sql": "nvarchar(30)",
+              "at": "tables/part_line.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -373,7 +441,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",

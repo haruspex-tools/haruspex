@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -58,7 +58,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -79,6 +86,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.member.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         },

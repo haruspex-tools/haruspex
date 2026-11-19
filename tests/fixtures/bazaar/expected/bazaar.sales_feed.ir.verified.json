@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -106,7 +106,29 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.sale_id",
+              "sql": "int",
+              "at": "tables/stall_sale.sql:3:5"
+            },
+            {
+              "column": "bazaar.web_order.order_id",
+              "sql": "int",
+              "at": "tables/web_order.sql:3:5"
+            },
+            {
+              "column": "bazaar.auction_lot.lot_id",
+              "sql": "int",
+              "at": "tables/auction_lot.sql:3:5"
+            },
+            {
+              "column": "bazaar.barter.barter_id",
+              "sql": "int",
+              "at": "tables/barter.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sold_at",
@@ -116,7 +138,29 @@
             "sql": "datetimeoffset(3)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.sold_on",
+              "sql": "date",
+              "at": "tables/stall_sale.sql:4:5"
+            },
+            {
+              "column": "bazaar.web_order.placed_at",
+              "sql": "datetimeoffset(3)",
+              "at": "tables/web_order.sql:4:5"
+            },
+            {
+              "column": "bazaar.auction_lot.closed_at",
+              "sql": "datetime",
+              "at": "tables/auction_lot.sql:4:5"
+            },
+            {
+              "column": "bazaar.barter.swapped_at",
+              "sql": "smalldatetime",
+              "at": "tables/barter.sql:4:5"
+            }
+          ]
         },
         {
           "name": "units",
@@ -140,7 +184,29 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.qty",
+              "sql": "smallint",
+              "at": "tables/stall_sale.sql:5:5"
+            },
+            {
+              "column": "bazaar.web_order.qty",
+              "sql": "int",
+              "at": "tables/web_order.sql:5:5"
+            },
+            {
+              "column": "bazaar.auction_lot.bids",
+              "sql": "tinyint",
+              "at": "tables/auction_lot.sql:5:5"
+            },
+            {
+              "column": "bazaar.barter.units",
+              "sql": "bigint",
+              "at": "tables/barter.sql:6:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -177,6 +243,38 @@
               "rule": "arithmetic-overflow",
               "at": "views/all_sales.sql:9:47"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.qty",
+              "sql": "smallint",
+              "at": "tables/stall_sale.sql:5:5"
+            },
+            {
+              "column": "bazaar.stall_sale.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/stall_sale.sql:6:5"
+            },
+            {
+              "column": "bazaar.web_order.price",
+              "sql": "money",
+              "at": "tables/web_order.sql:6:5"
+            },
+            {
+              "column": "bazaar.web_order.qty",
+              "sql": "int",
+              "at": "tables/web_order.sql:5:5"
+            },
+            {
+              "column": "bazaar.auction_lot.hammer",
+              "sql": "decimal(38,10)",
+              "at": "tables/auction_lot.sql:6:5"
+            },
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
+            }
           ]
         },
         {
@@ -198,6 +296,23 @@
             {
               "rule": "null-literal",
               "at": "views/all_sales.sql:15:67"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.paid_by",
+              "sql": "varchar(10)",
+              "at": "tables/stall_sale.sql:7:5"
+            },
+            {
+              "column": "bazaar.web_order.channel",
+              "sql": "nvarchar(20)",
+              "at": "tables/web_order.sql:7:5"
+            },
+            {
+              "column": "bazaar.auction_lot.paid_by",
+              "sql": "char(4)",
+              "at": "tables/auction_lot.sql:10:5"
             }
           ]
         },
@@ -225,6 +340,18 @@
             {
               "rule": "nullable-column",
               "at": "bazaar.barter.memo"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.note",
+              "sql": "varchar(200)",
+              "at": "tables/stall_sale.sql:11:5"
+            },
+            {
+              "column": "bazaar.barter.memo",
+              "sql": "nvarchar(max)",
+              "at": "tables/barter.sql:9:5"
             }
           ]
         }
@@ -298,7 +425,29 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.sale_id",
+              "sql": "int",
+              "at": "tables/stall_sale.sql:3:5"
+            },
+            {
+              "column": "bazaar.web_order.order_id",
+              "sql": "int",
+              "at": "tables/web_order.sql:3:5"
+            },
+            {
+              "column": "bazaar.auction_lot.lot_id",
+              "sql": "int",
+              "at": "tables/auction_lot.sql:3:5"
+            },
+            {
+              "column": "bazaar.barter.barter_id",
+              "sql": "int",
+              "at": "tables/barter.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sold_at",
@@ -308,7 +457,29 @@
             "sql": "datetimeoffset(3)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.sold_on",
+              "sql": "date",
+              "at": "tables/stall_sale.sql:4:5"
+            },
+            {
+              "column": "bazaar.web_order.placed_at",
+              "sql": "datetimeoffset(3)",
+              "at": "tables/web_order.sql:4:5"
+            },
+            {
+              "column": "bazaar.auction_lot.closed_at",
+              "sql": "datetime",
+              "at": "tables/auction_lot.sql:4:5"
+            },
+            {
+              "column": "bazaar.barter.swapped_at",
+              "sql": "smalldatetime",
+              "at": "tables/barter.sql:4:5"
+            }
+          ]
         },
         {
           "name": "units",
@@ -332,7 +503,29 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.stall_sale.qty",
+              "sql": "smallint",
+              "at": "tables/stall_sale.sql:5:5"
+            },
+            {
+              "column": "bazaar.web_order.qty",
+              "sql": "int",
+              "at": "tables/web_order.sql:5:5"
+            },
+            {
+              "column": "bazaar.auction_lot.bids",
+              "sql": "tinyint",
+              "at": "tables/auction_lot.sql:5:5"
+            },
+            {
+              "column": "bazaar.barter.units",
+              "sql": "bigint",
+              "at": "tables/barter.sql:6:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -369,6 +562,38 @@
               "rule": "arithmetic-overflow",
               "at": "views/all_sales.sql:9:47"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.qty",
+              "sql": "smallint",
+              "at": "tables/stall_sale.sql:5:5"
+            },
+            {
+              "column": "bazaar.stall_sale.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/stall_sale.sql:6:5"
+            },
+            {
+              "column": "bazaar.web_order.price",
+              "sql": "money",
+              "at": "tables/web_order.sql:6:5"
+            },
+            {
+              "column": "bazaar.web_order.qty",
+              "sql": "int",
+              "at": "tables/web_order.sql:5:5"
+            },
+            {
+              "column": "bazaar.auction_lot.hammer",
+              "sql": "decimal(38,10)",
+              "at": "tables/auction_lot.sql:6:5"
+            },
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
+            }
           ]
         },
         {
@@ -390,6 +615,23 @@
             {
               "rule": "null-literal",
               "at": "views/all_sales.sql:15:67"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.paid_by",
+              "sql": "varchar(10)",
+              "at": "tables/stall_sale.sql:7:5"
+            },
+            {
+              "column": "bazaar.web_order.channel",
+              "sql": "nvarchar(20)",
+              "at": "tables/web_order.sql:7:5"
+            },
+            {
+              "column": "bazaar.auction_lot.paid_by",
+              "sql": "char(4)",
+              "at": "tables/auction_lot.sql:10:5"
             }
           ]
         },
@@ -417,6 +659,18 @@
             {
               "rule": "nullable-column",
               "at": "bazaar.barter.memo"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.note",
+              "sql": "varchar(200)",
+              "at": "tables/stall_sale.sql:11:5"
+            },
+            {
+              "column": "bazaar.barter.memo",
+              "sql": "nvarchar(max)",
+              "at": "tables/barter.sql:9:5"
             }
           ]
         }

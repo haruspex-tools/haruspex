@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -76,7 +76,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.bed.name",
+              "sql": "nvarchar(40)",
+              "at": "plots.sql:10:5"
+            }
+          ]
         },
         {
           "name": "soil",
@@ -105,7 +112,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.bed.soil",
+              "sql": "varchar(5)",
+              "at": "plots.sql:12:5"
+            }
+          ]
         },
         {
           "name": "sowings",
@@ -148,7 +162,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.sowing.crop",
+              "sql": "nvarchar(30)",
+              "at": "plots.sql:19:5"
+            }
+          ]
         },
         {
           "name": "sown",
@@ -157,7 +178,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.sowing.sown",
+              "sql": "date",
+              "at": "plots.sql:20:5"
+            }
+          ]
         },
         {
           "name": "harvested",
@@ -171,6 +199,13 @@
             {
               "rule": "nullable-column",
               "at": "plot.sowing.harvested"
+            }
+          ],
+          "from": [
+            {
+              "column": "plot.sowing.harvested",
+              "sql": "date",
+              "at": "plots.sql:21:5"
             }
           ]
         }

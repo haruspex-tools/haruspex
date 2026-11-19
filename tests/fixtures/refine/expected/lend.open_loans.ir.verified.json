@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.loan.loan_id",
+              "sql": "int",
+              "at": "tables/loan.sql:3:5"
+            }
+          ]
         },
         {
           "name": "lent_on",
@@ -65,7 +72,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.loan.lent_on",
+              "sql": "date",
+              "at": "tables/loan.sql:7:5"
+            }
+          ]
         },
         {
           "name": "due_on",
@@ -74,7 +88,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.loan.due_on",
+              "sql": "date",
+              "at": "tables/loan.sql:8:5"
+            }
+          ]
         },
         {
           "name": "member_id",
@@ -98,7 +119,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "member",
@@ -114,7 +142,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "nickname",
@@ -135,6 +170,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.member.nickname"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         }

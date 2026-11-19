@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -78,7 +78,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.dog_id",
+              "sql": "int",
+              "at": "tables/dog.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -94,7 +101,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -127,7 +141,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.dog_id",
+              "sql": "int",
+              "at": "tables/dog.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -143,7 +164,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     },

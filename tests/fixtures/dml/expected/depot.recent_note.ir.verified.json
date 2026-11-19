@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -64,7 +64,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.part.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/part.sql:6:5"
+            }
+          ]
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -48,7 +48,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.chip",
+              "sql": "varchar(15)",
+              "at": "tables/dog.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -81,7 +88,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.dog_id",
+              "sql": "int",
+              "at": "tables/dog.sql:3:5"
+            }
+          ]
         },
         {
           "name": "chip_or_stray",
@@ -97,7 +111,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.chip",
+              "sql": "varchar(15)",
+              "at": "tables/dog.sql:5:5"
+            }
+          ]
         },
         {
           "name": "chip_json",

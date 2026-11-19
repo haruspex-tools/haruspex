@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -73,7 +73,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.bed.name",
+              "sql": "nvarchar(40)",
+              "at": "plots.sql:10:5"
+            }
+          ]
         },
         {
           "name": "crop",
@@ -95,6 +102,13 @@
               "rule": "unmatched-row",
               "at": "plots.sql:53:21"
             }
+          ],
+          "from": [
+            {
+              "column": "plot.sowing.crop",
+              "sql": "nvarchar(30)",
+              "at": "plots.sql:19:5"
+            }
           ]
         },
         {
@@ -109,6 +123,13 @@
             {
               "rule": "unmatched-row",
               "at": "plots.sql:53:21"
+            }
+          ],
+          "from": [
+            {
+              "column": "plot.sowing.sown",
+              "sql": "date",
+              "at": "plots.sql:20:5"
             }
           ]
         },
@@ -128,6 +149,13 @@
             {
               "rule": "unmatched-row",
               "at": "plots.sql:53:21"
+            }
+          ],
+          "from": [
+            {
+              "column": "plot.sowing.harvested",
+              "sql": "date",
+              "at": "plots.sql:21:5"
             }
           ]
         }

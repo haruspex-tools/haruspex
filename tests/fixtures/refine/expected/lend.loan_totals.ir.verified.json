@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -98,6 +98,13 @@
               "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:11:1"
             }
+          ],
+          "from": [
+            {
+              "column": "lend.loan.branch_id",
+              "sql": "int",
+              "at": "tables/loan.sql:4:5"
+            }
           ]
         },
         {
@@ -127,6 +134,13 @@
             {
               "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:11:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.loan.member_id",
+              "sql": "int",
+              "at": "tables/loan.sql:6:5"
             }
           ]
         },
@@ -190,6 +204,13 @@
             {
               "rule": "subtotal-row",
               "at": "procedures/loan_totals.sql:17:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
             }
           ]
         },

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -89,7 +96,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.job_id",
+              "sql": "int",
+              "at": "tables/job.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -119,7 +133,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.status",
+              "sql": "char(1)",
+              "at": "tables/job.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -152,7 +173,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:2:5"
+            }
+          ]
         },
         {
           "name": "jobs",

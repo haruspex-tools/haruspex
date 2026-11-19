@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +79,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "open_tab_id",
@@ -102,6 +116,13 @@
               "rule": "unmatched-lateral-row",
               "at": "procedures/guests_with_open_tab.sql:8:13"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
           ]
         },
         {
@@ -117,6 +138,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/guests_with_open_tab.sql:8:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.opened_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:4:5"
             }
           ]
         }

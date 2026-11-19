@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -103,7 +103,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.author_id",
+              "sql": "int",
+              "at": "tables/author.sql:4:5"
+            }
+          ]
         },
         {
           "name": "document",
@@ -114,7 +121,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/author.sql:5:5"
+            },
+            {
+              "column": "pay.author.bio",
+              "sql": "nvarchar(200)",
+              "at": "tables/author.sql:6:5"
+            }
+          ]
         },
         {
           "name": "profile",
@@ -127,6 +146,12 @@
             {
               "rule": "nullable-column",
               "at": "pay.author.profile"
+            }
+          ],
+          "from": [
+            {
+              "column": "pay.author.profile",
+              "at": "tables/author.sql:7:5"
             }
           ]
         }

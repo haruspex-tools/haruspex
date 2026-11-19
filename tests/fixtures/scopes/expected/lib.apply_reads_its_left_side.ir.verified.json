@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -48,7 +48,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -64,7 +71,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         },
         {
           "name": "loaned_on",
@@ -73,7 +87,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.loan.loaned_on",
+              "sql": "date",
+              "at": "tables/loan.sql:6:5"
+            }
+          ]
         }
       ]
     }

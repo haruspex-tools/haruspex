@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.vat_id",
+              "sql": "int",
+              "at": "tables/vat.sql:6:5"
+            }
+          ]
         },
         {
           "name": "state",
@@ -87,7 +94,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:8:5"
+            }
+          ]
         },
         {
           "name": "shade",
@@ -118,7 +132,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.shade",
+              "sql": "char(4)",
+              "at": "tables/vat.sql:10:5"
+            }
+          ]
         },
         {
           "name": "mode",
@@ -154,6 +175,13 @@
             {
               "rule": "nullable-column",
               "at": "dye.vat.mode"
+            }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.mode",
+              "sql": "varchar(8)",
+              "at": "tables/vat.sql:12:5"
             }
           ]
         },
@@ -192,6 +220,13 @@
               "rule": "nullable-column",
               "at": "dye.vat.batch"
             }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.batch",
+              "sql": "varchar(12)",
+              "at": "tables/vat.sql:14:5"
+            }
           ]
         },
         {
@@ -225,6 +260,13 @@
             {
               "rule": "nullable-column",
               "at": "dye.vat.label"
+            }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.label",
+              "sql": "nvarchar(10)",
+              "at": "tables/vat.sql:16:5"
             }
           ]
         },
@@ -260,6 +302,13 @@
             {
               "rule": "nullable-column",
               "at": "dye.vat.grade"
+            }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.grade",
+              "sql": "varchar(8)",
+              "at": "tables/vat.sql:17:5"
             }
           ]
         },
@@ -297,6 +346,13 @@
               "rule": "nullable-column",
               "at": "dye.vat.tone"
             }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.tone",
+              "sql": "varchar(8)",
+              "at": "tables/vat.sql:18:5"
+            }
           ]
         },
         {
@@ -332,6 +388,13 @@
             {
               "rule": "nullable-column",
               "at": "dye.vat.finish"
+            }
+          ],
+          "from": [
+            {
+              "column": "dye.vat.finish",
+              "sql": "varchar(8)",
+              "at": "tables/vat.sql:19:5"
             }
           ]
         }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -48,7 +48,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.title.author",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:6:5"
+            }
+          ]
         },
         {
           "name": "titles",
@@ -101,7 +108,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.title.genre",
+              "sql": "varchar(10)",
+              "at": "tables/title.sql:7:5"
+            }
+          ]
         },
         {
           "name": "first_isbn",
@@ -122,6 +136,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.title.isbn"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.title.isbn",
+              "sql": "varchar(13)",
+              "at": "tables/title.sql:4:5"
             }
           ]
         }

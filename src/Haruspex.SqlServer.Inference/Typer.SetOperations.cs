@@ -125,7 +125,11 @@ internal sealed partial class Typer
         for (var c = 0; c < count; c++)
         {
             var first = rows[0].Columns[c];
-            columns.Add(new RowColumn(first.Name, SetColumn([.. rows.Select(r => r.Columns[c])], node, first.At), first.At));
+            columns.Add(new RowColumn(first.Name, SetColumn([.. rows.Select(r => r.Columns[c])], node, first.At), first.At)
+            {
+                // Every query's columns, since a value of the set may come from any of them.
+                From = [.. rows.SelectMany(r => r.Columns[c].From).Distinct()],
+            });
         }
 
         return new Row([.. columns], null, node.Rows);

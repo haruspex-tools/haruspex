@@ -62,15 +62,20 @@ public class IrCombinationTests
     }
 
     [Fact]
-    public void A_document_combined_with_itself_says_what_it_says_and_names_its_baseline()
+    public void A_document_combined_with_itself_says_what_it_says_names_its_baseline_and_each_side_of_each_field()
     {
         var document = Infer(GetOrder);
 
         var combined = Combine(document, document);
 
         Assert.Empty(combined.Findings);
-        Assert.Equal(document with { Source = document.Source with { Baseline = document.Source } }, combined.Document);
-        Assert.Equal("0.24", combined.Document.Version);
+        var withoutSides = combined.Document with
+        {
+            Types = combined.Document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { Sides = null })] }),
+        };
+        Assert.Equal(document with { Source = document.Source with { Baseline = document.Source } }, withoutSides);
+        Assert.All(combined.Document.Types.Values.SelectMany(t => t.Fields), f => Assert.Equal(new IrFieldSides(IrFieldSide.Of(f with { Sides = null }), IrFieldSide.Of(f with { Sides = null })), f.Sides));
+        Assert.Equal(IrDocument.CurrentVersion, combined.Document.Version);
     }
 
     [Fact]
@@ -89,6 +94,23 @@ public class IrCombinationTests
         Assert.Equal(["closed", "held", "open"], ((IrScalar)Field(combined.Document, "shop.get_order", "status").Type).Facets!.Values!.Items.Select(v => v.Text).Order(StringComparer.Ordinal));
         FitsBoth(combined, baseline, candidate);
         FitsBoth(combined, baseline, candidate, strict: true);
+    }
+
+    [Fact]
+    public void A_combined_field_keeps_each_database_s_side_and_a_key_one_lacks_has_no_side_there()
+    {
+        var baseline = Infer(GetOrder);
+        var candidate = Infer(Edit(GetOrder, "o.status FROM", "o.status, o.channel FROM"));
+
+        var combined = Combine(baseline, candidate);
+
+        var channel = Field(combined.Document, "shop.get_order", "channel");
+        Assert.Null(channel.Sides!.Baseline);
+        Assert.Equal(IrPresence.Always, channel.Sides.Candidate!.Presence);
+        Assert.Equal(["shop.orders.channel"], channel.Sides.Candidate.From.Select(c => c.Column));
+        var status = Field(combined.Document, "shop.get_order", "status");
+        Assert.Equal(status.Sides!.Baseline!.Sql, status.Sides.Candidate!.Sql);
+        Assert.Equal(["shop.orders.status"], status.From.Select(c => c.Column));
     }
 
     [Fact]

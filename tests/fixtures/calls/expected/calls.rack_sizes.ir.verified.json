@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -73,6 +73,13 @@
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
             }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
+            }
           ]
         }
       ]
@@ -106,7 +113,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         }
       ]
     }

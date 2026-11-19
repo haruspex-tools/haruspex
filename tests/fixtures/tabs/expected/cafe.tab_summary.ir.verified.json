@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -81,7 +81,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -97,7 +104,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "display_name",
@@ -113,7 +127,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/guest.sql:4:5"
+            },
+            {
+              "column": "cafe.guest.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "phone",
@@ -129,7 +155,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.phone",
+              "sql": "varchar(15)",
+              "at": "tables/guest.sql:5:5"
+            }
+          ]
         },
         {
           "name": "items",
@@ -184,7 +217,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
+          ]
         },
         {
           "name": "subtotal_2dp",
@@ -221,6 +266,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/tab_summary.sql:15:8"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
           ]
         },
         {
@@ -252,7 +309,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab_item.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/tab_item.sql:6:5"
+            }
+          ]
         },
         {
           "name": "due",
@@ -289,6 +353,23 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/tab_summary.sql:17:8"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            },
+            {
+              "column": "cafe.tab_item.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/tab_item.sql:6:5"
+            }
           ]
         },
         {
@@ -305,7 +386,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.opened_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:4:5"
+            }
+          ]
         },
         {
           "name": "closed_text",
@@ -326,6 +414,13 @@
             {
               "rule": "nullable-column",
               "at": "cafe.tab.closed_at"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.closed_at",
+              "sql": "datetime2(0)",
+              "at": "tables/tab.sql:5:5"
             }
           ]
         }

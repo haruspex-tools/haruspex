@@ -33,8 +33,8 @@ public class IrVersionTests
         });
 
     /// <summary>
-    /// Each version the reader reads: the current one, a document combining two databases, and 0.23, every document of which
-    /// is a document of one database that 0.24 writes alike, labelled 0.23.
+    /// Each version the reader reads: the current one, and 0.24 and 0.23, each the label of a document that says less, written
+    /// alike by 0.25 (decision 0072's labelling by content).
     /// </summary>
     public static TheoryData<string> Readable { get; } = [.. IrDocument.ReadableVersions];
 
@@ -48,8 +48,8 @@ public class IrVersionTests
     }
 
     [Fact]
-    public void The_reader_reads_the_current_version_and_the_one_a_document_of_one_database_is_written_in() =>
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.OneDatabaseVersion], IrDocument.ReadableVersions);
+    public void The_reader_reads_the_current_version_and_those_a_document_saying_less_is_written_in() =>
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], IrDocument.ReadableVersions);
 
     [Theory]
     [MemberData(nameof(Older))]
@@ -59,7 +59,7 @@ public class IrVersionTests
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Equal(
-            $"$.irVersion is \"{version}\", and this reader reads IR 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.",
+            $"$.irVersion is \"{version}\", and this reader reads IR 0.25 and 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.",
             e.Message);
     }
 

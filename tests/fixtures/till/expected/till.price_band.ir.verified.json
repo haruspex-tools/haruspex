@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -181,7 +181,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -212,7 +219,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:6:5"
+            }
+          ]
         },
         {
           "name": "charged",
@@ -260,6 +274,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/price_band.sql:8:31"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.product.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/product.sql:6:5"
             }
           ]
         }

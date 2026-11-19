@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -67,7 +67,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dye.vat.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:8:5"
+            },
+            {
+              "column": "dye.rinse_tank.state",
+              "sql": "varchar(10)",
+              "at": "tables/vat.sql:25:5"
+            }
+          ]
         }
       ]
     }

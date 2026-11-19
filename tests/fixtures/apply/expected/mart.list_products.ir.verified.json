@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -72,7 +79,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.sku",
+              "sql": "varchar(20)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -88,7 +102,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -109,6 +130,13 @@
             {
               "rule": "nullable-column",
               "at": "mart.product.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.colour",
+              "sql": "nvarchar(20)",
+              "at": "tables/product.sql:6:5"
             }
           ]
         },
@@ -139,6 +167,13 @@
             {
               "rule": "nullable-column",
               "at": "mart.product.width_mm"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.width_mm",
+              "sql": "int",
+              "at": "tables/product.sql:7:5"
             }
           ]
         }

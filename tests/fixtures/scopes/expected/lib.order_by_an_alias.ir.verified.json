@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -48,7 +48,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.book.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         },
         {
           "name": "pages",
@@ -77,6 +84,13 @@
             {
               "rule": "nullable-column",
               "at": "lib.book.pages"
+            }
+          ],
+          "from": [
+            {
+              "column": "lib.book.pages",
+              "sql": "smallint",
+              "at": "tables/book.sql:5:5"
             }
           ]
         }

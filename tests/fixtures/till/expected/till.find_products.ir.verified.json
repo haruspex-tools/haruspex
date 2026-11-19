@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -105,7 +105,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
         },
         {
           "name": "sku",
@@ -121,7 +128,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.sku",
+              "sql": "char(8)",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -137,7 +151,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "till.product.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -158,6 +179,13 @@
             {
               "rule": "nullable-column",
               "at": "till.product.label"
+            }
+          ],
+          "from": [
+            {
+              "column": "till.product.label",
+              "sql": "varchar(20)",
+              "at": "tables/product.sql:5:5"
             }
           ]
         }

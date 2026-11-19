@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "paid",
@@ -97,6 +104,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:4:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            },
+            {
+              "column": "gym.visit.tip",
+              "sql": "smallmoney",
+              "at": "tables/visit.sql:8:5"
+            }
           ]
         },
         {
@@ -134,6 +153,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:5:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
           ]
         },
         {
@@ -170,6 +196,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:6:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            },
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         },
@@ -212,6 +250,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.tip",
+              "sql": "smallmoney",
+              "at": "tables/visit.sql:8:5"
+            },
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -243,7 +293,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
+          ]
         },
         {
           "name": "effort",
@@ -267,6 +324,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:9:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.weight",
+              "sql": "float",
+              "at": "tables/visit.sql:10:5"
+            },
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
           ]
         },
         {
@@ -286,6 +355,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.rating",
+              "sql": "real",
+              "at": "tables/visit.sql:9:5"
             }
           ]
         },
@@ -310,6 +386,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:11:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.rating",
+              "sql": "real",
+              "at": "tables/visit.sql:9:5"
+            },
+            {
+              "column": "gym.visit.weight",
+              "sql": "float",
+              "at": "tables/visit.sql:10:5"
             }
           ]
         },
@@ -348,6 +436,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
           ]
         },
         {
@@ -363,6 +458,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.visit.weight"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.weight",
+              "sql": "float",
+              "at": "tables/visit.sql:10:5"
             }
           ]
         },
@@ -388,7 +490,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "float_literal",
@@ -449,6 +558,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:17:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
+            }
           ]
         },
         {
@@ -468,6 +584,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:18:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
             }
           ]
         },
@@ -493,6 +616,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_money.sql:19:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
+            },
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
+            }
           ]
         },
         {
@@ -512,6 +647,18 @@
             {
               "rule": "nullable-column",
               "at": "gym.visit.weight"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.rating",
+              "sql": "real",
+              "at": "tables/visit.sql:9:5"
+            },
+            {
+              "column": "gym.visit.weight",
+              "sql": "float",
+              "at": "tables/visit.sql:10:5"
             }
           ]
         },
@@ -544,7 +691,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.tip",
+              "sql": "smallmoney",
+              "at": "tables/visit.sql:8:5"
+            },
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "some_time",
@@ -554,7 +713,19 @@
             "sql": "datetime2(3)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
+            },
+            {
+              "column": "gym.visit.started_at",
+              "sql": "datetime2(3)",
+              "at": "tables/visit.sql:4:5"
+            }
+          ]
         },
         {
           "name": "some_datetime",
@@ -573,6 +744,18 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.last_seen"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
+            },
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
             }
           ]
         }

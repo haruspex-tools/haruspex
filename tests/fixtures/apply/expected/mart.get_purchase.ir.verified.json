@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -81,7 +81,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -110,7 +117,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.status",
+              "sql": "varchar(4)",
+              "at": "tables/purchase.sql:5:5"
+            }
+          ]
         },
         {
           "name": "line_count",
@@ -171,6 +185,13 @@
               "rule": "empty-aggregate",
               "at": "procedures/get_purchase.sql:16:40"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase_line.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/purchase_line.sql:6:5"
+            }
           ]
         },
         {
@@ -192,6 +213,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/get_purchase.sql:20:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
             }
           ]
         }

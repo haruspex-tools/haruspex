@@ -49,7 +49,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Combined, json => json["irVersion"] = "0.23");
 
-        Assert.Equal("$.source.baseline is given in a document of IR 0.23, which describes one database: a document combining two is IR 0.24.", e.Message);
+        Assert.Equal("$.source.baseline is given in a document of IR 0.23, which describes one database: a document combining two is IR 0.24 or 0.25.", e.Message);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Combined, json => json["source"]!.AsObject().Remove("baseline"));
 
-        Assert.Equal("$.source.baseline is missing: a document of IR 0.24 combines two databases and names the other's source. A document of one database is IR 0.23.", e.Message);
+        Assert.Equal("$.source.baseline is missing: a document of IR 0.24 combines two databases and names the other's source. A document of one database is IR 0.23 or 0.25.", e.Message);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Everything, json => json["types"]!["FindOrdersRow"]!["fields"]![0]!["presence"] = "optional");
 
-        Assert.Equal("$.types.FindOrdersRow.fields[0].presence is \"optional\", which only a document combining two databases (IR 0.24) says.", e.Message);
+        Assert.Equal("$.types.FindOrdersRow.fields[0].presence is \"optional\", which only a document combining two databases (IR 0.24 or 0.25) says.", e.Message);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Everything, json => json["objects"]![0]!["results"]![0]!["absentBecause"]![0]!["rule"] = "not-in-both");
 
-        Assert.Equal("$.objects[0].results[0].absentBecause[0].rule is \"not-in-both\", which only a document combining two databases (IR 0.24) says.", e.Message);
+        Assert.Equal("$.objects[0].results[0].absentBecause[0].rule is \"not-in-both\", which only a document combining two databases (IR 0.24 or 0.25) says.", e.Message);
     }
 
     [Fact]

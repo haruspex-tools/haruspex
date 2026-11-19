@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -141,7 +141,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.book_id",
+              "sql": "int",
+              "at": "tables/review.sql:4:5"
+            }
+          ]
         },
         {
           "name": "reviews",
@@ -153,7 +160,24 @@
             "minItems": 1
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            },
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
+            },
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            }
+          ]
         },
         {
           "name": "comments",
@@ -179,7 +203,19 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            },
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            }
+          ]
         },
         {
           "name": "commentList",
@@ -198,7 +234,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.review.comment",
+              "sql": "nvarchar(100)",
+              "at": "tables/review.sql:6:5"
+            },
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
+          ]
         }
       ]
     }

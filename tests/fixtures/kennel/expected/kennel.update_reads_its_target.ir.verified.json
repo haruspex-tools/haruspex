@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -143,7 +143,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.dog.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/dog.sql:4:5"
+            }
+          ]
         }
       ]
     }

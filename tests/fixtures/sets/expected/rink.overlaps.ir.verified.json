@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -112,6 +112,13 @@
               "rule": "nullable-column",
               "at": "rink.member.email"
             }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            }
           ]
         }
       ]
@@ -150,7 +157,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.session.kind",
+              "sql": "varchar(8)",
+              "at": "tables/session.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -183,7 +197,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         }
       ]
     },

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "plot.bed.bed_id",
+              "sql": "int",
+              "at": "plots.sql:9:5"
+            }
+          ]
         },
         {
           "name": "area_m2",
@@ -92,6 +99,13 @@
             {
               "rule": "nullable-column",
               "at": "plot.bed.area_m2"
+            }
+          ],
+          "from": [
+            {
+              "column": "plot.bed.area_m2",
+              "sql": "decimal(6,2)",
+              "at": "plots.sql:11:5"
             }
           ]
         }

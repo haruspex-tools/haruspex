@@ -165,7 +165,7 @@ internal static class JsonShapes
         {
             if (f.Presence != g.Presence)
                 return null;
-            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)));
+            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)) { From = f.From });
         }
 
         return new ObjectShape([.. fields]);

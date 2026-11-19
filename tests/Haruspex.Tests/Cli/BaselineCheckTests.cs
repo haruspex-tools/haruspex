@@ -169,12 +169,12 @@ public class BaselineCheckTests
     {
         using var folder = Released(ListOrders, ListOrders);
         var ir = Path.Combine(folder.Path, "release", "haruspex.ir.json");
-        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.OneDatabaseVersion}\"", $"\"irVersion\": \"{version}\""));
+        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.CurrentVersion}\"", $"\"irVersion\": \"{version}\""));
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.24 and 0.23", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.25, 0.24 and 0.23", error, StringComparison.Ordinal);
         Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
     }
 

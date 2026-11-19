@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -156,7 +156,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_line.part_id",
+              "sql": "int",
+              "at": "tables/pick_line.sql:4:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -180,7 +187,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "depot.pick_line.qty",
+              "sql": "int",
+              "at": "tables/pick_line.sql:5:5"
+            }
+          ]
         }
       ]
     }

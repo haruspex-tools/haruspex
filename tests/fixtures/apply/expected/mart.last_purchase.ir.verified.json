@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +79,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.customer.name",
+              "sql": "nvarchar(50)",
+              "at": "tables/customer.sql:3:5"
+            }
+          ]
         },
         {
           "name": "purchase_id",
@@ -102,6 +116,13 @@
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
           ]
         },
         {
@@ -116,6 +137,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.placed_on",
+              "sql": "date",
+              "at": "tables/purchase.sql:4:5"
             }
           ]
         },
@@ -151,6 +179,13 @@
             {
               "rule": "unmatched-lateral-row",
               "at": "procedures/last_purchase.sql:13:13"
+            }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase.status",
+              "sql": "varchar(4)",
+              "at": "tables/purchase.sql:5:5"
             }
           ]
         }

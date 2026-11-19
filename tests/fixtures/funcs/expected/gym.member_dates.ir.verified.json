@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -81,7 +81,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "days_member",
@@ -110,6 +117,18 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.last_seen"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            },
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
             }
           ]
         },
@@ -141,6 +160,18 @@
               "rule": "nullable-column",
               "at": "gym.member.born"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
+            },
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
           ]
         },
         {
@@ -171,6 +202,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/member_dates.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
           ]
         },
         {
@@ -180,7 +218,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "seen_later",
@@ -195,6 +240,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.last_seen"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
             }
           ]
         },
@@ -212,6 +264,13 @@
               "rule": "nullable-column",
               "at": "gym.member.born"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
+            }
           ]
         },
         {
@@ -226,6 +285,13 @@
             {
               "rule": "parameter",
               "at": "@offset"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
             }
           ]
         },
@@ -261,7 +327,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "joined_year",
@@ -285,7 +358,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "seen_month",
@@ -314,6 +394,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.last_seen"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
             }
           ]
         },
@@ -345,6 +432,13 @@
               "rule": "nullable-column",
               "at": "gym.member.born"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
+            }
           ]
         },
         {
@@ -361,7 +455,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "month_end",
@@ -370,7 +471,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "month_end_shifted",
@@ -379,7 +487,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "seen_month_end",
@@ -393,6 +508,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.last_seen"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.last_seen",
+              "sql": "datetime",
+              "at": "tables/member.sql:8:5"
             }
           ]
         },
@@ -409,6 +531,13 @@
               "rule": "null-literal",
               "at": "procedures/member_dates.sql:21:38"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
           ]
         },
         {
@@ -418,7 +547,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
+            }
+          ]
         },
         {
           "name": "offset_month",
@@ -432,6 +568,13 @@
             {
               "rule": "parameter",
               "at": "@offset"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.joined",
+              "sql": "date",
+              "at": "tables/member.sql:7:5"
             }
           ]
         },
@@ -457,6 +600,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.member.born"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.born",
+              "sql": "smalldatetime",
+              "at": "tables/member.sql:9:5"
             }
           ]
         },

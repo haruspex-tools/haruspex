@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -69,6 +69,13 @@
               "rule": "empty-aggregate",
               "at": "procedures/review_digest.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            }
           ]
         },
         {
@@ -105,6 +112,18 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/review_digest.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "pay.review.review_id",
+              "sql": "int",
+              "at": "tables/review.sql:3:5"
+            },
+            {
+              "column": "pay.review.stars",
+              "sql": "tinyint",
+              "at": "tables/review.sql:5:5"
             }
           ]
         }

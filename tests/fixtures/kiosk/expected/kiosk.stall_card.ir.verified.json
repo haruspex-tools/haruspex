@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -84,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kiosk.stall.stall_id",
+              "sql": "int",
+              "at": "tables/stall.sql:7:5"
+            }
+          ]
         },
         {
           "name": "labelled",
@@ -98,6 +105,13 @@
             {
               "rule": "unknown",
               "at": "procedures/stall_card.sql:6:20"
+            }
+          ],
+          "from": [
+            {
+              "column": "kiosk.stall.kind",
+              "sql": "varchar(10)",
+              "at": "tables/stall.sql:11:5"
             }
           ]
         },

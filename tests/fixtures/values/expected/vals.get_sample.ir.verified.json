@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -84,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -100,7 +107,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample.label",
+              "sql": "nvarchar(40)",
+              "at": "tables/sample.sql:6:5"
+            }
+          ]
         },
         {
           "name": "tiny",
@@ -129,6 +143,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.tiny"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.tiny",
+              "sql": "tinyint",
+              "at": "tables/sample.sql:7:5"
             }
           ]
         },
@@ -160,6 +181,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.small"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.small",
+              "sql": "smallint",
+              "at": "tables/sample.sql:8:5"
+            }
           ]
         },
         {
@@ -190,6 +218,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.whole"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.whole",
+              "sql": "int",
+              "at": "tables/sample.sql:9:5"
+            }
           ]
         },
         {
@@ -219,6 +254,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.big"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.big",
+              "sql": "bigint",
+              "at": "tables/sample.sql:10:5"
             }
           ]
         },
@@ -257,6 +299,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.dec_19_2"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dec_19_2",
+              "sql": "decimal(19,2)",
+              "at": "tables/sample.sql:11:5"
+            }
           ]
         },
         {
@@ -293,6 +342,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.dec_38_0"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dec_38_0",
+              "sql": "decimal(38,0)",
+              "at": "tables/sample.sql:12:5"
             }
           ]
         },
@@ -331,6 +387,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.num_9_3"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.num_9_3",
+              "sql": "numeric(9,3)",
+              "at": "tables/sample.sql:13:5"
+            }
           ]
         },
         {
@@ -367,6 +430,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.dec_5_5"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dec_5_5",
+              "sql": "decimal(5,5)",
+              "at": "tables/sample.sql:14:5"
             }
           ]
         },
@@ -405,6 +475,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.cash"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.cash",
+              "sql": "money",
+              "at": "tables/sample.sql:15:5"
+            }
           ]
         },
         {
@@ -442,6 +519,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.small_cash"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.small_cash",
+              "sql": "smallmoney",
+              "at": "tables/sample.sql:16:5"
+            }
           ]
         },
         {
@@ -457,6 +541,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.approx"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.approx",
+              "sql": "float",
+              "at": "tables/sample.sql:17:5"
             }
           ]
         },
@@ -474,6 +565,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.approx_real"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.approx_real",
+              "sql": "real",
+              "at": "tables/sample.sql:18:5"
+            }
           ]
         },
         {
@@ -488,6 +586,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.flag"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.flag",
+              "sql": "bit",
+              "at": "tables/sample.sql:19:5"
             }
           ]
         },
@@ -504,6 +609,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.day"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.day",
+              "sql": "date",
+              "at": "tables/sample.sql:20:5"
+            }
           ]
         },
         {
@@ -518,6 +630,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.t0"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.t0",
+              "sql": "time(0)",
+              "at": "tables/sample.sql:21:5"
             }
           ]
         },
@@ -534,6 +653,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.t3"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.t3",
+              "sql": "time(3)",
+              "at": "tables/sample.sql:22:5"
+            }
           ]
         },
         {
@@ -548,6 +674,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.t7"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.t7",
+              "sql": "time(7)",
+              "at": "tables/sample.sql:23:5"
             }
           ]
         },
@@ -565,6 +698,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.dt2_0"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dt2_0",
+              "sql": "datetime2(0)",
+              "at": "tables/sample.sql:24:5"
+            }
           ]
         },
         {
@@ -580,6 +720,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.dt2_3"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dt2_3",
+              "sql": "datetime2(3)",
+              "at": "tables/sample.sql:25:5"
             }
           ]
         },
@@ -597,6 +744,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.dt2_7"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dt2_7",
+              "sql": "datetime2(7)",
+              "at": "tables/sample.sql:26:5"
+            }
           ]
         },
         {
@@ -612,6 +766,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.dto_0"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dto_0",
+              "sql": "datetimeoffset(0)",
+              "at": "tables/sample.sql:27:5"
             }
           ]
         },
@@ -629,6 +790,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.dto_3"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dto_3",
+              "sql": "datetimeoffset(3)",
+              "at": "tables/sample.sql:28:5"
+            }
           ]
         },
         {
@@ -644,6 +812,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.dto_7"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.dto_7",
+              "sql": "datetimeoffset(7)",
+              "at": "tables/sample.sql:29:5"
             }
           ]
         },
@@ -661,6 +836,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.small_dt"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.small_dt",
+              "sql": "smalldatetime",
+              "at": "tables/sample.sql:30:5"
+            }
           ]
         },
         {
@@ -677,6 +859,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.legacy_dt"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.legacy_dt",
+              "sql": "datetime",
+              "at": "tables/sample.sql:31:5"
+            }
           ]
         },
         {
@@ -691,6 +880,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.guid"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.guid",
+              "sql": "uniqueidentifier",
+              "at": "tables/sample.sql:32:5"
             }
           ]
         },
@@ -714,6 +910,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.code"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.code",
+              "sql": "char(5)",
+              "at": "tables/sample.sql:33:5"
+            }
           ]
         },
         {
@@ -735,6 +938,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.ncode"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.ncode",
+              "sql": "nchar(5)",
+              "at": "tables/sample.sql:34:5"
             }
           ]
         },
@@ -758,6 +968,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.vcode"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.vcode",
+              "sql": "varchar(5)",
+              "at": "tables/sample.sql:35:5"
+            }
           ]
         },
         {
@@ -772,6 +989,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.body"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.body",
+              "sql": "nvarchar(max)",
+              "at": "tables/sample.sql:36:5"
             }
           ]
         }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -86,7 +86,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -102,7 +109,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         },
         {
           "name": "rack_count",
@@ -131,6 +145,13 @@
             {
               "rule": "nullable-column",
               "at": "calls.oven.rack_count"
+            }
+          ],
+          "from": [
+            {
+              "column": "calls.oven.rack_count",
+              "sql": "tinyint",
+              "at": "tables/oven.sql:5:5"
             }
           ]
         }

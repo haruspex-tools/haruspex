@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.line_no",
+              "sql": "int",
+              "at": "tables/purchase_line.sql:3:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -80,7 +87,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.quantity",
+              "sql": "int",
+              "at": "tables/purchase_line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "unit_price",
@@ -111,7 +125,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase_line.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/purchase_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "discount",
@@ -148,6 +169,13 @@
               "rule": "nullable-column",
               "at": "mart.purchase_line.discount"
             }
+          ],
+          "from": [
+            {
+              "column": "mart.purchase_line.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/purchase_line.sql:7:5"
+            }
           ]
         },
         {
@@ -164,7 +192,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.product.title",
+              "sql": "nvarchar(80)",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -197,7 +232,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.purchase_id",
+              "sql": "int",
+              "at": "tables/purchase.sql:2:5"
+            }
+          ]
         },
         {
           "name": "placed_on",
@@ -206,7 +248,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "mart.purchase.placed_on",
+              "sql": "date",
+              "at": "tables/purchase.sql:4:5"
+            }
+          ]
         },
         {
           "name": "lines",

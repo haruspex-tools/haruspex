@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -84,7 +84,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
         },
         {
           "name": "customer",
@@ -100,7 +107,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.customer",
+              "sql": "nvarchar(40)",
+              "at": "tables/orders.sql:4:5"
+            }
+          ]
         },
         {
           "name": "placed_on",
@@ -109,7 +123,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.placed_on",
+              "sql": "date",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -130,6 +151,13 @@
             {
               "rule": "nullable-column",
               "at": "shop.orders.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.orders.note",
+              "sql": "nvarchar(200)",
+              "at": "tables/orders.sql:6:5"
             }
           ]
         }

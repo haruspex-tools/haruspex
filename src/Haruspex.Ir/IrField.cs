@@ -14,4 +14,18 @@ public sealed record IrField(string Name, IrType Type, IrPresence Presence, Equa
 {
     /// <summary>Whether the value can be null: true exactly when <see cref="NullableBecause"/> gives a reason.</summary>
     public bool Nullable => NullableBecause.Count > 0;
+
+    /// <summary>
+    /// The table columns the value is read from, in the order the SQL first reads them (0.25): the start of its derivation, which
+    /// <see cref="NullableBecause"/> continues. Empty when it reads none directly: a literal, a parameter, a count of rows, or a
+    /// column of a view, a derived table or a CTE, which is not traced through. Where a claim came from, not a claim, so
+    /// <see cref="IrComparison"/> reports no change in it.
+    /// </summary>
+    public EquatableArray<IrSourceColumn> From { get; init; } = [];
+
+    /// <summary>
+    /// In a document combining two databases (<see cref="IrSource.Baseline"/>), the field as each gave it, before they were
+    /// combined (0.25); null in a document of one database. Where a claim came from, not a claim.
+    /// </summary>
+    public IrFieldSides? Sides { get; init; }
 }

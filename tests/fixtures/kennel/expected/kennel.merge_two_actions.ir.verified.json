@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -163,7 +163,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kennel.booking.nights",
+              "sql": "int",
+              "at": "tables/booking.sql:4:5"
+            }
+          ]
         }
       ]
     }

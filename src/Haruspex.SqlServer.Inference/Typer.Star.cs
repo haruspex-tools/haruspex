@@ -34,8 +34,11 @@ internal sealed partial class Typer
         {
             columns.AddRange(expanded.Select(c => c.Column switch
             {
-                TableColumn table => new RowColumn(c.Name, FromColumn(table, scope), at, table),
-                RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at),
+                TableColumn table => new RowColumn(c.Name, FromColumn(table, scope), at, table) { From = [SourceColumn(table)] },
+                RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at)
+                {
+                    From = scope.Of(relation.Source).From is { } traced && relation.Ordinal < traced.Count ? traced[relation.Ordinal] : [],
+                },
                 UnlistedColumn unlisted => new RowColumn(c.Name, FromLocal(unlisted.Source, -1, scope, at), at),
                 Unresolved unresolved => new RowColumn(c.Name, Value.Unknown(Unknown(unresolved.Problem)), at),
             }));

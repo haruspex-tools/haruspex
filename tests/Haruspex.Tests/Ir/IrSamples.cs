@@ -14,6 +14,11 @@ internal static class IrSamples
 
     private static readonly IrNullReason Column = new(IrNullRule.NullableColumn, "sales.orders.note");
 
+    /// <summary>A column a field is read from (0.25), with no SQL type, as a column of a type the IR doesn't type would have.</summary>
+    private static readonly IrSourceColumn OrderId = new("sales.orders.order_id", null, "tables/orders.sql:2:5");
+
+    private static readonly IrSourceColumn Channel = new("sales.orders.channel", "varchar(10)", "tables/orders.sql:6:5");
+
     private static readonly IrScalar Int = new(IrScalarKind.Number, IrFormat.Int32, "int");
 
     /// <summary>The document.</summary>
@@ -167,6 +172,31 @@ internal static class IrSamples
                 Fields = [.. Everything.Types["FindOrdersRow"].Fields, new IrField("channel", new IrScalar(IrScalarKind.String, null, "varchar(10)"), IrPresence.Optional, [Column])],
             },
         },
+    };
+
+    /// <summary>
+    /// <see cref="Combined"/> saying where its fields came from (0.25): the columns each is read from, and how each database gave it,
+    /// so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Derived { get; } = Combined with
+    {
+        Types = Combined.Types.ToDictionary(t => t.Key, t => t.Key != "FindOrdersRow" ? t.Value : t.Value with
+        {
+            Fields =
+            [
+                .. t.Value.Fields.Select(f => f.Name == "channel"
+                    ? f with
+                    {
+                        From = [Channel],
+                        Sides = new IrFieldSides(null, new IrFieldSide(IrPresence.Always, [Column], "varchar(10)") { From = [Channel] }),
+                    }
+                    : f with
+                    {
+                        From = [OrderId],
+                        Sides = new IrFieldSides(IrFieldSide.Of(f) with { From = [OrderId] }, IrFieldSide.Of(f) with { From = [OrderId] }),
+                    }),
+            ],
+        }),
     };
 
     /// <summary>Every type node in a document, nested ones included, each once per place it appears.</summary>

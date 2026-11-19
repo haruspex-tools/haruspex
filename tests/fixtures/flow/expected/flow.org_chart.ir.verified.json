@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -62,7 +62,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.employee.employee_id",
+              "sql": "int",
+              "at": "tables/employee.sql:2:5"
+            }
+          ]
         },
         {
           "name": "managerId",
@@ -92,6 +99,13 @@
               "rule": "nullable-column",
               "at": "flow.employee.manager_id"
             }
+          ],
+          "from": [
+            {
+              "column": "flow.employee.manager_id",
+              "sql": "int",
+              "at": "tables/employee.sql:3:5"
+            }
           ]
         },
         {
@@ -108,7 +122,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.employee.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/employee.sql:4:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -129,6 +150,13 @@
             {
               "rule": "nullable-column",
               "at": "flow.employee.title"
+            }
+          ],
+          "from": [
+            {
+              "column": "flow.employee.title",
+              "sql": "nvarchar(30)",
+              "at": "tables/employee.sql:5:5"
             }
           ]
         },
@@ -151,6 +179,13 @@
             {
               "rule": "nullable-column",
               "at": "flow.employee.title"
+            }
+          ],
+          "from": [
+            {
+              "column": "flow.employee.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/employee.sql:4:5"
             }
           ]
         }

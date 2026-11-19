@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -94,6 +94,13 @@
               "rule": "count-overflow",
               "at": "procedures/catalogue_summary.sql:6:32"
             }
+          ],
+          "from": [
+            {
+              "column": "lend.title.author",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:6:5"
+            }
           ]
         },
         {
@@ -115,6 +122,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/catalogue_summary.sql:6:64"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.title.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/title.sql:5:5"
             }
           ]
         }
@@ -178,6 +192,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/catalogue_summary.sql:9:33"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
             }
           ]
         }

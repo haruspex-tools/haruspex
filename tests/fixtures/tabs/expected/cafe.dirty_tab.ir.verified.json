@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -92,7 +92,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -113,6 +120,13 @@
             {
               "rule": "nullable-column",
               "at": "cafe.tab.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.note",
+              "sql": "varchar(20)",
+              "at": "tables/tab.sql:8:5"
             }
           ]
         }
@@ -147,7 +161,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -168,6 +189,13 @@
             {
               "rule": "nullable-column",
               "at": "cafe.tab.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.note",
+              "sql": "varchar(20)",
+              "at": "tables/tab.sql:8:5"
             }
           ]
         }

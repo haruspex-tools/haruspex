@@ -241,11 +241,54 @@ public static class IrJsonWriter
             json.WriteBoolean("nullable", field.Nullable);
             if (field.Nullable)
                 WriteReasons(json, "nullableBecause", field.NullableBecause);
+            WriteFrom(json, field.From);
+            if (field.Sides is { } sides)
+            {
+                json.WriteStartObject("sides");
+                WriteSide(json, "baseline", sides.Baseline);
+                WriteSide(json, "candidate", sides.Candidate);
+                json.WriteEndObject();
+            }
 
             json.WriteEndObject();
         }
 
         json.WriteEndArray();
+        json.WriteEndObject();
+    }
+
+    /// <summary>A field's source columns (0.25), left out when it has none, so that a document without them reads as before.</summary>
+    private static void WriteFrom(Utf8JsonWriter json, EquatableArray<IrSourceColumn> from)
+    {
+        if (from.Count == 0)
+            return;
+        json.WriteStartArray("from");
+        foreach (var column in from)
+        {
+            json.WriteStartObject();
+            json.WriteString("column", column.Column);
+            if (column.Sql is { } sql)
+                json.WriteString("sql", sql);
+            json.WriteString("at", column.At);
+            json.WriteEndObject();
+        }
+
+        json.WriteEndArray();
+    }
+
+    /// <summary>One database's field in a combined one (0.25), left out where that database doesn't return the key.</summary>
+    private static void WriteSide(Utf8JsonWriter json, string name, IrFieldSide? side)
+    {
+        if (side is null)
+            return;
+        json.WriteStartObject(name);
+        json.WriteString("presence", IrWireNames.Of(side.Presence));
+        json.WriteBoolean("nullable", side.NullableBecause.Count > 0);
+        if (side.NullableBecause.Count > 0)
+            WriteReasons(json, "nullableBecause", side.NullableBecause);
+        if (side.Sql is { } sql)
+            json.WriteString("sql", sql);
+        WriteFrom(json, side.From);
         json.WriteEndObject();
     }
 

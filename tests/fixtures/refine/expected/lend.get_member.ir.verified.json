@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -82,6 +82,13 @@
               "rule": "unmatched-row",
               "at": "procedures/get_member.sql:18:11"
             }
+          ],
+          "from": [
+            {
+              "column": "lend.branch.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/branch.sql:3:5"
+            }
           ]
         },
         {
@@ -107,6 +114,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/get_member.sql:18:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.branch.city",
+              "sql": "nvarchar(40)",
+              "at": "tables/branch.sql:4:5"
             }
           ]
         }
@@ -141,7 +155,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -157,7 +178,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "nickname",
@@ -178,6 +206,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.member.nickname"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         },
@@ -200,6 +235,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.member.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         },

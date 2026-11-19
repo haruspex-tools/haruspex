@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "room_before",
@@ -86,6 +93,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:7:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -101,6 +115,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         },
@@ -143,6 +164,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:9:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            },
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -162,6 +195,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         }

@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -87,7 +87,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -108,6 +115,13 @@
             {
               "rule": "nullable-column",
               "at": "flow.sale.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "flow.sale.note",
+              "sql": "nvarchar(40)",
+              "at": "tables/sale.sql:7:5"
             }
           ]
         }
@@ -142,7 +156,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.region_id",
+              "sql": "int",
+              "at": "tables/region.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -158,7 +179,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.region.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/region.sql:4:5"
+            }
+          ]
         }
       ]
     }

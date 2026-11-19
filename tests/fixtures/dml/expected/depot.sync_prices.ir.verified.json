@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -194,6 +194,13 @@
             {
               "rule": "missing-for-action",
               "at": "procedures/sync_prices.sql:8:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "depot.price_list.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/price.sql:11:5"
             }
           ]
         }

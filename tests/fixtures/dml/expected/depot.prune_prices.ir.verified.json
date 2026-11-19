@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -114,6 +114,13 @@
               "rule": "missing-for-action",
               "at": "procedures/prune_prices.sql:7:1"
             }
+          ],
+          "from": [
+            {
+              "column": "depot.price_list.part_id",
+              "sql": "int",
+              "at": "tables/price.sql:10:5"
+            }
           ]
         },
         {
@@ -135,6 +142,13 @@
             {
               "rule": "missing-for-action",
               "at": "procedures/prune_prices.sql:7:1"
+            }
+          ],
+          "from": [
+            {
+              "column": "depot.part.code",
+              "sql": "varchar(20)",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }

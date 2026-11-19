@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Combined"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Derived"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Combined);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Derived);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
@@ -65,6 +65,23 @@ public class IrReaderSchemaAgreementTests
         {
             Assert.NotEmpty(schemaErrors);
             Assert.Equal(ReaderPath(location[..location.LastIndexOf('/')]), refusal?.Path);
+            return;
+        }
+
+        // A combined document's fields say how each database gave them (0.25), which a document of one database can't: without its
+        // baseline, the first field's sides are refused.
+        if (location == "/source" && key == "baseline")
+        {
+            Assert.NotEmpty(schemaErrors);
+            Assert.Equal("$.types.FindOrdersRow.fields[0].sides", refusal?.Path);
+            return;
+        }
+
+        // Sides that name neither database, their one side taken away, are refused as a whole.
+        if (location.EndsWith("/sides", StringComparison.Ordinal) && target.Count == 0)
+        {
+            Assert.NotEmpty(schemaErrors);
+            Assert.Equal(ReaderPath(location), refusal?.Path);
             return;
         }
 

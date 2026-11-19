@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -73,7 +73,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.orders.customer",
+              "sql": "nvarchar(40)",
+              "at": "tables/orders.sql:4:5"
+            }
+          ]
         },
         {
           "name": "line_id",
@@ -102,6 +109,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/order_lines.sql:8:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.line_id",
+              "sql": "int",
+              "at": "tables/order_line.sql:3:5"
             }
           ]
         },
@@ -133,6 +147,13 @@
               "rule": "unmatched-row",
               "at": "procedures/order_lines.sql:8:11"
             }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.order_id",
+              "sql": "int",
+              "at": "tables/order_line.sql:4:5"
+            }
           ]
         },
         {
@@ -154,6 +175,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/order_lines.sql:8:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.sku",
+              "sql": "varchar(12)",
+              "at": "tables/order_line.sql:5:5"
             }
           ]
         },
@@ -188,6 +216,13 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/order_lines.sql:8:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "shop.order_line.qty",
+              "sql": "int",
+              "at": "tables/order_line.sql:6:5"
             }
           ]
         }

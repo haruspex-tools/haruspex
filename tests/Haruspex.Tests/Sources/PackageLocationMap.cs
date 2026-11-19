@@ -54,7 +54,8 @@ internal sealed partial class PackageLocationMap
             var elements = XDocument.Load(stream).Root!.Element(Ns + "Model")!.Elements(Ns + "Element").ToList();
             foreach (var module in folder.Procedures.Cast<SchemaObject>().Concat(folder.Functions).Concat(folder.Views).Concat(folder.Triggers))
                 AddModule(module, elements, folderRoot, package);
-            foreach (var table in folder.Tables)
+            // A field's source columns (IR 0.25) name the tables of the other databases a project refers to as well as its own.
+            foreach (var table in folder.Tables.Concat(folder.Databases.Values.SelectMany(d => d.Tables)))
                 AddTable(table, elements, package);
         }
 

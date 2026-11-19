@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "tabs",
@@ -80,7 +87,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "spent",
@@ -116,6 +130,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/guest_spending.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
             }
           ]
         },
@@ -158,6 +184,13 @@
               "rule": "unmatched-row",
               "at": "procedures/guest_spending.sql:13:11"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.tip",
+              "sql": "decimal(9,2)",
+              "at": "tables/tab.sql:7:5"
+            }
           ]
         },
         {
@@ -182,7 +215,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.table_no",
+              "sql": "tinyint",
+              "at": "tables/tab.sql:6:5"
+            }
+          ]
         }
       ]
     }

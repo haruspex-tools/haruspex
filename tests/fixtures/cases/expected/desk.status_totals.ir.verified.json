@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -65,7 +65,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.job.status",
+              "sql": "char(1)",
+              "at": "tables/job.sql:4:5"
+            }
+          ]
         },
         {
           "name": "filter",
@@ -136,7 +143,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "desk.part_line.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/part_line.sql:6:5"
+            }
+          ]
         },
         {
           "name": "most",
@@ -165,6 +179,13 @@
             {
               "rule": "no-branch-matched",
               "at": "procedures/status_totals.sql:12:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "desk.part_line.qty",
+              "sql": "smallint",
+              "at": "tables/part_line.sql:5:5"
             }
           ]
         }

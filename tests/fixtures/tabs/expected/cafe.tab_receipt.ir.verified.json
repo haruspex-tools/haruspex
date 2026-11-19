@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -76,7 +76,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.title",
+              "sql": "nvarchar(30)",
+              "at": "tables/menu_item.sql:3:5"
+            },
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            }
+          ]
         },
         {
           "name": "ref",
@@ -97,6 +109,18 @@
             {
               "rule": "nullable-column",
               "at": "cafe.menu_item.short_code"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.menu_item.short_code",
+              "sql": "char(4)",
+              "at": "tables/menu_item.sql:5:5"
+            },
+            {
+              "column": "cafe.tab_item.tab_item_id",
+              "sql": "int",
+              "at": "tables/tab_item.sql:2:5"
             }
           ]
         },
@@ -129,7 +153,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab_item.qty",
+              "sql": "smallint",
+              "at": "tables/tab_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
+          ]
         },
         {
           "name": "discount",
@@ -165,6 +201,13 @@
             {
               "rule": "nullable-column",
               "at": "cafe.tab_item.discount"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab_item.discount",
+              "sql": "decimal(5,2)",
+              "at": "tables/tab_item.sql:6:5"
             }
           ]
         }
@@ -234,7 +277,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.tab.tab_id",
+              "sql": "int",
+              "at": "tables/tab.sql:2:5"
+            }
+          ]
         },
         {
           "name": "guest",
@@ -250,7 +300,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.guest.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/guest.sql:3:5"
+            },
+            {
+              "column": "cafe.guest.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/guest.sql:4:5"
+            }
+          ]
         },
         {
           "name": "note_number",
@@ -283,6 +345,13 @@
             {
               "rule": "failed-conversion",
               "at": "procedures/tab_receipt.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.tab.note",
+              "sql": "varchar(20)",
+              "at": "tables/tab.sql:8:5"
             }
           ]
         }

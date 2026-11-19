@@ -202,7 +202,7 @@ internal sealed partial class Typer
             return null;
         if (row.Unlisted is not null || row.Columns.Count != names.Count)
             throw new InvalidOperationException($"Binding listed {names.Count} columns where the query reads {row.Columns.Count}.");
-        return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null);
+        return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null) { From = [.. row.Columns.Select(c => c.From)] };
     }
 
     /// <summary>A chain of set operations' queries in order, and the operators between them; parentheses group a query of their own.</summary>

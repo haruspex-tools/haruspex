@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -102,6 +102,18 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:14:12"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.units",
+              "sql": "bigint",
+              "at": "tables/barter.sql:6:5"
+            },
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
+            }
           ]
         },
         {
@@ -117,6 +129,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:14:28"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.estimate",
+              "sql": "float",
+              "at": "tables/barter.sql:7:5"
+            },
+            {
+              "column": "bazaar.auction_lot.closed_at",
+              "sql": "datetime",
+              "at": "tables/auction_lot.sql:4:5"
             }
           ]
         },
@@ -148,6 +172,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:14:50"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.ticket",
+              "sql": "varchar(12)",
+              "at": "tables/stall_sale.sql:10:5"
+            }
           ]
         }
       ]
@@ -172,6 +203,18 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:25:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.stall_sale.sold_on",
+              "sql": "date",
+              "at": "tables/stall_sale.sql:4:5"
+            },
+            {
+              "column": "bazaar.barter.swapped_at",
+              "sql": "smalldatetime",
+              "at": "tables/barter.sql:4:5"
             }
           ]
         }
@@ -219,6 +262,23 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:35:12"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.units",
+              "sql": "bigint",
+              "at": "tables/barter.sql:6:5"
+            },
+            {
+              "column": "bazaar.web_order.price",
+              "sql": "money",
+              "at": "tables/web_order.sql:6:5"
+            },
+            {
+              "column": "bazaar.stall_sale.unit_price",
+              "sql": "decimal(9,2)",
+              "at": "tables/stall_sale.sql:6:5"
+            }
           ]
         },
         {
@@ -260,6 +320,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:41:26"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
+            }
           ]
         },
         {
@@ -294,6 +361,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:33:87"
             }
+          ],
+          "from": [
+            {
+              "column": "bazaar.auction_lot.bids",
+              "sql": "tinyint",
+              "at": "tables/auction_lot.sql:5:5"
+            }
           ]
         }
       ]
@@ -327,7 +401,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bazaar.barter.barter_id",
+              "sql": "int",
+              "at": "tables/barter.sql:3:5"
+            }
+          ]
         },
         {
           "name": "fee_or_big",
@@ -363,6 +444,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:47:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
             }
           ]
         },
@@ -400,6 +488,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/lenient.sql:48:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "bazaar.barter.small_fee",
+              "sql": "smallmoney",
+              "at": "tables/barter.sql:8:5"
             }
           ]
         }

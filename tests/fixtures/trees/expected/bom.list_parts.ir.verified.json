@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -63,7 +63,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.component.quantity",
+              "sql": "smallint",
+              "at": "tables/component.sql:6:5"
+            }
+          ]
         },
         {
           "name": "part",
@@ -88,6 +95,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/components.sql:8:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }
@@ -122,7 +136,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -138,7 +159,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -166,7 +194,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.kind",
+              "sql": "varchar(8)",
+              "at": "tables/part.sql:6:5"
+            }
+          ]
         },
         {
           "name": "unitCost",
@@ -203,6 +238,13 @@
               "rule": "nullable-column",
               "at": "bom.part.unit_cost"
             }
+          ],
+          "from": [
+            {
+              "column": "bom.part.unit_cost",
+              "sql": "decimal(9,2)",
+              "at": "tables/part.sql:7:5"
+            }
           ]
         }
       ]
@@ -236,7 +278,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -252,7 +301,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "bom.part.name",
+              "sql": "nvarchar(30)",
+              "at": "tables/part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "components",
@@ -269,6 +325,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/components.sql:8:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
             }
           ]
         },
@@ -290,6 +353,13 @@
             {
               "rule": "empty-subquery",
               "at": "functions/components.sql:8:12"
+            }
+          ],
+          "from": [
+            {
+              "column": "bom.part.part_id",
+              "sql": "int",
+              "at": "tables/part.sql:4:5"
             }
           ]
         }

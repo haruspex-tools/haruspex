@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -61,6 +61,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.guid"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.guid",
+              "sql": "uniqueidentifier",
+              "at": "tables/sample.sql:32:5"
+            }
           ]
         }
       ]
@@ -100,6 +107,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.whole"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.whole",
+              "sql": "int",
+              "at": "tables/sample.sql:9:5"
+            }
           ]
         },
         {
@@ -114,6 +128,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.flag"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.flag",
+              "sql": "bit",
+              "at": "tables/sample.sql:19:5"
             }
           ]
         }
@@ -140,7 +161,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample.label",
+              "sql": "nvarchar(40)",
+              "at": "tables/sample.sql:6:5"
+            }
+          ]
         },
         {
           "name": "code",
@@ -161,6 +189,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.code"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.code",
+              "sql": "char(5)",
+              "at": "tables/sample.sql:33:5"
             }
           ]
         }
@@ -195,7 +230,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample.sample_id",
+              "sql": "int",
+              "at": "tables/sample.sql:5:5"
+            }
+          ]
         },
         {
           "name": "when",
@@ -270,7 +312,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample_tag.sample_tag_id",
+              "sql": "int",
+              "at": "tables/sample_tag.sql:4:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -286,7 +335,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "vals.sample_tag.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/sample_tag.sql:6:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -307,6 +363,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample_tag.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample_tag.note",
+              "sql": "nvarchar(40)",
+              "at": "tables/sample_tag.sql:7:5"
             }
           ]
         }
@@ -332,6 +395,13 @@
               "rule": "nullable-column",
               "at": "vals.sample.day"
             }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.day",
+              "sql": "date",
+              "at": "tables/sample.sql:20:5"
+            }
           ]
         },
         {
@@ -346,6 +416,13 @@
             {
               "rule": "nullable-column",
               "at": "vals.sample.t0"
+            }
+          ],
+          "from": [
+            {
+              "column": "vals.sample.t0",
+              "sql": "time(0)",
+              "at": "tables/sample.sql:21:5"
             }
           ]
         }

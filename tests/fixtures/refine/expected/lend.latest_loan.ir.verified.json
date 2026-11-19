@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -81,7 +81,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.loan.loan_id",
+              "sql": "int",
+              "at": "tables/loan.sql:3:5"
+            }
+          ]
         },
         {
           "name": "lent_on",
@@ -90,7 +97,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.loan.lent_on",
+              "sql": "date",
+              "at": "tables/loan.sql:7:5"
+            }
+          ]
         },
         {
           "name": "returned_on",
@@ -104,6 +118,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.loan.returned_on"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.loan.returned_on",
+              "sql": "date",
+              "at": "tables/loan.sql:9:5"
             }
           ]
         },
@@ -141,6 +162,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.loan.fine"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.loan.fine",
+              "sql": "decimal(6,2)",
+              "at": "tables/loan.sql:10:5"
             }
           ]
         }

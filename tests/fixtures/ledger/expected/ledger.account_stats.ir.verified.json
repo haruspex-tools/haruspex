@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -92,7 +92,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "ledger.line.account_id",
+              "sql": "int",
+              "at": "tables/line.sql:5:5"
+            }
+          ]
         },
         {
           "name": "avg_qty",
@@ -121,6 +128,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:7:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.qty",
+              "sql": "int",
+              "at": "tables/line.sql:6:5"
             }
           ]
         },
@@ -151,6 +165,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
             }
           ]
         },
@@ -185,6 +206,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.delta",
+              "sql": "smallint",
+              "at": "tables/line.sql:18:5"
             }
           ]
         },
@@ -222,6 +250,13 @@
             {
               "rule": "precision-loss",
               "at": "procedures/account_stats.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
             }
           ]
         },
@@ -264,6 +299,13 @@
               "rule": "precision-loss",
               "at": "procedures/account_stats.sql:11:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.rate",
+              "sql": "decimal(19,6)",
+              "at": "tables/line.sql:8:5"
+            }
           ]
         },
         {
@@ -305,6 +347,13 @@
               "rule": "precision-loss",
               "at": "procedures/account_stats.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.discount",
+              "sql": "numeric(5,4)",
+              "at": "tables/line.sql:9:5"
+            }
           ]
         },
         {
@@ -342,6 +391,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:13:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -361,6 +417,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:14:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
             }
           ]
         },
@@ -403,6 +466,13 @@
               "rule": "precision-loss",
               "at": "procedures/account_stats.sql:15:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.frac",
+              "sql": "decimal(38,38)",
+              "at": "tables/line.sql:11:5"
+            }
           ]
         },
         {
@@ -418,6 +488,13 @@
             {
               "rule": "too-few-values",
               "at": "procedures/account_stats.sql:16:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
             }
           ]
         },
@@ -435,6 +512,13 @@
               "rule": "nullable-column",
               "at": "ledger.line.rate"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.rate",
+              "sql": "decimal(19,6)",
+              "at": "tables/line.sql:8:5"
+            }
           ]
         },
         {
@@ -451,6 +535,13 @@
               "rule": "too-few-values",
               "at": "procedures/account_stats.sql:18:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.fee",
+              "sql": "money",
+              "at": "tables/line.sql:12:5"
+            }
           ]
         },
         {
@@ -466,6 +557,13 @@
             {
               "rule": "nullable-column",
               "at": "ledger.line.score"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.score",
+              "sql": "real",
+              "at": "tables/line.sql:15:5"
             }
           ]
         },
@@ -490,6 +588,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/account_stats.sql:20:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.weight",
+              "sql": "float",
+              "at": "tables/line.sql:14:5"
             }
           ]
         }
@@ -541,6 +646,13 @@
               "rule": "precision-loss",
               "at": "procedures/account_stats.sql:25:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
           ]
         },
         {
@@ -561,6 +673,13 @@
               "rule": "too-few-values",
               "at": "procedures/account_stats.sql:26:8"
             }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "tables/line.sql:7:5"
+            }
           ]
         },
         {
@@ -576,6 +695,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/account_stats.sql:27:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "ledger.line.units",
+              "sql": "tinyint",
+              "at": "tables/line.sql:16:5"
             }
           ]
         }

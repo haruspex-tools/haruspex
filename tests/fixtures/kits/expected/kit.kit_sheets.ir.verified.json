@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -109,7 +109,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -151,7 +158,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -176,7 +190,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -200,7 +221,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -319,7 +347,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -361,7 +396,14 @@
             ]
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },

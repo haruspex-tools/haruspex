@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -76,7 +76,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Sales.OrderLines.Description",
+              "sql": "nvarchar(100)",
+              "at": "tables/OrderLines.sql:9:5"
+            }
+          ]
         },
         {
           "name": "quantity",
@@ -100,7 +107,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Sales.OrderLines.Quantity",
+              "sql": "int",
+              "at": "tables/OrderLines.sql:11:5"
+            }
+          ]
         },
         {
           "name": "unitPrice",
@@ -137,6 +151,13 @@
               "rule": "nullable-column",
               "at": "Sales.OrderLines.UnitPrice"
             }
+          ],
+          "from": [
+            {
+              "column": "Sales.OrderLines.UnitPrice",
+              "sql": "decimal(18,2)",
+              "at": "tables/OrderLines.sql:12:5"
+            }
           ]
         },
         {
@@ -170,7 +191,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Warehouse.StockItems.StockItemName",
+              "sql": "nvarchar(100)",
+              "at": "tables/StockItems.sql:7:5"
+            }
+          ]
         },
         {
           "name": "brand",
@@ -192,6 +220,13 @@
               "rule": "nullable-column",
               "at": "Warehouse.StockItems.Brand"
             }
+          ],
+          "from": [
+            {
+              "column": "Warehouse.StockItems.Brand",
+              "sql": "nvarchar(50)",
+              "at": "tables/StockItems.sql:12:5"
+            }
           ]
         },
         {
@@ -201,7 +236,14 @@
             "sql": "bit"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Warehouse.StockItems.IsChillerStock",
+              "sql": "bit",
+              "at": "tables/StockItems.sql:16:5"
+            }
+          ]
         }
       ]
     },
@@ -234,7 +276,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Sales.Orders.OrderID",
+              "sql": "int",
+              "at": "tables/Orders.sql:5:5"
+            }
+          ]
         },
         {
           "name": "orderDate",
@@ -243,7 +292,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Sales.Orders.OrderDate",
+              "sql": "date",
+              "at": "tables/Orders.sql:11:5"
+            }
+          ]
         },
         {
           "name": "expectedDelivery",
@@ -252,7 +308,14 @@
             "sql": "date"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Sales.Orders.ExpectedDeliveryDate",
+              "sql": "date",
+              "at": "tables/Orders.sql:12:5"
+            }
+          ]
         },
         {
           "name": "purchaseOrderNumber",
@@ -273,6 +336,13 @@
             {
               "rule": "nullable-column",
               "at": "Sales.Orders.CustomerPurchaseOrderNumber"
+            }
+          ],
+          "from": [
+            {
+              "column": "Sales.Orders.CustomerPurchaseOrderNumber",
+              "sql": "nvarchar(20)",
+              "at": "tables/Orders.sql:13:5"
             }
           ]
         },
@@ -325,7 +395,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "Application.People.FullName",
+              "sql": "nvarchar(50)",
+              "at": "tables/People.sql:6:5"
+            }
+          ]
         },
         {
           "name": "email",
@@ -346,6 +423,13 @@
             {
               "rule": "nullable-column",
               "at": "Application.People.EmailAddress"
+            }
+          ],
+          "from": [
+            {
+              "column": "Application.People.EmailAddress",
+              "sql": "nvarchar(256)",
+              "at": "tables/People.sql:19:5"
             }
           ]
         }

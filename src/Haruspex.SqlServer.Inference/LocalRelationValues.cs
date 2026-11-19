@@ -23,6 +23,12 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
     /// </summary>
     public bool AtLeastOne { get; init; }
 
+    /// <summary>
+    /// For each column, the table columns its value is read from (<c>Typer.Reads.cs</c>), so that a query over the relation traces
+    /// them through it; null where the relation doesn't trace them (a temporary table, a table-valued function).
+    /// </summary>
+    public EquatableArray<EquatableArray<IrSourceColumn>>? From { get; init; }
+
     /// <summary>Its unique keys, which only a view has here (see <see cref="Typer"/>'s <c>ViewKeys</c>).</summary>
     public EquatableArray<RelationKey> Keys { get; init; } = [];
 }

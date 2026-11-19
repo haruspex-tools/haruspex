@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.visit_id",
+              "sql": "int",
+              "at": "tables/visit.sql:2:5"
+            }
+          ]
         },
         {
           "name": "nth_visit",
@@ -206,7 +213,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
+          ]
         },
         {
           "name": "member_minutes",
@@ -239,6 +253,13 @@
             {
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_windows.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
             }
           ]
         },
@@ -273,6 +294,13 @@
             {
               "rule": "empty-frame",
               "at": "procedures/visit_windows.sql:11:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
             }
           ]
         },
@@ -311,6 +339,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/visit_windows.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
           ]
         },
         {
@@ -348,6 +383,13 @@
               "rule": "empty-frame",
               "at": "procedures/visit_windows.sql:13:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
           ]
         },
         {
@@ -358,7 +400,14 @@
             "sql": "datetime2(3)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.started_at",
+              "sql": "datetime2(3)",
+              "at": "tables/visit.sql:4:5"
+            }
+          ]
         },
         {
           "name": "best_tip",
@@ -395,6 +444,13 @@
               "rule": "nullable-column",
               "at": "gym.visit.tip"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.tip",
+              "sql": "smallmoney",
+              "at": "tables/visit.sql:8:5"
+            }
           ]
         },
         {
@@ -425,6 +481,13 @@
               "rule": "nullable-column",
               "at": "gym.visit.minutes"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
           ]
         },
         {
@@ -440,6 +503,13 @@
             {
               "rule": "window-edge",
               "at": "procedures/visit_windows.sql:17:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.started_at",
+              "sql": "datetime2(3)",
+              "at": "tables/visit.sql:4:5"
             }
           ]
         },
@@ -475,6 +545,13 @@
               "rule": "window-edge",
               "at": "procedures/visit_windows.sql:18:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
           ]
         },
         {
@@ -506,7 +583,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.fee",
+              "sql": "money",
+              "at": "tables/visit.sql:7:5"
+            }
+          ]
         },
         {
           "name": "room_after_next",
@@ -530,7 +614,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "same_room",
@@ -554,7 +645,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "first_room",
@@ -578,7 +676,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "next_room",
@@ -608,6 +713,13 @@
               "rule": "empty-frame",
               "at": "procedures/visit_windows.sql:23:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
           ]
         },
         {
@@ -623,6 +735,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.visit.minutes"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
             }
           ]
         },
@@ -648,7 +767,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.visit.room",
+              "sql": "tinyint",
+              "at": "tables/visit.sql:6:5"
+            }
+          ]
         },
         {
           "name": "median_minutes_taken",
@@ -677,6 +803,13 @@
             {
               "rule": "nullable-column",
               "at": "gym.visit.minutes"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
             }
           ]
         }

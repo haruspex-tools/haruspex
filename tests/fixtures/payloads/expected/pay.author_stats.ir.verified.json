@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -62,7 +62,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.author_id",
+              "sql": "int",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
         },
         {
           "name": "bookIds",
@@ -90,7 +97,14 @@
             "minItems": 1
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.book_id",
+              "sql": "int",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
         },
         {
           "name": "prices",
@@ -125,7 +139,19 @@
             "valuesNullable": false
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.title",
+              "sql": "nvarchar(60)",
+              "at": "tables/book.sql:5:5"
+            },
+            {
+              "column": "pay.book.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/book.sql:7:5"
+            }
+          ]
         }
       ]
     }

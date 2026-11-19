@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -96,7 +96,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.plan_name",
+              "sql": "varchar(10)",
+              "at": "tables/member.sql:6:5"
+            }
+          ]
         },
         {
           "name": "nicknames",
@@ -118,6 +125,18 @@
               "rule": "nullable-column",
               "at": "gym.member.nickname"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
           ]
         },
         {
@@ -134,7 +153,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            }
+          ]
         },
         {
           "name": "ids",
@@ -150,7 +176,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "gym.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -185,6 +218,13 @@
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:12:8"
             }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
           ]
         },
         {
@@ -203,6 +243,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:13:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.prefs",
+              "sql": "nvarchar(max)",
+              "at": "tables/member.sql:10:5"
             }
           ]
         },
@@ -225,6 +272,13 @@
             {
               "rule": "empty-aggregate",
               "at": "procedures/visit_totals.sql:14:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
             }
           ]
         }

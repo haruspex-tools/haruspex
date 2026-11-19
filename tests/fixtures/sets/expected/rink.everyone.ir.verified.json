@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            },
+            {
+              "column": "rink.guest.guest_id",
+              "sql": "int",
+              "at": "tables/guest.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -72,7 +84,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "rink.member.name",
+              "sql": "varchar(40)",
+              "at": "tables/member.sql:3:5"
+            },
+            {
+              "column": "rink.guest.name",
+              "sql": "varchar(30)",
+              "at": "tables/guest.sql:3:5"
+            }
+          ]
         },
         {
           "name": "contact",
@@ -97,6 +121,18 @@
             {
               "rule": "nullable-column",
               "at": "rink.guest.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.email",
+              "sql": "varchar(80)",
+              "at": "tables/member.sql:4:5"
+            },
+            {
+              "column": "rink.guest.phone",
+              "sql": "varchar(20)",
+              "at": "tables/guest.sql:4:5"
             }
           ]
         },
@@ -167,6 +203,13 @@
             {
               "rule": "null-literal",
               "at": "procedures/everyone.sql:10:46"
+            }
+          ],
+          "from": [
+            {
+              "column": "rink.member.level",
+              "sql": "varchar(10)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         }

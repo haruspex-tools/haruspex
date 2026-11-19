@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -104,7 +104,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
         },
         {
           "name": "amount",
@@ -135,7 +142,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/sale.sql:5:5"
+            }
+          ]
         },
         {
           "name": "note",
@@ -156,6 +170,13 @@
             {
               "rule": "nullable-column",
               "at": "flow.sale.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "flow.sale.note",
+              "sql": "nvarchar(40)",
+              "at": "tables/sale.sql:7:5"
             }
           ]
         }

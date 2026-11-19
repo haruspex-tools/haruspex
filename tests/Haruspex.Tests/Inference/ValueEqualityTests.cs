@@ -219,6 +219,18 @@ public class ValueEqualityTests
         ]);
     }
 
+    [Fact]
+    public void The_equality_of_fields_keeps_the_laws_and_leaves_out_the_columns_they_read()
+    {
+        var name = ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "nvarchar(10)"));
+        IrSourceColumn Column(string table) => new($"dbo.{table}.name", "nvarchar(10)", "t.sql:1:1");
+        FieldShape Field(string key, params string[] tables) => new(key, name, IrPresence.Always, []) { From = [.. tables.Select(Column)] };
+
+        EqualityLaws.Hold([Field("name"), Field("name", "t"), Field("name", "u"), Field("name", "t", "u"), Field("label"), Field("label", "t")]);
+        Assert.Equal(Field("name", "t"), Field("name", "u"));
+        Assert.NotEqual(Field("name", "t"), Field("label", "t"));
+    }
+
     /// <summary>
     /// Values and shapes drawn at random from small alphabets, every list and record built new, so that equal values are
     /// never the same objects.

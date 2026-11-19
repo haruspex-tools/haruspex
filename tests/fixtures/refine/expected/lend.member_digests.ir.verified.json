@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -53,6 +53,13 @@
             {
               "rule": "nullable-column",
               "at": "lend.member.nickname"
+            }
+          ],
+          "from": [
+            {
+              "column": "lend.member.nickname",
+              "sql": "nvarchar(20)",
+              "at": "tables/member.sql:5:5"
             }
           ]
         },
@@ -111,7 +118,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lend.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:2:5"
+            }
+          ]
         },
         {
           "name": "digest",

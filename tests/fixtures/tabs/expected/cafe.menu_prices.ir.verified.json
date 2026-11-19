@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -56,7 +56,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.item_id",
+              "sql": "int",
+              "at": "tables/menu_item.sql:2:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -72,7 +79,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.title",
+              "sql": "nvarchar(30)",
+              "at": "tables/menu_item.sql:3:5"
+            },
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
+          ]
         },
         {
           "name": "price_with_tax",
@@ -103,7 +122,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
+          ]
         },
         {
           "name": "pence",
@@ -133,6 +159,13 @@
               "rule": "arithmetic-overflow",
               "at": "procedures/menu_prices.sql:11:8"
             }
+          ],
+          "from": [
+            {
+              "column": "cafe.menu_item.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/menu_item.sql:4:5"
+            }
           ]
         },
         {
@@ -149,7 +182,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.short_code",
+              "sql": "char(4)",
+              "at": "tables/menu_item.sql:5:5"
+            }
+          ]
         },
         {
           "name": "ref",
@@ -165,7 +205,19 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cafe.menu_item.short_code",
+              "sql": "char(4)",
+              "at": "tables/menu_item.sql:5:5"
+            },
+            {
+              "column": "cafe.menu_item.item_id",
+              "sql": "int",
+              "at": "tables/menu_item.sql:2:5"
+            }
+          ]
         },
         {
           "name": "title_number",
@@ -194,6 +246,13 @@
             {
               "rule": "failed-conversion",
               "at": "procedures/menu_prices.sql:14:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "cafe.menu_item.title",
+              "sql": "nvarchar(30)",
+              "at": "tables/menu_item.sql:3:5"
             }
           ]
         }

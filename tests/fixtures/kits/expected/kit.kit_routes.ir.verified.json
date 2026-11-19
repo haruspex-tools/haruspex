@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -152,7 +152,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "colour",
@@ -173,6 +180,13 @@
             {
               "rule": "nullable-column",
               "at": "kit.kit_part.colour"
+            }
+          ],
+          "from": [
+            {
+              "column": "kit.kit_part.colour",
+              "sql": "nvarchar(10)",
+              "at": "tables/kit_part.sql:7:5"
             }
           ]
         }
@@ -232,7 +246,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.kit_id",
+              "sql": "int",
+              "at": "tables/kit.sql:3:5"
+            }
+          ]
         },
         {
           "name": "view_parts",
@@ -258,7 +279,19 @@
             "ref": "KitRoutesViewSummary"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/kit.sql:4:5"
+            },
+            {
+              "column": "kit.kit.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/kit.sql:5:5"
+            }
+          ]
         },
         {
           "name": "inline_parts",
@@ -309,7 +342,14 @@
             "ref": "KitRoutesCtePrice"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/kit.sql:5:5"
+            }
+          ]
         },
         {
           "name": "derived_card",
@@ -317,7 +357,14 @@
             "ref": "KitRoutesDerivedCard"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit.kit_id",
+              "sql": "int",
+              "at": "tables/kit.sql:3:5"
+            }
+          ]
         },
         {
           "name": "into_summary",
@@ -350,7 +397,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -374,7 +428,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -399,7 +460,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.sku",
+              "sql": "varchar(8)",
+              "at": "tables/kit_part.sql:5:5"
+            }
+          ]
         },
         {
           "name": "qty",
@@ -423,7 +491,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "kit.kit_part.qty",
+              "sql": "tinyint",
+              "at": "tables/kit_part.sql:6:5"
+            }
+          ]
         }
       ]
     },

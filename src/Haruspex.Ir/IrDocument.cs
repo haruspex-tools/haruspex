@@ -19,34 +19,47 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that combines two databases is written in. The IR is versioned
-    /// separately from the tool, because it is a file that other programs read: a change that would break a reader changes
-    /// this.
+    /// The newest IR format version, the one a document that says where a field's value came from is written in (0.25): a
+    /// field's source columns (<see cref="IrField.From"/>) and, combined, each database's field (<see cref="IrField.Sides"/>).
+    /// The IR is versioned separately from the tool, because it is a file that other programs read: a change that would break a
+    /// reader changes this.
     /// </summary>
-    public const string CurrentVersion = "0.24";
+    public const string CurrentVersion = "0.25";
 
     /// <summary>
-    /// The version a document of one database is written in: 0.24 added only what a combined document says (a source's
-    /// <see cref="IrSource.Baseline"/>, the presence <see cref="IrPresence.Optional"/> and the null rule
-    /// <see cref="IrNullRule.NotInBoth"/>), so a document without them is a 0.23 document that means the same, and is labelled
-    /// so: a run without a baseline writes what it wrote before, and a 0.23 reader still reads it.
+    /// The version a document that combines two databases and says nothing of where its fields came from is written in: 0.24
+    /// added only what a combined document says (a source's <see cref="IrSource.Baseline"/>, the presence
+    /// <see cref="IrPresence.Optional"/> and the null rule <see cref="IrNullRule.NotInBoth"/>).
+    /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
+    /// </summary>
+    public const string CombinedVersion = "0.24";
+
+    /// <summary>
+    /// The version a document of one database that says nothing of where its fields came from is written in: a 0.24 or 0.25
+    /// document without what those added means what it meant in 0.23, and is labelled so, so that a 0.23 reader still reads it.
     /// Why: docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md.
     /// </summary>
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.23, every document of which is a 0.24 document
-    /// of one database that means the same. 0.23 added a result set's name (<see cref="IrResult.Name"/>), which decides the shape
-    /// of the procedure's function, and whether a type's name was declared (<see cref="IrObjectType.NameDeclared"/>), which a 0.22
-    /// file doesn't say; so no 0.22 file means what a 0.23 file of its source does.
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.24 and 0.23, every document of which is a 0.25
+    /// document that says nothing of where its fields came from, meaning the same. 0.23 added a result set's name
+    /// (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
+    /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
+    /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
-    /// The version this document is written in: <see cref="CurrentVersion"/> when it combines two databases, and
-    /// <see cref="OneDatabaseVersion"/> otherwise.
+    /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
+    /// <see cref="CurrentVersion"/> when a field says where its value came from, which a document inferred from SQL almost always
+    /// does; else <see cref="CombinedVersion"/> when it combines two databases; else <see cref="OneDatabaseVersion"/>.
+    /// Why: docs/decisions/0078-the-ir-says-where-each-field-came-from.md.
     /// </summary>
-    public string Version => Source.Baseline is null ? OneDatabaseVersion : CurrentVersion;
+    public string Version =>
+        Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) ? CurrentVersion
+        : Source.Baseline is null ? OneDatabaseVersion
+        : CombinedVersion;
 
     /// <summary>
     /// The claims made by the config file rather than inferred: a nullability, a type or a value set an override

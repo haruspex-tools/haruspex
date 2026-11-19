@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -94,7 +94,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.oven_id",
+              "sql": "int",
+              "at": "tables/oven.sql:3:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -110,7 +117,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.oven.label",
+              "sql": "nvarchar(20)",
+              "at": "tables/oven.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -143,7 +157,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.batch_id",
+              "sql": "int",
+              "at": "tables/batch.sql:3:5"
+            }
+          ]
         },
         {
           "name": "product",
@@ -159,7 +180,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.product",
+              "sql": "nvarchar(30)",
+              "at": "tables/batch.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -192,7 +220,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.batch_id",
+              "sql": "int",
+              "at": "tables/batch.sql:3:5"
+            }
+          ]
         },
         {
           "name": "product",
@@ -208,7 +243,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "calls.batch.product",
+              "sql": "nvarchar(30)",
+              "at": "tables/batch.sql:5:5"
+            }
+          ]
         }
       ]
     }

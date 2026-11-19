@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -407,7 +407,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "prefs",
@@ -422,6 +429,12 @@
             {
               "rule": "nullable-column",
               "at": "admin.users.prefs"
+            }
+          ],
+          "from": [
+            {
+              "column": "admin.users.prefs",
+              "at": "tables/users.sql:5:5"
             }
           ]
         }
@@ -456,7 +469,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -487,7 +507,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -520,7 +547,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -536,7 +570,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/products.sql:3:5"
+            }
+          ]
         },
         {
           "name": "price",
@@ -567,7 +608,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.price",
+              "sql": "decimal(9,2)",
+              "at": "tables/products.sql:4:5"
+            }
+          ]
         }
       ]
     },
@@ -600,7 +648,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -631,7 +686,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -664,7 +726,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         }
       ]
     },
@@ -697,7 +766,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "orders",
@@ -751,7 +827,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -767,7 +850,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -800,7 +890,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -816,7 +913,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -849,7 +953,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.user_id",
+              "sql": "int",
+              "at": "tables/users.sql:2:5"
+            }
+          ]
         },
         {
           "name": "login",
@@ -865,7 +976,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "admin.users.login",
+              "sql": "varchar(30)",
+              "at": "tables/users.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -931,7 +1049,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "status",
@@ -962,7 +1087,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.status",
+              "sql": "varchar(10)",
+              "at": "tables/orders.sql:6:5"
+            }
+          ]
         }
       ]
     },
@@ -996,7 +1128,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:2:5"
+            }
+          ]
         },
         {
           "name": "total",
@@ -1027,7 +1166,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.orders.total",
+              "sql": "decimal(9,2)",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -1060,7 +1206,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.product_id",
+              "sql": "int",
+              "at": "tables/products.sql:2:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -1076,7 +1229,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "shop.products.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/products.sql:3:5"
+            }
+          ]
         }
       ]
     }

@@ -171,7 +171,10 @@ internal sealed partial class Typer(
             switch (element)
             {
                 case SelectScalarExpression scalar:
-                    columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, row), At(scalar), Origin(scalar.Expression, scope), scalar.Expression));
+                    columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, row), At(scalar), Origin(scalar.Expression, scope), scalar.Expression)
+                    {
+                        From = Reads(scalar.Expression, row),
+                    });
                     break;
                 case SelectStarExpression all:
                     unlisted ??= Expand(all, row, columns);
@@ -233,7 +236,8 @@ internal sealed partial class Typer(
             // A rowset column delivers JSON as text: the driver sees an nvarchar. Its content is what it parses to.
             c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
             IrPresence.Always,
-            c.Value.NullableBecause));
+            c.Value.NullableBecause)
+        { From = c.From });
         return new ArrayShape(new ObjectShape([.. fields]), []);
     }
 
@@ -341,7 +345,7 @@ internal sealed partial class Typer(
                 // FOR JSON leaves out a key whose value is null, unless INCLUDE_NULL_VALUES keeps it as null.
                 // Live JSON keeps its shape; JSON text (JsonTextShape) is escaped into a string.
                 var presence = value.NullableBecause.Count > 0 && !includeNulls ? IrPresence.OmittedWhenNull : IrPresence.Always;
-                fields.Add(new FieldShape(key, value.Shape, presence, value.NullableBecause));
+                fields.Add(new FieldShape(key, value.Shape, presence, value.NullableBecause) { From = leaf.From });
                 continue;
             }
 

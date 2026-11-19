@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -154,7 +154,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.plant_id",
+              "sql": "int",
+              "at": "tables/plants.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -170,7 +177,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/plants.sql:4:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -199,7 +213,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.kind",
+              "sql": "nvarchar(10)",
+              "at": "tables/plants.sql:5:5"
+            }
+          ]
         },
         {
           "name": "water_log",
@@ -236,7 +257,14 @@
             "sql": "datetime2(0)"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.water_log.watered_at",
+              "sql": "datetime2(0)",
+              "at": "tables/plants.sql:13:5"
+            }
+          ]
         },
         {
           "name": "litres",
@@ -267,7 +295,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.water_log.litres",
+              "sql": "decimal(5,2)",
+              "at": "tables/plants.sql:14:5"
+            }
+          ]
         }
       ]
     },
@@ -300,7 +335,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.plant_id",
+              "sql": "int",
+              "at": "tables/plants.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -316,7 +358,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/plants.sql:4:5"
+            }
+          ]
         },
         {
           "name": "kind",
@@ -345,7 +394,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.kind",
+              "sql": "nvarchar(10)",
+              "at": "tables/plants.sql:5:5"
+            }
+          ]
         },
         {
           "name": "planted",
@@ -359,6 +415,13 @@
             {
               "rule": "nullable-column",
               "at": "garden.plant.planted"
+            }
+          ],
+          "from": [
+            {
+              "column": "garden.plant.planted",
+              "sql": "date",
+              "at": "tables/plants.sql:6:5"
             }
           ]
         }
@@ -393,7 +456,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.plant_id",
+              "sql": "int",
+              "at": "tables/plants.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -409,7 +479,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "garden.plant.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/plants.sql:4:5"
+            }
+          ]
         },
         {
           "name": "last_watered",
@@ -424,6 +501,13 @@
             {
               "rule": "unmatched-row",
               "at": "queries/thirsty_plants.sql:6:11"
+            }
+          ],
+          "from": [
+            {
+              "column": "garden.water_log.watered_at",
+              "sql": "datetime2(0)",
+              "at": "tables/plants.sql:13:5"
             }
           ]
         }

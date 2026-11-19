@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -130,7 +130,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.item.item_id",
+              "sql": "int",
+              "at": "tables/item.sql:3:5"
+            }
+          ]
         },
         {
           "name": "title",
@@ -146,7 +153,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.item.title",
+              "sql": "nvarchar(20)",
+              "at": "tables/item.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -180,7 +194,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.category_id",
+              "sql": "int",
+              "at": "tables/category.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -196,7 +217,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/category.sql:5:5"
+            }
+          ]
         },
         {
           "name": "contents",
@@ -204,7 +232,14 @@
             "ref": "CategoryContentsNode"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.category_id",
+              "sql": "int",
+              "at": "tables/category.sql:3:5"
+            }
+          ]
         }
       ]
     },
@@ -237,7 +272,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.category_id",
+              "sql": "int",
+              "at": "tables/category.sql:3:5"
+            }
+          ]
         },
         {
           "name": "name",
@@ -253,7 +295,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/category.sql:5:5"
+            }
+          ]
         },
         {
           "name": "subcategories",
@@ -271,6 +320,13 @@
               "rule": "empty-subquery",
               "at": "functions/category_tree.sql:6:12"
             }
+          ],
+          "from": [
+            {
+              "column": "cat.category.category_id",
+              "sql": "int",
+              "at": "tables/category.sql:3:5"
+            }
           ]
         },
         {
@@ -279,7 +335,14 @@
             "ref": "CategoryContentsNode"
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "cat.category.category_id",
+              "sql": "int",
+              "at": "tables/category.sql:3:5"
+            }
+          ]
         }
       ]
     }

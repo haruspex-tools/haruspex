@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.23",
+  "irVersion": "0.25",
   "source": {
     "dialect": "tsql"
   },
@@ -67,7 +67,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.member_id",
+              "sql": "int",
+              "at": "tables/member.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -83,7 +90,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.member.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/member.sql:5:5"
+            }
+          ]
         }
       ]
     },
@@ -116,7 +130,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dbo.shelf.shelf_id",
+              "sql": "int",
+              "at": "tables/shelf.sql:4:5"
+            }
+          ]
         },
         {
           "name": "label",
@@ -132,7 +153,14 @@
             }
           },
           "presence": "always",
-          "nullable": false
+          "nullable": false,
+          "from": [
+            {
+              "column": "dbo.shelf.label",
+              "sql": "varchar(10)",
+              "at": "tables/shelf.sql:5:5"
+            }
+          ]
         }
       ]
     }
