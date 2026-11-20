@@ -90,6 +90,10 @@ public partial class JsonAssembledTests
     [InlineData("N'{\"id\":1,\"id\":' + convert(nvarchar(max), o.order_id) + N'}'")]
     [InlineData("N'{' + concat_ws(N',', N'\"id\":1', CASE WHEN o.channel = 'r' THEN N'\"id\":\"r\"' END) + N'}'")]
     [InlineData("N'{\"id\":1,' + concat_ws(N',', N'\"x\":2', N'\"id\":3') + N'}'")]
+    // A literal key under string_agg is written once for each row.
+    [InlineData("N'{' + coalesce((SELECT string_agg(N'\"p\":' + convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = o.order_id), N'') + N'}'")]
+    // Keys are compared by the names they decode to, not by how they are spelled: an escape of a is a.
+    [InlineData("N'{\"a\":1,\"\\u0061\":' + convert(nvarchar(max), o.order_id) + N'}'")]
     public void A_key_that_may_be_written_twice_is_unknown(string text)
     {
         var doc = Procedure(Read(text));
@@ -226,14 +230,29 @@ public partial class JsonAssembledTests
         Assert.Contains(why, Unknown(doc, "v").Detail, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Brackets_that_balance_on_no_way_are_never_json_and_describe_no_call()
+    [Theory]
+    // {"lines":[1} is refused (13609) whatever the value, and so is a bracket closed by the other kind, so no shape is claimed
+    // from the text.
+    [InlineData("N'{\"lines\":[' + convert(nvarchar(max), o.order_id) + N'}'")]
+    [InlineData("concat(N'{\"a\":[', o.order_id, N'}}')")]
+    [InlineData("concat(N'[{\"a\":', o.order_id, N']]')")]
+    public void Brackets_that_balance_on_no_way_are_never_json_and_describe_no_call(string text)
     {
-        // {"lines":[1} is refused (13609) whatever the value, so no shape is claimed from the text.
-        var doc = Procedure(Read($"N'{{\"lines\":[' + {Id} + N'}}'"));
+        var doc = Procedure(Read(text));
 
         Assert.IsType<IrUnknownType>(Field(doc, "v").Type);
         Assert.DoesNotContain("JSON assembled as text", Unknown(doc, "v").Detail, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // The text before a cut is read; what the cut may shorten, and what follows it, is not known.
+    [InlineData("N'{\"a\":\"' + cast(string_escape(o.ref, 'json') AS nvarchar(5)) + N'\"}'")]
+    [InlineData("N'[\"' + cast(string_escape(o.ref, 'json') AS nvarchar(5)) + N'\"]'")]
+    public void A_value_cut_short_inside_quotes_is_unknown_since_what_follows_comes_after_the_cut(string text)
+    {
+        var doc = Procedure(Read(text));
+
+        Assert.Contains("which may be cut short, is followed by more text", Unknown(doc, "v").Detail, StringComparison.Ordinal);
     }
 
     [Fact]

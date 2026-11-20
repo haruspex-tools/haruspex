@@ -63,9 +63,15 @@ internal sealed partial class Typer
         for (var i = 0; i < operands.Count; i++)
         {
             var (operand, expression) = operands[i];
-            pieces.AddRange(i < operands.Count - 1 && CutAtEnd(operand) is { } atLimit && (max || !atLimit)
-                ? [new OpaquePiece($"{Text(expression)}, which may be cut short,", At(expression))]
-                : operand);
+            if (i == operands.Count - 1 || CutAtEnd(operand) is not { } atLimit || (!max && atLimit))
+            {
+                pieces.AddRange(operand);
+                continue;
+            }
+
+            // The text before a cut is written whole; only what the cut may shorten, and so what follows it, is not known.
+            var cut = new OpaquePiece($"{Text(expression)}, which may be cut short,", At(expression), CutShort: true);
+            pieces.AddRange(operand[^1] is CutPiece ? [.. operand.Take(operand.Count - 1), cut] : [cut]);
         }
 
         return mayBeCut ? [new CutPiece([.. pieces], AtTypeLimit: true)] : [.. pieces];
@@ -76,7 +82,7 @@ internal sealed partial class Typer
     /// unfinished before the separator, so it is read as text that may be anything.
     /// </summary>
     private EquatableArray<TextPiece> Whole(EquatableArray<TextPiece> pieces, ScalarExpression expression) =>
-        CutAtEnd(pieces) is null ? pieces : [new OpaquePiece($"{Text(expression)}, which may be cut short,", At(expression))];
+        CutAtEnd(pieces) is null ? pieces : [new OpaquePiece($"{Text(expression)}, which may be cut short,", At(expression), CutShort: true)];
 
     /// <summary>
     /// What a value converted to a string type is as text: a string's own pieces, cut short when the type is shorter (and none

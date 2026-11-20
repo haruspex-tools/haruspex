@@ -197,6 +197,7 @@ internal static partial class JsonAssembly
                         JsonPiece json => Json(json.Content, i == 0),
                         ListPiece list => List(list),
                         JoinedPiece joined => Joined(joined),
+                        OpaquePiece { CutShort: true } cut => Stop(CutBefore(cut)),
                         OpaquePiece opaque => Stop(Now is State.InString or State.InKey ? Unquoted(opaque) : Unknown($"{opaque.What} is written into the JSON as text, which may not be one JSON value", opaque.At)),
                         _ => Stop("text this does not read is written into the JSON", at),
                     };

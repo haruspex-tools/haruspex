@@ -23,10 +23,27 @@ public partial class JsonAssembledObservationTests
     }
 
     [Fact]
-    public async Task A_key_written_with_escapes_is_read_as_the_name_they_make() =>
+    public async Task A_key_written_with_escapes_is_read_as_the_name_they_make()
+    {
+        // The backslash is built on the server with nchar(92), so no client or tool on the way decodes an escape before the
+        // server reads it. OPENJSON reads each key as the name it decodes to: a quotation mark, a backslash, and the letter e
+        // from its escape. json_query, in FOR JSON, keeps a key as it is spelled: the escape of e stays six characters.
         Assert.Equal(
-            """key: a"b;c\d;e""",
-            await Select("""SELECT [key] FROM OPENJSON(json_query(N'{"a\"b":' + convert(nvarchar(max), 1) + N',"c\\d":2,"e":3}'));"""));
+            """key,u: a"b,null;cBd,null;e,101""".Replace('B', '\\'),
+            await Select("""
+                DECLARE @b nchar(1) = nchar(92);
+                SELECT [key], CASE WHEN len([key]) = 1 THEN unicode([key]) END AS u
+                FROM OPENJSON(json_query(N'{"a' + @b + N'"b":' + convert(nvarchar(max), 1) + N',"c' + @b + @b + N'd":2,"' + @b + N'u0065":3}'));
+                """));
+        Assert.Equal(
+            "length,kept: 12,1",
+            await Select("""
+                DECLARE @b nchar(1) = nchar(92);
+                DECLARE @j nvarchar(max) = N'{"' + @b + N'u0065":3}';
+                SELECT len(@j) AS length,
+                    CASE WHEN (SELECT json_query(@j) AS v FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) = N'{"v":' + @j + N'}' THEN 1 ELSE 0 END AS kept;
+                """));
+    }
 
     [Fact]
     public async Task Keys_built_from_data_may_repeat_and_are_kept_as_written()

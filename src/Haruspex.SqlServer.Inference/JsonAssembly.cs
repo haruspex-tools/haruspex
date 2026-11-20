@@ -246,6 +246,9 @@ internal static partial class JsonAssembly
                     case NumberPiece number:
                         parts.Add(number.Text);
                         break;
+                    case OpaquePiece { CutShort: true } cut:
+                        unknown = CutBefore(cut);
+                        return null;
                     case OpaquePiece opaque:
                         unknown = Unquoted(opaque);
                         return null;
@@ -324,6 +327,10 @@ internal static partial class JsonAssembly
 
     private static UnknownShape Unknown(string why, SourceLocation at) =>
         new(IrUnknownReason.JsonShapeUnknown, $"JSON assembled as text, where {why}, so its shape is not known.", at);
+
+    /// <summary>Text that may be cut short with more after it: what follows comes after a cut that may fall anywhere.</summary>
+    private static UnknownShape CutBefore(OpaquePiece cut) =>
+        Unknown($"{cut.What} is followed by more text, which would come after a cut that may fall anywhere", cut.At);
 
     private static UnknownShape Unquoted(OpaquePiece opaque) => Unknown(
         $"{opaque.What} is written inside quotes without string_escape(…, 'json'), so a value holding a quotation mark, a backslash or a control character would change the JSON",
