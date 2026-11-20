@@ -75,8 +75,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             case AlterTableStatement alterTable:
                 ReadAlterTable(alterTable);
                 break;
-            case CreateIndexStatement { Unique: true, FilterPredicate: null, OnName.SchemaIdentifier: not null } index
-                when !index.OnName.BaseIdentifier.Value.StartsWith('#'):
+            case CreateIndexStatement { Unique: true, FilterPredicate: null } index when NamesThisDatabasesTable(index.OnName):
                 // As a key ALTER TABLE adds (AddedKey), and passed over in the same places.
                 into.AddedKeys.Add(new AddedKey(SyntaxReader.Name(index.OnName), SyntaxReader.Key(index, SyntaxReader.Span(file, index))));
                 break;
@@ -292,13 +291,21 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         if (statement is not AlterTableAddTableElementStatement add)
             return;
         ReadCascadingKeys(name, add.Definition);
-        if (add.Definition.ColumnDefinitions.Count == 0 && statement.SchemaObjectName.SchemaIdentifier is not null)
+        if (add.Definition.ColumnDefinitions.Count == 0 && NamesThisDatabasesTable(statement.SchemaObjectName))
         {
             var span = SyntaxReader.Span(file, statement);
             foreach (var key in add.Definition.TableConstraints.OfType<UniqueConstraintDefinition>())
                 into.AddedKeys.Add(new AddedKey(name, SyntaxReader.Key(key, span)));
         }
     }
+
+    /// <summary>
+    /// Whether a key added to the table <paramref name="name"/> names a table of this database for certain: with its schema (without
+    /// it, SQL Server looks in the caller's default schema first) and without a database or server, which would name another
+    /// database's table of the same schema and name. Not a temporary table, whose keys aren't modelled.
+    /// </summary>
+    private static bool NamesThisDatabasesTable(SchemaObjectName name) =>
+        name is { SchemaIdentifier: not null, DatabaseIdentifier: null, ServerIdentifier: null } && !name.BaseIdentifier.Value.StartsWith('#');
 
     /// <summary>
     /// ALTER TABLE forms that cannot make a column nullable, change its type, or add or remove one: adding a

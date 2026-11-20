@@ -97,12 +97,14 @@ public partial class RefinementTests
     [InlineData("ALTER TABLE dbo.k ADD CONSTRAINT uq_k_missing UNIQUE (missing);", IrCardinality.Many)]
     [InlineData("ALTER TABLE dbo.other ADD CONSTRAINT uq_other_code UNIQUE (code);", IrCardinality.Many)]
     [InlineData("ALTER TABLE k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
+    [InlineData("ALTER TABLE archive.dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
     [InlineData("CREATE PROCEDURE dbo.setup AS ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
     [InlineData("IF 1 = 1 ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);", IrCardinality.Many)]
     public void A_key_added_by_alter_table_with_its_schema_is_a_key(string alter, IrCardinality expected)
     {
         // A_key_added_by_alter_table_is_enforced_as_one_the_table_declares: as a key in CREATE TABLE, WITH NOCHECK or not, and an
-        // index disable undoes it. Without its schema the name may be another table's; in a body or under IF it may never run.
+        // index disable undoes it. Without its schema the name may be another table's, and with a database or server it is another
+        // database's; in a body or under IF it may never run.
         var doc = Infer(
             ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL);\nGO\nCREATE TABLE dbo.other (id int NOT NULL, code int NOT NULL);"),
             ("alter.sql", alter),
@@ -118,6 +120,7 @@ public partial class RefinementTests
     [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code) WHERE code > 0;", IrCardinality.Many)]
     [InlineData("CREATE INDEX ix_k_code ON dbo.k (code);", IrCardinality.Many)]
     [InlineData("CREATE UNIQUE INDEX ux_k_code ON k (code);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON archive.dbo.k (code);", IrCardinality.Many)]
     [InlineData("CREATE UNIQUE INDEX ux_k_missing ON dbo.k (missing);", IrCardinality.Many)]
     [InlineData("CREATE UNIQUE INDEX ux_other_code ON dbo.other (code);", IrCardinality.Many)]
     [InlineData("CREATE PROCEDURE dbo.setup AS CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);", IrCardinality.Many)]

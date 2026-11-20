@@ -4,7 +4,8 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// A primary key, unique constraint or unique index added to a table after its definition, by <c>ALTER TABLE … ADD
-/// CONSTRAINT</c> or <c>CREATE UNIQUE INDEX</c> without a filter, in a statement of a batch, naming the table with its schema.
+/// CONSTRAINT</c> or <c>CREATE UNIQUE INDEX</c> without a filter, in a statement of a batch, naming the table with its schema
+/// and no database or server (one with either is another database's table).
 /// AdventureWorks adds every key this way.
 /// </summary>
 /// <remarks>

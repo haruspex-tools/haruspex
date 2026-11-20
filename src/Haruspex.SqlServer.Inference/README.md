@@ -1226,7 +1226,7 @@ subquery an aggregate query.
 **Keys.** A source is fixed when every column of one of its enforced keys (`SchemaRules.EnforcedKeys`: the primary key,
 unique constraints and unfiltered unique indexes of its definition, and the primary key and unique constraints an
 `ALTER TABLE … ADD CONSTRAINT` adds and the unfiltered unique indexes a `CREATE UNIQUE INDEX` adds, each a statement of a batch
-naming the table with its schema, which are enforced as the definition's are
+naming the table with its schema and no database or server, which are enforced as the definition's are
 (`A_key_added_by_alter_table_is_enforced_as_one_the_table_declares`,
 `A_unique_index_created_after_its_table_is_enforced_as_one_the_table_declares`), less any an `ALTER INDEX … DISABLE`, a drop or
 an index that replaces it (`DROP_EXISTING`) anywhere may have disabled: a filtered unique index allows duplicates outside its
@@ -1271,7 +1271,7 @@ carry no `COLLATE` of its own (`Cardinality.InKeysType` lists them).
 
 Not modelled yet: keys of temporary tables (declared, or added by `CREATE UNIQUE INDEX` or `ALTER TABLE`), table variables,
 CTEs and derived tables (a derived table's at-most-one bound is); a key added by a statement in a body or under `IF`, or naming
-its table without its schema; `AVG`; refinement of `UPDATE … FROM` and
+its table without its schema, or with a database or server; `AVG`; refinement of `UPDATE … FROM` and
 `SELECT @v = …` by their filters. Each only claims less.
 
 ## APPLY

@@ -150,9 +150,10 @@ public static class SchemaRules
 
     /// <summary>
     /// Whether a column of <c>char(n)</c> or <c>binary(n)</c> may hold values shorter than n, its padding cut: a nullable one of a
-    /// table created while <c>ANSI_PADDING</c> is off does (<see cref="ScalarType.IsPaddingCutWithoutAnsiPadding"/>), and the
-    /// source doesn't say which tables were. A script may set it off before a <c>CREATE TABLE</c>, and the caller's session
-    /// decides it for a temporary table a body makes. A column that is never null pads under either setting, and so do a table
+    /// table created while <c>ANSI_PADDING</c> is off does (<see cref="ScalarType.IsPaddingCutWithoutAnsiPadding"/>). A script may
+    /// set it off before a <c>CREATE TABLE</c>, and the caller's session decides it for a temporary table a body makes, neither of
+    /// which the model follows; a DACPAC records it per table, which is not read either, so the rule is the same for every
+    /// source and only claims less where padding was on. A column that is never null pads under either setting, and so do a table
     /// type's columns and a table variable's, of a type or not (observed:
     /// A_table_type_created_with_ansi_padding_off_pads_its_nullable_char_and_binary_columns,
     /// A_nullable_char_column_a_body_creates_is_cut_under_its_callers_ansi_padding_off_but_a_table_variable_s_pads).
