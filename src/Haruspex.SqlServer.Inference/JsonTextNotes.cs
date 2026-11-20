@@ -22,8 +22,11 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 internal static class JsonTextNotes
 {
-    /// <summary>A note for each place JSON is built as text, in the order of their files and positions.</summary>
-    public static IEnumerable<Diagnostic> In(DatabaseModel model, IReadOnlyList<QueryFile> queries)
+    /// <summary>
+    /// A note for each place JSON is built as text, in the order of their files and positions: those found in the SQL, and those
+    /// typing found where it reads such text (<paramref name="read"/>), each place once.
+    /// </summary>
+    public static IEnumerable<Diagnostic> In(DatabaseModel model, IReadOnlyList<QueryFile> queries, IEnumerable<Diagnostic> read)
     {
         var bodies = new List<(SourceSpan Span, TSqlFragment? Body)>();
         bodies.AddRange(model.Procedures.Select(p => (p.Span, (TSqlFragment?)Statements(p.Body))));
@@ -44,15 +47,26 @@ internal static class JsonTextNotes
                 continue;
             var finder = new Finder();
             body.Accept(finder);
-            notes.AddRange(finder.Found.Select(f => (span.At(f.Expression), InferenceCodes.JsonBuiltAsText.At(span.At(f.Expression), Message(f.Expression, f.Aggregated)))));
+            notes.AddRange(finder.Found.Select(f => (span.At(f.Expression), Note(span.At(f.Expression), f.Expression, f.Aggregated))));
         }
 
+        var found = notes.Select(n => n.At).ToHashSet();
+        foreach (var note in read)
+        {
+            if (note.At is SourceLocation at && !found.Contains(at))
+                notes.Add((at, note));
+        }
         return notes
             .OrderBy(n => n.At.File, StringComparer.Ordinal).ThenBy(n => n.At.Line).ThenBy(n => n.At.Column)
             .Select(n => n.Note);
     }
 
     private static StatementList? Statements(ModuleBody body) => body is SqlBody { Statements: var statements } ? statements : null;
+
+    /// <summary>The note for JSON built as text by <paramref name="expression"/>, at <paramref name="at"/>.</summary>
+    /// <param name="aggregated">Whether it holds a <c>string_agg</c>, which <c>json_arrayagg</c> replaces; else <c>json_array</c> does.</param>
+    public static Diagnostic Note(SourceLocation at, ScalarExpression expression, bool aggregated) =>
+        InferenceCodes.JsonBuiltAsText.At(at, Message(expression, aggregated));
 
     private static string Message(ScalarExpression expression, bool aggregated) => aggregated
         ? $"{FragmentText.OneLine(expression)} builds a JSON array as text; build it with json_arrayagg(…) (SQL Server 2025, Azure SQL), which escapes each value and which haruspex types exactly. Like string_agg, it is NULL over no rows."

@@ -558,7 +558,7 @@ internal sealed partial class Typer(
             return argument;
         if (argument.Shape is JsonTextShape { Content: { } shape })
             return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, argument.NullableBecause, IsLiveJson: true);
-        if (Assembled(argument, At(call)) is { } assembled)
+        if (Assembled(argument, call.Parameters[0]) is { } assembled)
             return assembled is UnknownShape notKnown ? Value.Unknown(notKnown) : new Value(assembled, argument.NullableBecause, IsLiveJson: true);
         if (argument.JsonWhy is { } why)
             return Value.Unknown(why);

@@ -35,7 +35,7 @@ public partial class DiagnosticPagesTests
         foreach (var (name, code) in Codes)
         {
             var page = Page(name);
-            var heading = $"# {name}: {char.ToLowerInvariant(code.Title[0])}{code.Title[1..]}\n";
+            var heading = $"# {name}: {SentenceCase(code.Title)}\n";
             var severity = $"**{code.Severity}.**";
             if (!page.StartsWith(heading, StringComparison.Ordinal))
                 wrong.Add($"{name}: the page should start \"{heading.TrimEnd()}\"");
@@ -47,6 +47,13 @@ public partial class DiagnosticPagesTests
 
         Assert.Empty(wrong);
     }
+
+    /// <summary>
+    /// A title as a heading in the middle of a line writes it: its first letter lower case, unless it begins an acronym
+    /// (<c>JSON whose shape isn't visible</c>), which keeps its case.
+    /// </summary>
+    private static string SentenceCase(string title) =>
+        title.Length > 1 && char.IsUpper(title[1]) ? title : $"{char.ToLowerInvariant(title[0])}{title[1..]}";
 
     [Fact]
     public void Each_page_shows_as_its_example_the_line_its_code_is_reported_with()

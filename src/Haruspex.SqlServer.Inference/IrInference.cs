@@ -66,7 +66,7 @@ public static class IrInference
 
         // JSON built as text, wherever the project writes it, whether or not anything reads it as JSON
         // (docs/decisions/0085-json-built-as-text-is-a-note-wherever-it-is-written.md).
-        warnings.AddRange(JsonTextNotes.In(model, queries));
+        warnings.AddRange(JsonTextNotes.In(model, queries, summaries.JsonText));
         return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds }, [.. warnings]);
     }
 }

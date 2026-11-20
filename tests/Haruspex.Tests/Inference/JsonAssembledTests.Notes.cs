@@ -7,12 +7,16 @@ public partial class JsonAssembledTests
 {
     /// <summary>The notes of JSON built as text that inferring <c>dbo.p</c>, beside <paramref name="more"/>, gives: where, and the expression's start.</summary>
     private static List<string> Notes(string body, string more = "") =>
+        [.. Messages(body, more).Select(m => m[..m.IndexOf(" builds", StringComparison.Ordinal)])];
+
+    /// <summary>The whole notes, where and what, of JSON built as text that inferring <c>dbo.p</c> gives.</summary>
+    private static List<string> Messages(string body, string more = "") =>
         [.. InferProcedure.Inferred(
                 "dbo.p",
                 [("tables.sql", Tables), .. more.Length > 0 ? [("more.sql", more)] : System.Array.Empty<(string, string)>(), ("p.sql", $"CREATE PROCEDURE dbo.p @id int AS\n{body}")])
             .Diagnostics
             .Where(d => d.Code == InferenceCodes.JsonBuiltAsText)
-            .Select(d => $"{d.At}: {d.Message[..d.Message.IndexOf(" builds", StringComparison.Ordinal)]}")];
+            .Select(d => $"{d.At}: {d.Message}")];
 
     [Fact]
     public void Brackets_joined_around_a_value_are_noted_even_when_nothing_reads_them_as_json()
@@ -50,6 +54,24 @@ public partial class JsonAssembledTests
             """);
 
         Assert.Equal(["p.sql:4:5"], notes.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+    }
+
+    [Fact]
+    public void Brackets_put_around_a_list_held_in_a_variable_are_noted_where_typing_reads_them()
+    {
+        // The SQL alone doesn't show '[' + coalesce(@ids, '') + ']' is JSON; typing it does, and the note is given there, once.
+        var notes = Notes("""
+            DECLARE @ids nvarchar(max);
+            SELECT @ids = string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = @id;
+            SELECT json_query(N'[' + coalesce(@ids, N'') + N']') AS v, json_query(N'[' + coalesce(@ids, N'') + N']') AS w FOR JSON PATH;
+            """);
+
+        Assert.Equal(["p.sql:4:19", "p.sql:4:71"], notes.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+        Assert.All(Messages("""
+            DECLARE @ids nvarchar(max);
+            SELECT @ids = string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = @id;
+            SELECT json_query(N'[' + coalesce(@ids, N'') + N']') AS v FOR JSON PATH;
+            """), n => Assert.Contains("json_arrayagg", n, StringComparison.Ordinal));
     }
 
     [Fact]

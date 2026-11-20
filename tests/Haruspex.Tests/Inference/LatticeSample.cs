@@ -146,8 +146,8 @@ internal sealed class LatticeSample(int seed)
     public JsonSlot Slot() => random.Next(4) switch
     {
         0 => JsonSlot.Empty,
-        1 => JsonSlot.Text(Unknown()),
-        2 => JsonSlot.Assembled(Content(2)),
+        1 => JsonSlot.Text(Unknown()) with { Pieces = Pieces() },
+        2 => JsonSlot.Assembled(Content(2)) with { Pieces = Pieces() },
         _ => JsonSlot.Json(Content(2)),
     };
 

@@ -41,6 +41,21 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// <summary>What the triggers a write fires may return, shared by every walk so that each gap is warned of once.</summary>
     public DmlTriggers Triggers { get; } = new(model, warnings);
 
+    private readonly Dictionary<SourceLocation, Diagnostic> jsonText = [];
+
+    /// <summary>
+    /// The places a body reads JSON assembled as text, one note each (<see cref="JsonTextNotes"/>): those the SQL shows by its
+    /// construction are found without typing, but text read through a variable, <c>'[' + @ids + ']'</c>, only by it.
+    /// </summary>
+    public IReadOnlyCollection<Diagnostic> JsonText => jsonText.Values;
+
+    /// <summary>Records a place JSON assembled as text is read, once, however often its body is walked.</summary>
+    /// <param name="at">Where the expression that assembles it starts.</param>
+    /// <param name="expression">The expression.</param>
+    /// <param name="aggregated">Whether its text holds a <c>string_agg</c>.</param>
+    public void Assembled(SourceLocation at, ScalarExpression expression, bool aggregated) =>
+        jsonText.TryAdd(at, JsonTextNotes.Note(at, expression, aggregated));
+
     /// <summary>The object each recursive function's node stands for, settled at the fixed point.</summary>
     public IReadOnlyDictionary<ObjectName, ObjectShape> Nodes => functions.Nodes;
 

@@ -1785,7 +1785,13 @@ where the server guarantees its shape, and unknown, saying why, everywhere else.
   (`An_aggregate_over_no_rows_is_null_so_plus_is_null_concat_is_empty_and_quotes_in_concat_make_one_empty_string`,
   `With_concat_null_yields_null_off_plus_over_a_null_aggregate_is_empty_brackets`). So an array claims at least one item only
   where none of these can happen. `concat_ws` leaves out each NULL, so its elements are any subset of its values, none included
-  (`Concat_ws_skips_null_values_so_quoted_literals_make_any_subset_and_none_makes_empty_brackets`).
+  (`Concat_ws_skips_null_values_so_quoted_literals_make_any_subset_and_none_makes_empty_brackets`). An item of empty text is not
+  left out, but alone between the brackets it writes nothing, `[]`, which is JSON
+  (`An_empty_item_alone_between_the_brackets_leaves_an_empty_array`), so an item that may be empty may be absent too.
+- **Values run together.** With no comma between them, a value written straight after one that ends in a number continues it:
+  `concat('[', a, b, ']')` of two integers is one number, and a number before a `string_agg` joins its first item
+  (`A_number_written_straight_after_a_number_continues_it`). Such text is a bug, but it reads as JSON of another shape, so it is
+  unknown; a value written straight after a string, an array or an object is not JSON.
 - **Text that is not JSON is an error where it is read** (13609), in `FOR JSON`, in `json_object` and assigned to a variable,
   never NULL (`Json_query_of_text_that_is_not_json_is_an_error_wherever_it_is_and_text_read_without_it_is_a_string`), so a way
   the text can be that is not JSON describes no call and adds nothing: a NULL fragment in `concat`, which leaves a stray comma
@@ -1794,8 +1800,10 @@ where the server guarantees its shape, and unknown, saying why, everywhere else.
   `nvarchar(4000)` before a `max` piece, is unknown, since the cut may fall anywhere.
 - **Read without `json_query` it stays a string.** Assembled text returned as a column, or nested in `FOR JSON`, is a string, as
   before, with its type's facets: it is escaped where it nests, and only `json_query` makes it JSON. A variable or column of
-  `nvarchar(max)` assigned it holds its JSON for a later `json_query` and reads as its declared string; so does a call of a
-  scalar function of `nvarchar` that returns it.
+  `nvarchar(max)` keeps what the text written to it is made of (`JsonSlot.Pieces`), when every write gave the same, so a list
+  `SELECT @ids = string_agg(…)` writes is read as that list in `'[' + coalesce(@ids, '') + ']'`; one assigned a whole array holds
+  its JSON for a later `json_query` and reads as its declared string. So does a call of a scalar function of `nvarchar` that
+  returns one. A shorter variable cuts the text, so it keeps nothing.
 - **Not read**: an object assembled as text (`'{"a":' + …`), an array or object that opens in one literal and closes in another
   piece, text after the closing bracket (which `json_query` ignores), a literal with an escape inside quotes, and more than 64
   alternatives.
@@ -1806,7 +1814,9 @@ where the server guarantees its shape, and unknown, saying why, everywhere else.
   quotation mark or a brace in its literals, `string_agg`, `concat_ws`, or a part that builds JSON); and `concat_ws` with a comma
   between values one of which is a quoted literal. So T-SQL's own brackets, `'[' + name + ']'` quoting an identifier or
   `'[' + n + ' KEYS]'`, are not reported. It is found in the SQL itself (`JsonTextNotes`), in every module and query file, so it
-  is an inventory of code to modernise, not a by-product of an unknown.
+  is an inventory of code to modernise, not a by-product of an unknown. Where the SQL alone doesn't show it, as in
+  `'[' + coalesce(@ids, '') + ']'` over a list held in a variable, typing finds it where it reads the array, and the note is given
+  there too (`Summaries.JsonText`), each place once.
 
 ## Binary values
 

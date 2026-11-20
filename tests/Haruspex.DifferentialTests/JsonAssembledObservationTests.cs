@@ -212,6 +212,39 @@ public class JsonAssembledObservationTests(SqlServerFixture server)
         Assert.Equal(13609, await Error("""DECLARE @e nvarchar(10) = N''; SELECT json_query(N'[' + concat_ws(N',', N'"a"', @e) + N']') AS j;"""));
     }
 
+    // ---- empty items and numbers run together -----------------------------------------------------------------------------
+
+    [Fact]
+    public async Task An_empty_item_alone_between_the_brackets_leaves_an_empty_array()
+    {
+        // An item of empty text is not NULL, so neither string_agg nor concat_ws skips it, but alone it writes nothing: [], which
+        // json_query reads. Beside another item it leaves a stray comma, which json_query refuses.
+        Assert.Equal(
+            "agg,ws: [],[]",
+            await Select("""
+                DECLARE @one TABLE (id int NOT NULL); INSERT @one VALUES (1);
+                SELECT json_query(N'[' + (SELECT string_agg(CASE WHEN id > 1 THEN convert(nvarchar(max), id) ELSE N'' END, N',') FROM @one) + N']') AS agg,
+                    json_query(N'[' + concat_ws(N',', (SELECT N'' FROM @one), CAST(NULL AS nvarchar(10))) + N']') AS ws;
+                """));
+        Assert.Equal(13609, await Error("""
+            DECLARE @two TABLE (id int NOT NULL); INSERT @two VALUES (1), (2);
+            SELECT json_query(N'[' + (SELECT string_agg(N'', N',') FROM @two) + N']') AS agg;
+            """));
+    }
+
+    [Fact]
+    public async Task A_number_written_straight_after_a_number_continues_it()
+    {
+        // With no comma between them, two numbers are one, and a number before a list of them joins its first: [55,6], two items.
+        Assert.Equal(
+            "two,list: [2147483647214748364],[55,6]",
+            await Select($"""
+                DECLARE @n TABLE (id int NOT NULL); INSERT @n VALUES (5), (6);
+                SELECT json_query(concat(N'[', 2147483647, 214748364, N']')) AS two,
+                    json_query(concat(N'[', 5, (SELECT string_agg(convert(nvarchar(max), id), N',') WITHIN GROUP (ORDER BY id) FROM @n), N']')) AS list;
+                """));
+    }
+
     // ---- reading it --------------------------------------------------------------------------------------------------------
 
     [Fact]

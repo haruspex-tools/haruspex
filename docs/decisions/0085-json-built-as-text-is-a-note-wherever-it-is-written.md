@@ -7,7 +7,8 @@
 found in the SQL itself, by the construction, once at the outermost expression, whether or not anything reads the text as JSON
 and whatever procedures are selected: a concatenation whose text is a JSON array, each part that is not a literal standing for
 a value or for text in a string, and which shows it is JSON (a comma, a quotation mark or a brace in its literals, `string_agg`,
-`concat_ws`, or a part that builds JSON); or `concat_ws` of quoted literals.
+`concat_ws`, or a part that builds JSON); or `concat_ws` of quoted literals. Where the SQL alone doesn't show it, such as brackets
+around a list held in a variable, typing finds it where it reads the array, and gives the note there too, each place once.
 
 **Context.** The idiom is old, and code that can be changed should be: the constructors escape every value, and haruspex types
 what they build exactly. A real application's own sweep found 23 places beyond those that caused an unknown, because text that no

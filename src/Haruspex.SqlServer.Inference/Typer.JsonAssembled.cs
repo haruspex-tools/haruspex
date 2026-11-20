@@ -222,6 +222,18 @@ internal sealed partial class Typer
     internal static Shape? Assembled(Value value, SourceLocation at) =>
         !value.IsLiveJson && value.Pieces is { } pieces ? JsonAssembly.Parse(pieces, at) : null;
 
+    /// <summary>
+    /// <see cref="Assembled(Value, SourceLocation)"/> of an expression read as JSON, recording the place for the note
+    /// (<see cref="Summaries.Assembled"/>) when it is this idiom.
+    /// </summary>
+    private Shape? Assembled(Value value, ScalarExpression read)
+    {
+        var assembled = Assembled(value, At(read));
+        if (assembled is not null && value.Pieces is { } pieces)
+            summaries.Assembled(At(Strip(read)), Strip(read), JsonAssembly.Aggregates(pieces));
+        return assembled;
+    }
+
     /// <summary>Whether an operand of string <c>+</c> is itself a <c>+</c>, whose pieces are its own operands'.</summary>
     private static bool IsSum(ScalarExpression operand) => Strip(operand) is BinaryExpression { BinaryExpressionType: BinaryExpressionType.Add };
 }

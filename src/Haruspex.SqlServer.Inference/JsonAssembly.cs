@@ -47,11 +47,13 @@ internal static class JsonAssembly
         Shape? content = null;
         UnknownShape? unknown = null;
         var assembled = false;
-        foreach (var sequence in alternatives)
+        foreach (var raw in alternatives)
         {
-            var reader = new Reader(sequence, at, single: false);
+            var reader = new Reader(Merged(raw), at, single: false);
             var read = reader.Read();
-            assembled |= reader.Assembled;
+
+            // Text joined from more than one piece is assembled, even when its literals join into one JSON value.
+            assembled |= reader.Assembled || (read is not null and not UnknownShape && raw.Count(p => p is not LiteralPiece { Text.Length: 0 }) > 1);
             if (read is UnknownShape why)
                 unknown ??= why;
             else if (read is not null)
@@ -61,11 +63,36 @@ internal static class JsonAssembly
         return !assembled ? null : unknown ?? content;
     }
 
+    /// <summary>Whether text is made with <c>string_agg</c>, anywhere in its pieces: the note then names <c>json_arrayagg</c>.</summary>
+    public static bool Aggregates(EquatableArray<TextPiece> pieces) => pieces.Any(piece => piece switch
+    {
+        ListPiece => true,
+        EitherPiece either => either.Alternatives.Any(Aggregates),
+        CutPiece cut => Aggregates(cut.Pieces),
+        JoinedPiece joined => joined.Items.Any(i => Aggregates(i.Pieces)),
+        _ => false,
+    });
+
     /// <summary>
-    /// What one item of <c>string_agg</c> or <c>concat_ws</c> is when its text is exactly one JSON value: its shape and why it may be
-    /// JSON null, or an unknown saying why not. Null when no way it can be is JSON.
+    /// What the text of one item of <c>string_agg</c> or <c>concat_ws</c> may be, read as each of its alternatives.
     /// </summary>
-    private static (Shape Shape, EquatableArray<IrNullReason> Nulls)? Item(EquatableArray<TextPiece> pieces, SourceLocation at, out UnknownShape? unknown)
+    /// <param name="Shape">The JSON value it is, when it is one: its shape; null when no way it can be is one JSON value.</param>
+    /// <param name="Nulls">Why that value may be JSON null.</param>
+    /// <param name="MayBeEmpty">
+    /// Whether it may be empty text, which writes nothing: alone between the brackets it leaves <c>[]</c>, which is JSON (observed:
+    /// An_empty_item_alone_between_the_brackets_leaves_an_empty_array), so it may be absent.
+    /// </param>
+    /// <param name="EndsOpen">
+    /// Whether its text may end in a number or a word, which text written straight after it would continue (observed:
+    /// A_number_written_straight_after_a_number_continues_it).
+    /// </param>
+    private sealed record ItemText(Shape? Shape, EquatableArray<IrNullReason> Nulls, bool MayBeEmpty, bool EndsOpen);
+
+    /// <summary>
+    /// What one item of <c>string_agg</c> or <c>concat_ws</c> is (<see cref="ItemText"/>), or an unknown saying why it is not
+    /// known: an item whose text may be more than one JSON value, or text this does not read.
+    /// </summary>
+    private static ItemText? Item(EquatableArray<TextPiece> pieces, SourceLocation at, out UnknownShape? unknown)
     {
         unknown = null;
         if (Expand(pieces) is not { } alternatives)
@@ -74,10 +101,13 @@ internal static class JsonAssembly
             return null;
         }
 
-        (Shape Shape, EquatableArray<IrNullReason> Nulls)? item = null;
-        foreach (var sequence in alternatives)
+        Shape? shape = null;
+        EquatableArray<IrNullReason> nulls = [];
+        var empty = false;
+        var open = false;
+        foreach (var raw in alternatives)
         {
-            var reader = new Reader(sequence, at, single: true);
+            var reader = new Reader(Merged(raw), at, single: true);
             var read = reader.Read();
             if (read is UnknownShape why)
             {
@@ -85,13 +115,15 @@ internal static class JsonAssembly
                 return null;
             }
 
+            empty |= reader.Empty;
             if (read is null)
                 continue;
+            open |= reader.EndsOpen;
             var one = reader.Element;
-            item = item is not { } some ? one : (JsonShapes.Join(some.Shape, one.Shape), NullReasons.Join(some.Nulls, one.Nulls));
+            (shape, nulls) = shape is null ? one : (JsonShapes.Join(shape, one.Shape), NullReasons.Join(nulls, one.Nulls));
         }
 
-        return item;
+        return new ItemText(shape, nulls, empty, open);
     }
 
     /// <summary>
@@ -108,7 +140,7 @@ internal static class JsonAssembly
         }
 
         Shape? item = null;
-        foreach (var sequence in alternatives)
+        foreach (var sequence in alternatives.Select(Merged))
         {
             var parts = new List<Shape>();
             var literal = "";
@@ -144,7 +176,8 @@ internal static class JsonAssembly
 
     /// <summary>
     /// Each sequence of pieces the text can be, its alternatives taken and the pieces of cut text read as they are (a cut is never
-    /// JSON, <see cref="CutPiece"/>), adjacent literals joined; null when there are more than <see cref="MostAlternatives"/>.
+    /// JSON, <see cref="CutPiece"/>), before adjacent literals are joined (<see cref="Merged"/>); null when there are more than
+    /// <see cref="MostAlternatives"/>.
     /// </summary>
     private static List<List<TextPiece>>? Expand(EquatableArray<TextPiece> pieces)
     {
@@ -176,7 +209,7 @@ internal static class JsonAssembly
             sequences = next;
         }
 
-        return [.. sequences.Select(Merged)];
+        return sequences;
     }
 
     /// <summary>A sequence with each run of adjacent literals joined into one, which is how the server sees their text.</summary>
@@ -249,11 +282,17 @@ internal static class JsonAssembly
         private string literalInString = "";
         private bool literalOnly = true;
         private Shape? listItem;
-        private bool afterNumber;
+        private bool open;
         private bool endsInToken;
 
         /// <summary>Whether the text opens an array across pieces, or is one JSON value assembled here: whether it is this idiom.</summary>
         public bool Assembled { get; private set; }
+
+        /// <summary>For an item, whether its text is empty, or spaces only: it writes nothing.</summary>
+        public bool Empty => single && state == State.Comma;
+
+        /// <summary>For an item, whether its text may end in a number or a word that text after it would continue.</summary>
+        public bool EndsOpen => open || endsInToken;
 
         /// <summary>For an item, the one value read.</summary>
         public (Shape Shape, EquatableArray<IrNullReason> Nulls) Element => (groups[0].Shape, groups[0].Nulls);
@@ -325,6 +364,7 @@ internal static class JsonAssembly
         {
             groups.Add((shape, nulls, 1, 1));
             state = State.After;
+            open = false;
             return true;
         }
 
@@ -340,9 +380,9 @@ internal static class JsonAssembly
         private bool Literal(LiteralPiece literal, bool first)
         {
             var text = literal.Text;
-            if (afterNumber && text.Length > 0 && (char.IsAsciiDigit(text[0]) || text[0] is '.' or 'e' or 'E'))
-                return Stop("a value converted to a number is followed by a literal that continues it", literal.At);
-            afterNumber = false;
+            if (open && text.Length > 0 && (char.IsAsciiLetterOrDigit(text[0]) || text[0] is '.' or '-' or '+'))
+                return Stop("a number or word is followed by text that continues it", literal.At);
+            open = false;
             var i = 0;
             while (i < text.Length)
             {
@@ -535,6 +575,7 @@ internal static class JsonAssembly
             var shape = listItem ?? (parts.Count == 1 ? parts[0] : literalOnly ? LiteralString(literalInString, closing.National, closing.At) : AnyString);
             groups.Add((shape, [], 1, listItem is null ? 1 : null));
             state = State.After;
+            open = false;
             listItem = null;
             literalInString = "";
             literalOnly = true;
@@ -548,10 +589,11 @@ internal static class JsonAssembly
                 case State.InString:
                     return Part(number.Text, at);
                 case State.Open or State.Comma:
-                    afterNumber = true;
-                    return Value(number.Number, []);
+                    Value(number.Number, []);
+                    open = true;
+                    return true;
                 case State.After:
-                    return NotJson();
+                    return Continues();
                 default:
                     return Stop("a number is written outside the array", at);
             }
@@ -584,52 +626,76 @@ internal static class JsonAssembly
                 // ["…" + string_agg(x, '","') + "…"]: each item a string, the separator closing one and opening the next.
                 if (parts.Count > 0 || listItem is not null || !IsSeparator(list.Separator, quoted: true))
                     return Stop("string_agg inside quotes is not the only text there, or its separator is not \",\"", at);
-                if (StringItem(list.Item, at, out var why) is not { } item)
+                if (StringItem(list.Item, at, out var why) is not { } inQuotes)
                     return why is null ? NotJson() : Stop(why);
-                listItem = item;
+                listItem = inQuotes;
                 literalOnly = false;
                 return true;
             }
 
             if (state is not (State.Open or State.Comma))
-                return state == State.After ? NotJson() : Stop("string_agg is written outside the array", at);
+                return state == State.After ? Continues() : Stop("string_agg is written outside the array", at);
             if (!IsSeparator(list.Separator, quoted: false))
                 return Stop("string_agg's separator is not a literal comma", at);
-            if (Item(list.Item, at, out var unknownItem) is not { } element)
-                return unknownItem is null ? NotJson() : Stop(unknownItem);
-            groups.Add((element.Shape, element.Nulls, 1, null));
-            state = State.After;
-            return true;
+            if (Item(list.Item, at, out var unknownItem) is not { } item)
+                return Stop(unknownItem ?? Unknown("an item has no text this reads", at));
+            if (item.Shape is not null)
+                groups.Add((item.Shape, item.Nulls, item.MayBeEmpty ? 0 : 1, null));
+            else if (!item.MayBeEmpty)
+                return NotJson();
+            return Written(mayWriteNothing: item.MayBeEmpty || item.Shape is null, item.EndsOpen, "string_agg");
         }
 
-        private bool Joined(JoinedPiece joined)
+        /// <summary>
+        /// The state after a <c>string_agg</c> or <c>concat_ws</c>: after a value, or, when it may write nothing, where only the
+        /// closing bracket may follow, since anything else would follow the comma or bracket before it.
+        /// </summary>
+        private bool Written(bool mayWriteNothing, bool endsOpen, string what)
         {
-            if (state is not (State.Open or State.Comma) || !IsSeparator(joined.Separator, quoted: false))
-                return Stop("concat_ws is not the whole of the array between its brackets, or its separator is not a literal comma", at);
-            var shapes = new List<(Shape Shape, EquatableArray<IrNullReason> Nulls)>();
-            foreach (var item in joined.Items)
-            {
-                if (Item(item.Pieces, at, out var why) is { } element)
-                    shapes.Add(element);
-                else if (why is not null)
-                    return Stop(why);
-                else if (!item.MayBeAbsent)
-                    return NotJson();
-            }
-
-            var min = joined.Items.Count(i => !i.MayBeAbsent);
-            if (shapes.Count > 0)
-                groups.Add((shapes.Select(s => s.Shape).Aggregate(JsonShapes.Join), shapes.Select(s => s.Nulls).Aggregate(NullReasons.Join), min, shapes.Count));
-            if (min > 0)
+            open = endsOpen;
+            if (!mayWriteNothing)
             {
                 state = State.After;
                 return true;
             }
 
             if (state == State.Comma)
-                return Stop("concat_ws, which may write nothing, follows a comma", at);
+                return Stop($"{what}, which may write nothing, follows a comma", at);
             state = State.Gap;
             return true;
+        }
+
+        /// <summary>
+        /// A value written straight after another: not JSON, unless the one before may end in a number or a word, which the
+        /// server reads on into the next (observed: A_number_written_straight_after_a_number_continues_it), so it is not known.
+        /// </summary>
+        private bool Continues() => open || endsInToken ? Stop("a value is written straight after one that may end in a number, which it would continue", at) : NotJson();
+
+        private bool Joined(JoinedPiece joined)
+        {
+            if (state is not (State.Open or State.Comma) || !IsSeparator(joined.Separator, quoted: false))
+                return Stop("concat_ws is not the whole of the array between its brackets, or its separator is not a literal comma", at);
+            // An item NULL is left out; an item of empty text is not, but alone it leaves [] (observed:
+            // An_empty_item_alone_between_the_brackets_leaves_an_empty_array), so either may be absent.
+            var shapes = new List<(Shape Shape, EquatableArray<IrNullReason> Nulls)>();
+            var min = 0;
+            var endsOpen = false;
+            foreach (var argument in joined.Items)
+            {
+                if (Item(argument.Pieces, at, out var why) is not { } item)
+                    return Stop(why ?? Unknown("an item has no text this reads", at));
+                if (item.Shape is not null)
+                    shapes.Add((item.Shape, item.Nulls));
+                else if (!argument.MayBeAbsent && !item.MayBeEmpty)
+                    return NotJson();
+                if (!argument.MayBeAbsent && !item.MayBeEmpty)
+                    min++;
+                endsOpen |= item.EndsOpen;
+            }
+
+            if (shapes.Count > 0)
+                groups.Add((shapes.Select(s => s.Shape).Aggregate(JsonShapes.Join), shapes.Select(s => s.Nulls).Aggregate(NullReasons.Join), min, shapes.Count));
+            return Written(mayWriteNothing: min == 0, endsOpen, "concat_ws");
         }
 
         /// <summary>Whether a separator is a literal comma, with spaces around it, or, inside quotes, <c>","</c>.</summary>

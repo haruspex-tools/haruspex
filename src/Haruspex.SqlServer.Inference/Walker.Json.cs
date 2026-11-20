@@ -21,6 +21,19 @@ internal sealed partial class Walker
     /// <param name="where">The place, for the message.</param>
     private JsonSlot JsonWritten(Value value, ScalarExpression? expression, SourceLocation at, string where)
     {
+        var slot = JsonContentWritten(value, expression, at, where);
+
+        // The place holds the text as it is written, so it keeps what the text is made of (Typer.JsonAssembled.cs).
+        if (slot == JsonSlot.Empty || value.IsLiveJson || value.Pieces is not { } pieces)
+            return slot;
+        if (expression is not null && JsonAssembly.Parse(pieces, at) is not null)
+            summaries.Assembled(At(Strip(expression)), Strip(expression), JsonAssembly.Aggregates(pieces));
+        return slot with { Pieces = pieces };
+    }
+
+    /// <summary>What one write puts in a traced place as JSON (<see cref="JsonWritten"/>), before what its text is made of.</summary>
+    private JsonSlot JsonContentWritten(Value value, ScalarExpression? expression, SourceLocation at, string where)
+    {
         if (expression is not null && Strip(expression) is NullLiteral)
             return JsonSlot.Empty;
         if (value.Shape is UnknownShape unknown)

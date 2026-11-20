@@ -266,6 +266,50 @@ public partial class JsonAssembledTests
         Assert.IsType<IrRef>(Assert.IsType<IrTuple>(Field(one, "v").Type).Items[0].Type);
     }
 
+    // ---- empty items, numbers run together, literals joined ---------------------------------------------------------------
+
+    [Fact]
+    public void An_item_that_may_be_empty_text_may_be_absent_since_alone_it_leaves_an_empty_array()
+    {
+        // Observed: An_empty_item_alone_between_the_brackets_leaves_an_empty_array.
+        var on = new SessionOptions(ConcatNullYieldsNull: true);
+        var agg = Procedure(Read("N'[' + (SELECT string_agg(CASE WHEN l.line_id > 1 THEN convert(nvarchar(max), l.line_id) ELSE N'' END, N',') FROM dbo.line AS l WHERE l.order_id = o.order_id) + N']'"), on);
+        Assert.Null(Array(agg).MinItems);
+
+        var ws = Procedure(Read("N'[' + concat_ws(N',', CASE WHEN o.channel = 'r' THEN N'\"retail\"' ELSE N'' END, CASE WHEN o.channel = 't' THEN N'\"trade\"' END) + N']'"), on);
+        Assert.Null(Array(ws).MinItems);
+        Assert.Equal(2, Array(ws).MaxItems);
+
+        // An item that is only ever empty adds nothing; the others are read.
+        var blank = Procedure(Read("N'[' + concat_ws(N',', N'', CASE WHEN o.channel = 't' THEN N'\"trade\"' END) + N']'"));
+        Assert.Equal(1, Array(blank).MaxItems);
+    }
+
+    [Theory]
+    // Observed: A_number_written_straight_after_a_number_continues_it. Each is a bug in the SQL, but the server reads one number,
+    // or a list whose first item has the number before it, so the shape is not known.
+    [InlineData("concat(N'[', o.order_id, nullif(o.order_id, 0), N']')")]
+    [InlineData("concat(N'[', o.order_id, (SELECT string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = o.order_id), N']')")]
+    [InlineData("concat(N'[', (SELECT string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = o.order_id), o.order_id, N']')")]
+    [InlineData("concat(N'[1', o.order_id, N']')")]
+    public void A_value_written_straight_after_a_number_is_unknown_since_it_continues_the_number(string text)
+    {
+        var doc = Procedure(Read(text));
+
+        Assert.Equal(IrUnknownReason.JsonShapeUnknown, Unknown(doc, "v").Reason);
+    }
+
+    [Fact]
+    public void Literals_joined_into_whole_json_values_are_read_as_the_json_they_make()
+    {
+        // [1] or []: both JSON, so an array of at most one number 1.
+        var doc = Procedure(Read("concat(N'[', CASE WHEN o.channel = 'r' THEN N'1' ELSE N'' END, N']')"));
+        var array = Array(doc);
+
+        Assert.Equal(1, array.MaxItems);
+        Assert.Null(array.MinItems);
+    }
+
     // ---- what is never read -----------------------------------------------------------------------------------------------
 
     [Fact]
@@ -287,6 +331,21 @@ public partial class JsonAssembledTests
         var doc = Procedure(Read("concat(N'[', (SELECT string_agg(cast(N'\"' + string_escape(t.name, 'json') + N'\"' AS nvarchar(5)), N',') FROM dbo.tag AS t WHERE t.order_id = o.order_id), N']')"));
 
         Assert.Contains("which may be cut short", Unknown(doc, "v").Detail, StringComparison.Ordinal);
+    }
+
+    // ---- through a variable -------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void A_list_assigned_to_a_variable_and_put_in_brackets_later_is_typed()
+    {
+        var doc = Procedure("""
+            DECLARE @ids nvarchar(max);
+            SELECT @ids = string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l WHERE l.order_id = @id;
+            SELECT json_query(N'[' + coalesce(@ids, N'') + N']') AS v FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
+            """);
+
+        Assert.Equal("int", Assert.IsType<IrScalar>(Array(doc).Items).Sql);
+        Assert.Empty(doc.Unknowns);
     }
 
     // ---- read without json_query --------------------------------------------------------------------------------------------
