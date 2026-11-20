@@ -193,6 +193,36 @@ public partial class BinaryTests
     }
 
     [Theory]
+    // Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types: CAST and CONVERT to rowversion or timestamp make a
+    // timestamp, the value's bytes cut or padded to 8, never NULL under any options, from a binary value of any length, an integer,
+    // bit, money, a decimal, text not of max, datetime or smalldatetime.
+    [InlineData("CAST(checksum AS rowversion)")]
+    [InlineData("CONVERT(timestamp, original)")]
+    [InlineData("CAST(image_id AS rowversion)")]
+    [InlineData("CAST(CAST(image_id AS decimal(38,0)) AS rowversion)")]
+    [InlineData("CAST(CAST(image_id AS money) AS timestamp)")]
+    [InlineData("CAST(code AS rowversion)")]
+    [InlineData("CAST(caption AS rowversion)")]
+    [InlineData("CAST(GETDATE() AS rowversion)")]
+    public void A_value_converted_into_a_rowversion_is_never_null(string expression)
+    {
+        var doc = Procedure($"SELECT {expression} AS v FROM shop.product_image WHERE original IS NOT NULL AND code IS NOT NULL AND caption IS NOT NULL;");
+
+        Assert.Equal("timestamp exactly 8", Typed(doc, "v"));
+        Assert.Empty(Field(doc, "v").NullableBecause);
+    }
+
+    [Fact]
+    public void Text_of_max_converted_into_a_rowversion_keeps_its_reason()
+    {
+        // Past 8000 bytes it is an error (8152) under any options, which the table's rows leave out, as for binary into a number.
+        var doc = Procedure("SELECT CAST(CAST(code AS varchar(max)) AS rowversion) AS v FROM shop.product_image WHERE code IS NOT NULL;");
+
+        Assert.Equal("timestamp exactly 8", Typed(doc, "v"));
+        Assert.NotEmpty(Field(doc, "v").NullableBecause);
+    }
+
+    [Theory]
     // Into a decimal or a date and time a rowversion overflows: an error, NULL under the caller's options.
     [InlineData("CAST(row_version AS decimal(20,0))")]
     [InlineData("CAST(row_version AS datetime)")]

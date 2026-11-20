@@ -89,6 +89,13 @@ internal static class Conversions
         // never NULL. Into a decimal or a date and time it overflows (8115), and into nvarchar, a GUID or a float the server refuses
         // it (529), so none of those is a row.
         new([.. Binaries, .. Integers, BuiltInType.Bit, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.Char, BuiltInType.VarChar], [BuiltInType.Timestamp], ConversionCondition.Always, [AtTheEdges]),
+
+        // Into a rowversion (CAST and CONVERT to rowversion or timestamp make one) a value is its bytes, cut or padded to 8, never NULL
+        // under any options: a binary value of any length (past 8000 bytes, its first 8), a number but a floating-point one, text,
+        // datetime and smalldatetime. Text of max past 8000 bytes is an error (8152), so it must not be max. Floating point, a GUID
+        // and the other dates and times are refused (529), so none of those is a row.
+        new([BuiltInType.Timestamp], [.. Binaries, .. Integers, BuiltInType.Bit, .. Decimals, BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.DateTime, BuiltInType.SmallDateTime], ConversionCondition.Always, [AtTheEdges]),
+        new([BuiltInType.Timestamp], [.. Strings], ConversionCondition.SourceNotMax, [AtTheEdges]),
         new([.. Strings], [BuiltInType.Bit, .. Integers, .. Decimals, BuiltInType.UniqueIdentifier], ConversionCondition.FitsAsText, [AtTheEdges]),
         new([.. Integers], [BuiltInType.Bit, .. Integers], ConversionCondition.WiderInteger, [AtTheEdges]),
         new([BuiltInType.SmallInt, BuiltInType.Int, BuiltInType.BigInt, BuiltInType.SmallMoney, BuiltInType.Money], [.. Decimals], ConversionCondition.IntegerPartFits, [AtTheEdges]),

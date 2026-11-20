@@ -1740,7 +1740,10 @@ over either they stay unknown):
   (`Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert`). Into a decimal a binary value may
   overflow (8115), and into a date or time it is an error (210): no rows. A `rowversion` converts as its 8 bytes do, into binary of
   any length, an integer, `bit`, money or `varchar` without NULL, so `CONVERT(varchar(18), CONVERT(binary(8), t.row_version), 1)`
-  is never null over a column that isn't; into a decimal or a date and time it overflows.
+  is never null over a column that isn't; into a decimal or a date and time it overflows. `CAST` or `CONVERT` to `rowversion` or
+  `timestamp` makes a `timestamp`, the value's bytes cut or padded to 8, never NULL from a binary value of any length, a number but
+  a floating-point one, `datetime`, `smalldatetime` or text not of `max` (past 8000 bytes, error 8152); floating point, a GUID and
+  the other dates and times are refused (529).
   `OPENJSON`'s binary column decodes base64 and refuses any other text, or a longer value, with an error, never NULL
   (`Openjson_reads_a_binary_column_from_base64_and_refuses_any_other_text`).
 - **`COALESCE`, `CASE`, `IIF`, `CHOOSE` and set operations**, "Combining types" above; **`ISNULL`** is its first argument's

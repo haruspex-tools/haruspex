@@ -34,6 +34,22 @@ public class BinaryObservationTests(SqlServerFixture server)
             await Describe("SELECT CAST(1 AS varbinary) AS c1, CAST(1 AS binary) AS c2, CONVERT(varbinary, 'ab') AS c3, CONVERT(varbinary(4), '0x0A', 1) AS c4, CONVERT(varbinary(max), '0A', 2) AS c5, CONVERT(varchar(10), 0x0A, 1) AS c6, CONVERT(varchar(10), 0x0A, 2) AS c7"));
 
     [Fact]
+    public async Task A_conversion_into_rowversion_makes_a_timestamp_of_8_bytes_and_floating_point_a_guid_or_a_date_is_refused()
+    {
+        // rowversion and timestamp name one type, a value of which is its bytes cut or padded to 8 (the edges, with the options
+        // off, are in ConversionObservationTests). Into it a float, a real, a GUID, a date, a datetime2, a time or a
+        // datetimeoffset is refused (529).
+        Assert.Equal(
+            "c1 timestamp, c2 timestamp, c3 timestamp, c4 timestamp",
+            await Describe("SELECT CAST(b2 AS rowversion) AS c1, CAST(i AS timestamp) AS c2, CONVERT(rowversion, a) AS c3, CAST(nb AS rowversion) AS c4 FROM " + Row));
+        Assert.Equal(
+            "v: 0x0102000000000000",
+            (await Run("SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; SELECT CONVERT(varchar(20), CONVERT(binary(8), CAST(0x0102 AS rowversion)), 1) AS v;")).ToString());
+        foreach (var refused in new[] { "CAST(1e0 AS real)", "1e0", "NEWID()", "CAST(GETDATE() AS date)", "SYSDATETIME()", "CAST(GETDATE() AS time)", "SYSDATETIMEOFFSET()" })
+            Assert.Equal(529, (await Run($"SELECT CAST({refused} AS rowversion) AS v;")).Error);
+    }
+
+    [Fact]
     public async Task Converting_between_binary_types_cuts_or_pads_without_an_error_or_null_under_any_options()
     {
         // A longer value is cut short and a shorter one padded with zeros to a fixed length, under the default options and under
