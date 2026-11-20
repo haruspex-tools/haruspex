@@ -75,6 +75,30 @@ public partial class JsonAssembledTests
     }
 
     [Fact]
+    public void An_identifier_quoted_into_a_variable_is_not_noted_until_something_reads_it_as_json()
+    {
+        var notes = Notes("""
+            DECLARE @nm sysname = N'line', @q nvarchar(max) = N'[' + @nm + N']';
+            SELECT @q = N'[' + o.ref + N'].[' + o.ref + N']' FROM dbo.[order] AS o;
+            SELECT json_query(N'[' + @nm + N']') AS v FOR JSON PATH;
+            """);
+
+        // Only the read as JSON is noted.
+        Assert.Equal(["p.sql:4:19"], notes.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+    }
+
+    [Fact]
+    public void Json_built_by_for_json_written_to_a_variable_and_read_back_is_not_noted()
+    {
+        var notes = Notes("""
+            DECLARE @card nvarchar(max) = (SELECT o.ref AS ref FROM dbo.[order] AS o WHERE o.order_id = @id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+            SELECT json_query(@card) AS card, json_query((SELECT o.ref AS ref FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS one FROM dbo.[order] AS o FOR JSON PATH;
+            """);
+
+        Assert.Empty(notes);
+    }
+
+    [Fact]
     public void A_function_and_a_view_the_procedure_never_reads_are_noted_too()
     {
         var notes = Notes("SELECT 1 AS one;", more: """

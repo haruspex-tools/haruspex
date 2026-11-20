@@ -40,8 +40,16 @@ internal static class JsonAssembly
     /// </summary>
     /// <param name="pieces">The text's pieces.</param>
     /// <param name="at">Where it is read, for an unknown with no piece of its own to name.</param>
-    public static Shape? Parse(EquatableArray<TextPiece> pieces, SourceLocation at)
+    public static Shape? Parse(EquatableArray<TextPiece> pieces, SourceLocation at) => Parse(pieces, at, out _);
+
+    /// <summary>
+    /// <see cref="Parse(EquatableArray{TextPiece}, SourceLocation)"/>, saying too whether these pieces build the JSON as text: open
+    /// an array across pieces, or join literals into one. Text that is one JSON value whole, such as a variable read back holding
+    /// an array assembled where it was written, or <c>FOR JSON</c> text, is JSON here but is not built here, so it is not noted.
+    /// </summary>
+    public static Shape? Parse(EquatableArray<TextPiece> pieces, SourceLocation at, out bool built)
     {
+        built = false;
         if (Expand(pieces) is not { } alternatives)
             return null;
         Shape? content = null;
@@ -53,7 +61,9 @@ internal static class JsonAssembly
             var read = reader.Read();
 
             // Text joined from more than one piece is assembled, even when its literals join into one JSON value.
-            assembled |= reader.Assembled || (read is not null and not UnknownShape && raw.Count(p => p is not LiteralPiece { Text.Length: 0 }) > 1);
+            var joined = read is not null and not UnknownShape && raw.Count(p => p is not LiteralPiece { Text.Length: 0 }) > 1;
+            assembled |= reader.Assembled || joined;
+            built |= reader.Opened || joined;
             if (read is UnknownShape why)
                 unknown ??= why;
             else if (read is not null)
@@ -288,6 +298,9 @@ internal static class JsonAssembly
         /// <summary>Whether the text opens an array across pieces, or is one JSON value assembled here: whether it is this idiom.</summary>
         public bool Assembled { get; private set; }
 
+        /// <summary>Whether the text opens an array across pieces: whether it builds JSON as text here, rather than holding it whole.</summary>
+        public bool Opened { get; private set; }
+
         /// <summary>For an item, whether its text is empty, or spaces only: it writes nothing.</summary>
         public bool Empty => single && state == State.Comma;
 
@@ -434,6 +447,7 @@ internal static class JsonAssembly
                         if (c == '{')
                             return Stop("an object is written across several pieces, which is not read yet", literal.At);
                         Assembled = first;
+                        Opened = first;
                         state = State.Open;
                         i++;
                         continue;

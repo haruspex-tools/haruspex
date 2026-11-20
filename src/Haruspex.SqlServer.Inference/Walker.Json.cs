@@ -26,7 +26,9 @@ internal sealed partial class Walker
         // The place holds the text as it is written, so it keeps what the text is made of (Typer.JsonAssembled.cs).
         if (slot == JsonSlot.Empty || value.IsLiveJson || value.Pieces is not { } pieces)
             return slot;
-        if (expression is not null && JsonAssembly.Parse(pieces, at) is not null)
+        // A write is noted only when its text is known JSON: text that only opens with a bracket, such as an identifier quoted
+        // for dynamic SQL ('[' + @name + ']'), is not JSON built as text until something reads it as JSON, where it is noted.
+        if (expression is not null && JsonAssembly.Parse(pieces, at, out var built) is { } and not UnknownShape && built)
             summaries.Assembled(At(Strip(expression)), Strip(expression), JsonAssembly.Aggregates(pieces));
         return slot with { Pieces = pieces };
     }

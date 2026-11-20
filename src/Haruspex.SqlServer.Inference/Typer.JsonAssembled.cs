@@ -228,8 +228,10 @@ internal sealed partial class Typer
     /// </summary>
     private Shape? Assembled(Value value, ScalarExpression read)
     {
-        var assembled = Assembled(value, At(read));
-        if (assembled is not null && value.Pieces is { } pieces)
+        if (value.IsLiveJson || value.Pieces is not { } pieces)
+            return null;
+        var assembled = JsonAssembly.Parse(pieces, At(read), out var built);
+        if (assembled is not null && built)
             summaries.Assembled(At(Strip(read)), Strip(read), JsonAssembly.Aggregates(pieces));
         return assembled;
     }
