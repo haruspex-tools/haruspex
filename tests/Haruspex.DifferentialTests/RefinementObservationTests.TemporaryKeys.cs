@@ -281,6 +281,45 @@ public partial class RefinementObservationTests
     }
 
     [Fact]
+    public async Task A_derived_table_s_explicit_collation_compares_a_key_under_it()
+    {
+        // A COLLATE inside a derived table or CTE stays explicit outside it, so key = d.v compares under d.v's collation: a binary
+        // key holding 'a' and 'A', compared with a fixed case-insensitive d.v, matches both, from a temporary table or a table. A
+        // derived column without COLLATE compares under the key's (one row); a table's column of another collation is refused.
+        await using var scratch = await server.ScratchAsync();
+        const string Tables = """
+            CREATE TABLE #s (v varchar(10) COLLATE Latin1_General_CI_AS NOT NULL PRIMARY KEY);
+            CREATE TABLE #k (code varchar(10) COLLATE Latin1_General_BIN NOT NULL PRIMARY KEY, n int NOT NULL);
+            INSERT INTO #s VALUES ('a');
+            INSERT INTO #k VALUES ('a', 1), ('A', 2);
+            """;
+        Assert.Equal("2", await Scalar(scratch, $"""
+            {Tables}
+            SELECT COUNT(*) FROM (SELECT s.v COLLATE Latin1_General_CI_AS AS v FROM #s AS s WHERE s.v = 'a') AS d JOIN #k AS k ON k.code = d.v;
+            """));
+        Assert.Equal("2", await Scalar(scratch, $"""
+            {Tables}
+            WITH c AS (SELECT UPPER(s.v COLLATE Latin1_General_CI_AS) AS v FROM #s AS s WHERE s.v = 'a')
+            SELECT COUNT(*) FROM c JOIN #k AS k ON k.code = c.v;
+            """));
+        Assert.Equal("2", await Scalar(scratch, """
+            CREATE TABLE dbo.s (v varchar(10) COLLATE Latin1_General_CI_AS NOT NULL PRIMARY KEY);
+            CREATE TABLE dbo.k (code varchar(10) COLLATE Latin1_General_BIN NOT NULL PRIMARY KEY, n int NOT NULL);
+            INSERT INTO dbo.s VALUES ('a');
+            INSERT INTO dbo.k VALUES ('a', 1), ('A', 2);
+            SELECT COUNT(*) FROM (SELECT s.v COLLATE Latin1_General_CI_AS AS v FROM dbo.s AS s WHERE s.v = 'a') AS d JOIN dbo.k AS k ON k.code = d.v;
+            """));
+        Assert.Equal("1", await Scalar(scratch, $"""
+            {Tables}
+            SELECT COUNT(*) FROM (SELECT 'a' AS v) AS d JOIN #k AS k ON k.code = d.v;
+            """));
+        Assert.Equal("468", await Error(scratch, $"""
+            {Tables}
+            SELECT COUNT(*) FROM #s AS s JOIN #k AS k ON k.code = s.v WHERE s.v = 'a';
+            """));
+    }
+
+    [Fact]
     public async Task A_global_temporary_table_may_be_replaced_by_another_session()
     {
         // Its key holds whoever writes, but between two statements of one session another may drop it and create another of that

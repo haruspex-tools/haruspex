@@ -406,11 +406,16 @@ internal sealed partial class Cardinality(DatabaseModel model, Binder binder)
                     && (!scope.Bound.Sources.Contains(bound.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(bound.Source))
                     => KeyValue.Of(SchemaRules.ResolveType(model, bound.Column.Type)?.Type),
 
-                // So is a column of a body's table, a CTE or a derived table, of its value's SQL type.
+                // So is a column of a body's table, a CTE or a derived table, of its value's SQL type. A string one only of
+                // a body's table: a COLLATE inside a CTE or derived table stays explicit outside it, so key = d.v compares
+                // under d.v's collation, not the key's (A_derived_table_s_explicit_collation_compares_a_key_under_it).
+                // A table's column is implicit, and one of another collation than the key's is refused (468).
                 RelationColumn local when !ReferenceEquals(local.Source, keySource)
                     && (!scope.Bound.Sources.Contains(local.Source, ReferenceEqualityComparer.Instance) || fixedSources.Contains(local.Source))
                     && scope.Sources.TryGetValue(local.Source, out var values) && values.Values is { } columns
-                    => KeyValue.Of((columns[local.Ordinal].Shape as ScalarShape)?.BuiltIn?.Type),
+                    && (columns[local.Ordinal].Shape as ScalarShape)?.BuiltIn?.Type is { } type
+                    && (type.Family != TypeFamily.String || local.Relation is TemporaryTable or TableVariable)
+                    => new KeyValue(type),
                 _ => null,
             },
             _ => null,

@@ -65,9 +65,16 @@ public partial class RefinementTests
     [InlineData("SELECT t.n FROM @v AS v JOIN #t AS t ON t.id = v.id AND t.id = t.n WHERE v.id = @x;", IrCardinality.AtMostOne)]
     [InlineData("SELECT u.n FROM #t AS t JOIN #u AS u ON u.code = t.ncode WHERE t.id = @x;", IrCardinality.Many)]
     [InlineData("SELECT t.n FROM @v AS v JOIN #t AS t ON t.id = v.id WHERE v.n = @x;", IrCardinality.Many)]
+    [InlineData("SELECT u.n FROM (SELECT t.code COLLATE Latin1_General_CI_AS AS v FROM #t AS t WHERE t.id = @x) AS d JOIN #u AS u ON u.code = d.v;", IrCardinality.Many)]
+    [InlineData("SELECT u.n FROM (SELECT UPPER(t.code COLLATE Latin1_General_CI_AS) AS v FROM #t AS t WHERE t.id = @x) AS d JOIN #u AS u ON u.code = d.v;", IrCardinality.Many)]
+    [InlineData("WITH c AS (SELECT t.code COLLATE Latin1_General_CI_AS AS v FROM #t AS t WHERE t.id = @x) SELECT u.n FROM c JOIN #u AS u ON u.code = c.v;", IrCardinality.Many)]
+    [InlineData("SELECT u.n FROM (SELECT p.code COLLATE Latin1_General_CI_AS AS v FROM dbo.t AS p WHERE p.id = @x) AS d JOIN #u AS u ON u.code = d.v;", IrCardinality.Many)]
+    [InlineData("SELECT u.n FROM (SELECT t.code AS v FROM #t AS t WHERE t.id = @x) AS d JOIN #u AS u ON u.code = d.v;", IrCardinality.Many)]
     public void A_key_is_fixed_by_a_column_of_a_body_s_table_already_fixed(string query, IrCardinality expected) =>
         // As by a table's column: a column of a table variable, a temporary table or a derived table whose row is fixed is one
-        // value. Its type must keep the key's equality: an nvarchar column compared with a varchar key converts the key.
+        // value. Its type must keep the key's equality: an nvarchar column compared with a varchar key converts the key. A string
+        // column of a CTE or derived table may carry a COLLATE that stays explicit outside it, and the comparison is made under
+        // it (A_derived_table_s_explicit_collation_compares_a_key_under_it), so only a table's string column fixes a string key.
         Assert.Equal(expected, LastRows("""
             DECLARE @v TABLE (id int PRIMARY KEY, n int);
             CREATE TABLE #t (id int PRIMARY KEY, n int, code varchar(10), ncode nvarchar(10));
@@ -159,6 +166,8 @@ public partial class RefinementTests
     [InlineData(null, "ALTER TABLE #t DROP CONSTRAINT ck_other;", IrCardinality.Many)]
     [InlineData(null, "ALTER INDEX ix_other ON #t DISABLE;", IrCardinality.Many)]
     [InlineData(null, "DROP INDEX ix_other ON #t;", IrCardinality.Many)]
+    [InlineData(null, "ALTER INDEX ALL ON #t DISABLE; ALTER INDEX ix_other ON #t REBUILD;", IrCardinality.Many)]
+    [InlineData(null, "ALTER INDEX ALL ON #t DISABLE; ALTER INDEX ALL ON #t REBUILD;", IrCardinality.AtMostOne)]
     [InlineData("pk_t", "DROP INDEX ix_other ON #t;", IrCardinality.AtMostOne)]
     public void A_key_constraint_on_a_temporary_table_holds_until_a_statement_that_may_name_it_drops_it(string? name, string change, IrCardinality expected)
     {
@@ -210,6 +219,27 @@ public partial class RefinementTests
             ("p.sql", $"CREATE PROCEDURE dbo.p @x int AS\n{created}\nEXEC dbo.callee @x = @x;\nSELECT t.n AS m FROM #t AS t WHERE t.id = @x;"));
         Assert.Equal([expected, expected], Object(doc, "dbo.p").Results!.Select(r => r.Cardinality));
         Assert.Equal(IrCardinality.Many, Assert.Single(Object(doc, "dbo.callee").Results!).Cardinality);
+    }
+
+    [Theory]
+    [InlineData("ALTER INDEX ALL ON #t REBUILD;", IrCardinality.Many)]
+    [InlineData("DROP INDEX ux_t ON #t; CREATE UNIQUE INDEX ux_t ON #t (id);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_t ON #t (id) WITH (DROP_EXISTING = ON);", IrCardinality.Many)]
+    [InlineData("DECLARE @k int = 0;", IrCardinality.AtMostOne)]
+    public void A_recursive_call_that_may_change_an_index_makes_its_caller_s_table_unknown(string inRecursion, IrCardinality expected)
+    {
+        // Each statement here leaves the key as it was, so the walk of the body keeps it. But the recursive call isn't followed:
+        // what it may write is read from its body, an index statement included, and a table it may change is unknown after it,
+        // as a callee's drop stays when it returns (A_callee_s_key_on_its_caller_s_temporary_table_stays_when_it_returns).
+        var doc = Infer(
+            ("rec.sql", $"""
+                CREATE PROCEDURE dbo.rec @n int AS
+                DECLARE @m int = @n - 1;
+                {inRecursion}
+                IF @n > 0 EXEC dbo.rec @n = @m;
+                """),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS\nCREATE TABLE #t (id int NOT NULL, n int, INDEX ux_t UNIQUE (id));\nEXEC dbo.rec @n = 1;\nSELECT t.n FROM #t AS t WHERE t.id = @x;"));
+        Assert.Equal(expected, Assert.Single(Object(doc, "dbo.p").Results!).Cardinality);
     }
 
     [Theory]

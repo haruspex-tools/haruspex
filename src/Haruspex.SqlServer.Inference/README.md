@@ -280,9 +280,12 @@ A temporary table has the keys SQL Server enforces on it at that point, and a qu
   variable's takes the database's (`A_temporary_table_s_string_column_takes_tempdb_s_collation_and_a_table_variable_s_the_database_s`).
   The project doesn't say what the server's is, but a key doesn't need it: a comparison with a variable or a literal is made
   under the column's own collation, which is the key's equality, and one with a column of another collation is refused (468)
-  (`A_temporary_table_s_string_key_compares_under_its_own_collation`). So the rule of "How many rows" holds as for a table.
+  (`A_temporary_table_s_string_key_compares_under_its_own_collation`). So the rule of "How many rows" holds as for a table. A
+  string column of a CTE or a derived table fixes no key, though: a `COLLATE` inside it stays explicit outside it, and the
+  comparison is made under that collation, not the key's (`A_derived_table_s_explicit_collation_compares_a_key_under_it`).
 - **A trigger** that a write to a permanent table may fire, and that may change the procedure's `#t`, makes it unknown after the
-  write ("Triggers" below), keys included.
+  write ("Triggers" below), keys included. A key rests, as results do, on a table the project doesn't define having no
+  trigger the project can't show: such a trigger could drop it.
 - **A global temporary table** (`##t`) claims nothing, its keys included: another session may drop it and create another of
   that name between two statements (`A_global_temporary_table_may_be_replaced_by_another_session`).
 - **Across calls** a key goes where the table's columns go ("Calls"): a callee reads its caller's table with the caller's keys at
@@ -1271,7 +1274,8 @@ naming the table with its schema and no database or server, which are enforced a
 an index that replaces it (`DROP_EXISTING`) anywhere may have disabled: a filtered unique index allows duplicates outside its
 filter, `A_filtered_unique_index_allows_duplicates_outside_its_filter`, and a disabled one allows them,
 `A_disabled_unique_index_allows_duplicates`) is compared with `=` to a value the same for every row: a literal, a variable, an enclosing query's column, or a
-column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
+column of a source already fixed (of a CTE or derived table, not a string column, whose `COLLATE` would compare under its own
+collation, `A_derived_table_s_explicit_collation_compares_a_key_under_it`); or is tested `IS NULL`, since a key holds one NULL at most
 (`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
 from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an
 outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, views by the rule

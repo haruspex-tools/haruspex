@@ -32,7 +32,9 @@ statement, `INSERT … EXEC` and `MERGE` included; a key a callee adds to its ca
 - *Use a string key only under a known collation.* A temporary table's string column takes `tempdb`'s collation, the server's,
   which the project doesn't give (a table variable's takes the database's; observed). But a comparison with a variable or a
   literal is made under the column's own collation, which is the key's equality, and one with a column of another collation is
-  refused (468), so the rule that types the value (`Cardinality.InKeysType`) holds without knowing it.
+  refused (468), so the rule that types the value (`Cardinality.InKeysType`) holds without knowing it. Not so a string column of
+  a CTE or a derived table: a `COLLATE` inside it stays explicit outside it, and the comparison is made under it (observed), so
+  such a column fixes no string key.
 
 **Reason.** Each claim is what the server enforces at that statement on every path that reaches it, and each statement that may
 end a key is read as ending it. Nothing about the IR changes: a key is the walk's, read by the cardinality rules a table's keys
