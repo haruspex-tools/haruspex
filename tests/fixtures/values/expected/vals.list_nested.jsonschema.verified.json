@@ -20,7 +20,7 @@
       "properties": {
         "inner": {
           "$ref": "#/$defs/ListNestedDeepInner",
-          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:13:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep.inner"
+          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:13:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain vals.list_nested deep.inner"
         },
         "guid": {
           "description": "SQL type uniqueidentifier. Left out when null: nullable-column (vals.sample.guid).",
@@ -77,17 +77,17 @@
         },
         "when": {
           "$ref": "#/$defs/ListNestedWhen",
-          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:9:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested when"
+          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:9:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain vals.list_nested when"
         },
         "meta": {
           "$ref": "#/$defs/ListNestedMeta"
         },
         "deep": {
           "$ref": "#/$defs/ListNestedDeep",
-          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:13:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain vals.list_nested deep"
+          "description": "Left out when null: all-fields-null (procedures/list_nested.sql:13:12). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain vals.list_nested deep"
         },
         "tags": {
-          "description": "Left out when null: empty-subquery (procedures/list_nested.sql:16:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain vals.list_nested tags",
+          "description": "Left out when null: empty-subquery (procedures/list_nested.sql:16:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain vals.list_nested tags",
           "type": "array",
           "items": {
             "$ref": "#/$defs/ListNestedTag"

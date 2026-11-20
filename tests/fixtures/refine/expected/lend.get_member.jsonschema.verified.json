@@ -19,12 +19,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "SQL type nvarchar(40). Left out when null: unmatched-row (procedures/get_member.sql:18:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member home.name",
+          "description": "SQL type nvarchar(40). Left out when null: unmatched-row (procedures/get_member.sql:18:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member home.name",
           "type": "string",
           "maxLength": 40
         },
         "city": {
-          "description": "SQL type nvarchar(40). Left out when null: nullable-column (lend.branch.city), unmatched-row (procedures/get_member.sql:18:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member home.city",
+          "description": "SQL type nvarchar(40). Left out when null: nullable-column (lend.branch.city), unmatched-row (procedures/get_member.sql:18:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member home.city",
           "type": "string",
           "maxLength": 40
         }
@@ -62,20 +62,20 @@
           "maximum": 9223372036854775807
         },
         "open_loans": {
-          "description": "SQL type int. Left out when null: count-overflow (procedures/get_member.sql:13:16). May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\". Why: haruspex explain lend.get_member open_loans",
+          "description": "SQL type int. Left out when null: count-overflow (procedures/get_member.sql:13:16). May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\". Why: haruspex explain lend.get_member open_loans",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647
         },
         "last_loan": {
-          "description": "SQL type date. Left out when null: empty-aggregate (procedures/get_member.sql:14:16). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member last_loan",
+          "description": "SQL type date. Left out when null: empty-aggregate (procedures/get_member.sql:14:16). May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain lend.get_member last_loan",
           "type": "string",
           "format": "date",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         },
         "home": {
           "$ref": "#/$defs/GetMemberHome",
-          "description": "Left out when null: all-fields-null (procedures/get_member.sql:15:8). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain lend.get_member home"
+          "description": "Left out when null: all-fields-null (procedures/get_member.sql:15:8). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain lend.get_member home"
         }
       },
       "required": [

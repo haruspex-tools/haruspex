@@ -25,10 +25,10 @@
           "maximum": 2147483647
         },
         "labelled": {
-          "description": "Not known (sqlcmd-variable): The key '$(Label)' of json_object holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the object's keys are not known. Left out when null: unknown (procedures/stall_card.sql:6:20). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card labelled"
+          "description": "Not known (sqlcmd-variable): The key '$(Label)' of json_object holds the SQLCMD variable $(Label), which a deployment replaces with its value, so the object's keys are not known. Left out when null: unknown (procedures/stall_card.sql:6:20). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card labelled"
         },
         "origin": {
-          "description": "Not known (sqlcmd-variable): The literal '{\"region\":\"$(Region)\"}' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. Left out when null: unknown (procedures/stall_card.sql:7:19). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card origin"
+          "description": "Not known (sqlcmd-variable): The literal '{\"region\":\"$(Region)\"}' holds the SQLCMD variable $(Region), which a deployment replaces with its value, so its length, value and type are not the text's. Left out when null: unknown (procedures/stall_card.sql:7:19). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: declare the results in the config file's \"results\". Why: haruspex explain kiosk.stall_card origin"
         }
       },
       "required": [

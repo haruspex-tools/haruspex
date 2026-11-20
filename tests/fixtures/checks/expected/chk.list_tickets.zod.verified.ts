@@ -43,7 +43,7 @@ const folds = {
 export const ListTicketsOwnerSchema = z.object({
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain chk.list_tickets owner.name
    */
@@ -51,7 +51,7 @@ export const ListTicketsOwnerSchema = z.object({
   /**
    * One of "A", "B", as the database compares strings.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain chk.list_tickets owner.grade
    */
@@ -92,13 +92,13 @@ export const ListTicketsRowSchema = z.object({
   late: z.int32().optional(),
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain chk.list_tickets owner
    */
   owner: ListTicketsOwnerSchema.optional(),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain chk.list_tickets events
    */

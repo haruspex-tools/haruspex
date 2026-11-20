@@ -100,7 +100,7 @@
           "minItems": 2
         },
         "stored": {
-          "description": "Not known (json-shape-unknown): @stored is assigned k.extras at procedures/kit_badges.sql:19:8, which is not JSON built here. Left out when null: unknown (procedures/kit_badges.sql:19:8). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges stored"
+          "description": "Not known (json-shape-unknown): @stored is assigned k.extras at procedures/kit_badges.sql:19:8, which is not JSON built here. Left out when null: unknown (procedures/kit_badges.sql:19:8). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges stored"
         },
         "note": {
           "description": "SQL type nvarchar(max).",
@@ -140,7 +140,7 @@
           ]
         },
         "accent": {
-          "description": "Not known (json-shape-unknown): The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here. Left out when null: unknown (procedures/kit_badges.sql:41:19). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges accent"
+          "description": "Not known (json-shape-unknown): The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here. Left out when null: unknown (procedures/kit_badges.sql:41:19). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain kit.kit_badges accent"
         },
         "accent_n": {
           "type": "array",

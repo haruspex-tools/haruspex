@@ -88,7 +88,7 @@
           "maximum": 2147483647
         },
         "view_parts": {
-          "description": "Left out when null: empty-subquery (views/kit_card.sql:5:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes view_parts",
+          "description": "Left out when null: empty-subquery (views/kit_card.sql:5:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes view_parts",
           "type": "array",
           "items": {
             "$ref": "#/$defs/KitRoutesViewPart"
@@ -99,7 +99,7 @@
           "$ref": "#/$defs/KitRoutesViewSummary"
         },
         "inline_parts": {
-          "description": "Left out when null: empty-subquery (functions/parts_of.sql:6:22), unmatched-lateral-row (procedures/kit_routes.sql:19:13). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes inline_parts",
+          "description": "Left out when null: empty-subquery (functions/parts_of.sql:6:22), unmatched-lateral-row (procedures/kit_routes.sql:19:13). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes inline_parts",
           "type": "array",
           "items": {
             "$ref": "#/$defs/KitRoutesInlinePart"
@@ -107,7 +107,7 @@
           "minItems": 1
         },
         "sheet_parts": {
-          "description": "Left out when null: nullable-column (kit.part_sheet.parts), unmatched-lateral-row (procedures/kit_routes.sql:20:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes sheet_parts",
+          "description": "Left out when null: nullable-column (kit.part_sheet.parts), unmatched-lateral-row (procedures/kit_routes.sql:20:13). May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain kit.kit_routes sheet_parts",
           "type": "array",
           "items": {
             "$ref": "#/$defs/KitRoutesSheetPart"

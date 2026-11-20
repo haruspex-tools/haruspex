@@ -35,7 +35,7 @@ export const MemberPrefsResult2RowSchema = z.object({
   /**
    * Not known (json-shape-unknown); the IR's unknowns say why.
    * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: type it in the config file with "type" and "import".
    * Why: haruspex explain rink.member_prefs '#2.notify'
    */

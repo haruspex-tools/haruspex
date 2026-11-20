@@ -88,7 +88,7 @@
           "maximum": 2147483647
         },
         "notify": {
-          "description": "Not known (json-shape-unknown): p.notify is JSON read from a document: its shape is in the data. Left out when null: json-null-or-absent (procedures/member_prefs.sql:17:37). May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain rink.member_prefs '#2.notify'"
+          "description": "Not known (json-shape-unknown): p.notify is JSON read from a document: its shape is in the data. Left out when null: json-null-or-absent (procedures/member_prefs.sql:17:37). May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: type it in the config file with \"type\" and \"import\". Why: haruspex explain rink.member_prefs '#2.notify'"
         }
       },
       "required": [

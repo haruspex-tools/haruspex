@@ -53,7 +53,7 @@ export const KitRoutesRowSchema = z.object({
   kit_id: z.int32(),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.kit_routes view_parts
    */
@@ -62,14 +62,14 @@ export const KitRoutesRowSchema = z.object({
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
    * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.kit_routes inline_parts
    */
   inline_parts: z.array(KitRoutesInlinePartSchema).min(1).optional(),
   /**
    * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.kit_routes sheet_parts
    */

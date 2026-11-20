@@ -195,8 +195,9 @@ when nothing was declared ([decision 0038](../decisions/0038-the-callers-session
 declares needs a reason, or it reads as a bug. The IR records each field's derivation (the columns it is read from, and each
 null rule with where it applied), so the emitter can say the reason in the IR's own words: a line per rule, with its code, the
 way out when there is one, and the `haruspex explain` command that shows the rest. A rule every field of a kind follows is said
-once instead, in the module's header: `FOR JSON` leaves out a key whose value is null, so a key left out only because its column
-is nullable has no comment of its own. The places are left out, so that moving a
+once instead, in the module's header: `FOR JSON`, and `JSON_OBJECT` with `ABSENT ON NULL`, leave out a key whose value is null, so
+a key left out only because its column is nullable has no comment of its own. The IR doesn't record which of the two built an
+object, so every line that gives this reason names both (`IrFieldText.KeyLeftOutWhenNull`). The places are left out, so that moving a
 query down its file changes no comment. A comment is not part of what makes two shapes the same: shapes are compared without
 them, and a type that shares its shape says its fields' reasons above its own export
 ([decision 0079](../decisions/0079-a-surprise-is-explained-where-it-is-written.md)).

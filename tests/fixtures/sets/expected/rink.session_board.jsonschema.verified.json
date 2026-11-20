@@ -69,7 +69,7 @@
           "maxLength": 8
         },
         "people": {
-          "description": "Left out when null: empty-subquery (procedures/session_board.sql:9:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain rink.session_board '#1.people'",
+          "description": "Left out when null: empty-subquery (procedures/session_board.sql:9:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain rink.session_board '#1.people'",
           "type": "array",
           "items": {
             "$ref": "#/$defs/SessionBoardResult1PeopleItem"
@@ -105,7 +105,7 @@
         },
         "reach": {
           "$ref": "#/$defs/SessionBoardResult2Reach",
-          "description": "Left out when null: all-fields-null (procedures/session_board.sql:25:27). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain rink.session_board '#2.reach'"
+          "description": "Left out when null: all-fields-null (procedures/session_board.sql:25:27). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain rink.session_board '#2.reach'"
         }
       },
       "required": [

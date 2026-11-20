@@ -92,7 +92,7 @@ internal static class ZodLowering
         }
 
         if (leavesOutNullKeys)
-            yield return "FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null, so a key they may leave out is optional rather than nullable.";
+            yield return IrFieldText.KeyLeftOutWhenNull + ", so a key they may leave out is optional rather than nullable.";
 
         var caveats = declarations.Select(d => d.Schema).OfType<ObjectSchema>()
             .SelectMany(o => o.Properties).Select(p => p.Value)

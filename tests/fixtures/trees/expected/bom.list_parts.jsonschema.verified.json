@@ -16,7 +16,7 @@
           "$ref": "#/$defs/ComponentsNodePart"
         },
         "components": {
-          "description": "Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain ComponentsNode components",
+          "description": "Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain ComponentsNode components",
           "type": "array",
           "items": {
             "$ref": "#/$defs/ComponentsNode"
@@ -90,7 +90,7 @@
           "maxLength": 30
         },
         "components": {
-          "description": "Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain bom.list_parts components",
+          "description": "Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain bom.list_parts components",
           "type": "array",
           "items": {
             "$ref": "#/$defs/ComponentsNode"
@@ -98,7 +98,7 @@
           "minItems": 1
         },
         "componentsText": {
-          "description": "A string holding JSON, which contentSchema describes. Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain bom.list_parts componentsText",
+          "description": "A string holding JSON, which contentSchema describes. Left out when null: empty-subquery (functions/components.sql:8:12). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain bom.list_parts componentsText",
           "type": "string",
           "contentMediaType": "application/json",
           "contentSchema": {

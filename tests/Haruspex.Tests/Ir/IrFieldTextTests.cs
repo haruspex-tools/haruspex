@@ -66,11 +66,11 @@ public class IrFieldTextTests
         Assert.Equal(
             [
                 "May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).",
-                "Left out when null, as FOR JSON leaves out a key whose value is null.",
+                "Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.",
             ],
             lines.Take(2));
         Assert.Equal("Why: haruspex explain shop.order_note first_line", lines[^1]);
-        Assert.Contains("Left out when null, as FOR JSON leaves out a key whose value is null.", Lines(json, "note", IrComments.All, "shop.order_note"));
+        Assert.Contains("Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.", Lines(json, "note", IrComments.All, "shop.order_note"));
     }
 
     [Fact]

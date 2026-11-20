@@ -63,7 +63,7 @@ export const KitBadgesRowSchema = z.object({
   tiers: z.tuple([KitBadgesTiersSchema, KitBadgesTiers2Schema]),
   /**
    * Not known (json-shape-unknown); the IR's unknowns say why.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: type it in the config file with "type" and "import".
    * Why: haruspex explain kit.kit_badges stored
    */
@@ -73,7 +73,7 @@ export const KitBadgesRowSchema = z.object({
   share: z.union([KitBadgesShareSchema, z.tuple([])]),
   /**
    * Not known (json-shape-unknown); the IR's unknowns say why.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: type it in the config file with "type" and "import".
    * Why: haruspex explain kit.kit_badges accent
    */

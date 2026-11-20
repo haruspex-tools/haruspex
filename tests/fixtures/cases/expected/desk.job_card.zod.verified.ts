@@ -70,14 +70,14 @@ export const JobCardRowSchema = z.object({
   /**
    * A string holding JSON, checked against the schema inside.
    * May be null: COALESCE reads its argument a second time, which may then be null (read-twice).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain desk.job_card lines_text
    */
   lines_text: jsonText(() => z.array(JobCardLinesTextSchema)).optional(),
   lines: z.array(JobCardLineSchema),
   /**
    * May be null: COALESCE reads its argument a second time, which may then be null (read-twice).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain desk.job_card line_ids
    */
   line_ids: z.array(JobCardLineIdSchema).optional(),

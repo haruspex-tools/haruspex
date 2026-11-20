@@ -60,7 +60,7 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
         if (field.Presence == IrPresence.Optional)
             Say(output, "  absent: one of the two databases doesn't return the key, or leaves it out when null where the other sends null");
         else if (IrSurprises.AbsentWhenNull(field))
-            Say(output, "  absent when null: FOR JSON leaves out a key whose value is null");
+            Say(output, "  absent when null: " + IrFieldText.KeyLeftOutWhenNull);
 
         if (Override(place) is { } claim)
             Say(output, $"  declared {IrWireNames.Of(claim.Setting)} in the config file{(claim.Why is { } why ? $": {why}" : "")}");

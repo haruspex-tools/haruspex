@@ -8,14 +8,14 @@ export const StallCardRowSchema = z.object({
   id: z.int32(),
   /**
    * Not known (sqlcmd-variable); the IR's unknowns say why.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: declare the results in the config file's "results".
    * Why: haruspex explain kiosk.stall_card labelled
    */
   labelled: z.unknown().optional(),
   /**
    * Not known (sqlcmd-variable); the IR's unknowns say why.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: declare the results in the config file's "results".
    * Why: haruspex explain kiosk.stall_card origin
    */

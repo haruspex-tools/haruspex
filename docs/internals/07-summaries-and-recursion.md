@@ -166,7 +166,7 @@ export const SubcategoriesNodeSchema = z.object({
   name: z.string().max(40),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain SubcategoriesNode children
    */
@@ -179,7 +179,7 @@ export const CategoryTreeRowSchema = z.object({
   name: z.string().max(40),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain shop.category_tree children
    */

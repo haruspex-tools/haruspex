@@ -24,7 +24,7 @@
           "maxLength": 38
         },
         "ref": {
-          "description": "SQL type varchar(16). varchar(16) counts bytes and its collation isn't declared, so the length is at most 16 code points. Left out when null: nullable-column (cafe.menu_item.short_code). Its type is varchar(16), where cafe.menu_item.short_code is char(4) and cafe.tab_item.tab_item_id is int: what it is computed with makes it another type. Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain cafe.tab_receipt 'items[].ref'",
+          "description": "SQL type varchar(16). varchar(16) counts bytes and its collation isn't declared, so the length is at most 16 code points. Left out when null: nullable-column (cafe.menu_item.short_code). Its type is varchar(16), where cafe.menu_item.short_code is char(4) and cafe.tab_item.tab_item_id is int: what it is computed with makes it another type. Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain cafe.tab_receipt 'items[].ref'",
           "type": "string",
           "maxLength": 16
         },
@@ -54,7 +54,7 @@
           "$ref": "#/$defs/TabReceiptTab"
         },
         "items": {
-          "description": "Left out when null: empty-subquery (procedures/tab_receipt.sql:11:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cafe.tab_receipt items",
+          "description": "Left out when null: empty-subquery (procedures/tab_receipt.sql:11:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cafe.tab_receipt items",
           "type": "array",
           "items": {
             "$ref": "#/$defs/TabReceiptItem"
@@ -82,7 +82,7 @@
           "maxLength": 63
         },
         "note_number": {
-          "description": "SQL type int. Left out when null: nullable-column (cafe.tab.note), failed-conversion (procedures/tab_receipt.sql:10:8). Its type is int, where cafe.tab.note is varchar(20): what it is computed with makes it another type. May be null: TRY_CAST and TRY_CONVERT give null for a value that doesn't convert (failed-conversion). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain cafe.tab_receipt tab.note_number",
+          "description": "SQL type int. Left out when null: nullable-column (cafe.tab.note), failed-conversion (procedures/tab_receipt.sql:10:8). Its type is int, where cafe.tab.note is varchar(20): what it is computed with makes it another type. May be null: TRY_CAST and TRY_CONVERT give null for a value that doesn't convert (failed-conversion). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain cafe.tab_receipt tab.note_number",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

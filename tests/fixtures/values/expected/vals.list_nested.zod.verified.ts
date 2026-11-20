@@ -30,7 +30,7 @@ export type ListNestedDeepInner = z.infer<typeof ListNestedDeepInnerSchema>
 export const ListNestedDeepSchema = z.object({
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain vals.list_nested deep.inner
    */
   inner: ListNestedDeepInnerSchema.optional(),
@@ -49,20 +49,20 @@ export const ListNestedRowSchema = z.object({
   id: z.int32(),
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain vals.list_nested when
    */
   when: ListNestedWhenSchema.optional(),
   meta: ListNestedMetaSchema,
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain vals.list_nested deep
    */
   deep: ListNestedDeepSchema.optional(),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain vals.list_nested tags
    */

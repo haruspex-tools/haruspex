@@ -15,14 +15,14 @@ export const RegionReportRegionSchema = z.object({
    * One of "NTH", "STH", "EST", "WST", as the database compares strings.
    * char(3) counts bytes and its collation isn't declared, so the length is at most 3.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain flow.region_report region.code
    */
   code: z.string().max(3).optional(),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain flow.region_report region.name
    */
@@ -40,14 +40,14 @@ export const RegionReportRowSchema = z.object({
   channel: z.string().max(6),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain flow.region_report note
    */
   note: z.string().max(40).optional(),
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain flow.region_report region
    */
   region: RegionReportRegionSchema.optional(),

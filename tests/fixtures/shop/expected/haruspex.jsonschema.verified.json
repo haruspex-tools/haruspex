@@ -146,7 +146,7 @@
           "maximum": 2147483647
         },
         "lines": {
-          "description": "Left out when null: empty-subquery (queries/basket_card.sql:6:5). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain queries/basket_card.sql lines",
+          "description": "Left out when null: empty-subquery (queries/basket_card.sql:6:5). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain queries/basket_card.sql lines",
           "type": "array",
           "items": {
             "$ref": "#/$defs/BasketCardLine"
@@ -246,7 +246,7 @@
           "maxLength": 60
         },
         "lines": {
-          "description": "Left out when null: empty-subquery (procedures/get_basket.sql:10:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.get_basket lines",
+          "description": "Left out when null: empty-subquery (procedures/get_basket.sql:10:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain shop.get_basket lines",
           "type": "array",
           "items": {
             "$ref": "#/$defs/BasketItem"

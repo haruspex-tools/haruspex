@@ -39,7 +39,7 @@ export type PartRowsResult3Row = z.infer<typeof PartRowsResult3RowSchema>
 export const PartRowsResult4RowSchema = z.object({
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.part_rows '#4.name'
    */

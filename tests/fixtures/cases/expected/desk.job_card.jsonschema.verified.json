@@ -163,7 +163,7 @@
           ]
         },
         "lines_text": {
-          "description": "A string holding JSON, which contentSchema describes. Left out when null: read-twice (procedures/job_card.sql:11:17). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain desk.job_card lines_text",
+          "description": "A string holding JSON, which contentSchema describes. Left out when null: read-twice (procedures/job_card.sql:11:17). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain desk.job_card lines_text",
           "type": "string",
           "contentMediaType": "application/json",
           "contentSchema": {
@@ -180,7 +180,7 @@
           }
         },
         "line_ids": {
-          "description": "Left out when null: read-twice (procedures/job_card.sql:20:28). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain desk.job_card line_ids",
+          "description": "Left out when null: read-twice (procedures/job_card.sql:20:28). May be null: COALESCE reads its argument a second time, which may then be null (read-twice). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain desk.job_card line_ids",
           "type": "array",
           "items": {
             "$ref": "#/$defs/JobCardLineId"

@@ -13,14 +13,14 @@ import { z } from 'zod'
 export const GetMemberHomeSchema = z.object({
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lend.get_member home.name
    */
   name: z.string().max(40).optional(),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lend.get_member home.city
    */
@@ -38,21 +38,21 @@ export const GetMemberRowSchema = z.object({
   loans: z.number(),
   /**
    * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
    * Why: haruspex explain lend.get_member open_loans
    */
   open_loans: z.int32().optional(),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lend.get_member last_loan
    */
   last_loan: z.iso.date().optional(),
   /**
    * May be null: it is a nested object left out when every one of its values is null (all-fields-null).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain lend.get_member home
    */
   home: GetMemberHomeSchema.optional(),

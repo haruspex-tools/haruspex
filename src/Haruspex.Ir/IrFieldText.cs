@@ -10,6 +10,13 @@ namespace Haruspex.Ir;
 public static class IrFieldText
 {
     /// <summary>
+    /// Why a key may be left out when its value is null, in the words every emitter and <c>haruspex explain</c> use. It names both
+    /// constructs that do it, since the IR doesn't record which of them built an object: <c>FOR JSON</c> (without
+    /// <c>INCLUDE_NULL_VALUES</c>) and <c>JSON_OBJECT</c> with <c>ABSENT ON NULL</c>.
+    /// </summary>
+    public const string KeyLeftOutWhenNull = "FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null";
+
+    /// <summary>
     /// The lines that explain a field of <paramref name="typeName"/> at the level <paramref name="comments"/> asks for: none for a
     /// field that is no surprise unless every field is explained, and none at all under <see cref="IrComments.None"/>.
     /// </summary>
@@ -49,7 +56,7 @@ public static class IrFieldText
         if (field.Presence == IrPresence.Optional)
             lines.Add("May be left out: one of the two databases doesn't return the key, or leaves it out when null where the other sends null.");
         else if (IrSurprises.AbsentWhenNull(field))
-            lines.Add("Left out when null, as FOR JSON leaves out a key whose value is null.");
+            lines.Add($"Left out when null, as {KeyLeftOutWhenNull}.");
 
         lines.AddRange(ways.Distinct(StringComparer.Ordinal).Select(w => "To change it: " + w + "."));
         lines.Add("Why: " + IrFieldPlaces.Command(document, typeName, field));

@@ -27,21 +27,21 @@ export type ListBooksReviewsLatest = z.infer<typeof ListBooksReviewsLatestSchema
 export const ListBooksReviewsSchema = z.object({
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain pay.list_books reviews.stars
    */
   stars: z.array(z.int().min(1).max(5)).min(1).optional(),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain pay.list_books reviews.comments
    */
   comments: z.array(z.string().max(100).nullable()).min(1).optional(),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain pay.list_books reviews.latest
    */
@@ -102,7 +102,7 @@ export const ListBooksRowSchema = z.object({
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain pay.list_books tags
    */
@@ -110,7 +110,7 @@ export const ListBooksRowSchema = z.object({
   /**
    * A string holding JSON, checked against the schema inside.
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain pay.list_books firstReviewText
    */

@@ -47,13 +47,13 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code points. Left out when null: unmatched-row (procedures/list_tickets.sql:38:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets owner.name",
+          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code points. Left out when null: unmatched-row (procedures/list_tickets.sql:38:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets owner.name",
           "type": "string",
           "minLength": 1,
           "maxLength": 20
         },
         "grade": {
-          "description": "SQL type nchar(1). Facts: values from the check tables/owner.sql:6:38. One of \"A\", \"B\", as the database compares strings. nchar(1) is exactly 1 UTF-16 code units, which is 1 to 1 code points. Left out when null: unmatched-row (procedures/list_tickets.sql:38:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets owner.grade",
+          "description": "SQL type nchar(1). Facts: values from the check tables/owner.sql:6:38. One of \"A\", \"B\", as the database compares strings. nchar(1) is exactly 1 UTF-16 code units, which is 1 to 1 code points. Left out when null: unmatched-row (procedures/list_tickets.sql:38:11). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets owner.grade",
           "type": "string",
           "minLength": 1,
           "maxLength": 1
@@ -173,10 +173,10 @@
         },
         "owner": {
           "$ref": "#/$defs/ListTicketsOwner",
-          "description": "Left out when null: all-fields-null (procedures/list_tickets.sql:26:8). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain chk.list_tickets owner"
+          "description": "Left out when null: all-fields-null (procedures/list_tickets.sql:26:8). May be null: it is a nested object left out when every one of its values is null (all-fields-null). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain chk.list_tickets owner"
         },
         "events": {
-          "description": "Left out when null: empty-subquery (procedures/list_tickets.sql:28:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets events",
+          "description": "Left out when null: empty-subquery (procedures/list_tickets.sql:28:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain chk.list_tickets events",
           "type": "array",
           "items": {
             "$ref": "#/$defs/ListTicketsEvent"

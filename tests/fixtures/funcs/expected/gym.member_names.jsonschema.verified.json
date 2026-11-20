@@ -214,17 +214,17 @@
           "maxLength": 40
         },
         "tail": {
-          "description": "SQL type nvarchar(3). Left out when null: nullable-column (gym.member.nickname). Its type is nvarchar(3), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.tail'",
+          "description": "SQL type nvarchar(3). Left out when null: nullable-column (gym.member.nickname). Its type is nvarchar(3), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain gym.member_names '#2.tail'",
           "type": "string",
           "maxLength": 3
         },
         "locker": {
-          "description": "SQL type nvarchar(4000). Left out when null: json-null-or-absent (procedures/member_names.sql:32:8). Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type. May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.locker'",
+          "description": "SQL type nvarchar(4000). Left out when null: json-null-or-absent (procedures/member_names.sql:32:8). Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type. May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain gym.member_names '#2.locker'",
           "type": "string",
           "maxLength": 4000
         },
         "nickname_length": {
-          "description": "SQL type int. Left out when null: nullable-column (gym.member.nickname). Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain gym.member_names '#2.nickname_length'",
+          "description": "SQL type int. Left out when null: nullable-column (gym.member.nickname). Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type. Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain gym.member_names '#2.nickname_length'",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

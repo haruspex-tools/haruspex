@@ -56,7 +56,7 @@ export type GetKitEither2 = z.infer<typeof GetKitEither2Schema>
 export const GetKitRowSchema = z.object({
   /**
    * May be null: it is a variable that may not have been given a value that is never null (variable).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.get_kit kit
    */
@@ -64,7 +64,7 @@ export const GetKitRowSchema = z.object({
   parts: z.array(GetKitPartSchema),
   /**
    * May be null: it is a variable that may not have been given a value that is never null (variable).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain kit.get_kit either
    */

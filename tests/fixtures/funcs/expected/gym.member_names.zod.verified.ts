@@ -113,20 +113,20 @@ export const MemberNamesResult2RowSchema = z.object({
   shout: z.string().max(40),
   /**
    * Its type is nvarchar(3), where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain gym.member_names '#2.tail'
    */
   tail: z.string().max(3).optional(),
   /**
    * Its type is nvarchar(4000), where gym.member.prefs is nvarchar(max): what it is computed with makes it another type.
    * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain gym.member_names '#2.locker'
    */
   locker: z.string().max(4000).optional(),
   /**
    * Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain gym.member_names '#2.nickname_length'
    */
   nickname_length: z.int32().optional(),

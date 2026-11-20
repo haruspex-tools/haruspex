@@ -31,7 +31,7 @@ export const CatalogueSummaryResult2RowSchema = z.object({
   members: z.number(),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lend.catalogue_summary '#2.first_id'
    */

@@ -105,6 +105,20 @@ public class ExplainTests
             output);
     }
 
+    [Theory]
+    [InlineData("SELECT max(l.shipped_at) AS last_shipped FROM shop.order_line AS l FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;")]
+    [InlineData("SELECT JSON_OBJECT('last_shipped': max(l.shipped_at) ABSENT ON NULL) AS summary FROM shop.order_line AS l;")]
+    public void A_key_left_out_when_null_names_both_constructs_that_leave_one_out(string query)
+    {
+        // The IR doesn't say which construct built the object, so the line names both, as the Zod module's header does.
+        using var folder = Generated($"CREATE PROCEDURE shop.order_summary AS\n{query}");
+
+        var (exitCode, output, _) = Run(folder, "explain", "shop.order_summary", query.Contains("JSON_OBJECT", StringComparison.Ordinal) ? "summary<json>.last_shipped" : "last_shipped");
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("  absent when null: FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null\n", output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Where_the_sql_isn_t_at_hand_each_step_is_its_reference_alone()
     {

@@ -20,7 +20,7 @@ export const TabReceiptTabSchema = z.object({
   /**
    * Its type is int, where cafe.tab.note is varchar(20): what it is computed with makes it another type.
    * May be null: TRY_CAST and TRY_CONVERT give null for a value that doesn't convert (failed-conversion).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain cafe.tab_receipt tab.note_number
    */
   note_number: z.int32().optional(),
@@ -36,7 +36,7 @@ export const TabReceiptItemSchema = z.object({
   /**
    * varchar(16) counts bytes and its collation isn't declared, so the length is at most 16.
    * Its type is varchar(16), where cafe.menu_item.short_code is char(4) and cafe.tab_item.tab_item_id is int: what it is computed with makes it another type.
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain cafe.tab_receipt 'items[].ref'
    */
   ref: z.string().max(16).optional(),
@@ -54,7 +54,7 @@ export const TabReceiptRowSchema = z.object({
   tab: TabReceiptTabSchema,
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
-   * Left out when null, as FOR JSON leaves out a key whose value is null.
+   * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain cafe.tab_receipt items
    */

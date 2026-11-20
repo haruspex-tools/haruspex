@@ -106,7 +106,7 @@ holds up to trailing spaces is a `pattern`:
       "maxLength": 200
     },
     "lines": {
-      "description": "Left out when null: empty-subquery (example.sql:17:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \u0022nullable\u0022: false and why. Why: haruspex explain shop.get_basket lines",
+      "description": "Left out when null: empty-subquery (example.sql:17:8). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \u0022nullable\u0022: false and why. Why: haruspex explain shop.get_basket lines",
       "type": "array",
       "items": {
         "$ref": "#/$defs/GetBasketLine"

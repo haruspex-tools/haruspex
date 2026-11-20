@@ -131,7 +131,7 @@
           "maximum": 2147483647
         },
         "relatedText": {
-          "description": "A string holding JSON, which contentSchema describes. Left out when null: empty-subquery (functions/item_card.sql:7:17). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cat.list_items relatedText",
+          "description": "A string holding JSON, which contentSchema describes. Left out when null: empty-subquery (functions/item_card.sql:7:17). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cat.list_items relatedText",
           "type": "string",
           "contentMediaType": "application/json",
           "contentSchema": {
@@ -140,14 +140,14 @@
         },
         "related": {
           "$ref": "#/$defs/ListItemsRelated",
-          "description": "Left out when null: empty-subquery (functions/item_card.sql:7:17). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON leaves out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cat.list_items related"
+          "description": "Left out when null: empty-subquery (functions/item_card.sql:7:17). May be null: it is a subquery, which is null when it returns no rows (empty-subquery). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain cat.list_items related"
         },
         "label": {
           "$ref": "#/$defs/ListItemsLabel"
         },
         "noteLabel": {
           "$ref": "#/$defs/ListItemsNoteLabel",
-          "description": "Left out when null: null-input (procedures/list_items.sql:10:19). May be null: it calls a function that returns null on null input with an argument that may be null (null-input). Left out when null, as FOR JSON leaves out a key whose value is null. Why: haruspex explain cat.list_items noteLabel"
+          "description": "Left out when null: null-input (procedures/list_items.sql:10:19). May be null: it calls a function that returns null on null input with an argument that may be null (null-input). Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null. Why: haruspex explain cat.list_items noteLabel"
         },
         "tag": {
           "$ref": "#/$defs/ListItemsTag"
