@@ -282,22 +282,27 @@ internal sealed class FunctionSummaries
             : SqlTypes.ToShape(model, returnType, at);
         var declaredOnly = new FunctionReturn(declared, returnsJson, null, [new IrNullReason(IrNullRule.FunctionResult, at.ToString())], nullOnNull);
 
-        if (function.Body is not SqlBody { Statements: var statements } || !HoldsAnyJson(resolved))
+        // A function of nvarchar may return JSON assembled as text, which a shorter type cuts short, and a cut array is never
+        // JSON (CutPiece), so any length holds it. varchar may turn a character into a quotation mark, so it does not.
+        var assembles = resolved is not null && ScalarType.Of(resolved) is { IsString: true, IsNational: true };
+        if (function.Body is not SqlBody { Statements: var statements } || !(HoldsAnyJson(resolved) || assembles))
             return declaredOnly;
         if (Returned(statements, function.Parameters) is not { } expression)
             return declaredOnly;
         if (header)
-            return declaredOnly with { Content = new NeverShape(at) };
+            return HoldsAnyJson(resolved) ? declaredOnly with { Content = new NeverShape(at) } : declaredOnly;
 
         var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
         var value = new Typer(model, function.Span, summaries, parameters, function.AnsiNullsOff, uncommitted).Return(expression, function.Parameters);
 
-        var content = value switch
+        var content = !HoldsAnyJson(resolved) ? null : value switch
         {
             { IsLiveJson: true } => value.Shape,
             { Shape: JsonTextShape { Content: { } text } } => text,
             _ => null,
         };
+        if (content is null && assembles && Typer.Assembled(value, at) is { } assembled and not UnknownShape)
+            return new FunctionReturn(declared, returnsJson, assembled, value.NullableBecause, nullOnNull, AsText: true);
         return content is null ? declaredOnly : new FunctionReturn(declared, returnsJson, content, value.NullableBecause, nullOnNull);
     }
 

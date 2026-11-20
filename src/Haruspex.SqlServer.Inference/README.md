@@ -68,8 +68,8 @@ it, claim by claim.
 The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
 `VALUES` lists and views ("APPLY", "Views"), `SELECT *` ("`SELECT *`"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
-"Built-in functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, and JSON built in
-the project and traced to where it is read. The walk is `Walker.cs`, with `FlowState.cs` (the state and
+"Built-in functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, JSON built in
+the project and traced to where it is read, and JSON assembled as text. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
 query binds holds, the state it is read in, what the conditions around it prove and the construct it is inside), and never
 in anything the walk holds (the guide's [chapter 4](../../docs/internals/04-abstract-interpretation.md)) and `Lattice/` (the knowledge join of values, one lattice per fact, composed in `Value.Join`). Every engine rule it leans on is
@@ -1690,8 +1690,8 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   (`JsonShapes.Join`): the same shape is itself; arrays and tuples are an array of both's items, between the fewest and most
   of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order, each
   present the same way, join key by key, and records join value by value; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
-  nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation, `json_modify`, a
-  literal that is not a JSON document, a default, an `INSERT … EXEC`, a write through a CTE or derived table)
+  nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation that is not JSON
+  assembled as text (below), `json_modify`, a literal that is not a JSON document, a default, an `INSERT … EXEC`, a write through a CTE or derived table)
   makes the content unknown, and `json_query` over the place reports `json-shape-unknown` at that write, naming it.
 - **Literals** (`JsonLiterals`). A literal that is valid JSON of an object or array has an exact shape: an array a tuple, keys
   always present, a JSON `null` `null-literal`, strings and numbers their own values (fact source `expression`). Observed
@@ -1743,6 +1743,70 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
   whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s
   `value` as JSON text.
+
+## JSON assembled as text
+
+The code is `Typer.JsonAssembled.cs`, `JsonAssembly.cs` and the pieces (`TextPiece` and its kinds); the note is
+`JsonTextNotes.cs`. Before `json_arrayagg` and `json_array`, code built JSON arrays by joining text:
+`N'[' + coalesce(string_agg(convert(nvarchar(max), l.line_id), N','), N'') + N']'`, `concat(N'["', string_agg(…, N'","'), N'"]')`,
+`'[' + concat_ws(',', case when … then '"retail"' end, …) + ']'`, `concat('[', a.j, ',', b.j, ']')`. Where such text is read as
+JSON (`json_query`, `OPENJSON`, `JSON_VALUE`, a variable or column that holds JSON, a function's result), it is typed exactly
+where the server guarantees its shape, and unknown, saying why, everywhere else. Every rule is observed in
+`JsonAssembledObservationTests` ([decision 0084](../../docs/decisions/0084-json-assembled-as-text-is-typed-where-each-element-is-one-json-value.md)).
+
+- **Pieces.** What a string's text is made of is a fact of its value (`Value.Pieces`), stated by the rules that build strings
+  and passed on by those that keep the text: a literal; a number converted to text (`NumberPiece`); text that needs no escape
+  in quotes (`SafeTextPiece`); one JSON value (`JsonPiece`); `string_agg` (`ListPiece`) and `concat_ws` (`JoinedPiece`) of
+  pieces; text that is one of several (`EitherPiece`: `COALESCE`, `ISNULL`, `CASE`, or a NULL that counts as empty); text cut
+  short (`CutPiece`); and text that may be anything (`OpaquePiece`). `+` and `concat` join their operands' pieces, a scalar
+  subquery, a conversion to a string type that loses nothing and a place that holds the JSON keep them, and any other rule
+  drops them, which claims nothing ("Facts dropped by default" in [the guide](../../docs/internals/05-values-as-a-lattice.md)).
+  `JsonAssembly` reads the pieces where the text is read as JSON, as a parser reads text, each alternative apart, and joins
+  what each holds.
+- **Elements.** An element is typed only where its text is exactly one JSON value: a literal; an integer, a decimal or a `bit`
+  converted with no style, `money` with style 2 or 126 (written in full, a decimal with its scale and a leading zero, a `bit`
+  as the number 0 or 1, observed: `A_number_converted_to_text_is_written_so`, and the same converted implicitly by
+  `string_agg` and `concat`: `String_agg_and_concat_write_a_number_as_convert_with_no_style_does`); live JSON built as
+  `nvarchar(max)` (a constructor, a `FOR JSON` subquery with its wrapper: `Live_json_in_plus_and_string_agg_is_its_text`);
+  `FOR JSON … WITHOUT_ARRAY_WRAPPER` of one row at most, since of more rows its text is several values, which brackets make an
+  array of (`A_for_json_fragment_without_its_array_wrapper_holds_every_row_so_in_brackets_it_is_an_array_of_them`); and a
+  string in quotes whose text can't hold a quotation mark, a backslash or a control character: `string_escape(x, 'json')`, read
+  back as x; a number, a date, a time or a `uniqueidentifier` converted to text; a value whose every value is known exactly and
+  holds none of them; a literal. `money` with no style is rounded to two places, with style 1 it has commas (`[1,234.50]` is
+  two numbers), and `float` and `real` keep six digits, so their text is not their value: outside quotes they are unknown.
+- **An unescaped value in quotes is unknown.** A value `a","b` makes two elements, `a",1,"b` puts a number among the strings,
+  and `a"]x` ends the array, after which `json_query` ignores the rest: each read succeeds and returns another shape (observed:
+  `An_unescaped_value_in_quotes_can_make_more_elements_a_number_or_cut_the_array_short`). So it is unknown, naming the value.
+- **Separators.** `string_agg`'s and `concat_ws`'s separator must be a literal comma, or `","` inside quotes. A NULL separator
+  glues the items together (`String_agg_with_a_null_separator_glues_its_values_together`), so `[1,2]` becomes `[12]`.
+- **NULL and empty.** `string_agg` over no rows, or over NULLs only, is NULL. `'[' + NULL + ']'` is NULL, but `[]` under
+  `CONCAT_NULL_YIELDS_NULL` off, which the callers' sessions may set unless they are declared not to; `concat` and
+  `coalesce(…, '')` make `[]`; `concat(N'["', NULL, N'"]')` makes `[""]`, one empty string, which the element type allows
+  (`An_aggregate_over_no_rows_is_null_so_plus_is_null_concat_is_empty_and_quotes_in_concat_make_one_empty_string`,
+  `With_concat_null_yields_null_off_plus_over_a_null_aggregate_is_empty_brackets`). So an array claims at least one item only
+  where none of these can happen. `concat_ws` leaves out each NULL, so its elements are any subset of its values, none included
+  (`Concat_ws_skips_null_values_so_quoted_literals_make_any_subset_and_none_makes_empty_brackets`).
+- **Text that is not JSON is an error where it is read** (13609), in `FOR JSON`, in `json_object` and assigned to a variable,
+  never NULL (`Json_query_of_text_that_is_not_json_is_an_error_wherever_it_is_and_text_read_without_it_is_a_string`), so a way
+  the text can be that is not JSON describes no call and adds nothing: a NULL fragment in `concat`, which leaves a stray comma
+  (`A_null_fragment_in_concat_leaves_a_stray_comma_which_json_query_refuses_unless_it_is_the_only_one`), and text a type too
+  short cuts at the end, which leaves the array unclosed. Text cut before more text is added, by a conversion or past
+  `nvarchar(4000)` before a `max` piece, is unknown, since the cut may fall anywhere.
+- **Read without `json_query` it stays a string.** Assembled text returned as a column, or nested in `FOR JSON`, is a string, as
+  before, with its type's facets: it is escaped where it nests, and only `json_query` makes it JSON. A variable or column of
+  `nvarchar(max)` assigned it holds its JSON for a later `json_query` and reads as its declared string; so does a call of a
+  scalar function of `nvarchar` that returns it.
+- **Not read**: an object assembled as text (`'{"a":' + …`), an array or object that opens in one literal and closes in another
+  piece, text after the closing bracket (which `json_query` ignores), a literal with an escape inside quotes, and more than 64
+  alternatives.
+- **The note.** Wherever the project builds an array as text, whether or not anything reads it as JSON, inference reports
+  `HAR2025` with the constructor that builds the same JSON ([decision
+  0085](../../docs/decisions/0085-json-built-as-text-is-a-note-wherever-it-is-written.md)): a concatenation whose text is a JSON
+  array, each part that is not a literal standing for a value or for text in a string, which shows it is JSON (a comma, a
+  quotation mark or a brace in its literals, `string_agg`, `concat_ws`, or a part that builds JSON); and `concat_ws` with a comma
+  between values one of which is a quoted literal. So T-SQL's own brackets, `'[' + name + ']'` quoting an identifier or
+  `'[' + n + ' KEYS]'`, are not reported. It is found in the SQL itself (`JsonTextNotes`), in every module and query file, so it
+  is an inventory of code to modernise, not a by-product of an unknown.
 
 ## Binary values
 

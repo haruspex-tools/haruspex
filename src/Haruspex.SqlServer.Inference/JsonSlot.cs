@@ -16,7 +16,11 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 /// <param name="Content">The JSON every non-null value written is, when one has been; null when only NULL has been written.</param>
 /// <param name="NotJson">Why a value written may not be JSON built here, naming the write; null when every one is.</param>
-internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
+/// <param name="AsText">
+/// Whether a write was JSON assembled as text (<see cref="JsonAssembly"/>), which is a string wherever it is read without
+/// <c>json_query</c>, so the place reads as its declared string, holding the JSON as pieces, rather than as JSON text.
+/// </param>
+internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson, bool AsText = false)
 {
     /// <summary>Nothing but NULL written yet: a variable before its first assignment, a table before its first row.</summary>
     public static JsonSlot Empty { get; } = new(null, null);
@@ -24,6 +28,9 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     public static JsonSlot Json(Shape content) => new(content, null);
 
     public static JsonSlot Text(UnknownShape why) => new(null, why);
+
+    /// <summary>JSON assembled as text (<see cref="AsText"/>).</summary>
+    public static JsonSlot Assembled(Shape content) => new(content, null, AsText: true);
 
     /// <summary>A place written by either of two groups of writes.</summary>
     public static JsonSlot Join(JsonSlot a, JsonSlot b)
@@ -36,7 +43,7 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
             return b;
         if (b.Content is null)
             return a;
-        return Json(JsonShapes.Join(a.Content, b.Content));
+        return new JsonSlot(JsonShapes.Join(a.Content, b.Content), null, a.AsText || b.AsText);
     }
 
     /// <summary>
@@ -45,6 +52,7 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     /// </summary>
     public static bool Same(JsonSlot a, JsonSlot b) =>
         (a.NotJson is null) == (b.NotJson is null)
+        && (a.NotJson is not null || a.AsText == b.AsText)
         && (a.NotJson is not null || (a.Content is null ? b.Content is null : b.Content is not null && JsonShapes.Same(a.Content, b.Content)));
 
     /// <summary>
@@ -52,7 +60,7 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     /// hold JSON, nothing written is below anything, and JSON content is ordered by <see cref="JsonShapes.Below"/>.
     /// </summary>
     public static bool Below(JsonSlot a, JsonSlot b) =>
-        b.NotJson is not null || (a.NotJson is null && (a.Content is null || (b.Content is not null && JsonShapes.Below(a.Content, b.Content))));
+        b.NotJson is not null || (a.NotJson is null && (a.Content is null || (b.Content is not null && (!a.AsText || b.AsText) && JsonShapes.Below(a.Content, b.Content))));
 
     /// <summary>
     /// What a read of the place gives, its declared value being <paramref name="declared"/>: JSON text of the content, null as
@@ -62,6 +70,10 @@ internal sealed record JsonSlot(Shape? Content, UnknownShape? NotJson)
     {
         if (NotJson is { } why)
             return declared with { JsonWhy = why, Digits = declared.Digits };
-        return Content is { } content ? new Value(new JsonTextShape(content), declared.NullableBecause) : declared;
+        if (Content is not { } content)
+            return declared;
+        return AsText
+            ? declared with { Digits = declared.Digits, Pieces = [new JsonPiece(content)] }
+            : new Value(new JsonTextShape(content), declared.NullableBecause);
     }
 }

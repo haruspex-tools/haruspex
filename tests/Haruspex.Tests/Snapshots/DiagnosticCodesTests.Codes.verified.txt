@@ -40,6 +40,7 @@ HAR2021 N A trigger that may return result sets [Haruspex.SqlServer.Inference.In
 HAR2022 N A result set with a hidden column [Haruspex.SqlServer.Inference.InferenceCodes.HiddenColumn]
 HAR2023 N A SQLCMD variable a deployment replaces [Haruspex.SqlServer.Inference.InferenceCodes.SqlcmdVariable]
 HAR2024 N A query file's parameter its uses don't decide [Haruspex.SqlServer.Inference.InferenceCodes.UndecidedParameter]
+HAR2025 N JSON built as text [Haruspex.SqlServer.Inference.InferenceCodes.JsonBuiltAsText]
 HAR2101 W A write to an object the project doesn't define [Haruspex.SqlServer.Inference.InferenceCodes.UndefinedWriteTarget]
 HAR3001 E A config file can't be read [Haruspex.Config.ConfigCodes.Unreadable]
 HAR3002 E The config file isn't JSON [Haruspex.Config.ConfigCodes.NotJson]

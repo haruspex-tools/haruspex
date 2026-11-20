@@ -23,7 +23,8 @@ public static class IrInference
     /// </param>
     /// <returns>
     /// The document, with what could not be checked, once each: a write to a table the project does not define, whose
-    /// triggers (which could return result sets) are not in the project. Inference always gives a document, since what it
+    /// triggers (which could return result sets) are not in the project; and a note for each place the project builds JSON as
+    /// text, in every module and query file. Inference always gives a document, since what it
     /// can't type is an unknown in it, so it returns a success, and says so in its type.
     /// </returns>
     /// <param name="queries">
@@ -62,6 +63,10 @@ public static class IrInference
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
         var folds = IrDocumentFolds.Named(document).ToEquatableMap(name => name, name => SqlTypes.Fold(CollationFold.Named(name)));
+
+        // JSON built as text, wherever the project writes it, whether or not anything reads it as JSON
+        // (docs/decisions/0085-json-built-as-text-is-a-note-wherever-it-is-written.md).
+        warnings.AddRange(JsonTextNotes.In(model, queries));
         return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds }, [.. warnings]);
     }
 }

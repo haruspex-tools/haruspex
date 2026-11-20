@@ -40,6 +40,10 @@ internal sealed partial class Walker
                 $"{where} is assigned JSON whose shape is not known {Text(at)}{(expression is null ? "" : $": {Text(expression)}")}.", at));
         }
 
+        // JSON assembled as text holds its JSON as text, but stays a string where it is read without json_query.
+        if (Assembled(value, at) is { } assembled)
+            return assembled is UnknownShape notKnown ? JsonSlot.Text(notKnown) : JsonSlot.Assembled(assembled);
+
         if (expression is not null && LiteralOf(expression) is ({ } literal and StringLiteral, false))
         {
             var parsed = JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal));

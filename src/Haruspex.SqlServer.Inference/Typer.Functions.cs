@@ -168,7 +168,14 @@ internal sealed partial class Typer
             return value;
         if (StringOf(value) is null)
             return NotModelled(call, "STRING_ESCAPE of a value that is not a string is not modelled.");
-        return Typed(new ScalarType(BuiltInType.NVarChar, -1), value.NullableBecause, call);
+        var escaped = Typed(new ScalarType(BuiltInType.NVarChar, -1), value.NullableBecause, call);
+
+        // Escaped for JSON, its text needs no escape inside quotes, and a JSON reader gets the value back from it (observed:
+        // An_unescaped_value_in_quotes_can_make_more_elements_a_number_or_cut_the_array_short). 'json' is the only type SQL
+        // Server accepts.
+        return LiteralOf(call.Parameters[1]) is ({ } kind and StringLiteral, false) && string.Equals(kind.Value, "json", StringComparison.OrdinalIgnoreCase)
+            ? escaped with { Digits = escaped.Digits, Pieces = [new SafeTextPiece(value.Shape, $"{Text(call)} is written into the brackets outside quotes, where it may be any text", At(call))] }
+            : escaped;
     }
 
     /// <summary>
@@ -210,7 +217,7 @@ internal sealed partial class Typer
         var argument = Expression(call.Parameters[0], scope.InAggregate());
         if (argument.Shape is UnknownShape)
             return argument;
-        if (argument.IsLiveJson || TypeOf(argument) is not { } from)
+        if ((LiveText(argument, call.Parameters[0]) ?? (argument.IsLiveJson ? null : TypeOf(argument))) is not { } from)
             return NotModelled(call, "STRING_AGG of a value of this type is not modelled.");
 
         // Refused when the procedure is created (8116; observed: Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read).
@@ -224,7 +231,10 @@ internal sealed partial class Typer
         var type = from.IsString
             ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
             : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);
-        return Typed(type, ProvedAggregate(call, scope) ? [] : [.. argument.NullableBecause, .. Aggregate(call, scope)], call);
+        var aggregated = Typed(type, ProvedAggregate(call, scope) ? [] : [.. argument.NullableBecause, .. Aggregate(call, scope)], call);
+
+        // Past its limit it is an error, never cut short, so its text is every item's (Typer.JsonAssembled.cs).
+        return aggregated with { Digits = aggregated.Digits, Pieces = [new ListPiece(Whole(ItemPieces(argument, call.Parameters[0]), call.Parameters[0]), SeparatorPieces(call.Parameters[1]))] };
     }
 
     // ---- GENERATE_SERIES ------------------------------------------------------------------------------------------------

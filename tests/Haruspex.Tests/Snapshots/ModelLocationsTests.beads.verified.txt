@@ -1,0 +1,23 @@
+check bead.order ck_order_channel at tables/order.sql:5:32
+column bead.order.channel varchar(10) at tables/order.sql:5:5
+column bead.order.order_id int at tables/order.sql:3:5
+column bead.order.ref nvarchar(20) at tables/order.sql:4:5
+column bead.order_line.gift bit at tables/order_line.sql:7:5
+column bead.order_line.line_id int at tables/order_line.sql:3:5
+column bead.order_line.order_id int at tables/order_line.sql:4:5
+column bead.order_line.price decimal(7,2) at tables/order_line.sql:6:5
+column bead.order_line.qty smallint at tables/order_line.sql:5:5
+column bead.order_tag.order_id int at tables/order_tag.sql:3:5
+column bead.order_tag.tag nvarchar(15) at tables/order_tag.sql:4:5
+function bead.channels at functions/channels.sql:3:1
+key bead.order unnamed (order_id) at tables/order.sql:3:36
+key bead.order_line unnamed (line_id) at tables/order_line.sql:3:36
+key bead.order_tag unnamed (order_id, tag) at tables/order_tag.sql:5:5
+named function bead.channels
+parameter bead.channels @channel at functions/channels.sql:3:32
+parameter bead.order_card @order_id at procedures/order_card.sql:5:5
+procedure bead.order_card at procedures/order_card.sql:4:1
+procedure bead.order_ids at procedures/order_ids.sql:2:1
+table bead.order at tables/order.sql:1:1
+table bead.order_line at tables/order_line.sql:1:1
+table bead.order_tag at tables/order_tag.sql:1:1

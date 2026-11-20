@@ -25,7 +25,7 @@ internal sealed partial class Typer
         if (LiteralOf(document) is ({ } literal and StringLiteral, false))
             return JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;
         var value = Expression(document, scope);
-        var shape = value.IsLiveJson ? value.Shape : value.Shape is JsonTextShape { Content: var content } ? content : null;
+        var shape = value.IsLiveJson ? value.Shape : value.Shape is JsonTextShape { Content: var content } ? content : Assembled(value, At(document));
         return shape is null or UnknownShape or RecursiveShape ? null : (shape, value.NullableBecause);
     }
 

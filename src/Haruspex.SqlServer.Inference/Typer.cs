@@ -516,8 +516,8 @@ internal sealed partial class Typer(
             // A scalar subquery is not folded: (SELECT 1) counts an int's 10 digits beside a decimal (observed:
             // An_int_constant_counts_its_own_digits_beside_a_decimal).
             return row.Rows == IrCardinality.One
-                ? only.Value with { Digits = IntDigits.OfType }
-                : only.Value with { Digits = IntDigits.OfType, NullableBecause = [.. only.Value.NullableBecause, Empty(row, at)] };
+                ? only.Value with { Digits = IntDigits.OfType, Pieces = only.Value.Pieces }
+                : only.Value with { Digits = IntDigits.OfType, NullableBecause = [.. only.Value.NullableBecause, Empty(row, at)], Pieces = only.Value.Pieces };
         }
 
         var query = subquery.QueryExpression;
@@ -533,8 +533,11 @@ internal sealed partial class Typer(
         if (shape is UnknownShape unknown)
             return Value.Unknown(unknown);
         EquatableArray<IrNullReason> empty = forJson.Rows == IrCardinality.One ? [] : [Empty(forJson, at)];
+        // Without its wrapper, the text of more than one row is several values, which brackets around it make an array of
+        // (observed: A_for_json_fragment_without_its_array_wrapper_holds_every_row_so_in_brackets_it_is_an_array_of_them), so
+        // only text of one row at most is one JSON value as text.
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
-            ? new Value(new JsonTextShape(shape), empty)
+            ? new Value(new JsonTextShape(shape), empty) { Pieces = forJson.Rows is IrCardinality.One or IrCardinality.AtMostOne ? [new JsonPiece(shape)] : null }
             : new Value(shape, empty, IsLiveJson: true);
     }
 
@@ -555,6 +558,8 @@ internal sealed partial class Typer(
             return argument;
         if (argument.Shape is JsonTextShape { Content: { } shape })
             return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, argument.NullableBecause, IsLiveJson: true);
+        if (Assembled(argument, At(call)) is { } assembled)
+            return assembled is UnknownShape notKnown ? Value.Unknown(notKnown) : new Value(assembled, argument.NullableBecause, IsLiveJson: true);
         if (argument.JsonWhy is { } why)
             return Value.Unknown(why);
 
@@ -589,6 +594,7 @@ internal sealed partial class Typer(
 
         return result switch
         {
+            { AsText: true, Content: { } assembled } => new Value(result.Declared, [.. because]) { Digits = IntDigits.OfType, Pieces = [new JsonPiece(assembled)] },
             { Content: null, ReturnsJson: true } => new Value(result.Declared, [.. because], IsLiveJson: true),
             { Content: null } => Value.Computed(result.Declared, [.. because]),
             { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, [.. because], IsLiveJson: true),

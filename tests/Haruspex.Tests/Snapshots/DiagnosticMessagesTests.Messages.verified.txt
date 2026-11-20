@@ -103,6 +103,9 @@ db/p1.sql:1:34: note HAR2023: lib.p results[0][].region: The literal '$(Region)'
 HAR2024
 sql/q.sql:1:8: note HAR2024: sql/q.sql parameters.@label: No use of @label decides its type: none is one that haruspex infers a type from. Declare it in the file: -- @param @label <type>.
 
+HAR2025
+db/p1.sql:1:34: note HAR2025: N'[' + string_agg(convert(nvarchar(max), b.id), N',') + N']' builds a JSON array as text; build it with json_arrayagg(…) (SQL Server 2025, Azure SQL), which escapes each value and which haruspex types exactly. Like string_agg, it is NULL over no rows.
+
 HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 

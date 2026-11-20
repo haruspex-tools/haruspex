@@ -1,0 +1,2 @@
+CREATE SCHEMA bead;
+GO

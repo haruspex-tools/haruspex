@@ -1,0 +1,15 @@
+// The runs of the beads fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
+// what each key means.
+{
+  // The fixture is about which JSON assembled text makes, not about scalar facts, so the seed is not held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "order_card, lines, tags and both channels", "procedure": "bead.order_card", "parameters": { "@order_id": 1 } },
+    { "name": "order_card, nothing aggregated and no channel", "procedure": "bead.order_card", "parameters": { "@order_id": 2 } },
+    { "name": "order_card, one of each and retail", "procedure": "bead.order_card", "parameters": { "@order_id": 3 } },
+    { "name": "order_card, trade", "procedure": "bead.order_card", "parameters": { "@order_id": 4 } },
+    { "name": "order_card, no such order", "procedure": "bead.order_card", "parameters": { "@order_id": 999 } },
+    { "name": "order_ids", "procedure": "bead.order_ids" }
+  ]
+}

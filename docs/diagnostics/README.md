@@ -60,6 +60,7 @@ reason.
 | [HAR2022](HAR2022.md) | note | A result set with a hidden column |
 | [HAR2023](HAR2023.md) | note | A SQLCMD variable a deployment replaces |
 | [HAR2024](HAR2024.md) | note | A query file's parameter its uses don't decide |
+| [HAR2025](HAR2025.md) | note | JSON built as text |
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
 
 ## Reading the config file

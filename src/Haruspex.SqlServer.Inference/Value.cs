@@ -34,14 +34,15 @@ namespace Haruspex.SqlServer.Inference;
 /// <c>1</c> are not those of <c>-1</c> or of <c>@x + 1</c>. So it does not survive an operation unless the operation's rule
 /// passes it on. A value made with <c>with</c> has <see cref="IntDigits.Unknown"/> digits, the top, unless the
 /// <c>with</c> sets them (the copy constructor below leaves them out, and C# runs it for every <c>with</c>); and a value built
-/// new has them too unless its rule states them. A rule that forgets claims less, never something false. The other facts
+/// new has them too unless its rule states them. A rule that forgets claims less, never something false. <see cref="Pieces"/>
+/// are dropped the same way, since an operation that changes a string's text must not keep them. The other facts
 /// are kept by <c>with</c>: the shape, the reasons and whether it is live JSON are what <c>with</c> is used to change, and
 /// the JSON's why is a witness.
 /// </para>
 /// </remarks>
 internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, UnknownShape? JsonWhy = null)
 {
-    /// <summary>The copy <c>with</c> starts from: every fact but <see cref="Digits"/>, which it drops to the top.</summary>
+    /// <summary>The copy <c>with</c> starts from: every fact but <see cref="Digits"/> and <see cref="Pieces"/>, which it drops to the top.</summary>
     private Value(Value original)
     {
         Shape = original.Shape;
@@ -49,6 +50,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         IsLiveJson = original.IsLiveJson;
         JsonWhy = original.JsonWhy;
         Digits = IntDigits.Unknown;
+        Pieces = null;
     }
 
     /// <summary>
@@ -62,10 +64,19 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     public IntDigits Digits { get; init; } = IntDigits.Unknown;
 
     /// <summary>
+    /// For a string, what its text is made of, as far as it may be JSON assembled as text (<see cref="TextPiece"/>): literals,
+    /// numbers and escaped strings written as text, JSON values, a <c>string_agg</c> of them. <see cref="JsonAssembly"/> reads
+    /// what JSON the pieces make where the text is read as JSON. Null when no rule said, which claims nothing. Dropped by
+    /// <c>with</c>, as <see cref="Digits"/> is: an operation that changes the text must not keep its pieces, so only a rule that
+    /// states them passes them on.
+    /// </summary>
+    public EquatableArray<TextPiece>? Pieces { get; init; }
+
+    /// <summary>
     /// The same value with other reasons it may be null: a filter proving it non-null, an outer join or a rollup adding a reason.
     /// Whether it may be null says nothing of what it is, so every other fact is passed on.
     /// </summary>
-    public Value WithNullableBecause(EquatableArray<IrNullReason> because) => this with { NullableBecause = because, Digits = Digits };
+    public Value WithNullableBecause(EquatableArray<IrNullReason> because) => this with { NullableBecause = because, Digits = Digits, Pieces = Pieces };
 
     /// <summary>A value of a column, a variable or a computed result: one the server never folds, so <see cref="Digits"/> are its type's.</summary>
     public static Value Computed(Shape shape, EquatableArray<IrNullReason> nullableBecause, bool isLiveJson = false) =>
@@ -85,7 +96,8 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// <remarks>
     /// <para>
     /// It joins each fact in its own lattice: the reasons in <see cref="NullReasons"/>, the digits in <see cref="IntDigits"/>,
-    /// and the shape, with whether it is live JSON, in <see cref="JoinShapes"/>. The JSON's why, a witness, is the left
+    /// the pieces flat (the same pieces stay, any others are none known), and the shape, with whether it is live JSON, in
+    /// <see cref="JoinShapes"/>. The JSON's why, a witness, is the left
     /// side's when it has one. An unknown shape allows null, which the reasons then say, and has no why of its own: an
     /// unknown is what <c>json_query</c> over it gives anyway.
     /// </para>
@@ -107,6 +119,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         return new Value(shape, because, live, a.JsonWhy ?? b.JsonWhy ?? notJson)
         {
             Digits = IntDigits.Join(a.Digits, b.Digits),
+            Pieces = a.Pieces == b.Pieces ? a.Pieces : null,
         };
     }
 
@@ -172,8 +185,8 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// Whether two values say the same: equal but for witnesses, which a join keeps from its left side. The reasons are
     /// compared as sets (<see cref="NullReasons.Same"/>), a scalar's facets ignoring their sources and value sets' order
     /// (<see cref="ScalarFacets.Same"/>), JSON content up to its unions' order (<see cref="JsonShapes.Same"/>), and an unknown,
-    /// or the JSON's why, as any other. Everything else, the digits and whether it is live JSON among them, is compared
-    /// exactly. The convergence test of a fixed point is structural equality, which is finer: it can cost a pass, never stop
+    /// or the JSON's why, as any other. Everything else, the digits, the pieces and whether it is live JSON among them, is
+    /// compared exactly. The convergence test of a fixed point is structural equality, which is finer: it can cost a pass, never stop
     /// one early.
     /// </summary>
     public static bool Same(Value a, Value b) =>
@@ -181,19 +194,21 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         && a.Digits == b.Digits
         && a.IsLiveJson == b.IsLiveJson
         && (a.JsonWhy is null) == (b.JsonWhy is null)
+        && a.Pieces == b.Pieces
         && JsonShapes.Same(a.Shape, b.Shape);
 
     /// <summary>
     /// Whether every value <paramref name="a"/> allows, <paramref name="b"/> allows: the product of the facts' orders. Anything
     /// is below a value of unknown shape (but for its reasons, which still say why it may be null); otherwise the same
-    /// liveness, the reasons a subset (<see cref="NullReasons.Below"/>), the digits within the other's (<see cref="IntDigits.Below"/>)
+    /// liveness, the reasons a subset (<see cref="NullReasons.Below"/>), the digits within the other's (<see cref="IntDigits.Below"/>),
+    /// the same pieces or the other's none known,
     /// and the shape below the other's: JSON text below a string of <c>nvarchar(max)</c> that proves only what its type does,
     /// and anything else by <see cref="JsonShapes.Below"/>. Written apart from <see cref="Join"/>, so that the law tests can
     /// check the join against it.
     /// </summary>
     public static bool Below(Value a, Value b)
     {
-        if (!NullReasons.Below(Explained(a), Explained(b)) || !IntDigits.Below(a.Digits, b.Digits))
+        if (!NullReasons.Below(Explained(a), Explained(b)) || !IntDigits.Below(a.Digits, b.Digits) || (b.Pieces is not null && a.Pieces != b.Pieces))
             return false;
         if (b.Shape is UnknownShape)
             return true;

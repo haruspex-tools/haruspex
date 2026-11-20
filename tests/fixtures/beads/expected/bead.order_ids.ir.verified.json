@@ -1,0 +1,93 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_ids.sql": "b101d604f6764b219158ed30b5e0a3f685e9d1d50e1c006feaba56ef147386ef",
+      "tables/order.sql": "0ce20b4f7566b4bdf23c48a78db7d597c62fda37ce2180f69a9734d5f0f8186c"
+    }
+  },
+  "objects": [
+    {
+      "id": "bead.order_ids",
+      "name": "OrderIds",
+      "kind": "procedure",
+      "at": "procedures/order_ids.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderIdsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OrderIdsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_ids",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "line_ids",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/order_ids.sql:7:24"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

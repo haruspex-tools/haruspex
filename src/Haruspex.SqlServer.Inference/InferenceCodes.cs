@@ -87,6 +87,13 @@ public static class InferenceCodes
     public static DiagnosticCode UndecidedParameter { get; } = Unknown(2024, "A query file's parameter its uses don't decide");
 
     /// <summary>
+    /// JSON built as text, <c>'[' + string_agg(…) + ']'</c> and its kin, found by its construction wherever it is written
+    /// (<see cref="JsonTextNotes"/>): the place, and the constructor that builds the same JSON, escaped by the engine and typed
+    /// exactly. An inventory for modernisation, not an unknown: such text is typed where the server guarantees its shape.
+    /// </summary>
+    public static DiagnosticCode JsonBuiltAsText { get; } = new(2025, DiagnosticSeverity.Note, "JSON built as text");
+
+    /// <summary>
     /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
     /// can resolve (code outside the project, an encrypted definition, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
     /// the project or one more than one schema has), whose unknowns the config layer reports instead, each once, with what to

@@ -1,0 +1,412 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_card.sql": "6a54a7b71ec746aa2026e433d3f3b16877a6eed0c530838b56750dd1bf6a92bf",
+      "tables/order.sql": "0ce20b4f7566b4bdf23c48a78db7d597c62fda37ce2180f69a9734d5f0f8186c"
+    }
+  },
+  "objects": [
+    {
+      "id": "bead.order_card",
+      "name": "OrderCard",
+      "kind": "procedure",
+      "at": "procedures/order_card.sql:4:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "OrderCardRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/order_card.sql:12:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OrderCardParts": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_card",
+        "path": "results[0].parts[0]"
+      },
+      "fields": [
+        {
+          "name": "ref",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_card",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "lineIds",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "number",
+              "format": "int32",
+              "sql": "int",
+              "min": {
+                "value": -2147483648,
+                "inclusive": true,
+                "from": {
+                  "type": "int"
+                }
+              },
+              "max": {
+                "value": 2147483647,
+                "inclusive": true,
+                "from": {
+                  "type": "int"
+                }
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/order_card.sql:13:35"
+            }
+          ]
+        },
+        {
+          "name": "prices",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "number",
+              "format": "decimal",
+              "sql": "decimal(7,2)",
+              "digits": {
+                "precision": 7,
+                "scale": 2,
+                "from": {
+                  "type": "decimal(7,2)"
+                }
+              },
+              "min": {
+                "value": -99999.99,
+                "inclusive": true,
+                "from": {
+                  "type": "decimal(7,2)"
+                }
+              },
+              "max": {
+                "value": 99999.99,
+                "inclusive": true,
+                "from": {
+                  "type": "decimal(7,2)"
+                }
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "gifts",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "number",
+              "values": {
+                "match": "exact",
+                "items": [0,1
+                ],
+                "from": [
+                  {
+                    "expression": "procedures/order_card.sql:20:30"
+                  }
+                ]
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "string",
+              "sql": "nvarchar(15)",
+              "maxLength": {
+                "value": 15,
+                "unit": "utf16",
+                "from": {
+                  "type": "nvarchar(15)"
+                }
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/order_card.sql:22:35"
+            }
+          ]
+        },
+        {
+          "name": "tagNames",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "union",
+              "variants": [
+                {
+                  "kind": "string",
+                  "sql": "nvarchar(15)",
+                  "maxLength": {
+                    "value": 15,
+                    "unit": "utf16",
+                    "from": {
+                      "type": "nvarchar(15)"
+                    }
+                  }
+                },
+                {
+                  "kind": "string",
+                  "values": {
+                    "match": "exact",
+                    "items": [
+                      ""
+                    ],
+                    "from": [
+                      {
+                        "expression": "procedures/order_card.sql:26:26"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "channels",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "string",
+              "values": {
+                "match": "exact",
+                "items": [
+                  "retail",
+                  "trade"
+                ],
+                "from": [
+                  {
+                    "expression": "functions/channels.sql:8:55"
+                  },
+                  {
+                    "expression": "functions/channels.sql:9:54"
+                  }
+                ]
+              }
+            },
+            "maxItems": 2
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/order_card.sql:10:35"
+            }
+          ]
+        },
+        {
+          "name": "parts",
+          "type": {
+            "kind": "tuple",
+            "items": [
+              {
+                "type": {
+                  "ref": "OrderCardParts"
+                },
+                "nullable": false
+              },
+              {
+                "type": {
+                  "kind": "tuple",
+                  "items": [
+                    {
+                      "type": {
+                        "kind": "number",
+                        "format": "int32",
+                        "sql": "int",
+                        "min": {
+                          "value": -2147483648,
+                          "inclusive": true,
+                          "from": {
+                            "type": "int"
+                          }
+                        },
+                        "max": {
+                          "value": 2147483647,
+                          "inclusive": true,
+                          "from": {
+                            "type": "int"
+                          }
+                        }
+                      },
+                      "nullable": false
+                    },
+                    {
+                      "type": {
+                        "kind": "string",
+                        "sql": "varchar(10)",
+                        "maxLength": {
+                          "value": 10,
+                          "unit": "bytes",
+                          "from": {
+                            "type": "varchar(10)"
+                          }
+                        },
+                        "values": {
+                          "match": "collation",
+                          "items": [
+                            "retail",
+                            "trade",
+                            "both"
+                          ],
+                          "from": [
+                            {
+                              "check": "bead.ck_order_channel"
+                            }
+                          ]
+                        }
+                      },
+                      "nullable": true,
+                      "nullableBecause": [
+                        {
+                          "rule": "nullable-column",
+                          "at": "bead.order.channel"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "nullable": false
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bead.order.ref",
+              "sql": "nvarchar(20)",
+              "at": "tables/order.sql:4:5"
+            },
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            },
+            {
+              "column": "bead.order.channel",
+              "sql": "varchar(10)",
+              "at": "tables/order.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

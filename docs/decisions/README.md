@@ -88,6 +88,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0081](0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md) | 19 Nov 2026 | Binary values are a kind of their own, counted in bytes |
 | [0082](0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md) | 19 Nov 2026 | A binary value is a `Buffer` in a rowset and base64 in JSON |
 | [0083](0083-a-body-s-own-table-has-the-keys-sql-server-enforces-at-each-statement.md) | 20 Nov 2026 | A body's own table has the keys SQL Server enforces on it at each statement |
+| [0084](0084-json-assembled-as-text-is-typed-where-each-element-is-one-json-value.md) | 20 Nov 2026 | JSON assembled as text is typed where each element is one JSON value |
+| [0085](0085-json-built-as-text-is-a-note-wherever-it-is-written.md) | 20 Nov 2026 | JSON built as text is a note wherever it is written |
 
 ## Writing a record
 

@@ -174,9 +174,13 @@ internal sealed partial class Typer
             .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
-        var value = Typed(type, because, at) with { Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType };
+        var value = Typed(type, because, at) with
+        {
+            Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType,
+            Pieces = EitherPieces([.. given.Select(r => r.Expression)], [.. given.Select(r => r.Value)], type, first: false),
+        };
         return LiteralSet(given.Select(r => r.Expression), type, at) is { } set && value.Shape is ScalarShape scalar
-            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } }, Digits = value.Digits }
+            ? value with { Shape = scalar with { Type = scalar.Type with { Facets = (scalar.Type.Facets ?? new IrFacets()) with { Values = set } } }, Digits = value.Digits, Pieces = value.Pieces }
             : value;
     }
 

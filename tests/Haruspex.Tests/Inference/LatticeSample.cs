@@ -106,6 +106,21 @@ internal sealed class LatticeSample(int seed)
         }
     }
 
+    /// <summary>
+    /// What a string's text is made of (<see cref="Value.Pieces"/>): none known, or one of a few assembled arrays, so that two
+    /// values may have the same pieces or others.
+    /// </summary>
+    private EquatableArray<TextPiece>? Pieces()
+    {
+        var at = new SourceLocation("p.sql", 1, 1);
+        return random.Next(3) switch
+        {
+            0 => null,
+            1 => [new LiteralPiece("[", National: true, at), new ListPiece([new JsonPiece(Content(1))], [new LiteralPiece(",", National: true, at)]), new LiteralPiece("]", National: true, at)],
+            _ => [new LiteralPiece("[", National: true, at), new OpaquePiece("t.name", at), new LiteralPiece("]", National: true, at)],
+        };
+    }
+
     /// <summary>A value: a scalar, JSON text with or without its content, live JSON, or an unknown.</summary>
     public Value Value()
     {
@@ -116,7 +131,7 @@ internal sealed class LatticeSample(int seed)
             case 1:
                 var scalar = Scalar();
                 var why = scalar.Type.Sql == "nvarchar(max)" && random.Next(2) == 0 ? Unknown() with { Reason = IrUnknownReason.JsonShapeUnknown } : null;
-                return new Value(scalar, Reasons(), JsonWhy: why) { Digits = digits };
+                return new Value(scalar, Reasons(), JsonWhy: why) { Digits = digits, Pieces = Pieces() };
             case 2:
                 return new Value(new JsonTextShape(random.Next(3) == 0 ? null : Content(2)), Reasons()) { Digits = digits };
             case 3:
@@ -132,6 +147,7 @@ internal sealed class LatticeSample(int seed)
     {
         0 => JsonSlot.Empty,
         1 => JsonSlot.Text(Unknown()),
+        2 => JsonSlot.Assembled(Content(2)),
         _ => JsonSlot.Json(Content(2)),
     };
 

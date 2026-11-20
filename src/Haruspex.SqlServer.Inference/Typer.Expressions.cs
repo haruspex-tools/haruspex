@@ -24,7 +24,7 @@ internal sealed partial class Typer
     /// </summary>
     private Value FromString(StringLiteral literal) =>
         LiteralType(literal) is { } type
-            ? new Value(SqlTypes.ToConvertedShape(type, At(literal)), [])
+            ? new Value(SqlTypes.ToConvertedShape(type, At(literal)), []) { Pieces = [new LiteralPiece(literal.Value, literal.IsNational, At(literal))] }
             : Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The literal {Text(literal)} is not ASCII, so its length in bytes depends on the code page.", At(literal)));
 
     /// <summary>
@@ -287,6 +287,7 @@ internal sealed partial class Typer
         return Typed(type, combined.Converted.Aggregate(because, NullReasons.Join), coalesce) with
         {
             Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
+            Pieces = EitherPieces(arguments, values, type),
         };
     }
 
@@ -355,9 +356,10 @@ internal sealed partial class Typer
         // An overflow converting the second, or a rounding to a's fewer places, is NULL, or an error that fails the call when
         // the callers' sessions make it one (or silent, for the rounding); then ISNULL of a second never null is never null.
         var converting = ConversionReasons(summaries.Session, second, b, type, fits, At(call));
-        if (second.NullableBecause.Count == 0 && converting.Count == 0)
-            return Typed(type, [], call);
-        return Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), converting), call);
+        var either = second.NullableBecause.Count == 0 && converting.Count == 0
+            ? Typed(type, [], call)
+            : Typed(type, NullReasons.Join(NullReasons.Join(first.NullableBecause, second.NullableBecause), converting), call);
+        return either with { Digits = either.Digits, Pieces = EitherPieces([a, b], [first, second], type) };
     }
 
     // ---- CAST and CONVERT -------------------------------------------------------------------------------------------
@@ -413,8 +415,10 @@ internal sealed partial class Typer
             ?? (from is not null && Conversions.Converts(from, to, styled && (attempt || !to.IsBinary)));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
-            return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType };
-        return Value.Computed(shape, NullReasons.Join(value.NullableBecause, ConversionReasons(summaries.Session, value, operand, to, fits, At(call), attempt)));
+            return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType, Pieces = value.Pieces };
+        return Value.Computed(shape, NullReasons.Join(value.NullableBecause, ConversionReasons(summaries.Session, value, operand, to, fits, At(call), attempt)))
+            with
+        { Digits = IntDigits.OfType, Pieces = ConvertedPieces(value, to, shape, call) };
     }
 
     /// <summary>The NULL literal, cast or converted, however many times.</summary>
@@ -466,7 +470,7 @@ internal sealed partial class Typer
         var values = arguments.Select(a => Strip(a) is NullLiteral ? null : Expression(a, scope)).ToList();
         if (values.FirstOrDefault(v => v is { IsLiveJson: false, Shape: UnknownShape }) is { } unknown)
             return unknown;
-        var pieces = values.Select(Piece).ToList();
+        var pieces = values.Select((v, i) => v is not null && LiveText(v, arguments[i]) is { } live ? (live, -1) : Piece(v)).ToList();
         if (pieces.Any(p => p is null))
             return NotModelled(call, "an argument whose length as a string is not modelled yet.");
 
@@ -479,7 +483,10 @@ internal sealed partial class Typer
         var separator = separated ? known[0].Length * (parts.Count - 1) : 0;
         var max = known.Any(p => p.Type.IsMax);
         var national = known.Any(p => p.Type.IsNational);
-        return Typed(ScalarType.CharacterString(national, varying: true, max ? -1 : parts.Sum(p => p.Length) + separator), [], call);
+        var length = parts.Sum(p => p.Length) + separator;
+        var type = ScalarType.CharacterString(national, varying: true, max ? -1 : length);
+        var concatenated = Typed(type, [], call);
+        return concatenated with { Digits = concatenated.Digits, Pieces = ConcatPieces(arguments, values, separated, max, !max && length > type.Type.MostLength) };
     }
 
     /// <summary>
@@ -495,15 +502,36 @@ internal sealed partial class Typer
     /// 8000 bytes, max if either is, and NULL by the same rule (observed:
     /// Binary_plus_is_as_long_as_both_up_to_8000_bytes_and_fixed_only_when_both_are).
     /// </remarks>
-    private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r) =>
-        Typed(
-            l.IsBinary
-                ? ScalarType.ByteString(varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length)
-                : ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length),
+    private Value Plus(BinaryExpression plus, Value left, Value right, ScalarType l, ScalarType r)
+    {
+        var type = l.IsBinary
+            ? ScalarType.ByteString(varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length)
+            : ScalarType.CharacterString(l.IsNational || r.IsNational, varying: l.IsVarying || r.IsVarying, l.IsMax || r.IsMax ? -1 : l.Length + r.Length);
+        var sum = Typed(
+            type,
             summaries.Session.ConcatenatingNullKeepsTheString && (left.NullableBecause.Count == 0 || right.NullableBecause.Count == 0)
                 ? []
                 : NullReasons.Join(left.NullableBecause, right.NullableBecause),
             plus);
+        if (l.IsBinary)
+            return sum;
+
+        // JSON assembled as text (Typer.JsonAssembled.cs): a NULL operand makes the sum NULL, unless the callers' sessions may
+        // set CONCAT_NULL_YIELDS_NULL off, under which it counts as empty. An operand that is itself a sum already has its own
+        // operands' empty alternatives: off, it is NULL only when they all are, and on, its NULL makes this sum NULL too.
+        var nullIsEmpty = summaries.Session.ConcatNullYieldsNull != true;
+        return sum with
+        {
+            Digits = sum.Digits,
+            Pieces = Joined(
+                [
+                    (OrEmpty(PiecesOf(left, plus.FirstExpression), left, nullIsEmpty && !IsSum(plus.FirstExpression)), plus.FirstExpression),
+                    (OrEmpty(PiecesOf(right, plus.SecondExpression), right, nullIsEmpty && !IsSum(plus.SecondExpression)), plus.SecondExpression),
+                ],
+                type.IsMax,
+                mayBeCut: !type.IsMax && l.Length + r.Length > type.Type.MostLength),
+        };
+    }
 
     // ---- arithmetic ---------------------------------------------------------------------------------------------------
 
@@ -536,6 +564,12 @@ internal sealed partial class Typer
             return left;
         if (right.Shape is UnknownShape)
             return right;
+        // Live JSON built as text is nvarchar(max) beside a string (Typer.JsonAssembled.cs).
+        if (op == '+' && LiveText(left, binary.FirstExpression) is var lj && LiveText(right, binary.SecondExpression) is var rj && (lj is not null || rj is not null)
+            && (lj ?? TypeOf(left)) is { IsString: true } lt && (rj ?? TypeOf(right)) is { IsString: true } rt)
+        {
+            return Plus(binary, left, right, lt, rt);
+        }
         if (OperandOf(left, binary.FirstExpression) is not { } l || OperandOf(right, binary.SecondExpression) is not { } r)
             return NotModelled(binary, "an operand of this type is not modelled yet.");
         if (op == '+' && ((l.Type.IsString && r.Type.IsString) || (l.Type.IsBinary && r.Type.IsBinary)))

@@ -223,6 +223,7 @@ public class DiagnosticMessagesTests
         (2022, () => Cli(["CREATE PROCEDURE lib.p AS DECLARE c CURSOR LOCAL FOR SELECT b.id FROM lib.book AS b; OPEN c; FETCH NEXT FROM c; CLOSE c; DEALLOCATE c;"])),
         (2023, () => Cli(["CREATE PROCEDURE lib.p AS SELECT '$(Region)' AS region;"])),
         (2024, () => Query("SELECT @label AS label;")),
+        (2025, () => Cli(["CREATE PROCEDURE lib.p AS SELECT N'[' + string_agg(convert(nvarchar(max), b.id), N',') + N']' AS ids FROM lib.book AS b;"])),
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
 
         (3001, () => Cli([GetBook], $"{{ {Plain}, \"procedures\": {{ \"lib.get_book\": {{ \"results\": {{ \"rowset\": \"schemas\" }}, \"why\": \"w\" }} }} }}", arrange: f => Directory.CreateDirectory(Path.Combine(f.Path, "schemas")))),

@@ -233,6 +233,7 @@ join of two values joins them fact by fact.
 | A scalar's facets | lengths, bounds, digits, value sets | none | no facets | facet by facet, the looser; a facet one side lacks is dropped | `ScalarFacets` |
 | JSON built here | shapes, unions of shapes | none | unknown | key by key, item by item, or a union | `JsonShapes` |
 | How many rows | one, at most one, any | one | any | the higher in that chain | `Cardinalities` |
+| What a string's text is made of | sequences of pieces of text | none: each sequence is minimal | none known | the same pieces, or none known | `Value.Pieces` |
 | The value | all of the above, with whether it is live JSON | | | fact by fact | `Value.Join` |
 
 Building the value's join from its facts' joins is what keeps it right as facts are added. A new fact comes with its own
@@ -331,6 +332,12 @@ The server's type rules read the same count, one end of that range at a time. Th
 `Operand` carries it beside its `ScalarType`, every operand is built with its count named (`Operand.OfType`, or a number
 for a literal), and a rule's result is a plain `ScalarType`, which has nowhere to keep one. So the count can't survive into
 a result by accident, nor be dropped from an operand without the rule writing so.
+
+The pieces a string's text is made of (`Value.Pieces`, read where the text is read as JSON: the inference reference's "JSON
+assembled as text") are the second fact with the default. `upper(x)` or `left(x, 5)` makes a string from a string, and a rule
+that passed the pieces on by forgetting would claim the old text's JSON for the new text. So the copy constructor drops them
+too, and only the rules that keep the text (a scalar subquery, a conversion that loses nothing, `+` and `concat`, which join
+their operands') state them. A rule that forgets them claims no JSON, which is the top.
 
 The other facts survive a `with`. The shape, the reasons and whether a value is live JSON are what a `with` is written to
 change, and the JSON's why is a witness. A fact earns the default when a rule that forgets it can make a claim false.
