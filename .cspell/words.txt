@@ -8,6 +8,7 @@ arithabort
 charindex
 checkident
 cume
+databasepropertyex
 datalength
 dateadd
 datediff
@@ -36,6 +37,7 @@ getutcdate
 hashbytes
 hierarchyid
 holdlock
+infomsgs
 instr
 isdate
 isjson
@@ -49,6 +51,7 @@ newsequentialid
 nocount
 noexec
 noexpand
+nonclustered
 ntext
 ntile
 nvarchar
@@ -80,6 +83,7 @@ rowstat
 rowversion
 rtrim
 schemabinding
+serverproperty
 sessionproperty
 smalldatetime
 smalldatetimefromparts

@@ -4,6 +4,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Syntax;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -240,25 +241,35 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
     /// </summary>
     public ImmutableHashSet<LocalName> TempWrites(ObjectName name) => Writes(name);
 
-    /// <inheritdoc cref="TempWrites"/>
+    /// <summary>
+    /// The temporary tables a body (a procedure's or a trigger's) writes, creates, alters or drops, or any procedure it calls does,
+    /// at any depth.
+    /// </summary>
+    /// <param name="body">The body's statements.</param>
+    /// <param name="span">Where the body is, which its calls are bound in.</param>
+    public ImmutableHashSet<LocalName> TempWrites(TSqlFragment body, SourceSpan span)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var finder = new WriteFinder();
+        body.Accept(finder);
+        var all = finder.Tables.ToImmutableHashSet();
+        var binder = new Binder(model, span);
+        foreach (var call in finder.Calls)
+        {
+            if (binder.BindCall(call) is ProcedureCall { Procedure: var callee })
+                all = all.Union(Writes(callee.Name));
+        }
+
+        return all;
+    }
+
+    /// <inheritdoc cref="TempWrites(ObjectName)"/>
     private ImmutableHashSet<LocalName> Writes(ObjectName name)
     {
         if (writes.TryGetValue(name, out var known))
             return known;
         writes[name] = [];
-        var all = ImmutableHashSet<LocalName>.Empty;
-        if (model.FindProcedure(name) is { Body: SqlBody { Statements: var body } } procedure)
-        {
-            var finder = new WriteFinder();
-            body.Accept(finder);
-            all = all.Union(finder.Tables);
-            var binder = new Binder(model, procedure.Span);
-            foreach (var call in finder.Calls)
-            {
-                if (binder.BindCall(call) is ProcedureCall { Procedure: var callee })
-                    all = all.Union(Writes(callee.Name));
-            }
-        }
+        var all = model.FindProcedure(name) is { Body: SqlBody { Statements: var body } } procedure ? TempWrites(body, procedure.Span) : [];
 
         writes[name] = all;
         return all;
@@ -282,6 +293,17 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
         public override void Visit(CreateTableStatement node) => Add(node.SchemaObjectName);
 
         public override void Visit(AlterTableStatement node) => Add(node.SchemaObjectName);
+
+        // An index statement changes the table's keys (KnownTable.Keys).
+        public override void Visit(CreateIndexStatement node) => Add(node.OnName);
+
+        public override void Visit(AlterIndexStatement node) => Add(node.OnName);
+
+        public override void Visit(DropIndexStatement node)
+        {
+            foreach (var (table, _) in SyntaxReader.DroppedIndexes(node))
+                Add(table);
+        }
 
         public override void Visit(DropTableStatement node)
         {

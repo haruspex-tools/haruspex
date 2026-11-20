@@ -67,7 +67,7 @@ internal sealed partial class Typer
 
         return state.Temp(name) switch
         {
-            KnownTable known => new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null),
+            KnownTable known => new LocalRelationValues([.. known.Columns.Select(c => c.Name)], [.. known.Columns.Select(c => c.Read)], null) { Keys = [.. TemporaryKeys(known)] },
             UnknownTable unknown => LocalRelationValues.Unknown(unknown.Why),
             AbsentTable absent => LocalRelationValues.Unknown(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} was dropped at {absent.At}, so it is not there to read.", absent.At)),
 
@@ -77,6 +77,24 @@ internal sealed partial class Typer
                 $"{name} is not created by the procedure before this, so it is the caller's, whose shape depends on who calls.",
                 Nowhere)),
         };
+    }
+
+    /// <summary>
+    /// A temporary table's keys that hold where it is read, each typed for comparing it with a value in its column's type. A key
+    /// over a column whose type isn't known (one of an alias type, which tempdb lacks) is left out. A string column takes tempdb's
+    /// collation, which the project doesn't give, but that doesn't matter here: a comparison with a variable, a literal or a
+    /// column of the same collation is made under the key column's own, and one with a column of another is refused (468), so
+    /// <see cref="Cardinality"/>'s rule holds as for a table (observed: A_temporary_table_s_string_key_compares_under_its_own_collation).
+    /// </summary>
+    private static IEnumerable<RelationKey> TemporaryKeys(KnownTable table)
+    {
+        foreach (var key in table.Keys.Where(k => k.DisabledAt is null))
+        {
+            var ordinals = key.Columns.Select(table.IndexOf).ToList();
+            var types = ordinals.Select(o => o < 0 ? null : (table.Columns[o].Value.Shape as ScalarShape)?.BuiltIn?.Type).ToList();
+            if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
+                yield return new RelationKey([.. ordinals], [.. types.OfType<BuiltInType>()]);
+        }
     }
 
     /// <summary>A table variable's columns as they stand in <paramref name="state"/>: each declared, holding the JSON written to it.</summary>

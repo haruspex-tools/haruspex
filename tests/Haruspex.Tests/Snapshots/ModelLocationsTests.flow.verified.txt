@@ -31,8 +31,10 @@ parameter flow.caught_report @fail_at at procedures/caught_report.sql:4:5
 parameter flow.chain_up @employee at procedures/chain_up.sql:4:5
 parameter flow.notes_or_names @notes at procedures/notes_or_names.sql:5:5
 parameter flow.part_list @with_units at procedures/part_list.sql:4:5
+parameter flow.region_card @region_id at procedures/region_card.sql:5:5
 parameter flow.region_report @channel at procedures/region_report.sql:5:5
 parameter flow.sale_card @sale_id at procedures/sale_card.sql:5:5
+parameter flow.sale_line @sale_id at procedures/sale_line.sql:5:5
 parameter flow.sale_receipt @sale_id at procedures/sale_receipt.sql:5:5
 parameter flow.sales_by_mode @mode at procedures/sales_by_mode.sql:5:5
 parameter flow.sales_by_mode @region at procedures/sales_by_mode.sql:6:5
@@ -44,9 +46,11 @@ procedure flow.notes_or_names at procedures/notes_or_names.sql:4:1
 procedure flow.org_chart at procedures/org_chart.sql:3:1
 procedure flow.part_counts at procedures/part_counts.sql:4:1
 procedure flow.part_list at procedures/part_list.sql:3:1
+procedure flow.region_card at procedures/region_card.sql:4:1
 procedure flow.region_report at procedures/region_report.sql:4:1
 procedure flow.region_sales at procedures/region_sales.sql:3:1
 procedure flow.sale_card at procedures/sale_card.sql:4:1
+procedure flow.sale_line at procedures/sale_line.sql:4:1
 procedure flow.sale_receipt at procedures/sale_receipt.sql:4:1
 procedure flow.sales_by_mode at procedures/sales_by_mode.sql:4:1
 procedure flow.staff_moves at procedures/staff_moves.sql:4:1

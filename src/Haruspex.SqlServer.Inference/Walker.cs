@@ -23,7 +23,6 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 internal sealed partial class Walker
 {
-    private readonly DatabaseModel model;
     private readonly Binder binder;
     private readonly SourceSpan source;
 
@@ -59,7 +58,6 @@ internal sealed partial class Walker
         bool uncommittedReads = false,
         ParameterUses? uses = null)
     {
-        this.model = model;
         binder = summaries.Bindings.For(source);
         this.source = source;
         this.uses = uses;
@@ -357,7 +355,17 @@ internal sealed partial class Walker
                 return Continue(state);
             case AlterTableStatement alter when Binder.Temporary(alter.SchemaObjectName) is { } altered:
                 return Continue(Alter(alter, altered, state));
-            case CreateIndexStatement index when Binder.Temporary(index.OnName) is not null:
+            case CreateIndexStatement index when Binder.Temporary(index.OnName) is { } indexed:
+                return Continue(IndexCreated(index, indexed, state));
+            case AlterIndexStatement alter when Binder.Temporary(alter.OnName) is { } indexed:
+                return Continue(IndexAltered(alter, indexed, state, at));
+            case DropIndexStatement drop when SyntaxReader.DroppedIndexes(drop).ToList() is var dropped && dropped.All(d => Binder.Temporary(d.Table) is not null):
+                foreach (var (table, index) in dropped)
+                {
+                    if (Binder.Temporary(table) is { } name && state.Temp(name) is KnownTable known)
+                        state = state.WithTemp(name, known.Dropped(index));
+                }
+
                 return Continue(state);
             default:
                 return Blocked(statement);
@@ -609,14 +617,7 @@ internal sealed partial class Walker
         var name = function.Name.ToString();
         var table = function.Returns;
         var values = table.Columns.Select(c => typer.DeclaredValue(table, c, name, temporary: false)).ToList();
-        var keys = new List<RelationKey>();
-        foreach (var key in SchemaRules.EnforcedKeys(table))
-        {
-            var ordinals = key.Columns.Select(c => table.Columns.ToList().FindIndex(x => x.Name.Equals(c, StringComparison.OrdinalIgnoreCase))).ToList();
-            var types = key.Columns.Select(c => SchemaRules.ResolveType(model, table.Column(c)?.Type)?.Type).ToList();
-            if (ordinals.All(o => o >= 0) && types.All(t => t is not null))
-                keys.Add(new RelationKey([.. ordinals], [.. types.OfType<BuiltInType>()]));
-        }
+        var keys = typer.TableKeys(table).ToList();
 
         // What its nvarchar(max) columns hold as JSON is what its body writes to them: the body is walked as a
         // procedure's is, the return table a table variable, and its traced columns read as they stand where it returns. A body

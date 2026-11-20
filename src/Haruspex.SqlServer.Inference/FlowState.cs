@@ -221,9 +221,9 @@ internal sealed record FlowState
         states.Aggregate((FlowState?)null, (all, next) => Join(all, next, at));
 
     /// <summary>
-    /// A table on either of two paths. The same table joins column by column; any other pair is unknown, since a read of
-    /// it could be of either: a table created on one path only is the caller's on the other, and one dropped on one path
-    /// only may be missing.
+    /// A table on either of two paths. The same table joins column by column, keeping the keys both paths have; any other pair
+    /// is unknown, since a read of it could be of either: a table created on one path only is the caller's on the other, and one
+    /// dropped on one path only may be missing.
     /// </summary>
     private static TempTable JoinTable(LocalName name, TempTable? a, TempTable? b, SourceLocation at)
     {
@@ -242,7 +242,7 @@ internal sealed record FlowState
             (_, UnknownTable) => b,
             (AbsentTable, AbsentTable) => a,
             (KnownTable x, KnownTable y) when x.Columns.Select(c => c.Name).SequenceEqual(y.Columns.Select(c => c.Name), StringComparer.OrdinalIgnoreCase)
-                => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => TempColumn.Join(c, d, at, $"{name}.{c.Name}"))]),
+                => new KnownTable(x.Name, [.. x.Columns.Zip(y.Columns, (c, d) => TempColumn.Join(c, d, at, $"{name}.{c.Name}"))]) { Keys = KnownTable.JoinKeys(x, y) },
             (KnownTable, KnownTable) => new UnknownTable(new UnknownShape(IrUnknownReason.UnsupportedStatement, $"{name} has different columns on different paths before {at}.", at)),
             _ => new UnknownTable(new UnknownShape(IrUnknownReason.UnresolvedTable, $"{name} is dropped on some paths before {at}, so it may not exist there.", at)),
         };

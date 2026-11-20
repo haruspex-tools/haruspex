@@ -89,7 +89,8 @@ internal sealed partial class Walker
             return Blocked(insert);
 
         // Into a permanent table: what its triggers may return (DmlTriggers), then the rows of its OUTPUT, if it has one.
-        if (followsCalls && summaries.Triggers.Check(written, binder, DmlEvents.Insert, at) is { } fired)
+        var (fired, reached) = followsCalls ? summaries.Triggers.Check(written, binder, DmlEvents.Insert, at) : (null, []);
+        if (fired is not null)
         {
             blocker ??= fired;
             return Outcome.Ends;
@@ -102,10 +103,12 @@ internal sealed partial class Walker
             return Outcome.Ends;
         after = Assigned(execute, after);
         if (written.Direct is not { } target)
-            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, after));
+            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, Triggered(after, reached, at)));
         if (target.IsVariable)
             return Continue(TableVariableWritten(after, target, null, null, null, at));
-        if (!target.IsTemporary || after.Temp(target) is not KnownTable table)
+        if (!target.IsTemporary)
+            return Continue(Triggered(after, reached, at));
+        if (after.Temp(target) is not KnownTable table)
             return Continue(after);
 
         // Without a column list the rows go into every column but an identity column (observed, also of one SELECT … INTO
@@ -283,6 +286,27 @@ internal sealed partial class Walker
             if (Binder.Temporary(name) is { } created)
                 Names.Add(created);
         }
+    }
+
+    /// <summary>
+    /// The state after the triggers a write may fire (<see cref="DmlTriggers.Check"/>) have run: each temporary table one of them,
+    /// or a procedure it calls, may write, alter or drop is unknown, since a trigger runs in the session that fired it, so its
+    /// <c>#t</c> is the procedure's (observed: A_trigger_changes_the_temporary_table_of_the_procedure_whose_write_fires_it).
+    /// </summary>
+    private FlowState Triggered(FlowState state, IReadOnlyList<Trigger> reached, SourceLocation at)
+    {
+        foreach (var trigger in reached)
+        {
+            foreach (var name in summaries.TempWrites(trigger).Where(n => state.Temp(n) is KnownTable))
+            {
+                state = state.WithTemp(name, new UnknownTable(new UnknownShape(
+                    IrUnknownReason.UnsupportedStatement,
+                    $"{name} may be changed by the trigger {trigger.Name}, which the write at {at} may fire.",
+                    at)));
+            }
+        }
+
+        return state;
     }
 
     /// <summary>

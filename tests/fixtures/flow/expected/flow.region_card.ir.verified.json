@@ -1,0 +1,144 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/region_card.sql": "e249f0856da3adeb67ca28227f5dbb52b7ac0c2ec4ae9d1f5fb9c929d763988e"
+    }
+  },
+  "objects": [
+    {
+      "id": "flow.region_card",
+      "name": "RegionCard",
+      "kind": "procedure",
+      "at": "procedures/region_card.sql:4:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@region_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "RegionCardRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "RegionCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.region_card",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "length": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,2)",
+            "digits": {
+              "precision": 38,
+              "scale": 2,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "min": {
+              "value": -999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            },
+            "max": {
+              "value": 999999999999999999999999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "#totals.total"
+            },
+            {
+              "rule": "unmatched-row",
+              "at": "procedures/region_card.sql:30:11"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

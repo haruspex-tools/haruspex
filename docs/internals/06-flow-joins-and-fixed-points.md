@@ -17,7 +17,7 @@ In haruspex the fact at a point is a `FlowState`:
 | Part | Holds | Joined |
 |---|---|---|
 | `FlowState.Variables` | each variable's and parameter's value | value by value (`Value.Join`) |
-| `FlowState.Temps` | each temporary table: its columns and what each holds, or why it is unknown | column by column (`TempColumn.Join`); a table on one path only is the caller's on the other, so unknown |
+| `FlowState.Temps` | each temporary table: its columns and what each holds, and the keys SQL Server enforces on it there, or why it is unknown | column by column (`TempColumn.Join`), and the keys both have (`KnownTable.JoinKeys`), since a key is a must-fact, as `Unassigned` is; a table on one path only is the caller's on the other, so unknown |
 | `FlowState.Json` | what each traced `nvarchar(max)` place holds as JSON | slot by slot (`JsonSlot.Join`) |
 | `FlowState.Results` | the result sets returned so far, by position | position by position, each the set of what any path returned there (`ResultTrack.Join`) |
 | `FlowState.ReadUncommitted` | whether a statement may read uncommitted | either |

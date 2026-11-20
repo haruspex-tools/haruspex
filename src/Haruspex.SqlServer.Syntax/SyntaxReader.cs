@@ -157,13 +157,14 @@ public static class SyntaxReader
             .Concat(definition.TableConstraints.OfType<CheckConstraintDefinition>().Select(k => Check(k, null, span)))
             .ToList();
 
-        // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table
-        // (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
+        // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table or on a
+        // column (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
         // CREATE UNIQUE INDEX and ALTER TABLE … ADD CONSTRAINT, after the table, are read by the folder's reader.
         var keys = definition.ColumnDefinitions
             .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => ColumnKey(u, c.ColumnIdentifier.Value, span)))
+            .Concat(definition.ColumnDefinitions.Where(c => c.Index is { Unique: true, FilterPredicate: null }).Select(c => IndexKey(c.Index, c.ColumnIdentifier.Value, span)))
             .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => Key(u, span)))
-            .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => IndexKey(i, span)))
+            .Concat(definition.Indexes.Where(i => i.Unique && i.FilterPredicate is null).Select(i => IndexKey(i, null, span)))
             .ToList();
 
         return new Table(name, span, [.. columns], [.. primaryKey], [.. checks], [.. keys]) { IsGraph = isGraph };
@@ -190,9 +191,12 @@ public static class SyntaxReader
     private static UniqueKey ColumnKey(UniqueConstraintDefinition key, string column, SourceSpan span) =>
         new(key.ConstraintIdentifier?.Value, [column], key.IsPrimaryKey, span.At(key)) { IgnoresDuplicates = IgnoresDuplicates(key.IndexOptions) };
 
-    /// <summary>A unique index declared in the table (<c>INDEX … UNIQUE</c>).</summary>
-    private static UniqueKey IndexKey(IndexDefinition index, SourceSpan span) =>
-        new(index.Name?.Value, [.. index.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)], false, span.At(index))
+    /// <summary>
+    /// A unique index declared in the table (<c>INDEX … UNIQUE</c>), or on <paramref name="column"/> (<c>id int INDEX ux UNIQUE</c>,
+    /// which lists no columns of its own; enforced as the other, observed: A_temporary_table_enforces_the_keys_its_create_table_declares).
+    /// </summary>
+    private static UniqueKey IndexKey(IndexDefinition index, string? column, SourceSpan span) =>
+        new(index.Name?.Value, column is null ? [.. index.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)] : [column], false, span.At(index))
         {
             IgnoresDuplicates = IgnoresDuplicates(index.IndexOptions),
         };
@@ -221,6 +225,32 @@ public static class SyntaxReader
     {
         ArgumentNullException.ThrowIfNull(index);
         return index.IndexOptions.OfType<IndexStateOption>().Any(o => o.OptionKind == IndexOptionKind.DropExisting && o.OptionState == OptionState.On);
+    }
+
+    /// <summary>
+    /// The indexes a <c>DROP INDEX</c> drops, each with the table it names: <c>DROP INDEX ix ON t</c>, and the older
+    /// <c>DROP INDEX t.ix</c> or <c>DROP INDEX schema.t.ix</c>, whose index is the name's last part.
+    /// </summary>
+    /// <param name="drop">The statement.</param>
+    public static IEnumerable<(SchemaObjectName Table, string Index)> DroppedIndexes(DropIndexStatement drop)
+    {
+        ArgumentNullException.ThrowIfNull(drop);
+        foreach (var clause in drop.DropIndexClauses)
+        {
+            switch (clause)
+            {
+                case DropIndexClause on:
+                    yield return (on.Object, on.Index.Value);
+                    break;
+                case BackwardsCompatibleDropIndexClause old:
+                    var table = new SchemaObjectName();
+                    if (old.Index.SchemaIdentifier is { } schema)
+                        table.Identifiers.Add(schema);
+                    table.Identifiers.Add(old.Index.BaseIdentifier);
+                    yield return (table, old.Index.ChildIdentifier.Value);
+                    break;
+            }
+        }
     }
 
     /// <summary>Whether a key's or index's options say <c>IGNORE_DUP_KEY = ON</c> (<see cref="UniqueKey.IgnoresDuplicates"/>).</summary>

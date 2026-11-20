@@ -33,14 +33,14 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
     private readonly HashSet<string> warned = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Why a write fires a trigger that may return result sets, or null when none of those it may fire does. Warns, once per
-    /// name, of each object written that the project does not define.
+    /// Why a write fires a trigger that may return result sets, or null when none of those it may fire does, with every trigger it
+    /// may fire, at any depth, when none does. Warns, once per name, of each object written that the project does not define.
     /// </summary>
     /// <param name="target">What the write is aimed at.</param>
     /// <param name="binder">The binder of the body the write is in, which resolves its names.</param>
     /// <param name="events">The statements the write is, for triggers: a MERGE is each of its actions.</param>
     /// <param name="at">Where the write is.</param>
-    public UnknownShape? Check(DmlTarget target, Binder binder, DmlEvents events, SourceLocation at)
+    public (UnknownShape? Why, IReadOnlyList<Trigger> Reached) Check(DmlTarget target, Binder binder, DmlEvents events, SourceLocation at)
     {
         var visited = new HashSet<Visit>();
         foreach (var written in target.Objects)
@@ -51,11 +51,11 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
             foreach (var name in resolved)
             {
                 if (Reaches(name, events, binder, at, visited) is { } why)
-                    return new UnknownShape(IrUnknownReason.TriggerResults, $"The write at {at} {why}", at);
+                    return (new UnknownShape(IrUnknownReason.TriggerResults, $"The write at {at} {why}", at), []);
             }
         }
 
-        return null;
+        return (null, [.. visited.OfType<TriggerVisit>().Select(v => v.Trigger)]);
     }
 
     /// <summary>Warns of a name written that resolves to nothing, as written, by its canonical subject (<see cref="Subject(ObjectName)"/>).</summary>
@@ -116,6 +116,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         var remaining = events;
         foreach (var trigger in model.TriggersOn(name).Where(t => (t.Events & events) != 0))
         {
+            visited.Add(new TriggerVisit(trigger));
             if (Returns(trigger, visited) is { } why)
                 return $"fires the trigger {trigger.Name} on {name} ({trigger.Span}), which {why}";
 
@@ -198,7 +199,8 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
                 or DeclareVariableStatement or DeclareTableVariableStatement or SetVariableStatement or PredicateSetStatement
                 or PrintStatement or RaiseErrorStatement or ThrowStatement or ReturnStatement or BreakStatement or ContinueStatement
                 or BeginTransactionStatement or CommitTransactionStatement or RollbackTransactionStatement or SaveTransactionStatement
-                or CreateTableStatement or DropTableStatement or AlterTableStatement or CreateIndexStatement or TruncateTableStatement
+                or CreateTableStatement or DropTableStatement or AlterTableStatement or CreateIndexStatement or AlterIndexStatement or DropIndexStatement
+                or TruncateTableStatement
                 or DeclareCursorStatement or OpenCursorStatement or CloseCursorStatement or DeallocateCursorStatement
                 or GoToStatement or LabelStatement or SetRowCountStatement => null,
             _ => $"runs {statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant()} at {at}, which is not known to return no result set",
@@ -302,4 +304,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
 
     /// <summary>A procedure called from a trigger's body, or from one it calls, whose statements were followed.</summary>
     private sealed record CallVisit(ObjectName Procedure) : Visit;
+
+    /// <summary>A trigger reached, which may fire.</summary>
+    private sealed record TriggerVisit(Trigger Trigger) : Visit;
 }

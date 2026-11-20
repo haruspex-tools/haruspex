@@ -302,7 +302,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// <summary>
     /// Whether a key added to the table <paramref name="name"/> names a table of this database for certain: with its schema (without
     /// it, SQL Server looks in the caller's default schema first) and without a database or server, which would name another
-    /// database's table of the same schema and name. Not a temporary table, whose keys aren't modelled.
+    /// database's table of the same schema and name. Not a temporary table, which is no table of the database: a body's temporary
+    /// tables have their keys in the walk (Inference's <c>KnownTable.Keys</c>).
     /// </summary>
     private static bool NamesThisDatabasesTable(SchemaObjectName name) =>
         name is { SchemaIdentifier: not null, DatabaseIdentifier: null, ServerIdentifier: null } && !name.BaseIdentifier.Value.StartsWith('#');
@@ -395,23 +396,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
 
         foreach (var drop in Everywhere<DropIndexStatement>(script))
         {
-            foreach (var clause in drop.DropIndexClauses)
-            {
-                switch (clause)
-                {
-                    case DropIndexClause on:
-                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(on.Object), on.Object.SchemaIdentifier is not null, on.Index.Value, At(drop)));
-                        break;
-                    case BackwardsCompatibleDropIndexClause old:
-                        // DROP INDEX table.index, or schema.table.index: the index is the name's last part.
-                        var table = new SchemaObjectName();
-                        if (old.Index.SchemaIdentifier is { } schema)
-                            table.Identifiers.Add(schema);
-                        table.Identifiers.Add(old.Index.BaseIdentifier);
-                        into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(table), old.Index.SchemaIdentifier is not null, old.Index.ChildIdentifier.Value, At(drop)));
-                        break;
-                }
-            }
+            foreach (var (table, index) in SyntaxReader.DroppedIndexes(drop))
+                into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(table), table.SchemaIdentifier is not null, index, At(drop)));
         }
     }
 

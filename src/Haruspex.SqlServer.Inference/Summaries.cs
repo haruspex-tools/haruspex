@@ -2,6 +2,7 @@ using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -66,6 +67,10 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
     public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) => procedures.Declared(name);
 
-    /// <summary>The temporary tables a procedure, or any it calls, may change (<see cref="ProcedureCalls.TempWrites"/>).</summary>
+    /// <summary>The temporary tables a procedure, or any it calls, may change (<see cref="ProcedureCalls.TempWrites(ObjectName)"/>).</summary>
     public IReadOnlySet<LocalName> TempWrites(ObjectName name) => procedures.TempWrites(name);
+
+    /// <summary>The temporary tables a trigger, or any procedure it calls, may change (<see cref="ProcedureCalls.TempWrites(TSqlFragment, SourceSpan)"/>).</summary>
+    public IReadOnlySet<LocalName> TempWrites(Trigger trigger) =>
+        trigger.Body is SqlBody { Statements: var body } ? procedures.TempWrites(body, trigger.Span) : [];
 }

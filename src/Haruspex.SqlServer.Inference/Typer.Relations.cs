@@ -28,9 +28,11 @@ internal sealed partial class Typer
     /// <summary>What a table variable holds as declared; JSON written to it is in the state (<see cref="Holding"/>).</summary>
     /// <remarks>
     /// <para>
-    /// One of a table type, a table-valued parameter among them, has the type's keys, which SQL Server enforces on every row sent
-    /// or written (observed: <c>A_table_valued_parameter_s_key_refuses_a_duplicate_row</c>), so a query that fixes one reads at
-    /// most one row, as of a table. One declared with its own columns claims none yet, which only claims less.
+    /// Its keys are its declaration's: one of a table type, a table-valued parameter among them, has the type's, which SQL Server
+    /// enforces on every row sent or written (observed: <c>A_table_valued_parameter_s_key_refuses_a_duplicate_row</c>), and one
+    /// declared with its own columns has the primary key, unique constraints and unfiltered unique indexes it declares
+    /// (<c>A_table_variable_enforces_the_keys_it_declares</c>). So a query that fixes one reads at most one row, as of a table. No
+    /// statement can add or remove one.
     /// </para>
     /// <para>
     /// Its columns are the type's, so a value read from one names the type's column, as a table's does (<c>sales.line_list.note</c>),
@@ -43,7 +45,7 @@ internal sealed partial class Typer
         var named = definition.Type?.Name.ToString() ?? definition.Name;
         return new([.. definition.Columns.Select(c => c.Name)], [.. definition.Columns.Select(c => DeclaredValue(definition, c, named, temporary: false))], null)
         {
-            Keys = definition.Type is null ? [] : [.. TableKeys(definition)],
+            Keys = [.. TableKeys(definition)],
             From = definition.Type is { } type ? [.. type.Columns.Select(c => (EquatableArray<IrSourceColumn>)[TypeColumn(type, c)])] : null,
         };
     }
@@ -53,7 +55,7 @@ internal sealed partial class Typer
         new($"{type.Name}.{column.Name}", column.IsComputed ? null : (ColumnShape(type, type.Name.ToString(), column) as ScalarShape)?.Type.Sql, column.At.ToString());
 
     /// <summary>A body's table's enforced keys, by its columns' places, each typed for comparing it with a value in its own type.</summary>
-    private IEnumerable<RelationKey> TableKeys(DeclaredTable table)
+    internal IEnumerable<RelationKey> TableKeys(DeclaredTable table)
     {
         foreach (var key in SchemaRules.EnforcedKeys(table))
         {

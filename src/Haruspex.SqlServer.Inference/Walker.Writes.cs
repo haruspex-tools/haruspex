@@ -40,7 +40,8 @@ internal sealed partial class Walker
         var target = DmlTarget.Of(spec.Target, from, with);
         if (target.Unmodelled is not null)
             return Blocked(statement);
-        if (followsCalls && summaries.Triggers.Check(target, binder, events, at) is { } fired)
+        var (fired, reached) = followsCalls ? summaries.Triggers.Check(target, binder, events, at) : (null, []);
+        if (fired is not null)
         {
             blocker ??= fired;
             return Outcome.Ends;
@@ -48,7 +49,7 @@ internal sealed partial class Walker
 
         // A write that may reach a permanent table may remove a row an existence guard found (FoundRow); one to a temporary
         // table or table variable fires no trigger.
-        var after = target.Objects.Count > 0 ? write(target).Written() : write(target);
+        var after = Triggered(target.Objects.Count > 0 ? write(target).Written() : write(target), reached, at);
 
         // A temporary table changed underneath a CTE is not followed, so what it holds is not known.
         foreach (var name in target.Temps.Where(t => after.Temp(t) is KnownTable))

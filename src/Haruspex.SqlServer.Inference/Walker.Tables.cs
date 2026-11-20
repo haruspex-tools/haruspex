@@ -253,9 +253,6 @@ internal sealed partial class Walker
         }
     }
 
-    private static int IndexOf(KnownTable table, string column) =>
-        table.Columns.ToList().FindIndex(c => c.Name.Equals(column, StringComparison.OrdinalIgnoreCase));
-
     /// <summary>
     /// What an UPDATE does: to the temporary table it writes directly, a column SELECT … INTO made joins with each value
     /// written to it, and a declared one is unchanged. A variable set by it, whatever its target, may not be (no rows), so
@@ -294,7 +291,7 @@ internal sealed partial class Walker
                     state = state.WithJson(slotKey, JsonSlot.Join(held, Rewritten(mutation, slotKey.ToString())));
                 if (table is null || columns is null)
                     continue;
-                var m = IndexOf(table, mutated);
+                var m = table.IndexOf(mutated);
                 if (m < 0)
                     return state.WithTemp(table.Name, Unknown(table.Name, Unsupported(IrUnknownReason.UnresolvedColumn, $"The update changes {mutated}, which {table.Name} does not have.", At(mutation))));
                 var where = $"{table.Name}.{columns[m].Name}";

@@ -30,8 +30,8 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
     public EquatableArray<EquatableArray<IrSourceColumn>>? From { get; init; }
 
     /// <summary>
-    /// Its unique keys, which only a view (see <see cref="Typer"/>'s <c>ViewKeys</c>) and a table variable of a table type (its
-    /// <c>TableVariableValues</c>) have here.
+    /// Its unique keys, which only a view (see <see cref="Typer"/>'s <c>ViewKeys</c>), a table variable (its <c>TableVariableValues</c>),
+    /// a temporary table (<c>TemporaryKeys</c>) and a multi-statement function's return table have here.
     /// </summary>
     public EquatableArray<RelationKey> Keys { get; init; } = [];
 }

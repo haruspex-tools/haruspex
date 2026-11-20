@@ -32,10 +32,12 @@ internal sealed partial class Walker
         if (create.Definition is null)
             return Unknown(name, Unsupported(IrUnknownReason.UnsupportedSource, "a temporary table created without a column list is not modelled yet.", At(create)));
 
+        // Its keys are the ones it declares: the primary key, unique constraints and unfiltered unique indexes (INDEX … UNIQUE)
+        // (A_temporary_table_enforces_the_keys_its_create_table_declares). An identity column is none.
         var definition = SyntaxReader.Declared(name.Text, create.Definition, source.Within(create));
         return definition.Columns.Any(c => c.IsColumnSet)
             ? WithColumnSet(name, At(create))
-            : new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]);
+            : new KnownTable(name, [.. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, null))]) { Keys = definition.UniqueKeys };
     }
 
     private static UnknownTable WithColumnSet(LocalName name, SourceLocation at) =>
@@ -65,25 +67,29 @@ internal sealed partial class Walker
         {
             case AlterTableAddTableElementStatement add:
             {
-                // A new column's declaration is read like CREATE TABLE's. Constraints added on existing columns are not
-                // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there.
+                // A new column's declaration is read like CREATE TABLE's. CHECK constraints added on existing columns are not
+                // read, which only claims less. WITH NOCHECK leaves the new columns' own checks unproved for the rows there, but
+                // not a key, which rows already there must keep or the statement fails (Added).
                 var definition = SyntaxReader.Declared(name.Text, add.Definition, source.Within(alter));
                 if (definition.Columns.Any(c => c.IsColumnSet))
                     return state.WithTemp(name, WithColumnSet(name, at));
+                var keys = definition.UniqueKeys;
                 if (add.ExistingRowsCheckEnforcement == ConstraintEnforcement.NoCheck)
                     definition = Disabled(definition, null, at);
-                return state.WithTemp(name, table with
+                var widened = table with
                 {
                     Columns = [.. table.Columns, .. definition.Columns.Select(c => Fresh(definition, c, name, c.IsIdentity, add.Definition.ColumnDefinitions
                         .Any(d => d.ColumnIdentifier.Value.Equals(c.Name, StringComparison.OrdinalIgnoreCase) && d.DefaultConstraint is not null) ? at : null))],
-                });
+                };
+                return state.WithTemp(name, keys.Aggregate(widened, Added));
             }
 
             case AlterTableAlterColumnStatement change when change.DataType is not null
                 && change.AlterTableAlterColumnOption is AlterTableAlterColumnOption.NoOptionDefined or AlterTableAlterColumnOption.Null or AlterTableAlterColumnOption.NotNull:
             {
-                // The column takes the new type; without NOT NULL it may be null. Its checks are left out, which claims less.
-                var i = IndexOf(table, change.ColumnIdentifier.Value);
+                // The column takes the new type; without NOT NULL it may be null. Its checks and the keys over it are left out,
+                // which claims less (SQL Server refuses to change a key's column, 5074).
+                var i = table.IndexOf(change.ColumnIdentifier.Value);
                 if (i < 0)
                     break;
                 var column = new Column(
@@ -97,7 +103,7 @@ internal sealed partial class Walker
                 var definition = new DeclaredTable(name.Text, source.Within(alter), [column], [], [], []);
                 var columns = table.Columns.ToList();
                 columns[i] = Fresh(definition, column, name, table.Columns[i].Identity, at);
-                return state.WithTemp(name, table with { Columns = [.. columns] });
+                return state.WithTemp(name, table.WithoutKeysOver(column.Name) with { Columns = [.. columns] });
             }
 
             case AlterTableDropTableElementStatement drop:
@@ -109,12 +115,16 @@ internal sealed partial class Walker
                     {
                         case TableElementType.Column:
                             columns.RemoveAll(c => c.Name.Equals(element.Name.Value, StringComparison.OrdinalIgnoreCase));
+                            table = table.WithoutKeysOver(element.Name.Value);
                             break;
                         case TableElementType.Constraint or TableElementType.NotSpecified:
-                            // A dropped CHECK proves nothing more. One of an unknown name may be a check without one.
+                            // A dropped CHECK proves nothing more, and a dropped key holds no longer. One of an unknown name
+                            // may be a check without one, or a key SQL Server named.
                             columns = Rechecked(columns, element.Name.Value, name, at, drop: true);
+                            table = table.Dropped(element.Name.Value);
                             break;
                         case TableElementType.Index:
+                            table = table.Dropped(element.Name.Value);
                             break;
                         default:
                             return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
@@ -141,6 +151,54 @@ internal sealed partial class Walker
         }
 
         return state.WithTemp(name, Unknown(name, Unsupported(IrUnknownReason.UnsupportedStatement, $"{Text(alter)} is not modelled yet.", at)));
+    }
+
+    /// <summary>
+    /// The table with a key an <c>ALTER TABLE … ADD</c> declares, over columns it has. A primary key's columns refuse NULL from
+    /// then on: SQL Server adds one only over columns that already do (8111), which a column <c>SELECT … INTO</c> made may,
+    /// whatever haruspex can tell of its rows. The key holds from this statement on, for every path that goes on past it: one that
+    /// rows already break fails the statement (1505), which fails the call or reaches <c>CATCH</c> from the state before it
+    /// (A_key_that_fails_to_be_added_fails_the_call_or_reaches_catch_without_it).
+    /// </summary>
+    private static KnownTable Added(KnownTable table, UniqueKey key)
+    {
+        if (!key.IsPrimaryKey)
+            return table.WithKey(key);
+        var columns = table.Columns.Select(c => key.Columns.Contains(c.Name, StringComparer.OrdinalIgnoreCase) ? c with { RefusesNull = true } : c);
+        return (table with { Columns = [.. columns] }).WithKey(key);
+    }
+
+    /// <summary>
+    /// <c>CREATE INDEX … ON #t</c>: a unique one without a filter is a key from here on, as one added by <c>ALTER TABLE</c> is
+    /// (<see cref="Added"/>; A_key_added_to_a_temporary_table_holds_from_that_statement_on); one created <c>WITH (DROP_EXISTING =
+    /// ON)</c> replaces the index of its name, which may have been unique.
+    /// </summary>
+    private FlowState IndexCreated(CreateIndexStatement index, LocalName name, FlowState state)
+    {
+        if (state.Temp(name) is not KnownTable table)
+            return state;
+        if (SyntaxReader.DropsExisting(index))
+            table = table.Dropped(index.Name.Value);
+        if (index.Unique && index.FilterPredicate is null)
+            table = Added(table, SyntaxReader.Key(index, source.Within(index)));
+        return state.WithTemp(name, table);
+    }
+
+    /// <summary>
+    /// <c>ALTER INDEX … ON #t</c>: <c>DISABLE</c> stops a key being enforced, and <c>REBUILD</c> enables it again
+    /// (A_temporary_table_s_key_holds_until_it_is_dropped_or_disabled); any other form leaves it unique.
+    /// </summary>
+    private static FlowState IndexAltered(AlterIndexStatement alter, LocalName name, FlowState state, SourceLocation at)
+    {
+        if (state.Temp(name) is not KnownTable table)
+            return state;
+        var index = alter.All ? null : alter.Name?.Value;
+        return alter.AlterIndexType switch
+        {
+            AlterIndexType.Disable => state.WithTemp(name, table.Disabled(index, at)),
+            AlterIndexType.Rebuild => state.WithTemp(name, table.Rebuilt(index)),
+            _ => state,
+        };
     }
 
     /// <summary>

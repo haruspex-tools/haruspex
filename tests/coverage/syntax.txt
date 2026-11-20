@@ -83,7 +83,9 @@ DropTableStatement | DROP TABLE | partly unsupported-statement | A temporary tab
 AlterTableAddTableElementStatement | ALTER TABLE … ADD | partly unsupported-statement | A temporary table's columns | A column added to a temporary table joins its columns; altering a permanent table isn't modelled. | CREATE TABLE #t (a int); ALTER TABLE #t ADD b int NULL; SELECT a, b FROM #t; && ALTER TABLE dbo.box ADD note int NULL;
 AlterTableAlterColumnStatement | ALTER TABLE … ALTER COLUMN | partly unsupported-statement | A temporary table's columns | A temporary table's column takes its new type; a permanent one isn't modelled. | CREATE TABLE #t (a int); ALTER TABLE #t ALTER COLUMN a bigint NOT NULL; SELECT a FROM #t; && ALTER TABLE dbo.box ALTER COLUMN qty bigint;
 AlterTableDropTableElementStatement | ALTER TABLE … DROP | partly unsupported-statement | A temporary table's columns | A column dropped from a temporary table leaves it; a permanent table isn't modelled. | CREATE TABLE #t (a int, b int); ALTER TABLE #t DROP COLUMN b; SELECT a FROM #t; && ALTER TABLE dbo.box DROP COLUMN qty;
-CreateIndexStatement | CREATE INDEX | partly unsupported-statement | A temporary table's columns | An index on a temporary table changes nothing; one on a permanent table isn't modelled. | CREATE TABLE #t (a int); CREATE INDEX ix ON #t (a); && CREATE INDEX ix ON dbo.box (qty);
+CreateIndexStatement | CREATE INDEX | partly unsupported-statement | A temporary table's keys | A unique index without a filter on a temporary table is a key from there on, and any other changes nothing; one on a permanent table isn't modelled. | CREATE TABLE #t (a int); CREATE UNIQUE INDEX ux ON #t (a); && CREATE INDEX ix ON dbo.box (qty);
+AlterIndexStatement | ALTER INDEX | partly unsupported-statement | A temporary table's keys | On a temporary table, DISABLE stops a key being enforced and REBUILD enables it again; on a permanent table it isn't modelled. | CREATE TABLE #t (a int, INDEX ux UNIQUE (a)); ALTER INDEX ux ON #t DISABLE; && ALTER INDEX ALL ON dbo.box REBUILD;
+DropIndexStatement | DROP INDEX | partly unsupported-statement | A temporary table's keys | On a temporary table, the key of the index dropped holds no longer; on a permanent table it isn't modelled. | CREATE TABLE #t (a int, INDEX ux UNIQUE (a)); DROP INDEX ux ON #t; && DROP INDEX ix ON dbo.box;
 IndexDefinition | INDEX in CREATE TABLE | within CreateTableStatement | | |
 
 [Statements about the session and its transactions]
@@ -154,7 +156,6 @@ AlterFederationStatement
 AlterFullTextCatalogStatement
 AlterFullTextIndexStatement
 AlterFullTextStopListStatement
-AlterIndexStatement
 AlterLoginAddDropCredentialStatement
 AlterLoginEnableDisableStatement
 AlterLoginOptionsStatement
@@ -310,7 +311,6 @@ DropFullTextCatalogStatement
 DropFullTextIndexStatement
 DropFullTextStopListStatement
 DropFunctionStatement
-DropIndexStatement
 DropLoginStatement
 DropMasterKeyStatement
 DropMessageTypeStatement

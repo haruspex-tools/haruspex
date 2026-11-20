@@ -207,15 +207,15 @@ option not declared is not known, and each rule then claims what holds whatever 
 
 | Part | What it is | Starts as |
 |---|---|---|
-| Temporary tables, by name | `KnownTable` (columns, and what each may hold), `AbsentTable` (dropped here), `UnknownTable` (with a reason); a name not there is the caller's | empty: every `#t` is the caller's |
+| Temporary tables, by name | `KnownTable` (columns, what each may hold, and its keys), `AbsentTable` (dropped here), `UnknownTable` (with a reason); a name not there is the caller's | empty: every `#t` is the caller's |
 | Variables and parameters, by name | a `Value`: the declared type (with the type's facets, since every assignment converts to it), and why it may be null | a parameter may be null (`parameter`); a variable is NULL (`variable`) |
 | Result sets | `ResultTrack`: for each position, what each path returned there; and how many results the paths have returned | none, one path at 0 |
 
 Declarations are compiled, not run (`A_variable_or_table_variable_declared_in_a_branch_not_taken_still_exists`), so
 variables' types and table variables are collected from the whole body before the walk, and a table variable is
-always its declaration: nothing a statement does changes what its columns may hold. One declared with a table type, a
-table-valued parameter among them, has the type's keys too ("Table-valued parameters"); one declared with its own columns claims
-none yet, which only claims less.
+always its declaration: nothing a statement does changes what its columns may hold, or its keys. One declared with a table type,
+a table-valued parameter among them, has the type's keys ("Table-valued parameters"); one declared with its own columns has the
+primary key, unique constraints and unfiltered unique indexes it declares (`A_table_variable_enforces_the_keys_it_declares`).
 
 ### A temporary table's columns
 
@@ -253,6 +253,42 @@ none yet, which only claims less.
   "Cursors"). `EXEC` and `INSERT … EXEC` are followed (below, "Calls"). Any other statement makes the results unknown
   (`unsupported-statement`).
 
+### A temporary table's keys
+
+A temporary table has the keys SQL Server enforces on it at that point, and a query over it uses them as it uses a table's
+("How many rows" below; [decision 0083](../../docs/decisions/0083-a-body-s-own-table-has-the-keys-sql-server-enforces-at-each-statement.md)). `KnownTable.Keys` holds them, by name and columns:
+
+| Statement | Its keys after it |
+|---|---|
+| `CREATE TABLE #t` | the primary key, unique constraints and unique indexes without a filter it declares, on a column or the table (`A_temporary_table_enforces_the_keys_its_create_table_declares`); an identity column is none |
+| `SELECT … INTO`, `CREATE TABLE … AS SELECT` | none, even with an identity column (`A_table_select_into_makes_has_no_key_even_with_an_identity`) |
+| `ALTER TABLE #t ADD` a key, `CREATE UNIQUE INDEX` without a filter | that key as well (`A_key_added_to_a_temporary_table_holds_from_that_statement_on`); a primary key's columns refuse NULL from then on (`A_primary_key_added_to_a_temporary_table_makes_its_column_refuse_null`) |
+| `ALTER TABLE #t DROP CONSTRAINT`, `DROP INDEX`, `CREATE INDEX … WITH (DROP_EXISTING = ON)` | not the key of that name (`A_temporary_table_s_key_holds_until_it_is_dropped_or_disabled`) |
+| `ALTER INDEX … DISABLE`, of a name or `ALL` | the key kept, but enforcing nothing until `ALTER INDEX … REBUILD` of its name or `ALL` enables it again |
+| `ALTER TABLE #t ALTER COLUMN`, `DROP COLUMN` | not the keys over that column (SQL Server refuses to change one, 5074, which only claims less) |
+| `DROP TABLE #t` | none: a table created again starts from its own declaration |
+
+- **A key that can't be added fails.** Rows that already share a key, or NULL in a primary key's column (8111), refuse the
+  `ALTER TABLE` or `CREATE UNIQUE INDEX`, and the error fails the call, or reaches `CATCH` from the state before the statement,
+  so on every path that goes on past it the key holds (`A_key_that_fails_to_be_added_fails_the_call_or_reaches_catch_without_it`).
+  A write that would break a key fails the whole statement, `INSERT … EXEC` and `MERGE` included
+  (`A_write_that_would_break_a_temporary_table_s_key_fails`).
+- **A name the body doesn't know may be a key's.** SQL Server names a key declared without a name, so a drop or a disable of a
+  name the table's keys don't have removes or disables every key whose name isn't known. Where paths meet, a key both have is
+  kept, disabled if either disabled it, and its name kept only when both name it alike.
+- **Collation.** A string column of a temporary table takes `tempdb`'s collation, the server's, not the database's; a table
+  variable's takes the database's (`A_temporary_table_s_string_column_takes_tempdb_s_collation_and_a_table_variable_s_the_database_s`).
+  The project doesn't say what the server's is, but a key doesn't need it: a comparison with a variable or a literal is made
+  under the column's own collation, which is the key's equality, and one with a column of another collation is refused (468)
+  (`A_temporary_table_s_string_key_compares_under_its_own_collation`). So the rule of "How many rows" holds as for a table.
+- **A trigger** that a write to a permanent table may fire, and that may change the procedure's `#t`, makes it unknown after the
+  write ("Triggers" below), keys included.
+- **A global temporary table** (`##t`) claims nothing, its keys included: another session may drop it and create another of
+  that name between two statements (`A_global_temporary_table_may_be_replaced_by_another_session`).
+- **Across calls** a key goes where the table's columns go ("Calls"): a callee reads its caller's table with the caller's keys at
+  the call, and a key it adds or drops is the caller's when it returns
+  (`A_callee_s_key_on_its_caller_s_temporary_table_stays_when_it_returns`). Read alone, the callee knows nothing of the table.
+
 ## Joins, where paths meet
 
 After `IF … ELSE`, at a loop's head, at `CATCH` and at the end of the procedure, the states of the paths that reach
@@ -262,7 +298,7 @@ the point are joined. Each join claims only what holds on every path:
 |---|---|
 | A temporary table's column's declaration | kept only when it is the same on both paths; a column declared on some paths only, or differently, joins later writes like a `SELECT … INTO` column and is never read again from one path's declaration |
 | A value (variable, column) | null if null on any path (the reasons of both); a scalar of the same SQL type keeps the facets both prove, each the looser of the two (longer maximum, lower minimum, the union of two sets); other shapes stay only when both are the same, or are unknown |
-| A temporary table | the same table on both: column by column. Created on one path only: unknown, the caller's on the other (`caller-temp-table`). Dropped on one path only: unknown (`unresolved-table`) |
+| A temporary table | the same table on both: column by column, and the keys both have. Created on one path only: unknown, the caller's on the other (`caller-temp-table`). Dropped on one path only: unknown (`unresolved-table`) |
 | Result sets | per position, everything either path returned there; the numbers of results so far, both |
 | No path (every one ended) | the other side, unchanged |
 
@@ -398,7 +434,7 @@ walks the callee and solves recursion. Every engine rule here is observed and ke
   either makes the results after it unknown (`unsupported-statement`); `UNDEFINED` is as no clause.
 - **The callee is walked again at each call**, from the caller's temporary tables at that point (`CallContext`), so what it
   reads of them is the caller's (a callee read alone gives `caller-temp-table`), and its writes stay: `INSERT` and `UPDATE`
-  widen a column as in the caller, `ALTER TABLE … ADD` adds one, `DROP TABLE` drops it
+  widen a column as in the caller, `ALTER TABLE … ADD` adds one, a key it adds or drops is added or dropped, `DROP TABLE` drops it
   (`A_callee_writes_its_callers_temporary_table_and_the_rows_stay`, `A_callee_can_alter_and_drop_its_callers_temporary_table`).
   A table the callee creates is gone when it returns (`A_temporary_table_a_callee_creates_is_gone_when_it_returns`); a callee
   that creates one of a name its caller has may have written the caller's before, which is not followed, so the caller's
@@ -593,7 +629,10 @@ Which triggers a write may fire is followed transitively, each step observed:
 | a `DELETE` or `UPDATE` of a table that foreign keys reference with an action (`ON DELETE CASCADE`, `SET NULL`, `SET DEFAULT`, or `ON UPDATE` ones) | the `DELETE` and `UPDATE` triggers of the referencing table (`A_cascading_delete_fires_the_triggers_of_the_referencing_table`), from `CREATE TABLE` or `ALTER TABLE … ADD` |
 | inside a trigger, its own writes and calls | followed the same way (`A_triggers_own_dml_fires_other_triggers_whose_results_reach_the_client`): nested triggers are on by default |
 
-Every trigger reachable is checked, which is more than fire; that only claims less. A trigger **may return results**
+Every trigger reachable is checked, which is more than fire; that only claims less. A trigger runs in the session of the
+statement that fired it, so a temporary table it changes is the procedure's
+(`A_trigger_changes_the_temporary_table_of_the_procedure_whose_write_fires_it`): after the write, each temporary table a
+reachable trigger, or a procedure it calls, may write, alter or drop is unknown (`Walker.Triggered`). A trigger **may return results**
 unless every statement in it, at any depth, is one known to return none: control flow, declarations and assignments
 (`SELECT @v = …` included), `PRINT`, `RAISERROR`, `THROW`, transactions, `SET` options, temporary tables and indexes,
 `TRUNCATE`, cursor statements with `FETCH … INTO`, writes (each followed as above, with no `OUTPUT` without `INTO`), and
@@ -1235,8 +1274,9 @@ filter, `A_filtered_unique_index_allows_duplicates_outside_its_filter`, and a di
 column of a source already fixed; or is tested `IS NULL`, since a key holds one NULL at most
 (`A_unique_constraint_allows_one_null_only`). When every source is fixed, there is at most one row. A condition counts
 from `WHERE`'s top-level conjuncts, or from a join's `ON` for the sources inside that join (the optional side, for an
-outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, and views by the rule
-in "Views" below, except a source read `FOR SYSTEM_TIME` `ALL`, `BETWEEN`, `FROM … TO` or `CONTAINED IN`, table or view,
+outer join, which then matches at most one row per kept row); never under `OR`. Tables are keyed, views by the rule
+in "Views" below, and a body's temporary tables and table variables by the keys they have where they are read ("A temporary
+table's keys" above), except a source read `FOR SYSTEM_TIME` `ALL`, `BETWEEN`, `FROM … TO` or `CONTAINED IN`, table or view,
 whose history rows repeat every key (`For_system_time_other_than_as_of_repeats_a_key_through_a_table_or_a_view`; `AS OF`
 returns one version and keeps it); such a source counts as fixed
 only when it is exactly one row (an aggregate without `GROUP BY`), never for an at-most-one bound, which may come from a key
@@ -1269,9 +1309,8 @@ under a SQL collation compared with an `nvarchar` value is compared by Unicode r
 type, a narrower integer or decimal, a `varchar` for an `nvarchar` key, or a string for a key that is not a string, and
 carry no `COLLATE` of its own (`Cardinality.InKeysType` lists them).
 
-Not modelled yet: keys of temporary tables (declared, or added by `CREATE UNIQUE INDEX` or `ALTER TABLE`), table variables,
-CTEs and derived tables (a derived table's at-most-one bound is); a key added by a statement in a body or under `IF`, or naming
-its table without its schema, or with a database or server; `AVG`; refinement of `UPDATE … FROM` and
+Not modelled yet: keys of CTEs and derived tables (a derived table's at-most-one bound is); a key added to a permanent table by
+a statement in a body or under `IF`, or naming its table without its schema, or with a database or server; `AVG`; refinement of `UPDATE … FROM` and
 `SELECT @v = …` by their filters. Each only claims less.
 
 ## APPLY

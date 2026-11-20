@@ -23,8 +23,22 @@ namespace Haruspex.SqlServer.Inference;
 /// </param>
 internal sealed record TempColumn(string Name, Value Value, DeclaredTable? Declaration, bool? Identity = false, JsonSlot? Json = null)
 {
-    /// <summary>What a read of the column gives: its value, holding the JSON its writes put in it.</summary>
-    public Value Read => Json is { } slot ? slot.Read(Value) : Value;
+    /// <summary>
+    /// Whether a primary key added after the column was made covers it, so that it refuses NULL whatever a write tries: SQL Server
+    /// adds one only over columns that don't allow NULL (8111), so the column never held one either (observed:
+    /// A_primary_key_added_to_a_temporary_table_makes_its_column_refuse_null). A declared column's own declaration says so already.
+    /// </summary>
+    public bool RefusesNull { get; init; }
+
+    /// <summary>What a read of the column gives: its value, holding the JSON its writes put in it, and never null when it refuses NULL.</summary>
+    public Value Read
+    {
+        get
+        {
+            var value = Json is { } slot ? slot.Read(Value) : Value;
+            return RefusesNull && value.Shape is not UnknownShape ? value.WithNullableBecause([]) : value;
+        }
+    }
 
     /// <summary>
     /// The same column on either of two paths, each fact joined in its own lattice: its value (<see cref="Value.Join"/>), its
@@ -41,5 +55,6 @@ internal sealed record TempColumn(string Name, Value Value, DeclaredTable? Decla
         Declaration = ReferenceEquals(c.Declaration, d.Declaration) ? c.Declaration : null,
         Identity = c.Identity == d.Identity ? c.Identity : null,
         Json = c.Json is { } x && d.Json is { } y ? JsonSlot.Join(x, y) : null,
+        RefusesNull = c.RefusesNull && d.RefusesNull,
     };
 }
