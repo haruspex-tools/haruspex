@@ -97,7 +97,7 @@ internal sealed class LatticeSample(int seed)
                 return new TupleShape([.. Enumerable.Range(0, random.Next(3)).Select(_ => new ElementShape(Content(depth - 1), Reasons()))]);
             case 4:
             case 5:
-                var keys = random.Next(3) switch { 0 => new[] { "id" }, 1 => ["name"], _ => ["id", "name"] };
+                var keys = random.Next(4) switch { 0 => new[] { "id" }, 1 => ["name"], 2 => [], _ => ["id", "name"] };
                 return new ObjectShape([.. keys.Select(k => new FieldShape(k, Content(depth - 1), random.Next(3) == 0 ? IrPresence.OmittedWhenNull : IrPresence.Always, Reasons()))]);
             case 6:
                 return new RecordShape(Content(depth - 1), Reasons());

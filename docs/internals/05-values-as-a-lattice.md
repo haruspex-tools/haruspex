@@ -245,7 +245,9 @@ an enum's values holds only as long as nobody reorders its members.
 Two facts can't be joined apart, and are one fact here: a shape and whether it is live JSON. The same object shape means a
 JSON object when it is live and a string holding one when it is not, so `Value.Join` joins the pair. A shape that can't be
 joined as a SQL value (a string and a number, two different objects) is unknown there, since a column can't be a union of
-types. JSON built here can always be joined exactly, as a union, so it has a lattice of its own, `JsonShapes`.
+types. JSON built here can always be joined exactly, as a union, so it has a lattice of its own, `JsonShapes`. One join there
+is not a union: an object of no keys and an object whose keys are data join as the latter, since `{}` is one of those, which
+text such as `'{' + coalesce(string_agg(…), '') + '}'` needs (its two ways are `{}` and keys from data).
 
 ### The laws a join keeps, and why each matters
 

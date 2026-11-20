@@ -14,11 +14,12 @@ namespace Haruspex.SqlServer.Inference;
 /// </summary>
 /// <remarks>
 /// Two constructions are reported, each once, at the outermost expression. One is a concatenation (<c>+</c> or <c>concat</c>)
-/// whose text is a JSON array, each part that is not a literal standing for a value or for text inside a string, and that shows
-/// it is JSON: a comma, a quotation mark or a brace in its literals, a <c>string_agg</c> or <c>concat_ws</c>, or a part that
-/// builds JSON. That leaves out T-SQL's own brackets, <c>'[' + name + ']'</c> quoting an identifier and text such as
-/// <c>'[' + n + ' KEYS]'</c>, which a reader of the corpora meets often. The other is <c>concat_ws</c> with a comma between values
-/// one of which is a literal JSON string, <c>'"retail"'</c>, whose brackets may be elsewhere.
+/// whose text is a JSON array or object, each part that is not a literal standing for a value, for text inside a string, or,
+/// where a key goes, for a key or for members, and that shows it is JSON: a comma or a quotation mark in its literals, a brace
+/// in an array's, a <c>string_agg</c> or <c>concat_ws</c>, or a part that builds JSON. That leaves out T-SQL's own brackets,
+/// <c>'[' + name + ']'</c> quoting an identifier and text such as <c>'[' + n + ' KEYS]'</c>, and braces around a name or display
+/// text, <c>'{' + name + '}'</c>, which a reader of the corpora meets often. The other is <c>concat_ws</c> with a comma between
+/// values one of which is a literal JSON string, <c>'"retail"'</c>, whose brackets may be elsewhere.
 /// </remarks>
 internal static class JsonTextNotes
 {
@@ -68,9 +69,39 @@ internal static class JsonTextNotes
     public static Diagnostic Note(SourceLocation at, ScalarExpression expression, bool aggregated) =>
         InferenceCodes.JsonBuiltAsText.At(at, Message(expression, aggregated));
 
-    private static string Message(ScalarExpression expression, bool aggregated) => aggregated
-        ? $"{FragmentText.OneLine(expression)} builds a JSON array as text; build it with json_arrayagg(…) (SQL Server 2025, Azure SQL), which escapes each value and which haruspex types exactly. Like string_agg, it is NULL over no rows."
-        : $"{FragmentText.OneLine(expression)} builds a JSON array as text; build it with json_array(…) (SQL Server 2022 on), which escapes each value, leaves out a NULL as concat_ws does, and which haruspex types exactly.";
+    /// <summary>
+    /// What the note says: the expression, whether it builds an array or an object (by its first literal), and the constructor
+    /// that builds the same JSON, escaping each value: <c>json_object</c> for an object, <c>json_array</c> or, where
+    /// <c>string_agg</c> makes the items, <c>json_arrayagg</c> for an array, with <c>json_object</c> inside for an array of
+    /// objects.
+    /// </summary>
+    private static string Message(ScalarExpression expression, bool aggregated)
+    {
+        var parts = new List<ScalarExpression>();
+        Flatten(expression, parts);
+        var text = FragmentText.OneLine(expression);
+        if (parts is [StringLiteral first, ..] && first.Value.TrimStart().StartsWith('{'))
+        {
+            return aggregated
+                ? $"{text} builds a JSON object as text; build it with json_object(…) (SQL Server 2022 on) or FOR JSON PATH, and what string_agg makes inside it with json_arrayagg(…) or json_objectagg(…) (SQL Server 2025, Azure SQL), which escape each key and value, write each key once, and which haruspex types exactly."
+                : $"{text} builds a JSON object as text; build it with json_object(…) (SQL Server 2022 on) or FOR JSON PATH, which escape each key and value, write each key once, and which haruspex types exactly.";
+        }
+
+        var literals = new LiteralFinder();
+        expression.Accept(literals);
+        var objects = literals.Found.Any(l => l.Contains('{', StringComparison.Ordinal));
+        return aggregated
+            ? $"{text} builds a JSON array as text; build it with json_arrayagg({(objects ? "json_object(…)" : "…")}) (SQL Server 2025, Azure SQL), which escapes each value and which haruspex types exactly. Like string_agg, it is NULL over no rows."
+            : $"{text} builds a JSON array as text; build it with json_array({(objects ? "json_object(…), …" : "…")}) (SQL Server 2022 on), which escapes each value, leaves out a NULL as concat_ws does, and which haruspex types exactly.";
+    }
+
+    /// <summary>Every string literal written in an expression.</summary>
+    private sealed class LiteralFinder : TSqlFragmentVisitor
+    {
+        public List<string> Found { get; } = [];
+
+        public override void Visit(StringLiteral node) => Found.Add(node.Value);
+    }
 
     /// <summary>Visits a body, recording each outermost construction and not looking inside it again.</summary>
     private sealed class Finder : TSqlFragmentVisitor
@@ -113,7 +144,8 @@ internal static class JsonTextNotes
     }
 
     /// <summary>
-    /// A concatenation whose text is a JSON array, not all literals, that shows it is JSON (<see cref="JsonTextNotes"/>).
+    /// A concatenation whose text is a JSON array or object, not all literals, that shows it is JSON (<see cref="JsonTextNotes"/>).
+    /// An object's own first brace shows nothing, so it is not counted.
     /// </summary>
     private static bool Bracketed(ScalarExpression node)
     {
@@ -121,30 +153,61 @@ internal static class JsonTextNotes
             return false;
         var parts = new List<ScalarExpression>();
         Flatten(node, parts);
-        if (parts is not [StringLiteral first, .., StringLiteral] || !first.Value.TrimStart().StartsWith('[') || parts.All(p => p is StringLiteral) || !LexesAsArray(parts))
+        if (parts is not [StringLiteral first, .., StringLiteral] || first.Value.TrimStart() is not ['[' or '{', ..] opening || parts.All(p => p is StringLiteral) || !LexesAsJson(parts))
             return false;
         var builders = new JsonBuilderFinder();
         node.Accept(builders);
-        return builders.Found || parts.OfType<StringLiteral>().Any(l => l.Value.IndexOfAny(['"', ',', '{']) >= 0);
+        char[] evidence = opening[0] == '[' ? ['"', ',', '{'] : ['"', ','];
+        return builders.Found || parts.OfType<StringLiteral>().Any(l => l.Value.IndexOfAny(evidence) >= 0 || (opening[0] == '{' && ColonBeforeValue(l.Value)));
     }
 
     /// <summary>
-    /// Whether the parts' text is one JSON array, each part that is not a literal read as a value, or as text where it is inside
-    /// a string: the lexical shape of JSON, not its content.
+    /// Whether a literal has a colon followed by the start of a JSON value, <c>:true</c> or <c>:"</c>: an object's member whose
+    /// key another part writes, where <c>{n: items}</c> is display text.
     /// </summary>
-    private static bool LexesAsArray(List<ScalarExpression> parts)
+    private static bool ColonBeforeValue(string text)
+    {
+        for (var i = text.IndexOf(':', StringComparison.Ordinal); i >= 0; i = text.IndexOf(':', i + 1))
+        {
+            var rest = text[(i + 1)..].TrimStart(' ', '\t', '\r', '\n');
+            if (rest is ['"' or '[' or '{' or '-' or (>= '0' and <= '9'), ..] || rest.StartsWith("true", StringComparison.Ordinal)
+                || rest.StartsWith("false", StringComparison.Ordinal) || rest.StartsWith("null", StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether a part is a line break or a tab written as <c>CHAR(10)</c>, <c>CHAR(13)</c> or <c>CHAR(9)</c>: whitespace between
+    /// JSON's tokens, which code laying its JSON out on lines writes between the pieces.
+    /// </summary>
+    private static bool IsWhitespace(ScalarExpression part) =>
+        part is FunctionCall { CallTarget: null, Parameters: [IntegerLiteral { Value: "9" or "10" or "13" }] } call
+        && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } function
+        && function == ScalarFunctions.CharOf;
+
+    /// <summary>
+    /// Whether the parts' text is one JSON array or object, each part that is not a literal read as a value, as text where it is
+    /// inside a string, or, where a key goes, as a key or as members: the lexical shape of JSON, not its content.
+    /// </summary>
+    private static bool LexesAsJson(List<ScalarExpression> parts)
     {
         var open = new Stack<char>();
-        var expect = 'v'; // v a value, c a comma or a close, k a key or a close, : a colon, s inside a string, d done
+        var expect = 'v'; // v a value, c a comma or a close, k a key or a close, m after a key or members, : a colon, s inside a string, d done
         var key = false;
         foreach (var part in parts)
         {
+            if (IsWhitespace(part) && expect is not 's')
+                continue;
             if (part is not StringLiteral { Value: var text })
             {
                 if (expect is 'v' && open.Count > 0)
                     expect = 'c';
                 else if (expect is 'k')
-                    (expect, key) = (':', false);
+                    expect = 'm';
                 else if (expect is not 's')
                     return false;
                 continue;
@@ -182,8 +245,15 @@ internal static class JsonTextNotes
                     case 'k' when c == '"':
                         (expect, key) = ('s', true);
                         break;
-                    case ':' when c == ':':
+                    case ':' or 'm' when c == ':':
                         expect = 'v';
+                        break;
+                    case 'm' when c == ',':
+                        expect = 'k';
+                        break;
+                    case 'm' when c == '}':
+                        open.Pop();
+                        expect = open.Count == 0 ? 'd' : 'c';
                         break;
                     case 'c' when c == ',' && open.Count > 0:
                         expect = open.Peek() == '[' ? 'v' : 'k';

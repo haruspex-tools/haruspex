@@ -90,6 +90,8 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0083](0083-a-body-s-own-table-has-the-keys-sql-server-enforces-at-each-statement.md) | 20 Nov 2026 | A body's own table has the keys SQL Server enforces on it at each statement |
 | [0084](0084-json-assembled-as-text-is-typed-where-each-element-is-one-json-value.md) | 20 Nov 2026 | JSON assembled as text is typed where each element is one JSON value |
 | [0085](0085-json-built-as-text-is-a-note-wherever-it-is-written.md) | 20 Nov 2026 | JSON built as text is a note wherever it is written |
+| [0086](0086-a-json-object-assembled-as-text-is-typed-where-each-key-is-written-once-in-a-literal.md) | 20 Nov 2026 | A JSON object assembled as text is typed where each key is written once in a literal |
+| [0087](0087-keys-built-from-data-make-an-object-whose-keys-are-data.md) | 20 Nov 2026 | Keys built from data make an object whose keys are data |
 
 ## Writing a record
 

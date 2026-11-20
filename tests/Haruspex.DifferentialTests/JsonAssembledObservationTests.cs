@@ -7,7 +7,7 @@ namespace Haruspex.DifferentialTests;
 /// <c>string_agg</c> rather than built by <c>json_arrayagg</c>, <c>json_array</c> or <c>FOR JSON</c>. The rules in
 /// Haruspex.SqlServer.Inference's README.md, "JSON assembled as text", rest on these. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class JsonAssembledObservationTests(SqlServerFixture server)
+public partial class JsonAssembledObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string call) => ObservedCall.Run(server, [], call);
 

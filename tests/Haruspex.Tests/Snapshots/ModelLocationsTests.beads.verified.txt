@@ -16,8 +16,10 @@ key bead.order_tag unnamed (order_id, tag) at tables/order_tag.sql:5:5
 named function bead.channels
 parameter bead.channels @channel at functions/channels.sql:3:32
 parameter bead.order_card @order_id at procedures/order_card.sql:5:5
+parameter bead.order_object @order_id at procedures/order_object.sql:5:5
 procedure bead.order_card at procedures/order_card.sql:4:1
 procedure bead.order_ids at procedures/order_ids.sql:2:1
+procedure bead.order_object at procedures/order_object.sql:4:1
 table bead.order at tables/order.sql:1:1
 table bead.order_line at tables/order_line.sql:1:1
 table bead.order_tag at tables/order_tag.sql:1:1

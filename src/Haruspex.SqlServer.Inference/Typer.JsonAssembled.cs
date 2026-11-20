@@ -159,8 +159,8 @@ internal sealed partial class Typer
 
         // A NULL separator is no text; a NULL argument is left out, with its separator.
         var items = Enumerable.Range(1, arguments.Count - 1)
-            .Where(i => values[i] is not null)
-            .Select(i => new JoinedPiece.Item(Whole(Of(i), arguments[i]), values[i] is { NullableBecause.Count: > 0 }))
+            .Select(i => values[i] is { } value ? new JoinedPiece.Item(Whole(Of(i), arguments[i]), value.NullableBecause) : null)
+            .OfType<JoinedPiece.Item>()
             .ToList();
         var separator = values[0] is { } sep ? Whole(OrEmpty(Of(0), sep, nullIsEmpty: true), arguments[0]) : [];
         EquatableArray<TextPiece> joined = [new JoinedPiece(separator, [.. items])];

@@ -28,8 +28,9 @@ internal static class JsonShapes
     /// is itself; an unknown stays unknown; arrays and tuples become an array of the items of both (the empty tuple <c>[]</c>
     /// adds no item, so <c>COALESCE(@lines, '[]')</c> keeps the lines' items and only loses their least count); objects with the
     /// same keys in the same order, each present the same way, join key by key; records join value by value; scalars of one
-    /// type keep the facts both prove; anything else is a union of
-    /// both, which is exact.
+    /// type keep the facts both prove; an object of no keys joins a record as the record, which holds it (<c>'{' +
+    /// coalesce(string_agg(…), '') + '}'</c> is <c>{}</c> over no rows; docs/decisions/0087-keys-built-from-data-make-an-object-whose-keys-are-data.md);
+    /// anything else is a union of both, which is exact.
     /// </summary>
     public static Shape Join(Shape a, Shape b)
     {
@@ -52,6 +53,10 @@ internal static class JsonShapes
                 return x.Joined(y, ScalarFacets.Join(x.Type.Facets, y.Type.Facets));
             case (RecordShape x, RecordShape y):
                 return new RecordShape(Join(x.Values, y.Values), NullReasons.Join(x.ValuesNullableBecause, y.ValuesNullableBecause));
+            case (ObjectShape { Fields.Count: 0 }, RecordShape):
+                return b;
+            case (RecordShape, ObjectShape { Fields.Count: 0 }):
+                return a;
         }
 
         // A union: each variant of either once, a variant joining the first of its own kind it can (an array with an array).
@@ -119,6 +124,7 @@ internal static class JsonShapes
                 && (p.First.Presence == p.Second.Presence || p.First.NullableBecause.Count == 0)
                 && Below(p.First.Type, p.Second.Type) && NullReasons.Below(p.First.NullableBecause, p.Second.NullableBecause)),
         (RecordShape x, RecordShape y) => Below(x.Values, y.Values) && NullReasons.Below(x.ValuesNullableBecause, y.ValuesNullableBecause),
+        (ObjectShape { Fields.Count: 0 }, RecordShape) => true,
         (JsonTextShape x, JsonTextShape y) => y.Content is null || (x.Content is not null && Below(x.Content, y.Content)),
         _ => a == b,
     };
@@ -145,7 +151,7 @@ internal static class JsonShapes
     /// and tuples, records, objects of the same keys, scalars of one type, or the same shape.
     /// </summary>
     private static bool Mergeable(Shape a, Shape b) =>
-        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b || (a is RecordShape && b is RecordShape)
+        (a is TupleShape or ArrayShape && b is TupleShape or ArrayShape) || a == b || (a is RecordShape or ObjectShape { Fields.Count: 0 } && b is RecordShape or ObjectShape { Fields.Count: 0 })
         || (a is ObjectShape x && b is ObjectShape y && Objects(x, y) is not null)
         || (a is ScalarShape s && b is ScalarShape t && s.SameType(t));
 

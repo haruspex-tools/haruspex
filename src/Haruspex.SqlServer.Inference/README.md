@@ -1746,13 +1746,17 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 
 ## JSON assembled as text
 
-The code is `Typer.JsonAssembled.cs`, `JsonAssembly.cs` and the pieces (`TextPiece` and its kinds); the note is
-`JsonTextNotes.cs`. Before `json_arrayagg` and `json_array`, code built JSON arrays by joining text:
-`N'[' + coalesce(string_agg(convert(nvarchar(max), l.line_id), N','), N'') + N']'`, `concat(N'["', string_agg(…, N'","'), N'"]')`,
-`'[' + concat_ws(',', case when … then '"retail"' end, …) + ']'`, `concat('[', a.j, ',', b.j, ']')`. Where such text is read as
-JSON (`json_query`, `OPENJSON`, `JSON_VALUE`, a variable or column that holds JSON, a function's result), it is typed exactly
-where the server guarantees its shape, and unknown, saying why, everywhere else. Every rule is observed in
-`JsonAssembledObservationTests` ([decision 0084](../../docs/decisions/0084-json-assembled-as-text-is-typed-where-each-element-is-one-json-value.md)).
+The code is `Typer.JsonAssembled.cs`, `JsonAssembly.cs` with its reader (`JsonAssembly.Reader.cs`) and the pieces (`TextPiece`
+and its kinds); the note is `JsonTextNotes.cs`. Before `json_arrayagg`, `json_array` and `json_object`, code built JSON by
+joining text: `N'[' + coalesce(string_agg(convert(nvarchar(max), l.line_id), N','), N'') + N']'`,
+`concat(N'["', string_agg(…, N'","'), N'"]')`, `'[' + concat_ws(',', case when … then '"retail"' end, …) + ']'`,
+`concat('[', a.j, ',', b.j, ']')`, and objects, `'{"id":' + convert(nvarchar(max), o.id) + ',"status":"' + string_escape(o.status,
+'json') + '"}'`, often inside `string_agg`. Where such text is read as JSON (`json_query`, `OPENJSON`, `JSON_VALUE`, a variable
+or column that holds JSON, a function's result), it is typed exactly where the server guarantees its shape, and unknown, saying
+why, everywhere else. Every rule is observed in `JsonAssembledObservationTests` ([decision
+0084](../../docs/decisions/0084-json-assembled-as-text-is-typed-where-each-element-is-one-json-value.md) for arrays and values,
+[decision 0086](../../docs/decisions/0086-a-json-object-assembled-as-text-is-typed-where-each-key-is-written-once-in-a-literal.md)
+for objects).
 
 - **Pieces.** What a string's text is made of is a fact of its value (`Value.Pieces`), stated by the rules that build strings
   and passed on by those that keep the text: a literal; a number converted to text (`NumberPiece`); text that needs no escape
@@ -1762,7 +1766,9 @@ where the server guarantees its shape, and unknown, saying why, everywhere else.
   subquery, a conversion to a string type that loses nothing and a place that holds the JSON keep them, and any other rule
   drops them, which claims nothing ("Facts dropped by default" in [the guide](../../docs/internals/05-values-as-a-lattice.md)).
   `JsonAssembly` reads the pieces where the text is read as JSON, as a parser reads text, each alternative apart, and joins
-  what each holds.
+  what each holds. Its reader keeps a stack of the arrays and objects open, so one may open in a literal and close in a later
+  piece, each inside the other, and an item of `string_agg` may be an object built as text; brackets that don't balance on a
+  way make that way not JSON.
 - **Elements.** An element is typed only where its text is exactly one JSON value: a literal; an integer, a decimal or a `bit`
   converted with no style, `money` with style 2 or 126 (written in full, a decimal with its scale and a leading zero, a `bit`
   as the number 0 or 1, observed: `A_number_converted_to_text_is_written_so`, and the same converted implicitly by
@@ -1804,16 +1810,42 @@ where the server guarantees its shape, and unknown, saying why, everywhere else.
   `SELECT @ids = string_agg(…)` writes is read as that list in `'[' + coalesce(@ids, '') + ']'`; one assigned a whole array holds
   its JSON for a later `json_query` and reads as its declared string. So does a call of a scalar function of `nvarchar` that
   returns one. A shorter variable cuts the text, so it keeps nothing.
-- **Not read**: an object assembled as text (`'{"a":' + …`), an array or object that opens in one literal and closes in another
-  piece, text after the closing bracket (which `json_query` ignores), a literal with an escape inside quotes, and more than 64
-  alternatives.
-- **The note.** Wherever the project builds an array as text, whether or not anything reads it as JSON, inference reports
-  `HAR2025` with the constructor that builds the same JSON ([decision
+- **Keys.** An object's key is known only where it is written whole in a literal, and is the name it decodes to: `"a\"b"` is
+  `a"b` (`A_key_written_with_escapes_is_read_as_the_name_they_make`). A literal without `N` whose key is not ASCII is not read,
+  since the code page may change it. A key that may be written twice on one way through the text, in two literals or in two
+  items of `concat_ws` that may both write it, makes the object unknown: `json_query` keeps both, and readers differ on which
+  value they keep, `JSON_VALUE` the first and `JSON.parse` the last
+  (`A_key_written_twice_is_kept_twice_and_readers_differ_on_which_wins`). Different branches of a `CASE` may write one key
+  each; that is one key, its value the join of both.
+- **Keys from data.** Where every key is built from data in quotes, safe there as a value in quotes is
+  (`'{' + string_agg('"' + string_escape(k, 'json') + '":' + v, ',') + '}'`), the object's keys are data, as `json_objectagg`
+  builds, and its values the join of all of them ([decision
+  0087](../../docs/decisions/0087-keys-built-from-data-make-an-object-whose-keys-are-data.md)): a key may repeat
+  (`Keys_built_from_data_may_repeat_and_are_kept_as_written`), but whichever value a reader keeps is one of those. Over no rows
+  such text is `{}`, which is such an object too. Keys from data beside keys in literals are unknown.
+- **Keys left out.** `concat_ws` of members inside braces leaves out each item that is NULL with its keys, and all NULL leaves
+  `{}` (`Concat_ws_of_members_leaves_out_those_that_are_null_and_a_stray_comma_is_not_json`), so such a key is left out when
+  null, for the item's null reasons. A key that may also be JSON null, an item that may be empty text, and an item whose
+  branches write different keys can't be said by one presence, so the object is unknown. `concat_ws` that may write nothing
+  after a literal comma, or before one, may leave `{"a":1,}` or `{,"b":2}`, which is not JSON on that way and JSON on others,
+  so it is unknown.
+- **A value that may be NULL.** `'{"a":' + x + '}'` is NULL when x is, so the whole object may be null, not its key; `concat`
+  writes `{"a":}`, which is not JSON (13609), so that way describes no call; `coalesce(x, 'null')` writes the key with a JSON
+  null (`A_null_value_leaves_an_object_null_under_plus_and_not_json_under_concat`). A JSON `null` written in a literal has no
+  type of its own and is read as a string, as `JsonLiterals` reads one, so `coalesce(x, 'null')` over an integer is a union of
+  the integer and a string, never wrong.
+- **Not read**: text after the closing bracket or brace (which `json_query` ignores:
+  `Brackets_that_do_not_balance_are_not_json_and_text_after_the_brace_is_ignored`), a literal with an escape inside a value's
+  quotes, a key split across pieces beside a literal key, and more than 64 alternatives.
+- **The note.** Wherever the project builds an array or object as text, whether or not anything reads it as JSON, inference
+  reports `HAR2025` with the constructor that builds the same JSON ([decision
   0085](../../docs/decisions/0085-json-built-as-text-is-a-note-wherever-it-is-written.md)): a concatenation whose text is a JSON
-  array, each part that is not a literal standing for a value or for text in a string, which shows it is JSON (a comma, a
-  quotation mark or a brace in its literals, `string_agg`, `concat_ws`, or a part that builds JSON); and `concat_ws` with a comma
-  between values one of which is a quoted literal. So T-SQL's own brackets, `'[' + name + ']'` quoting an identifier or
-  `'[' + n + ' KEYS]'`, are not reported. It is found in the SQL itself (`JsonTextNotes`), in every module and query file, so it
+  array or object, each part that is not a literal standing for a value, for text in a string, or, where a key goes, for a key or
+  members, which shows it is JSON (a comma or a quotation mark in its literals, a brace in an array's, `string_agg`,
+  `concat_ws`, or a part that builds JSON); and `concat_ws` with a comma between values one of which is a quoted literal. So
+  T-SQL's own brackets, `'[' + name + ']'` quoting an identifier or `'[' + n + ' KEYS]'`, and braces around a name,
+  `'{' + name + '}'`, are not reported. An object's note names `json_object`, and an array of objects `json_object` inside
+  `json_array` or `json_arrayagg`. It is found in the SQL itself (`JsonTextNotes`), in every module and query file, so it
   is an inventory of code to modernise, not a by-product of an unknown. Where the SQL alone doesn't show it, as in
   `'[' + coalesce(@ids, '') + ']'` over a list held in a variable, typing finds it where it reads the array, and the note is given
   there too (`Summaries.JsonText`), each place once.

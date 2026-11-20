@@ -1,0 +1,383 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_object.sql": "100b770428cd21d5469e3f2fff4751b42a752f54ba603fb8e8f871709e4ae0cc",
+      "tables/order.sql": "0ce20b4f7566b4bdf23c48a78db7d597c62fda37ce2180f69a9734d5f0f8186c"
+    }
+  },
+  "objects": [
+    {
+      "id": "bead.order_object",
+      "name": "OrderObject",
+      "kind": "procedure",
+      "at": "procedures/order_object.sql:4:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "OrderObjectRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/order_object.sql:9:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OrderObjectCard": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_object",
+        "path": "results[0].card"
+      },
+      "fields": [
+        {
+          "name": "orderId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "ref",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderObjectCardLine"
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "channels",
+          "type": {
+            "ref": "OrderObjectCardChannels"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderObjectCardChannels": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_object",
+        "path": "results[0].card.channels"
+      },
+      "fields": [
+        {
+          "name": "retail",
+          "type": {
+            "kind": "boolean"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "no-branch-matched",
+              "at": "procedures/order_object.sql:18:16"
+            }
+          ]
+        },
+        {
+          "name": "trade",
+          "type": {
+            "kind": "boolean"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "no-branch-matched",
+              "at": "procedures/order_object.sql:19:16"
+            }
+          ]
+        }
+      ]
+    },
+    "OrderObjectCardLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_object",
+        "path": "results[0].card.lines[]"
+      },
+      "fields": [
+        {
+          "name": "lineId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "qty",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(7,2)",
+            "digits": {
+              "precision": 7,
+              "scale": 2,
+              "from": {
+                "type": "decimal(7,2)"
+              }
+            },
+            "min": {
+              "value": -99999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(7,2)"
+              }
+            },
+            "max": {
+              "value": 99999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(7,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderObjectRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bead.order_object",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "card",
+          "type": {
+            "ref": "OrderObjectCard"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            },
+            {
+              "column": "bead.order.ref",
+              "sql": "nvarchar(20)",
+              "at": "tables/order.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "lineByGift",
+          "type": {
+            "kind": "record",
+            "values": {
+              "kind": "number",
+              "format": "int32",
+              "sql": "int",
+              "min": {
+                "value": -2147483648,
+                "inclusive": true,
+                "from": {
+                  "type": "int"
+                }
+              },
+              "max": {
+                "value": 2147483647,
+                "inclusive": true,
+                "from": {
+                  "type": "int"
+                }
+              }
+            },
+            "valuesNullable": false
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/order_object.sql:22:35"
+            }
+          ]
+        },
+        {
+          "name": "twice",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/order_object.sql:25:19"
+            }
+          ],
+          "from": [
+            {
+              "column": "bead.order.order_id",
+              "sql": "int",
+              "at": "tables/order.sql:3:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "bead.order_object",
+      "path": "results[0].twice",
+      "reason": "json-shape-unknown",
+      "detail": "JSON assembled as text, where the key \"n\" is written twice, and readers differ on which of its values they keep, so its shape is not known.",
+      "at": "procedures/order_object.sql:25:19"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

@@ -113,4 +113,69 @@ public partial class JsonAssembledTests
         Assert.Equal(2, notes.Count);
         Assert.All(notes, n => Assert.StartsWith("more.sql:", n, StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void An_object_built_as_text_is_noted_with_json_object()
+    {
+        var messages = Messages("""
+            SELECT N'{"id":' + convert(nvarchar(max), o.order_id) + N',"ref":"' + string_escape(o.ref, 'json') + N'"}' AS card,
+                concat(N'{"id":', o.order_id, N',"lines":[', (SELECT string_agg(convert(nvarchar(max), l.line_id), N',') FROM dbo.line AS l), N']}') AS lines,
+                N'{' + concat_ws(N',', N'"id":1', CASE WHEN o.channel = 'r' THEN N'"retail":true' END) + N'}' AS flags
+            FROM dbo.[order] AS o;
+            """);
+
+        Assert.Equal(["p.sql:2:8", "p.sql:3:5", "p.sql:4:5"], messages.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+        Assert.All(messages, m => Assert.Contains("builds a JSON object as text; build it with json_object(…)", m, StringComparison.Ordinal));
+        Assert.Contains("json_arrayagg", messages[1], StringComparison.Ordinal);
+        Assert.DoesNotContain("json_arrayagg", messages[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_array_of_objects_built_as_text_is_noted_with_json_object_inside_json_arrayagg()
+    {
+        var message = Assert.Single(Messages("""
+            SELECT N'[' + coalesce((SELECT string_agg(N'{"id":' + convert(nvarchar(max), l.line_id) + N'}', N',') FROM dbo.line AS l WHERE l.order_id = o.order_id), N'') + N']' AS lines
+            FROM dbo.[order] AS o;
+            """));
+
+        Assert.Contains("builds a JSON array as text; build it with json_arrayagg(json_object(…))", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Braces_around_display_text_or_a_name_are_not_noted()
+    {
+        var notes = Notes("""
+            SELECT N'{' + o.ref + N'}' AS braced, N'{' + cast(o.order_id AS nvarchar(10)) + N' items}' AS display,
+                N'{"' + o.ref + N'"}' AS quoted
+            FROM dbo.[order] AS o;
+            """);
+
+        Assert.Empty(notes);
+    }
+
+    [Fact]
+    public void An_object_read_through_a_variable_as_json_is_noted_where_typing_reads_it()
+    {
+        var notes = Notes("""
+            DECLARE @members nvarchar(max) = concat_ws(N',', N'"id":1', CASE WHEN @id > 1 THEN N'"big":true' END);
+            SELECT json_query(N'{' + @members + N'}') AS v FOR JSON PATH;
+            """);
+
+        Assert.Equal(["p.sql:3:19"], notes.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+    }
+
+    [Fact]
+    public void An_object_laid_out_with_line_breaks_or_keyed_by_a_variable_is_noted()
+    {
+        // CHAR(10) between pieces is JSON whitespace; a colon before a JSON value shows an object whose key a variable writes.
+        var notes = Notes("""
+            DECLARE @key nvarchar(50) = N'"k"';
+            SELECT N'{' + CHAR(10) + N'"ref":"' + string_escape(o.ref, 'json') + N'"' + CHAR(13) + CHAR(10) + N'}' AS laid_out,
+                concat(N'{', @key, N':true}') AS flag,
+                concat(N'{', @key, N': items}') AS display
+            FROM dbo.[order] AS o;
+            """);
+
+        Assert.Equal(["p.sql:3:8", "p.sql:4:5"], notes.Select(n => n[..n.IndexOf(": ", StringComparison.Ordinal)]));
+    }
 }

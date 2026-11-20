@@ -2,12 +2,14 @@
 
 **Date:** 20 Nov 2026
 
-**Decision.** Wherever the project builds a JSON array as text, in any module or query file, inference reports a note,
-`HAR2025`, with the constructor that builds the same JSON: `json_arrayagg` for an aggregate, `json_array` for a fixed list. It is
-found in the SQL itself, by the construction, once at the outermost expression, whether or not anything reads the text as JSON
-and whatever procedures are selected: a concatenation whose text is a JSON array, each part that is not a literal standing for
-a value or for text in a string, and which shows it is JSON (a comma, a quotation mark or a brace in its literals, `string_agg`,
-`concat_ws`, or a part that builds JSON); or `concat_ws` of quoted literals. Where the SQL alone doesn't show it, such as brackets
+**Decision.** Wherever the project builds a JSON array or object as text, in any module or query file, inference reports a
+note, `HAR2025`, with the constructor that builds the same JSON: `json_arrayagg` for an aggregate, `json_array` for a fixed list,
+`json_object` (or `FOR JSON PATH`) for an object, with `json_object` inside for an array of objects. It is found in the SQL
+itself, by the construction, once at the outermost expression, whether or not anything reads the text as JSON and whatever
+procedures are selected: a concatenation whose text is a JSON array or object, each part that is not a literal standing for a
+value, for text in a string, or, where a key goes, for a key or members, and which shows it is JSON (a comma or a quotation mark
+in its literals, a brace in an array's, `string_agg`, `concat_ws`, or a part that builds JSON); or `concat_ws` of quoted
+literals. An object's own first brace shows nothing: `'{' + name + '}'` is a name in braces, not JSON. Where the SQL alone doesn't show it, such as brackets
 around a list held in a variable, typing finds it where it reads the array, and gives the note there too, each place once.
 
 **Context.** The idiom is old, and code that can be changed should be: the constructors escape every value, and haruspex types

@@ -2,7 +2,7 @@
 -- and tags, among them a tag holding a quotation mark and a backslash, which string_escape keeps one string; an order with
 -- neither, whose aggregates are NULL; and each channel, none included.
 --
--- order 1: three lines (a gift among them), three tags, sold through both channels.
+-- order 1: three lines (a gift among them, so two lines alike in gift), three tags, sold through both channels.
 -- order 2: no lines, no tags, no channel.
 -- order 3: one line, one tag, retail only.
 -- order 4: no lines, no tags, trade only.

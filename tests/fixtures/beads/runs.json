@@ -10,6 +10,11 @@
     { "name": "order_card, one of each and retail", "procedure": "bead.order_card", "parameters": { "@order_id": 3 } },
     { "name": "order_card, trade", "procedure": "bead.order_card", "parameters": { "@order_id": 4 } },
     { "name": "order_card, no such order", "procedure": "bead.order_card", "parameters": { "@order_id": 999 } },
-    { "name": "order_ids", "procedure": "bead.order_ids" }
+    { "name": "order_ids", "procedure": "bead.order_ids" },
+    { "name": "order_object, lines, gifts alike and both channels", "procedure": "bead.order_object", "parameters": { "@order_id": 1 } },
+    { "name": "order_object, no lines and no channel", "procedure": "bead.order_object", "parameters": { "@order_id": 2 } },
+    { "name": "order_object, one line and retail", "procedure": "bead.order_object", "parameters": { "@order_id": 3 } },
+    { "name": "order_object, trade", "procedure": "bead.order_object", "parameters": { "@order_id": 4 } },
+    { "name": "order_object, no such order", "procedure": "bead.order_object", "parameters": { "@order_id": 999 } }
   ]
 }

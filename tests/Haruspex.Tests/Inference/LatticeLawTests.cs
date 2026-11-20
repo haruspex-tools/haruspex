@@ -228,6 +228,22 @@ public class LatticeLawTests
     }
 
     [Fact]
+    public void An_object_of_no_keys_joins_a_record_as_the_record_in_any_order()
+    {
+        // '{' + coalesce(string_agg(…), '') + '}' is {} over no rows, and {} is a record with no keys
+        // (docs/decisions/0087-keys-built-from-data-make-an-object-whose-keys-are-data.md).
+        var empty = new ObjectShape([]);
+        var numbers = new RecordShape(Number, []);
+        var named = new ObjectShape([new FieldShape("id", Number, IrPresence.Always, [])]);
+
+        Assert.Equal(numbers, JsonShapes.Join(empty, numbers));
+        Assert.Equal(numbers, JsonShapes.Join(numbers, empty));
+        Assert.True(JsonShapes.Below(empty, numbers));
+        Assert.False(JsonShapes.Below(named, numbers));
+        Assert.True(JsonShapes.Same(JsonShapes.Join(JsonShapes.Join(empty, named), numbers), JsonShapes.Join(empty, JsonShapes.Join(named, numbers))));
+    }
+
+    [Fact]
     public void Equal_facts_from_different_sources_are_kept_with_the_left_ones_source()
     {
         // Both sides' values have exactly this length, or these digits, whichever constraint proved it: the fact holds of
