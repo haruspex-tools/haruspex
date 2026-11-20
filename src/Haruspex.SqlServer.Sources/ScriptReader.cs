@@ -75,6 +75,11 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             case AlterTableStatement alterTable:
                 ReadAlterTable(alterTable);
                 break;
+            case CreateIndexStatement { Unique: true, FilterPredicate: null, OnName.SchemaIdentifier: not null } index
+                when !index.OnName.BaseIdentifier.Value.StartsWith('#'):
+                // As a key ALTER TABLE adds (AddedKey), and passed over in the same places.
+                into.AddedKeys.Add(new AddedKey(SyntaxReader.Name(index.OnName), SyntaxReader.Key(index, SyntaxReader.Span(file, index))));
+                break;
             case DropTableStatement drop:
                 ReadDrops(drop.Objects, RedefiningStatement.DropTable, drop, into.TableChanges.TryAdd);
                 break;
@@ -360,7 +365,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
 
     /// <summary>
     /// Every statement in the script that may stop a key being enforced (<see cref="KeyDisable"/>), at any depth, as for
-    /// NOCHECK: <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, since whether a
+    /// NOCHECK: <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c>, <c>DROP INDEX</c> and <c>CREATE INDEX … WITH
+    /// (DROP_EXISTING = ON)</c>, since whether a
     /// statement in a body or under IF runs is not knowable. A disabled key enforces nothing and a dropped one is gone, so rows
     /// written meanwhile may share a key. A top-level <c>DROP CONSTRAINT</c> also changes the table (<see cref="OnlyTightens"/>).
     /// </summary>
@@ -375,6 +381,10 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType is TableElementType.Constraint or TableElementType.NotSpecified))
                 into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(drop.SchemaObjectName), drop.SchemaObjectName.SchemaIdentifier is not null, element.Name.Value, At(drop)));
         }
+
+        // An index created WITH (DROP_EXISTING = ON) replaces the one of its name, unique or not, so the key that was is gone.
+        foreach (var replace in Everywhere<CreateIndexStatement>(script).Where(SyntaxReader.DropsExisting))
+            into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(replace.OnName), replace.OnName.SchemaIdentifier is not null, replace.Name.Value, At(replace)));
 
         foreach (var drop in Everywhere<DropIndexStatement>(script))
         {

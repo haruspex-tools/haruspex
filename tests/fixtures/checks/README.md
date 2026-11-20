@@ -19,3 +19,4 @@ nullable `char(4)` and `binary(4)` columns hold values shorter than their length
 | `chk.list_tickets` | every fact through `FOR JSON PATH`: aliases, a left join, a nested object, a nested subquery |
 | `chk.ticket_rows` | the same columns as a rowset |
 | `chk.legacy_tags` | a table created with `ANSI_PADDING` off, as a rowset |
+| `chk.owner_by_name` | a lookup by a key `CREATE UNIQUE INDEX` adds after the table (`ux_owner_name`): at most one row |

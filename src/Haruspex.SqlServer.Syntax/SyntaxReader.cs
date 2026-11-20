@@ -159,7 +159,7 @@ public static class SyntaxReader
 
         // Unique constraints and the primary key, on the table or on a column, and unique indexes declared in the table
         // (INDEX … UNIQUE) without a filter: a filtered index is unique only among the rows its filter keeps.
-        // CREATE UNIQUE INDEX is not read, which only claims less; ALTER TABLE … ADD CONSTRAINT is read by the folder's reader.
+        // CREATE UNIQUE INDEX and ALTER TABLE … ADD CONSTRAINT, after the table, are read by the folder's reader.
         var keys = definition.ColumnDefinitions
             .SelectMany(c => c.Constraints.OfType<UniqueConstraintDefinition>().Select(u => ColumnKey(u, c.ColumnIdentifier.Value, span)))
             .Concat(definition.TableConstraints.OfType<UniqueConstraintDefinition>().Select(u => Key(u, span)))
@@ -196,6 +196,32 @@ public static class SyntaxReader
         {
             IgnoresDuplicates = IgnoresDuplicates(index.IndexOptions),
         };
+
+    /// <summary>
+    /// The key a <c>CREATE UNIQUE INDEX</c> without a filter declares: its columns, in key order, whatever their sort order; the
+    /// columns it includes are no part of it.
+    /// </summary>
+    /// <param name="index">The statement, which must be unique and unfiltered.</param>
+    /// <param name="span">Where the statement is.</param>
+    public static UniqueKey Key(CreateIndexStatement index, SourceSpan span)
+    {
+        ArgumentNullException.ThrowIfNull(index);
+        ArgumentNullException.ThrowIfNull(span);
+        if (!index.Unique || index.FilterPredicate is not null)
+            throw new ArgumentException("Only a unique index without a filter is a key.", nameof(index));
+        return new UniqueKey(index.Name.Value, [.. index.Columns.Select(c => c.Column.MultiPartIdentifier.Identifiers[^1].Value)], false, span.At(index))
+        {
+            IgnoresDuplicates = IgnoresDuplicates(index.IndexOptions),
+        };
+    }
+
+    /// <summary>Whether an index's options say <c>DROP_EXISTING = ON</c>: it replaces the index of its name, which may have been unique.</summary>
+    /// <param name="index">The statement.</param>
+    public static bool DropsExisting(CreateIndexStatement index)
+    {
+        ArgumentNullException.ThrowIfNull(index);
+        return index.IndexOptions.OfType<IndexStateOption>().Any(o => o.OptionKind == IndexOptionKind.DropExisting && o.OptionState == OptionState.On);
+    }
 
     /// <summary>Whether a key's or index's options say <c>IGNORE_DUP_KEY = ON</c> (<see cref="UniqueKey.IgnoresDuplicates"/>).</summary>
     private static bool IgnoresDuplicates(IEnumerable<IndexOption> options) =>

@@ -5,3 +5,7 @@ CREATE TABLE chk.owner
     -- Unnamed, so its facts are attributed to where it is declared.
     grade     nchar(1)      NOT NULL CHECK (grade IN (N'A', N'B'))
 );
+GO
+
+-- A key added after the table, as many scripts add theirs.
+CREATE UNIQUE INDEX ux_owner_name ON chk.owner (name);

@@ -3,14 +3,17 @@ using Haruspex.SqlServer.Model;
 namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
-/// A primary key or unique constraint added to a table after its definition, by <c>ALTER TABLE … ADD CONSTRAINT</c> in a
-/// statement of a batch, naming the table with its schema. AdventureWorks adds every key this way.
+/// A primary key, unique constraint or unique index added to a table after its definition, by <c>ALTER TABLE … ADD
+/// CONSTRAINT</c> or <c>CREATE UNIQUE INDEX</c> without a filter, in a statement of a batch, naming the table with its schema.
+/// AdventureWorks adds every key this way.
 /// </summary>
 /// <remarks>
-/// Such a key is enforced as one the table declares (observed: A_key_added_by_alter_table_is_enforced_as_one_the_table_declares):
-/// a primary key can't be added over a nullable column, <c>WITH NOCHECK</c> doesn't apply to a key, and <c>NOCHECK
-/// CONSTRAINT</c> can't disable it; only <c>ALTER INDEX … DISABLE</c> can, which <see cref="ConstraintTrust"/> follows for it
-/// as for any key. A table name without its schema may mean another table (SQL Server looks in the caller's default schema
+/// Such a key is enforced as one the table declares (observed: A_key_added_by_alter_table_is_enforced_as_one_the_table_declares,
+/// A_unique_index_created_after_its_table_is_enforced_as_one_the_table_declares): a primary key can't be added over a nullable
+/// column, <c>WITH NOCHECK</c> doesn't apply to a key and an index has no such option, so rows already sharing a key, NULL
+/// included, refuse it, and <c>NOCHECK CONSTRAINT</c> can't disable it; only <c>ALTER INDEX … DISABLE</c>, a drop or an index
+/// that replaces it (<c>DROP_EXISTING</c>) can, which <see cref="ConstraintTrust"/> follows for it as for any key. A filtered
+/// index is unique only among the rows its filter keeps, so it is no key. A table name without its schema may mean another table (SQL Server looks in the caller's default schema
 /// first), and one inside a body or under <c>IF</c> may never run, so neither is read, which only claims less.
 /// </remarks>
 /// <param name="Table">The table it is added to.</param>

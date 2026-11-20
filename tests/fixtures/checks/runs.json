@@ -13,6 +13,9 @@
     { "name": "list_tickets", "procedure": "chk.list_tickets" },
     { "name": "list_tickets, no tickets", "procedure": "chk.list_tickets", "setup": "no tickets" },
     { "name": "ticket_rows", "procedure": "chk.ticket_rows" },
-    { "name": "legacy_tags", "procedure": "chk.legacy_tags" }
+    { "name": "legacy_tags", "procedure": "chk.legacy_tags" },
+    { "name": "owner_by_name", "procedure": "chk.owner_by_name", "parameters": { "@name": "Al" } },
+    { "name": "owner_by_name, the longest name", "procedure": "chk.owner_by_name", "parameters": { "@name": "nnnnnnnnnnnnnnnnnnnn" } },
+    { "name": "owner_by_name, no such owner", "procedure": "chk.owner_by_name", "parameters": { "@name": "Zed" } }
   ]
 }

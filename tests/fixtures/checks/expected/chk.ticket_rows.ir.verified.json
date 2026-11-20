@@ -4,7 +4,7 @@
     "dialect": "tsql",
     "files": {
       "procedures/ticket_rows.sql": "0f8375d9312ebc8b52249259a90408907d38c26a04651959f5b1dd5b6cd3aca0",
-      "tables/owner.sql": "c28e3f62c2f2b7dcb94a264049a6a7abd1aa713a630ae92bb75f0194a6e8e330",
+      "tables/owner.sql": "93e543a366f6bec9573d17b0f7fd547d4a8652c6cf25e459a3673ff3754c3a99",
       "tables/ticket.sql": "52bbff4157b63a697ee5773a9876a307c0b4ca003c5ec29cf6f51c1a7e7dc28c"
     }
   },

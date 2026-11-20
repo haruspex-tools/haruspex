@@ -311,6 +311,31 @@ public partial class RefinementObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_unique_index_created_after_its_table_is_enforced_as_one_the_table_declares()
+    {
+        // Rows already there that share a key, NULL included, refuse it (1505): CREATE INDEX has no NOCHECK.
+        Assert.Equal(1505, (await Run(
+            ["CREATE TABLE dbo.obs_indexed (id int NOT NULL, code int NULL); INSERT INTO dbo.obs_indexed VALUES (1, NULL), (2, NULL);"],
+            "CREATE UNIQUE INDEX ux_obs_indexed ON dbo.obs_indexed (code);")).Error);
+
+        // Once created, a second NULL is refused as a second 5 is (2601), as in a key the table declares: NULLs count as equal, so
+        // at most one row has NULL in a nullable column of it. A filter (WHERE) leaves the rows outside it free, as declared in the
+        // table (A_filtered_unique_index_allows_duplicates_outside_its_filter).
+        string[] created = ["CREATE TABLE dbo.obs_indexed (id int NOT NULL, code int NULL); CREATE UNIQUE INDEX ux_obs_indexed ON dbo.obs_indexed (code);"];
+        Assert.Equal(" ! 2601", (await Run(created, "INSERT INTO dbo.obs_indexed VALUES (1, NULL), (2, NULL);")).ToString());
+        Assert.Equal(" ! 2601", (await Run(created, "INSERT INTO dbo.obs_indexed VALUES (1, 5), (2, 5);")).ToString());
+        Assert.Equal("", (await Run(
+            ["CREATE TABLE dbo.obs_indexed (id int NOT NULL, code int NULL); CREATE UNIQUE INDEX ux_obs_indexed ON dbo.obs_indexed (code) WHERE code > 0;"],
+            "INSERT INTO dbo.obs_indexed VALUES (1, NULL), (2, NULL), (3, -1), (4, -1);")).ToString());
+
+        // Disabled, or replaced by an index that isn't unique (DROP_EXISTING), it enforces nothing.
+        Assert.Equal("n: 2", (await Run([.. created, "ALTER INDEX ux_obs_indexed ON dbo.obs_indexed DISABLE;"], "INSERT INTO dbo.obs_indexed VALUES (1, 5), (2, 5); SELECT COUNT(*) AS n FROM dbo.obs_indexed;")).ToString());
+        Assert.Equal("n: 2", (await Run(
+            [.. created, "CREATE INDEX ux_obs_indexed ON dbo.obs_indexed (code) WITH (DROP_EXISTING = ON);"],
+            "INSERT INTO dbo.obs_indexed VALUES (1, 5), (2, 5); SELECT COUNT(*) AS n FROM dbo.obs_indexed;")).ToString());
+    }
+
+    [Fact]
     public async Task A_dropped_key_holds_no_longer_and_its_primary_keys_columns_stay_not_null()
     {
         // Dropped in a procedure, as anywhere a statement may run, by ALTER TABLE … DROP CONSTRAINT (the keyword is optional:

@@ -112,6 +112,47 @@ public partial class RefinementTests
     }
 
     [Theory]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);", IrCardinality.AtMostOne)]
+    [InlineData("CREATE UNIQUE CLUSTERED INDEX ux_k_code ON dbo.k (code DESC) WITH (IGNORE_DUP_KEY = ON);", IrCardinality.AtMostOne)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code) INCLUDE (id);", IrCardinality.AtMostOne)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code) WHERE code > 0;", IrCardinality.Many)]
+    [InlineData("CREATE INDEX ix_k_code ON dbo.k (code);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON k (code);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_missing ON dbo.k (missing);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_other_code ON dbo.other (code);", IrCardinality.Many)]
+    [InlineData("CREATE PROCEDURE dbo.setup AS CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);\nGO\nALTER INDEX ux_k_code ON dbo.k DISABLE;", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);\nGO\nCREATE PROCEDURE dbo.fix AS DROP INDEX ux_k_code ON dbo.k;", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);\nGO\nIF 1 = 1 CREATE INDEX ux_k_code ON dbo.k (code) WITH (DROP_EXISTING = ON);", IrCardinality.Many)]
+    [InlineData("CREATE UNIQUE INDEX ux_k_code ON dbo.k (code);\nGO\nCREATE INDEX ux_k_other ON dbo.k (code) WITH (DROP_EXISTING = ON);", IrCardinality.AtMostOne)]
+    public void A_unique_index_created_by_a_statement_of_a_batch_naming_its_schema_is_a_key(string index, IrCardinality expected)
+    {
+        // A_unique_index_created_after_its_table_is_enforced_as_one_the_table_declares: as a key added by ALTER TABLE, and the
+        // same rules pass it over (no schema, in a body or under IF) or undo it (a disable or a drop anywhere, and an index that
+        // replaces it by DROP_EXISTING, which need not be unique). A filtered one is unique only among the rows its filter keeps.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL);\nGO\nCREATE TABLE dbo.other (id int NOT NULL, code int NOT NULL);"),
+            ("index.sql", index),
+            ("p.sql", "CREATE PROCEDURE dbo.p @x int AS SELECT k.id FROM dbo.k AS k WHERE k.code = @x;"));
+
+        Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
+    }
+
+    [Theory]
+    [InlineData("k.code = @x", IrCardinality.AtMostOne)]
+    [InlineData("k.code IS NULL", IrCardinality.AtMostOne)]
+    public void A_unique_index_on_a_nullable_column_keeps_one_row_for_a_value_or_for_null(string where, IrCardinality expected)
+    {
+        // A_unique_index_created_after_its_table_is_enforced_as_one_the_table_declares: a second NULL is refused as a second 5 is.
+        var doc = Infer(
+            ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NULL);\nGO\nCREATE UNIQUE INDEX ux_k_code ON dbo.k (code);"),
+            ("p.sql", $"CREATE PROCEDURE dbo.p @x int AS SELECT k.id FROM dbo.k AS k WHERE {where};"));
+
+        Assert.Equal(expected, doc.Objects.Single(o => o.Id == "dbo.p").Results!.Single().Cardinality);
+    }
+
+    [Theory]
     [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
     [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT IF EXISTS uq_k_code;", IrCardinality.Many)]
     [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP uq_k_code;", IrCardinality.Many)]

@@ -1,0 +1,93 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/owner_by_name.sql": "dabec610cc605057c8c99730ba3711cc8eac089e9b649b0901e932ea00804e33",
+      "tables/owner.sql": "93e543a366f6bec9573d17b0f7fd547d4a8652c6cf25e459a3673ff3754c3a99"
+    }
+  },
+  "objects": [
+    {
+      "id": "chk.owner_by_name",
+      "name": "OwnerByName",
+      "kind": "procedure",
+      "at": "procedures/owner_by_name.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OwnerByNameRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OwnerByNameRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "chk.owner_by_name",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            },
+            "minLength": {
+              "value": 2,
+              "from": {
+                "check": "chk.ck_owner_name"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.owner.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/owner.sql:4:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}
