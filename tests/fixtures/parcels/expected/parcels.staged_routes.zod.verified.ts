@@ -2,13 +2,13 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
-export const StagedRoutesRouteItemSchema = z.object({
+export const StagedRoutesRouteItemSchema = z.looseObject({
   kind: z.enum(["depot"]),
   depot: z.string(),
 })
 export type StagedRoutesRouteItem = z.infer<typeof StagedRoutesRouteItemSchema>
 
-export const StagedRoutesRouteItem2Schema = z.object({
+export const StagedRoutesRouteItem2Schema = z.looseObject({
   kind: z.enum(["address"]),
   postcode: z.string(),
   /**

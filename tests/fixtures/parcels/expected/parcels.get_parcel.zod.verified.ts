@@ -39,13 +39,13 @@ export const GetParcelOptionsSchema = z.object({
 })
 export type GetParcelOptions = z.infer<typeof GetParcelOptionsSchema>
 
-export const GetParcelRouteSchema = z.object({
+export const GetParcelRouteSchema = z.looseObject({
   kind: z.enum(["depot"]),
   depot: z.string(),
 })
 export type GetParcelRoute = z.infer<typeof GetParcelRouteSchema>
 
-export const GetParcelRoute2Schema = z.object({
+export const GetParcelRoute2Schema = z.looseObject({
   kind: z.enum(["address"]),
   postcode: z.string(),
   /**

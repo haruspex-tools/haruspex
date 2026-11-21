@@ -268,7 +268,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             var refused = module.Diagnostics.Count(d => d.Code == CliCodes.BaselineRefused);
             string?[] lines =
             [
-                changes == 0 ? null : $"haruspex: {Counted(changes, "change")} from the module in {Shown(module.Out ?? "")}. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.",
+                changes == 0 ? null : $"haruspex: {Counted(changes, "change")} from the module in {Shown(module.Out ?? "")}. If they are meant, run haruspex generate and commit what it writes; if not, change back the SQL, or a schema file a column is declared with.",
                 refused == 0 ? null : $"haruspex: {Counted(refused, "change")} the application already running, built against {Shown(module.Baseline ?? "")}, would fail on. Ship each in two steps: first a change it can take, then the rest once it is redeployed.",
             ];
             return lines.Any(l => l is not null) ? string.Join('\n', lines.OfType<string>()) : null;

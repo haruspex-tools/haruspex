@@ -37,4 +37,14 @@ public partial class ZodEmitterTests
 
         Assert.Matches(@"\n  v: z\.string\(\)\.max\(128\)( /\*[^\n]*\*/)?,\n", ts);
     }
+
+    [Fact]
+    public void An_exact_set_of_numbers_of_no_format_is_z_literal_in_json()
+    {
+        var levels = new IrScalar(IrScalarKind.Number, null, null, new IrFacets(Values: new IrValueSet([new IrValue("1", IsString: false), new IrValue("2.5", IsString: false)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Declared, "shop.orders.settings")])));
+
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", levels))).Expected();
+
+        Assert.Matches(@"\n  v: z\.literal\(\[1, 2\.5\]\)( /\*[^\n]*\*/)?,\n", ts);
+    }
 }

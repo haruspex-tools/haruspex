@@ -166,7 +166,7 @@ internal static class ZodPrinter
     /// </summary>
     private static string ObjectSchema(ZodExpression.ObjectSchema obj)
     {
-        var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : ".object({\n");
+        var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : obj.Loose ? ".looseObject({\n" : ".object({\n");
         foreach (var property in obj.Properties)
         {
             text.Append(Documentation([.. ZodNotes.Of(property.Value).Select(n => n.Text), .. property.Explanation], "  "));

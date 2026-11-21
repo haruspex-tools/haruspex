@@ -23,6 +23,7 @@ through `json_query`, nested by `FOR JSON`, and through a temporary table, a vie
 | `parcels.routes`, `parcels.staged_routes` | through `INSERT … EXEC` |
 
 The seed has options with every key, with only the required ones, with a `null` note, and none at all; routes of one stop and of
-both kinds; and `extra` as an object, an array and NULL. A run sets one `extra` to a JSON string, which any JSON allows and a plain
+both kinds, one stop with a key its schema doesn't list; a note of exactly 200 code points outside the Basic Multilingual Plane,
+which is 400 UTF-16 code units, at the declared `maxLength`; and `extra` as an object, an array and NULL. A run sets one `extra` to a JSON string, which any JSON allows and a plain
 read returns as it is; `json_query` would refuse it with an error (13609), so no run that reads `extra` through `json_query`
 sees it. Another removes every parcel, so that each `FOR JSON` result is seen absent.

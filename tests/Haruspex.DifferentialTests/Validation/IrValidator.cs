@@ -334,7 +334,8 @@ public static partial class IrValidator
                 // FOR JSON keys are compared by case, as JavaScript compares them.
                 if (!present.TryAdd(property.Name, property.Value))
                     Violation($"{path}.{property.Name}", "each key at most once", Shorten(property.Value.GetRawText()));
-                else if (!type.Fields.Any(f => f.Name.Equals(property.Name, StringComparison.Ordinal)))
+                // An open object (a column's declared JSON) may hold keys it doesn't list, of any value.
+                else if (!type.Open && !type.Fields.Any(f => f.Name.Equals(property.Name, StringComparison.Ordinal)))
                     Violation($"{path}.{property.Name}", $"no key {property.Name}: the keys are {string.Join(", ", type.Fields.Select(f => f.Name))}", Shorten(property.Value.GetRawText()));
             }
 
@@ -517,9 +518,20 @@ public static partial class IrValidator
         {
             if (facets.Length is { } length)
             {
-                var measure = length is { Unit: IrLengthUnit.Bytes, Encoding: IrByteEncoding.Utf8 } ? Encoding.UTF8.GetByteCount(text) : text.Length;
-                var exact = length.Unit == IrLengthUnit.Utf16 || length.Encoding is IrByteEncoding.SingleByte or IrByteEncoding.Utf8;
-                var unit = length.Unit == IrLengthUnit.Utf16 ? "UTF-16 code units" : length.Encoding == IrByteEncoding.Utf8 ? "UTF-8 bytes" : "characters";
+                // Code points (a declaration's maxLength, 0.28): a lone surrogate is one, as EnumerateRunes counts it.
+                var measure = length switch
+                {
+                    { Unit: IrLengthUnit.Bytes, Encoding: IrByteEncoding.Utf8 } => Encoding.UTF8.GetByteCount(text),
+                    { Unit: IrLengthUnit.CodePoints } => text.EnumerateRunes().Count(),
+                    _ => text.Length,
+                };
+                var exact = length.Unit is IrLengthUnit.Utf16 or IrLengthUnit.CodePoints || length.Encoding is IrByteEncoding.SingleByte or IrByteEncoding.Utf8;
+                var unit = length.Unit switch
+                {
+                    IrLengthUnit.Utf16 => "UTF-16 code units",
+                    IrLengthUnit.CodePoints => "code points",
+                    _ => length.Encoding == IrByteEncoding.Utf8 ? "UTF-8 bytes" : "characters",
+                };
                 if (length.IsFixed && exact ? measure != length.Value : measure > length.Value)
                     return $"{(length.IsFixed && exact ? "exactly" : "at most")} {length.Value} {unit} ({scalar.Sql})";
                 if (measure == length.Value)

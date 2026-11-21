@@ -31,13 +31,13 @@ export const ParcelFeedOptionsSchema = z.object({
 })
 export type ParcelFeedOptions = z.infer<typeof ParcelFeedOptionsSchema>
 
-export const ParcelFeedRouteItemSchema = z.object({
+export const ParcelFeedRouteItemSchema = z.looseObject({
   kind: z.enum(["depot"]),
   depot: z.string(),
 })
 export type ParcelFeedRouteItem = z.infer<typeof ParcelFeedRouteItemSchema>
 
-export const ParcelFeedRouteItem2Schema = z.object({
+export const ParcelFeedRouteItem2Schema = z.looseObject({
   kind: z.enum(["address"]),
   postcode: z.string(),
   /**

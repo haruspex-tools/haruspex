@@ -12,13 +12,13 @@ const jsonText = (content: () => z.ZodType): z.ZodString =>
     }
   }, { error: 'Expected JSON text holding a value of its content type' })
 
-export const RoutesRouteSchema = z.object({
+export const RoutesRouteSchema = z.looseObject({
   kind: z.enum(["depot"]),
   depot: z.string(),
 })
 export type RoutesRoute = z.infer<typeof RoutesRouteSchema>
 
-export const RoutesRoute2Schema = z.object({
+export const RoutesRoute2Schema = z.looseObject({
   kind: z.enum(["address"]),
   postcode: z.string(),
   /**

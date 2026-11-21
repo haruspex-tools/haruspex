@@ -42,10 +42,20 @@ internal abstract record ZodExpression
     /// <param name="Variants">The variants, in the order they are tried.</param>
     public sealed record Union(EquatableArray<ZodExpression> Variants) : ZodExpression;
 
-    /// <summary><c>z.object({…})</c>, or <c>z.strictObject({…})</c>: a named object type's schema, one property per field.</summary>
+    /// <summary>
+    /// <c>z.object({…})</c>, <c>z.strictObject({…})</c> or <c>z.looseObject({…})</c>: a named object type's schema, one property per
+    /// field.
+    /// </summary>
     /// <param name="Properties">The fields, in order.</param>
     /// <param name="Strict">Whether a key the type does not list fails parsing, rather than being removed.</param>
-    public sealed record ObjectSchema(EquatableArray<ZodProperty> Properties, bool Strict) : ZodExpression;
+    public sealed record ObjectSchema(EquatableArray<ZodProperty> Properties, bool Strict) : ZodExpression
+    {
+        /// <summary>
+        /// Whether a key the type does not list is kept, of any value, rather than removed: an open object's (JSON a column is
+        /// declared to hold), whose other keys are its writer's, and so part of the value. Never with <see cref="Strict"/>.
+        /// </summary>
+        public bool Loose { get; init; }
+    }
 
     /// <summary>A string that must parse as JSON to a value of <paramref name="Content"/>, through the module's helper.</summary>
     /// <param name="Content">The schema of what the text holds.</param>

@@ -105,7 +105,7 @@ nullable, where its new reason is (here the column's declaration):
 ```text
 db/tables.sql:3:5: error HAR6014: shop.list_orders results[0][].customer: became nullable
 db/procedures.sql:1:1: error HAR6014: shop.list_orders results[0][].status: value set grew: added "closed"
-haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change the SQL back.
+haruspex: 2 changes from the module in generated. If they are meant, run haruspex generate and commit what it writes; if not, change back the SQL, or a schema file a column is declared with.
 ```
 
 In CI, until haruspex is published as a package, a job runs it from a copy of its source pinned to a commit, and one step

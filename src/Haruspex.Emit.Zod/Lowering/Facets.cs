@@ -170,6 +170,12 @@ internal static class Facets
             }
 
             default:
+                // A declaration's enum, in JSON: JSON.parse reads a value and the literal written here as the same decimal, so to
+                // the same double, and z.literal compares them exactly. Only a declared set, so far: other exact sets of numbers of
+                // no format would hold the same way, but writing them so changes modules this change has no reason to touch.
+                if (json && facets?.Values?.From is { Count: > 0 } from && from.All(f => f.Kind == IrFactSourceKind.Declared) && ExactNumbers(facets) is { } exact)
+                    return exact;
+
                 // Floating point, or a number of no stated format: inclusive bounds only, since an exclusive one can't
                 // survive rounding (see the remarks).
                 return Upper(Lower(Z("number"), facets?.Min, null, exclusiveAllowed: false), facets?.Max, null, exclusiveAllowed: false);

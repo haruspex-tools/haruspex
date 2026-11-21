@@ -611,7 +611,8 @@ when the claims change. Another writer need not write the same bytes, but must w
 is, and must not be written empty. Each is `{ "column", "schema", "pointer"?, "files" }`: the column as `schema.table.column`; the
 schema file, relative to the folder of the config file and `/`-separated; the JSON Pointer to the schema used inside the file,
 left out for the whole file; and `files`, the SHA-256 of every file the declaration read (the schema file itself, which it must
-list, and every file a `$ref` reached), by path, as 64 lower-case hexadecimal digits. A declaration completes the column's type:
+list, and every file a `$ref` reached), by path, as 64 lower-case hexadecimal digits: of the file's text, without a UTF-8 byte
+order mark and with every CRLF and lone CR as LF, so that one schema checked out with either line ending gives one hash. A declaration completes the column's type:
 every value read from the column holds JSON of the schema, as a claim a person makes, which the generated code checks. A file's
 hash makes a change to its text a change to the document, which `haruspex check` reports
 ([decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)).

@@ -237,7 +237,8 @@ internal static class ZodLowering
     /// time, so a column the database adds before the application redeploys doesn't break it. Strict is a setting for
     /// projects that deploy the application first or together, and want an unexpected key to fail
     /// (<c>docs/decisions/0008-objects-strip-unknown-keys-by-default.md</c>). An open object, of JSON a column is declared to
-    /// hold, is never strict: whoever wrote it may have added keys it doesn't list. Every object here is part of a result.
+    /// hold, is loose whatever the setting: whoever wrote it may have added keys it doesn't list, which are part of its value, so
+    /// they are kept rather than refused or dropped. Every object here is part of a result.
     /// </summary>
     /// <param name="named">The type.</param>
     /// <param name="plan">The module's plan.</param>
@@ -258,7 +259,7 @@ internal static class ZodLowering
         {
             Explanation = explained ? [.. IrFieldText.Of(plan.Document, named.Name, field, plan.Options.Comments)] : [],
         });
-        return new ZodDeclaration(named.Name, null, new ObjectSchema([.. properties], plan.Options.Objects == ZodObjects.Strict && !named.Type.Open));
+        return new ZodDeclaration(named.Name, null, new ObjectSchema([.. properties], plan.Options.Objects == ZodObjects.Strict && !named.Type.Open) { Loose = named.Type.Open });
     }
 
     /// <summary>

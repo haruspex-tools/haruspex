@@ -12,7 +12,7 @@ namespace Haruspex.Tests.Config;
 public partial class ColumnDeclarationTests
 {
     /// <summary>The keywords Zod 4.6.7 emits for the invented schema that haruspex doesn't check, each a warning.</summary>
-    private static readonly string[] ZodKeywordsNotChecked = ["format", "maximum", "minimum", "pattern", "propertyNames"];
+    private static readonly string[] ZodKeywordsNotChecked = ["format", "maximum", "minimum", "pattern", "prefixItems", "propertyNames"];
 
     [Fact]
     public void A_schema_zod_generates_is_read_with_a_warning_for_each_keyword_not_checked_and_no_error()
@@ -37,5 +37,9 @@ public partial class ColumnDeclarationTests
             Assert.IsType<IrUnion>(Field(declared, "delivery").Type).Variants
                 .Select(v => Assert.IsType<IrScalar>(Fields(declared, v).Single(f => f.Name == "kind").Type).Facets?.Values?.Items.Select(i => i.Text).ToArray()));
         Assert.Equal(1, Assert.IsType<IrArray>(Field(declared, "lines").Type).MinItems);
+
+        // A tuple is prefixItems, with items false after it or the rest's schema: neither says what every item is.
+        Assert.Equal(new IrAnyJson(), Assert.IsType<IrArray>(Field(declared, "pair").Type).Items);
+        Assert.Equal(new IrAnyJson(), Assert.IsType<IrArray>(Field(declared, "rest").Type).Items);
     }
 }

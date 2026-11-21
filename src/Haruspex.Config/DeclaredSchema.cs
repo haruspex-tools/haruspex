@@ -469,8 +469,15 @@ internal sealed class DeclaredSchema
     private IrType? ObjectNode(JsonObjectValue schema, string at, string irPath)
     {
         var members = Members(schema);
+
+        // patternProperties allows keys additionalProperties doesn't speak for, each of its own schema, which is not read: an
+        // object with it holds keys of any JSON whatever additionalProperties says.
+        var patterned = members.ContainsKey("patternProperties");
         if (!members.TryGetValue("properties", out var properties))
         {
+            if (patterned)
+                return new IrRecord(new IrAnyJson(), []);
+
             // An object whose keys are data: every value of one type, like what json_objectagg builds; or of any JSON, when the
             // schema says nothing of them, which is what an object of any keys holds.
             if (members.TryGetValue("additionalProperties", out var values) && values.Value is JsonObjectValue)
@@ -524,7 +531,7 @@ internal sealed class DeclaredSchema
 
         // A column's object may hold keys its schema doesn't list unless the schema closes it: whoever wrote it may have added
         // them. FOR JSON writes exactly a declared result's keys.
-        var closed = members.TryGetValue("additionalProperties", out var rest) && rest.Value is JsonOtherValue { Kind: System.Text.Json.JsonTokenType.False };
+        var closed = !patterned && members.TryGetValue("additionalProperties", out var rest) && rest.Value is JsonOtherValue { Kind: System.Text.Json.JsonTokenType.False };
         return new IrRef(define(irPath, [.. fields], column && !closed));
     }
 
@@ -551,18 +558,21 @@ internal sealed class DeclaredSchema
     {
         var members = Members(schema);
 
-        // An array that says nothing of its items holds any JSON.
+        // An array that says nothing of its items holds any JSON. With prefixItems (a tuple, as Zod writes one), items speaks only
+        // for the items after the prefix, so neither says what every item is: they are any JSON, and prefixItems is not checked
+        // (its warning says so). items: false allows no item at all, so the array is empty.
+        if (members.ContainsKey("prefixItems"))
+            return Bounded(new IrArray(new IrAnyJson()));
+        if (members.TryGetValue("items", out var none) && none.Value is JsonOtherValue { Kind: System.Text.Json.JsonTokenType.False })
+            return new IrArray(new IrAnyJson()) { MaxItems = 0 };
         var (type, nullable) = members.TryGetValue("items", out var items)
             ? Node(items.Value, Child(at, "items"), irPath + "[]") is var (itemType, itemNullable) ? (itemType, itemNullable) : (null, false)
             : (new IrAnyJson(), false);
         if (type is null)
             return null;
-        return new IrArray(type)
-        {
-            ItemsNullableBecause = nullable ? [Declared] : [],
-            MinItems = Count(members, "minItems", at),
-            MaxItems = Count(members, "maxItems", at),
-        };
+        return Bounded(new IrArray(type) { ItemsNullableBecause = nullable ? [Declared] : [] });
+
+        IrArray Bounded(IrArray array) => array with { MinItems = Count(members, "minItems", at), MaxItems = Count(members, "maxItems", at) };
     }
 
     /// <summary>
@@ -640,9 +650,9 @@ internal sealed class DeclaredSchema
         var hash = target.IndexOf('#', StringComparison.Ordinal);
         var location = hash < 0 ? target : target[..hash];
         var fragment = hash < 0 ? "" : target[(hash + 1)..];
-        if (Uri.TryCreate(location, UriKind.Absolute, out var absolute) && absolute.Scheme != Uri.UriSchemeFile && !Path.IsPathRooted(location))
+        if (IsRemote(location))
         {
-            Report(ConfigCodes.ForeignReference, reference.Value, refPath, $"refers to {location}, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it.");
+            Report(ConfigCodes.ForeignReference, reference.Value, refPath, Remote(location));
             return null;
         }
 
@@ -673,6 +683,14 @@ internal sealed class DeclaredSchema
         refs.Push((key, document));
         return (value, valuePath);
     }
+
+    /// <summary>Whether a schema's location names something other than a local file: a URL of the network.</summary>
+    public static bool IsRemote(string location) =>
+        Uri.TryCreate(location, UriKind.Absolute, out var absolute) && absolute.Scheme != Uri.UriSchemeFile && !Path.IsPathRooted(location);
+
+    /// <summary>Why a schema on the network is refused, whether a <c>$ref</c> or a column's <c>json</c> names it.</summary>
+    public static string Remote(string location) =>
+        $"refers to {location}, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it.";
 
     /// <summary>The schema without one keyword, read again as if it were not written.</summary>
     private static JsonObjectValue Without(JsonObjectValue schema, string keyword) =>

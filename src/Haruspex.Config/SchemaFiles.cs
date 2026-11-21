@@ -37,11 +37,30 @@ internal sealed class SchemaFiles(string directory, List<Diagnostic> problems)
         var parsed = ConfigJson.Parse(bytes, fullPath);
         problems.AddRange(parsed.Diagnostics);
         var document = parsed is Succeeded<JsonValue> { Value: var root } ? new SchemaDocument(fullPath, root, "") : null;
-        read[fullPath] = (document, Convert.ToHexStringLower(SHA256.HashData(bytes)));
+        read[fullPath] = (document, Convert.ToHexStringLower(SHA256.HashData(Text(bytes))));
         return document;
     }
 
-    /// <summary>The SHA-256 of a file read, as 64 lower-case hexadecimal digits.</summary>
+    /// <summary>
+    /// A file's bytes as the hash reads them: without a UTF-8 byte order mark, and with each CRLF and each lone CR as LF. The same
+    /// schema checked out on Windows, where git may write CRLF, and elsewhere then gives the same hash, so the IR is the same.
+    /// </summary>
+    private static byte[] Text(byte[] bytes)
+    {
+        var start = bytes.AsSpan().StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]) ? 3 : 0;
+        var text = new List<byte>(bytes.Length);
+        for (var i = start; i < bytes.Length; i++)
+        {
+            if (bytes[i] != (byte)'\r')
+                text.Add(bytes[i]);
+            else if (i + 1 >= bytes.Length || bytes[i + 1] != (byte)'\n')
+                text.Add((byte)'\n');
+        }
+
+        return [.. text];
+    }
+
+    /// <summary>The SHA-256 of a file read, of its text with LF line endings and no byte order mark, as 64 lower-case hexadecimal digits.</summary>
     public string Sha256(string fullPath) => read[fullPath].Sha256 ?? throw new InvalidOperationException($"{fullPath} was not read.");
 
     /// <summary>A file's path as the IR writes it: relative to the config file's folder, with <c>/</c> between folders.</summary>

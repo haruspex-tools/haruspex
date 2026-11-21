@@ -376,6 +376,73 @@ public partial class ColumnDeclarationTests
             StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{ "type": "object", "properties": { "id": { "type": "string" } }, "required": ["id"], "patternProperties": { "^x-": { "type": "string" } }, "additionalProperties": false }""")]
+    [InlineData("""{ "type": "object", "patternProperties": { "^x-": { "type": "string" } }, "additionalProperties": false }""")]
+    public void Pattern_properties_keep_an_object_open_whatever_additional_properties_says(string schema)
+    {
+        using var dir = new TempDirectory();
+        dir.File("schemas/settings.schema.json", schema);
+
+        var declared = Assert.Single(Read(dir).Expected().Columns);
+
+        // Keys of the pattern may be there, of the pattern's schema, which isn't read: so any key, of any JSON.
+        Assert.True(declared.Content switch
+        {
+            IrRef reference => declared.Types[reference.Name].Open,
+            IrRecord { Values: IrAnyJson } => true,
+            _ => false,
+        });
+    }
+
+    [Theory]
+    [InlineData("""{ "type": "array", "prefixItems": [{ "type": "string" }], "items": { "type": "number" } }""")]
+    [InlineData("""{ "type": "array", "prefixItems": [{ "type": "string" }, { "type": "integer" }], "items": false }""")]
+    public void Items_beside_prefix_items_speak_only_for_the_items_after_it_so_every_item_is_any_json(string schema)
+    {
+        using var dir = new TempDirectory();
+        dir.File("schemas/settings.schema.json", schema);
+
+        var read = Read(dir);
+
+        Assert.Contains("prefixItems", Assert.Single(Problems(read)), StringComparison.Ordinal);
+        Assert.Equal(new IrArray(new IrAnyJson()), Assert.Single(read.Expected().Columns).Content);
+    }
+
+    [Fact]
+    public void Items_false_alone_allows_no_item()
+    {
+        using var dir = new TempDirectory();
+
+        Assert.Equal(new IrArray(new IrAnyJson()) { MaxItems = 0 }, Declared(dir, """{ "type": "array", "items": false }""").Content);
+    }
+
+    [Fact]
+    public void A_schema_s_hash_is_of_its_text_whatever_its_line_endings_and_byte_order_mark()
+    {
+        const string Lf = "{\n  \"type\": \"object\",\n  \"properties\": {}\n}\n";
+        string[] copies = [Lf, Lf.Replace("\n", "\r\n", StringComparison.Ordinal), Lf.Replace("\n", "\r", StringComparison.Ordinal), Encoding.UTF8.GetString(Encoding.UTF8.Preamble) + Lf];
+
+        var hashes = copies.Select(text =>
+        {
+            using var dir = new TempDirectory();
+            dir.File("schemas/settings.schema.json", text);
+            return Assert.Single(Read(dir).Expected().Columns).Record.Files["schemas/settings.schema.json"];
+        });
+
+        Assert.Single(hashes.Distinct());
+    }
+
+    [Fact]
+    public void A_column_s_json_on_the_network_is_refused_as_a_reference_to_one_is()
+    {
+        using var dir = new TempDirectory();
+
+        Assert.Equal(
+            ["haruspex.json:1:50: error HAR3112: columns[\"shop.orders.settings\"].json: refers to https://example.com/settings.json, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it."],
+            Problems(Read(dir, "https://example.com/settings.json")).Select(p => p.Replace(dir.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal)));
+    }
+
     [Fact]
     public void A_pattern_is_not_checked_and_says_so()
     {

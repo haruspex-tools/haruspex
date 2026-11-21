@@ -14,6 +14,7 @@ namespace Haruspex.Ir;
 /// <param name="Pointer">The JSON Pointer into the file of the schema used (<c>/$defs/person</c>), or null for the whole file.</param>
 /// <param name="Files">
 /// The SHA-256 of every schema file the declaration read, the file itself and every file a <c>$ref</c> reached, as 64 lower-case
-/// hexadecimal digits, by the file's path, written as <paramref name="Schema"/> is.
+/// hexadecimal digits, by the file's path, written as <paramref name="Schema"/> is: of its text without a UTF-8 byte order mark and
+/// with LF line endings, so that one schema gives one hash wherever it is checked out.
 /// </param>
 public sealed record IrColumnDeclaration(string Column, string Schema, string? Pointer, EquatableMap<string, string> Files);

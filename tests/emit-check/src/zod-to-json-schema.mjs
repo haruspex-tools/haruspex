@@ -2,7 +2,7 @@
 // settings of a shop's order. A team may keep its Zod schema as the source and generate the JSON Schema a column is declared
 // with from it, so Zod's output is an input haruspex reads (ColumnDeclarationTests.ZodJsonSchema). It uses what such schemas
 // use: objects, optional keys, an enum, a discriminated union, a record, a nullable value, strings with formats and lengths,
-// integers, a default and an array with a minimum.
+// integers, a default, an array with a minimum, and tuples with and without a rest.
 import { z } from 'zod'
 
 const Delivery = z.discriminatedUnion('kind', [
@@ -19,6 +19,8 @@ const Settings = z.object({
   attempts: z.number().int().nonnegative(),
   gift: z.boolean().default(false),
   lines: z.array(z.object({ sku: z.string().regex(/^[A-Z]{3}-\d+$/), quantity: z.int() })).min(1),
+  pair: z.tuple([z.string(), z.int()]),
+  rest: z.tuple([z.string()], z.number()),
 })
 
 process.stdout.write(JSON.stringify(z.toJSONSchema(Settings), null, 2) + '\n')

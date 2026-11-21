@@ -1006,6 +1006,12 @@ public static class ConfigReader
             var pointer = hash < 0 ? null : json.Value[(hash + 1)..];
             var errors = Problems.Count(p => p.IsError);
             var full = Path.GetFullPath(Path.Combine(directory, schemaPath));
+            if (DeclaredSchema.IsRemote(schemaPath))
+            {
+                Report(ConfigCodes.ForeignReference, json, jsonPath, DeclaredSchema.Remote(schemaPath));
+                return null;
+            }
+
             if (SchemaFiles.Load(full, At(json, jsonPath), schemaPath) is not { } document)
                 return null;
             if (JsonPointer.Resolve(document.Root, "", pointer ?? "") is not var (root, rootPath))

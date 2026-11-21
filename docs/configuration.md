@@ -345,12 +345,12 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
   array, and errs on anything else, only the schema's objects and arrays reach it.
 - **A key the schema doesn't require** may be left out, and may be null only where its schema allows `null`: an application may
   write it either way, unlike `FOR JSON`. An object its schema doesn't close (with `false` for its other keys) may hold other keys,
-  which the generated code never refuses, whatever `objects` says. The top of the schema can't allow `null` (HAR3115): a column
+  which the generated code keeps (`z.looseObject` in Zod), whatever `objects` says. The top of the schema can't allow `null` (HAR3115): a column
   with no value is NULL in SQL, which its own nullability says.
 - **`{}` (or `true`) declares any JSON**, a type of its own: the column holds JSON, which nests as JSON and is checked as JSON
   (`z.json()`), but its shape is the writer's ([decision 0094](decisions/0094-any-json-is-a-type-of-its-own.md)).
 - **The IR records each declaration** with the SHA-256 of every schema file it read, so a change to a schema's text is a change
-  `check` reports, and each object whose results may hold a declared column's JSON lists the claim (an override with `via`).
+  `check` reports (but not a change of its line endings or byte order mark, which git may make on checkout), and each object whose results may hold a declared column's JSON lists the claim (an override with `via`).
 - **A declaration is checked at runtime**, like everything else: the generated validator rejects a value that doesn't fit it, so
   a wrong schema fails loudly, on real data. It is a claim about every writer there ever was, which only the team can make.
 
@@ -363,8 +363,8 @@ read:
 |---|---|
 | `type` | One type or several, with `"null"` when the value may be null. Several types are a value of any of them, each with the keywords written for it. A schema without a `type` is any JSON, and a keyword that applies only to one type is then a warning. |
 | `properties`, `required` | An object's keys. Without `properties`, an object whose keys are data, each value of `additionalProperties`, or any JSON when that is not given. In a column's JSON a key not `required` may be left out whatever its value; in declared results it is left out only when null. |
-| `additionalProperties` | Alone, the type of every value of an object whose keys are data. `false` beside `properties` closes the object: in a column's JSON an object it doesn't close may hold keys it doesn't list, which the generated code never refuses; a declared result's object holds only its keys, as `FOR JSON` writes it, and the `objects` setting decides what happens to any other. A schema beside `properties` is a warning, and not checked. |
-| `items`, `minItems`, `maxItems` | An array's items and how many there are. Without `items`, an array of any JSON. |
+| `additionalProperties` | Alone, the type of every value of an object whose keys are data. `false` beside `properties` closes the object, unless `patternProperties` allows other keys, which aren't read, so the object stays open: in a column's JSON an object it doesn't close may hold keys it doesn't list, which the generated code keeps and never refuses; a declared result's object holds only its keys, as `FOR JSON` writes it, and the `objects` setting decides what happens to any other. A schema beside `properties` is a warning, and not checked. |
+| `items`, `minItems`, `maxItems` | An array's items and how many there are. Without `items`, an array of any JSON; with `items` false, an empty array. Beside `prefixItems` (a tuple, as Zod writes one), `items` speaks only for the items after the prefix, so every item is any JSON, and `prefixItems` is a warning. |
 | `enum`, `const` | A set of strings, of numbers (in plain decimal form), or both, which the generated schema checks exactly; `null` in it makes the value nullable. A set with any other kind of value is a warning, and the schema is read without it. |
 | `anyOf`, `oneOf` | A value of any branch: a union. `oneOf` is read as `anyOf`, which also accepts a value two branches accept: wider, so never refusing a value the schema allows. A branch of `null` alone makes the value nullable. A keyword beside them is a warning, and not checked. |
 | `minLength`, `maxLength` | A string's minimum and maximum length, counted in code points as JSON Schema counts them, as the generated checks do too (Zod's own check counts code points, observed in `ZodObservationTests`). |
