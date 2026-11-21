@@ -16,8 +16,9 @@ public class EmitCheckPackageTests
         Assert.Contains("more than the 8,191 Windows allows", why, StringComparison.Ordinal);
     }
 
-    // "node" "a" "bc": each part quoted, a space before each argument.
+    // "node" "a" "bc": each part counted as quoted, a space before each argument; .NET quotes only a part that needs it, so this is
+    // the most the line can be.
     [Fact]
-    public void A_command_line_is_measured_as_windows_writes_it() =>
+    public void A_command_line_is_measured_as_if_every_part_were_quoted() =>
         Assert.Equal("\"node\" \"a\" \"bc\"".Length, EmitCheckPackage.CommandLineLength("node", ["a", "bc"]));
 }

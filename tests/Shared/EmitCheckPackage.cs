@@ -140,9 +140,10 @@ internal static class EmitCheckPackage
     }
 
     /// <summary>
-    /// The length of the command line Windows would be given for <paramref name="file"/> and <paramref name="args"/>: each part
-    /// quoted, with a space before each argument, as .NET writes it when a part holds a space. An escaped quote or backslash would add
-    /// a character, but the paths and options the tests pass hold none.
+    /// The length of the command line Windows would be given for <paramref name="file"/> and <paramref name="args"/>, at most, when
+    /// no part holds a quote or ends with a backslash, as none the tests pass does. .NET quotes only a part that needs it (one that
+    /// holds a space, for example) and puts a space before each argument; this counts every part as quoted. A backslash is doubled
+    /// only before a quote, so a Windows path's backslashes add nothing.
     /// </summary>
     internal static int CommandLineLength(string file, string[] args) => file.Length + 2 + args.Sum(arg => arg.Length + 3);
 }
