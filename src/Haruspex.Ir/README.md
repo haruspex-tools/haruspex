@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.27
+# Haruspex.Ir: the IR format, version 0.28
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.27, whose documents that say less are labelled 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
+version 0.28, whose documents that say less are labelled 0.27, 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
@@ -130,12 +130,15 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
+- must read `irVersion` first and must refuse a document of any version but 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
-  one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional`, a reason whose rule
+  one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional` (but in a document labelled
+  0.28), a reason whose rule
   is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
   document labelled 0.23 or 0.24; must refuse a document labelled 0.26 without `tableTypes`, and one labelled before 0.26 with
-  them; and must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none;
+  them; must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none; and must
+  refuse `columns`, any JSON and a fact from a declaration in a document labelled before 0.28, and a document labelled 0.28
+  that says none of them;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
   `utf16` or with an `encoding`;
 - must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
@@ -161,8 +164,9 @@ find the cycles itself, "Recursive types"). `IrJsonReader` doesn't check them; a
 
 `IrJsonReader` and `IrJsonWriter` are this project's reader and writer, and follow every rule here that binds them. The schema
 checks what a reader must refuse except what JSON Schema can't express: a number's form, a key given twice in one object, a `ref`
-that names no type, what ties a table-valued parameter to its type's definition and rows, and whether a document holds a binary
-value, which decides whether it is labelled 0.27.
+that names no type, what ties a table-valued parameter to its type's definition and rows, whether a document holds a binary
+value, which decides whether it is labelled 0.27, and what ties a `column-json` claim and a declaration's files to the declaration,
+or whether a document holds any JSON or a fact from a declaration, which decides whether it is labelled 0.28.
 
 ## A document
 
@@ -170,7 +174,8 @@ value, which decides whether it is labelled 0.27.
 {
   "irVersion": "0.25",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
                                       // (0.26 when it defines a table type: "Table types", below; 0.27 when it
-                                      // holds a binary value: "Logical kinds", below)
+                                      // holds a binary value: "Logical kinds", below; 0.28 when it declares a
+                                      // column's JSON: "Column declarations", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -343,14 +348,17 @@ A type node is one of these, and nothing else:
 | record | `{ "kind": "record", "values", "valuesNullable", "valuesNullableBecause"? }` | an object whose keys are data: any string keys (possibly repeated in the text, which `JSON.parse` reads as the last), each to a value of `values` |
 | union | `{ "kind": "union", "variants": […] }` | a value of one of the variants: at least two, all different |
 | JSON text | `{ "kind": "json-text", "content"? }` | a string holding JSON, which the consumer parses. With `content`, a non-null string parses to a value of that type (the JSON was built here). Without it, only "JSON" is claimed |
+| any JSON | `{ "kind": "any-json", "objectOrArray"? }` | (0.28) any JSON value: an object, an array, a string, a number, a boolean or `null`, of any content. Not an unknown: the value is known to be JSON, so it nests as JSON, and a consumer may check that it is, but nothing of its shape is claimed. With `objectOrArray` `true` it is only ever an object or an array; left out when false. A column declared with the schema `{}` or `true` holds it ([decision 0094](../../docs/decisions/0094-any-json-is-a-type-of-its-own.md)) |
 | import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from`. `from` is a path relative to the folder the IR file is in, when it starts `./` or `../`, and otherwise a name the target resolves itself (a package, a path alias). Emitters import and use it as it is, so the value is still checked, by that schema, which receives the value as it arrives: the string, where it replaces JSON text |
 | unknown | `{ "kind": "unknown", "reason" }` | a value of any shape: nothing is claimed. The document's `unknowns` says why, and where |
 
 A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "identity"?, "fields": […] }`; each field is
 `{ "name", "type", "presence", "nullable", "nullableBecause"?, "from"?, "sides"? }`. `presence` is `always` (the key is there, null or not),
 `omittedWhenNull` (the key is left out when the value is null), or (0.24) `optional` (the key may be left out whatever its
-value, and when it is there, its value is null only with a reason). Only a combined document has `optional`: one of its
-databases doesn't return the key, or one leaves it out when null where the other sends the null. `recursive` may be left out
+value, and when it is there, its value is null only with a reason). A combined document has `optional` where one of its
+databases doesn't return the key, or one leaves it out when null where the other sends the null; and (0.28) a document has it in
+JSON a column is declared to hold, for a key the schema doesn't require: the application may leave it out, or write it null where
+the schema allows null. `recursive` may be left out
 when false. `nameDeclared` (0.23) is `true` when the config file gave the type its name rather than
 the naming rules, and may be left out when false: an emitter that declares a shape several types share once declares it under such a
 name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `identity` is left
@@ -456,8 +464,10 @@ reader must refuse a `reason` not in this list.
 
 An override is `{ "object", "path", "setting", "via"?, "why"? }`: a claim the config file made rather than inference, kept so
 that what the database proves and what a person asserts stay apart. `setting` is `not-null` (declared never null), `type`
-(declared an imported schema), `exact-values` (a `collation` value set declared exact) or `results` (the results declared,
-not inferred; with `via`, a caller's results include a declared callee's, named by `via`). `why` is the reason the config
+(declared an imported schema), `exact-values` (a `collation` value set declared exact), `results` (the results declared,
+not inferred; with `via`, a caller's results include a declared callee's, named by `via`) or (0.28) `column-json` (the object
+reads a column declared to hold JSON of a schema, named by `via` as `schema.table.column`, which `columns` must declare; its
+`path` is `results`). `why` is the reason the config
 file gives, when it needs one. An emitter needs neither: the types already carry the result.
 
 ## Paths
@@ -505,7 +515,9 @@ A scalar may carry facets, each a guarantee about its **non-null** values, and e
 from, `{ "type": "<type or alias type>" }` or `{ "check": "<schema.constraint>" }` (the constraint's location
 when it has no name), or `{ "engine": "<what>" }` for a closed set the engine itself writes or a range it fixes (`ASCII`'s
 0 to 255), or `{ "expression":
-"<location>" }` for the literals an expression gives, for the origins graph. A facet that is not proved is left out:
+"<location>" }` for the literals an expression gives, or (0.28) `{ "declared": "<what>" }` for a value set or a minimum length a
+declaration in the config file states (`<what>` is the column declared, `schema.table.column`, or the procedure whose results are
+declared), for the origins graph. A facet that is not proved is left out:
 absence claims nothing. None says anything about null, which is the field's `nullable`: a CHECK constraint passes when
 its condition is UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes
 null.
@@ -589,11 +601,31 @@ setting and `via`; two spaces of indentation, LF line endings, no byte order mar
 absolute paths. Characters are escaped only where JSON requires it. A CI check that compares the file sees a change only
 when the claims change. Another writer need not write the same bytes, but must write a document a reader reads as the same.
 
+## Column declarations
+
+`columns` (0.28) lists the columns the config file declares to hold JSON of a schema, sorted by `column`; it is left out when none
+is, and must not be written empty. Each is `{ "column", "schema", "pointer"?, "files" }`: the column as `schema.table.column`; the
+schema file, relative to the folder of the config file and `/`-separated; the JSON Pointer to the schema used inside the file,
+left out for the whole file; and `files`, the SHA-256 of every file the declaration read (the schema file itself, which it must
+list, and every file a `$ref` reached), by path, as 64 lower-case hexadecimal digits. A declaration completes the column's type:
+every value read from the column holds JSON of the schema, as a claim a person makes, which the generated code checks. A file's
+hash makes a change to its text a change to the document, which `haruspex check` reports
+([decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)).
+
 ## Changelog
 
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.28** (21 Nov 2026, declared JSON). A document's `columns`, each column the config file declares to hold JSON of a schema
+("Column declarations", above); the type node `any-json`, any JSON value, and narrowed, any object or array ("Type nodes", above);
+the fact source `declared`; the override setting `column-json`; and the presence `optional` in a document of one database, for a
+key a declared schema doesn't require
+([decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),
+[decision 0094](../../docs/decisions/0094-any-json-is-a-type-of-its-own.md)). Only a document that says one of these is labelled
+0.28: every 0.27, 0.26, 0.25, 0.24 and 0.23 document is a 0.28 document that declares nothing, meaning the same, so this reader
+reads all six ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), eleventh amendment).
 
 **0.27** (19 Nov 2026, binary values). The scalar kind `bytes`, a string of bytes, such as SQL Server's `binary`, `varbinary`
 and `rowversion`, whose only facet is its length in bytes ("Logical kinds", above;

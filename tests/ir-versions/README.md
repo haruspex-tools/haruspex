@@ -1,7 +1,7 @@
 # IR files, one per version
 
 One IR file from each version of the format, kept so that the reader is tested against what each version really wrote. The
-current version's file must be read, and round trip to the same bytes; so must 0.26's, 0.25's, 0.24's and 0.23's, the older versions
+current version's file must be read, and round trip to the same bytes; so must 0.27's, 0.26's, 0.25's, 0.24's and 0.23's, the older versions
 the reader still reads, since a document that says less is still labelled with the oldest version that says all it says
 ([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md),
 [decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)); every other must be refused, naming its version and the versions the reader
@@ -40,6 +40,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.25 | the commit that adds `IrSourceColumn`, on `feature/explain`: each field says the columns it is read from (`from`) |
 | 0.26 | the commit that merges `main` into H3 (table types, first set at `645af81a` as 0.25, renumbered when 7b took 0.25); a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
 | 0.27 | the commit that types binary values; a document that holds none is still written as before, so this file is `gallery.get_image` from the `gallery` fixture, whose columns are `varbinary`, `binary`, `rowversion` and `varbinary(max)` |
+| 0.28 | the commit that adds column declarations to the IR: until the config file can declare one, the 0.27 file with a declaration added by hand |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

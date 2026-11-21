@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Binary"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Declared"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Binary);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Declared);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
@@ -71,6 +71,17 @@ public class IrReaderSchemaAgreementTests
             || (key == "generated" && location.StartsWith("/tableTypes/", StringComparison.Ordinal) && target["sql"] is null))
         {
             Assert.DoesNotContain(schemaErrors, e => !e.Contains("tableTypes", StringComparison.Ordinal));
+            Assert.NotNull(refusal);
+            return;
+        }
+
+        // What ties a claim to the declared column it rests on, and a declaration to the hash of its own file (0.28), which the schema
+        // can't follow from one place to another: the claim's column, the declarations as a whole, and the file's own hash.
+        if ((key == "via" && target["setting"]?.GetValue<string>() == "column-json")
+            || (location.Length == 0 && key == "columns")
+            || (location.StartsWith("/columns/", StringComparison.Ordinal) && location.EndsWith("/files", StringComparison.Ordinal) && At(JsonNode.Parse(File)!, location[..^"/files".Length])["schema"]?.GetValue<string>() == key))
+        {
+            Assert.Empty(schemaErrors);
             Assert.NotNull(refusal);
             return;
         }

@@ -8,9 +8,10 @@ namespace Haruspex.Ir;
 public sealed record IrOverride(string Object, string Path, IrOverrideSetting Setting, string? Why)
 {
     /// <summary>
-    /// The procedure whose declaration the claim rests on, when it is not <see cref="Object"/> itself: a caller's results
-    /// that include the declared results of a procedure it calls (<see cref="IrOverrideSetting.Results"/>). Null when the
-    /// claim is about the object's own declaration.
+    /// What the claim rests on, when it is not <see cref="Object"/>'s own declaration: the procedure whose declared results a
+    /// caller's results include (<see cref="IrOverrideSetting.Results"/>), or the column declared to hold JSON of a schema, as
+    /// <c>schema.table.column</c>, that the object reads (<see cref="IrOverrideSetting.ColumnJson"/>, 0.28). Null when the claim
+    /// is about the object's own declaration.
     /// </summary>
     public string? Via { get; init; }
 }

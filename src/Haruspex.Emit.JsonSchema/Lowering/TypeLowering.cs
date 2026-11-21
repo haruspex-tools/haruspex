@@ -32,6 +32,9 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         IrImport import => Schema.Any.Noted(new SchemaNote(
             $"Declared by the config file to be {import.Name} from {import.From}, an application's schema this document can't refer to, so any value is accepted here.")),
         IrJsonText text => JsonText(text, place),
+        IrAnyJson { ObjectOrArray: true } => Schema.Any.With(Keyword.Type, new SchemaValue.List([new SchemaValue.Text("object"), new SchemaValue.Text("array")]))
+            .Noted(new SchemaNote("Any JSON object or array.")),
+        IrAnyJson => Schema.Any.Noted(new SchemaNote("Any JSON value.")),
         IrUnknownType unknown => Schema.Any.Noted(unknowns.Note(unknown.Reason, place)),
     };
 
@@ -52,8 +55,11 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         return schema.Noted(declared.At(at));
     }
 
-    /// <summary>Why a key of a document combining two databases may be left out whatever its value.</summary>
-    private static readonly SchemaNote LeftOut = new("May be left out: the two databases these types combine don't agree on it.");
+    /// <summary>
+    /// Why a key may be left out whatever its value: the two databases a combined document's types hold against don't agree on
+    /// it, or a schema declared for a column's JSON doesn't require it.
+    /// </summary>
+    private static readonly SchemaNote LeftOut = new("May be left out whatever its value: the two databases these types combine don't agree on it, or a column's declared JSON doesn't require it.");
 
     /// <summary>The notes of the claims the config file made at <paramref name="place"/>, such as a procedure's declared results.</summary>
     public IEnumerable<SchemaNote> Declared(Place place) => declared.At(place);

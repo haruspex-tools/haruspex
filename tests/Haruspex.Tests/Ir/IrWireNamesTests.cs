@@ -70,12 +70,12 @@ public class IrWireNamesTests
 
     [Fact]
     public void Override_settings_keep_their_names() => Assert.Equal(
-        ["not-null", "type", "exact-values", "results"],
+        ["not-null", "type", "exact-values", "results", "column-json"],
         Names<IrOverrideSetting>(IrWireNames.Of));
 
     [Fact]
     public void Fact_source_kinds_keep_their_names() => Assert.Equal(
-        ["type", "check", "engine", "expression"],
+        ["type", "check", "engine", "expression", "declared"],
         Names<IrFactSourceKind>(IrWireNames.Of));
 
     [Fact]

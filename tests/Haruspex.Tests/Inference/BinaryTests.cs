@@ -47,7 +47,7 @@ public partial class BinaryTests
         Assert.Empty(Field(doc, "checksum").NullableBecause);
         Assert.Empty(Field(doc, "row_version").NullableBecause);
         Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "thumbnail"));
-        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+        Assert.Equal(IrDocument.BytesVersion, doc.Version);
     }
 
     [Fact]

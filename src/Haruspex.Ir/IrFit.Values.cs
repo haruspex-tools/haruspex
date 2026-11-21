@@ -61,6 +61,15 @@ public static partial class IrFit
                         return;
                 }
 
+                // Any JSON (0.28) is held only where JSON is, so it accepts whatever is given there; narrowed to an object or an array,
+                // it accepts only what is one.
+                if (accepting is IrAnyJson any)
+                {
+                    if (any.ObjectOrArray && given is not (IrArray or IrTuple or IrRecord or IrRef or IrAnyJson { ObjectOrArray: true }))
+                        Refuse(IrChangeKind.TypeChanged, path, Refusal, IrClaimText.Type(accepting), IrClaimText.Type(given));
+                    return;
+                }
+
                 if (accepting.GetType() != given.GetType())
                 {
                     Refuse(IrChangeKind.TypeChanged, path, Refusal, IrClaimText.Type(accepting), IrClaimText.Type(given));
@@ -95,8 +104,8 @@ public static partial class IrFit
                         if (accepting != given)
                             Refuse(IrChangeKind.TypeChanged, path, Refusal, IrClaimText.Type(accepting), IrClaimText.Type(given));
                         break;
-                    case IrUnion or IrUnknownType:
-                        // Each is decided by the switch above, before the kinds are compared.
+                    case IrUnion or IrUnknownType or IrAnyJson:
+                        // Each is decided above, before the kinds are compared.
                         break;
                 }
             }

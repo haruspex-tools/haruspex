@@ -57,6 +57,7 @@ internal static class Origins
         IrFactSourceKind.Check => $"the check {from.Ref}",
         IrFactSourceKind.Engine => $"the engine ({from.Ref})",
         IrFactSourceKind.Expression => $"the expression at {from.Ref}",
+        IrFactSourceKind.Declared => $"the declaration of {from.Ref}",
     };
 
     /// <summary>Items as an English list: <c>a</c>, <c>a and b</c>, <c>a, b and c</c>.</summary>

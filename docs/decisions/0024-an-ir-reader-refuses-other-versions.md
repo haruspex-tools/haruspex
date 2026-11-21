@@ -79,5 +79,11 @@ The 0.27 reader reads 0.26, 0.25, 0.24 and 0.23 too, by the same test: 0.27 adde
 of those versions is a 0.27 document that holds no binary value, meaning the same. A binary value in a document labelled before
 0.27 is refused by its path, and a document labelled 0.27 that holds none is refused by its label.
 
+**Amended an eleventh time** (21 Nov 2026, IR 0.28, [decision 0093](0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)).
+The 0.28 reader reads 0.27, 0.26, 0.25, 0.24 and 0.23 too, by the same test: 0.28 added only what a column declared to hold JSON
+of a schema brings, and every document of those versions is a 0.28 document that declares nothing, meaning the same. What only a
+declaration gives in a document labelled before 0.28 is refused by its path, and a document labelled 0.28 that declares nothing is
+refused by its label.
+
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

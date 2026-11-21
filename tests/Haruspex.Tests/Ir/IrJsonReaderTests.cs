@@ -46,7 +46,7 @@ public partial class IrJsonReaderTests
     [Fact]
     public void The_sample_holds_every_type_node_the_format_has()
     {
-        var nodes = IrSamples.TypeNodes(IrSamples.Everything).Select(t => t.GetType().Name).Distinct().Order(StringComparer.Ordinal);
+        var nodes = IrSamples.TypeNodes(IrSamples.Everything).Concat(IrSamples.TypeNodes(IrSamples.Declared)).Select(t => t.GetType().Name).Distinct().Order(StringComparer.Ordinal);
 
         Assert.Equal(typeof(IrType).Assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(IrType)) && !t.IsAbstract).Select(t => t.Name).Order(StringComparer.Ordinal), nodes);
     }
@@ -232,7 +232,7 @@ public partial class IrJsonReaderTests
         });
 
         Assert.Equal("$.irVersion", e.Path);
-        Assert.Equal("is \"0.14\", and this reader reads IR 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
+        Assert.Equal("is \"0.14\", and this reader reads IR 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.", e.Problem);
     }
 
     [Fact]

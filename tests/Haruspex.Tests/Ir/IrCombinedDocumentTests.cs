@@ -65,7 +65,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Everything, json => json["types"]!["FindOrdersRow"]!["fields"]![0]!["presence"] = "optional");
 
-        Assert.Equal("$.types.FindOrdersRow.fields[0].presence is \"optional\", which only a document combining two databases (IR 0.24 or 0.25) says.", e.Message);
+        Assert.Equal("$.types.FindOrdersRow.fields[0].presence is \"optional\", which only a document combining two databases (IR 0.24 or later), or one declaring a column's JSON (IR 0.28), says.", e.Message);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class IrCombinedDocumentTests
     {
         var e = Refused(IrSamples.Everything, json => json["objects"]![0]!["results"]![0]!["absentBecause"]![0]!["rule"] = "not-in-both");
 
-        Assert.Equal("$.objects[0].results[0].absentBecause[0].rule is \"not-in-both\", which only a document combining two databases (IR 0.24 or 0.25) says.", e.Message);
+        Assert.Equal("$.objects[0].results[0].absentBecause[0].rule is \"not-in-both\", which only a document combining two databases (IR 0.24 or later) says.", e.Message);
     }
 
     [Fact]

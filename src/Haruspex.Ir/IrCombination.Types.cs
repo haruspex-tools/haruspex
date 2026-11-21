@@ -62,6 +62,8 @@ public static partial class IrCombination
                 case (IrJsonText before, IrJsonText after):
                     // JSON text whose content isn't typed is checked as a string, which any JSON text is.
                     return before.Content is { } old && after.Content is { } content ? new IrJsonText(Join(id, [.. path, new IrPathJson()], old, content)) : new IrJsonText();
+                case (IrAnyJson before, IrAnyJson after):
+                    return new IrAnyJson(before.ObjectOrArray && after.ObjectOrArray);
                 case (IrImport, IrImport) when was == now:
                     return now;
                 default:
@@ -92,7 +94,7 @@ public static partial class IrCombination
         /// <summary>Whether two variants join into one rather than standing side by side in a union.</summary>
         private bool Alike(IrType was, IrType now) => (was, now) switch
         {
-            (IrRef, IrRef) or (IrArray, IrArray) or (IrRecord, IrRecord) or (IrJsonText, IrJsonText) => true,
+            (IrRef, IrRef) or (IrArray, IrArray) or (IrRecord, IrRecord) or (IrJsonText, IrJsonText) or (IrAnyJson, IrAnyJson) => true,
             (IrScalar before, IrScalar after) => Widest(before, after) is not null,
             (IrTuple before, IrTuple after) => before.Items.Count == after.Items.Count,
             _ => was == now,

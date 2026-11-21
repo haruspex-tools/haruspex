@@ -34,4 +34,8 @@ internal static class IrDocumentOrder
             .ThenBy(o => o.Path, StringComparer.Ordinal)
             .ThenBy(o => IrWireNames.Of(o.Setting), StringComparer.Ordinal)
             .ThenBy(o => o.Via, StringComparer.Ordinal);
+
+    /// <summary>Column declarations by column.</summary>
+    public static IEnumerable<IrColumnDeclaration> Columns(IrDocument document) =>
+        document.Columns.OrderBy(c => c.Column, StringComparer.Ordinal);
 }

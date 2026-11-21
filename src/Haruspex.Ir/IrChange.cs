@@ -72,7 +72,7 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.ValueSetAdded => $"now drawn from a value set ({After})",
         IrChangeKind.ValueSetRemoved => $"no longer drawn from a value set (was {Before})",
         IrChangeKind.ValueMatchChanged => $"value set's match changed from {Before} to {After}",
-        IrChangeKind.DialectChanged or IrChangeKind.SessionChanged or IrChangeKind.FoldChanged => $"changed from {Before} to {After}",
+        IrChangeKind.DialectChanged or IrChangeKind.SessionChanged or IrChangeKind.FoldChanged or IrChangeKind.ColumnDeclarationChanged => $"changed from {Before} to {After}",
     };
 
     /// <summary>The change as one line: the object, the path and the description, such as <c>shop.list_orders results[0][].note: became nullable</c>.</summary>

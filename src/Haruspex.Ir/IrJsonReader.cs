@@ -154,8 +154,8 @@ public static class IrJsonReader
         if (baseline is null && version == IrDocument.CombinedVersion)
             throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or later.");
         var tableTypes = json.OptionalObject("tableTypes");
-        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.TableTypesVersion))
-            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, or {IrDocument.CurrentVersion} when it holds a binary value.");
+        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion))
+            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, {IrDocument.BytesVersion} when it holds a binary value, or {IrDocument.CurrentVersion} when it declares a column's JSON.");
         if (tableTypes is null && version == IrDocument.TableTypesVersion)
             throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
 
@@ -168,15 +168,69 @@ public static class IrJsonReader
             Overrides = [.. json.Array("overrides").Select(o => Override(IrJsonObject.At(o.Item, o.Path)))],
             Folds = Folds(json.Object("folds")),
             TableTypes = tableTypes is null ? [] : TableTypes(tableTypes),
+            Columns = Columns(json),
         };
         source.End();
         json.End();
         if (baseline is null)
-            OneDatabase(document);
-        if (version is not (IrDocument.CurrentVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
+            OneDatabase(document, version);
+        if (version is not (IrDocument.CurrentVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
         HoldsBytesAsLabelled(document, version);
+        DeclaresAsLabelled(document, version);
         return document;
+    }
+
+    /// <summary>
+    /// The columns declared to hold JSON of a schema (0.28); none when the file leaves <c>columns</c> out. An empty array is
+    /// refused: the writer leaves it out, so there is one way to say "none". Each column is declared once.
+    /// </summary>
+    private static EquatableArray<IrColumnDeclaration> Columns(IrJsonObject json)
+    {
+        if (json.Optional("columns") is null)
+            return [];
+        var columns = new List<IrColumnDeclaration>();
+        foreach (var (item, path) in json.Array("columns"))
+        {
+            var entry = IrJsonObject.At(item, path);
+            var files = entry.Object("files");
+            var column = new IrColumnDeclaration(entry.String("column"), entry.String("schema"), entry.OptionalString("pointer"), files.Names.ToList().ToEquatableMap(name => name, files.String));
+            files.End();
+            entry.End();
+            if (!column.Files.ContainsKey(column.Schema))
+                throw new IrFormatException(entry.PathOf("files"), $"has no hash of \"{column.Schema}\", the schema file itself: it lists every file the declaration read.");
+            if (columns.Any(c => c.Column == column.Column))
+                throw new IrFormatException(entry.PathOf("column"), $"is \"{column.Column}\", declared twice: a column is declared once.");
+            columns.Add(column);
+        }
+
+        return columns.Count > 0 ? [.. columns] : throw new IrFormatException(json.PathOf("columns"), "is empty: a document that declares no column leaves it out.");
+    }
+
+    /// <summary>
+    /// Refuses what only a declaration of a column's JSON gives (0.28) in a document labelled before 0.28, by its path, and a document
+    /// labelled 0.28 that says nothing of the kind, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// A claim that an object reads a declared column must name one the document declares.
+    /// </summary>
+    private static void DeclaresAsLabelled(IrDocument document, string version)
+    {
+        foreach (var (claim, i) in IrDocumentOrder.Overrides(document).Select((o, i) => (o, i)))
+        {
+            if (claim.Setting == IrOverrideSetting.ColumnJson && !document.Columns.Any(c => c.Column == claim.Via))
+                throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but a \"column-json\" claim names a column the document declares in $.columns.");
+        }
+
+        if (version == IrDocument.CurrentVersion)
+        {
+            if (!document.Declares)
+                throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a column's JSON, and this one declares none. One that declares none is labelled {IrDocument.BytesVersion} or earlier, by what else it says.");
+            return;
+        }
+
+        if (document.Columns.Count > 0)
+            throw new IrFormatException("$.columns", $"is given in a document of IR {version}: a document that declares a column's JSON is IR {IrDocument.CurrentVersion}.");
+        if (IrDocumentDeclared.First(document) is var (path, what))
+            throw new IrFormatException(path, $"is {what}, given in a document of IR {version}: only a declaration gives it, in IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>
@@ -304,9 +358,9 @@ public static class IrJsonReader
     private static void HoldsBytesAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentScalars.Of(document).FirstOrDefault(s => s.Scalar.Kind == IrScalarKind.Bytes);
-        if (first.Scalar is not null && version != IrDocument.CurrentVersion)
-            throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.CurrentVersion}.");
-        if (first.Scalar is null && version == IrDocument.CurrentVersion)
+        if (first.Scalar is not null && version is not (IrDocument.BytesVersion or IrDocument.CurrentVersion))
+            throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.BytesVersion}, or {IrDocument.CurrentVersion} when it declares a column's JSON.");
+        if (first.Scalar is null && version == IrDocument.BytesVersion)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a binary value, and this one holds none. One that holds none is labelled {IrDocument.TableTypesVersion} or earlier, by what else it says.");
     }
 
@@ -340,16 +394,20 @@ public static class IrJsonReader
     /// Refuses, by its path, what only a document combining two databases says (0.24) in one of one database, which could say
     /// neither: a key that may be left out whatever its value, and a result missing because only one database returns it.
     /// </summary>
-    private static void OneDatabase(IrDocument document)
+    /// <remarks>
+    /// From 0.28 a key may be left out whatever its value in a document of one database too, where a column's JSON is declared: a key
+    /// a schema does not require is one an application may leave out or write as null (<see cref="IrPresence.Optional"/>).
+    /// </remarks>
+    private static void OneDatabase(IrDocument document, string version)
     {
-        const string Why = "which only a document combining two databases (IR 0.24 or 0.25) says";
+        const string Why = "which only a document combining two databases (IR 0.24 or later) says";
         foreach (var (name, type) in document.Types)
         {
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
             {
                 var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
-                if (field.Presence == IrPresence.Optional)
-                    throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", {Why}.");
+                if (field.Presence == IrPresence.Optional && version != IrDocument.CurrentVersion)
+                    throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", which only a document combining two databases (IR 0.24 or later), or one declaring a column's JSON (IR {IrDocument.CurrentVersion}), says.");
                 if (field.Sides is not null)
                     throw new IrFormatException(at + ".sides", $"is given, {Why}.");
                 Rules(at + ".nullableBecause", field.NullableBecause);
@@ -614,6 +672,7 @@ public static class IrJsonReader
             "record" => new IrRecord(Type(json.Object("values")), Reasons(json, "valuesNullable", "valuesNullableBecause")),
             "union" => Union(json),
             "json-text" => new IrJsonText(json.OptionalObject("content") is { } content ? Type(content) : null),
+            "any-json" => new IrAnyJson(json.OptionalBoolean("objectOrArray") ?? false),
             "import" => new IrImport(json.String("name"), json.String("from")),
             "unknown" => new IrUnknownType(json.Name<IrUnknownReason>("reason", IrWireNames.TryParse, "an unknown's reason")),
             _ => throw new IrFormatException(json.PathOf("kind"), $"is \"{kind}\", which is not a type in IR {IrDocument.CurrentVersion}."),

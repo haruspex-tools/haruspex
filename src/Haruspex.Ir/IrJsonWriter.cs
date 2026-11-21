@@ -74,6 +74,27 @@ public static class IrJsonWriter
                 json.WriteEndObject();
             }
 
+            // Left out when no column is declared, so that such a document reads as it did in 0.27.
+            if (document.Columns.Count > 0)
+            {
+                json.WriteStartArray("columns");
+                foreach (var column in IrDocumentOrder.Columns(document))
+                {
+                    json.WriteStartObject();
+                    json.WriteString("column", column.Column);
+                    json.WriteString("schema", column.Schema);
+                    if (column.Pointer is not null)
+                        json.WriteString("pointer", column.Pointer);
+                    json.WriteStartObject("files");
+                    foreach (var (file, sha256) in column.Files.OrderBy(f => f.Key, StringComparer.Ordinal))
+                        json.WriteString(file, sha256);
+                    json.WriteEndObject();
+                    json.WriteEndObject();
+                }
+
+                json.WriteEndArray();
+            }
+
             json.WriteStartArray("unknowns");
             foreach (var unknown in IrDocumentOrder.Unknowns(document))
             {
@@ -455,6 +476,11 @@ public static class IrJsonWriter
                     WriteType(json, content);
                 }
 
+                break;
+            case IrAnyJson any:
+                json.WriteString("kind", "any-json");
+                if (any.ObjectOrArray)
+                    json.WriteBoolean("objectOrArray", true);
                 break;
             case IrImport import:
                 json.WriteString("kind", "import");

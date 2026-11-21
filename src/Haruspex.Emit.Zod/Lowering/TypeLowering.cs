@@ -28,6 +28,10 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         // What the text holds is JSON, even in a rowset.
         IrJsonText { Content: { } content } => new Noted(new JsonText(Type(content, IrEncoding.Json)), new ZodNote("A string holding JSON, checked against the schema inside.")),
         IrJsonText => new Noted(Z("string"), new ZodNote("A string holding JSON.")),
+
+        // z.json() accepts every value JSON.parse gives and nothing else (observed in the pinned Zod: JsonValueTests).
+        IrAnyJson { ObjectOrArray: true } => new Noted(Z("union", new ArrayLiteral([Z("record", Z("string"), Z("json")), Z("array", Z("json"))])), new ZodNote("Any JSON object or array.")),
+        IrAnyJson => new Noted(Z("json"), new ZodNote("Any JSON value.")),
         IrUnknownType unknown => new Noted(Z("unknown"), new ZodNote($"Not known ({IrWireNames.Of(unknown.Reason)}); the IR's unknowns say why.")),
     };
 

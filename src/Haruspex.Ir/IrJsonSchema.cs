@@ -37,7 +37,7 @@ public static class IrJsonSchema
     public const string Id = "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json";
 
     /// <summary>The definitions of the type nodes, one per node of <see cref="IrType"/>'s closed set.</summary>
-    private static readonly string[] TypeNodes = ["ref", "scalar", "array", "tuple", "record", "union", "jsonText", "import", "unknownType"];
+    private static readonly string[] TypeNodes = ["ref", "scalar", "array", "tuple", "record", "union", "jsonText", "anyJson", "import", "unknownType"];
 
     private static readonly JsonWriterOptions Options = new()
     {
@@ -59,10 +59,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, and (0.27) binary values. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, and (0.28) the columns the config file declares to hold JSON of a schema. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that declares a column's JSON (columns, or what only a declaration gives: any JSON, or a fact from a declaration, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -76,6 +76,11 @@ public static class IrJsonSchema
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Ref("tableType")))),
+            ("columns", Node(
+                ("description", "The columns the config file declares to hold JSON of a schema, sorted by column (0.28). Never given before 0.28."),
+                ("type", "array"),
+                ("minItems", 1),
+                ("items", Ref("columnDeclaration")))),
             ("unknowns", ArrayOf(Ref("unknown"))),
             ("overrides", ArrayOf(Ref("override"))),
             ("folds", Node(
@@ -85,10 +90,19 @@ public static class IrJsonSchema
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
 
-        // A document labelled 0.23 never names a baseline, one labelled 0.24 always does, and one labelled 0.25, 0.26 or 0.27 may;
-        // one of those that names none says nothing only a combined document says. One labelled 0.26 always defines table types, one
-        // labelled 0.27 may, and one labelled earlier never does.
+        // A document labelled 0.28 may say anything a 0.27 one may, and a key left out whatever its value in a document of one
+        // database too, since a column's declared JSON says it. One labelled earlier declares no column, and: one labelled 0.23 never names a baseline, one
+        // labelled 0.24 always does, and one labelled 0.25, 0.26 or 0.27 may; one of those that names none says nothing only a
+        // combined document says. One labelled 0.26 always defines table types, one labelled 0.27 may, and one labelled earlier never does.
         ("anyOf", new JsonArray(
+            Node(
+                ("properties", Node(
+                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("source", Node(("required", Names("baseline"))))))),
+            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: null, optional: true),
+            Node(
+                ("not", Node(("required", Names("columns")))),
+                ("anyOf", new JsonArray(
             Node(
                 ("properties", Node(
                     ("irVersion", Node(("const", IrDocument.OneDatabaseVersion))),
@@ -113,9 +127,9 @@ public static class IrJsonSchema
             OneDatabaseOf(IrDocument.TableTypesVersion, tableTypes: true),
             Node(
                 ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("irVersion", Node(("const", IrDocument.BytesVersion))),
                     ("source", Node(("required", Names("baseline"))))))),
-            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: null))),
+            OneDatabaseOf(IrDocument.BytesVersion, tableTypes: null)))))),
         ("$defs", Definitions()));
 
     /// <summary>
@@ -123,11 +137,16 @@ public static class IrJsonSchema
     /// is true, without them when it is false, and either way when it is null: then no field has <c>sides</c> or the presence <c>optional</c>,
     /// and no result is missing for the rule <c>not-in-both</c>, which only a combined document says.
     /// </summary>
-    private static JsonObject OneDatabaseOf(string version, bool? tableTypes)
+    /// <param name="version">The version.</param>
+    /// <param name="tableTypes">Whether it defines table types; either way when null.</param>
+    /// <param name="optional">Whether a key may be left out whatever its value, as one a column's declared JSON doesn't require (0.28).</param>
+    private static JsonObject OneDatabaseOf(string version, bool? tableTypes, bool optional = false)
     {
-        var field = Node(
-            ("not", Node(("required", Names("sides")))),
-            ("properties", Node(("presence", Not(IrWireNames.Of(IrPresence.Optional))))));
+        var field = optional
+            ? Node(("not", Node(("required", Names("sides")))))
+            : Node(
+                ("not", Node(("required", Names("sides")))),
+                ("properties", Node(("presence", Not(IrWireNames.Of(IrPresence.Optional))))));
         var reason = Node(("properties", Node(("rule", Not(IrWireNames.Of(IrNullRule.NotInBoth))))));
         var result = Properties("absentBecause", Node(("items", reason)));
         var document = Node(("properties", Node(
@@ -383,6 +402,22 @@ public static class IrJsonSchema
             ["kind"],
             ("kind", Node(("const", "json-text"))),
             ("content", Ref("type")))),
+        ("anyJson", Closed(
+            "Any JSON value (0.28): an object, an array, a string, a number, a boolean or null, of any content.",
+            ["kind"],
+            ("kind", Node(("const", "any-json"))),
+            ("objectOrArray", Flag("Whether it is only ever an object or an array; left out when it may be any JSON value.")))),
+        ("columnDeclaration", Closed(
+            "A column the config file declares to hold JSON of a schema (0.28).",
+            ["column", "schema", "files"],
+            ("column", Text("The column, as schema.table.column.")),
+            ("schema", Text("The schema file, relative to the folder of the config file, /-separated.")),
+            ("pointer", Text("The JSON Pointer to the schema used inside the file, when not the whole file.")),
+            ("files", Node(
+                ("description", "The SHA-256 of every schema file the declaration read, by its path, written as schema is."),
+                ("type", "object"),
+                ("minProperties", 1),
+                ("additionalProperties", Node(("type", "string"), ("pattern", "^[0-9a-f]{64}$"))))))),
         ("import", Closed(
             "A schema the application already has, which the config file declared.",
             ["kind", "name", "from"],
@@ -408,7 +443,7 @@ public static class IrJsonSchema
             ("object", Text("The id of the object it applies to.")),
             ("path", Text("Where in the object, in the IR's path syntax.")),
             ("setting", Vocabulary<IrOverrideSetting>(IrWireNames.Of)),
-            ("via", Text("The procedure whose declaration the claim rests on, when not the object itself.")),
+            ("via", Text("What the claim rests on, when not the object's own declaration: the procedure whose declared results it includes, or (0.28) the declared column it reads.")),
             ("why", Text("The reason given in the config file.")))));
 
     /// <summary>A scalar: its kind and format, its SQL type, and its facets beside them.</summary>

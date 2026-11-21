@@ -47,14 +47,14 @@ public partial class IrJsonReaderTests
         var e = RefusedBinary(json => json["irVersion"] = IrDocument.TableTypesVersion);
 
         Assert.Equal(
-            "$.objects[0].parameters[3].type is a binary value (kind \"bytes\"), given in a document of IR 0.26: a document that holds one is IR 0.27.",
+            "$.objects[0].parameters[3].type is a binary value (kind \"bytes\"), given in a document of IR 0.26: a document that holds one is IR 0.27, or 0.28 when it declares a column's JSON.",
             e.Message);
     }
 
     [Fact]
     public void A_document_labelled_0_27_that_holds_no_binary_value_is_refused()
     {
-        var e = Refused(json => json["irVersion"] = IrDocument.CurrentVersion);
+        var e = Refused(json => json["irVersion"] = IrDocument.BytesVersion);
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Contains("holds none", e.Message, StringComparison.Ordinal);

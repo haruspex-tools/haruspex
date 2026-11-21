@@ -266,6 +266,36 @@ internal static class IrSamples
         }),
     };
 
+    /// <summary>
+    /// <see cref="Binary"/> with a column declared to hold JSON of a schema (0.28): the declaration and the files it read, a claim
+    /// that an object reads it, any JSON and any JSON object or array, and a string whose value set and minimum length a
+    /// declaration states, so that it holds every property and every type node the format has.
+    /// </summary>
+    public static IrDocument Declared { get; } = Binary with
+    {
+        Types = Binary.Types.ToDictionary(t => t.Key, t => t.Key != "OrderRow" ? t.Value : t.Value with
+        {
+            Fields =
+            [
+                .. t.Value.Fields,
+                new IrField("extras", new IrJsonText(new IrAnyJson()), IrPresence.Always, [Column]),
+                new IrField("live", new IrAnyJson(ObjectOrArray: true), IrPresence.OmittedWhenNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, "procedures/get_order.sql:6:9")]),
+                new IrField("mode", new IrScalar(IrScalarKind.String, null, null, new IrFacets(
+                    MinLength: new IrMinLength(1, new IrFactSource(IrFactSourceKind.Declared, "sales.orders.settings")),
+                    Values: new IrValueSet([new IrValue("fast", IsString: true), new IrValue("slow", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Declared, "sales.orders.settings")]))), IrPresence.Optional, []),
+            ],
+        }),
+        Columns =
+        [
+            new IrColumnDeclaration(
+                "sales.orders.settings",
+                "schemas/order-settings.schema.json",
+                "/$defs/settings",
+                new Dictionary<string, string> { ["schemas/order-settings.schema.json"] = Hash('a'), ["schemas/common.schema.json"] = Hash('b') }.ToEquatableMap(f => f.Key, f => f.Value)),
+        ],
+        Overrides = [.. Binary.Overrides, new IrOverride("sales.get_order", "results", IrOverrideSetting.ColumnJson, null) { Via = "sales.orders.settings" }],
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

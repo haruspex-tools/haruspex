@@ -238,6 +238,8 @@ internal sealed class OverrideApplier(
         IrJsonText { Content: null } => "JSON text of unknown content",
         IrJsonText => "JSON text",
         IrImport import => $"the imported {import.Name}",
+        IrAnyJson { ObjectOrArray: true } => "any JSON object or array",
+        IrAnyJson => "any JSON",
         IrUnknownType => "of unknown type",
 #pragma warning disable CA1308 // Lower case to write the kind in a message, not to compare it.
         IrScalar { Sql: { } sql } scalar => $"a {scalar.Kind.ToString().ToLowerInvariant()} ({sql})",

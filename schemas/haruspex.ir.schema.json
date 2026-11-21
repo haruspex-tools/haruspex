@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, and (0.27) binary values. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, and (0.28) the columns the config file declares to hold JSON of a schema. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.27 for a document that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.28 for a document that declares a column's JSON (columns, or what only a declaration gives: any JSON, or a fact from a declaration, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
+        "0.28",
         "0.27",
         "0.26",
         "0.25",
@@ -158,6 +159,14 @@
         "$ref": "#/$defs/tableType"
       }
     },
+    "columns": {
+      "description": "The columns the config file declares to hold JSON of a schema, sorted by column (0.28). Never given before 0.28.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/columnDeclaration"
+      }
+    },
     "unknowns": {
       "type": "array",
       "items": {
@@ -192,60 +201,19 @@
     {
       "properties": {
         "irVersion": {
-          "const": "0.23"
-        },
-        "source": {
-          "not": {
-            "required": [
-              "baseline"
-            ]
-          }
-        }
-      },
-      "not": {
-        "required": [
-          "tableTypes"
-        ]
-      }
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.24"
+          "const": "0.28"
         },
         "source": {
           "required": [
             "baseline"
           ]
         }
-      },
-      "not": {
-        "required": [
-          "tableTypes"
-        ]
       }
     },
     {
       "properties": {
         "irVersion": {
-          "const": "0.25"
-        },
-        "source": {
-          "required": [
-            "baseline"
-          ]
-        }
-      },
-      "not": {
-        "required": [
-          "tableTypes"
-        ]
-      }
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.25"
+          "const": "0.28"
         },
         "source": {
           "not": {
@@ -263,13 +231,6 @@
                     "required": [
                       "sides"
                     ]
-                  },
-                  "properties": {
-                    "presence": {
-                      "not": {
-                        "const": "optional"
-                      }
-                    }
                   }
                 }
               }
@@ -299,160 +260,281 @@
             }
           }
         }
-      },
-      "not": {
-        "required": [
-          "tableTypes"
-        ]
       }
     },
     {
-      "properties": {
-        "irVersion": {
-          "const": "0.26"
-        },
-        "source": {
-          "required": [
-            "baseline"
-          ]
-        }
+      "not": {
+        "required": [
+          "columns"
+        ]
       },
-      "required": [
-        "tableTypes"
+      "anyOf": [
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.23"
+            },
+            "source": {
+              "not": {
+                "required": [
+                  "baseline"
+                ]
+              }
+            }
+          },
+          "not": {
+            "required": [
+              "tableTypes"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.24"
+            },
+            "source": {
+              "required": [
+                "baseline"
+              ]
+            }
+          },
+          "not": {
+            "required": [
+              "tableTypes"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.25"
+            },
+            "source": {
+              "required": [
+                "baseline"
+              ]
+            }
+          },
+          "not": {
+            "required": [
+              "tableTypes"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.25"
+            },
+            "source": {
+              "not": {
+                "required": [
+                  "baseline"
+                ]
+              }
+            },
+            "types": {
+              "additionalProperties": {
+                "properties": {
+                  "fields": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      "properties": {
+                        "presence": {
+                          "not": {
+                            "const": "optional"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "objects": {
+              "items": {
+                "properties": {
+                  "results": {
+                    "items": {
+                      "properties": {
+                        "absentBecause": {
+                          "items": {
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "not": {
+            "required": [
+              "tableTypes"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.26"
+            },
+            "source": {
+              "required": [
+                "baseline"
+              ]
+            }
+          },
+          "required": [
+            "tableTypes"
+          ]
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.26"
+            },
+            "source": {
+              "not": {
+                "required": [
+                  "baseline"
+                ]
+              }
+            },
+            "types": {
+              "additionalProperties": {
+                "properties": {
+                  "fields": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      "properties": {
+                        "presence": {
+                          "not": {
+                            "const": "optional"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "objects": {
+              "items": {
+                "properties": {
+                  "results": {
+                    "items": {
+                      "properties": {
+                        "absentBecause": {
+                          "items": {
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "tableTypes"
+          ]
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.27"
+            },
+            "source": {
+              "required": [
+                "baseline"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "irVersion": {
+              "const": "0.27"
+            },
+            "source": {
+              "not": {
+                "required": [
+                  "baseline"
+                ]
+              }
+            },
+            "types": {
+              "additionalProperties": {
+                "properties": {
+                  "fields": {
+                    "items": {
+                      "not": {
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      "properties": {
+                        "presence": {
+                          "not": {
+                            "const": "optional"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "objects": {
+              "items": {
+                "properties": {
+                  "results": {
+                    "items": {
+                      "properties": {
+                        "absentBecause": {
+                          "items": {
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       ]
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.26"
-        },
-        "source": {
-          "not": {
-            "required": [
-              "baseline"
-            ]
-          }
-        },
-        "types": {
-          "additionalProperties": {
-            "properties": {
-              "fields": {
-                "items": {
-                  "not": {
-                    "required": [
-                      "sides"
-                    ]
-                  },
-                  "properties": {
-                    "presence": {
-                      "not": {
-                        "const": "optional"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "objects": {
-          "items": {
-            "properties": {
-              "results": {
-                "items": {
-                  "properties": {
-                    "absentBecause": {
-                      "items": {
-                        "properties": {
-                          "rule": {
-                            "not": {
-                              "const": "not-in-both"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "required": [
-        "tableTypes"
-      ]
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.27"
-        },
-        "source": {
-          "required": [
-            "baseline"
-          ]
-        }
-      }
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.27"
-        },
-        "source": {
-          "not": {
-            "required": [
-              "baseline"
-            ]
-          }
-        },
-        "types": {
-          "additionalProperties": {
-            "properties": {
-              "fields": {
-                "items": {
-                  "not": {
-                    "required": [
-                      "sides"
-                    ]
-                  },
-                  "properties": {
-                    "presence": {
-                      "not": {
-                        "const": "optional"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "objects": {
-          "items": {
-            "properties": {
-              "results": {
-                "items": {
-                  "properties": {
-                    "absentBecause": {
-                      "items": {
-                        "properties": {
-                          "rule": {
-                            "not": {
-                              "const": "not-in-both"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
   ],
   "$defs": {
@@ -1203,6 +1285,9 @@
           "$ref": "#/$defs/jsonText"
         },
         {
+          "$ref": "#/$defs/anyJson"
+        },
+        {
           "$ref": "#/$defs/import"
         },
         {
@@ -1621,6 +1706,10 @@
         "expression": {
           "description": "The expression the fact came from.",
           "type": "string"
+        },
+        "declared": {
+          "description": "The declared the fact came from.",
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -1660,6 +1749,15 @@
           },
           "required": [
             "expression"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "declared": true
+          },
+          "required": [
+            "declared"
           ]
         }
       ]
@@ -1903,6 +2001,56 @@
       ],
       "additionalProperties": false
     },
+    "anyJson": {
+      "description": "Any JSON value (0.28): an object, an array, a string, a number, a boolean or null, of any content.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "any-json"
+        },
+        "objectOrArray": {
+          "description": "Whether it is only ever an object or an array; left out when it may be any JSON value.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "columnDeclaration": {
+      "description": "A column the config file declares to hold JSON of a schema (0.28).",
+      "type": "object",
+      "properties": {
+        "column": {
+          "description": "The column, as schema.table.column.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "The schema file, relative to the folder of the config file, /-separated.",
+          "type": "string"
+        },
+        "pointer": {
+          "description": "The JSON Pointer to the schema used inside the file, when not the whole file.",
+          "type": "string"
+        },
+        "files": {
+          "description": "The SHA-256 of every schema file the declaration read, by its path, written as schema is.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "required": [
+        "column",
+        "schema",
+        "files"
+      ],
+      "additionalProperties": false
+    },
     "import": {
       "description": "A schema the application already has, which the config file declared.",
       "type": "object",
@@ -2045,11 +2193,12 @@
             "not-null",
             "type",
             "exact-values",
-            "results"
+            "results",
+            "column-json"
           ]
         },
         "via": {
-          "description": "The procedure whose declaration the claim rests on, when not the object itself.",
+          "description": "What the claim rests on, when not the object's own declaration: the procedure whose declared results it includes, or (0.28) the declared column it reads.",
           "type": "string"
         },
         "why": {

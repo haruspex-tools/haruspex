@@ -153,4 +153,10 @@ public enum IrChangeKind
 
     /// <summary>A fold a canonical value set names was added, removed or compares otherwise.</summary>
     FoldChanged,
+
+    /// <summary>
+    /// A column's declared JSON (0.28) was added, removed, or reads another schema: another file or pointer, or a file whose text
+    /// changed, which may change what every value read from the column is claimed to hold.
+    /// </summary>
+    ColumnDeclarationChanged,
 }

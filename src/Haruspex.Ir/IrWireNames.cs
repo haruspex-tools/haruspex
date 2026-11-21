@@ -151,6 +151,7 @@ public static class IrWireNames
         IrOverrideSetting.Type => "type",
         IrOverrideSetting.ExactValues => "exact-values",
         IrOverrideSetting.Results => "results",
+        IrOverrideSetting.ColumnJson => "column-json",
     };
 
     /// <summary>Where a fact came from (the key in <c>from</c>).</summary>
@@ -160,6 +161,7 @@ public static class IrWireNames
         IrFactSourceKind.Check => "check",
         IrFactSourceKind.Engine => "engine",
         IrFactSourceKind.Expression => "expression",
+        IrFactSourceKind.Declared => "declared",
     };
 
     /// <summary>What a length counts (<c>unit</c>).</summary>

@@ -18,4 +18,11 @@ public enum IrOverrideSetting
     /// declared results of a procedure it calls.
     /// </summary>
     Results,
+
+    /// <summary>
+    /// The object reads a column the config file declares to hold JSON of a schema (0.28), named by <see cref="IrOverride.Via"/>,
+    /// so what it returns of that JSON rests on the declaration, not on the database
+    /// (<see cref="IrDocument.Columns"/>).
+    /// </summary>
+    ColumnJson,
 }

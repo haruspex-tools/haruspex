@@ -25,6 +25,13 @@ public static class IrClaimText
         return $"{type.Bracketed} ({string.Join("; ", new[] { string.Join(", ", columns) }.Concat(keys).Concat(checks))})";
     }
 
+    /// <summary>
+    /// A column's declared JSON (0.28): its schema, with the pointer, and the hash of each file it read, abridged; or <c>none</c>.
+    /// </summary>
+    public static string Declaration(IrColumnDeclaration? declaration) => declaration is null
+        ? "none"
+        : $"{declaration.Schema}{(declaration.Pointer is { } pointer ? "#" + pointer : "")} ({string.Join(", ", declaration.Files.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => $"{f.Key} {f.Value[..Math.Min(12, f.Value.Length)]}"))})";
+
     /// <summary>A type node, without what lies behind a reference: <c>string</c>, <c>number (int32)</c>, <c>an array of the object OrderRow</c>.</summary>
     public static string Type(IrType type) => type switch
     {
@@ -35,6 +42,7 @@ public static class IrClaimText
         IrUnion union => $"one of {string.Join(", ", union.Variants.Select(Type))}",
         IrRef reference => $"the object {reference.Name}",
         IrJsonText text => text.Content is { } content ? $"JSON text of {Type(content)}" : "JSON text",
+        IrAnyJson any => any.ObjectOrArray ? "any JSON object or array" : "any JSON",
         IrImport import => $"{import.Name} from {import.From}",
         IrUnknownType unknown => $"unknown ({IrWireNames.Of(unknown.Reason)})",
     };

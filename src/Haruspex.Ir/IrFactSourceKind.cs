@@ -21,4 +21,11 @@ public enum IrFactSourceKind
     /// is the expression's (or the literal's) location.
     /// </summary>
     Expression,
+
+    /// <summary>
+    /// A declaration in the config file (0.28): a JSON Schema's <c>enum</c>, <c>const</c> or <c>minLength</c>, in a column declared
+    /// to hold JSON of the schema, or in a procedure's declared results. The ref names what was declared: the column
+    /// (<c>schema.table.column</c>), or the procedure.
+    /// </summary>
+    Declared,
 }

@@ -18,7 +18,7 @@ public static class IrTypeTree
         ArgumentNullException.ThrowIfNull(type);
         return type switch
         {
-            IrScalar or IrRef or IrImport or IrUnknownType => [],
+            IrScalar or IrRef or IrImport or IrUnknownType or IrAnyJson => [],
             IrArray array => [new IrTypeChild(array.Items, new IrPathItems())],
             IrTuple tuple => tuple.Items.Select((element, i) => new IrTypeChild(element.Type, new IrPathIndex(i))),
             IrRecord record => [new IrTypeChild(record.Values, new IrPathValues())],
@@ -59,7 +59,7 @@ public static class IrTypeTree
         return type switch
         {
             IrRef reference => new IrRef(rename(reference.Name)),
-            IrScalar or IrImport or IrUnknownType => type,
+            IrScalar or IrImport or IrUnknownType or IrAnyJson => type,
             IrArray array => array with { Items = Renamed(array.Items) },
             IrTuple tuple => new IrTuple([.. tuple.Items.Select(e => e with { Type = Renamed(e.Type) })]),
             IrRecord record => record with { Values = Renamed(record.Values) },

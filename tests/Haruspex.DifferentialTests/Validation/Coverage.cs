@@ -95,7 +95,7 @@ public static class Coverage
                 break;
 
             // Nothing inside them to see: a scalar is seen as its field is, and the rest claim no values.
-            case IrScalar or IrImport or IrJsonText or IrUnknownType:
+            case IrScalar or IrImport or IrJsonText or IrAnyJson or IrUnknownType:
                 break;
         }
     }
@@ -226,7 +226,7 @@ public static class Coverage
                 break;
 
             // No scalar inside them.
-            case IrImport or IrJsonText or IrUnknownType:
+            case IrImport or IrJsonText or IrAnyJson or IrUnknownType:
                 break;
         }
     }

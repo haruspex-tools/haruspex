@@ -11,7 +11,7 @@ namespace Haruspex.Ir;
 /// Only claims are compared: what a reader of the document, or of code generated from it, may rely on. What says where a
 /// claim came from is not a claim, so it is not compared: every location (<c>at</c>), the reasons a value may be null or
 /// absent (only whether there is one is a claim), the sources of facts (<c>from</c>), the package a source was read from and
-/// its hash, an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
+/// its hash (but a declared column's schema files, whose text is the claim: 0.28), an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
 /// the types), and a type's identity and whether it is recursive (both follow from the types). So editing a procedure without
 /// changing what it returns, or rebuilding a DACPAC, changes nothing here. Why: docs/decisions/0050-check-compares-claims-not-files.md.
 /// </para>
@@ -34,6 +34,7 @@ public static class IrComparison
         var changes = new List<IrChange>();
         Source(before, after, changes);
         Folds(before, after, changes);
+        Columns(before, after, changes);
 
         var earlier = before.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
         var later = after.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
@@ -72,6 +73,23 @@ public static class IrComparison
             var now = after.Folds.GetValueOrDefault(name);
             if (was != now)
                 changes.Add(new IrChange(IrChangeKind.FoldChanged, "", "folds" + IrPath.Key(name), IrClaimText.Fold(was), IrClaimText.Fold(now)));
+        }
+    }
+
+    /// <summary>
+    /// The columns declared to hold JSON of a schema (0.28). A declaration is a claim made in a schema file, so a file whose text
+    /// changed is a change though no type the document holds changed: the next value read from the column is held to the new text.
+    /// </summary>
+    private static void Columns(IrDocument before, IrDocument after, List<IrChange> changes)
+    {
+        var earlier = before.Columns.ToDictionary(c => c.Column, StringComparer.Ordinal);
+        var later = after.Columns.ToDictionary(c => c.Column, StringComparer.Ordinal);
+        foreach (var column in earlier.Keys.Union(later.Keys).Order(StringComparer.Ordinal))
+        {
+            var was = earlier.GetValueOrDefault(column);
+            var now = later.GetValueOrDefault(column);
+            if (was != now)
+                changes.Add(new IrChange(IrChangeKind.ColumnDeclarationChanged, "", "columns" + IrPath.Key(column), IrClaimText.Declaration(was), IrClaimText.Declaration(now)));
         }
     }
 
@@ -229,7 +247,7 @@ public static class IrComparison
                 case IrJsonText text:
                     JsonText(path, text, (IrJsonText)now);
                     break;
-                case IrImport:
+                case IrImport or IrAnyJson:
                     if (was != now)
                         Add(IrChangeKind.TypeChanged, path, IrClaimText.Type(was), IrClaimText.Type(now));
                     break;

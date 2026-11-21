@@ -46,7 +46,7 @@ public partial class IrJsonReaderTests
     {
         var e = RefusedWhole(json => json["irVersion"] = IrDocument.CombinedVersion);
 
-        Assert.Equal("$.tableTypes is given in a document of IR 0.24: a document that defines a table type is IR 0.26, or 0.27 when it holds a binary value.", e.Message);
+        Assert.Equal("$.tableTypes is given in a document of IR 0.24: a document that defines a table type is IR 0.26, 0.27 when it holds a binary value, or 0.28 when it declares a column's JSON.", e.Message);
     }
 
     [Fact]

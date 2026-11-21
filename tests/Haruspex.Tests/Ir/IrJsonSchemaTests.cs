@@ -29,6 +29,11 @@ public class IrJsonSchemaTests
         (typeof(IrDocument), nameof(IrDocument.Types), "", "types"),
         (typeof(IrDocument), nameof(IrDocument.Folds), "", "folds"),
         (typeof(IrDocument), nameof(IrDocument.TableTypes), "", "tableTypes"),
+        (typeof(IrDocument), nameof(IrDocument.Columns), "", "columns"),
+        (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Column), "columnDeclaration", "column"),
+        (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Schema), "columnDeclaration", "schema"),
+        (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Pointer), "columnDeclaration", "pointer"),
+        (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Files), "columnDeclaration", "files"),
         (typeof(IrTableType), nameof(IrTableType.Schema), "tableType", "schema"),
         (typeof(IrTableType), nameof(IrTableType.Name), "tableType", "name"),
         (typeof(IrTableType), nameof(IrTableType.Columns), "tableType", "columns"),
@@ -157,6 +162,7 @@ public class IrJsonSchemaTests
         (typeof(IrUnion), nameof(IrUnion.Variants), "union", "variants"),
         (typeof(IrRef), nameof(IrRef.Name), "ref", "ref"),
         (typeof(IrJsonText), nameof(IrJsonText.Content), "jsonText", "content"),
+        (typeof(IrAnyJson), nameof(IrAnyJson.ObjectOrArray), "anyJson", "objectOrArray"),
         (typeof(IrImport), nameof(IrImport.Name), "import", "name"),
         (typeof(IrImport), nameof(IrImport.From), "import", "from"),
         (typeof(IrUnknownType), nameof(IrUnknownType.Reason), "unknownType", "reason"),
@@ -236,7 +242,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]
@@ -259,11 +265,11 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Binary));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Declared));
 
     [Fact]
     public void The_samples_of_each_version_the_reader_reads_pass_the_schema() =>
-        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary], d => AssertValid(IrJsonWriter.Write(d)));
+        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared], d => AssertValid(IrJsonWriter.Write(d)));
 
     /// <summary>Ways to break a binary value, each of which the schema and the reader must both refuse.</summary>
     private static readonly Dictionary<string, Action<JsonObject>> BinaryBreakages = new(StringComparer.Ordinal)

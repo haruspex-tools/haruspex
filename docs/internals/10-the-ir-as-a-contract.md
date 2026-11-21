@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -233,6 +233,14 @@ type, and one that holds none keeps the label the rest of it earns; the 0.27 rea
 the whole document, so the reader must find a binary value wherever one can be (a parameter, a result, a field, a table type's
 column, inside a union or a JSON text's content) before it can say the label is right, which `IrDocumentScalars` does in one place
 ([decision 0081](../decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)).
+
+Version 0.28 adds what a column declared to hold JSON of a schema brings: the declarations themselves (`columns`, each with the
+hash of every schema file it read), a type node for any JSON value (`any-json`), a fact whose source is a declaration, a claim that
+an object reads a declared column, and a key left out whatever its value in a document of one database. A document that says
+none of these keeps its label, so every document written before is still written byte for byte, and the 0.28 reader reads all
+six. The label is checked as 0.27's is, by finding what only a declaration gives wherever it can be (`IrDocumentDeclared`)
+([decision 0093](../decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),
+[decision 0094](../decisions/0094-any-json-is-a-type-of-its-own.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

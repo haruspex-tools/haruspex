@@ -68,7 +68,7 @@ public class IrFieldSourceTests
     {
         var e = Refused(IrSamples.Everything, json => FindOrdersRowField(json, 0)["sides"] = JsonNode.Parse("""{ "candidate": { "presence": "always", "nullable": false } }"""));
 
-        Assert.Equal("$.types.FindOrdersRow.fields[0].sides is given, which only a document combining two databases (IR 0.24 or 0.25) says.", e.Message);
+        Assert.Equal("$.types.FindOrdersRow.fields[0].sides is given, which only a document combining two databases (IR 0.24 or later) says.", e.Message);
     }
 
     [Fact]
