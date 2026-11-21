@@ -10,7 +10,7 @@ namespace Haruspex.DifferentialTests;
 /// <c>MssqlDriverAcceptanceTests</c> parses it with them. The driver recognises a top-level FOR JSON result set by the name
 /// SQL Server gives its one column, joins the rows it is split over into one row, and with <c>parseJSON</c> parses it.
 /// </summary>
-public class MssqlDriverObservationTests(SqlServerFixture server)
+public partial class MssqlDriverObservationTests(SqlServerFixture server)
 {
     /// <summary>The name SQL Server gives the one column of a top-level FOR JSON result set.</summary>
     private const string JsonColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
