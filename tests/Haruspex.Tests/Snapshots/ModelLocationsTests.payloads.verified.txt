@@ -23,7 +23,13 @@ key pay.author unnamed (author_id) at tables/author.sql:4:37
 key pay.book unnamed (book_id) at tables/book.sql:3:38
 key pay.book_tag unnamed (book_id, tag) at tables/book_tag.sql:6:5
 key pay.review unnamed (review_id) at tables/review.sql:3:42
+parameter pay.author_card_rows @first at procedures/author_card_rows.sql:3:39
+parameter pay.author_card_rows @last at procedures/author_card_rows.sql:3:51
+parameter pay.author_cards @first at procedures/author_cards.sql:4:35
+parameter pay.author_cards @last at procedures/author_cards.sql:4:47
 parameter pay.get_author @author_id at procedures/get_author.sql:4:5
+procedure pay.author_card_rows at procedures/author_card_rows.sql:3:1
+procedure pay.author_cards at procedures/author_cards.sql:4:1
 procedure pay.author_documents at procedures/author_documents.sql:2:1
 procedure pay.author_stats at procedures/author_stats.sql:2:1
 procedure pay.get_author at procedures/get_author.sql:3:1

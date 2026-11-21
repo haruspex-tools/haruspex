@@ -27,6 +27,14 @@
     { "name": "review_digest", "procedure": "pay.review_digest" },
     { "name": "review_digest, no reviews", "procedure": "pay.review_digest", "setup": "no reviews" },
     // The text's content claims at least one id when it is not null: one review is that edge.
-    { "name": "review_digest, one review", "procedure": "pay.review_digest", "setup": "one review" }
+    { "name": "review_digest, one review", "procedure": "pay.review_digest", "setup": "one review" },
+    // Every author: books empty and not, about null and not, ids at int's edges.
+    { "name": "author_card_rows", "procedure": "pay.author_card_rows", "parameters": { "@first": -2147483648, "@last": 2147483647 } },
+    { "name": "author_card_rows, none", "procedure": "pay.author_card_rows", "parameters": { "@first": 10, "@last": 20 } },
+    { "name": "author_cards", "procedure": "pay.author_cards", "parameters": { "@first": -2147483648, "@last": 2147483647 } },
+    // No author in the range: the placeholder, with no card, no bio and no books.
+    { "name": "author_cards, none", "procedure": "pay.author_cards", "parameters": { "@first": 10, "@last": 20 } },
+    // No row at all, so no JSON: the result reads as null.
+    { "name": "author_cards, no range", "procedure": "pay.author_cards", "parameters": { "@first": null, "@last": 20 } }
   ]
 }

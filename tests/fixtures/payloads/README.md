@@ -18,3 +18,5 @@ what the edge check shows.
 | `pay.reviews_by_book` | the same, of objects, and a record keyed by a number; `json_arrayagg` of a nullable value whose group is all nulls (`[]`) |
 | `pay.author_documents` | a constructor and a `json` column as rowset columns: JSON text to parse |
 | `pay.review_digest` | `json_arrayagg` and `json_objectagg` without `GROUP BY`, as rowset columns: `NULL` over no rows |
+| `pay.author_card_rows` | JSON as rowset columns for `INSERT … EXEC`: a constructor, one that may be null, and `json_query(coalesce((… FOR JSON PATH), N'[]'))`, never null |
+| `pay.author_cards` | `author_card_rows`' columns collected by `INSERT … EXEC` into a table variable, by position through a column list in another order and under other names, then read with `json_query` into `FOR JSON PATH`; a placeholder row of nulls written after it, when the range has no author, joins with what it carried; no row at all reads as null |

@@ -77,7 +77,9 @@ internal sealed partial class Walker
     /// <c>INSERT … EXEC</c>: the rows of every result set the callee returns go into the table, and none reaches the client
     /// (observed). A result set of another width than the insert's columns fails the statement, even with no rows (213), and
     /// so does a FOR JSON query (13602), both observed, so a successful insert received neither and nothing of them is written.
-    /// Into a permanent table it returns nothing either, unless a trigger it fires may, or it has an OUTPUT.
+    /// Into a permanent table it returns nothing either, unless a trigger it fires may, or it has an OUTPUT. Into a temporary
+    /// table or a table variable, the rows are the callee's columns by position (<see cref="RowsReceived"/>): a column
+    /// <c>SELECT … INTO</c> made joins with them, and a traced column holds the JSON they carry.
     /// </summary>
     private Outcome InsertExecute(InsertStatement insert, FlowState state)
     {
@@ -98,14 +100,26 @@ internal sealed partial class Walker
 
         var called = Call(execute, state, inserting: true);
         if (called.Unknowable is { } why)
-            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, Assigned(execute, Forgotten(state, why, at))));
+        {
+            var forgotten = Assigned(execute, Forgotten(state, why, at));
+            if (written.Direct is { IsVariable: true } variable)
+                return Continue(TableVariableWritten(forgotten, variable, null, null, null, at, $"by a call whose result sets are not known: {why.Detail.TrimEnd('.')}"));
+            return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, forgotten));
+        }
+
         if (called.After is not { } after)
             return Outcome.Ends;
         after = Assigned(execute, after);
         if (written.Direct is not { } target)
             return Continue(Output(insert, spec, null, null, insert.WithCtesAndXmlNamespaces, written, state, Triggered(after, reached, at)));
+
+        // Into a table variable: what its traced columns hold as JSON is what the callee's columns hold, by position.
         if (target.IsVariable)
-            return Continue(TableVariableWritten(after, target, null, null, null, at));
+        {
+            var into = TableVariableTargets(target, spec.Columns);
+            return Continue(TableVariableWritten(after, target, into, into is null ? null : RowsReceived(called.Received, into.Count, target), null, at));
+        }
+
         if (!target.IsTemporary)
             return Continue(Triggered(after, reached, at));
         if (after.Temp(target) is not KnownTable table)
@@ -125,28 +139,58 @@ internal sealed partial class Walker
         if (targets.Any(i => i < 0))
             return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at))));
 
+        return Continue(after.WithTemp(target, Written(table, targets, RowsReceived(called.Received, targets.Count, target), at)));
+    }
+
+    /// <summary>
+    /// The rows <c>INSERT … EXEC</c> puts in <paramref name="target"/> from what the callee returned: every rowset's, by
+    /// position (observed: Insert_exec_maps_the_callees_columns_to_the_targets_by_position), one row for each shape a result
+    /// set may have. A result set of another width than the insert's <paramref name="width"/> columns fails the insert, so a
+    /// successful one never received it.
+    /// </summary>
+    private static List<IReadOnlyList<Value>> RowsReceived(ResultTrack received, int width, LocalName target)
+    {
         var rows = new List<IReadOnlyList<Value>>();
-        foreach (var produced in called.Received.All.Where(p => p.Result.Encoding == IrEncoding.Rowset))
+        foreach (var produced in received.All.Where(p => p.Result.Encoding == IrEncoding.Rowset))
         {
             foreach (var shape in produced.Result.Shape is UnionShape union ? union.Variants : [produced.Result.Shape])
             {
                 switch (shape)
                 {
-                    case ArrayShape { Items: ObjectShape row } when row.Fields.Count == targets.Count:
-                        rows.Add([.. row.Fields.Select(f => Value.Computed(f.Type, f.NullableBecause))]);
+                    case ArrayShape { Items: ObjectShape row } when row.Fields.Count == width:
+                        rows.Add([.. row.Fields.Select((f, n) => Received(f, n, produced.At, target))]);
                         break;
                     case ArrayShape { Items: ObjectShape }:
                         // Of another width: it fails the insert (213), so a successful one never received it.
                         break;
                     default:
                         var unknown = shape as UnknownShape ?? Unsupported(IrUnknownReason.UnsupportedStatement, $"The rows {produced.At} returns into {target} are not of a form modelled.", produced.At);
-                        rows.Add([.. targets.Select(_ => Value.Unknown(unknown))]);
+                        rows.Add([.. Enumerable.Range(0, width).Select(_ => Value.Unknown(unknown))]);
                         break;
                 }
             }
         }
 
-        return Continue(after.WithTemp(target, Written(table, targets, rows, at)));
+        return rows;
+    }
+
+    /// <summary>
+    /// The value a callee's column puts in the row it inserts: its type and why it may be null. JSON text keeps its content,
+    /// which a traced column of the target holds (<see cref="JsonSlot"/>); any other value names the column, for when it is
+    /// read as JSON.
+    /// </summary>
+    /// <param name="field">The callee's column.</param>
+    /// <param name="position">Its position in the result set, from 0.</param>
+    /// <param name="at">The result set.</param>
+    /// <param name="target">The table it goes into.</param>
+    private static Value Received(FieldShape field, int position, SourceLocation at, LocalName target)
+    {
+        var value = Value.Computed(field.Type, field.NullableBecause);
+        if (field.Type is JsonTextShape or UnknownShape)
+            return value;
+        var why = $"{target} receives {field.Name}, column {position + 1} of the result set at {at}, by INSERT … EXEC, and it is not JSON built there.";
+        // A witness only: with keeps every other fact but the digits, which are set again.
+        return value with { JsonWhy = Unsupported(IrUnknownReason.JsonShapeUnknown, why, at), Digits = value.Digits };
     }
 
     /// <summary>

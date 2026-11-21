@@ -476,7 +476,29 @@ it isn't a plain column reference or reads a column that isn't, is one when it r
 in FROM, listed once, and may be one otherwise (a join, a CTE, a column listed twice). When a column may be one, which
 columns an insert without a column list fills is not known, and the table becomes unknown.
 
-`INSERT … EXEC` into a table variable works (`Insert_exec_into_a_table_variable_works`), and changes nothing it may hold.
+`INSERT … EXEC` into a table variable works (`Insert_exec_into_a_table_variable_works`). Its columns are their declarations,
+as for any write, and what its traced columns hold as JSON (below, "JSON built here, traced") is what the callee's columns
+hold, joined over every rowset it may return:
+
+- **By position.** The callee's columns go into the target's in order, or into the column list's, never by name; columns the
+  list leaves out take their default, and without a list an identity column is skipped
+  (`Insert_exec_maps_the_callees_columns_to_the_targets_by_position`).
+- **Text in, text out.** A column of JSON text keeps its content in an `nvarchar(max)` column, which holds it unchanged; a
+  shorter one refuses longer text (8152) and `varchar` loses characters its code page lacks
+  (`Insert_exec_converts_json_to_the_columns_type_as_insert_does`), so neither is traced. Stored, the JSON is text: JSON
+  again only under `json_query` (`Json_inserted_by_insert_exec_is_text_until_json_query_reads_it`). A callee of no rows
+  inserts none, and a null stays null (`Insert_exec_of_no_rows_inserts_none_and_a_null_json_column_stays_null`).
+- **No JSON result is ever inserted.** A FOR JSON result is not cut into rows, however long: it fails the insert (13602), from
+  a procedure, a string or `sp_executesql` alike (`Insert_exec_never_cuts_a_for_json_result_into_rows_it_fails`).
+- **Errors.** Under a caller's `CATCH`, an error in the callee fails the whole statement and keeps none of its rows;
+  uncaught, a `RAISERROR` or `1 / 0` lets the callee go on and its rows are inserted, but the client is handed the error and
+  the call fails; a callee's own `CATCH` keeps the rows sent before the error beside its own
+  (`Insert_exec_whose_callee_fails_inserts_nothing_unless_the_error_lets_it_go_on`). The walk follows each: a failing path is
+  no successful call, and the callee's `CATCH` adds its rows to the results it was entered with.
+- **What isn't followed.** A call whose results are not known (dynamic SQL, another database, no such procedure, an
+  unknown result) makes every traced column's JSON unknown, naming the call; a callee column that is not JSON text names
+  its column and result set.
+
 Into a permanent table the callee is followed the same way, and the insert is a write like any other (below, "DML").
 
 ### What stays unknown
@@ -1756,7 +1778,8 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   of both (so `'[]'` keeps an array's items and only drops its least count); objects with the same keys in the same order, each
   present the same way, join key by key, and records join value by value; scalars of one type keep the facts both prove; anything else is a `union` of both, which is exact. NULL adds
   nothing. A write of a value that may not be JSON built here (a parameter, a stored column, concatenation that is not JSON
-  assembled as text (below), `json_modify`, a literal that is not a JSON document, a default, an `INSERT … EXEC`, a write through a CTE or derived table)
+  assembled as text (below), `json_modify`, a literal that is not a JSON document, a default, an `INSERT … EXEC` of a call not followed or of a column that
+  is not JSON text, a write through a CTE or derived table)
   makes the content unknown, and `json_query` over the place reports `json-shape-unknown` at that write, naming it.
 - **Literals** (`JsonLiterals`). A literal that is valid JSON of an object or array has an exact shape: an array a tuple, keys
   always present, a JSON `null` `null-literal`, strings and numbers their own values (fact source `expression`). Observed
