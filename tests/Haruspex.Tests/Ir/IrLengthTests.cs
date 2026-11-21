@@ -12,11 +12,11 @@ public class IrLengthTests
     private static readonly IrFactSource Type = new(IrFactSourceKind.Type, "t");
 
     [Theory]
-    // A code point is one or two UTF-16 code units (an emoji is a pair, so nchar(4) may hold two), of which a value converted under
-    // an _SC collation may have one fewer: nchar(5) holding two emoji, and nchar(1) nothing.
+    // A code point is one or two UTF-16 code units (an emoji is a pair, so nchar(4) may hold two). A fixed length of code units is a
+    // stored value's: one converted to nchar(n) is at most n and at least n - 1 (SqlTypes in the front end).
     [InlineData(4, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 2)]
-    [InlineData(5, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 2)]
-    [InlineData(1, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 0)]
+    [InlineData(5, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 3)]
+    [InlineData(1, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 1)]
     [InlineData(5, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, 5)]
     [InlineData(5, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, 5)]
     [InlineData(5, IrLengthUnit.Bytes, IrByteEncoding.DoubleByte, 3)]
@@ -30,9 +30,7 @@ public class IrLengthTests
     }
 
     [Theory]
-    // One short, where an _SC collation cuts off a pair that doesn't fit.
-    [InlineData(4, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 3)]
-    [InlineData(1, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 0)]
+    [InlineData(4, IrLengthUnit.Utf16, IrByteEncoding.Unknown, 4)]
     // n code points are at least n code units.
     [InlineData(5, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, 5)]
     [InlineData(5, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, 5)]

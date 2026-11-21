@@ -3,9 +3,9 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/ticket_rows.sql": "0f8375d9312ebc8b52249259a90408907d38c26a04651959f5b1dd5b6cd3aca0",
+      "procedures/ticket_rows.sql": "8bcc5257702192a2c1657bf0208379599ad8dd2824f33c27c9ef92b91230dd93",
       "tables/owner.sql": "93e543a366f6bec9573d17b0f7fd547d4a8652c6cf25e459a3673ff3754c3a99",
-      "tables/ticket.sql": "52bbff4157b63a697ee5773a9876a307c0b4ca003c5ec29cf6f51c1a7e7dc28c"
+      "tables/ticket.sql": "84d19fdd552f5d07972ebafdece5ede73c12b0b363b97d4efbe2eb5f56e6afca"
     }
   },
   "objects": [
@@ -618,6 +618,30 @@
           ]
         },
         {
+          "name": "fill_utf8",
+          "type": {
+            "kind": "string",
+            "sql": "char(8)",
+            "length": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "utf-8",
+              "from": {
+                "type": "char(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "chk.ticket.fill_utf8",
+              "sql": "char(8)",
+              "at": "tables/ticket.sql:29:5"
+            }
+          ]
+        },
+        {
           "name": "muted",
           "type": {
             "kind": "number",
@@ -650,7 +674,7 @@
             {
               "column": "chk.ticket.muted",
               "sql": "int",
-              "at": "tables/ticket.sql:28:5"
+              "at": "tables/ticket.sql:30:5"
             }
           ]
         },
@@ -687,7 +711,7 @@
             {
               "column": "chk.ticket.restored",
               "sql": "int",
-              "at": "tables/ticket.sql:31:5"
+              "at": "tables/ticket.sql:33:5"
             }
           ]
         },
@@ -724,7 +748,7 @@
             {
               "column": "chk.ticket.late",
               "sql": "int",
-              "at": "tables/ticket.sql:33:5"
+              "at": "tables/ticket.sql:35:5"
             }
           ]
         },
@@ -752,7 +776,7 @@
           "nullableBecause": [
             {
               "rule": "unmatched-row",
-              "at": "procedures/ticket_rows.sql:28:11"
+              "at": "procedures/ticket_rows.sql:29:11"
             }
           ],
           "from": [
@@ -793,7 +817,7 @@
           "nullableBecause": [
             {
               "rule": "unmatched-row",
-              "at": "procedures/ticket_rows.sql:28:11"
+              "at": "procedures/ticket_rows.sql:29:11"
             }
           ],
           "from": [

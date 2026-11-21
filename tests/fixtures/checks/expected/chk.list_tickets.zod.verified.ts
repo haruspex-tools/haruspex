@@ -53,13 +53,12 @@ export const ListTicketsOwnerSchema = z.object({
   name: z.string().min(1).max(20).optional(),
   /**
    * One of "A", "B", as the database compares strings.
-   * nchar(1) is 1 UTF-16 code unit, or 0 UTF-16 code units where an _SC collation cuts off a pair, which is 0 to 1 code points.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain chk.list_tickets owner.grade
    */
-  grade: z.string().max(1).optional(),
+  grade: z.string().length(1).optional(),
 })
 export type ListTicketsOwner = z.infer<typeof ListTicketsOwnerSchema>
 
@@ -67,7 +66,7 @@ export const ListTicketsEventSchema = z.object({
   id: z.int32(),
   /**
    * One of "open", "note", "done", as the database compares strings.
-   * nchar(4) is 4 UTF-16 code units, or 3 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 4 code points.
+   * nchar(4) is exactly 4 UTF-16 code units, which is 2 to 4 code points.
    */
   kind: z.string().min(2).max(4),
   minutes: z.int().gt(0).max(32767).optional(),
@@ -94,6 +93,8 @@ export const ListTicketsRowSchema = z.object({
   tagUtf8: z.string().max(12).optional(),
   /** char(4) counts bytes and UTF-8 takes up to four a character, so the length is at most 4. */
   padUtf8: z.string().max(4).optional(),
+  /** char(8) pads to 8 bytes and UTF-8 takes up to four a character, so the length is 2 to 8 code points. */
+  fillUtf8: z.string().min(2).max(8),
   muted: z.int32().optional(),
   restored: z.int32().gt(0).optional(),
   late: z.int32().optional(),

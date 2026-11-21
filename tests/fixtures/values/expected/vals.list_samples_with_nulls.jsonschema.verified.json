@@ -258,12 +258,12 @@
           "maxLength": 5
         },
         "ncode": {
-          "description": "SQL type nchar(5). nchar(5) is 5 UTF-16 code units, or 4 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 5 code points. May be null: nullable-column (vals.sample.ncode).",
+          "description": "SQL type nchar(5). nchar(5) is exactly 5 UTF-16 code units, which is 3 to 5 code points. May be null: nullable-column (vals.sample.ncode).",
           "type": [
             "string",
             "null"
           ],
-          "minLength": 2,
+          "minLength": 3,
           "maxLength": 5
         },
         "vcode": {

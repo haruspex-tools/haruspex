@@ -528,7 +528,7 @@ null.
 
 | Facet | Meaning |
 |---|---|
-| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
+| `maxLength` / `length` | at most, or exactly (padded, as a stored `nchar(n)` or `char(n)` is), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
@@ -538,9 +538,10 @@ A length is the server's, in its unit. A target that counts another, as Zod and 
 `IrLength.FewestCodePoints` and `IrMinLength.FewestCodePoints`: a maximum of any unit is a maximum of code points, since a code point
 takes at least one of each, but a fixed length or a minimum is a minimum only of the fewest code points a value of it can hold
 (an `nchar(4)` holding two emoji is two). `IrLength.FewestUtf16Units` gives the same for a minimum in UTF-16 code units, which is
-how a fixed length becomes a minimum when two documents are combined. A fixed length of UTF-16 code units is exact for a stored
-value, but a value converted to `nchar(n)` under a supplementary-character (`_SC`) collation is cut before a pair that doesn't fit
-and not padded, so it may be one code unit short: the minima count that.
+how a fixed length becomes a minimum when two documents are combined. A value converted to `nchar(n)` rather than stored, by
+`CAST`, a variable or a parameter read in the body, is `maxLength` n and `minLength` n - 1: under a supplementary-character (`_SC`)
+collation a conversion cuts a value before a pair that doesn't fit and doesn't pad it
+([decision 0095](../../docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)).
 
 Every count (a length, `digits`, `minItems`, `maxItems`) is a whole number from 0 to 2,147,483,647.
 

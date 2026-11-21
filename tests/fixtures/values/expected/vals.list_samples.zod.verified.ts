@@ -47,8 +47,8 @@ export const ListSamplesRowSchema = z.object({
   guid: z.guid().optional(),
   /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).optional(),
-  /** nchar(5) is 5 UTF-16 code units, or 4 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 5 code points. */
-  ncode: z.string().min(2).max(5).optional(),
+  /** nchar(5) is exactly 5 UTF-16 code units, which is 3 to 5 code points. */
+  ncode: z.string().min(3).max(5).optional(),
   /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   vcode: z.string().max(5).optional(),
   body: z.string().optional(),

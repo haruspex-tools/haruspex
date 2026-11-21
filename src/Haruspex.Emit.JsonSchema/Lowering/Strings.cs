@@ -61,8 +61,6 @@ internal static class Strings
         return schema.With(Keyword.MinLength, fewest > 0 ? fewest : null).With(Keyword.MaxLength, facets?.Length?.Value).Noted(notes);
     }
 
-    private static string CodeUnits(int count) => count == 1 ? "1 UTF-16 code unit" : $"{count.ToString(CultureInfo.InvariantCulture)} UTF-16 code units";
-
     private static string CodePoints(int count) => count == 1 ? "1 code point" : $"{count.ToString(CultureInfo.InvariantCulture)} code points";
 
     /// <summary>
@@ -81,7 +79,7 @@ internal static class Strings
         if (length.Unit == IrLengthUnit.Utf16)
         {
             return length.IsFixed
-                ? new SchemaNote($"{sql} is {CodeUnits(length.Value)}, or {CodeUnits(length.FewestUtf16Units)} where an _SC collation cuts off a pair, which is {fewest} to {length.Value} code points.", JsonSchemaCaveat.CodePoints)
+                ? new SchemaNote($"{sql} is exactly {length.Value} UTF-16 code units, which is {fewest} to {length.Value} code points.", JsonSchemaCaveat.CodePoints)
                 : null;
         }
 

@@ -3,8 +3,8 @@ namespace Haruspex.Ir;
 /// <summary>A string's length.</summary>
 /// <param name="Value">The maximum, or the fixed length.</param>
 /// <param name="IsFixed">
-/// Whether every value has exactly this length (padded), rather than at most it; for UTF-16 code units, every value stored, since
-/// one converted under a supplementary-character collation may be one short (<see cref="FewestUtf16Units"/>).
+/// Whether every value has exactly this length (padded), rather than at most it. A stored <c>nchar(n)</c> is; one converted to
+/// <c>nchar(n)</c> may be a code unit short, and the SQL Server front end says at most n and at least n - 1 for it.
 /// </param>
 /// <param name="Unit">What <paramref name="Value"/> counts.</param>
 /// <param name="Encoding">
@@ -24,26 +24,18 @@ public sealed record IrLength(int Value, bool IsFixed, IrLengthUnit Unit, IrByte
 {
     /// <summary>
     /// The fewest code points a value of a fixed length holds, which a target counting code points (JSON Schema's <c>minLength</c>,
-    /// Zod's <c>.min</c>) may claim; 0 for a maximum. A code point is at most four bytes of UTF-8 or two of a double-byte code page,
-    /// and a value cut short to a fixed length in bytes is cut between characters and padded, so it is the length divided by that,
-    /// rounded up. A fixed length of UTF-16 code units holds at least <see cref="FewestUtf16Units"/> of them, of which a code point
-    /// takes at most two, so <c>n / 2</c> rounded down: an <c>nchar(4)</c> holding two emoji is two code points, and an
-    /// <c>nchar(1)</c> may be empty.
+    /// Zod's <c>.min</c>) may claim; 0 for a maximum. A code point is at most two UTF-16 code units, four bytes of UTF-8 or two of a
+    /// double-byte code page, and a value cut short to a fixed length in bytes is cut between characters and padded, so it is the
+    /// length divided by that, rounded up: an <c>nchar(4)</c> holding two emoji is two code points.
     /// </summary>
-    public int FewestCodePoints => !IsFixed ? 0
-        : Unit == IrLengthUnit.Utf16 ? Ceiling(FewestUtf16Units, 2)
-        : Ceiling(Value, MostPerCodePoint);
+    public int FewestCodePoints => IsFixed ? Ceiling(Value, MostPerCodePoint) : 0;
 
     /// <summary>
     /// The fewest UTF-16 code units a value of a fixed length holds, which <see cref="IrMinLength"/> counts; 0 for a maximum. A
-    /// fixed length of UTF-16 code units is one fewer than itself: a value converted to <c>nchar(n)</c> under a
-    /// supplementary-character (<c>_SC</c>) collation is cut before a pair that doesn't fit, and not padded, though a stored one is
-    /// always <c>n</c>. A code unit is at most three bytes of UTF-8 (a character of the Basic Multilingual Plane; one outside it is
-    /// four bytes and two units) or two of a double-byte code page, and <c>n</c> code points are at least <c>n</c> code units.
+    /// code unit is at most three bytes of UTF-8 (a character of the Basic Multilingual Plane; one outside it is four bytes and two
+    /// units) or two of a double-byte code page, and <c>n</c> code points are at least <c>n</c> code units.
     /// </summary>
-    public int FewestUtf16Units => !IsFixed ? 0
-        : Unit == IrLengthUnit.Utf16 ? Math.Max(0, Value - 1)
-        : Ceiling(Value, MostPerUtf16Unit);
+    public int FewestUtf16Units => IsFixed ? Ceiling(Value, MostPerUtf16Unit) : 0;
 
     private int MostPerCodePoint => (Unit, Encoding) switch
     {

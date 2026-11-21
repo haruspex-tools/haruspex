@@ -6,6 +6,7 @@ export const ticket: ListTicketsRow = {
   code: 'ABCDEFGH',
   status: 'open',
   title: 'A title',
+  fillUtf8: '        ',
 }
 
 // An exact set of numbers (CHECK level = 1 OR level = 2 OR level = 4) is a union of literals...
@@ -46,6 +47,7 @@ export const row: TicketRowsRow = {
   sigil: null,
   tag_utf8: null,
   pad_utf8: null,
+  fill_utf8: '        ',
   muted: null,
   restored: null,
   late: null,

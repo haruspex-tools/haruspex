@@ -158,10 +158,10 @@ public partial class IrCombinationTests
     }
 
     [Fact]
-    public void A_fixed_length_in_utf_16_code_units_is_a_minimum_of_one_fewer()
+    public void A_fixed_length_in_utf_16_code_units_is_a_minimum_of_as_many()
     {
-        // An nchar(4) value converted under an _SC collation may be cut before a pair, to 3 code units (observed in the differential
-        // tests' A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points).
+        // A stored nchar(4) is always 4 code units (observed in the differential tests'
+        // A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points).
         const string Codes = "CREATE TABLE shop.codes (id int NOT NULL PRIMARY KEY, code nchar(4) NOT NULL);";
         const string List = "CREATE PROCEDURE shop.list_codes AS SELECT c.code FROM shop.codes AS c;";
         var baseline = Infer(List, Codes);
@@ -169,7 +169,7 @@ public partial class IrCombinationTests
 
         var combined = Combine(baseline, candidate);
 
-        Assert.Equal(3, ((IrScalar)Field(combined.Document, "shop.list_codes", "code").Type).Facets!.MinLength!.Value);
+        Assert.Equal(4, ((IrScalar)Field(combined.Document, "shop.list_codes", "code").Type).Facets!.MinLength!.Value);
         FitsBoth(combined, baseline, candidate);
     }
 

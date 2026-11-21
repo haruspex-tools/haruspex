@@ -256,13 +256,13 @@ internal sealed partial class Typer
 
     /// <summary>
     /// The type an OPENJSON WITH column of <paramref name="declared"/> gives: an <c>nchar(n)</c> is not padded, so it is at most n,
-    /// not exactly n, where a <c>char(n)</c> is (observed: Openjson_with_does_not_pad_nchar_but_pads_char). A
+    /// with no least length, where a <c>char(n)</c> is exactly n (observed: Openjson_with_does_not_pad_nchar_but_pads_char). A
     /// value that is already n long, as an <c>nchar(n)</c> column through FOR JSON is, keeps its fixed length through the
     /// identity conversion (<see cref="Converted"/>).
     /// </summary>
     internal static Shape Unpadded(Shape declared) =>
-        declared is ScalarShape { Type.Facets: { Length: { IsFixed: true } length } facets, BuiltIn.Type: var type } scalar && type == BuiltInType.NChar
-            ? scalar.WithFacets(facets with { Length = length with { IsFixed = false } })
+        declared is ScalarShape { Type.Facets: { Length: { } length } facets, BuiltIn.Type: var type } scalar && type == BuiltInType.NChar
+            ? scalar.WithFacets(facets with { Length = length with { IsFixed = false }, MinLength = null })
             : declared;
 
     /// <summary>

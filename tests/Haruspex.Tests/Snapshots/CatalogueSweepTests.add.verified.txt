@@ -616,7 +616,7 @@ c3 + f25 -> unknown unsupported-expression: c3 + f25: arithmetic on these types 
 c3 + c3 -> char(6) string {length=6}
 c3 + v10 -> varchar(13) string {length<=13}
 c3 + vx -> varchar(max) string
-c3 + nc3 -> nchar(6) string {length=6}
+c3 + nc3 -> nchar(6) string {length<=6}
 c3 + nv10 -> nvarchar(13) string {length<=13}
 c3 + nvx -> nvarchar(max) string
 c3 + dt -> unknown unsupported-expression: c3 + dt: arithmetic on these types is not modelled yet.
@@ -733,10 +733,10 @@ nc3 + f -> unknown unsupported-expression: nc3 + f: arithmetic on these types is
 nc3 + r -> unknown unsupported-expression: nc3 + r: arithmetic on these types is not modelled yet.
 nc3 + f24 -> unknown unsupported-expression: nc3 + f24: arithmetic on these types is not modelled yet.
 nc3 + f25 -> unknown unsupported-expression: nc3 + f25: arithmetic on these types is not modelled yet.
-nc3 + c3 -> nchar(6) string {length=6}
+nc3 + c3 -> nchar(6) string {length<=6}
 nc3 + v10 -> nvarchar(13) string {length<=13}
 nc3 + vx -> nvarchar(max) string
-nc3 + nc3 -> nchar(6) string {length=6}
+nc3 + nc3 -> nchar(6) string {length<=6}
 nc3 + nv10 -> nvarchar(13) string {length<=13}
 nc3 + nvx -> nvarchar(max) string
 nc3 + dt -> unknown unsupported-expression: nc3 + dt: arithmetic on these types is not modelled yet.

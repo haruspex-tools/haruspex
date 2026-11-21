@@ -50,12 +50,14 @@ public class ZodFacetsTests
 
     [Theory]
     [InlineData("nvarchar(40)", 40, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().max(40)")]
-    // Zod counts code points, and a pair of UTF-16 code units is one; a value converted under an _SC collation is cut before a pair
-    // that doesn't fit, one code unit short and unpadded. So nchar(5) holds 2 to 5 code points, and nchar(1) may be empty (observed:
+    // Zod counts code points, and a pair of UTF-16 code units is one, so a stored nchar(5) holds 3 to 5 of them (observed:
     // A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points).
-    [InlineData("nchar(5)", 5, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().min(2).max(5) // nchar(5) is 5 UTF-16 code units, or 4 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 5 code points.")]
-    [InlineData("nchar(4)", 4, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().min(2).max(4) // nchar(4) is 4 UTF-16 code units, or 3 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 4 code points.")]
-    [InlineData("nchar(1)", 1, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().max(1) // nchar(1) is 1 UTF-16 code unit, or 0 UTF-16 code units where an _SC collation cuts off a pair, which is 0 to 1 code points.")]
+    [InlineData("nchar(5)", 5, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().min(3).max(5) // nchar(5) is exactly 5 UTF-16 code units, which is 3 to 5 code points.")]
+    [InlineData("nchar(4)", 4, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().min(2).max(4) // nchar(4) is exactly 4 UTF-16 code units, which is 2 to 4 code points.")]
+    // One code unit is one code point, a lone surrogate too.
+    [InlineData("nchar(1)", 1, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().length(1)")]
+    // Converted to nchar(5), a value may be one code unit short, which the front end says as at most 5 and at least 4.
+    [InlineData("nchar(5)", 5, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().max(5)")]
     // In a single-byte collation a byte is a character, so varchar and char are exact, and need no note.
     [InlineData("varchar(5)", 5, false, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().max(5)")]
     [InlineData("char(5)", 5, true, IrLengthUnit.Bytes, IrByteEncoding.SingleByte, "z.string().length(5)")]
@@ -217,6 +219,13 @@ public class ZodFacetsTests
         // A number written into JSON in the SQL's text (json_query('[2024]')), or a bit converted to text: SQL Server hands the text
         // on unchanged, so JSON.parse reads it and the literal here as one decimal, and so one double.
         Assert.Equal("z.literal([0, 2024])", Json(new IrScalar(IrScalarKind.Number, null, null, new IrFacets(Values: Numbers("0", "2024")))));
+
+    [Fact]
+    public void A_set_of_numbers_of_no_format_stays_a_number_in_a_row() =>
+        // In a row a number is the driver's, not text JSON.parse reads, so its literal is not shown to be the same double (a real
+        // arrives as its single-precision value widened, 0.10000000149011612 for 0.1). A number of no format arrives only inside
+        // JSON today; were one to reach a row, the check stays the plain number.
+        Assert.Equal("z.number()", Rows(new IrScalar(IrScalarKind.Number, null, null, new IrFacets(Values: Numbers("0", "2024")))));
 
     [Fact]
     public void A_set_of_floats_stays_a_number_since_for_json_writes_sixteen_digits() =>

@@ -13,9 +13,9 @@
           "maximum": 999999.99
         },
         "unit": {
-          "description": "SQL type nchar(3). nchar(3) is 3 UTF-16 code units, or 2 UTF-16 code units where an _SC collation cuts off a pair, which is 1 to 3 code points.",
+          "description": "SQL type nchar(3). nchar(3) is exactly 3 UTF-16 code units, which is 2 to 3 code points.",
           "type": "string",
-          "minLength": 1,
+          "minLength": 2,
           "maxLength": 3
         },
         "product": {

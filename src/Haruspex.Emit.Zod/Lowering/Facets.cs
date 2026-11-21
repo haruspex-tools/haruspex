@@ -110,7 +110,7 @@ internal static class Facets
         if (length.Unit == IrLengthUnit.Utf16)
         {
             return length.IsFixed
-                ? new ZodNote($"{sql} is {CodeUnits(length.Value)}, or {CodeUnits(length.FewestUtf16Units)} where an _SC collation cuts off a pair, which is {length.FewestCodePoints} to {length.Value} code points.", ZodCaveat.CodePoints)
+                ? new ZodNote($"{sql} is exactly {length.Value} UTF-16 code units, which is {length.FewestCodePoints} to {length.Value} code points.", ZodCaveat.CodePoints)
                 : null;
         }
 
@@ -126,8 +126,6 @@ internal static class Facets
         var range = length.IsFixed ? $"{length.FewestCodePoints} to {length.Value} code points" : $"at most {length.Value}";
         return new ZodNote($"{counts} and {why}, so the length is {range}.", ZodCaveat.ByteLengths);
     }
-
-    private static string CodeUnits(int count) => count == 1 ? "1 UTF-16 code unit" : $"{Count(count).Value} UTF-16 code units";
 
     private static string CodePoints(int count) => count == 1 ? "1 code point" : $"{Count(count).Value} code points";
 

@@ -26,7 +26,7 @@ internal static class SqlTypes
     /// </summary>
     public static Shape ToConvertedShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
-            ? ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true)
+            ? Converted(ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true))
             : Unsupported(type, at);
 
     /// <summary>
@@ -53,8 +53,29 @@ internal static class SqlTypes
     public static Shape ToConvertedShape(ScalarType type, SourceLocation at)
     {
         var resolved = ResolvedType.Of(type);
-        return ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true);
+        return Converted(ToShape(SchemaRules.TypeFacts(resolved, collation: null), resolved, at, withFacets: true));
     }
+
+    /// <summary>
+    /// A value converted to <c>nchar(n)</c> rather than stored as one: at most n UTF-16 code units and at least n - 1, not exactly n.
+    /// Under a supplementary-character (<c>_SC</c>) collation, the value's or the database's, a conversion cuts a value before a
+    /// surrogate pair that doesn't fit and doesn't pad it, so <c>nchar(3)</c> of two emoji is one, and <c>nchar(1)</c> of one is
+    /// empty; a stored <c>nchar(n)</c> is always n (observed:
+    /// <c>A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points</c>). A procedure's
+    /// parameter keeps its fixed length (<see cref="ToParameterShape"/>), which is what a client sends and binds; a read of it in
+    /// the body is converted. A <c>char(n)</c> conversion is cut between characters and padded, so it stays fixed. Why:
+    /// docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md.
+    /// </summary>
+    private static Shape Converted(Shape shape) =>
+        shape is ScalarShape { Type.Facets: { Length: { IsFixed: true, Unit: IrLengthUnit.Utf16 } length } facets } scalar
+            ? scalar.WithFacets(facets with
+            {
+                Length = length with { IsFixed = false },
+                MinLength = length.Value > 1 && (facets.MinLength is null || facets.MinLength.Value < length.Value - 1)
+                    ? new IrMinLength(length.Value - 1, length.From)
+                    : facets.MinLength,
+            })
+            : shape;
 
     /// <summary>
     /// The built-in types inference gives a value of, and what each is in the IR. A type not listed reaches the IR as unknown

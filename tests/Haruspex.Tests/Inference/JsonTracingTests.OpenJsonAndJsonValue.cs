@@ -59,7 +59,10 @@ public partial class JsonTracingTests
             CROSS APPLY OPENJSON(N'[{"v":"ab","w":""}]') WITH (v nchar(4), w nchar) AS d;
             """);
 
-        Assert.True(Assert.IsType<IrScalar>(Field(doc, "fixed").Type).Facets!.Length!.IsFixed);
+        // Read back as its own type it keeps what the CAST gave it: at most 8 and at least 7 code units, since a conversion under
+        // a supplementary-character collation may cut a pair off (SqlTypes.Converted).
+        var kept = Assert.IsType<IrScalar>(Field(doc, "fixed").Type).Facets!;
+        Assert.Equal((8, false, 7), (kept.Length!.Value, kept.Length.IsFixed, kept.MinLength!.Value));
         Assert.False(Assert.IsType<IrScalar>(Field(doc, "colour").Type).Facets!.Length!.IsFixed);
         Assert.False(Assert.IsType<IrScalar>(Field(doc, "v").Type).Facets!.Length!.IsFixed);
 

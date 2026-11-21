@@ -25,6 +25,8 @@ CREATE TABLE chk.ticket
     sigil       varchar(6)     COLLATE Latin1_General_100_BIN2 NULL CONSTRAINT ck_ticket_sigil CHECK (sigil IN ('a.b', 'c+d', '(x) ')),
     tag_utf8    varchar(12)    COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL,
     pad_utf8    char(4)        COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL,
+    -- Stored, so padded to 8 bytes: two emoji fill it, which is 2 code points.
+    fill_utf8   char(8)        COLLATE Latin1_General_100_CI_AS_SC_UTF8 NOT NULL CONSTRAINT df_ticket_fill DEFAULT '',
     muted       int            NULL CONSTRAINT ck_ticket_muted CHECK (muted > 0),
     replicated  int            NULL CONSTRAINT ck_ticket_replicated CHECK NOT FOR REPLICATION (replicated > 0),
     -- Disabled and then validated again by ticket_restored.sql, so trusted.

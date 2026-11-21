@@ -21,8 +21,8 @@ export type GetComponentsNodeProduct = z.infer<typeof GetComponentsNodeProductSc
 
 export const GetComponentsNodeSchema = z.object({
   quantity: z.number().min(1).max(999999.99).multipleOf(1e-2),
-  /** nchar(3) is 3 UTF-16 code units, or 2 UTF-16 code units where an _SC collation cuts off a pair, which is 1 to 3 code points. */
-  unit: z.string().min(1).max(3),
+  /** nchar(3) is exactly 3 UTF-16 code units, which is 2 to 3 code points. */
+  unit: z.string().min(2).max(3),
   product: GetComponentsNodeProductSchema,
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).

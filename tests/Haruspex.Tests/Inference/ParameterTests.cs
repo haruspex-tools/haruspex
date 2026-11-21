@@ -31,6 +31,19 @@ public partial class ParameterTests
     }
 
     [Fact]
+    public void An_nchar_parameter_is_sent_as_its_fixed_length_but_read_in_the_body_as_at_least_one_fewer()
+    {
+        // What a caller sends is checked against nchar(3) and bound as NChar(3); inside the body the value was converted, which
+        // under a supplementary-character collation may leave 2 code units.
+        var doc = InferProcedure.Infer("dbo.p", ("p.sql", "CREATE PROCEDURE dbo.p @code nchar(3) AS SELECT @code AS code;"));
+        var sent = Facets(Assert.Single(doc.Objects[0].Parameters)).Length!;
+        var read = Assert.IsType<IrScalar>(IrNavigation.Field(doc, "code").Type).Facets!;
+
+        Assert.Equal((3, true), (sent.Value, sent.IsFixed));
+        Assert.Equal((3, false, 2), (read.Length!.Value, read.Length.IsFixed, read.MinLength!.Value));
+    }
+
+    [Fact]
     public void A_char_parameter_keeps_its_fixed_length_in_bytes()
     {
         var length = Facets(Parameter("@code char(3)")).Length!;

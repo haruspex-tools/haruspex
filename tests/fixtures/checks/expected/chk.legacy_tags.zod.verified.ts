@@ -10,7 +10,7 @@ export const LegacyTagsRowSchema = z.object({
   id: z.int32(),
   code: z.string().max(4).nullable(),
   kept: z.string().length(4),
-  /** nchar(4) is 4 UTF-16 code units, or 3 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 4 code points. */
+  /** nchar(4) is exactly 4 UTF-16 code units, which is 2 to 4 code points. */
   wide: z.string().min(2).max(4).nullable(),
   stamp: z.instanceof(Buffer).check(z.maxLength(4)).nullable(),
 })

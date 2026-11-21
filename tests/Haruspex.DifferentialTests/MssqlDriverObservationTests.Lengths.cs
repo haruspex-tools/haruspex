@@ -102,8 +102,8 @@ public partial class MssqlDriverObservationTests
 
         // A value converted to nchar(n) under a supplementary-character collation (the value's own, here, or the database's) is
         // cut before a pair that doesn't fit, and not padded: n - 1 code units, and nchar(1) of an emoji is empty. A stored
-        // nchar(n) is always n (above). So a fixed length of n code units holds at least n - 1 of them, and half that, rounded up,
-        // in code points.
+        // nchar(n) is always n (above). So a converted nchar(n) is at most n code units and at least n - 1 (SqlTypes.Converted), and a
+        // stored one exactly n.
         var converted = await MssqlDriver.RunAsync(
             server,
             null,

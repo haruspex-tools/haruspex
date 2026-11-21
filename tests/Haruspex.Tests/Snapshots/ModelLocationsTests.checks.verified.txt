@@ -3,13 +3,13 @@ check chk.owner unnamed at tables/owner.sql:6:38
 check chk.ticket ck_ticket_big at tables/ticket.sql:19:37
 check chk.ticket ck_ticket_discount at tables/ticket.sql:17:28
 check chk.ticket ck_ticket_level at tables/ticket.sql:16:37
-check chk.ticket ck_ticket_muted at tables/ticket.sql:28:37, disabled at tables/ticket_nocheck.sql:3:1
+check chk.ticket ck_ticket_muted at tables/ticket.sql:30:37, disabled at tables/ticket_nocheck.sql:3:1
 check chk.ticket ck_ticket_note at tables/ticket.sql:21:70
-check chk.ticket ck_ticket_pair at tables/ticket.sql:35:5
+check chk.ticket ck_ticket_pair at tables/ticket.sql:37:5
 check chk.ticket ck_ticket_priority at tables/ticket.sql:14:37
-check chk.ticket ck_ticket_rate at tables/ticket.sql:34:5
-check chk.ticket ck_ticket_replicated at tables/ticket.sql:29:37
-check chk.ticket ck_ticket_restored at tables/ticket.sql:31:37
+check chk.ticket ck_ticket_rate at tables/ticket.sql:36:5
+check chk.ticket ck_ticket_replicated at tables/ticket.sql:31:37
+check chk.ticket ck_ticket_restored at tables/ticket.sql:33:37
 check chk.ticket ck_ticket_score at tables/ticket.sql:15:37
 check chk.ticket ck_ticket_sigil at tables/ticket.sql:25:69
 check chk.ticket ck_ticket_status at tables/ticket.sql:13:74
@@ -29,17 +29,18 @@ column chk.ticket.alt_code short_code at tables/ticket.sql:12:5
 column chk.ticket.big bigint at tables/ticket.sql:19:5
 column chk.ticket.code short_code at tables/ticket.sql:11:5
 column chk.ticket.discount pct at tables/ticket.sql:17:5
-column chk.ticket.late int at tables/ticket.sql:33:5
+column chk.ticket.fill_utf8 char(8) at tables/ticket.sql:29:5
+column chk.ticket.late int at tables/ticket.sql:35:5
 column chk.ticket.level smallint at tables/ticket.sql:16:5
-column chk.ticket.muted int at tables/ticket.sql:28:5
+column chk.ticket.muted int at tables/ticket.sql:30:5
 column chk.ticket.note varchar(30) at tables/ticket.sql:21:5
 column chk.ticket.owner_id int at tables/ticket.sql:10:5
 column chk.ticket.pad_utf8 char(4) at tables/ticket.sql:27:5
 column chk.ticket.priority tinyint at tables/ticket.sql:14:5
 column chk.ticket.rate decimal(9,4) at tables/ticket.sql:18:5
 column chk.ticket.region char(2) at tables/ticket.sql:22:5
-column chk.ticket.replicated int at tables/ticket.sql:29:5
-column chk.ticket.restored int at tables/ticket.sql:31:5
+column chk.ticket.replicated int at tables/ticket.sql:31:5
+column chk.ticket.restored int at tables/ticket.sql:33:5
 column chk.ticket.score int at tables/ticket.sql:15:5
 column chk.ticket.sigil varchar(6) at tables/ticket.sql:25:5
 column chk.ticket.status varchar(10) at tables/ticket.sql:13:5
