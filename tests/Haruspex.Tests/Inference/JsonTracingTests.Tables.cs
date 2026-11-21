@@ -46,6 +46,8 @@ public partial class JsonTracingTests
     [InlineData("MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id WHEN NOT MATCHED THEN INSERT (id, lines) VALUES (o.order_id, o.notes);", "o.notes")]
     [InlineData("MERGE @t AS t USING sales.[order] AS o ON t.id = o.order_id WHEN MATCHED THEN UPDATE SET lines = o.notes;", "o.notes")]
     [InlineData("INSERT @t (id, lines) OUTPUT inserted.id, inserted.lines INTO @t (id, lines) VALUES (2, N'x');", "not valid JSON")]
+    // OUTPUT … INTO a table variable writes it as an INSERT would; ScriptDom reads the target as a variable's reference.
+    [InlineData("UPDATE sales.[order] SET total = 0 OUTPUT inserted.order_id, inserted.notes INTO @t;", "inserted.notes")]
     public void A_write_to_a_table_variable_whose_value_is_not_built_json_makes_it_unknown(string write, string named)
     {
         var doc = Infer($"""
@@ -56,6 +58,18 @@ public partial class JsonTracingTests
             """);
 
         Assert.Contains(named, Unknown(doc, "x").Detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Output_into_a_table_variable_puts_the_json_it_writes_there()
+    {
+        var doc = Infer("""
+            DECLARE @t TABLE (id int NOT NULL, lines nvarchar(max) NULL);
+            DELETE FROM sales.[order] OUTPUT deleted.order_id, (SELECT l.sku, l.qty FROM sales.order_line AS l WHERE l.order_id = deleted.order_id FOR JSON PATH) INTO @t;
+            SELECT json_query(t.lines) AS lines FROM @t AS t FOR JSON PATH;
+            """);
+
+        AssertLines(doc, Field(doc, "lines").Type);
     }
 
     [Fact]

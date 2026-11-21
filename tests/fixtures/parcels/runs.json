@@ -5,7 +5,9 @@
     // Any JSON is any JSON, a scalar too, which a plain read returns as it is (json_query would refuse it).
     "a scalar extra": "UPDATE parcels.parcel SET extra = N'\"loose\"' WHERE parcel_id = 4;",
     // FOR JSON over no rows returns no row at all, so each of its results may be absent.
-    "no parcels": "DELETE FROM parcels.parcel;"
+    "no parcels": "DELETE FROM parcels.parcel;",
+    // A run of a procedure that writes, in a session that is rolled back.
+    "writes": "SET NOCOUNT ON;"
   },
 
   "runs": [
@@ -25,6 +27,8 @@
     { "name": "options_of_one, every option", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 1 } },
     { "name": "options_of_one, a null note", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 3 } },
     { "name": "options_of_one, no options", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 4 } },
+    { "name": "claimed_options", "procedure": "parcels.claimed_options", "setup": "writes" },
+    { "name": "claimed_options, no parcels", "procedure": "parcels.claimed_options", "setup": "no parcels" },
     { "name": "routes", "procedure": "parcels.routes" },
     { "name": "staged_routes", "procedure": "parcels.staged_routes" },
     { "name": "staged_routes, no parcels", "procedure": "parcels.staged_routes", "setup": "no parcels" }

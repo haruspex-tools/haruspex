@@ -3,7 +3,7 @@
 An invented courier's parcels, for columns declared in `haruspex.json` to hold JSON of a schema
 ([decision 0093](../../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)): read plainly,
 through `json_query`, nested by `FOR JSON`, and through a temporary table, a view, a variable, a scalar function and
-`INSERT … EXEC`. No part of it comes from a real system.
+`INSERT … EXEC` and `OUTPUT … INTO`. No part of it comes from a real system.
 
 | Column | Declared as |
 |---|---|
@@ -19,6 +19,7 @@ through `json_query`, nested by `FOR JSON`, and through a temporary table, a vie
 | `parcels.staged_options` | through a temporary table |
 | `parcels.options_by_view` | through a view |
 | `parcels.options_of_one` | through a variable, and a scalar function returning the column |
+| `parcels.claimed_options` | through `UPDATE … OUTPUT … INTO` a table variable |
 | `parcels.routes`, `parcels.staged_routes` | through `INSERT … EXEC` |
 
 The seed has options with every key, with only the required ones, with a `null` note, and none at all; routes of one stop and of

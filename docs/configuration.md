@@ -338,7 +338,7 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
 - **`json`** is the schema file, relative to this file, with a JSON Pointer after `#` to a schema inside it when it isn't the
   whole file. A reference in the schema to another file is read relative to the file it is written in.
 - **The declaration is part of the column's type**, so it goes wherever the column's value goes: through views, functions,
-  variables, temporary tables, table variables and `INSERT … EXEC`
+  variables, temporary tables, table variables, `INSERT … EXEC` and `OUTPUT … INTO`
   ([decision 0093](decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). Read plainly, the column is
   a string holding JSON of the schema's type, which the generated code parses and checks (`jsonText(() => …)` in Zod).
   Through `json_query` it is that JSON, live, nested as JSON in `FOR JSON`; and since `json_query` returns only an object or an

@@ -189,6 +189,8 @@ public class DeclaredColumnTests
     [InlineData("function", "CREATE PROCEDURE shop.p @id int AS SELECT json_query(shop.settings_of(@id)) AS settings FOR JSON PATH;")]
     [InlineData("temporary table", "CREATE PROCEDURE shop.p AS CREATE TABLE #t (settings nvarchar(max) NULL); INSERT INTO #t (settings) SELECT o.settings FROM shop.orders AS o; SELECT json_query(t.settings) AS settings FROM #t AS t FOR JSON PATH;")]
     [InlineData("table variable", "CREATE PROCEDURE shop.p AS DECLARE @t TABLE (settings nvarchar(max) NULL); INSERT INTO @t (settings) SELECT o.settings FROM shop.orders AS o; SELECT json_query(t.settings) AS settings FROM @t AS t FOR JSON PATH;")]
+    [InlineData("OUTPUT … INTO a table variable", "CREATE PROCEDURE shop.p AS DECLARE @t TABLE (settings nvarchar(max) NULL); UPDATE TOP (50) o SET total = 0 OUTPUT inserted.settings INTO @t FROM shop.orders AS o; SELECT json_query(t.settings) AS settings FROM @t AS t FOR JSON PATH;")]
+    [InlineData("OUTPUT … INTO a temporary table", "CREATE PROCEDURE shop.p AS CREATE TABLE #t (settings nvarchar(max) NULL); DELETE FROM shop.orders OUTPUT deleted.settings INTO #t; SELECT json_query(t.settings) AS settings FROM #t AS t FOR JSON PATH;")]
     [InlineData("INSERT … EXEC", "CREATE PROCEDURE shop.q AS SELECT o.settings FROM shop.orders AS o;\nGO\nCREATE PROCEDURE shop.p AS CREATE TABLE #t (settings nvarchar(max) NULL); INSERT INTO #t (settings) EXEC shop.q; SELECT json_query(t.settings) AS settings FROM #t AS t FOR JSON PATH;")]
     public void The_declaration_goes_wherever_the_column_s_value_goes(string route, string procedures)
     {

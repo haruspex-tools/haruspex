@@ -120,6 +120,9 @@ public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equatab
         NamedTableReference { SchemaObject: var name } when Binder.Temporary(name) is { } temporary => temporary,
         NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null, BaseIdentifier.Value: var variable } }
             when variable.StartsWith('@') => new LocalName(variable),
+
+        // ScriptDom reads OUTPUT … INTO @t as a variable's reference, not a name.
+        VariableTableReference { Variable.Name: var name } => new LocalName(name),
         _ => null,
     };
 

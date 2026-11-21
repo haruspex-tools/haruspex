@@ -1848,8 +1848,8 @@ declares to hold JSON of a schema holds it whoever wrote it: the declaration com
 ([decision 0017](../../docs/decisions/0017-stored-json-is-typed-only-by-declaration.md),
 [decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). So it is read at
 every read of the column, as the column's SQL type is, and goes wherever the value goes: through a CTE, a view, a function, a
-variable, a temporary table or table variable of `nvarchar(max)`, and `INSERT … EXEC`, by the routes JSON built here takes
-(above).
+variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EXEC`, and a write's `inserted` and `deleted`
+(`OUTPUT`, and `OUTPUT … INTO` a table, which writes it as an INSERT would), by the routes JSON built here takes (above).
 
 | Read | What it is |
 |---|---|

@@ -6,7 +6,7 @@
 (`"columns": { "shop.orders.settings": { "json": "schemas/order-settings.schema.json" } }`). The declaration is part of the column's
 type: inference reads it at every read of the column, as it reads the column's SQL type and its `CHECK` constraints, so it reaches
 every result the column's value reaches, through `json_query`, `FOR JSON`, variables, temporary tables, table variables, views,
-functions and `INSERT … EXEC`. Read plainly, the column is JSON text of the schema's type; through `json_query`, live JSON of it.
+functions, `INSERT … EXEC` and `OUTPUT … INTO`. Read plainly, the column is JSON text of the schema's type; through `json_query`, live JSON of it.
 The IR records each declaration with the hash of every schema file it read (`columns`, IR 0.28), so that a changed schema is a
 change `haruspex check` reports, and lists, under `overrides`, a `column-json` claim on each object that reads a declared column.
 An object of a column's JSON may hold keys its schema doesn't list (it is `open`) unless the schema closes it, since its writer
