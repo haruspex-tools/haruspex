@@ -19,4 +19,10 @@ internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, T
 {
     /// <summary>The table columns its value is read from (<c>Typer.Reads.cs</c>), which the IR writes as the field's <c>from</c>.</summary>
     public EquatableArray<IrSourceColumn> From { get; init; } = [];
+
+    /// <summary>
+    /// Whether its value is JSON the server never folds to a constant (<c>Typer.Folding.cs</c>), which makes a UNION over it
+    /// text in every row.
+    /// </summary>
+    public bool JsonNeverFolded { get; init; }
 }

@@ -112,8 +112,8 @@ public class SetTypeTests
         Assert.Equal("decimal(38,28) precision-loss", Beside("CAST(2 AS int)"));
         Assert.Equal("decimal(38,28) precision-loss", Beside("(SELECT 1)"));
         Assert.Equal("decimal(38,37) precision-loss", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT q.y FROM (SELECT 1 AS y) AS q;")));
-        Assert.StartsWith("unknown: ", Beside("IIF(s.id > 0, 1, 2)"), StringComparison.Ordinal);
-        Assert.Contains("folds", Beside("CASE WHEN s.id > 0 THEN 1 END"), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: ", Beside("IIF(s.id > 0 OR 1 = 1, 1, 2)"), StringComparison.Ordinal);
+        Assert.Contains("folds", Beside("CASE WHEN s.id = NULL THEN 1 END"), StringComparison.Ordinal);
         Assert.Equal("decimal(38,37) precision-loss", Typed(Procedure("SELECT COALESCE(s.frac, CAST(NULL AS int)) AS v FROM dbo.sale AS s;")));
 
         // Beside a decimal(9,2) the scale is 2 however the server folds it: typed, with the most digits.
@@ -121,7 +121,7 @@ public class SetTypeTests
 
         // Decimal arithmetic counts the same digits.
         Assert.Equal("decimal(38,37) arithmetic-overflow precision-loss", Typed(Procedure("SELECT s.frac + CAST(NULL AS int) AS v FROM dbo.sale AS s;")).Replace(" null-literal", "", StringComparison.Ordinal));
-        Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + IIF(s.id > 0, 1, 2) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + IIF(1 = 1, 1, 2) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -168,6 +168,10 @@ internal sealed partial class Typer
         return NullReasons.Join(left, right);
     }
 
+    /// <summary>Whether every operator of the node is UNION or UNION ALL.</summary>
+    private static bool OnlyUnions(SetNode node) =>
+        node.Left is null || (node.Right is not null && !node.Intersect && OnlyUnions(node.Left) && OnlyUnions(node.Right));
+
     /// <summary>
     /// One column of a set operation, from that column of every query (see <see cref="Combine(List{Row}, List{BinaryQueryExpression}, SourceLocation)"/>),
     /// or of a VALUES list, from that column of every row, as a UNION ALL of its rows (<see cref="UnionAll"/>).
@@ -182,25 +186,37 @@ internal sealed partial class Typer
         if (given.FirstOrDefault(c => c.Value.Shape is UnknownShape) is { } unknown)
             return unknown.Value;
 
-        // JSON comes out of a set operation as text, but json_query's stays JSON (observed:
-        // Json_through_a_set_operation_is_text_except_json_query), which a value here does not record.
-        if (given.Any(c => c.Value.IsLiveJson))
-            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "A set operation over JSON is not modelled: whether it comes out as JSON or text depends on how it was made.", at));
-
-        // Text holding JSON stays text; its content is known when every query's is the same.
-        var output = node.Out.Select(i => columns[i]).Where(c => !IsNull(c)).ToList();
-        if (given.All(c => c.Value.Shape is JsonTextShape))
+        // Over JSON a set operation's column has one form for every row. A UNION's is text when one query's JSON is never folded
+        // to a constant, and JSON when every query's is json_query of a constant (observed:
+        // A_union_over_json_built_from_rows_is_text_in_every_row); INTERSECT and EXCEPT keep the first query's form. Text holding
+        // JSON stays text. Either way it is JSON text of what the queries hold, joined (JsonContent).
+        var live = given.Any(c => c.Value.IsLiveJson);
+        if (live && !OnlyUnions(node))
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "Over JSON, INTERSECT and EXCEPT come out in the form of the first query's value (observed), which is not modelled.", at));
+        if (live && !given.Any(c => c.JsonNeverFolded))
         {
-            var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
-            var contents = output.Select(c => ((JsonTextShape)c.Value.Shape).Content).ToList();
-            var same = contents.Count > 0 && contents.All(x => x is not null && x == contents[0]);
-            return new Value(new JsonTextShape(same ? contents[0] : null), because);
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "A UNION over JSON is JSON in every row when every query's JSON is "
+                + "json_query of a constant, and text in every row when one query's is built from a table's rows (observed); here neither is certain.", at));
+        }
+
+        var output = node.Out.Select(i => columns[i]).Where(c => !IsNull(c)).ToList();
+        if (given.Any(c => IsJson(c.Value)))
+        {
+            var (json, content) = JsonContent(output.Select(c => (c.Expression ?? new NullLiteral(), c.Value)));
+            if (json)
+            {
+                var because = SetNulls(node, [.. columns.Select(c => IsNull(c) ? [new IrNullReason(IrNullRule.NullLiteral, c.At.ToString())] : c.Value.NullableBecause)]);
+                return new Value(new JsonTextShape(content), because);
+            }
+
+            if (live)
+                return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, "A UNION of JSON and a value that may not be JSON is not modelled.", at));
         }
 
         // Each query's value is converted to the column's type, which may overflow or round it to fewer places, NULL under the
         // caller's options; that is one more reason that query's value may be null, before INTERSECT and EXCEPT decide whose
         // nulls come out.
-        var combined = Chained([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))]);
+        var combined = Chained([.. given.Select(c => (c.Value, c.Expression ?? new NullLiteral(), c.At))], queries: true);
         if (combined.Type is not { } type)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{column}: {combined.Why}", at));
         var next = 0;

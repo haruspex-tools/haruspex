@@ -1,0 +1,154 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/product_links.sql": "e78436b2e5ab613a70db0e6dd30f57359fff29e9b1ceeb23e0aff46921a15ae0",
+      "tables/product.sql": "e90e6dd5c5c87b2ee65e627b0c25fa575562469024ef3f1ba02dca3fd21bbdc7",
+      "tables/tag.sql": "6fe186645501d2ba04d959a949da1a41a6e6013b482582d09cc2812960c058b1"
+    }
+  },
+  "objects": [
+    {
+      "id": "store.product_links",
+      "name": "ProductLinks",
+      "kind": "procedure",
+      "at": "procedures/product_links.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ProductLinksRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/product_links.sql:6:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ProductLinksLinks": {
+      "kind": "object",
+      "identity": {
+        "procedure": "store.product_links",
+        "path": "results[0][].links<json>[]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "string",
+                "sql": "nvarchar(20)",
+                "maxLength": {
+                  "value": 20,
+                  "unit": "utf16",
+                  "from": {
+                    "type": "nvarchar(20)"
+                  }
+                }
+              },
+              {
+                "kind": "string",
+                "sql": "varchar(9)",
+                "maxLength": {
+                  "value": 9,
+                  "unit": "bytes",
+                  "from": {
+                    "type": "varchar(9)"
+                  }
+                }
+              }
+            ]
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.tag.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/tag.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "ProductLinksRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "store.product_links",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "links",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "ProductLinksLinks"
+              },
+              "minItems": 1
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/product_links.sql:7:39"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

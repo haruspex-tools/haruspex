@@ -1,0 +1,19 @@
+// The runs of the folds fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means.
+{
+  "setups": {
+    "no tags": "DELETE FROM store.tag;",
+    "no products": "DELETE FROM store.tag; DELETE FROM store.product;"
+  },
+
+  "runs": [
+    { "name": "budget_report", "procedure": "store.budget_report" },
+    { "name": "budget_report, no tags", "procedure": "store.budget_report", "setup": "no tags" },
+    { "name": "product_cards", "procedure": "store.product_cards" },
+    { "name": "product_cards, no products", "procedure": "store.product_cards", "setup": "no products" },
+    { "name": "product_refs", "procedure": "store.product_refs" },
+    { "name": "product_refs, no products", "procedure": "store.product_refs", "setup": "no products" },
+    { "name": "product_links", "procedure": "store.product_links" },
+    { "name": "product_links, no products", "procedure": "store.product_links", "setup": "no products" }
+  ]
+}

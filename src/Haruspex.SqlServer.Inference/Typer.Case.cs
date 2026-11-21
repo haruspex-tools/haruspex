@@ -125,10 +125,10 @@ internal sealed partial class Typer
     /// <paramref name="also"/>. When
     /// every other result is a string literal, or every one a number, it is one of them exactly: a literal is varchar or
     /// nvarchar, never padded, so trailing spaces are its own (observed:
-    /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). Live JSON is not modelled: whether a CASE
-    /// over it nests as JSON depends on whether the server folds it to one branch (observed:
-    /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch). Results that are all JSON
-    /// text are JSON text of their join, and where folding does not matter (under json_query, or assigned), so are any.
+    /// A_literal_result_keeps_its_trailing_spaces_and_a_fixed_length_result_pads). Over live JSON it is text unless the server
+    /// folds it to one branch (observed: Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch),
+    /// so it is typed only where it is text in every context (<see cref="NestsAsText"/>). Results that are all JSON text are JSON
+    /// text of their join, and where folding does not matter (under json_query, or assigned), so are any.
     /// </summary>
     private Value Results(TSqlFragment at, List<(ScalarExpression Expression, Value? Value)> results, EquatableArray<IrNullReason> also, ReadScope scope)
     {
@@ -147,9 +147,14 @@ internal sealed partial class Typer
         // Under json_query, or assigned, whether the server folds it no longer matters (ReadScope.FoldingMoot), so what it holds
         // is the join of its results' JSON, literals parsed. Elsewhere, JSON text in every result is JSON text.
         var foldingMoot = ReferenceEquals(at, scope.FoldingMoot);
-        if (given.Any(r => r.Value.IsLiveJson) && !foldingMoot)
-            return NotModelled(at, "whether it nests as JSON depends on whether the server folds it to one result.");
-        if (foldingMoot || given.Any(r => r.Value.Shape is JsonTextShape))
+        if (given.Any(r => r.Value.IsLiveJson) && !foldingMoot && !NestsAsText(at, scope))
+        {
+            return NotModelled(at, "over JSON it nests as JSON where the server folds it to one result, which a condition on anything but a table's "
+                + "column lets it do, and in json_object also where its last result is JSON built here (observed); it is typed only where every "
+                + "condition compares a table's column with a literal and the last result is NULL or a literal.");
+        }
+
+        if (foldingMoot || given.Any(r => IsJson(r.Value)))
         {
             var (json, content) = JsonContent(given.Select(r => (r.Expression, r.Value)));
             if (json)
@@ -173,10 +178,10 @@ internal sealed partial class Typer
             .Append(also)
             .Aggregate((EquatableArray<IrNullReason>)[], NullReasons.Join);
         // A CASE whose condition is constant is folded to one result, an int literal then counting its own digits (observed:
-        // An_int_constant_counts_its_own_digits_beside_a_decimal); which, is not known here.
+        // An_int_constant_counts_its_own_digits_beside_a_decimal); one whose first condition never is, is never folded.
         var value = Typed(type, because, at) with
         {
-            Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType,
+            Digits = type.Type == BuiltInType.Int && !NeverFoldsToOneResult(at) ? IntDigits.Foldable(given.Select(r => r.Value.Digits)) : IntDigits.OfType,
             Pieces = EitherPieces([.. given.Select(r => r.Expression)], [.. given.Select(r => r.Value)], type, first: false),
         };
         return LiteralSet(given.Select(r => r.Expression), type, at) is { } set && value.Shape is ScalarShape scalar
@@ -270,8 +275,9 @@ internal sealed partial class Typer
     /// <summary>
     /// <c>NULLIF(a, b)</c>: a's value, unchanged, or NULL when a and b compare equal (<c>null-when-equal</c>), so a's type and facts; never
     /// equal when b is the NULL literal. An integer literal a is the smallest integer type that holds it (observed:
-    /// Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it). Over JSON it is text
-    /// unless the server folds it (observed, as for CASE), which is not modelled.
+    /// Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it). Over JSON text it is that
+    /// text or NULL; over live JSON it nests as text in FOR JSON but as JSON in json_object, which is not modelled (observed:
+    /// Nullif_over_json_text_is_text_or_null_in_every_context).
     /// </summary>
     private Value NullIf(NullIfExpression nullIf, ReadScope scope)
     {
@@ -280,10 +286,13 @@ internal sealed partial class Typer
         var value = Expression(nullIf.FirstExpression, scope);
         if (Strip(nullIf.SecondExpression) is NullLiteral || value.Shape is UnknownShape)
             return value;
-        if (value.IsLiveJson || value.Shape is JsonTextShape)
-            return NotModelled(nullIf, "whether NULLIF over JSON nests as JSON depends on whether the server folds it.");
+        if (value.IsLiveJson)
+            return NotModelled(nullIf, "over JSON, NULLIF nests as text in FOR JSON but as JSON in json_object (observed), which one shape can't say.");
 
+        // Over JSON text it is that text or NULL, text wherever it nests (observed: Nullif_over_json_text_is_text_or_null_in_every_context).
         var because = NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.NullWhenEqual, At(nullIf).ToString())]);
+        if (value.Shape is JsonTextShape)
+            return new Value(value.Shape, because);
         if (LiteralOf(nullIf.FirstExpression) is ({ } literal and IntegerLiteral, var negative)
             && long.TryParse(literal.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var n))
         {
@@ -292,7 +301,10 @@ internal sealed partial class Typer
             return Typed(ScalarType.Of(smallest), because, nullIf);
         }
 
-        return value with { NullableBecause = because, Digits = IntDigits.Foldable([value.Digits]) };
+        // Folded only when neither argument is never constant (observed:
+        // Only_expressions_over_literals_are_folded_when_a_type_is_derived).
+        var never = NeverConstant(nullIf.FirstExpression) || NeverConstant(nullIf.SecondExpression);
+        return value with { NullableBecause = because, Digits = never ? IntDigits.OfType : IntDigits.Foldable([value.Digits]) };
     }
 
     // ---- COALESCE and ISNULL over JSON ----------------------------------------------------------------------------------
@@ -352,30 +364,32 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// Whether a live JSON argument of COALESCE is one the server cannot fold away: a FOR JSON subquery, perhaps in json_query.
-    /// COALESCE whose first argument is a constant never NULL is folded to it, keeping its JSON (observed:
-    /// Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch); a subquery, even one without
-    /// FROM, is not (Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json).
-    /// </summary>
-    private static bool Unfoldable(ScalarExpression expression) => Strip(expression) switch
-    {
-        ScalarSubquery subquery when ForOf(subquery.QueryExpression) is JsonForClause => true,
-        FunctionCall { CallTarget: null, Parameters: [var inner] } call
-            when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery => Unfoldable(inner),
-        _ => false,
-    };
-
-    /// <summary>
     /// <c>COALESCE</c> with a JSON argument: text wherever it nests, never live JSON (observed:
-    /// Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json), nvarchar(max) in a rowset. Its content is
+    /// Coalesce_over_a_for_json_subquery_nests_as_escaped_text_and_isnull_as_json), nvarchar(max) in a rowset, unless the server
+    /// folds it to a live first argument; so it is typed where that argument is never folded (<see cref="NeverFoldedAsJson"/>),
+    /// where no live argument can be folded to (<see cref="BuiltFromRows"/>), or where folding doesn't matter. Its content is
     /// what its arguments hold (<see cref="JsonContent"/>), which json_query makes live again. Null as any COALESCE: a FOR JSON
     /// subquery before the fallback is read twice, so <c>COALESCE((SELECT … FOR JSON PATH), '[]')</c> keeps the subquery's
     /// <c>empty-subquery</c> (observed: Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not).
     /// </summary>
     private Value CoalesceJson(CoalesceExpression coalesce, List<ScalarExpression> arguments, List<Value> values, EquatableArray<IrNullReason> because, ReadScope scope)
     {
-        if (!ReferenceEquals(coalesce, scope.FoldingMoot) && arguments.Where((a, i) => values[i].IsLiveJson && !Unfoldable(a)).Any())
-            return NotModelled(coalesce, "whether COALESCE over this JSON nests as JSON depends on whether the server folds it.");
+        // The server folds COALESCE only to its first argument, so in FOR JSON it is text wherever that is never folded, or wherever
+        // no live argument can be folded to. In json_object it is JSON too where its last argument is JSON built here (observed:
+        // Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level), as a CASE is (NestsAsText).
+        var live = values.Any(v => v.IsLiveJson);
+        if (live && !ReferenceEquals(coalesce, scope.FoldingMoot) && !LastResultConstant(arguments[^1]))
+        {
+            return NotModelled(coalesce, "over JSON, COALESCE nests as JSON in json_object where its last argument is JSON built here (observed), "
+                + "and as text in FOR JSON, which one shape can't say.");
+        }
+
+        if (live && !ReferenceEquals(coalesce, scope.FoldingMoot) && !NeverFoldedAsJson(arguments[0], scope)
+            && arguments.Where((a, i) => values[i].IsLiveJson && !BuiltFromRows(a, scope)).Any())
+        {
+            return NotModelled(coalesce, "over JSON, COALESCE nests as JSON where the server folds it to its first argument, which it can when that "
+                + "is not JSON built from a table's rows (a FOR JSON or json_arrayagg subquery, json_query of a table's column; observed).");
+        }
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)
             return new Value(new JsonTextShape(content), because);

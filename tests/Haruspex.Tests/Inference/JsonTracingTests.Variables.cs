@@ -168,12 +168,13 @@ public partial class JsonTracingTests
     [Fact]
     public void Coalesce_over_json_nested_in_for_json_stays_unknown_even_on_its_way_to_a_variable()
     {
-        // Embedded in an outer FOR JSON, whether the server folds it decides whether it nests as JSON or as escaped text.
+        // Embedded in an outer FOR JSON, how it nests depends on where it is: text in FOR JSON, but JSON in json_object, where
+        // its last argument is JSON built here (Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level).
         var doc = Infer("""
             DECLARE @x nvarchar(max) = (SELECT COALESCE((SELECT json_arrayagg(l.qty) FROM sales.order_line AS l WHERE l.order_id = @id), json_array()) AS qty FOR JSON PATH);
             SELECT json_query(@x) AS x FOR JSON PATH;
             """);
 
-        Assert.Contains("folds", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
+        Assert.Contains("json_object", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
     }
 }

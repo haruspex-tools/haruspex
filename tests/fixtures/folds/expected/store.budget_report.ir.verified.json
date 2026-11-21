@@ -1,0 +1,276 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/budget_report.sql": "46eab59fd229a2b009375dfc6020a8976ceac37072d7280a4223287d1a2398a3",
+      "tables/product.sql": "e90e6dd5c5c87b2ee65e627b0c25fa575562469024ef3f1ba02dca3fd21bbdc7",
+      "views/budget.sql": "c199132eae83616a7df4767223211cc4859a4269599a77aeb8648df955e0fdb7"
+    }
+  },
+  "objects": [
+    {
+      "id": "store.budget_report",
+      "name": "BudgetReport",
+      "kind": "procedure",
+      "at": "procedures/budget_report.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BudgetReportRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BudgetReportRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "store.budget_report",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "per_day",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(30,15)",
+            "digits": {
+              "precision": 30,
+              "scale": 15,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            },
+            "min": {
+              "value": -999999999999999.999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            },
+            "max": {
+              "value": 999999999999999.999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-when-equal",
+              "at": "views/budget.sql:8:19"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "views/budget.sql:8:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "store.product.budget",
+              "sql": "decimal(19,4)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "per_call",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(30,17)",
+            "digits": {
+              "precision": 30,
+              "scale": 17,
+              "from": {
+                "type": "decimal(30,17)"
+              }
+            },
+            "min": {
+              "value": -9999999999999.99999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,17)"
+              }
+            },
+            "max": {
+              "value": 9999999999999.99999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,17)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "views/budget.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "store.product.credits",
+              "sql": "int",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "per_month",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(38,12)",
+            "digits": {
+              "precision": 38,
+              "scale": 12,
+              "from": {
+                "type": "decimal(38,12)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999.999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,12)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999.999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(38,12)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-when-equal",
+              "at": "views/budget.sql:10:28"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "views/budget.sql:10:8"
+            },
+            {
+              "rule": "precision-loss",
+              "at": "views/budget.sql:10:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "store.product.budget",
+              "sql": "decimal(19,4)",
+              "at": "tables/product.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "per_credit",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(30,15)",
+            "digits": {
+              "precision": 30,
+              "scale": 15,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            },
+            "min": {
+              "value": -999999999999999.999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            },
+            "max": {
+              "value": 999999999999999.999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(30,15)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "null-when-equal",
+              "at": "views/budget.sql:11:19"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "views/budget.sql:11:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "store.product.budget",
+              "sql": "decimal(19,4)",
+              "at": "tables/product.sql:4:5"
+            },
+            {
+              "column": "store.product.credits",
+              "sql": "int",
+              "at": "tables/product.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

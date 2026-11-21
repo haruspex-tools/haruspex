@@ -380,18 +380,4 @@ public class CaseTests
         Assert.IsType<IrArray>(Field(doc, "f").Type);
         Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "f"));
     }
-
-    [Fact]
-    public void Case_iif_choose_nullif_and_coalesce_over_json_that_the_server_may_fold_are_not_typed()
-    {
-        // Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch: whether they nest as
-        // JSON depends on the optimiser. COALESCE over a FOR JSON subquery is never folded, so only that is typed.
-        var doc = Procedure($"""
-            SELECT t.id, CASE WHEN t.id = 1 THEN {Lines} ELSE '[]' END AS a, IIF(t.id = 1, {Lines}, '[]') AS b,
-                   CHOOSE(t.id, {Lines}, '[]') AS c, NULLIF({Lines}, '[]') AS d, COALESCE(JSON_OBJECT('a': t.id), '[]') AS e
-            FROM dbo.t AS t FOR JSON PATH;
-            """);
-        foreach (var name in new[] { "a", "b", "c", "d", "e" })
-            Assert.True(IsUnknown(doc, name), name);
-    }
 }

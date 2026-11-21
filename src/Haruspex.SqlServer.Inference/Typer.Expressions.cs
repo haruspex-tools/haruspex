@@ -90,12 +90,25 @@ internal sealed partial class Typer
     /// counts its own, and so does an int the server treats as a constant (<see cref="Value.Digits"/>): its fewest when
     /// <paramref name="least"/>, else its most. Anything else its type's.
     /// </summary>
-    private static Operand? OperandOf(Value value, ScalarExpression expression, bool least = false)
+    /// <param name="value">The operand's value.</param>
+    /// <param name="expression">The expression it came from.</param>
+    /// <param name="least">Whether to count the fewest digits the value may have, rather than the most.</param>
+    /// <param name="query">Whether it is a set operation's query as it stands, rather than inside an expression.</param>
+    private static Operand? OperandOf(Value value, ScalarExpression expression, bool least = false, bool query = false)
     {
         if (TypeOf(value) is not { } type)
             return null;
         if (IntegerLiteralOf(expression) is { } literal)
             return new Operand(type, literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1);
+
+        // Inside an expression the server folds NULLIF of two literals, and counts a column's type's digits even when it is a
+        // derived table's literal; only as a set operation's query, as it stands, does a column count its literal's digits and
+        // NULLIF its type's (observed: Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query,
+        // A_derived_tables_literal_counts_its_own_digits_only_as_a_set_operations_query).
+        if (!query && FoldedNullIfDigits(expression) is { } folded)
+            return new Operand(type, folded);
+        if (!query && Strip(expression) is ColumnReferenceExpression)
+            return Operand.OfType(type);
         if (type.Type == BuiltInType.Int && (least ? value.Digits.Least : value.Digits.Most) is var d and < 10)
             return new Operand(type, d);
         return Operand.OfType(type);
@@ -200,9 +213,11 @@ internal sealed partial class Typer
 
     /// <param name="values">Each value, the expression it came from (for a literal's digits and value), and where an overflow
     /// converting it would happen.</param>
-    private ChainType Chained(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values)
+    /// <param name="queries">Whether the values are a set operation's queries, each as it stands, rather than inside an
+    /// expression (<see cref="OperandOf"/>).</param>
+    private ChainType Chained(IReadOnlyList<(Value Value, ScalarExpression Expression, SourceLocation At)> values, bool queries = false)
     {
-        var operands = values.Select(v => OperandOf(v.Value, v.Expression)).ToList();
+        var operands = values.Select(v => OperandOf(v.Value, v.Expression, query: queries)).ToList();
         var types = operands.Select(o => o?.Type).ToList();
         static string Name(Value value, ScalarType? type) => type?.Text ?? value.Shape switch
         {
@@ -229,7 +244,7 @@ internal sealed partial class Typer
         // scale, which values come back is not known (observed: An_int_constant_counts_its_own_digits_beside_a_decimal). When it
         // changes only the precision, the most digits hold every value.
         // Never null: each value's operand was found above, and one by its fewest digits is found with it (OperandOf).
-        if (values.Any(v => Uncertain(v.Value)) && TypeChain.Of([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true)!)]) is var fewest
+        if (values.Any(v => Uncertain(v.Value)) && TypeChain.Of([.. values.Select(v => OperandOf(v.Value, v.Expression, least: true, query: queries)!)]) is var fewest
             && (fewest is null || fewest.Type != type.Type || fewest.Scale != type.Scale))
         {
             return new ChainType(null, [], $"its type depends on whether SQL Server folds {Names(values.Where(v => Uncertain(v.Value)).Select(v => Text(v.Expression)))} to a constant, whose digits it would count.");
@@ -283,10 +298,11 @@ internal sealed partial class Typer
         if (combined.Type is not { } type)
             return NotModelled(coalesce, combined.Why!); // Never null: a chain without a type says why (Chained).
 
-        // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal).
+        // COALESCE(NULL, 1) is folded to 1 and counts its digits (observed: An_int_constant_counts_its_own_digits_beside_a_decimal);
+        // one whose first argument is never constant is never folded (Only_expressions_over_literals_are_folded_when_a_type_is_derived).
         return Typed(type, combined.Converted.Aggregate(because, NullReasons.Join), coalesce) with
         {
-            Digits = type.Type == BuiltInType.Int ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
+            Digits = type.Type == BuiltInType.Int && !NeverConstant(arguments[0]) ? IntDigits.Foldable(values.Select(v => v.Digits)) : IntDigits.OfType,
             Pieces = EitherPieces(arguments, values, type),
         };
     }
@@ -341,8 +357,10 @@ internal sealed partial class Typer
             return NotModelled(call, $"SQL Server refuses it: {secondType.Text} doesn't convert implicitly to {firstType.Text}.");
         }
 
+        // ISNULL is never folded, so an int counts its type's digits even when a is a literal (observed:
+        // Only_expressions_over_literals_are_folded_when_a_type_is_derived).
         if (first.NullableBecause.Count == 0)
-            return first;
+            return first with { Digits = IntDigits.OfType, Pieces = first.Pieces };
         if (IsJson(first))
             return Strip(b) is NullLiteral ? first : IsNullJson(call, a, first, b, scope);
         if (TypeOf(first) is not { } type)

@@ -199,16 +199,4 @@ public partial class SetJoinTests
         AllTyped(doc);
         Assert.Equal("int", Typed(doc, "id"));
     }
-
-    [Fact]
-    public void Json_through_a_set_operation_is_not_modelled()
-    {
-        // Json_through_a_set_operation_is_text_except_json_query.
-        var doc = Procedure("SELECT (SELECT u.id FROM dbo.u AS u FOR JSON PATH) AS j UNION ALL SELECT (SELECT u.qty FROM dbo.u AS u FOR JSON PATH);");
-        Assert.IsType<IrUnknownType>(Field(doc, "j").Type);
-
-        // Text holding JSON stays text whose content is the same.
-        doc = Procedure("SELECT (SELECT u.id FROM dbo.u AS u FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS j UNION ALL SELECT (SELECT u.id FROM dbo.u AS u FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);");
-        Assert.IsType<IrJsonText>(Field(doc, "j").Type);
-    }
 }

@@ -1091,17 +1091,23 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   only `char` results pad, and those are columns, not literals. These are output values, so no collation applies. Literals in
   conditions do not count; a value written twice is one item; numbers are converted to the type exactly, which is wide enough
   for each.
-- **JSON.** A CASE, IIF or CHOOSE with a live JSON result is not modelled. Over JSON it is text, escaped where it nests, unless
-  the server folds it to the one result a constant condition picks, when it keeps that result's JSON
-  (`Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch`). Which is up to the
-  optimiser, and `OPTION (RECOMPILE)` folds a parameter's value too, so the shape cannot be known from the code. The
-  exceptions: one whose results are all JSON text (or JSON literals) is JSON text of their join, and under `json_query`, where folding no
-  longer matters, any is ("JSON built here, traced").
+- **JSON.** Over JSON a CASE, IIF or CHOOSE is text, escaped where it nests, unless the server folds it to the one result a
+  constant condition picks, when it keeps that result's JSON
+  (`Case_iif_choose_and_coalesce_over_json_are_text_unless_the_server_folds_them_to_one_branch`). Which is up to the plan:
+  `OPTION (RECOMPILE)` folds a parameter's value too. And in `json_object` a CASE that is never folded still nests as JSON
+  when its last result is JSON built here. So a CASE or IIF with a live JSON result is typed only where it is text in every
+  context ("What the server folds", below): every condition compares a table's stored column with a literal other than NULL,
+  or tests one for NULL, and the last result is absent, NULL, a string literal or `json_query` of one. It is then JSON text
+  of what its results hold. Every other CASE, IIF or CHOOSE over live JSON is unknown. One whose results are all JSON text (or
+  JSON literals) is JSON text of their join, and under `json_query`, where folding no longer matters, any is ("JSON built here,
+  traced").
 - **`NULLIF(a, b)`** is `a`, unchanged, or NULL when `a` and `b` compare equal (`null-when-equal`): `a`'s type and facets, a CHECK set
   included. `a`'s type, except that an integer literal `a` is the smallest integer type that holds it, `tinyint` for `1`,
   `smallint` for `-1` or `1000` (`Nullif_is_its_first_arguments_type_but_an_integer_literal_is_the_smallest_integer_holding_it`;
   everywhere else such a literal is `int`). With the `NULL` literal as `b` nothing is equal, and it is `a`. Of the `NULL`
-  literal it is error 4151, and over JSON it is text unless folded, as CASE: neither is modelled.
+  literal it is error 4151, which is not modelled. Over JSON text it is that text or NULL, text wherever it nests
+  (`Nullif_over_json_text_is_text_or_null_in_every_context`). Over live JSON it nests as text in FOR JSON but as JSON in
+  `json_object`, which one shape can't say, so it is unknown.
 
 ## COALESCE and ISNULL over JSON
 
@@ -1124,9 +1130,15 @@ observed in each position before it was typed (`CaseObservationTests`):
   (`Json_query_over_coalesce_makes_it_json_again`; over `'null'` it is error 13609). It is still read twice
   (`Coalesce_reads_a_for_json_subquery_twice_so_it_can_be_null_though_its_fallback_is_not`, the subquery reading its outer
   row, as real ones do: one that does not may be read once and spooled). One exception: `COALESCE` whose first argument is a
-  constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`), so a COALESCE
-  with a live argument that is not a FOR JSON subquery (perhaps in `JSON_QUERY`) is not modelled where it nests. A FOR JSON
-  subquery is never folded, even one without FROM. Where the folding doesn't matter, it is modelled: under `JSON_QUERY`, and as
+  constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`, and so does a
+  derived table's or a view's `json_query` of a literal, or a subquery's, even over a table). JSON built from a table's rows is
+  never folded ("What the server folds", below): a `FOR JSON` subquery, even one without FROM, a `json_arrayagg` or
+  `json_objectagg` subquery, converted to `nvarchar(max)` or not, `json_query` of one or of a table's stored column, and
+  `json_object` (`Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level`). And in `json_object` a
+  COALESCE whose last argument is JSON built here (`json_array()`, another `FOR JSON` subquery) nests as JSON, as a CASE does.
+  So a COALESCE whose first argument is one of those, or whose every live argument is built from rows, and whose last
+  argument is a string literal or `json_query` of one, is JSON text where it nests; any other COALESCE with a live argument is
+  not modelled there. Where the folding doesn't matter, it is modelled: under `JSON_QUERY`, and as
   the value assigned to a variable or a column, which holds the same text whether or not the server folds it
   (`Assigned_to_a_variable_coalesce_and_case_over_json_are_the_same_text_whether_or_not_the_server_folds_them`), so
   `DECLARE @ids nvarchar(max) = COALESCE((SELECT json_arrayagg(…) …), json_array())` holds the aggregate's array or the empty
@@ -1141,6 +1153,50 @@ observed in each position before it was typed (`CaseObservationTests`):
   fallback is: never for a literal. Over JSON text (a subquery `WITHOUT_ARRAY_WRAPPER`) it is text, with the same content rule
   as `COALESCE` (`Without_its_array_wrapper_the_subquery_is_text_in_coalesce_and_isnull_until_json_query`).
 - In a rowset each is `nvarchar(max)` text (`In_a_rowset_coalesce_and_isnull_over_json_are_nvarchar_max_text`), as any JSON is.
+
+## What the server folds
+
+Constant folding is the compiler's rewriting of an expression whose value it can work out into that value. SQL Server does it
+twice, with different reach, and two of haruspex's answers depend on it: how many integer digits an `int` counts beside a
+decimal, and whether a value nests as JSON or as escaped text. `Typer.Folding.cs` holds both rules, and
+[decision 0088](../../docs/decisions/0088-a-type-that-depends-on-folding-is-typed-where-the-server-never-folds.md) says why only
+these are modelled. Each was observed at every compatibility level from 130 to 170, as written and with `OPTION (RECOMPILE)`
+(`FoldingObservationTests`).
+
+**When it derives a type**, the server folds only expressions over literals
+(`Only_expressions_over_literals_are_folded_when_a_type_is_derived`): `21`, `NULLIF(21, 0)`, `IIF(1 = 1, 5, 70)`,
+`COALESCE(NULL, 21)`, each counting the digits of the literal it folds to. A column of any source, a derived table's, a CTE's,
+a view's or a one-row `VALUES` list's literal included, a variable, a parameter and a subquery are never folded, and
+`OPTION (RECOMPILE)` changes nothing. Nor are `ISNULL`, a `NULLIF` with an argument of those, a `COALESCE` whose first argument
+is one, or a `CASE` or `IIF` whose first condition is never constant. A condition is never constant when it is a comparison,
+`IS NULL`, `IN`, `LIKE` or `BETWEEN` over such a value and literals other than NULL, or `NOT`, `AND` and `OR` of such
+conditions, even a contradiction (`A_condition_on_a_column_is_never_folded_but_one_with_a_constant_or_null_may_be`); a
+comparison with NULL, `OR 1 = 1` and `AND 1 = 0` are folded. Every such int counts its type's 10 digits, so
+`budget / NULLIF(w.days, 0)` with `w` a derived table `(SELECT 21 AS days)` is `decimal(30,15)` beside `decimal(19,4)`, not
+`decimal(22,7)`.
+
+Two places count differently. A derived table's literal counts its own digits as a set operation's query as it stands, alone,
+in parentheses or as what a constant `IIF` folds to, but its type's inside any expression
+(`A_derived_tables_literal_counts_its_own_digits_only_as_a_set_operations_query`); `Typer.OperandOf` is told which. And `NULLIF` of two
+numeric literals is `tinyint` as a query, but inside an expression is folded to its first literal, or to NULL (one digit) when
+they are equal (`Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query`).
+
+**When it decides how a value nests**, the plan matters: a derived table's `json_query(N'[1]')` is folded into a `COALESCE`
+over it, and a parameter's value under `OPTION (RECOMPILE)`. JSON built from a table's rows never is (`Typer.BuiltFromRows`): a
+`FOR JSON` subquery, a `json_arrayagg` or `json_objectagg` subquery (cast or converted to a string or not), `json_query` of one
+or of a stored column of a table, and `json_object` or `json_array` of one. So:
+
+| Over JSON | Typed as JSON text when | Observed |
+|---|---|---|
+| `COALESCE` | its first argument is built from rows, or `json_object`, and its last is a string literal or `json_query` of one | `Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level` |
+| `UNION`, `UNION ALL` | a query's JSON is built from rows, or `json_object`; then every row is text | `A_union_over_json_built_from_rows_is_text_in_every_row` |
+| `CASE`, `IIF` | every condition compares a stored column with a literal, or tests it for NULL, and the last result is absent, NULL, a string literal or `json_query` of one | `A_case_over_json_on_a_tables_column_is_text_where_its_last_result_is_null_or_a_literal` |
+| `NULLIF` | its first argument is JSON text | `Nullif_over_json_text_is_text_or_null_in_every_context` |
+
+Each is text in a rowset, in `FOR JSON` and in `json_object` alike. The rest are unknown: a `UNION` of `json_query` of constants
+is JSON in every row (text beside it is written in as it is), `INTERSECT` and `EXCEPT` keep the first query's form, `NULLIF` over
+live JSON is text in `FOR JSON` but JSON in `json_object`, and so is a `CASE` or `COALESCE` whose last result is JSON built
+here (`json_array()`, a `FOR JSON` subquery, `json_object`).
 
 ## Refinement
 
@@ -1515,9 +1571,12 @@ and `SELECT … INTO`. Each rule is observed in `SetJoinObservationTests`.
   (`A_fixed_length_string_pads_a_shorter_one_through_a_set_operation`). A `UNION` that drops duplicates under the collation
   keeps one of them, still an item. `INTERSECT` and `EXCEPT` keep the left side's set: intersecting the sets would not be
   sound under a collation that ignores case.
-- **JSON.** A `FOR JSON` subquery or a constructor comes out of a set operation as text, but `json_query`'s stays JSON
-  (`Json_through_a_set_operation_is_text_except_json_query`), which a value does not record, so a set operation over live JSON
-  is unknown. JSON text stays JSON text, its content kept when every query's is the same. `FOR JSON` on a set operation is
+- **JSON.** A `FOR JSON` subquery or a constructor comes out of a set operation as text, but `json_query` of a constant stays
+  JSON (`Json_through_a_set_operation_is_text_except_json_query`), and the column has one form for every row. A `UNION` with a
+  query whose JSON is built from a table's rows is text in every row, whatever the order
+  (`A_union_over_json_built_from_rows_is_text_in_every_row`), so it is JSON text of every query's content joined; any other
+  set operation over live JSON is unknown ("What the server folds"). JSON text stays JSON text, its content the join of every
+  query's. `FOR JSON` on a set operation is
   refused anywhere but a statement (1086, `A_for_json_subquery_over_a_set_operation_needs_a_derived_table`); over a derived
   table that is one it is the usual `FOR JSON`.
 - **Where the parser puts ORDER BY, OFFSET and FOR.** On the set operation in a statement, but on its last query in a subquery
@@ -1579,16 +1638,17 @@ where folding did).
   other's type by rules not observed for every pair (a `varbinary(10)` beside an `nvarchar(3)` is `nvarchar(10)`), and a chain
   holding an `image` isn't observed at all, so each is not modelled.
 - **An int constant's digits** (`An_int_constant_counts_its_own_digits_beside_a_decimal`). Beside a decimal an
-  int counts 10 integer digits, but one the server treats as a constant counts its own: a literal, also as a derived table's,
-  CTE's or view's column or a `VALUES` list's of one row; the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a constant
-  condition and `COALESCE(NULL, 1)`, folded to that literal. Arithmetic, a scalar subquery, a `CAST` of a number, `ISNULL`, a
-  `CASE` reading a column, a set operation of literals and a `VALUES` list of several rows, even of one literal, count 10
-  (`A_values_lists_int_column_is_a_constant_in_one_row_only`). A value carries the digits (`Value.Digits`, `IntDigits`):
-  exact where the server folds; for a `CASE`, `IIF`, `CHOOSE`, `COALESCE` or `NULLIF` that has a literal among its results,
-  a range from the fewest to 10, since whether the server folds it turns on its condition. Where the range changes the scale,
-  the column is unknown (its reason names the expression); where it changes only the precision, the most digits hold every
-  value. Claiming a literal's digits where the server counts 10 is still sound (the constant fits them, and the scale claimed
-  is the larger); claiming 10 where it counts the literal's is not. Decimal arithmetic counts the same digits
+  int counts 10 integer digits, but one the server treats as a constant counts its own: a literal; as a set operation's query,
+  a derived table's, CTE's or view's literal column or a `VALUES` list's of one row (inside an expression these count 10:
+  "What the server folds"); the NULL cast to int (`CAST`, `CONVERT`, `TRY_` forms, nested) 1; a `CASE` or `IIF` with a
+  constant condition and `COALESCE(NULL, 1)`, folded to that literal. Arithmetic, a scalar subquery, a `CAST` of a number,
+  `ISNULL`, a `CASE` reading a column, a set operation of literals and a `VALUES` list of several rows, even of one literal,
+  count 10 (`A_values_lists_int_column_is_a_constant_in_one_row_only`). A value carries the digits (`Value.Digits`,
+  `IntDigits`): exact where the server folds, or where it never does; for a `CASE`, `IIF`, `CHOOSE`, `COALESCE` or `NULLIF`
+  that has a literal among its results and may be folded, a range from the fewest to 10. Where the range changes the scale, the
+  column is unknown (its reason names the expression); where it changes only the precision, the most digits hold every value.
+  Neither end may be claimed for the other: a division's scale grows with the divisor's digits and an addition's shrinks past
+  38, so too few digits rejects a division's values and too many an addition's. Decimal arithmetic counts the same digits
   (`decimal(38,38) + CAST(NULL AS int)` is `decimal(38,37)`), and turns unknown on the same range.
 - **Converting each value.** A value whose type may not convert without overflow (`Conversions.NeverNull`: `Conversions.Converts`, or a
   string into `uniqueidentifier`, which fails as an error and is never NULL) gives `arithmetic-overflow`: an overflow is an
@@ -2512,10 +2572,13 @@ For the IR:
   nullable (a column, an outer join, a `ROLLUP`), so the `CASE` is not.
 - `COALESCE` over JSON is `json-text` wherever it nests, its `content` what the arguments hold (a fallback `'[]'` removes the
   array's `minItems`, `'{}'` adds the empty object as a variant of a `union`); `ISNULL` over JSON is JSON where it nests, with
-  the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over JSON is unknown
-  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: under
-  `json_query` or assigned to a variable or column, and when every result is JSON text, `CASE`, `IIF` and `CHOOSE` hold the join of their results' JSON, and any
-  literal that is a JSON document counts as JSON, not only `'[]'` and `'{}'` ("JSON built here, traced" below).
+  the same content, and never null with a literal fallback. A `CASE`, `IIF`, `CHOOSE` or `NULLIF` over live JSON is unknown
+  (`unsupported-expression`): whether it nests as JSON depends on whether the server folds it. The exceptions: a `CASE` or `IIF`
+  on a table's stored columns whose last result is NULL or a literal, and `NULLIF` over JSON text, are `json-text` ("What the
+  server folds"); under `json_query` or assigned to a variable or column, and when every result is JSON text, `CASE`, `IIF` and
+  `CHOOSE` hold the join of their results' JSON, and any literal that is a JSON document counts as JSON, not only `'[]'` and
+  `'{}'` ("JSON built here, traced" below). A `UNION` over JSON with a query built from rows is `json-text` of every query's
+  content joined; any other set operation over live JSON is unknown.
 
 ### Set operations, CROSS JOIN, FULL OUTER JOIN and OPENJSON
 

@@ -1,0 +1,240 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/product_cards.sql": "80487e85fa9b584d3a966bfbcf1b5f4c8c8232a13e54946a70322f4d5f6b39c0",
+      "tables/product.sql": "e90e6dd5c5c87b2ee65e627b0c25fa575562469024ef3f1ba02dca3fd21bbdc7",
+      "views/product_card.sql": "f2980d26afdf987def9960e7fbf425ee57a0f315c237e954411dae7b00eb4a80"
+    }
+  },
+  "objects": [
+    {
+      "id": "store.product_cards",
+      "name": "ProductCards",
+      "kind": "procedure",
+      "at": "procedures/product_cards.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ProductCardsResult1Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ProductCardsResult2Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/product_cards.sql:10:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ProductCardsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "store.product_cards",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.product.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/product.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "kind": "string",
+                "sql": "nvarchar(20)",
+                "maxLength": {
+                  "value": 20,
+                  "unit": "utf16",
+                  "from": {
+                    "type": "nvarchar(20)"
+                  }
+                }
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "views/product_card.sql:6:17"
+            }
+          ]
+        }
+      ]
+    },
+    "ProductCardsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "store.product_cards",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "product_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "store.product.product_id",
+              "sql": "int",
+              "at": "tables/product.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "kind": "string",
+                "sql": "nvarchar(20)",
+                "maxLength": {
+                  "value": 20,
+                  "unit": "utf16",
+                  "from": {
+                    "type": "nvarchar(20)"
+                  }
+                }
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "views/product_card.sql:6:17"
+            }
+          ]
+        },
+        {
+          "name": "tag_list",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "string",
+              "sql": "nvarchar(20)",
+              "maxLength": {
+                "value": 20,
+                "unit": "utf16",
+                "from": {
+                  "type": "nvarchar(20)"
+                }
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "views/product_card.sql:6:17"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

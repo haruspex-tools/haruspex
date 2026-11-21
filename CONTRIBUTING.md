@@ -221,6 +221,7 @@ split into parts along the constructs it covers. The families today:
 | Expressions | `ExpressionTests` | `ExpressionObservationTests`, `BitwiseGridTests` | `tests/fixtures/tabs` | "Expressions" |
 | Numbers | `NumericTests` | `NumericObservationTests`, `ArithmeticGridTests` | `tests/fixtures/ledger` | "Decimal arithmetic", "Numeric functions" |
 | CASE and its kin | `CaseTests` | `CaseObservationTests` | `tests/fixtures/cases` | "CASE, IIF, CHOOSE and NULLIF", "COALESCE and ISNULL over JSON" |
+| What the server folds | `FoldingTests` | `FoldingObservationTests` | `tests/fixtures/folds` | "What the server folds" |
 | Built-in functions | `FunctionTests` | `FunctionObservationTests` | `tests/fixtures/funcs` | "Built-in functions", "Window functions" |
 | Table-valued functions | `TableFunctionTests` | `TableFunctionObservationTests` | `tests/fixtures/tabs` | "Table-valued functions" |
 | Set operations and joins | `SetJoinTests` | `SetJoinObservationTests` | `tests/fixtures/sets` | "Set operations", "CROSS JOIN and FULL OUTER JOIN", "OPENJSON" |

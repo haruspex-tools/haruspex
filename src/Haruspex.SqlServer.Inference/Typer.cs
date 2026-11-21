@@ -171,9 +171,11 @@ internal sealed partial class Typer(
             switch (element)
             {
                 case SelectScalarExpression scalar:
-                    columns.Add(new RowColumn(Binder.ColumnName(scalar), Expression(scalar.Expression, row), At(scalar), Origin(scalar.Expression, scope), scalar.Expression)
+                    var value = Expression(scalar.Expression, row);
+                    columns.Add(new RowColumn(Binder.ColumnName(scalar), value, At(scalar), Origin(scalar.Expression, scope), scalar.Expression)
                     {
                         From = Reads(scalar.Expression, row),
+                        JsonNeverFolded = value.IsLiveJson && NeverFoldedAsJson(scalar.Expression, row),
                     });
                     break;
                 case SelectStarExpression all:

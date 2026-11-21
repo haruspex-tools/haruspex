@@ -1,0 +1,20 @@
+check store.product ck_product_credits at tables/product.sql:5:26
+column store.product.budget decimal(19,4) at tables/product.sql:4:5
+column store.product.credits int at tables/product.sql:5:5
+column store.product.name nvarchar(40) at tables/product.sql:3:5
+column store.product.product_id int at tables/product.sql:2:5
+column store.product.ref int at tables/product.sql:6:5
+column store.product.ref_system varchar(10) at tables/product.sql:7:5
+column store.tag.name nvarchar(20) at tables/tag.sql:4:5
+column store.tag.product_id int at tables/tag.sql:3:5
+column store.tag.tag_id int at tables/tag.sql:2:5
+key store.product pk_product (product_id) at tables/product.sql:2:29
+key store.tag pk_tag (tag_id) at tables/tag.sql:2:25
+procedure store.budget_report at procedures/budget_report.sql:2:1
+procedure store.product_cards at procedures/product_cards.sql:2:1
+procedure store.product_links at procedures/product_links.sql:2:1
+procedure store.product_refs at procedures/product_refs.sql:4:1
+table store.product at tables/product.sql:1:1
+table store.tag at tables/tag.sql:1:1
+view store.budget at views/budget.sql:4:1
+view store.product_card at views/product_card.sql:2:1
