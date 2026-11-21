@@ -468,6 +468,31 @@ public class StaleFilesTests
         Assert.DoesNotContain("\"Admin.zod.ts\"", ListText(folder), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Admin", "ADMIN")]
+    [InlineData("admin", "Admin")]
+    [InlineData("ADMIN", "admin")]
+    public void A_module_renamed_only_by_case_is_written_under_its_new_name(string before, string after)
+    {
+        using var folder = Shop();
+        static string Named(string module) => BothModules.Replace("\"admin\": [\"admin\"]", $"\"{module}\": [\"admin\"]", StringComparison.Ordinal);
+
+        var (exitCode, said) = Twice(folder, Named(before), Named(after));
+
+        // Where the file system ignores case, the old file is the one the new name finds, and is renamed as it is replaced, so
+        // that the names on disk are the ones the imports and the list say; where it doesn't, the old file is a file apart,
+        // removed by the list.
+        Assert.True(exitCode == 0, said);
+        string[] files = [$"{after}.jsonschema.json", $"{after}.mssql.ts", $"{after}.zod.ts"];
+        var names = Directory.GetFiles(Out(folder)).Select(f => Path.GetFileName(f)).ToList();
+        Assert.All(files, f => Assert.Contains(f, names));
+        Assert.DoesNotContain(names, n => n.StartsWith(before + ".", StringComparison.Ordinal));
+        Assert.Contains($"from './{after}.zod.js'", File.ReadAllText(Out(folder, $"{after}.mssql.ts")), StringComparison.Ordinal);
+        Assert.All(files, f => Assert.Contains($"\"{f}\"", ListText(folder), StringComparison.Ordinal));
+        var (checkCode, checkSaid) = Run(folder, "check");
+        Assert.True(checkCode == 0, checkSaid);
+    }
+
     [Fact]
     public void Check_fails_naming_each_file_generate_would_remove()
     {

@@ -355,6 +355,11 @@ public class DiagnosticMessagesTests
             new IrObject("shop.get_basket", "GetBasket", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrRef("GetBasket"), [])]))).Diagnostics.Select(d => d.ToString())),
 
         (5007, () => Emitted(Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])))),
+        (5008, () => Emitted(Document(new() { ["Row"] = new([new IrField("__proto__", Number, IrPresence.Always, [])]) }, Rows("s.p", "Row")))),
+        (5009, () => Emitted(Document(new() { ["Row"] = new([new IrField("constructor", Number, IrPresence.Always, [])]) }, Rows("s.p", "Row")))),
+        (5205, () => MssqlEmitter.Emit(
+            Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@__proto__", Number, false, false)], [])),
+            new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
         (5203, () => MssqlEmitter.Emit(
             Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])),
             new MssqlOptions()).Diagnostics.Select(d => d.ToString())),

@@ -28,4 +28,10 @@ public static class MssqlCodes
     /// parameter must declare for every column.
     /// </summary>
     public static DiagnosticCode TableColumnCannotBeDeclared { get; } = new(5204, DiagnosticSeverity.Error, "A table type's column can't be declared to the driver");
+
+    /// <summary>
+    /// A parameter named <c>@__proto__</c>, which the driver never sends: it keeps a request's parameters as keys of an object,
+    /// where that key sets the object's prototype rather than adding a key.
+    /// </summary>
+    public static DiagnosticCode ParameterUnusable { get; } = new(5205, DiagnosticSeverity.Error, "A parameter the driver can't send");
 }

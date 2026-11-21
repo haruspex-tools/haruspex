@@ -156,11 +156,14 @@ reason.
 | [HAR5005](HAR5005.md) | error | A type read both as rows and as JSON |
 | [HAR5006](HAR5006.md) | error | A procedure's parameters' name is taken |
 | [HAR5007](HAR5007.md) | error | A result set's name can't be a key |
+| [HAR5008](HAR5008.md) | error | A key Zod can't check |
+| [HAR5009](HAR5009.md) | error | A column the driver can't hand over |
 | [HAR5101](HAR5101.md) | error | One name for two definitions |
 | [HAR5201](HAR5201.md) | error | A procedure's function can't take its name |
 | [HAR5202](HAR5202.md) | error | A query file's parameter can't be declared |
 | [HAR5203](HAR5203.md) | error | A result set's name can't be a key of the function's object |
 | [HAR5204](HAR5204.md) | error | A table type's column can't be declared to the driver |
+| [HAR5205](HAR5205.md) | error | A parameter the driver can't send |
 
 ## The command line and files
 

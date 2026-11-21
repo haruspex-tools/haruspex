@@ -144,6 +144,80 @@ public class ZodPlannerTests
     }
 
     [Fact]
+    public void A_field_whose_key_would_set_the_prototype_is_refused()
+    {
+        // A FOR JSON alias, a json_object key or a declared result can give the key; Zod never checks a key of this name.
+        var document = Document(new() { ["Row"] = new([new IrField("__proto__", Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row")));
+
+        Assert.Equal(
+            "haruspex: error HAR5008: The type Row, which s.p returns, has a key named __proto__, which Zod never checks and an object literal can't hold; name it otherwise in the SQL.",
+            Refused(document));
+    }
+
+    [Fact]
+    public void A_parameter_whose_key_would_set_the_prototype_is_refused()
+    {
+        var document = Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@__proto__", Number, false, false)], []));
+
+        Assert.Equal(
+            "haruspex: error HAR5008: s.p has a parameter named @__proto__, which as a key of its parameters' object Zod never checks and an object literal can't hold; rename the parameter.",
+            Refused(document));
+    }
+
+    [Fact]
+    public void A_table_types_column_whose_key_would_set_the_prototype_is_refused()
+    {
+        var row = new IrObjectType([new IrField("__proto__", Number, IrPresence.Always, [])]) { Identity = new IrTypeIdentity(IrTypeOwner.TableType, "s.lines", "<s.lines>") };
+        var document = Document(
+            new() { ["LinesRow"] = row },
+            new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@t", new IrArray(new IrRef("LinesRow")), true, false) { TableType = "s.lines" }], []));
+
+        Assert.Equal(
+            "haruspex: error HAR5008: The type LinesRow, which s.p takes, has a key named __proto__, which Zod never checks and an object literal can't hold; name it otherwise in the SQL.",
+            Refused(document));
+    }
+
+    [Theory]
+    [InlineData("constructor")]
+    [InlineData("prototype")]
+    [InlineData("hasOwnProperty")]
+    [InlineData("toString")]
+    public void A_json_key_named_as_a_member_every_object_inherits_is_an_ordinary_key(string key)
+    {
+        // Only __proto__ is special in an object literal; these become own keys, which Zod checks (observed with the pinned
+        // Zod: a value of another type fails, and so does an object without the key), and JSON.parse makes them own keys.
+        var document = Document(new() { ["Row"] = new([new IrField(key, Number, IrPresence.Always, [])]) }, Procedure("s.p", Json(new IrRef("Row"))));
+
+        Assert.Equal(["Row", "s.p"], Order(Plan(document)));
+        Assert.Contains($"  {key}: z.int32(),\n", ZodEmitter.Emit(document).Expected(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("constructor")]
+    [InlineData("hasOwnProperty")]
+    [InlineData("toString")]
+    [InlineData("valueOf")]
+    [InlineData("isPrototypeOf")]
+    [InlineData("propertyIsEnumerable")]
+    [InlineData("toLocaleString")]
+    [InlineData("__defineGetter__")]
+    [InlineData("__lookupSetter__")]
+    public void A_column_named_as_a_member_every_object_inherits_is_refused_in_rows(string column)
+    {
+        // The mssql driver takes such a column for one repeated, and hands over [inherited member, value]
+        // (A_column_named_as_a_member_every_object_inherits_comes_back_as_an_array), so no schema of the value holds.
+        var document = Document(new() { ["Row"] = new([new IrField(column, Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row")));
+
+        Assert.Equal(
+            $"haruspex: error HAR5009: The type Row, which s.p returns as rows, has a column named {column}, which the mssql driver hands over as an array of the member every object inherits and the value; name it otherwise in the SQL.",
+            Refused(document));
+    }
+
+    [Fact]
+    public void A_column_named_prototype_is_an_ordinary_column_in_rows() =>
+        Assert.Equal(["Row", "s.p"], Order(Plan(Document(new() { ["Row"] = new([new IrField("prototype", Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row"))))));
+
+    [Fact]
     public void A_procedure_whose_results_cannot_be_listed_is_planned_alone()
     {
         var unlisted = new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], null);

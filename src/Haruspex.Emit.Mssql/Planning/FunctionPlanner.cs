@@ -64,6 +64,14 @@ internal static class FunctionPlanner
                 continue;
             }
 
+            // The driver keeps a request's parameters as keys of an object, so it never sends one named __proto__ (observed:
+            // A_parameter_named_proto_is_never_sent).
+            if (obj.Parameters.FirstOrDefault(p => SchemaModuleNames.Key(p.Name) == "__proto__") is { } unsent)
+            {
+                refusals.Add(MssqlCodes.ParameterUnusable.At(null, $"{obj.Id} has a parameter named {unsent.Name}, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter."));
+                continue;
+            }
+
             (string Text, string Declaration)? batch = obj.Kind == IrObjectKind.Query ? Batch(obj, refusals) : null;
             functions.Add(Function(name, obj, document, refusals) with { Batch = batch });
         }

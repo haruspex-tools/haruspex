@@ -54,6 +54,18 @@ public partial class MssqlEmitterTests
     }
 
     [Fact]
+    public void A_parameter_the_driver_cannot_send_by_its_name_is_refused()
+    {
+        // The driver keeps a request's parameters in an object keyed by name, so one named __proto__ is never sent (observed:
+        // MssqlDriverObservationTests), and p.__proto__ would read the prototype.
+        var refused = MssqlEmitter.Emit(Document(Procedure("GetOrder", [Parameter("@__proto__", Int)], Rows)));
+
+        Assert.Equal(
+            "haruspex: error HAR5205: shop.GetOrder has a parameter named @__proto__, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter.",
+            Assert.Single(Assert.IsType<Haruspex.Diagnostics.Failed<string>>(refused).Diagnostics).ToString());
+    }
+
+    [Fact]
     public void A_procedure_without_parameters_takes_only_the_connection() =>
         Assert.Contains("export async function listOrders(db: Queryable): Promise<", Emitted(Procedure("ListOrders", [], Rows)), StringComparison.Ordinal);
 

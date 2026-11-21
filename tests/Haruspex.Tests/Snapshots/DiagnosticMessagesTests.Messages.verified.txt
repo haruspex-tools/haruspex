@@ -346,6 +346,12 @@ haruspex: error HAR5006: The parameters of shop.get_order are declared as GetOrd
 HAR5007
 haruspex: error HAR5007: A result set of s.p is named __proto__, which as a key of an object sets its prototype rather than adding a key; rename the set.
 
+HAR5008
+haruspex: error HAR5008: The type Row, which s.p returns, has a key named __proto__, which Zod never checks and an object literal can't hold; name it otherwise in the SQL.
+
+HAR5009
+haruspex: error HAR5009: The type Row, which s.p returns as rows, has a column named constructor, which the mssql driver hands over as an array of the member every object inherits and the value; name it otherwise in the SQL.
+
 HAR5101
 haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
 
@@ -360,6 +366,9 @@ haruspex: error HAR5203: A result set of s.p is named __proto__, which as a key 
 
 HAR5204
 haruspex: error HAR5204: The function of s.p must declare the column qty of the table type s.lines to the driver, and its type gives no driver type to declare it as.
+
+HAR5205
+haruspex: error HAR5205: s.p has a parameter named @__proto__, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter.
 
 HAR6001
 haruspex: error HAR6001: Unrecognized command or argument 'blue'.
