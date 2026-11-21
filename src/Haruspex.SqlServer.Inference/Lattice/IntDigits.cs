@@ -51,8 +51,9 @@ internal sealed record IntDigits
 
     /// <summary>
     /// The digits the server counts for an int literal written <paramref name="text"/> (digits, perhaps with a sign and leading
-    /// zeros), negated or not: its own, at least one, except that a negative one of five digits, <c>-10000</c> to <c>-99999</c>,
-    /// counts six.
+    /// zeros), <paramref name="negative"/> when a minus sign is before it: its own, at least one, except that a negative one of
+    /// five digits, <c>-10000</c> to <c>-99999</c>, counts six. The literal is negative when its text or the sign before it says
+    /// so; a literal with both is signed twice, which is unknown before its digits are asked for.
     /// </summary>
     /// <remarks>
     /// The exception is observed, not documented: in every arithmetic operator, on either side, past 38 digits, beside a decimal
@@ -64,7 +65,7 @@ internal sealed record IntDigits
     public static int CountOf(string text, bool negative)
     {
         var own = text.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
-        return own == 5 && negative != text.StartsWith('-') ? 6 : own;
+        return own == 5 && (negative || text.StartsWith('-')) ? 6 : own;
     }
 
     /// <summary>Whether the count may be fewer than 10, depending on whether the server folds the expression to a constant.</summary>

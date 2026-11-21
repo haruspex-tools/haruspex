@@ -26,6 +26,7 @@ object's prototype rather than adding a key, so the schema had no such key. Obse
   parsed value lacks.
 - The mssql driver hands over no key for a column named `__proto__` (`A_column_named_proto_is_not_a_key_of_the_row_the_driver_hands_over`)
   and never sends a parameter named `@__proto__` (`A_parameter_named_proto_is_never_sent`): it keeps both as keys of an object.
+  Without a default the call fails; with one, the procedure runs with the default whatever the caller gave.
   Building a row, it reads each column's name on the row first, to find a column repeated, so a column named as any member of
   `Object.prototype` comes back as `[inherited member, value]`
   (`A_column_named_as_a_member_every_object_inherits_comes_back_as_an_array`). A parameter of such a name is sent, and a JSON

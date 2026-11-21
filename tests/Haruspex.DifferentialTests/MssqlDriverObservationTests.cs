@@ -340,14 +340,19 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_parameter_named_proto_is_never_sent()
     {
-        // The driver keeps a request's parameters as keys of an object, so the procedure is called without it.
+        // The driver keeps a request's parameters as keys of an object, so the procedure is called without it: one without a
+        // default fails (201), and one with a default runs with the default, not the caller's value.
         var calls = await MssqlDriver.RunAsync(
             server,
             null,
-            ["CREATE PROCEDURE dbo.echo_key @__proto__ int AS SELECT @__proto__ AS v;"],
-            [new("call", ParseJson: false, Procedure: "dbo.echo_key", Parameters: new Dictionary<string, object?> { ["__proto__"] = 1 })],
+            ["CREATE PROCEDURE dbo.echo_key @__proto__ int AS SELECT @__proto__ AS v;", "CREATE PROCEDURE dbo.echo_or_seven @__proto__ int = 7 AS SELECT @__proto__ AS v;"],
+            [
+                new("required", ParseJson: false, Procedure: "dbo.echo_key", Parameters: new Dictionary<string, object?> { ["__proto__"] = 1 }),
+                new("defaulted", ParseJson: false, Procedure: "dbo.echo_or_seven", Parameters: new Dictionary<string, object?> { ["__proto__"] = 1 }),
+            ],
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(201, Assert.Single(calls).Error?.Number);
+        Assert.Equal(201, calls[0].Error?.Number);
+        Assert.Equal("""{"v":7}""", Compact(OnlyRow(calls[1]).Row));
     }
 }

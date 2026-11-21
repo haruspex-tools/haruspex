@@ -119,12 +119,16 @@ internal sealed partial class Typer
     /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
     private static bool Uncertain(Value value) => value.Shape is ScalarShape { BuiltIn.Type: var type } && type == BuiltInType.Int && !value.IsLiveJson && value.Digits.IsUncertain;
 
-    /// <summary>An integer literal, through parentheses and signs, with whether the signs negate it.</summary>
+    /// <summary>
+    /// An integer literal, through parentheses and signs, with whether a minus sign is the sign before it. Only one sign is ever
+    /// counted: a literal signed more than once is unknown wherever it is typed (<see cref="Unary"/>), before its digits are
+    /// asked for.
+    /// </summary>
     private static (IntegerLiteral Literal, bool Negative)? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
     {
         IntegerLiteral literal => (literal, false),
         UnaryExpression { UnaryExpressionType: UnaryExpressionType.Negative or UnaryExpressionType.Positive } unary =>
-            IntegerLiteralOf(unary.Expression) is var (literal, negative) ? (literal, negative != (unary.UnaryExpressionType == UnaryExpressionType.Negative)) : null,
+            IntegerLiteralOf(unary.Expression) is var (literal, _) ? (literal, unary.UnaryExpressionType == UnaryExpressionType.Negative) : null,
         _ => null,
     };
 
