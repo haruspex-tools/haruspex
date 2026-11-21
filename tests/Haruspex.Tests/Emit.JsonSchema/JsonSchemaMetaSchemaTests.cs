@@ -16,21 +16,23 @@ public class JsonSchemaMetaSchemaTests
         using var folder = new TempDirectory();
 
         // Each fixture's whole document, both ways objects can be, and every committed snapshot, which the snapshot tests hold to
-        // what the emitter gives one procedure.
-        var documents = Fixture.All.SelectMany(f => new[]
-            {
-                folder.File($"{f.Name}.strip.jsonschema.json", JsonSchemaEmitter.Emit(f.Ir).Expected()),
-                folder.File($"{f.Name}.strict.jsonschema.json", JsonSchemaEmitter.Emit(f.Ir, new JsonSchemaOptions { Objects = JsonSchemaObjects.Strict }).Expected()),
-            })
-            .Concat(Fixture.All.SelectMany(f => f.JsonSchemaSnapshots).Select(s => s.JsonSchema))
-
-            // A split project's documents, each a module's; that their references resolve together is JsonSchemaModulesTests'.
-            .Concat(Fixture.All.Where(f => f.IsSplit).SelectMany(f => Directory.GetFiles(f.Expected, "*.jsonschema.verified.json")).Order(StringComparer.Ordinal))
-            .ToArray();
+        // what the emitter gives one procedure; and a split project's documents, each a module's (that their references resolve
+        // together is JsonSchemaModulesTests'). All are written to one folder, and node is given the folder, not each file: the
+        // command line stays short however many fixtures there are (EmitCheckPackage.TryRun). A copy is named after its fixture,
+        // so two fixtures' snapshots of the same name don't meet.
+        foreach (var f in Fixture.All)
+        {
+            folder.File($"{f.Name}.strip.jsonschema.json", JsonSchemaEmitter.Emit(f.Ir).Expected());
+            folder.File($"{f.Name}.strict.jsonschema.json", JsonSchemaEmitter.Emit(f.Ir, new JsonSchemaOptions { Objects = JsonSchemaObjects.Strict }).Expected());
+            var committed = f.JsonSchemaSnapshots.Select(s => s.JsonSchema)
+                .Concat(f.IsSplit ? Directory.GetFiles(f.Expected, "*.jsonschema.verified.json") : []);
+            foreach (var path in committed)
+                File.Copy(path, Path.Combine(folder.Path, $"{f.Name}.{Path.GetFileName(path)}"));
+        }
 
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
         Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("src", "meta-schema.mjs"), .. documents], RepositoryPaths.EmitCheck, out var output, out var why),
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "meta-schema.mjs"), folder.Path], RepositoryPaths.EmitCheck, out var output, out var why),
             $"A generated JSON Schema is not a valid 2020-12 schema ({why}):\n{output}");
     }
 }

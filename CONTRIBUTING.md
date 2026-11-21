@@ -84,7 +84,9 @@ failures, `tests/emit-check/src/accept.mjs`, through which the differential test
 with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
 meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
 `tests/emit-check/src/functions.mjs`, through which they call it through the generated functions. CI sets
-`HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip.
+`HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip. A test gives a script the folder it
+wrote its files to, never a list of the files: Windows refuses a command line past a fixed length, so the tests refuse one past
+cmd.exe's 8,191 characters on every platform, and a list that grows with the fixtures fails on the machine it is written on.
 
 ### Differential tests against SQL Server
 

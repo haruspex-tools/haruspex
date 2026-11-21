@@ -71,10 +71,12 @@ public class ReportFormatTests
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, $"the {format} reports were not validated");
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
         using var folder = new TempDirectory();
-        var files = Documents(format).Select(d => folder.File($"{d.Name}.{format}.json", d.Text)).ToArray();
+        foreach (var (name, text) in Documents(format))
+            folder.File($"{name}.{format}.json", text);
 
+        // The folder, not each file: the command line stays short however many documents there are (EmitCheckPackage.TryRun).
         Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("src", "validate.mjs"), Path.Combine(RepositoryPaths.Root, schema), .. files], RepositoryPaths.EmitCheck, out var output, out var why),
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "validate.mjs"), Path.Combine(RepositoryPaths.Root, schema), folder.Path], RepositoryPaths.EmitCheck, out var output, out var why),
             $"A {format} report doesn't validate against {schema} ({why}):\n{output}");
     }
 
