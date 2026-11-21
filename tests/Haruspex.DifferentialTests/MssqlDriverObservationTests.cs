@@ -306,6 +306,29 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_column_named_as_a_member_every_object_inherits_comes_back_as_an_array()
+    {
+        // The driver treats a column whose name the row already has as one repeated, and makes it [earlier, value]; a plain
+        // object already has every member of Object.prototype, inherited, so each such column comes back as the array, the
+        // inherited function written as null. prototype is no such member, and comes back as it is.
+        var (on, off) = await Both(
+            "SELECT 1 AS [constructor], 2 AS [toString], 3 AS [valueOf], 4 AS [hasOwnProperty], 5 AS [isPrototypeOf], " +
+            "6 AS [propertyIsEnumerable], 7 AS [toLocaleString], 8 AS [__defineGetter__], 9 AS [__lookupSetter__], 10 AS [prototype];");
+
+        const string Row = """{"constructor":[null,1],"toString":[null,2],"valueOf":[null,3],"hasOwnProperty":[null,4],"isPrototypeOf":[null,5],"propertyIsEnumerable":[null,6],"toLocaleString":[null,7],"__defineGetter__":[null,8],"__lookupSetter__":[null,9],"prototype":10}""";
+        Assert.Equal(Row, Compact(OnlyRow(on).Row));
+        Assert.Equal(Row, Compact(OnlyRow(off).Row));
+    }
+
+    [Fact]
+    public async Task A_json_key_named_as_a_member_every_object_inherits_is_a_key_like_any_other()
+    {
+        var (on, _) = await Both("SELECT 1 AS [constructor], 2 AS [toString] FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;");
+
+        Assert.Equal("""{"constructor":1,"toString":2}""", Compact(OnlyRow(on).Row));
+    }
+
+    [Fact]
     public async Task A_json_key_named_proto_is_a_key_of_the_document_parsed()
     {
         // A FOR JSON alias and a json_object key alike; JSON.parse makes each an own property.

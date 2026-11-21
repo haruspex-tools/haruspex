@@ -76,6 +76,8 @@ internal static class ZodPlanner
                     continue;
                 }
 
+                if (encodings.Single() == IrEncoding.Rowset)
+                    RequireDriverColumns(name, document.Types[name], obj, refusals);
                 entries.Add(new ZodPlanEntry.NamedType(name, document.Types[name], encodings.Single()));
                 declared.Add(name);
             }
@@ -175,6 +177,19 @@ internal static class ZodPlanner
     {
         if (type.Fields.FirstOrDefault(f => TypeScriptNames.IsUnusableKey(f.Name)) is { } field)
             refusals.Add(ZodCodes.KeyUnusable.At(null, $"The type {name}, {reachedBy}, has a key named {field.Name}, which Zod never checks and an object literal can't hold; name it otherwise in the SQL."));
+    }
+
+    /// <summary>
+    /// A row's schema checks the row the mssql driver builds, which reads each column's name on the row before writing it, to
+    /// find a column repeated: a name every object inherits is found there already, so the driver hands over the inherited
+    /// member and the value as an array (observed: A_column_named_as_a_member_every_object_inherits_comes_back_as_an_array), and
+    /// no schema of the column's value holds. Such a column is refused; <c>__proto__</c> is refused already
+    /// (<see cref="RequireUsableKeys"/>). Decision 0092.
+    /// </summary>
+    private static void RequireDriverColumns(string name, IrObjectType type, IrObject obj, List<Diagnostic> refusals)
+    {
+        if (type.Fields.FirstOrDefault(f => TypeScriptNames.IsInheritedMember(f.Name) && !TypeScriptNames.IsUnusableKey(f.Name)) is { } field)
+            refusals.Add(ZodCodes.ColumnUnusable.At(null, $"The type {name}, which {obj.Id} returns as rows, has a column named {field.Name}, which the mssql driver hands over as an array of the member every object inherits and the value; name it otherwise in the SQL."));
     }
 
     /// <summary>

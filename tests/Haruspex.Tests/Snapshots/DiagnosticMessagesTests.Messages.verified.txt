@@ -349,6 +349,9 @@ haruspex: error HAR5007: A result set of s.p is named __proto__, which as a key 
 HAR5008
 haruspex: error HAR5008: The type Row, which s.p returns, has a key named __proto__, which Zod never checks and an object literal can't hold; name it otherwise in the SQL.
 
+HAR5009
+haruspex: error HAR5009: The type Row, which s.p returns as rows, has a column named constructor, which the mssql driver hands over as an array of the member every object inherits and the value; name it otherwise in the SQL.
+
 HAR5101
 haruspex: error HAR5101: The IR name 'GetBasket' names a type and the procedure shop.get_basket, which one $defs can't hold.
 

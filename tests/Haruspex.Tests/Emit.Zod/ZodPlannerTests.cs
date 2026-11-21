@@ -182,15 +182,40 @@ public class ZodPlannerTests
     [InlineData("prototype")]
     [InlineData("hasOwnProperty")]
     [InlineData("toString")]
-    public void A_key_named_as_a_member_every_object_inherits_is_an_ordinary_key(string key)
+    public void A_json_key_named_as_a_member_every_object_inherits_is_an_ordinary_key(string key)
     {
         // Only __proto__ is special in an object literal; these become own keys, which Zod checks (observed with the pinned
-        // Zod: a value of another type fails, and so does an object without the key).
-        var document = Document(new() { ["Row"] = new([new IrField(key, Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row")));
+        // Zod: a value of another type fails, and so does an object without the key), and JSON.parse makes them own keys.
+        var document = Document(new() { ["Row"] = new([new IrField(key, Number, IrPresence.Always, [])]) }, Procedure("s.p", Json(new IrRef("Row"))));
 
         Assert.Equal(["Row", "s.p"], Order(Plan(document)));
         Assert.Contains($"  {key}: z.int32(),\n", ZodEmitter.Emit(document).Expected(), StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("constructor")]
+    [InlineData("hasOwnProperty")]
+    [InlineData("toString")]
+    [InlineData("valueOf")]
+    [InlineData("isPrototypeOf")]
+    [InlineData("propertyIsEnumerable")]
+    [InlineData("toLocaleString")]
+    [InlineData("__defineGetter__")]
+    [InlineData("__lookupSetter__")]
+    public void A_column_named_as_a_member_every_object_inherits_is_refused_in_rows(string column)
+    {
+        // The mssql driver takes such a column for one repeated, and hands over [inherited member, value]
+        // (A_column_named_as_a_member_every_object_inherits_comes_back_as_an_array), so no schema of the value holds.
+        var document = Document(new() { ["Row"] = new([new IrField(column, Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row")));
+
+        Assert.Equal(
+            $"haruspex: error HAR5009: The type Row, which s.p returns as rows, has a column named {column}, which the mssql driver hands over as an array of the member every object inherits and the value; name it otherwise in the SQL.",
+            Refused(document));
+    }
+
+    [Fact]
+    public void A_column_named_prototype_is_an_ordinary_column_in_rows() =>
+        Assert.Equal(["Row", "s.p"], Order(Plan(Document(new() { ["Row"] = new([new IrField("prototype", Number, IrPresence.Always, [])]) }, Procedure("s.p", Rows("Row"))))));
 
     [Fact]
     public void A_procedure_whose_results_cannot_be_listed_is_planned_alone()

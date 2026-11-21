@@ -34,4 +34,10 @@ public static class ZodCodes
     /// (<see cref="TypeScriptNames.IsUnusableKey"/>).
     /// </summary>
     public static DiagnosticCode KeyUnusable { get; } = new(5008, DiagnosticSeverity.Error, "A key Zod can't check");
+
+    /// <summary>
+    /// A column of rows named as a member every object inherits (<see cref="TypeScriptNames.IsInheritedMember"/>), which the
+    /// mssql driver hands over as an array rather than the column's value.
+    /// </summary>
+    public static DiagnosticCode ColumnUnusable { get; } = new(5009, DiagnosticSeverity.Error, "A column the driver can't hand over");
 }

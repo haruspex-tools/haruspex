@@ -38,4 +38,18 @@ public static class TypeScriptNames
     /// <c>constructor</c> and <c>prototype</c> included, is an ordinary own key.
     /// </summary>
     public static bool IsUnusableKey(string key) => key == "__proto__";
+
+    /// <summary>
+    /// Whether <paramref name="name"/> is a member every plain object inherits: a name of <c>Object.prototype</c>, so that
+    /// <c>{}[name]</c> is defined before anything is assigned to it. In an object literal or from <c>JSON.parse</c> each is an
+    /// ordinary own key; it matters where code reads a key before writing it, as the mssql driver does building a row.
+    /// </summary>
+    public static bool IsInheritedMember(string name) => InheritedMembers.Contains(name);
+
+    // Object.getOwnPropertyNames(Object.prototype), as Node 26 lists them.
+    private static readonly HashSet<string> InheritedMembers = new(StringComparer.Ordinal)
+    {
+        "constructor", "__defineGetter__", "__defineSetter__", "hasOwnProperty", "__lookupGetter__", "__lookupSetter__",
+        "isPrototypeOf", "propertyIsEnumerable", "toString", "valueOf", "__proto__", "toLocaleString",
+    };
 }
