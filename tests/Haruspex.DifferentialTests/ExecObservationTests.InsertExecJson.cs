@@ -21,7 +21,7 @@ public partial class ExecObservationTests
     public async Task Insert_exec_maps_the_callees_columns_to_the_targets_by_position()
     {
         // The callee's head and lines go into the columns the list names second and third, whatever they are called; a column
-        // the list leaves out takes its default (null). Without a list, an identity column is skipped.
+        // the list leaves out takes its default (null). Without a list, an identity column and a computed column are skipped.
         Assert.Equal("id,head,lines,other: 1,[],{\"name\":\"Ann\"},null", (await Run(Cards, """
             DECLARE @r TABLE (id int, head nvarchar(max), lines nvarchar(max), other nvarchar(max));
             INSERT INTO @r (id, lines, head) EXEC dbo.obs_cards 1;
@@ -31,6 +31,16 @@ public partial class ExecObservationTests
             DECLARE @r TABLE (n int IDENTITY(1, 1), id int, head nvarchar(max), lines nvarchar(max));
             INSERT INTO @r EXEC dbo.obs_cards 1;
             SELECT r.n, r.head FROM @r AS r;
+            """)).ToString());
+        Assert.Equal("twice,head: 2,{\"name\":\"Ann\"}", (await Run(Cards, """
+            DECLARE @r TABLE (id int, twice AS id * 2, head nvarchar(max), lines nvarchar(max));
+            INSERT INTO @r EXEC dbo.obs_cards 1;
+            SELECT r.twice, r.head FROM @r AS r;
+            """)).ToString());
+        Assert.Equal("twice,head: 2,{\"name\":\"Ann\"}", (await Run(Cards, """
+            CREATE TABLE #r (id int, twice AS id * 2, head nvarchar(max), lines nvarchar(max));
+            INSERT INTO #r EXEC dbo.obs_cards 1;
+            SELECT r.twice, r.head FROM #r AS r;
             """)).ToString());
     }
 

@@ -69,6 +69,25 @@ public partial class JsonTracingTests
         Assert.Empty(doc.Unknowns);
     }
 
+    [Theory]
+    [InlineData("DECLARE @r TABLE")]
+    [InlineData("CREATE TABLE #r")]
+    public void Insert_exec_without_a_column_list_skips_a_computed_column(string table)
+    {
+        // Observed: Insert_exec_maps_the_callees_columns_to_the_targets_by_position. A computed column takes no value, so the
+        // callee's three columns go into the other three.
+        var name = table.EndsWith("#r", StringComparison.Ordinal) ? "#r" : "@r";
+        var doc = Infer($"""
+            {table} (order_id int NOT NULL, twice AS order_id * 2, head nvarchar(max) NULL, lines nvarchar(max) NULL);
+            INSERT INTO {name} EXEC sales.cards @id;
+            SELECT json_query(r.head) AS head, json_query(r.lines) AS lines FROM {name} AS r FOR JSON PATH;
+            """, more: Cards);
+
+        AssertHead(doc, Field(doc, "head").Type);
+        AssertLines(doc, Field(doc, "lines").Type);
+        Assert.Empty(doc.Unknowns);
+    }
+
     [Fact]
     public void Insert_exec_joins_what_every_result_set_of_the_callee_inserts()
     {

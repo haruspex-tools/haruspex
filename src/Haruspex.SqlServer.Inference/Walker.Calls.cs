@@ -125,8 +125,8 @@ internal sealed partial class Walker
         if (after.Temp(target) is not KnownTable table)
             return Continue(after);
 
-        // Without a column list the rows go into every column but an identity column (observed, also of one SELECT … INTO
-        // copied); when a column may be one, which columns they go into is not known.
+        // Without a column list the rows go into every column but an identity or computed column (observed, also of an identity
+        // column SELECT … INTO copied); when a column may be an identity column, which columns they go into is not known.
         if (spec.Columns.Count == 0 && table.Columns.FirstOrDefault(c => c.Identity is null) is { } maybe)
         {
             return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnsupportedStatement,
@@ -134,7 +134,7 @@ internal sealed partial class Walker
         }
 
         var targets = spec.Columns.Count == 0
-            ? [.. Enumerable.Range(0, table.Columns.Count).Where(i => table.Columns[i].Identity != true)]
+            ? [.. Enumerable.Range(0, table.Columns.Count).Where(i => table.Columns[i].Identity != true && !table.Columns[i].IsComputed)]
             : Binder.Written(spec.Columns, [.. table.Columns.Select(c => c.Name)]).ToList();
         if (targets.Any(i => i < 0))
             return Continue(after.WithTemp(target, Unknown(target, Unsupported(IrUnknownReason.UnresolvedColumn, "The insert names a column the table does not have.", at))));

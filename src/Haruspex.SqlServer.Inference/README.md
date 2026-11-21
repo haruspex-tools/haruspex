@@ -481,7 +481,7 @@ as for any write, and what its traced columns hold as JSON (below, "JSON built h
 hold, joined over every rowset it may return:
 
 - **By position.** The callee's columns go into the target's in order, or into the column list's, never by name; columns the
-  list leaves out take their default, and without a list an identity column is skipped
+  list leaves out take their default, and without a list an identity or computed column is skipped, in a temporary table too
   (`Insert_exec_maps_the_callees_columns_to_the_targets_by_position`).
 - **Text in, text out.** A column of JSON text keeps its content in an `nvarchar(max)` column, which holds it unchanged; a
   shorter one refuses longer text (8152) and `varchar` loses characters its code page lacks

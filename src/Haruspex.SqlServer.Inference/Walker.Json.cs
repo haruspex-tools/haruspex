@@ -82,14 +82,17 @@ internal sealed partial class Walker
     private static IEnumerable<(int Position, ColumnSlot Key)> TracedColumns(FlowState state, LocalName name, IReadOnlyList<string> columns) =>
         columns.Select((c, i) => (i, new ColumnSlot(name, c))).Where(c => state.Json.ContainsKey(c.Item2));
 
-    /// <summary>The positions an insert's values go to: its column list's, or every column but an identity column.</summary>
+    /// <summary>
+    /// The positions an insert's values go to: its column list's, or every column but an identity or computed column, which
+    /// take no value (observed: Insert_exec_maps_the_callees_columns_to_the_targets_by_position).
+    /// </summary>
     private List<int>? TableVariableTargets(LocalName name, IList<ColumnReferenceExpression> listed)
     {
         if (this.names.TableVariable(name)?.Declaration is not { } table)
             return null;
         var names = table.Columns.Select(c => c.Name).ToList();
         var targets = listed.Count == 0
-            ? [.. Enumerable.Range(0, names.Count).Where(i => !table.Columns[i].IsIdentity)]
+            ? [.. Enumerable.Range(0, names.Count).Where(i => !table.Columns[i].IsIdentity && !table.Columns[i].IsComputed)]
             : Binder.Written(listed, names).ToList();
         return targets.Any(i => i < 0) ? null : targets;
     }
