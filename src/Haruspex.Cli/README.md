@@ -80,7 +80,7 @@ take:
 | `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
 | `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module ("Several modules", below). |
-| `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run. |
+| `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run, which then removes no file of the last run's ([decision 0091](../../docs/decisions/0091-generate-removes-only-the-files-its-list-names.md)). |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
 | `--verbose`, `-v` | Also list every note: each unknown, grouped by the procedure or query file it is in. |
 | `--quiet`, `-q` | Print errors only. |
@@ -172,7 +172,8 @@ and the JSON's shape, are in [the command line's page](../../docs/command-line.m
   beside it.
 - **It removes only what it wrote.** Once the module is in place, each file the last run's `haruspex.files.json` names that
   this run didn't write is removed, then the list is written anew; a file the list doesn't name is never removed, nor anything
-  the list names outside the folder or through a symbolic link, nor a folder. A run that fails before writing removes nothing.
+  the list names outside the folder, with a character no name it writes has, or through a symbolic link, nor a folder. A run
+  that fails before writing removes nothing, and so does one narrowed by `--include`.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed and checked out.
 - **`check` writes nothing, and fails on any change of claim**, said as the change: a field added or removed, a value that
   became nullable, a type that changed, a value set that grew. What only says where a claim came from (a location, a reason,

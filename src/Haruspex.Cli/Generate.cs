@@ -22,7 +22,7 @@ internal static class Generate
             progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
             var earlier = EarlierOutput.Read(module);
             return Write(module)
-                .Select(paths => Tidied(module, paths, earlier.List))
+                .Select(paths => Tidied(module, paths, earlier.List, narrowed: request.Include.Count > 0))
                 .Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
         });
         return run switch
@@ -152,9 +152,11 @@ internal static class Generate
     /// that the next run tries again. Without a list to go by, a first run or one whose list can't be read, nothing is removed.
     /// The list is written last, so a run stopped before then leaves the last one's, which still names every file this one would
     /// have removed. Only the list says what may be removed, never the folder's contents
-    /// (docs/decisions/0091-generate-removes-only-the-files-its-list-names.md).
+    /// (docs/decisions/0091-generate-removes-only-the-files-its-list-names.md). A run <paramref name="narrowed"/> by
+    /// <c>--include</c> is a one-off look at part of the module, so it removes nothing: what it doesn't write is carried onto the
+    /// new list, for the next full run to remove or write again.
     /// </summary>
-    private static Written Tidied(EmittedModule module, EquatableArray<string> paths, EarlierList earlier)
+    private static Written Tidied(EmittedModule module, EquatableArray<string> paths, EarlierList earlier, bool narrowed)
     {
         var list = Path.Join(module.Out, OutputList.FileName);
         var at = new FileLocation(list);
@@ -172,6 +174,12 @@ internal static class Generate
                 var found = StaleFiles.Of(module.Out, entries, names);
                 warnings.AddRange(found.Refused.Select(r => CliCodes.ListedOutside.At(at,
                     $"\"{r.Entry}\" {r.Why}, so it isn't removed: generate removes only files inside the output folder, named as it writes them. The list was edited, or written by something else; it is written anew without it.")));
+                if (narrowed)
+                {
+                    kept.AddRange(found.Stale);
+                    break;
+                }
+
                 foreach (var entry in found.Stale)
                 {
                     var path = StaleFiles.PathOf(module.Out, entry);

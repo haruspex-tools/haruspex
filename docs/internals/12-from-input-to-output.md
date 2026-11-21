@@ -245,8 +245,8 @@ Once the files are in place, `Generate.Tidied` removes what the last run wrote a
 of the split. It goes only by the list the last run left, `haruspex.files.json` (`OutputList`), never by what the folder holds:
 a tool may remove only what it can prove it made, and the folder may hold the application's own files. `StaleFiles` sorts the
 list's entries: those this run writes again, compared as the file system compares names (a module renamed only by case on macOS
-is the same file), those that could reach outside the folder (absolute, with `..`, or through a symbolic link), which are never
-removed, and the plain files left, which are. The new list is written last, so a run stopped before then leaves the old list,
+is the same file), those that could reach outside the folder or name a file this run wrote (absolute, with `..`, with a character
+no name it writes has, or through a symbolic link), which are never removed, and the plain files left, which are. The new list is written last, so a run stopped before then leaves the old list,
 which still names every file to remove
 ([decision 0091](../decisions/0091-generate-removes-only-the-files-its-list-names.md)).
 

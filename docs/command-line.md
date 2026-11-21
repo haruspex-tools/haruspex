@@ -121,7 +121,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 | `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
 | `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module. |
-| `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run. |
+| `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run, which then removes no file of the last run's ([the files generate removes](configuration.md#the-files-generate-removes)). |
 | `--out`, `-o` | The folder to write to, or for `check` to compare with. Replaces `out` in the config file. |
 | `--baseline`, `-b` | The database before the change being made, a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file: `generate` writes types that work against both ([below](#generating-against-a-baseline)), and `check` also fails on what the application already running would fail on ([below](#checking-against-a-baseline)). Replaces `baseline` in the config file. |
 | `--fit-only` | `check` only, with a baseline: judge only whether the module fits it, without reading the output folder ([below](#checking-against-a-baseline)). |

@@ -9,16 +9,21 @@ the list anew. The list is the only thing it trusts for removal: it never looks 
 
 - **Nothing is removed** when the run fails before writing, when there is no list (the first run, or the first after
   upgrading), or when the list can't be read ([HAR6039](../diagnostics/HAR6039.md)), which is written anew all the same.
-- **Never outside the folder.** An entry that is absolute, has a `..`, isn't names joined by `/`, or is reached through a
+- **Never outside the folder.** An entry that is absolute, has a `..`, has a character no name `generate` writes has (ASCII
+  letters, digits, `.`, `-` and `_`, names joined by `/`), or is reached through a
   symbolic link or junction at any step, whether it points out of the folder or not, is never removed
   ([HAR6040](../diagnostics/HAR6040.md)). An entry that is a folder, or is gone, is passed over without a word.
 - **Never a folder.** Removing a file never removes the folder it was in, even when that leaves it empty: `generate` writes no
   folder but the output folder, so any other is someone else's.
-- **A file edited by hand is still removed** when the list names it: the outputs are generated, and each says so in its first
-  line.
+- **A file edited by hand is still removed** when the list names it: the outputs are generated, and each says so (a comment at
+  the top of the TypeScript, the JSON Schema's `description`, the list's `about`).
 - **Case.** An entry this run writes again is not removed, however its case differs, where the folder's file system ignores
   case: a module renamed `Admin` to `admin` keeps the file this run wrote. Where the file system tells case apart, the old file
-  is a file apart, and is removed.
+  is a file apart, and is removed. Holding entries to ASCII is what makes this exact: such a file system folds other letters its
+  own way (Windows' and macOS's take the Kelvin sign for `K`), so an entry with one could name a file this run wrote under a
+  name that compares as another.
+- **A run narrowed by `--include` removes nothing**, and carries what it didn't write onto the new list. It is a one-off look at
+  part of the module; removing whole modules because of it would be a surprise, and the next full run removes what is gone.
 - **A file that can't be removed** stays on the new list, so the next run tries again ([HAR6041](../diagnostics/HAR6041.md)).
 - **The list is written last**, after the removals, so a run stopped before then leaves the last run's list, which still names
   every file this one would have removed.

@@ -383,6 +383,74 @@ public class StaleFilesTests
     }
 
     [Fact]
+    public void An_entry_with_a_letter_generate_never_writes_is_refused_so_it_cannot_name_a_file_this_run_wrote()
+    {
+        // Windows' and macOS's file systems take the Kelvin sign for K, so the entry is kiln.zod.ts there, which this run writes;
+        // it compares as another name, so only refusing it keeps that file.
+        const string Kelvin = "\u212A";
+        using var folder = Shop(BothModules.Replace("\"admin\": [\"admin\"]", "\"kiln\": [\"admin\"]", StringComparison.Ordinal));
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        Listing(folder, Kelvin + "iln.zod.ts");
+
+        var (exitCode, said) = Run(folder, "generate");
+
+        Assert.True(exitCode == 0, said);
+        Assert.True(File.Exists(Out(folder, "kiln.zod.ts")));
+        Assert.Contains($"out/haruspex.files.json: warning HAR6040: \"{Kelvin}iln.zod.ts\" isn't a path generate writes", said, StringComparison.Ordinal);
+        Assert.DoesNotContain("Removed", said, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_list_is_never_removed_however_an_edit_spells_its_name()
+    {
+        using var folder = Shop();
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        Listing(folder, "Haruspex.Files.json");
+
+        var (exitCode, said) = Run(folder, "generate");
+
+        Assert.True(exitCode == 0, said);
+        Assert.True(File.Exists(Out(folder, "haruspex.files.json")));
+        Assert.DoesNotContain("Removed", said, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_run_narrowed_by_include_removes_nothing_and_keeps_what_it_did_not_write_on_the_list()
+    {
+        using var folder = Shop();
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+
+        var (exitCode, said) = Run(folder, "generate", "--include", "sales.*");
+
+        Assert.True(exitCode == 0, said);
+        Assert.All(AdminFiles, f => Assert.True(File.Exists(Out(folder, f)), f));
+        Assert.All(AdminFiles, f => Assert.Contains($"\"{f}\"", ListText(folder), StringComparison.Ordinal));
+        Assert.DoesNotContain("Removed", said, StringComparison.Ordinal);
+
+        // The next full run with admin gone removes them, as the list still names them.
+        folder.File("haruspex.json", SalesOnly);
+        Assert.Contains("Removed out/admin.jsonschema.json, out/admin.mssql.ts and out/admin.zod.ts", Run(folder, "generate").Said, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_baseline_run_that_empties_a_module_removes_its_files_fails_and_says_what_it_removed()
+    {
+        using var folder = Shop();
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        folder.File("release/tables.sql", Tables);
+        folder.File("release/procedures.sql", Procedures);
+
+        // admin's one procedure gains a parameter without a default: no one function calls both, so the module leaves it out.
+        folder.File("db/procedures.sql", Procedures.Replace("admin.list_clerks AS", "admin.list_clerks @shift int AS", StringComparison.Ordinal));
+        var (exitCode, said) = Run(folder, "generate", "--baseline", "release");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("HAR6033", said, StringComparison.Ordinal);
+        Assert.All(AdminFiles, f => Assert.False(File.Exists(Out(folder, f)), f));
+        Assert.Contains("Removed out/admin.jsonschema.json, out/admin.mssql.ts and out/admin.zod.ts, which this run no longer writes.", said, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_module_renamed_only_by_case_keeps_the_file_this_run_wrote()
     {
         using var folder = Shop();

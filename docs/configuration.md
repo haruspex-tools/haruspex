@@ -447,12 +447,15 @@ removed. Commit the list with the other files: it is generated, and `check` comp
 
 - **Only what the list names is removed.** The output folder may hold files of your own: `generate` never looks for files to
   remove, so a file it didn't write is never removed, whatever its name.
-- **A file edited by hand is removed** when the list names it and the run no longer writes it. Each generated file says in its
-  first line not to edit it.
+- **A file edited by hand is removed** when the list names it and the run no longer writes it. Each generated file says it is
+  generated: a comment at the top of the TypeScript files, the JSON Schema's `description`, the list's `about`.
 - **Nothing is removed** by a run that fails before writing, by the first run that writes a list (after upgrading, a module
   removed before then leaves its files: remove them yourself), or when the list can't be read ([HAR6039](diagnostics/HAR6039.md)).
-- **Nothing outside the folder.** An entry that is absolute, climbs out with `..`, or is reached through a symbolic link is
-  never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
+- **A run narrowed by `--include` removes nothing.** It is a look at part of the module, so the files it doesn't write stay, and
+  stay on the list, for the next full run to write again or remove. `check` reports them meanwhile, since the IR it wrote is the
+  narrowed one.
+- **Nothing outside the folder.** An entry that is absolute, climbs out with `..`, has a character no name `generate` writes has
+  (it writes ASCII letters, digits, `.`, `-` and `_`), or is reached through a symbolic link is never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
   folder is ever removed, even one a removed file leaves empty.
 - **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
   file the run wrote.

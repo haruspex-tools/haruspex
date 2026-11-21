@@ -39,7 +39,8 @@ internal static class StaleFiles
         var refused = new List<Refusal>();
         foreach (var entry in listed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
         {
-            if (now.Contains(Key(entry, ignoresCase)) || entry == OutputList.FileName)
+            // The list itself is written anew, never removed, however an edit spells its name.
+            if (now.Contains(Key(entry, ignoresCase)) || Key(entry, ignoresCase) == Key(OutputList.FileName, ignoresCase))
                 continue;
             if (Unsafe(entry) is { } why)
             {
@@ -50,7 +51,7 @@ internal static class StaleFiles
             switch (Reached(folder, entry))
             {
                 case Reach.ThroughLink:
-                    refused.Add(new Refusal(entry, "is reached through a symbolic link, which generate never writes, so it may be outside the output folder"));
+                    refused.Add(new Refusal(entry, "is reached through a symbolic link, which generate never writes and which may lead out of the output folder"));
                     break;
                 case Reach.File:
                     stale.Add(entry);
@@ -68,7 +69,7 @@ internal static class StaleFiles
 
     /// <summary>
     /// Why an entry can't be a path generate wrote, which the list's own form can say without touching the disk: absolute, or
-    /// climbing out, or not names joined by <c>/</c>. Null for one that can. generate writes names alone, so anything more is an
+    /// climbing out, or with a character no name generate writes has. Null for one that can. generate writes names alone, so anything more is an
     /// edit; accepting only plain relative names makes the folder the only place an entry can reach, links aside.
     /// </summary>
     private static string? Unsafe(string entry)
@@ -81,10 +82,13 @@ internal static class StaleFiles
         if (names.Contains(".."))
             return "climbs out of the output folder";
 
-        // A backslash is a separator on Windows and a colon names a drive or a stream there; a name of '.' or nothing makes two
-        // spellings of one path. None is in a name generate writes.
-        if (names.Any(n => n.Length == 0 || n == "." || n.Contains('\\', StringComparison.Ordinal) || n.Contains(':', StringComparison.Ordinal) || n.Contains('\0', StringComparison.Ordinal)))
-            return "isn't a path relative to the output folder with / between its names";
+        // generate writes names of ASCII letters, digits, '.', '-' and '_' alone (a module's name is held to them, decision 0074), so
+        // any other character is an edit. Holding entries to them also makes the comparison with this run's files exact: a file
+        // system that ignores case folds ASCII as ToUpperInvariant does, while other letters (the Kelvin sign, which Windows' and
+        // macOS's file systems take for K) or an accent composed another way could name a file this run wrote under a name that
+        // compares as another. A backslash, a colon and a name of '.' or nothing are refused by the same rule.
+        if (names.Any(n => n.Length == 0 || n == "." || !n.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_')))
+            return "isn't a path generate writes, names of ASCII letters, digits, '.', '-' and '_' joined by /";
         return null;
     }
 
@@ -140,8 +144,9 @@ internal static class StaleFiles
 
     /// <summary>
     /// An entry as the file system tells it apart: in upper case where case is ignored. Every name generate writes is ASCII (a
-    /// module's name is, docs/decisions/0074-a-config-may-split-its-output-into-modules.md), so how a file system folds other
-    /// letters, or composes an accent, never decides whether a file it wrote is written again.
+    /// module's name is, docs/decisions/0074-a-config-may-split-its-output-into-modules.md), and an entry with any other character
+    /// is refused before it could be removed (<see cref="Unsafe"/>), so how a file system folds other letters, or composes an
+    /// accent, never decides whether a file it wrote is written again.
     /// </summary>
     private static string Key(string entry, bool ignoresCase) => ignoresCase ? entry.ToUpperInvariant() : entry;
 }

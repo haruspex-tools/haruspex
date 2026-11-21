@@ -61,9 +61,17 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         if (detail == OutputDetail.Verbose || module.Diagnostics.Any(d => d.Code == CliCodes.UnknownsFail))
             Notes(module, error);
 
+        // A run that fails after writing (a change no one function bridges) has removed files all the same, which only this says.
+        if (!module.Succeeded && detail != OutputDetail.Quiet && Removed(module) is { } removed)
+            error.WriteLine(removed);
+
         if (!module.Succeeded && detail != OutputDetail.Quiet && Closing(module) is { } closing)
             error.WriteLine(closing);
     }
+
+    /// <summary>The line naming the files <c>generate</c> removed; null when it removed none.</summary>
+    private string? Removed(ModuleReport module) =>
+        module.Removed.Count == 0 ? null : $"Removed {EnglishList.Of([.. module.Removed.Select(Shown)])}, which this run no longer writes.";
 
     /// <summary>Whether a diagnostic other than an unknown's note is said: errors always, warnings unless quiet, notes when verbose.</summary>
     private bool Shows(Diagnostic diagnostic) => diagnostic.Severity switch
@@ -118,8 +126,8 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
 
         var combined = module.Baseline is { } against ? $" Its types work against the baseline {Shown(against)} too." : "";
         var lines = new List<string> { $"haruspex: {counted}. Wrote {WrittenFiles(module)}.{combined}" };
-        if (module.Removed.Count > 0)
-            lines.Add($"Removed {EnglishList.Of([.. module.Removed.Select(Shown)])}, which this run no longer writes.");
+        if (Removed(module) is { } removed)
+            lines.Add(removed);
         switch (module.Since)
         {
             case SinceLastRun.Compared compared:
