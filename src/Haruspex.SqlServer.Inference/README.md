@@ -921,7 +921,10 @@ operators, with no difference; that took 14 minutes, so the grid kept as a test 
   digits one of six (`-70000` is (6,0), `-9999` (4,0) and `-100000` (6,0) as their own, `IntDigits.CountOf`; observed in every
   operator and at every compatibility level, `A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five`),
   `money` (19,4), `smallmoney` (10,4); a decimal literal is `numeric` of its own digits (`1.0` is `numeric(2,1)`, `-1.0` and
-  `-70000.0` too: the sign is not a digit).
+  `-70000.0` too: the sign is not a digit). A sign binds more loosely than `*`, `/` and `%`, so `-70000 * d` is
+  `-(70000 * d)` on the server, counting five, where the parser gives `(-70000) * d`; `Typer.SignedProduct` types the product
+  and negates it, and a sign inside a chain, `d * -7 * 1`, which the server reads as `d * -(7 * 1)`, is unknown
+  (`A_sign_before_a_product_negates_the_product`).
   A `bit` beside another number is converted to that number's own type, a decimal's precision and scale too (`bit * decimal(10,2)`
   is `decimal(21,4)`, that is `decimal(10,2) * decimal(10,2)`); two bits are an error (402), and so is negating one (8117)
   (`A_bit_beside_a_number_takes_the_numbers_type_and_two_bits_are_an_error`; it does not count as `decimal(1,0)`). The result is `numeric` when either operand is.

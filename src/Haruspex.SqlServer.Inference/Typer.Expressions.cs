@@ -579,23 +579,55 @@ internal sealed partial class Typer
         if (op == '?')
             return BitwiseBinary(binary, scope);
 
-        var left = Expression(binary.FirstExpression, scope);
-        var right = Expression(binary.SecondExpression, scope);
+        // T-SQL's unary minus and plus bind more loosely than *, / and %, so -a * b is -(a * b) on the server, where the parser
+        // gives (-a) * b; and a sign inside a chain takes in what follows, a * -b * c being a * -(b * c). The type of the product
+        // is the server's grouping's (observed: A_sign_before_a_product_negates_the_product).
+        if (op is '*' or '/' or '%')
+        {
+            if (binary.FirstExpression is UnaryExpression { UnaryExpressionType: UnaryExpressionType.Negative or UnaryExpressionType.Positive } sign)
+                return SignedProduct(binary, sign, op, scope);
+            if (binary.FirstExpression is BinaryExpression { BinaryExpressionType: BinaryExpressionType.Multiply or BinaryExpressionType.Divide or BinaryExpressionType.Modulo, SecondExpression: UnaryExpression { UnaryExpressionType: UnaryExpressionType.Negative or UnaryExpressionType.Positive } })
+                return NotModelled(binary, "a sign inside a chain of *, / and % takes in the rest of the chain on the server, which is not modelled.");
+        }
+
+        return Operation(binary, binary.FirstExpression, binary.SecondExpression, op, scope);
+    }
+
+    /// <summary>
+    /// <c>-a * b</c>, <c>-a / b</c> or <c>-a % b</c> as the server groups it, <c>-(a * b)</c>: the product of <c>a</c> and
+    /// <c>b</c>, negated (<see cref="Negated"/>). A sign that negates nothing, <c>+</c>, leaves the product as it is.
+    /// </summary>
+    private Value SignedProduct(BinaryExpression binary, UnaryExpression sign, char op, ReadScope scope)
+    {
+        if (Strip(sign.Expression) is UnaryExpression)
+            return NotModelled(binary, "a value signed more than once before a product is not modelled.");
+        var product = Operation(binary, sign.Expression, binary.SecondExpression, op, scope);
+        return sign.UnaryExpressionType == UnaryExpressionType.Positive || product.Shape is UnknownShape ? product : Negated(product, binary);
+    }
+
+    /// <summary>
+    /// <c>first op second</c>, typed at <paramref name="binary"/>: string + (<see cref="Plus"/>), or numbers and dates typed by
+    /// <see cref="Arithmetic.TypeOf"/>.
+    /// </summary>
+    private Value Operation(BinaryExpression binary, ScalarExpression first, ScalarExpression second, char op, ReadScope scope)
+    {
+        var left = Expression(first, scope);
+        var right = Expression(second, scope);
         if (left.Shape is UnknownShape)
             return left;
         if (right.Shape is UnknownShape)
             return right;
         // Live JSON built as text is nvarchar(max) beside a string (Typer.JsonAssembled.cs).
-        if (op == '+' && LiveText(left, binary.FirstExpression) is var lj && LiveText(right, binary.SecondExpression) is var rj && (lj is not null || rj is not null)
+        if (op == '+' && LiveText(left, first) is var lj && LiveText(right, second) is var rj && (lj is not null || rj is not null)
             && (lj ?? TypeOf(left)) is { IsString: true } lt && (rj ?? TypeOf(right)) is { IsString: true } rt)
         {
             return Plus(binary, left, right, lt, rt);
         }
         // NULLIF over a literal whose fold isn't worked out here may count its literal's digits or its type's (observed:
         // Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values).
-        if (NullIfMayFold(binary.FirstExpression) || NullIfMayFold(binary.SecondExpression))
+        if (NullIfMayFold(first) || NullIfMayFold(second))
             return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
-        if (OperandOf(left, binary.FirstExpression, arithmetic: true) is not { } l || OperandOf(right, binary.SecondExpression, arithmetic: true) is not { } r)
+        if (OperandOf(left, first, arithmetic: true) is not { } l || OperandOf(right, second, arithmetic: true) is not { } r)
             return NotModelled(binary, "an operand of this type is not modelled yet.");
         if (op == '+' && ((l.Type.IsString && r.Type.IsString) || (l.Type.IsBinary && r.Type.IsBinary)))
             return Plus(binary, left, right, l.Type, r.Type);
@@ -604,15 +636,15 @@ internal sealed partial class Typer
 
         // An int the server may fold to a literal counts that literal's digits (observed:
         // An_int_constant_counts_its_own_digits_beside_a_decimal); when its fewest digits give another scale, not modelled.
-        var mayOverflow = Arithmetic.MayOverflow(op, l, r, NumberOf(binary.SecondExpression));
+        var mayOverflow = Arithmetic.MayOverflow(op, l, r, NumberOf(second));
         var rounds = Arithmetic.Rounds(op, l, r);
         if (Uncertain(left) || Uncertain(right))
         {
             // Never null: both operands were found above, and one by its fewest digits is found with it (OperandOf).
-            var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true, arithmetic: true)!, OperandOf(right, binary.SecondExpression, least: true, arithmetic: true)!);
+            var (lf, rf) = (OperandOf(left, first, least: true, arithmetic: true)!, OperandOf(right, second, least: true, arithmetic: true)!);
             if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Type != type.Type)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
-            mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));
+            mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(second));
             rounds |= Arithmetic.Rounds(op, lf, rf);
         }
 
@@ -659,14 +691,20 @@ internal sealed partial class Typer
         var operand = Expression(unary.Expression, scope);
         if (operand.Shape is UnknownShape || unary.UnaryExpressionType == UnaryExpressionType.Positive)
             return operand;
-        return TypeOf(operand) switch
-        {
-            ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact, operand.NullableBecause, unary),
-            { } tiny when tiny.Type == BuiltInType.TinyInt => Typed(ScalarType.Of(BuiltInType.SmallInt), operand.NullableBecause, unary),
-            ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, Overflow(unary)), unary),
-            _ => NotModelled(unary, "negating a value of this type is not modelled yet."),
-        };
+        return Negated(operand, unary);
     }
+
+    /// <summary>
+    /// <paramref name="operand"/> negated, at <paramref name="at"/>: its type, but a tinyint negated is a smallint, and an integer
+    /// or money may overflow at its least value.
+    /// </summary>
+    private Value Negated(Value operand, ScalarExpression at) => TypeOf(operand) switch
+    {
+        ({ IsDecimal: true } or { IsApproximate: true }) and var exact => Typed(exact, operand.NullableBecause, at),
+        { } tiny when tiny.Type == BuiltInType.TinyInt => Typed(ScalarType.Of(BuiltInType.SmallInt), operand.NullableBecause, at),
+        ({ IsInteger: true } or { IsMoney: true }) and var integer => Typed(integer, NullReasons.Join(operand.NullableBecause, Overflow(at)), at),
+        _ => NotModelled(at, "negating a value of this type is not modelled yet."),
+    };
 
     // ---- SUM --------------------------------------------------------------------------------------------------------
 

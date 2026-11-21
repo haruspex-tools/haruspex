@@ -123,17 +123,35 @@ public class NumericTests
         var doc = Procedure($"""
             SELECT d55 + {literal} AS a, d55 - {literal} AS b, d55 * {literal} AS c, d55 / {literal} AS e, d380 % {literal} AS g,
                    {literal} + d55 AS h, COALESCE(d55, {literal}) AS k, d3838 + {literal} AS l, d3838 - {literal} AS n,
-                   d3838 * {literal} AS o
+                   d3838 * {literal} AS o, CASE WHEN i > 0 THEN d55 ELSE {literal} END AS q, IIF(i > 0, d55, {literal}) AS r
             FROM dbo.t;
             """);
         var p = digits + 6;
         Assert.Equal(
             $"a decimal({p},5), b decimal({p},5), c decimal({p},5), e decimal({p},{p}), g decimal({digits},0), h decimal({p},5), "
-            + $"k decimal({digits + 5},5), l decimal(38,{38 - digits}), n decimal(38,{38 - digits}), o decimal(38,{37 - digits})",
+            + $"k decimal({digits + 5},5), l decimal(38,{38 - digits}), n decimal(38,{38 - digits}), o decimal(38,{37 - digits}), "
+            + $"q decimal({digits + 5},5), r decimal({digits + 5},5)",
             string.Join(", ", Fields(doc).Select(f => f.Name + " " + (f.Type as IrScalar)?.Sql)));
         Assert.Equal(
             $"u decimal({digits + 5},5)",
             string.Join(", ", Fields(Procedure($"SELECT d55 AS u FROM dbo.t UNION ALL SELECT {literal};")).Select(f => f.Name + " " + (f.Type as IrScalar)?.Sql)));
+    }
+
+    [Fact]
+    public void A_sign_before_a_product_negates_the_product_and_one_inside_a_chain_is_unknown()
+    {
+        // A_sign_before_a_product_negates_the_product: the server reads -70000 * d55 as -(70000 * d55), and d55 * -7 * 1 as
+        // d55 * -(7 * 1), where the parser gives (-70000) * d55 and (d55 * -7) * 1.
+        var doc = Procedure("""
+            SELECT -70000 * d55 AS a, d55 * -70000 AS b, -70000 / d55 AS c, -70000 % d380 AS e, -70000 + d55 AS f, (-70000) * d55 AS g,
+                   -70000 * d55 * 1 AS h, d55 * -7 * 1 AS k, -70000 - d55 AS l, +70000 * d55 AS m, -ti * ti AS n
+            FROM dbo.t;
+            """);
+
+        Assert.Equal(
+            "a decimal(11,5), b decimal(12,5), c decimal(16,6), e decimal(5,0), f decimal(12,5), g decimal(12,5), h decimal(13,5), "
+            + "k unknown, l decimal(12,5), m decimal(11,5), n smallint",
+            string.Join(", ", Fields(doc).Select(f => f.Name + " " + ((f.Type as IrScalar)?.Sql ?? "unknown"))));
     }
 
     [Fact]
