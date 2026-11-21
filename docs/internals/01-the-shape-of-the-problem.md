@@ -83,8 +83,8 @@ export type GetCategory = z.infer<typeof GetCategorySchema>
 Every line is a claim, and each has a reason in the SQL:
 
 - **`id` is a 32-bit integer and never null**: `category_id` is an `int` declared `NOT NULL`, and is the primary key too.
-- **`name` is at most 40 characters**: `nvarchar(40)` counts UTF-16 code units, as JavaScript's `length` does, so the
-  bound is exact.
+- **`name` is at most 40 characters**: `nvarchar(40)` counts UTF-16 code units, and Zod's `.max` counts code points, of which
+  each is one code unit or two, so a value the column holds is never more than 40 of them.
 - **`price` may be absent, but is never `null`**: the column allows NULL, and `FOR JSON` leaves a null key out of the
   object rather than writing `null`. Its range and its step of 0.01 come from `decimal(9, 2)`.
 - **`products` has at least one item when it is there, and may be absent**: a `FOR JSON` subquery over no rows gives NULL,

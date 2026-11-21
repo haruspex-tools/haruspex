@@ -534,6 +534,14 @@ null.
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
 | `values` | the value is one of `items` (strings, or numbers as plain decimal text). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020). `canonical` (0.20): the value's canonical form under the fold `fold` names (see `folds`) is an item's, so an emitter may map a value to the item whose canonical form it has and then treat the set as exact; its items are in ordinal order, and where two share a canonical form, a value maps to the first. `fold` is there exactly when `match` is `canonical` |
 
+A length is the server's, in its unit. A target that counts another, as Zod and JSON Schema count code points, reads it through
+`IrLength.FewestCodePoints` and `IrMinLength.FewestCodePoints`: a maximum of any unit is a maximum of code points, since a code point
+takes at least one of each, but a fixed length or a minimum is a minimum only of the fewest code points a value of it can hold
+(an `nchar(4)` holding two emoji is two). `IrLength.FewestUtf16Units` gives the same for a minimum in UTF-16 code units, which is
+how a fixed length becomes a minimum when two documents are combined. A fixed length of UTF-16 code units is exact for a stored
+value, but a value converted to `nchar(n)` under a supplementary-character (`_SC`) collation is cut before a pair that doesn't fit
+and not padded, so it may be one code unit short: the minima count that.
+
 Every count (a length, `digits`, `minItems`, `maxItems`) is a whole number from 0 to 2,147,483,647.
 
 Facets travel with a value only while it passes through unchanged: a column reference, under aliases, through

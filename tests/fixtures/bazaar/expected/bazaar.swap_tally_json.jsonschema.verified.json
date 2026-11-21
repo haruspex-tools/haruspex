@@ -37,7 +37,7 @@
           "maximum": 999999999999999999
         },
         "grade": {
-          "description": "SQL type char(1). char(1) pads to 1 bytes and its collation isn't declared, so the length is 1 to 1 code points.",
+          "description": "SQL type char(1).",
           "type": "string",
           "minLength": 1,
           "maxLength": 1

@@ -290,7 +290,8 @@ export type GetComponentsNodeProduct = z.infer<typeof GetComponentsNodeProductSc
 
 export const GetComponentsNodeSchema = z.object({
   quantity: z.number().min(1).max(999999.99).multipleOf(1e-2),
-  unit: z.string().length(3),
+  /** nchar(3) is 3 UTF-16 code units, or 2 UTF-16 code units where an _SC collation cuts off a pair, which is 1 to 3 code points. */
+  unit: z.string().min(1).max(3),
   product: GetComponentsNodeProductSchema,
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
@@ -328,7 +329,9 @@ export type GetProductTree = z.infer<typeof GetProductTreeSchema>
 ```
 
 `quantity` is at least 1 and `standardCost` at least 0 from the sample's `CHECK` constraints, `name` is at most 50 characters
-from its alias type `Name`, and `unit` is exactly three characters because `nchar(3)` arrives padded.
+from its alias type `Name`, and `unit` is three UTF-16 code units because `nchar(3)` arrives padded. Zod counts code
+points, of which a character outside the Basic Multilingual Plane (an emoji) is one but takes two code units, and a value
+converted under a supplementary-character collation may be cut before such a pair, so it checks one to three.
 
 ## Other ways to use it
 

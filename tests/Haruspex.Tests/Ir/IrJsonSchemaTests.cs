@@ -131,8 +131,11 @@ public class IrJsonSchemaTests
         (typeof(IrLength), nameof(IrLength.Unit), "length", "unit"),
         (typeof(IrLength), nameof(IrLength.Encoding), "length", "encoding"),
         (typeof(IrLength), nameof(IrLength.From), "length", "from"),
+        (typeof(IrLength), nameof(IrLength.FewestCodePoints), "length", null), // derived from its value, unit and encoding; not written
+        (typeof(IrLength), nameof(IrLength.FewestUtf16Units), "length", null), // the same
         (typeof(IrMinLength), nameof(IrMinLength.Value), "minLength", "value"),
         (typeof(IrMinLength), nameof(IrMinLength.From), "minLength", "from"),
+        (typeof(IrMinLength), nameof(IrMinLength.FewestCodePoints), "minLength", null), // derived from its value; not written
         (typeof(IrDigits), nameof(IrDigits.Precision), "digits", "precision"),
         (typeof(IrDigits), nameof(IrDigits.Scale), "digits", "scale"),
         (typeof(IrDigits), nameof(IrDigits.From), "digits", "from"),

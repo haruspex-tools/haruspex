@@ -26,8 +26,8 @@ export const EchoReadingsRowSchema = z.object({
   token: z.guid().nullable(),
   flagged: z.boolean().nullable(),
   total: z.string().nullable(),
-  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3. */
-  code: z.string().max(3).nullable(),
+  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points. */
+  code: z.string().min(1).max(3).nullable(),
 })
 export type EchoReadingsRow = z.infer<typeof EchoReadingsRowSchema>
 

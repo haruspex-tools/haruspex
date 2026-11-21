@@ -69,16 +69,17 @@ public static partial class IrCombination
         }
 
         /// <summary>
-        /// The shortest length either allows: a fixed length is a minimum too. Null when either may be as short as nothing, or
-        /// both's lengths are counted in another unit.
+        /// The shortest length either allows, in UTF-16 code units: a fixed length is a minimum too, of the fewest code units it can
+        /// hold (<see cref="IrLength.FewestUtf16Units"/>: <c>char(8)</c> of UTF-8 may be two emoji, four code units). Null when either
+        /// may be as short as nothing.
         /// </summary>
         private static IrMinLength? Shortest(IrFacets was, IrFacets now)
         {
             var (a, b) = (Least(was), Least(now));
             return a is null || b is null ? null : a.Value <= b.Value ? a : b;
 
-            static IrMinLength? Least(IrFacets facets) => facets.Length is { IsFixed: true } fixedAt && (facets.MinLength is null || facets.MinLength.Value < fixedAt.Value)
-                ? new IrMinLength(fixedAt.Value, fixedAt.From)
+            static IrMinLength? Least(IrFacets facets) => facets.Length is { IsFixed: true } fixedAt && (facets.MinLength is null || facets.MinLength.Value < fixedAt.FewestUtf16Units)
+                ? new IrMinLength(fixedAt.FewestUtf16Units, fixedAt.From)
                 : facets.MinLength;
         }
 

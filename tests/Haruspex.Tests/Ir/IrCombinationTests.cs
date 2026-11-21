@@ -140,6 +140,40 @@ public partial class IrCombinationTests
     }
 
     [Fact]
+    public void A_fixed_length_in_utf_8_bytes_is_a_minimum_only_of_the_code_units_those_bytes_can_hold()
+    {
+        // char(8) of UTF-8 holding two emoji is 8 bytes but 4 UTF-16 code units (observed in the differential tests'
+        // A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points): at least 3, not 8.
+        const string Codes = "CREATE TABLE shop.codes (id int NOT NULL PRIMARY KEY, code char(8) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NOT NULL);";
+        const string List = "CREATE PROCEDURE shop.list_codes AS SELECT c.code FROM shop.codes AS c;";
+        var baseline = Infer(List, Codes);
+        var candidate = Infer(List, Edit(Codes, "char(8)", "char(10)"));
+
+        var combined = Combine(baseline, candidate);
+
+        var facets = ((IrScalar)Field(combined.Document, "shop.list_codes", "code").Type).Facets!;
+        Assert.Equal((10, false, IrByteEncoding.Utf8), (facets.Length!.Value, facets.Length.IsFixed, facets.Length.Encoding));
+        Assert.Equal(3, facets.MinLength!.Value);
+        FitsBoth(combined, baseline, candidate);
+    }
+
+    [Fact]
+    public void A_fixed_length_in_utf_16_code_units_is_a_minimum_of_one_fewer()
+    {
+        // An nchar(4) value converted under an _SC collation may be cut before a pair, to 3 code units (observed in the differential
+        // tests' A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points).
+        const string Codes = "CREATE TABLE shop.codes (id int NOT NULL PRIMARY KEY, code nchar(4) NOT NULL);";
+        const string List = "CREATE PROCEDURE shop.list_codes AS SELECT c.code FROM shop.codes AS c;";
+        var baseline = Infer(List, Codes);
+        var candidate = Infer(List, Edit(Codes, "nchar(4)", "nchar(6)"));
+
+        var combined = Combine(baseline, candidate);
+
+        Assert.Equal(3, ((IrScalar)Field(combined.Document, "shop.list_codes", "code").Type).Facets!.MinLength!.Value);
+        FitsBoth(combined, baseline, candidate);
+    }
+
+    [Fact]
     public void A_value_of_another_kind_is_a_union_of_both()
     {
         var baseline = Infer(Edit(GetOrder, "o.status FROM", "o.status, o.qty AS amount FROM"));

@@ -14,8 +14,7 @@ export const SwapTallyJsonRowSchema = z.object({
   worth: z.number().min(-1000000000000000000).max(1000000000000000000).multipleOf(1),
   /** numeric(18,0) runs from -999999999999999999 to 999999999999999999, which JavaScript reads as the nearest doubles. */
   share: z.number().min(-1000000000000000000).max(1000000000000000000).multipleOf(1),
-  /** char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1. */
-  grade: z.string().max(1),
+  grade: z.string().length(1),
   /** varchar(1) counts bytes and its collation isn't declared, so the length is at most 1. */
   mark: z.string().max(1),
   opened: z.iso.time(),

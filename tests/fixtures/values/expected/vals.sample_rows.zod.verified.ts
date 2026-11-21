@@ -4,6 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
+// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
+//   may take more than one, so a fixed or least length holds fewer code points than it counts.
 // - The mssql driver builds a decimal or money of more than 15 digits as a double, which may land just past the type's
 //   bounds.
 import { z } from 'zod'
@@ -42,7 +44,8 @@ export const SampleRowsRowSchema = z.object({
   guid: z.guid().nullable(),
   /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).nullable(),
-  ncode: z.string().length(5).nullable(),
+  /** nchar(5) is 5 UTF-16 code units, or 4 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 5 code points. */
+  ncode: z.string().min(2).max(5).nullable(),
   /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   vcode: z.string().max(5).nullable(),
   body: z.string().nullable(),

@@ -6,6 +6,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
+// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
+//   may take more than one, so a fixed or least length holds fewer code points than it counts.
 // - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
 //   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
@@ -45,7 +47,8 @@ export const GetSampleRowSchema = z.object({
   guid: z.guid().optional(),
   /** char(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   code: z.string().max(5).optional(),
-  ncode: z.string().length(5).optional(),
+  /** nchar(5) is 5 UTF-16 code units, or 4 UTF-16 code units where an _SC collation cuts off a pair, which is 2 to 5 code points. */
+  ncode: z.string().min(2).max(5).optional(),
   /** varchar(5) counts bytes and its collation isn't declared, so the length is at most 5. */
   vcode: z.string().max(5).optional(),
   body: z.string().optional(),

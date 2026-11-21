@@ -9,8 +9,8 @@
 import { z } from 'zod'
 
 export const RegionCardRowSchema = z.object({
-  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3. */
-  code: z.string().max(3),
+  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points. */
+  code: z.string().min(1).max(3),
   name: z.string().max(30),
   /**
    * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.

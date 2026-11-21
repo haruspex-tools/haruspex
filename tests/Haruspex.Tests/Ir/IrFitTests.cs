@@ -506,6 +506,16 @@ public partial class IrFitTests
     }
 
     [Fact]
+    public void A_fixed_length_in_utf_8_bytes_does_not_fit_a_minimum_of_as_many_code_units()
+    {
+        // char(8) of UTF-8 may hold two emoji, 4 UTF-16 code units, which a minimum of 6 refuses.
+        var before = WithField(Infer(ListOrders), "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(6, Declared) }));
+        var after = WithField(before, "customer", t => Faceted(t, _ => new IrFacets(Length: new IrLength(8, true, IrLengthUnit.Bytes, IrByteEncoding.Utf8, Declared))));
+
+        Assert.Single(Fit(before, after), f => f.Contains("minimum length changed from at least 6", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_fixed_length_fits_only_the_same_fixed_length()
     {
         var before = WithField(Infer(ListOrders), "customer", t => Faceted(t, f => Sized(f, 10, isFixed: true)));

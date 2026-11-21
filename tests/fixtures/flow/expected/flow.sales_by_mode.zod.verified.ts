@@ -25,18 +25,18 @@ export const SalesByModeResult1Row3Schema = z.object({
   name: z.string().max(30),
   /**
    * One of "NTH", "STH", "EST", "WST", as the database compares strings.
-   * char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3.
+   * char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points.
    */
-  code: z.string().max(3),
+  code: z.string().min(1).max(3),
 })
 export type SalesByModeResult1Row3 = z.infer<typeof SalesByModeResult1Row3Schema>
 
 export const SalesByModeResult2RowSchema = z.object({
   /**
    * One of "NTH", "STH", "EST", "WST", as the database compares strings.
-   * char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3.
+   * char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points.
    */
-  code: z.string().max(3),
+  code: z.string().min(1).max(3),
   name: z.string().max(30),
 })
 export type SalesByModeResult2Row = z.infer<typeof SalesByModeResult2RowSchema>

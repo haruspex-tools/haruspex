@@ -7,8 +7,8 @@
 import { z } from 'zod'
 
 export const VariableAndTempOfOneNameRowSchema = z.object({
-  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is at most 3. */
-  variable_code: z.string().max(3),
+  /** char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points. */
+  variable_code: z.string().min(1).max(3),
   /** varchar(10) counts bytes and its collation isn't declared, so the length is at most 10. */
   temp_code: z.string().max(10).nullable(),
   label: z.string().max(20),

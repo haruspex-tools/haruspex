@@ -13,8 +13,7 @@ export const SwapTallyTypesResult1RowSchema = z.object({
   worth: z.number().multipleOf(1),
   /** The driver may round numeric(18,0) past its bounds in a row, so they are not checked. */
   share: z.number().multipleOf(1),
-  /** char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1. */
-  grade: z.string().max(1),
+  grade: z.string().length(1),
   /** varchar(1) counts bytes and its collation isn't declared, so the length is at most 1. */
   mark: z.string().max(1),
   opened: z.date(),
@@ -40,12 +39,11 @@ export const SwapTallyTypesResult2RowSchema = z.object({
    */
   share: z.number().multipleOf(1).nullable(),
   /**
-   * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain bazaar.swap_tally_types '#2.grade'
    */
-  grade: z.string().max(1).nullable(),
+  grade: z.string().length(1).nullable(),
   /**
    * varchar(1) counts bytes and its collation isn't declared, so the length is at most 1.
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).

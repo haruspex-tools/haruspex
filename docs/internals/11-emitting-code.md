@@ -328,7 +328,7 @@ And what each can't say, which its output widens and notes:
 |---|---|---|
 | a value set that holds up to a collation's fold (`canonical`) | said: the value is mapped to its item first | a note on a plain string: a validator can't fold |
 | a decimal's places | `.multipleOf`, which Zod tests with a tolerance shown never to reject a true value | a note: most validators test `multipleOf` in binary floating point, and 0.07 is no multiple of 0.01 there |
-| a length in UTF-16 code units or bytes | exact for UTF-16, as JavaScript counts | a bound on code points, which JSON Schema counts, exact only in a single-byte collation |
+| a length in UTF-16 code units or bytes | a maximum of code points, which Zod counts; a fixed length or a minimum is a minimum only of the fewest code points it can hold (`IrLength.FewestCodePoints`), exact only in a single-byte collation | the same, since JSON Schema counts code points too |
 | a `bigint` past 2^53 | a string in a rowset, a double in JSON | exact in the file, a double in most validators |
 | JSON text of known content | parsed and checked | `contentSchema`, which a validator checks only when asked |
 | the application's own schema, declared by the config file | imported and used | `{}`: a document can't refer to a TypeScript module |
