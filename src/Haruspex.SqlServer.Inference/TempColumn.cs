@@ -24,6 +24,13 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed record TempColumn(string Name, Value Value, DeclaredTable? Declaration, bool? Identity = false, JsonSlot? Json = null)
 {
     /// <summary>
+    /// Whether it is declared computed (<c>b AS a * 2</c>), so that an insert without a column list skips it, as it does an
+    /// identity column (observed: Insert_exec_maps_the_callees_columns_to_the_targets_by_position). A column
+    /// <c>SELECT … INTO</c> made is never one.
+    /// </summary>
+    public bool IsComputed => Declaration?.Columns.Any(c => c.IsComputed && string.Equals(c.Name, Name, StringComparison.OrdinalIgnoreCase)) == true;
+
+    /// <summary>
     /// Whether a primary key added after the column was made covers it, so that it refuses NULL whatever a write tries: SQL Server
     /// adds one only over columns that don't allow NULL (8111), so the column never held one either (observed:
     /// A_primary_key_added_to_a_temporary_table_makes_its_column_refuse_null). A declared column's own declaration says so already.

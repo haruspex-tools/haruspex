@@ -1,0 +1,303 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/author_card_rows.sql": "589b231ce0a945eb662ad8ce7d76d5f6d888b85c819c7eb4a7d6d623d098abed",
+      "tables/author.sql": "36962d05f775e75e37619cbcae65312d3973d56786379a515f58e588ca5ab7e7",
+      "tables/book.sql": "053e9977cc318e875367cf0f26854ca6e321d652e00e86da99fbda45ef0589bf"
+    }
+  },
+  "objects": [
+    {
+      "id": "pay.author_card_rows",
+      "name": "AuthorCardRows",
+      "kind": "procedure",
+      "at": "procedures/author_card_rows.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@first",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@last",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AuthorCardRowsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AuthorCardRowsBioCard": {
+      "kind": "object",
+      "identity": {
+        "procedure": "pay.author_card_rows",
+        "path": "results[0][].bio_card<json>"
+      },
+      "fields": [
+        {
+          "name": "bio",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "AuthorCardRowsBookList": {
+      "kind": "object",
+      "identity": {
+        "procedure": "pay.author_card_rows",
+        "path": "results[0][].book_list<json>[]"
+      },
+      "fields": [
+        {
+          "name": "bookId",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.book_id",
+              "sql": "int",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.book.title",
+              "sql": "nvarchar(60)",
+              "at": "tables/book.sql:5:5"
+            }
+          ]
+        }
+      ]
+    },
+    "AuthorCardRowsNameCard": {
+      "kind": "object",
+      "identity": {
+        "procedure": "pay.author_card_rows",
+        "path": "results[0][].name_card<json>"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "AuthorCardRowsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "pay.author_card_rows",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "author_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.author_id",
+              "sql": "int",
+              "at": "tables/author.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "name_card",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "AuthorCardRowsNameCard"
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "pay.author.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/author.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "bio_card",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "AuthorCardRowsBioCard"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "no-branch-matched",
+              "at": "procedures/author_card_rows.sql:9:8"
+            }
+          ],
+          "from": [
+            {
+              "column": "pay.author.bio",
+              "sql": "nvarchar(200)",
+              "at": "tables/author.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "book_list",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "AuthorCardRowsBookList"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "read-twice",
+              "at": "procedures/author_card_rows.sql:10:28"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}
