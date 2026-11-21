@@ -291,4 +291,40 @@ public class MssqlDriverObservationTests(SqlServerFixture server)
             Assert.Equal(text, row.GetProperty(XmlColumn).GetString());
         }
     }
+
+    // ---- a key named __proto__ ------------------------------------------------------------------------------------------
+    // Assigned to an object, __proto__ sets its prototype rather than adding a key; parsed from JSON, it is a key like any
+    // other. The Zod and database modules refuse a key of this name (HAR5008, HAR5205), and these are why.
+
+    [Fact]
+    public async Task A_column_named_proto_is_not_a_key_of_the_row_the_driver_hands_over()
+    {
+        var (on, off) = await Both("SELECT 1 AS a, N'x' AS [__proto__];");
+
+        Assert.Equal("""{"a":1}""", Compact(OnlyRow(on).Row));
+        Assert.Equal("""{"a":1}""", Compact(OnlyRow(off).Row));
+    }
+
+    [Fact]
+    public async Task A_json_key_named_proto_is_a_key_of_the_document_parsed()
+    {
+        // A FOR JSON alias and a json_object key alike; JSON.parse makes each an own property.
+        var (on, _) = await Both("SELECT 1 AS [__proto__], json_object('__proto__': 2) AS o FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;");
+
+        Assert.Equal("""{"__proto__":1,"o":{"__proto__":2}}""", Compact(OnlyRow(on).Row));
+    }
+
+    [Fact]
+    public async Task A_parameter_named_proto_is_never_sent()
+    {
+        // The driver keeps a request's parameters as keys of an object, so the procedure is called without it.
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            ["CREATE PROCEDURE dbo.echo_key @__proto__ int AS SELECT @__proto__ AS v;"],
+            [new("call", ParseJson: false, Procedure: "dbo.echo_key", Parameters: new Dictionary<string, object?> { ["__proto__"] = 1 })],
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(201, Assert.Single(calls).Error?.Number);
+    }
 }

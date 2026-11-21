@@ -1,5 +1,6 @@
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
+using Haruspex.Emit.Zod.Lowering;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
 
@@ -44,11 +45,14 @@ internal static class ZodPlanner
             RequireIdentifier(obj.Name, refusals);
             foreach (var set in obj.SetNames?.Where(TypeScriptNames.IsUnusableKey) ?? [])
                 refusals.Add(ZodCodes.SetNameUnusable.At(null, $"A result set of {obj.Id} is named {set}, which as a key of an object sets its prototype rather than adding a key; rename the set."));
+            foreach (var parameter in obj.Parameters.Where(p => TypeScriptNames.IsUnusableKey(ParameterLowering.Key(p))))
+                refusals.Add(ZodCodes.KeyUnusable.At(null, $"{obj.Id} has a parameter named {parameter.Name}, which as a key of its parameters' object Zod never checks and an object literal can't hold; rename the parameter."));
             // A table type's row is sent, and is only scalars (the reader holds a document to both), so it is declared as it is,
             // once, before the first procedure that takes it.
             foreach (var row in obj.Parameters.SelectMany(p => IrTypeTree.References(p.Type)).Where(n => !declared.Contains(n)).Distinct())
             {
                 RequireIdentifier(row, refusals);
+                RequireUsableKeys(row, document.Types[row], $"which {obj.Id} takes", refusals);
                 entries.Add(new ZodPlanEntry.TableRow(row, document.Types[row]));
                 declared.Add(row);
             }
@@ -60,6 +64,7 @@ internal static class ZodPlanner
             foreach (var name in reached)
             {
                 RequireIdentifier(name, refusals);
+                RequireUsableKeys(name, document.Types[name], $"which {obj.Id} returns", refusals);
 
                 // Scalars map differently by encoding (a date is a string in JSON, a Date in a row), so a type shared between
                 // encodings would need two schemas. haruspex's front end never shares one so, but an IR is a file anything can
@@ -160,6 +165,17 @@ internal static class ZodPlanner
         document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type))
             .Concat(document.Objects.SelectMany(o => o.Results ?? []).Select(r => r.Type))
             .SelectMany(IrTypeTree.Within);
+
+    /// <summary>
+    /// A type's keys become keys of an object literal. A key Zod can't check (<see cref="TypeScriptNames.IsUnusableKey"/>) is
+    /// refused at the type's first declaration, naming the procedure that reaches it there, since SQL gives it (an alias, a
+    /// <c>json_object</c> key, a declared result) and only SQL can rename it.
+    /// </summary>
+    private static void RequireUsableKeys(string name, IrObjectType type, string reachedBy, List<Diagnostic> refusals)
+    {
+        if (type.Fields.FirstOrDefault(f => TypeScriptNames.IsUnusableKey(f.Name)) is { } field)
+            refusals.Add(ZodCodes.KeyUnusable.At(null, $"The type {name}, {reachedBy}, has a key named {field.Name}, which Zod never checks and an object literal can't hold; name it otherwise in the SQL."));
+    }
 
     /// <summary>
     /// Names become TypeScript identifiers. The front end only settles valid ones, but the IR is a file that anything can

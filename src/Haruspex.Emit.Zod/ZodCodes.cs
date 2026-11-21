@@ -28,4 +28,10 @@ public static class ZodCodes
 
     /// <summary>A result set named with a key a TypeScript object can't hold (<see cref="TypeScriptNames.IsUnusableKey"/>).</summary>
     public static DiagnosticCode SetNameUnusable { get; } = new(5007, DiagnosticSeverity.Error, "A result set's name can't be a key");
+
+    /// <summary>
+    /// A field, a parameter or a table type's column whose key a TypeScript object can't hold, and which Zod never checks
+    /// (<see cref="TypeScriptNames.IsUnusableKey"/>).
+    /// </summary>
+    public static DiagnosticCode KeyUnusable { get; } = new(5008, DiagnosticSeverity.Error, "A key Zod can't check");
 }
