@@ -1,0 +1,20 @@
+{
+  "about": "The files haruspex generate wrote to this folder, which a later run removes when it no longer writes them. Generated: do not edit.",
+  "files": [
+    "admin.jsonschema.json",
+    "admin.mssql.ts",
+    "admin.zod.ts",
+    "haruspex.ir.json",
+    "haruspex.mapping.ts",
+    "queries.jsonschema.json",
+    "queries.mssql.ts",
+    "queries.zod.ts",
+    "sales.jsonschema.json",
+    "sales.mssql.ts",
+    "sales.zod.ts",
+    "shared.zod.ts",
+    "shop.jsonschema.json",
+    "shop.mssql.ts",
+    "shop.zod.ts"
+  ]
+}

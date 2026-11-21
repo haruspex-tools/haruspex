@@ -15,6 +15,7 @@
         "queryFiles": 0
       },
       "written": [],
+      "removed": [],
       "unknowns": {
         "count": 3,
         "byReason": [

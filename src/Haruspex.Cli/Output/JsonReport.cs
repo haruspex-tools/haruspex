@@ -84,6 +84,10 @@ internal sealed class JsonReport(string workingDirectory)
         foreach (var path in module.Written)
             json.WriteStringValue(Shown(path));
         json.WriteEndArray();
+        json.WriteStartArray("removed");
+        foreach (var path in module.Removed)
+            json.WriteStringValue(Shown(path));
+        json.WriteEndArray();
         Unknowns(json, module);
         Since(json, module.Since);
         json.WriteStartArray("diagnostics");

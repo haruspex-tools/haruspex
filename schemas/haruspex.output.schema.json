@@ -25,7 +25,7 @@
   "$defs": {
     "module": {
       "type": "object",
-      "required": ["config", "out", "baseline", "exitCode", "typed", "written", "unknowns", "sinceLastRun", "diagnostics", "acknowledged"],
+      "required": ["config", "out", "baseline", "exitCode", "typed", "written", "removed", "unknowns", "sinceLastRun", "diagnostics", "acknowledged"],
       "additionalProperties": false,
       "properties": {
         "config": { "description": "The config file --config named or --all found; null when the run looked for one.", "type": ["string", "null"] },
@@ -49,6 +49,11 @@
         },
         "written": {
           "description": "The files generate wrote, the IR first; empty for check and for a run that wrote nothing.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "removed": {
+          "description": "The files generate removed: those its list (haruspex.files.json) named from the last run that this run didn't write. Empty for check.",
           "type": "array",
           "items": { "type": "string" }
         },

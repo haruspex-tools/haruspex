@@ -18,6 +18,7 @@
         "a/out/haruspex.ir.json",
         "a/out/haruspex.zod.ts"
       ],
+      "removed": [],
       "unknowns": {
         "count": 0,
         "byReason": []
@@ -36,6 +37,7 @@
       "exitCode": 2,
       "typed": null,
       "written": [],
+      "removed": [],
       "unknowns": null,
       "sinceLastRun": null,
       "diagnostics": [

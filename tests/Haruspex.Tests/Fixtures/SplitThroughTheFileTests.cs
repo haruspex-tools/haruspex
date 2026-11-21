@@ -32,8 +32,9 @@ public class SplitThroughTheFileTests
             var snapshot = Path.Combine(fixture.Expected, Path.GetFileNameWithoutExtension(file.Name) + ".verified" + Path.GetExtension(file.Name));
             Assert.Equal(File.ReadAllText(snapshot), file.Text);
         });
+        // The list of files written is the command's record of a run, not an emitter's output; FixtureSnapshotTests holds it.
         Assert.Equal(
-            Directory.GetFiles(fixture.Expected).Select(Path.GetFileName).Where(f => f != "haruspex.ir.verified.json").Order(StringComparer.Ordinal),
+            Directory.GetFiles(fixture.Expected).Select(Path.GetFileName).Where(f => f is not ("haruspex.ir.verified.json" or "haruspex.files.verified.json")).Order(StringComparer.Ordinal),
             files.Select(f => Path.GetFileNameWithoutExtension(f.Name) + ".verified" + Path.GetExtension(f.Name)).Order(StringComparer.Ordinal));
     }
 }

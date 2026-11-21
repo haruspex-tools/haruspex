@@ -360,7 +360,8 @@ import the functions then need `server-only` resolved as Next.js resolves it, or
 module's page has [the Vitest configuration for each](database-module.md#where-the-functions-run).
 
 `emit` lists at least one, each once. `check` compares each file it names with the one in the output folder, and fails when one is
-missing. A file of an emitter taken off the list is left where it is, not deleted: remove it yourself.
+missing. The file of an emitter taken off the list is removed by the next `generate`
+([below](#the-files-generate-removes)).
 
 ## Splitting the output into modules: `split`
 
@@ -413,12 +414,50 @@ modules import from or refer to; a shared file is written only when something is
 - **There is no `index.ts`** that re-exports every module, which would make every reader import everything again.
 - **Each module's functions are self-contained**, with their own error classes, as the functions of several config files are:
   tell a failure apart by its `name` and `kind` ([when a call fails](database-module.md#when-a-call-fails)).
-- **A module that is gone leaves its files**: `generate` writes the modules the config gives and removes nothing, as for an
-  emitter taken off `emit`. Remove the old module's files yourself.
+- **A module that is gone loses its files**: taken out of the list, or left with no procedures, its files are removed by the next
+  `generate`, as an emitter's are when it is taken off `emit` ([below](#the-files-generate-removes)).
 
 `check` compares every file as it compares one module's, and fails when one is missing. A procedure added to one schema changes
 the IR and its module's files, and the shared file only when it shares a definition with another module; that module's file then
 imports the shape it shares, its own types keeping their names.
+
+## The files generate removes
+
+`generate` writes the list of the files it wrote, `haruspex.files.json`, beside them in the output folder, and removes each file
+the last run's list names that this run doesn't write: a module taken out of `split`, or one a baseline leaves with no
+procedures, loses its files, and so does an emitter taken off `emit`. Taking the module `admin` out of the split removes
+`admin.zod.ts`, `admin.jsonschema.json` and `admin.mssql.ts` on the next run, and nothing else; the run says which files it
+removed. Commit the list with the other files: it is generated, and `check` compares it as it compares them
+([decision 0091](decisions/0091-generate-removes-only-the-files-its-list-names.md)).
+
+```json
+{
+  "about": "The files haruspex generate wrote to this folder, which a later run removes when it no longer writes them. Generated: do not edit.",
+  "files": [
+    "admin.jsonschema.json",
+    "admin.mssql.ts",
+    "admin.zod.ts",
+    "haruspex.ir.json",
+    "sales.jsonschema.json",
+    "sales.mssql.ts",
+    "sales.zod.ts"
+  ]
+}
+```
+
+- **Only what the list names is removed.** The output folder may hold files of your own: `generate` never looks for files to
+  remove, so a file it didn't write is never removed, whatever its name.
+- **A file edited by hand is removed** when the list names it and the run no longer writes it. Each generated file says in its
+  first line not to edit it.
+- **Nothing is removed** by a run that fails before writing, by the first run that writes a list (after upgrading, a module
+  removed before then leaves its files: remove them yourself), or when the list can't be read ([HAR6039](diagnostics/HAR6039.md)).
+- **Nothing outside the folder.** An entry that is absolute, climbs out with `..`, or is reached through a symbolic link is
+  never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
+  folder is ever removed, even one a removed file leaves empty.
+- **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
+  file the run wrote.
+- **`check`** fails at each file the next `generate` would remove ([HAR6042](diagnostics/HAR6042.md)), and when the list is
+  missing, as for any other file.
 
 ## Results policy: `objects`
 

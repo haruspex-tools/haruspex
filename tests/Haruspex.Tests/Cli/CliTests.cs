@@ -332,7 +332,7 @@ public partial class CliTests
         [.. Directory.EnumerateFileSystemEntries(folder).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
 
     [Fact]
-    public void Generate_writes_what_emit_names_beside_the_ir_and_nothing_else()
+    public void Generate_writes_what_emit_names_beside_the_ir_and_its_list_and_nothing_else()
     {
         using var folder = Emitting("""["json-schema"]""");
 
@@ -340,7 +340,7 @@ public partial class CliTests
 
         Assert.True(exitCode == 0, error);
         Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json and out/haruspex.jsonschema.json.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
-        Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json"], Files(Path.Combine(folder.Path, "out")));
+        Assert.Equal(["haruspex.files.json", "haruspex.ir.json", "haruspex.jsonschema.json"], Files(Path.Combine(folder.Path, "out")));
 
         // The emitter's own output for the IR written, with the config file's objects.
         var ir = IrJsonReader.Read(File.ReadAllText(Path.Combine(folder.Path, "out", HaruspexCli.IrFileName)));
@@ -361,7 +361,7 @@ public partial class CliTests
         Assert.True(exitCode == 0, error);
         Assert.Equal("haruspex: 1 procedure, no unknowns. Wrote out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.jsonschema.json.\nFirst output in out, so nothing to compare with.\n", CliOutput.Shown(output, folder.Path));
         Assert.Equal((0, "haruspex: nothing changed since the last run: 1 procedure, no unknowns.\n"), (exitCodeAgain, outputAgain));
-        Assert.Equal(["haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
+        Assert.Equal(["haruspex.files.json", "haruspex.ir.json", "haruspex.jsonschema.json", "haruspex.zod.ts"], first.Keys);
         Assert.All(first, f => Assert.Equal(f.Value, File.ReadAllText(Path.Combine(folder.Path, "out", f.Key))));
     }
 
@@ -409,7 +409,7 @@ public partial class CliTests
     }
 
     [Fact]
-    public void A_run_that_succeeds_replaces_both_files_and_leaves_nothing_else()
+    public void A_run_that_succeeds_replaces_both_files_and_leaves_nothing_else_but_its_list()
     {
         using var outDir = new TempDirectory();
         File.WriteAllText(Path.Combine(outDir.Path, "haruspex.ir.json"), "old");
@@ -418,7 +418,7 @@ public partial class CliTests
         var (exitCode, _, _) = Run("generate", Fixture.Named("orders").Database, "--include", "sales.*", "--out", outDir.Path);
 
         Assert.Equal(0, exitCode);
-        Assert.Equal(["haruspex.ir.json", "haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        Assert.Equal(["haruspex.files.json", "haruspex.ir.json", "haruspex.zod.ts"], Directory.EnumerateFileSystemEntries(outDir.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         Assert.NotEqual("old", File.ReadAllText(Path.Combine(outDir.Path, "haruspex.ir.json")));
         Assert.NotEqual("old", File.ReadAllText(Path.Combine(outDir.Path, "haruspex.zod.ts")));
     }

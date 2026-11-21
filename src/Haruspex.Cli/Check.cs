@@ -91,25 +91,61 @@ internal static class Check
     /// </summary>
     private static IEnumerable<Diagnostic> Differences(EmittedModule module) => Committed(module) switch
     {
-        Failed<(IrDocument Ir, IReadOnlyList<string> Files)> failed => failed.Diagnostics,
-        Succeeded<(IrDocument Ir, IReadOnlyList<string> Files)> { Value: var committed } => Differences(module, committed.Ir, committed.Files),
+        Failed<CommittedOutput> failed => failed.Diagnostics,
+        Succeeded<CommittedOutput> { Value: var committed } => Differences(module, committed),
     };
 
-    /// <param name="files">The text in the output folder of each of the module's files, in <see cref="EmittedModule.Files"/>' order.</param>
-    private static IEnumerable<Diagnostic> Differences(EmittedModule module, IrDocument committed, IReadOnlyList<string> files)
+    /// <summary>
+    /// What the output folder holds to compare with: the IR, each of the module's files in its order, and the list of files. Like each
+    /// value handed from one step to the next, a class: nothing compares two.
+    /// </summary>
+    private sealed class CommittedOutput(IrDocument ir, IReadOnlyList<string> files, EarlierList.Readable list)
     {
-        var changes = IrComparison.Compare(committed, module.Document);
-        if (changes.Count > 0)
-            return changes.Select(change => Placed(module, change, Object(change, committed, module.Document)));
+        public IrDocument Ir { get; } = ir;
 
+        public IReadOnlyList<string> Files { get; } = files;
+
+        public EarlierList.Readable List { get; } = list;
+    }
+
+    private static IEnumerable<Diagnostic> Differences(EmittedModule module, CommittedOutput committed)
+    {
+        // A file generate would remove is said whatever else differs: it is no claim of the IR's, and nothing else says it.
+        var stale = NoLongerWritten(module, committed.List);
+        var changes = IrComparison.Compare(committed.Ir, module.Document);
+        if (changes.Count > 0)
+            return [.. changes.Select(change => Placed(module, change, Object(change, committed.Ir, module.Document))), .. stale];
+
+        // The list differs wherever a file would be removed, which those files' own errors say better; otherwise, it is compared
+        // as each emitted file is.
+        var list = stale.Count > 0 ? [] : TextDiffers(Path.Join(module.Out, OutputList.FileName), committed.List.Text, OutputList.Text(Written(module)));
         return
         [
-            .. module.Files.Zip(files).SelectMany(pair => FirstDifference(pair.Second.Replace("\r\n", "\n", StringComparison.Ordinal), pair.First.Text) is { } line
-                ? [CliCodes.ModuleDiffers.At(new FileLocation(module.PathOf(pair.First)),
-                    $"line {line.Number} is {line.Committed} where haruspex now writes {line.Now}, though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.")]
-                : Array.Empty<Diagnostic>()),
+            .. module.Files.Zip(committed.Files).SelectMany(pair => TextDiffers(module.PathOf(pair.First), pair.Second, pair.First.Text)),
+            .. list,
+            .. stale,
         ];
     }
+
+    /// <summary>The names of the files <c>generate</c> writes for <paramref name="module"/>, as its list names them: the IR and each emitted file.</summary>
+    private static IEnumerable<string> Written(EmittedModule module) => [HaruspexCli.IrFileName, .. module.Files.Select(f => f.Name)];
+
+    /// <summary>Each file the list names that <c>generate</c> would remove now, as <see cref="Generate"/> would find it (<see cref="StaleFiles"/>).</summary>
+    private static List<Diagnostic> NoLongerWritten(EmittedModule module, EarlierList.Readable list) =>
+    [
+        .. StaleFiles.Of(module.Out, list.Entries, Written(module)).Stale.Select(entry => CliCodes.NoLongerWritten.At(new FileLocation(StaleFiles.PathOf(module.Out, entry)),
+            "generate wrote this file last and doesn't write it now, so the next run removes it. Run haruspex generate, and commit the removal with the rest.")),
+    ];
+
+    /// <summary>
+    /// An error at <paramref name="path"/> when the text in the output folder, <paramref name="committed"/>, isn't what haruspex
+    /// writes, <paramref name="now"/>, line endings aside (git may convert them on checkout); nothing when it is.
+    /// </summary>
+    private static Diagnostic[] TextDiffers(string path, string committed, string now) =>
+        FirstDifference(committed.Replace("\r\n", "\n", StringComparison.Ordinal), now) is { } line
+            ? [CliCodes.ModuleDiffers.At(new FileLocation(path),
+                $"line {line.Number} is {line.Committed} where haruspex now writes {line.Now}, though no claim the IR makes has changed. A comment written from a reason (why a value is unknown, why a result may be absent) changes so; so does a module another version of haruspex wrote, or one edited. Run haruspex generate, and read the change to the module before committing it.")]
+            : [];
 
     /// <summary>The first line where the module in the output folder and the one haruspex writes differ, each cut short and quoted; null when none does.</summary>
     private static (int Number, string Committed, string Now)? FirstDifference(string committed, string now)
@@ -142,21 +178,29 @@ internal static class Check
     /// The IR in the output folder and each of the module's files, in their order; or why there are none to compare with: missing, of another
     /// version, or not readable as IR.
     /// </summary>
-    private static Outcome<(IrDocument Ir, IReadOnlyList<string> Files)> Committed(EmittedModule module)
+    private static Outcome<CommittedOutput> Committed(EmittedModule module)
     {
         var earlier = EarlierOutput.Read(module);
-        if (earlier.Unreadable.Count > 0)
+        var listPath = Path.Join(module.Out, OutputList.FileName);
+        if (earlier.Unreadable.Count > 0 || earlier.List is EarlierList.Unreadable)
         {
-            return new Failed<(IrDocument, IReadOnlyList<string>)>([.. earlier.Unreadable.Select(u =>
-                CliCodes.CommittedUnreadable.At(new FileLocation(u.Key), $"this file can't be read: {u.Value}"))]);
+            return new Failed<CommittedOutput>([
+                .. earlier.Unreadable.Select(u => CliCodes.CommittedUnreadable.At(new FileLocation(u.Key), $"this file can't be read: {u.Value}")),
+                .. earlier.List is EarlierList.Unreadable { Problem: var problem }
+                    ? [CliCodes.CommittedUnreadable.At(new FileLocation(listPath), $"this list of the files generate wrote can't be read: {problem} Run haruspex generate to write it again.")]
+                    : Array.Empty<Diagnostic>(),
+            ]);
         }
 
+        // The list is a generated file like the others: without it committed, generate on a fresh checkout would remove nothing.
         var missing = module.Files.Select(module.PathOf).Where((_, i) => earlier.Files[i] is null).ToList();
         if (earlier.Ir is EarlierIr.Absent)
             missing.Insert(0, module.IrPath);
+        if (earlier.List is not EarlierList.Readable)
+            missing.Add(listPath);
         if (missing.Count > 0)
         {
-            return ModuleRun.Refused<(IrDocument, IReadOnlyList<string>)>(CliCodes.NothingCommitted,
+            return ModuleRun.Refused<CommittedOutput>(CliCodes.NothingCommitted,
                 $"nothing to compare with: {EnglishList.Of([.. missing.Select(DiagnosticFormatter.PathAsShown)])} {(missing.Count == 1 ? "isn't" : "aren't")} there. Run haruspex generate, read what it writes, and commit it.");
         }
 
@@ -164,10 +208,10 @@ internal static class Check
         var emitted = EnglishList.Of([.. module.Files.Select(f => DiagnosticFormatter.PathAsShown(module.PathOf(f)))]);
         return earlier.Ir switch
         {
-            EarlierIr.Readable { Document: var document } => new Succeeded<(IrDocument, IReadOnlyList<string>)>((document, [.. earlier.Files.OfType<string>()])),
-            EarlierIr.OtherVersion { Version: var version } => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedOtherVersion.At(at,
+            EarlierIr.Readable { Document: var document } => new Succeeded<CommittedOutput>(new CommittedOutput(document, [.. earlier.Files.OfType<string>()], (EarlierList.Readable)earlier.List)),
+            EarlierIr.OtherVersion { Version: var version } => new Failed<CommittedOutput>([CliCodes.CommittedOtherVersion.At(at,
                 $"this file is IR {version}, and this haruspex writes IR {module.Document.Version}, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to {emitted} before committing it, and commit {(module.Files.Count == 1 ? "both" : "them all")}.")]),
-            EarlierIr.Unreadable unreadable => new Failed<(IrDocument, IReadOnlyList<string>)>([CliCodes.CommittedUnreadable.At(at, unreadable.AsIr
+            EarlierIr.Unreadable unreadable => new Failed<CommittedOutput>([CliCodes.CommittedUnreadable.At(at, unreadable.AsIr
                 ? $"this file can't be read as IR: {unreadable.Problem} Run haruspex generate to write it again."
                 : $"this file can't be read: {unreadable.Problem}")]),
 

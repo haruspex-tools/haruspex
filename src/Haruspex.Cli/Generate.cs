@@ -21,7 +21,9 @@ internal static class Generate
             // Read before it is written over: what the folder held is what this run is compared with.
             progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
             var earlier = EarlierOutput.Read(module);
-            return Write(module).Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
+            return Write(module)
+                .Select(paths => Tidied(module, paths, earlier.List))
+                .Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
         });
         return run switch
         {
@@ -43,13 +45,14 @@ internal static class Generate
         var module = written.Module;
         Diagnostic[] combining = module.Baseline is { } baseline ? [.. module.Combination, .. BaselineCheck.Shapes(module, baseline.Document, module.Document, baseline)] : [];
         var (kept, acknowledged) = Acknowledgements.Apply([.. found, .. combining], module.Config, sayUnused: request.Include.Count == 0);
-        var failures = combining.Where(d => d.IsError).ToList();
-        return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
+        var failures = combining.Concat(written.Warnings).Where(d => d.IsError).ToList();
+        return new ModuleReport(CommandName.Generate, request, [.. kept, .. written.Warnings, .. written.Unknowns.Select(u => u.Note).OfType<Diagnostic>()], failures.Count == 0 ? HaruspexCli.ExitCodes.Success : ModuleRun.ExitCode(failures))
         {
             Out = written.Module.Out,
             Baseline = module.Baseline?.Path,
             Document = written.Module.Document,
             Written = written.Paths,
+            Removed = written.Removed,
             Modules = written.Module.Modules,
             Unknowns = written.Unknowns,
             Since = since,
@@ -57,12 +60,20 @@ internal static class Generate
         };
     }
 
-    /// <summary>The written output: the module, where each file went (the IR first), and each unknown in it, noted.</summary>
-    private sealed class Written(EmittedModule module, EquatableArray<string> paths)
+    /// <summary>
+    /// The written output: the module, where each file went (the IR first), the files of the last run it removed, what removing
+    /// them and writing the list found (warnings, and an error when the list can't be written), and each unknown in the module,
+    /// noted.
+    /// </summary>
+    private sealed class Written(EmittedModule module, EquatableArray<string> paths, EquatableArray<string> removed, EquatableArray<Diagnostic> warnings)
     {
         public EmittedModule Module { get; } = module;
 
         public EquatableArray<string> Paths { get; } = paths;
+
+        public EquatableArray<string> Removed { get; } = removed;
+
+        public EquatableArray<Diagnostic> Warnings { get; } = warnings;
 
         public EquatableArray<NotedUnknown> Unknowns { get; } = ModuleRun.Notes(module.Document, module.Project);
     }
@@ -80,7 +91,7 @@ internal static class Generate
     /// file's backup. The folder is created here, after every other step has succeeded, so a run that fails before writing creates
     /// nothing.
     /// </summary>
-    private static Outcome<Written> Write(EmittedModule module)
+    private static Outcome<EquatableArray<string>> Write(EmittedModule module)
     {
         var folder = module.Out;
         var run = Guid.NewGuid().ToString("N");
@@ -115,7 +126,7 @@ internal static class Generate
                         kept.Add(p.File.Backup);
                     var fresh = stuck.Select(p => DiagnosticFormatter.PathAsShown(p.File.Path)).ToList();
                     var backups = stuck.Where(p => p.Had).Select(p => DiagnosticFormatter.PathAsShown(p.File.Backup)).ToList();
-                    return ModuleRun.Refused<Written>(CliCodes.CannotWrite,
+                    return ModuleRun.Refused<EquatableArray<string>>(CliCodes.CannotWrite,
                         $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message} Files written before it could not be put back ({string.Join("; ", stuck.Select(p => p.Failure))}), so {EnglishList.Of(fresh)} {(fresh.Count == 1 ? "is" : "are")} new and the others are not{(backups.Count > 0 ? $"; the old {(backups.Count == 1 ? "one is" : "ones are")} kept at {EnglishList.Of(backups)}" : "")}.");
                 }
 
@@ -124,7 +135,7 @@ internal static class Generate
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return ModuleRun.Refused<Written>(CliCodes.CannotWrite, $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message}");
+            return ModuleRun.Refused<EquatableArray<string>>(CliCodes.CannotWrite, $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message}");
         }
         finally
         {
@@ -132,7 +143,73 @@ internal static class Generate
                 Remove(temporary);
         }
 
-        return new Succeeded<Written>(new Written(module, [.. staged.Select(f => f.Path)]));
+        return new Succeeded<EquatableArray<string>>([.. staged.Select(f => f.Path)]);
+    }
+
+    /// <summary>
+    /// Once the module is written, at <paramref name="paths"/>: each file the last run's list names and this run didn't write is
+    /// removed, and then the list is written anew, naming this run's files and any of the last run's that couldn't be removed, so
+    /// that the next run tries again. Without a list to go by, a first run or one whose list can't be read, nothing is removed.
+    /// The list is written last, so a run stopped before then leaves the last one's, which still names every file this one would
+    /// have removed. Only the list says what may be removed, never the folder's contents
+    /// (docs/decisions/0091-generate-removes-only-the-files-its-list-names.md).
+    /// </summary>
+    private static Written Tidied(EmittedModule module, EquatableArray<string> paths, EarlierList earlier)
+    {
+        var list = Path.Join(module.Out, OutputList.FileName);
+        var at = new FileLocation(list);
+        string[] names = [HaruspexCli.IrFileName, .. module.Files.Select(f => f.Name)];
+        var warnings = new List<Diagnostic>();
+        var removed = new List<string>();
+        var kept = new List<string>();
+        switch (earlier)
+        {
+            case EarlierList.Unreadable { Problem: var problem }:
+                warnings.Add(CliCodes.ListUnreadable.At(at,
+                    $"this list of the files the last run wrote can't be read: {problem} So none of them is removed, and the list is written anew with this run's files; remove yourself any file the last run wrote that this one doesn't."));
+                break;
+            case EarlierList.Readable { Entries: var entries }:
+                var found = StaleFiles.Of(module.Out, entries, names);
+                warnings.AddRange(found.Refused.Select(r => CliCodes.ListedOutside.At(at,
+                    $"\"{r.Entry}\" {r.Why}, so it isn't removed: generate removes only files inside the output folder, named as it writes them. The list was edited, or written by something else; it is written anew without it.")));
+                foreach (var entry in found.Stale)
+                {
+                    var path = StaleFiles.PathOf(module.Out, entry);
+                    try
+                    {
+                        File.Delete(path);
+                        removed.Add(path);
+                    }
+                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                    {
+                        kept.Add(entry);
+                        warnings.Add(CliCodes.CannotRemove.At(new FileLocation(path),
+                            $"the last run wrote this file and this one doesn't, but it can't be removed: {e.Message} It stays on the list, so the next run tries again."));
+                    }
+                }
+
+                break;
+            default:
+                // No list: nothing to go by, so nothing is removed.
+                break;
+        }
+
+        var temporary = Path.Join(module.Out, $".{OutputList.FileName}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllText(temporary, OutputList.Text([.. names, .. kept]));
+            File.Move(temporary, list, overwrite: true);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Remove(temporary);
+
+            // The module is written and the removals done, so the run is reported as one that wrote, with this error failing it.
+            warnings.Add(CliCodes.CannotWrite.At(at,
+                $"the module is written, but this list of its files can't be: {e.Message} The next run goes by the list that is there, if any, which may not name every file this run wrote."));
+        }
+
+        return new Written(module, paths, [.. removed], [.. warnings]);
     }
 
     /// <summary>

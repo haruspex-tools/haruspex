@@ -93,6 +93,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0086](0086-a-json-object-assembled-as-text-is-typed-where-each-key-is-written-once-in-a-literal.md) | 20 Nov 2026 | A JSON object assembled as text is typed where each key is written once in a literal |
 | [0087](0087-keys-built-from-data-make-an-object-whose-keys-are-data.md) | 20 Nov 2026 | Keys built from data make an object whose keys are data |
 | [0088](0088-a-type-that-depends-on-folding-is-typed-where-the-server-never-folds.md) | 21 Nov 2026 | A type that depends on folding is typed where the server never folds |
+| [0091](0091-generate-removes-only-the-files-its-list-names.md) | 21 Nov 2026 | `generate` removes only the files its list names |
 
 ## Writing a record
 

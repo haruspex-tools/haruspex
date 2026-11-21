@@ -101,7 +101,9 @@ var run = emitted.Then(module =>
     // Read before it is written over: what the folder held is what this run is compared with.
     progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
     var earlier = EarlierOutput.Read(module);
-    return Write(module).Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
+    return Write(module)
+        .Select(paths => Tidied(module, paths, earlier.List))
+        .Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
 });
 ```
 
@@ -238,6 +240,15 @@ aside; if one can't be, those already in place are put back as they were. Two ca
 CLI's README names both: a process killed between two renames, and a file system that refuses to put one back, when the error
 says so and keeps that file's backup. A run that fails earlier writes nothing, and doesn't even create the folder, since the
 folder is made in `Generate.Write`, after every other step has succeeded.
+
+Once the files are in place, `Generate.Tidied` removes what the last run wrote and this one doesn't, such as a module taken out
+of the split. It goes only by the list the last run left, `haruspex.files.json` (`OutputList`), never by what the folder holds:
+a tool may remove only what it can prove it made, and the folder may hold the application's own files. `StaleFiles` sorts the
+list's entries: those this run writes again, compared as the file system compares names (a module renamed only by case on macOS
+is the same file), those that could reach outside the folder (absolute, with `..`, or through a symbolic link), which are never
+removed, and the plain files left, which are. The new list is written last, so a run stopped before then leaves the old list,
+which still names every file to remove
+([decision 0091](../decisions/0091-generate-removes-only-the-files-its-list-names.md)).
 
 ## Checking without writing
 

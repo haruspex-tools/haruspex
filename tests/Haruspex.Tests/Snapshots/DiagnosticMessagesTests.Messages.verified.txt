@@ -392,7 +392,7 @@ HAR6010
 haruspex.json: warning HAR6010: "collation" is Latin1_General_100_CI_AS, but atelier.dacpac records SQL_Latin1_General_CP1_CI_AS, the database's own, which is the one used.
 
 HAR6011
-haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json and out/haruspex.zod.ts aren't there. Run haruspex generate, read what it writes, and commit it.
+haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.files.json aren't there. Run haruspex generate, read what it writes, and commit it.
 
 HAR6012
 out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.25, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
@@ -474,4 +474,16 @@ haruspex: error HAR6037: no IR to read: name it with --ir, or run where haruspex
 
 HAR6038
 haruspex: error HAR6038: lib.get_book has no field nothing; its fields are id, title, note, status, copies and extra.
+
+HAR6039
+out/haruspex.files.json: warning HAR6039: this list of the files the last run wrote can't be read: it isn't JSON, from line 1. So none of them is removed, and the list is written anew with this run's files; remove yourself any file the last run wrote that this one doesn't.
+
+HAR6040
+out/haruspex.files.json: warning HAR6040: "../notes.ts" climbs out of the output folder, so it isn't removed: generate removes only files inside the output folder, named as it writes them. The list was edited, or written by something else; it is written anew without it.
+
+HAR6041
+out/held/old.zod.ts: warning HAR6041: the last run wrote this file and this one doesn't, but it can't be removed: …
+
+HAR6042
+out/old.zod.ts: error HAR6042: generate wrote this file last and doesn't write it now, so the next run removes it. Run haruspex generate, and commit the removal with the rest.
 

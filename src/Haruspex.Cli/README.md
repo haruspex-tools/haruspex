@@ -34,7 +34,7 @@ flowchart LR
     zod --> emitted["EmittedModule"]
     jsonSchema --> emitted
     emitted --> generate["Generate"]
-    generate --> files["haruspex.ir.json, haruspex.zod.ts, haruspex.jsonschema.json"]
+    generate --> files["haruspex.ir.json, haruspex.zod.ts, haruspex.jsonschema.json, haruspex.files.json"]
     emitted --> check["Check"]
     committed["the files in the output folder"] --> check
     check --> compare["IrComparison.Compare"]
@@ -68,7 +68,10 @@ for one: `haruspex init Sales/Sales.sqlproj`.
 
 `generate` writes `haruspex.ir.json` to the output folder, and beside it what the config file's `emit` names: `haruspex.zod.ts`
 (the default), `haruspex.jsonschema.json`, `haruspex.mssql.ts`, the database module's functions, and `haruspex.mapping.ts`, the
-mapping helper ([the configuration page](../../docs/configuration.md#what-is-written-emit)).
+mapping helper ([the configuration page](../../docs/configuration.md#what-is-written-emit)). It writes `haruspex.files.json`
+beside them, the list of the files it wrote (`OutputList`), and removes each file the last run's list names that this run
+doesn't write (`StaleFiles`), never one the list doesn't name
+([decision 0091](../../docs/decisions/0091-generate-removes-only-the-files-its-list-names.md)).
 `check` infers the same way, writes nothing, and compares with the files there, which in CI are the ones committed. Both
 take:
 
@@ -167,6 +170,9 @@ and the JSON's shape, are in [the command line's page](../../docs/command-line.m
   cases: a process killed between two renames, which can also leave the hidden temporary files (`.haruspex.ir.json.….tmp`,
   `….old`) in the folder; and a file system that refuses to put one back, which the error then says, keeping the old file
   beside it.
+- **It removes only what it wrote.** Once the module is in place, each file the last run's `haruspex.files.json` names that
+  this run didn't write is removed, then the list is written anew; a file the list doesn't name is never removed, nor anything
+  the list names outside the folder or through a symbolic link, nor a folder. A run that fails before writing removes nothing.
 - **The same input gives the same bytes**, on every platform, so a CI check can compare the output with what is committed and checked out.
 - **`check` writes nothing, and fails on any change of claim**, said as the change: a field added or removed, a value that
   became nullable, a type that changed, a value set that grew. What only says where a claim came from (a location, a reason,

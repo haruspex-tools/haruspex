@@ -24,7 +24,10 @@ imports the schemas as `./haruspex.zod.js`, the name of the file it compiles to,
 A config file that splits its output ([`split`](configuration.md#splitting-the-output-into-modules-split)) writes these two
 files for each module, named after it: `sales.zod.ts` and `sales.mssql.ts`, whose functions import `./sales.zod.js`, with what
 two or more modules' schemas share in `shared.zod.ts`. Import a function from its module's file, and a type from the file of the
-module it belongs to; every name is the one the unsplit module gives.
+module it belongs to; every name is the one the unsplit module gives. A module taken out of the split loses its files on the next
+run of `generate`, which removes only the files its list, `haruspex.files.json`, says it wrote
+([the files generate removes](configuration.md#the-files-generate-removes)): an application that still imports one then fails to
+compile, rather than compiling against a module that is gone.
 
 ## Calling a procedure
 

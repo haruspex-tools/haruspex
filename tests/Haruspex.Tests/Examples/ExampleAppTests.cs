@@ -20,7 +20,11 @@ public class ExampleAppTests
         var exitCode = HaruspexCli.Run(["generate", "--out", temp.Path], output, error, Folder);
 
         Assert.True(exitCode == 0, error.ToString());
-        foreach (var file in new[] { "haruspex.ir.json", "haruspex.zod.ts", "haruspex.mssql.ts", "haruspex.mapping.ts" })
+
+        // Every file generate writes, its list of them included, and nothing else committed beside them.
+        var written = Directory.GetFiles(temp.Path).Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(written, Directory.GetFiles(Path.Combine(Folder, "src", "db")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+        foreach (var file in written)
         {
             Assert.True(
                 File.ReadAllText(Path.Combine(Folder, "src", "db", file)) == File.ReadAllText(Path.Combine(temp.Path, file)),

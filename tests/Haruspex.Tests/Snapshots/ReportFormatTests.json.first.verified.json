@@ -18,6 +18,7 @@
         "src/db/haruspex.ir.json",
         "src/db/haruspex.zod.ts"
       ],
+      "removed": [],
       "unknowns": {
         "count": 3,
         "byReason": [

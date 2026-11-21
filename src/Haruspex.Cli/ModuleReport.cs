@@ -43,6 +43,11 @@ internal sealed class ModuleReport(CommandName command, RunRequest request, Equa
     /// <summary>The files <c>generate</c> wrote, full, the IR first; empty for <c>check</c> and for a run that wrote nothing.</summary>
     public EquatableArray<string> Written { get; init; } = [];
 
+    /// <summary>
+    /// The files <c>generate</c> removed, full: those the last run's list named that this run didn't write; empty for <c>check</c>.
+    /// </summary>
+    public EquatableArray<string> Removed { get; init; } = [];
+
     /// <summary>The modules the output is split into, when the config file splits it (<c>split</c>); empty otherwise.</summary>
     public EquatableArray<string> Modules { get; init; } = [];
 

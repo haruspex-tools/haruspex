@@ -139,13 +139,31 @@ internal static class CliCodes
     public static DiagnosticCode ExplainNotFound { get; } = new(6038, DiagnosticSeverity.Error, "Nothing of that name to explain");
 
     /// <summary>
+    /// The list of the files the last run of <c>generate</c> wrote can't be read, so this run removes none of them and writes the
+    /// list anew.
+    /// </summary>
+    public static DiagnosticCode ListUnreadable { get; } = new(6039, DiagnosticSeverity.Warning, "The list of files written can't be read");
+
+    /// <summary>
+    /// An entry of the list of files written that could name a file outside the output folder: absolute, climbing out, or reached
+    /// through a symbolic link. It is never removed.
+    /// </summary>
+    public static DiagnosticCode ListedOutside { get; } = new(6040, DiagnosticSeverity.Warning, "A listed path generate doesn't remove");
+
+    /// <summary>A file the last run wrote and this one doesn't, which can't be removed; it stays on the list.</summary>
+    public static DiagnosticCode CannotRemove { get; } = new(6041, DiagnosticSeverity.Warning, "A file no longer written can't be removed");
+
+    /// <summary><c>check</c> finds a file the last run of <c>generate</c> wrote that it would no longer write, and would remove.</summary>
+    public static DiagnosticCode NoLongerWritten { get; } = new(6042, DiagnosticSeverity.Error, "A file generate would remove");
+
+    /// <summary>
     /// The codes with which a run fails though the command line and the config file may be right, so the exit code is 1, not 2:
     /// what <c>check</c> found differs from the files in the output folder, or can't be compared with it, or is incomplete; the
     /// application already running would fail on it; a change can't be bridged; or the baseline can't be read or is combined.
     /// </summary>
     public static IReadOnlySet<DiagnosticCode> CheckFailures { get; } = new HashSet<DiagnosticCode>
     {
-        NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, ResultsUnknown, UnknownsFail, BaselineRefused, BaselineUnreadable,
+        NothingCommitted, CommittedOtherVersion, CommittedUnreadable, ClaimChanged, ModuleDiffers, NoLongerWritten, ResultsUnknown, UnknownsFail, BaselineRefused, BaselineUnreadable,
         Unbridgeable, BaselineCombined,
     };
 }

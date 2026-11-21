@@ -204,3 +204,7 @@ reason.
 | [HAR6036](HAR6036.md) | error | A combined IR given as a database |
 | [HAR6037](HAR6037.md) | error | No IR to explain |
 | [HAR6038](HAR6038.md) | error | Nothing of that name to explain |
+| [HAR6039](HAR6039.md) | warning | The list of files written can't be read |
+| [HAR6040](HAR6040.md) | warning | A listed path generate doesn't remove |
+| [HAR6041](HAR6041.md) | warning | A file no longer written can't be removed |
+| [HAR6042](HAR6042.md) | error | A file generate would remove |

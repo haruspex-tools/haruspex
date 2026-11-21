@@ -164,3 +164,7 @@ HAR6035 W A procedure in only one of the two databases [Haruspex.Cli.CliCodes.In
 HAR6036 E A combined IR given as a database [Haruspex.Cli.CliCodes.BaselineCombined]
 HAR6037 E No IR to explain [Haruspex.Cli.CliCodes.ExplainNoIr]
 HAR6038 E Nothing of that name to explain [Haruspex.Cli.CliCodes.ExplainNotFound]
+HAR6039 W The list of files written can't be read [Haruspex.Cli.CliCodes.ListUnreadable]
+HAR6040 W A listed path generate doesn't remove [Haruspex.Cli.CliCodes.ListedOutside]
+HAR6041 W A file no longer written can't be removed [Haruspex.Cli.CliCodes.CannotRemove]
+HAR6042 E A file generate would remove [Haruspex.Cli.CliCodes.NoLongerWritten]

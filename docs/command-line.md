@@ -46,6 +46,15 @@ module, so the first line counts them and names the modules instead:
 haruspex: 6 procedures, 2 query files, no unknowns. Wrote 15 files to src/db: the IR and the modules admin, queries, sales and shop, with what they share.
 ```
 
+The first line doesn't count the list of the files written, `haruspex.files.json`, which `generate` keeps beside them. A run that
+no longer writes a file the last one did, for a module taken out of the split or an emitter taken off `emit`, removes it, as the
+list names it, and says so on the next line
+([the files generate removes](configuration.md#the-files-generate-removes)):
+
+```text
+Removed src/db/admin.jsonschema.json, src/db/admin.mssql.ts and src/db/admin.zod.ts, which this run no longer writes.
+```
+
 **A run that changes nothing**, which is most runs, is one line:
 
 ```text
@@ -371,6 +380,7 @@ no module ran, when none did) and `modules`, one for each module in the order th
 | `exitCode` | The module's exit code. |
 | `typed` | How many `procedures` and `queryFiles` it types; null when the run failed before inferring. |
 | `written` | The files `generate` wrote, the IR first. |
+| `removed` | The files `generate` removed: those the last run's list of files named that this run didn't write ([the files generate removes](configuration.md#the-files-generate-removes)). Empty for `check`. |
 | `unknowns` | Their `count`, and `byReason`: each reason as the IR names it, the code of its note, and how many. |
 | `sinceLastRun` | For `generate`: `compared` false with `why`, or true with the `changes` (each with its `kind`, such as `became-nullable`, `object`, `path`, `before`, `after` and the `text` the report prints), `newUnknowns`, `resolvedUnknowns`, `unchangedUnknowns` and `rewritten`. Null for `check`. |
 | `acknowledged` | The warnings the config file's `acknowledge` names, each as a diagnostic with its `subject` and `why`. |

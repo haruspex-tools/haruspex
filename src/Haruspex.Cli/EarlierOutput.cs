@@ -3,17 +3,19 @@ using Haruspex.Ir;
 namespace Haruspex.Cli;
 
 /// <summary>
-/// What a module's output folder holds before a run touches it: the IR, read or why it can't be, and each emitted file's text.
+/// What a module's output folder holds before a run touches it: the IR, read or why it can't be, each emitted file's text, and
+/// the list of the files the last run wrote.
 /// <see cref="Check"/> compares the module with it (in CI, what is committed); <see cref="Generate"/> reads it before writing over it,
 /// to say what changed since the last run. One reader, so the two commands agree on what the folder held.
 /// </summary>
 internal sealed class EarlierOutput
 {
-    private EarlierOutput(EarlierIr ir, IReadOnlyList<string?> files, IReadOnlyDictionary<string, string> unreadable)
+    private EarlierOutput(EarlierIr ir, IReadOnlyList<string?> files, IReadOnlyDictionary<string, string> unreadable, EarlierList list)
     {
         Ir = ir;
         Files = files;
         Unreadable = unreadable;
+        List = list;
     }
 
     /// <summary>The IR, or why there is none to compare with.</summary>
@@ -27,6 +29,9 @@ internal sealed class EarlierOutput
 
     /// <summary>The module's files that are there but can't be read, by path, with what the file system said.</summary>
     public IReadOnlyDictionary<string, string> Unreadable { get; }
+
+    /// <summary>The list of the files the last run of <c>generate</c> wrote (<see cref="OutputList"/>), or why there is none.</summary>
+    public EarlierList List { get; }
 
     /// <summary>
     /// Reads the folder <paramref name="module"/> is written to: each file apart, so one that can't be read is said by its own
@@ -50,7 +55,7 @@ internal sealed class EarlierOutput
             }
         }
 
-        return new EarlierOutput(ReadIr(module.IrPath), files, unreadable);
+        return new EarlierOutput(ReadIr(module.IrPath), files, unreadable, OutputList.Read(module.Out));
     }
 
     /// <summary>The IR at <paramref name="path"/>, or why there is none to compare with: also how a baseline given as an IR file is read.</summary>

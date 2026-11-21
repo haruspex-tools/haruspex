@@ -113,11 +113,13 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
             };
             return $"haruspex: {OneLine(module, counted)}. {verdict}";
         }
-        if (module.Since is SinceLastRun.Compared { Nothing: true })
+        if (module.Since is SinceLastRun.Compared { Nothing: true } && module.Removed.Count == 0)
             return $"haruspex: nothing changed since the last run: {OneLine(module, counted)}.";
 
         var combined = module.Baseline is { } against ? $" Its types work against the baseline {Shown(against)} too." : "";
         var lines = new List<string> { $"haruspex: {counted}. Wrote {WrittenFiles(module)}.{combined}" };
+        if (module.Removed.Count > 0)
+            lines.Add($"Removed {EnglishList.Of([.. module.Removed.Select(Shown)])}, which this run no longer writes.");
         switch (module.Since)
         {
             case SinceLastRun.Compared compared:
