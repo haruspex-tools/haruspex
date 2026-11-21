@@ -31,13 +31,13 @@ export const KitSheetsResult1CardSchema = z.object({
 export type KitSheetsResult1Card = z.infer<typeof KitSheetsResult1CardSchema>
 
 /** A shape several types share, declared once; each is exported under its own name. */
-const shapecc06f0 = z.object({
+const shapee0391b = z.object({
   /** varchar(8) counts bytes and its collation isn't declared, so the length is at most 8. */
   sku: z.string().max(8),
-  qty: z.number(),
+  qty: z.union([z.int().min(0).max(255), z.literal([0])]),
 })
 
-export const KitSheetsResult1CopiedItemSchema = shapecc06f0
+export const KitSheetsResult1CopiedItemSchema = shapee0391b
 export type KitSheetsResult1CopiedItem = z.infer<typeof KitSheetsResult1CopiedItemSchema>
 
 export const KitSheetsResult1RowSchema = z.object({
@@ -48,7 +48,7 @@ export const KitSheetsResult1RowSchema = z.object({
 })
 export type KitSheetsResult1Row = z.infer<typeof KitSheetsResult1RowSchema>
 
-export const KitSheetsResult2PartsSchema = shapecc06f0
+export const KitSheetsResult2PartsSchema = shapee0391b
 export type KitSheetsResult2Parts = z.infer<typeof KitSheetsResult2PartsSchema>
 
 export const KitSheetsResult2RowSchema = z.object({

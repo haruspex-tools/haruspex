@@ -199,10 +199,12 @@ internal static class Facets
             }
 
             default:
-                // A declaration's enum, in JSON: JSON.parse reads a value and the literal written here as the same decimal, so to
-                // the same double, and z.literal compares them exactly. Only a declared set, so far: other exact sets of numbers of
-                // no format would hold the same way, but writing them so changes modules this change has no reason to touch.
-                if (json && facets?.Values?.From is { Count: > 0 } from && from.All(f => f.Kind == IrFactSourceKind.Declared) && ExactNumbers(facets) is { } exact)
+                // An exact set of numbers of no format, in JSON: a declaration's enum, a number written into JSON in the SQL's text
+                // (json_query('[2024]')), or a bit converted to text. Each is an exact decimal SQL Server hands on as written, so
+                // JSON.parse reads a value and the literal written here as the same decimal, so to the same double, and z.literal
+                // compares them exactly; the differential tests run every fixture's output through it. Not a float's: FOR JSON
+                // writes one with 16 significant digits, which may not read back as its literal's double.
+                if (json && scalar.Format is null && ExactNumbers(facets) is { } exact)
                     return exact;
 
                 // Floating point, or a number of no stated format: inclusive bounds only, since an exclusive one can't

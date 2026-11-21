@@ -33,7 +33,7 @@ export type KitBadgesTiers = z.infer<typeof KitBadgesTiersSchema>
 
 export const KitBadgesTiers2Schema = z.object({
   tier: z.enum(["silver"]),
-  since: z.number(),
+  since: z.literal([2024]),
 })
 export type KitBadgesTiers2 = z.infer<typeof KitBadgesTiers2Schema>
 

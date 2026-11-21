@@ -213,6 +213,16 @@ public class ZodFacetsTests
         Assert.Equal("z.literal([1.5, 2.25])", Json(Number(IrFormat.Decimal, "decimal(5,2)", Decimal(5, 2, Inclusive("-999.99"), Inclusive("999.99"), Numbers("1.5", "2.25")))));
 
     [Fact]
+    public void A_set_of_numbers_of_no_format_is_a_literal_in_json() =>
+        // A number written into JSON in the SQL's text (json_query('[2024]')), or a bit converted to text: SQL Server hands the text
+        // on unchanged, so JSON.parse reads it and the literal here as one decimal, and so one double.
+        Assert.Equal("z.literal([0, 2024])", Json(new IrScalar(IrScalarKind.Number, null, null, new IrFacets(Values: Numbers("0", "2024")))));
+
+    [Fact]
+    public void A_set_of_floats_stays_a_number_since_for_json_writes_sixteen_digits() =>
+        Assert.Equal("z.number()", Json(Number(IrFormat.Float, "float", new IrFacets(Values: Numbers("0.1")))));
+
+    [Fact]
     public void A_narrow_decimal_in_a_row_keeps_its_bounds() =>
         Assert.Equal("z.number().min(-214748.3648).max(214748.3647).multipleOf(1e-4)", Rows(Number(IrFormat.Decimal, "smallmoney", Decimal(10, 4, Inclusive("-214748.3648"), Inclusive("214748.3647")))));
 

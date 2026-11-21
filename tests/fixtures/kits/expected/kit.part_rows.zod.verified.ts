@@ -47,7 +47,7 @@ export const PartRowsResult4RowSchema = z.object({
   finish: z.enum(["matt"]),
   boxed: z.enum(["false", "true"]),
   with_finish: z.enum(["matt"]),
-  sizes: z.tuple([z.number(), z.number(), z.number()]),
+  sizes: z.tuple([z.literal([1]), z.literal([2]), z.literal([3])]),
 })
 export type PartRowsResult4Row = z.infer<typeof PartRowsResult4RowSchema>
 

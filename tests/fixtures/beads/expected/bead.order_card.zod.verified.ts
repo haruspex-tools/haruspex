@@ -24,7 +24,7 @@ export const OrderCardRowSchema = z.object({
    */
   lineIds: z.array(z.int32()).optional(),
   prices: z.array(z.number().min(-99999.99).max(99999.99).multipleOf(1e-2)),
-  gifts: z.array(z.number()),
+  gifts: z.array(z.literal([0, 1])),
   /**
    * May be null: COALESCE reads its argument a second time, which may then be null (read-twice).
    * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
