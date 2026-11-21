@@ -459,7 +459,9 @@ removed. Commit the list with the other files: it is generated, and `check` comp
   folder is ever removed, even one a removed file leaves empty.
 - **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
   file the run wrote, under the module's new name: the old file is renamed as it is replaced, so the names on disk are the
-  ones the imports and the list say.
+  ones the imports and the list say. Git there (`core.ignoreCase`, its default on such a file system) still stages each file
+  under its old name, so commit the rename with `git mv` (to another name and then to the new one), or a checkout on a file
+  system that tells case apart fails `check` ([HAR6011](diagnostics/HAR6011.md)).
 - **`check`** fails at each file the next `generate` would remove ([HAR6042](diagnostics/HAR6042.md)), and when the list is
   missing, as for any other file.
 
