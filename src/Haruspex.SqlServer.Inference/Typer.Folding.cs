@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -69,25 +70,49 @@ internal sealed partial class Typer
     };
 
     /// <summary>
-    /// The digits the server counts for <c>NULLIF(a, b)</c> of an integer literal and another literal, which it folds to
-    /// <c>a</c>, or to NULL (one digit) when they are equal; null for any other expression (observed:
-    /// <c>Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values</c>). A string that is not a
-    /// number fails the comparison (245), so no value comes back and either count holds.
+    /// The digits the server counts in arithmetic for <c>NULLIF(a, b)</c> whose arguments are literals or such NULLIFs, which it
+    /// folds, however deep, to <c>a</c>'s integer, or to NULL (one digit) when the two are equal or <c>a</c> folds to NULL; null
+    /// for any other expression (observed: <c>Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values</c>).
     /// </summary>
-    private static int? FoldedNullIfDigits(ScalarExpression expression)
-    {
-        if (Strip(expression) is not NullIfExpression nullIf || IntegerLiteralOf(nullIf.FirstExpression) is not { } first
-            || NumberOf(nullIf.FirstExpression) is not { } a)
-        {
-            return null;
-        }
+    private static int? FoldedNullIfDigits(ScalarExpression expression) =>
+        Strip(expression) is NullIfExpression && Folded(expression) is { } folded ? (folded.Null ? 1 : folded.Digits) : null;
 
-        var b = NumberOf(nullIf.SecondExpression) ?? (LiteralOf(nullIf.SecondExpression) is ({ } text and StringLiteral, false)
-            && decimal.TryParse(text.Value.Trim(), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null);
-        if (b is null && LiteralOf(nullIf.SecondExpression) is not ({ } and StringLiteral, _))
+    /// <summary>
+    /// The integer constant <paramref name="expression"/> folds to: an integer literal, signed, or a NULLIF of such constants;
+    /// NULL when a NULLIF's arguments are equal or its first is NULL. Null when it is anything else.
+    /// </summary>
+    private static (bool Null, decimal Value, int Digits)? Folded(ScalarExpression expression)
+    {
+        if (IntegerLiteralOf(expression) is { } literal && NumberOf(expression) is { } number)
+            return (false, number, literal.Value.TrimStart('0').Length is var n and > 0 ? n : 1);
+        if (Strip(expression) is not NullIfExpression nullIf || Folded(nullIf.FirstExpression) is not { } a)
             return null;
-        return a == b ? 1 : first.Value.TrimStart('0').Length is var n and > 0 ? n : 1;
+        if (a.Null)
+            return a;
+
+        // A string that is not a number fails the comparison (245), so no value comes back and either count holds.
+        decimal? b;
+        if (Folded(nullIf.SecondExpression) is { } inner)
+            b = inner.Null ? null : inner.Value;
+        else if (NumberOf(nullIf.SecondExpression) is { } value)
+            b = value;
+        else if (LiteralOf(nullIf.SecondExpression) is ({ } text and StringLiteral, false))
+            b = decimal.TryParse(text.Value.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+        else
+            return null;
+        return b == a.Value ? (true, 0, 1) : a;
     }
+
+    /// <summary>
+    /// Whether <paramref name="expression"/> is a NULLIF over an integer literal that the server may fold in arithmetic but
+    /// <see cref="Folded"/> can't work out: its second argument is not a literal or such a NULLIF, yet may be constant.
+    /// </summary>
+    private static bool NullIfMayFold(ScalarExpression expression) =>
+        Strip(expression) is NullIfExpression nullIf && FoldedNullIfDigits(expression) is null && LiteralRooted(nullIf.FirstExpression)
+        && !NeverConstant(nullIf.SecondExpression);
+
+    private static bool LiteralRooted(ScalarExpression expression) =>
+        IntegerLiteralOf(expression) is not null || (Strip(expression) is NullIfExpression nullIf && LiteralRooted(nullIf.FirstExpression));
 
     // ---- when the server decides whether a value nests as JSON ----------------------------------------------------------
 

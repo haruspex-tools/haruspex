@@ -590,6 +590,10 @@ internal sealed partial class Typer
         {
             return Plus(binary, left, right, lt, rt);
         }
+        // NULLIF over a literal whose fold isn't worked out here may count its literal's digits or its type's (observed:
+        // Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values).
+        if (NullIfMayFold(binary.FirstExpression) || NullIfMayFold(binary.SecondExpression))
+            return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
         if (OperandOf(left, binary.FirstExpression, arithmetic: true) is not { } l || OperandOf(right, binary.SecondExpression, arithmetic: true) is not { } r)
             return NotModelled(binary, "an operand of this type is not modelled yet.");
         if (op == '+' && ((l.Type.IsString && r.Type.IsString) || (l.Type.IsBinary && r.Type.IsBinary)))

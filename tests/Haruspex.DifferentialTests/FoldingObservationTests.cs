@@ -202,15 +202,19 @@ public class FoldingObservationTests(SqlServerFixture server)
     public async Task Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values()
     {
         // NULLIF(1, 0) is tinyint, and as a UNION's query, or beside a COALESCE's or a CASE's other values, counts tinyint's 3
-        // digits. In arithmetic it is folded to its first
+        // digits. In arithmetic it is folded, however deeply nested in NULLIFs of literals, to its first
         // literal, or to NULL (one digit) when the two are equal, the second a number or a string holding one; NULLIF of a literal and a column is not, and
         // counts tinyint's.
         var types = await Types(Budget,
             "CAST(0.5 AS decimal(38,38)) + NULLIF(1, 0)", "p.budget / NULLIF(5, 5)", "p.budget / NULLIF(70000, 0)", "p.budget / NULLIF(21, 0.0)", "p.budget / NULLIF(-21, 0)",
             "p.budget / NULLIF(21, p.id)", "CAST(0.5 AS decimal(38,38)) + NULLIF(70000, 0)", "CAST(0.5 AS decimal(38,38)) + NULLIF(5, 5.0)",
             "CAST(0.5 AS decimal(38,38)) + NULLIF(1, p.id)", "p.budget / NULLIF(21, '0')", "CAST(0.5 AS decimal(38,38)) + NULLIF(1, '1')",
-            "COALESCE(CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))", "IIF(p.id > 0, CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))");
-        Assert.Equal(["decimal(38,37)", "decimal(21,6)", "decimal(25,10)", "decimal(22,7)", "decimal(22,7)", "decimal(23,8)", "decimal(38,33)", "decimal(38,37)", "decimal(38,35)", "decimal(22,7)", "decimal(38,37)", "decimal(38,35)", "decimal(38,35)"], types);
+            "COALESCE(CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))", "IIF(p.id > 0, CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))",
+            "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(1, 0), 0)", "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(70000, 0), 0)",
+            "CAST(0.5 AS decimal(38,38)) + NULLIF(1, NULLIF(0, 1))", "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(1, 1), 0)",
+            "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(21, 0), 21)", "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(NULLIF(123, 0), 0), 0)");
+        Assert.Equal(["decimal(38,37)", "decimal(21,6)", "decimal(25,10)", "decimal(22,7)", "decimal(22,7)", "decimal(23,8)", "decimal(38,33)", "decimal(38,37)", "decimal(38,35)", "decimal(22,7)", "decimal(38,37)", "decimal(38,35)", "decimal(38,35)",
+            "decimal(38,37)", "decimal(38,33)", "decimal(38,37)", "decimal(38,37)", "decimal(38,37)", "decimal(38,35)"], types);
         Assert.Equal(
             ["decimal(38,35)"],
             await Everywhere(Described, ["SELECT CAST(0.5 AS decimal(38,38)) AS v FROM k2.product UNION ALL SELECT NULLIF(1, 0){0}"]));

@@ -94,6 +94,14 @@ public class FoldingTests
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT s.frac + NULLIF(1, s.id) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT NULLIF(1, 0) FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT COALESCE(s.frac, NULLIF(1, 0)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+
+        // Nested, it folds however deep; a NULLIF of a literal and a constant it can't work out here is unknown.
+        Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(NULLIF(1, 0), 0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,33)", Typed(Procedure("SELECT s.frac + NULLIF(NULLIF(70000, 0), 0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(1, NULLIF(0, 1)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(NULLIF(21, 0), 21) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT s.frac + NULLIF(NULLIF(NULLIF(123, 0), 0), 0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("unknown: ", Typed(Procedure("SELECT s.frac + NULLIF(1, IIF(1 = 1, 0, 1)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT IIF(s.id > 0, s.frac, NULLIF(1, 0)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
     }
 

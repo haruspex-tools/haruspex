@@ -1180,7 +1180,8 @@ Two places count differently. A derived table's literal counts its own digits as
 in parentheses or as what a constant `IIF` folds to, but its type's inside any expression
 (`A_derived_tables_literal_counts_its_own_digits_only_as_a_set_operations_query`); `Typer.OperandOf` is told which. And `NULLIF` of two
 literals is `tinyint` as a query and beside a `COALESCE`'s or `CASE`'s other values, but in arithmetic is folded to its first
-literal, or to NULL (one digit) when they are equal (`Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values`).
+literal, or to NULL (one digit) when they are equal, nested in NULLIFs of literals however deep; a `NULLIF` of a literal and
+some other constant is unknown there (`Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values`).
 
 **When it decides how a value nests**, the plan matters: a derived table's `json_query(N'[1]')` is folded into a `COALESCE`
 over it, and a parameter's value under `OPTION (RECOMPILE)`. JSON built from a table's rows never is (`Typer.BuiltFromRows`): a
