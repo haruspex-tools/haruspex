@@ -484,8 +484,9 @@ hold, joined over every rowset it may return:
   list leaves out take their default, and without a list an identity or computed column is skipped, in a temporary table too
   (`Insert_exec_maps_the_callees_columns_to_the_targets_by_position`).
 - **Text in, text out.** A column of JSON text keeps its content in an `nvarchar(max)` column, which holds it unchanged; a
-  shorter one refuses longer text (8152) and `varchar` loses characters its code page lacks
-  (`Insert_exec_converts_json_to_the_columns_type_as_insert_does`), so neither is traced. Stored, the JSON is text: JSON
+  shorter one refuses longer text (8152), and `varchar` changes what its code page lacks: not only a string's content, since
+  best fit can turn a character into JSON's own punctuation (`＂` becomes `"`), giving another structure, a key the callee
+  never wrote or text that is not JSON (`Insert_exec_converts_json_to_the_columns_type_as_insert_does`). So neither is traced. Stored, the JSON is text: JSON
   again only under `json_query` (`Json_inserted_by_insert_exec_is_text_until_json_query_reads_it`). A callee of no rows
   inserts none, and a null stays null (`Insert_exec_of_no_rows_inserts_none_and_a_null_json_column_stays_null`).
 - **No JSON result is ever inserted.** A FOR JSON result is not cut into rows, however long: it fails the insert (13602), from
@@ -1769,7 +1770,7 @@ column is never traced: someone else may write it. Every rule is observed in `Js
 - **Places.** A variable, and a declared column of a table variable, temporary table or multi-statement function's return
   table, of type `nvarchar(max)`, holds JSON as text, escaped where it nests, JSON again under `json_query`
   (`Json_built_here_keeps_its_content_through_variables_and_tables_until_json_query`). A shorter type cuts it short without
-  an error, and `varchar` changes a character its code page lacks into another, so neither is traced. What a place holds as JSON
+  an error, and `varchar` changes a character its code page lacks into another, JSON's own punctuation among them, so neither is traced. What a place holds as JSON
   (`JsonSlot`) is kept beside its value: `FlowState.Json` for variables and table variables (`@t.column`), `TempColumn.Json`
   for a temporary table, so a callee's writes come back with the table. A parameter is the caller's, so it is not traced.
 - **Writes join.** A place written on several paths, in a loop, by several statements, or by an assignment that may not

@@ -208,8 +208,9 @@ public partial class JsonTracingTests
     [InlineData("nvarchar(10)")]
     public void Insert_exec_into_a_column_that_may_change_the_text_leaves_its_json_unknown(string type)
     {
-        // Observed: Insert_exec_converts_json_to_the_columns_type_as_insert_does. A shorter column refuses longer text (8152) and
-        // varchar loses the characters its code page lacks, so only nvarchar(max) holds the text unchanged.
+        // Observed: Insert_exec_converts_json_to_the_columns_type_as_insert_does. A shorter column refuses longer text (8152), and
+        // varchar's code page can turn a character into JSON's own punctuation (＂ into "), changing the structure, not only a
+        // string's content. So only nvarchar(max) holds the text unchanged.
         var doc = Infer($"""
             DECLARE @r TABLE (order_id int PRIMARY KEY, head {type} NULL, lines {type} NULL);
             INSERT INTO @r EXEC sales.cards @id;

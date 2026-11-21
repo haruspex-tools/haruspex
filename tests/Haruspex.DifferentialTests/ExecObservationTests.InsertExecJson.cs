@@ -61,12 +61,18 @@ public partial class ExecObservationTests
     public async Task Insert_exec_converts_json_to_the_columns_type_as_insert_does()
     {
         // Under the driver's settings (ANSI_WARNINGS ON): a column too short fails the insert (8152, or 2628 with verbose
-        // truncation messages); varchar keeps only what its code page has (Latin1 here: ā is a, 😀 two question marks); a long
-        // enough nvarchar(n) keeps the text. Only nvarchar(max) holds any JSON text unchanged.
+        // truncation messages); varchar keeps only what its code page has (Latin1 here: ā is a, 😀 two question marks), and
+        // best fit can turn a character into JSON's own punctuation (＂, U+FF02, is "), so the stored text has another structure:
+        // here a key the callee never wrote, and beside other text not JSON at all. A long enough nvarchar(n) keeps the text.
+        // Only nvarchar(max) holds any JSON text unchanged.
         string[] setup = ["CREATE PROCEDURE dbo.obs_uni AS SELECT json_object('name': nchar(257) + nchar(55357) + nchar(56832)) AS j;"];
 
         Assert.Contains((await Run(setup, "DECLARE @t TABLE (j nvarchar(5)); INSERT INTO @t EXEC dbo.obs_uni;")).Error, new int?[] { 8152, 2628 });
         Assert.Equal("j: {\"name\":\"a??\"}", (await Run(setup, "DECLARE @t TABLE (j varchar(max)); INSERT INTO @t EXEC dbo.obs_uni; SELECT j FROM @t;")).ToString());
+        string[] quotes = ["CREATE PROCEDURE dbo.obs_quotes @q nvarchar(20) AS SELECT json_object('q': @q) AS j;"];
+        const string Quoted = "DECLARE @t TABLE (j varchar(max)); DECLARE @w nchar(1) = nchar(65282); ";
+        Assert.Equal("j,keys: {\"q\":\"\",\"z\":\"\"},2", (await Run(quotes, Quoted + "DECLARE @q nvarchar(20) = @w + N',' + @w + N'z' + @w + N':' + @w; INSERT INTO @t EXEC dbo.obs_quotes @q; SELECT t.j, (SELECT COUNT(*) FROM OPENJSON(t.j)) AS keys FROM @t AS t;")).ToString());
+        Assert.Equal("j,ok: {\"q\":\"\"\"},0", (await Run(quotes, Quoted + "INSERT INTO @t EXEC dbo.obs_quotes @w; SELECT t.j, ISJSON(t.j) AS ok FROM @t AS t;")).ToString());
         Assert.Equal("j: {\"name\":\"ā😀\"}", (await Run(setup, "DECLARE @t TABLE (j nvarchar(4000)); INSERT INTO @t EXEC dbo.obs_uni; SELECT j FROM @t;")).ToString());
         Assert.Equal("j: {\"name\":\"ā😀\"}", (await Run(setup, "DECLARE @t TABLE (j nvarchar(max)); INSERT INTO @t EXEC dbo.obs_uni; SELECT j FROM @t;")).ToString());
     }
