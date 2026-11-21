@@ -388,7 +388,7 @@ internal sealed partial class Typer
             && arguments.Where((a, i) => values[i].IsLiveJson && !BuiltFromRows(a, scope)).Any())
         {
             return NotModelled(coalesce, "over JSON, COALESCE nests as JSON where the server folds it to its first argument, which it can when that "
-                + "is not JSON built from a table's rows (a FOR JSON or json_arrayagg subquery, json_query of a table's column; observed).");
+                + "is not JSON built from a table's rows (a FOR JSON or json_arrayagg subquery, json_object; observed).");
         }
         var (json, content) = JsonContent(arguments.Zip(values));
         if (json)

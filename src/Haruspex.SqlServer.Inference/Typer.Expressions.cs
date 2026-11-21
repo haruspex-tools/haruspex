@@ -94,18 +94,20 @@ internal sealed partial class Typer
     /// <param name="expression">The expression it came from.</param>
     /// <param name="least">Whether to count the fewest digits the value may have, rather than the most.</param>
     /// <param name="query">Whether it is a set operation's query as it stands, rather than inside an expression.</param>
-    private static Operand? OperandOf(Value value, ScalarExpression expression, bool least = false, bool query = false)
+    /// <param name="arithmetic">Whether it is an operand of arithmetic, where NULLIF of two literals is folded.</param>
+    private static Operand? OperandOf(Value value, ScalarExpression expression, bool least = false, bool query = false, bool arithmetic = false)
     {
         if (TypeOf(value) is not { } type)
             return null;
         if (IntegerLiteralOf(expression) is { } literal)
             return new Operand(type, literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1);
 
-        // Inside an expression the server folds NULLIF of two literals, and counts a column's type's digits even when it is a
-        // derived table's literal; only as a set operation's query, as it stands, does a column count its literal's digits and
-        // NULLIF its type's (observed: Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query,
+        // Inside an expression the server counts a column's type's digits even when it is a derived table's literal; only as a
+        // set operation's query, as it stands, does a column count its literal's digits. NULLIF of two literals it folds in
+        // arithmetic only; beside a COALESCE's, a CASE's or a query's other values it counts its type's (observed:
+        // Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values,
         // A_derived_tables_literal_counts_its_own_digits_only_as_a_set_operations_query).
-        if (!query && FoldedNullIfDigits(expression) is { } folded)
+        if (arithmetic && FoldedNullIfDigits(expression) is { } folded)
             return new Operand(type, folded);
         if (!query && Strip(expression) is ColumnReferenceExpression)
             return Operand.OfType(type);
@@ -588,7 +590,7 @@ internal sealed partial class Typer
         {
             return Plus(binary, left, right, lt, rt);
         }
-        if (OperandOf(left, binary.FirstExpression) is not { } l || OperandOf(right, binary.SecondExpression) is not { } r)
+        if (OperandOf(left, binary.FirstExpression, arithmetic: true) is not { } l || OperandOf(right, binary.SecondExpression, arithmetic: true) is not { } r)
             return NotModelled(binary, "an operand of this type is not modelled yet.");
         if (op == '+' && ((l.Type.IsString && r.Type.IsString) || (l.Type.IsBinary && r.Type.IsBinary)))
             return Plus(binary, left, right, l.Type, r.Type);
@@ -602,7 +604,7 @@ internal sealed partial class Typer
         if (Uncertain(left) || Uncertain(right))
         {
             // Never null: both operands were found above, and one by its fewest digits is found with it (OperandOf).
-            var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true)!, OperandOf(right, binary.SecondExpression, least: true)!);
+            var (lf, rf) = (OperandOf(left, binary.FirstExpression, least: true, arithmetic: true)!, OperandOf(right, binary.SecondExpression, least: true, arithmetic: true)!);
             if (Arithmetic.TypeOf(op, lf, rf) is not { } fewest || fewest.Scale != type.Scale || fewest.Type != type.Type)
                 return NotModelled(binary, "its type depends on whether SQL Server folds an operand to a constant, whose digits it would count.");
             mayOverflow |= Arithmetic.MayOverflow(op, lf, rf, NumberOf(binary.SecondExpression));

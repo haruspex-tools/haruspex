@@ -199,16 +199,18 @@ public class FoldingObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query()
+    public async Task Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values()
     {
-        // NULLIF(1, 0) is tinyint, and as a UNION's query counts tinyint's 3 digits. Inside an expression it is folded to its first
+        // NULLIF(1, 0) is tinyint, and as a UNION's query, or beside a COALESCE's or a CASE's other values, counts tinyint's 3
+        // digits. In arithmetic it is folded to its first
         // literal, or to NULL (one digit) when the two are equal, the second a number or a string holding one; NULLIF of a literal and a column is not, and
         // counts tinyint's.
         var types = await Types(Budget,
             "CAST(0.5 AS decimal(38,38)) + NULLIF(1, 0)", "p.budget / NULLIF(5, 5)", "p.budget / NULLIF(70000, 0)", "p.budget / NULLIF(21, 0.0)", "p.budget / NULLIF(-21, 0)",
             "p.budget / NULLIF(21, p.id)", "CAST(0.5 AS decimal(38,38)) + NULLIF(70000, 0)", "CAST(0.5 AS decimal(38,38)) + NULLIF(5, 5.0)",
-            "CAST(0.5 AS decimal(38,38)) + NULLIF(1, p.id)", "p.budget / NULLIF(21, '0')", "CAST(0.5 AS decimal(38,38)) + NULLIF(1, '1')");
-        Assert.Equal(["decimal(38,37)", "decimal(21,6)", "decimal(25,10)", "decimal(22,7)", "decimal(22,7)", "decimal(23,8)", "decimal(38,33)", "decimal(38,37)", "decimal(38,35)", "decimal(22,7)", "decimal(38,37)"], types);
+            "CAST(0.5 AS decimal(38,38)) + NULLIF(1, p.id)", "p.budget / NULLIF(21, '0')", "CAST(0.5 AS decimal(38,38)) + NULLIF(1, '1')",
+            "COALESCE(CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))", "IIF(p.id > 0, CAST(0.5 AS decimal(38,38)), NULLIF(1, 0))");
+        Assert.Equal(["decimal(38,37)", "decimal(21,6)", "decimal(25,10)", "decimal(22,7)", "decimal(22,7)", "decimal(23,8)", "decimal(38,33)", "decimal(38,37)", "decimal(38,35)", "decimal(22,7)", "decimal(38,37)", "decimal(38,35)", "decimal(38,35)"], types);
         Assert.Equal(
             ["decimal(38,35)"],
             await Everywhere(Described, ["SELECT CAST(0.5 AS decimal(38,38)) AS v FROM k2.product UNION ALL SELECT NULLIF(1, 0){0}"]));
@@ -328,6 +330,26 @@ public class FoldingObservationTests(SqlServerFixture server)
                     + """ | [{"id":1,"x":"{\"id\":7}"},{"id":2,"x":"{\"id\":7}"}] | [{"o":{"x":{"id":7}}},{"o":{"x":{"id":7}}}] @ 130 recompile, 140 recompile, 150 recompile, 160 recompile, 170 recompile""",
                 """[{"id":1,"x":{"id":1}},{"id":2,"x":{"id":2}}] | [{"o":{"x":{"id":1}}},{"o":{"x":{"id":2}}}]""",
                 """[{"id":1,"x":"[{\"name\":\"steel\"},{\"name\":\"blue\"}]"},{"id":2,"x":"[]"}] | [{"o":{"x":"[{\"name\":\"steel\"},{\"name\":\"blue\"}]"}},{"o":{"x":"[]"}}]""",
+            ],
+            nesting);
+    }
+
+    [Fact]
+    public async Task Json_of_a_type_shorter_than_max_stays_json_through_case_and_coalesce()
+    {
+        // JSON that is not nvarchar(max) (json_query of a literal is nvarchar(4000), of a cast to nvarchar(200) that type) nests
+        // as JSON through a CASE on a table's column, a COALESCE and a NULLIF, where the same over nvarchar(max) JSON is text.
+        var nesting = await Nesting(Products,
+            "CASE WHEN p.ref IS NOT NULL THEN JSON_QUERY(N'{\"a\":1}') END",
+            "CASE WHEN p.ref IS NOT NULL THEN JSON_QUERY(CAST(JSON_OBJECT('id': p.ref) AS nvarchar(200))) END",
+            "COALESCE(JSON_QUERY(CAST(JSON_OBJECT('id': p.ref) AS nvarchar(200))), N'[]')",
+            "NULLIF(JSON_QUERY(CAST(JSON_OBJECT('id': p.ref) AS nvarchar(200))), N'')");
+        Assert.Equal(
+            [
+                """[{"id":1,"x":{"a":1}},{"id":2}] | [{"o":{"x":{"a":1}}},{"o":{"x":null}}]""",
+                """[{"id":1,"x":{"id":42}},{"id":2}] | [{"o":{"x":{"id":42}}},{"o":{"x":null}}]""",
+                """[{"id":1,"x":{"id":42}},{"id":2,"x":{"id":null}}] | [{"o":{"x":{"id":42}}},{"o":{"x":{"id":null}}}]""",
+                """[{"id":1,"x":{"id":42}},{"id":2,"x":{"id":null}}] | [{"o":{"x":{"id":42}}},{"o":{"x":{"id":null}}}]""",
             ],
             nesting);
     }

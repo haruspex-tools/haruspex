@@ -10,12 +10,13 @@ and leaves it unknown elsewhere, saying what the server does. That covers two qu
   column of any source (a derived table's, a CTE's, a view's or a one-row `VALUES` list's literal too), a variable, a parameter
   and a subquery are never folded there, nor `ISNULL`, nor a `NULLIF`, `CASE`, `IIF` or `COALESCE` that reads one of those
   first. `OPTION (RECOMPILE)` changes nothing. So such an int counts its type's 10 digits. A derived table's literal counts
-  its own only as a set operation's query as it stands, and `NULLIF` of two literals is folded inside an expression.
+  its own only as a set operation's query as it stands, and `NULLIF` of two literals is folded in arithmetic only.
 - **Whether a value nests as JSON or as escaped text**, settled with the plan. JSON built from a table's rows (a `FOR JSON` or
-  `json_arrayagg` subquery, `json_query` of a stored column, `json_object` of one) is never folded. So `COALESCE` whose first
+  `json_arrayagg` subquery, `json_query` of one, `json_object`), all of type `nvarchar(max)`, is never folded; JSON of a
+  shorter type stays JSON through `COALESCE`, `CASE` and `NULLIF` whether folded or not. So `COALESCE` whose first
   argument is such JSON and whose last is a literal, and a `UNION` with such a query, are JSON text in every context. So is a
-  `CASE` or `IIF` whose every condition compares a table's stored column with a literal, or tests it for NULL, when its last
-  result is absent, NULL or a literal, and `NULLIF` over JSON text.
+  `CASE` or `IIF` whose every condition compares a table's stored column with a literal, or tests it for NULL, with a result
+  of `nvarchar(max)` JSON, when its last result is absent, NULL or a literal, and `NULLIF` over JSON text.
 
 **Context.** On one application's corpus, 14 of 43 unknowns were these forms. Observing them (`FoldingObservationTests`)
 showed the earlier model was also wrong in two places. It gave a derived table's literal its own digits inside arithmetic, and

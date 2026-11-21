@@ -71,7 +71,7 @@ internal sealed partial class Typer
     /// <summary>
     /// The digits the server counts for <c>NULLIF(a, b)</c> of an integer literal and another literal, which it folds to
     /// <c>a</c>, or to NULL (one digit) when they are equal; null for any other expression (observed:
-    /// <c>Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query</c>). A string that is not a
+    /// <c>Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values</c>). A string that is not a
     /// number fails the comparison (245), so no value comes back and either count holds.
     /// </summary>
     private static int? FoldedNullIfDigits(ScalarExpression expression)
@@ -94,10 +94,13 @@ internal sealed partial class Typer
     /// <summary>
     /// Whether <paramref name="expression"/> is JSON the server builds from rows, which it never folds to a constant JSON
     /// value: a FOR JSON subquery, even without FROM; <c>json_arrayagg</c> or <c>json_objectagg</c>, even of a literal; a
-    /// subquery of one of those, cast or converted to a string; <c>json_query</c> of one, or of a stored column of a table; and
-    /// <c>json_object</c> or <c>json_array</c> of a value that is (observed:
-    /// <c>Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level</c>). A column of a derived table, CTE or
-    /// view, a variable or a parameter may be folded (a derived table's <c>json_query(N'[1]')</c> is), so none is.
+    /// subquery of one of those, cast or converted to <c>nvarchar(max)</c>; <c>json_query</c> of one; and <c>json_object</c>
+    /// or <c>json_array</c> of a value that is or of a stored column (observed:
+    /// <c>Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level</c>). Each is <c>nvarchar(max)</c>: JSON
+    /// of a shorter type stays JSON through COALESCE, CASE and NULLIF (observed:
+    /// <c>Json_of_a_type_shorter_than_max_stays_json_through_case_and_coalesce</c>), so <c>json_query</c> of a column, whose type
+    /// is the column's, is not one. A column of a derived table, CTE or view, a variable or a parameter may be folded (a derived
+    /// table's <c>json_query(N'[1]')</c> is), so none is.
     /// </summary>
     /// <param name="expression">The expression.</param>
     /// <param name="scope">Where its columns are bound; null inside a subquery, whose columns are not read here.</param>
@@ -105,20 +108,33 @@ internal sealed partial class Typer
     {
         ScalarSubquery subquery when ForOf(subquery.QueryExpression) is JsonForClause => true,
         ScalarSubquery { QueryExpression: QuerySpecification { SelectElements: [SelectScalarExpression only] } } => BuiltFromRows(only.Expression, null),
-        CastCall cast => IsString(cast.DataType) && BuiltFromRows(cast.Parameter, scope),
-        ConvertCall { Style: null } convert => IsString(convert.DataType) && BuiltFromRows(convert.Parameter, scope),
+        CastCall cast => IsMaxString(cast.DataType) && BuiltFromRows(cast.Parameter, scope),
+        ConvertCall { Style: null } convert => IsMaxString(convert.DataType) && BuiltFromRows(convert.Parameter, scope),
         FunctionCall { CallTarget: null, OverClause: null } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is { } aggregate
             && (aggregate == AggregateFunctions.JsonArrayAgg || aggregate == AggregateFunctions.JsonObjectAgg) => true,
         FunctionCall { CallTarget: null, Parameters: [var inner] } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery =>
-            BuiltFromRows(inner, scope) || StoredColumn(inner, scope),
-        FunctionCall { CallTarget: null } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } scalar
-            && (scalar == ScalarFunctions.JsonObject || scalar == ScalarFunctions.JsonArray) =>
+            BuiltFromRows(inner, scope),
+        FunctionCall { CallTarget: null } call when IsTextConstructor(call) =>
             call.JsonParameters.Select(p => p.JsonValue).Concat(call.Parameters).Any(v => BuiltFromRows(v, scope) || StoredColumn(v, scope)),
         _ => false,
     };
 
-    private static bool IsString(DataTypeReference type) =>
-        type is SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.NVarChar or SqlDataTypeOption.VarChar or SqlDataTypeOption.NChar or SqlDataTypeOption.Char };
+    private static bool IsMaxString(DataTypeReference type) =>
+        type is SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.NVarChar or SqlDataTypeOption.VarChar, Parameters: [MaxLiteral] };
+
+    /// <summary><c>json_object</c> or <c>json_array</c>, not <c>RETURNING json</c>: JSON of type <c>nvarchar(max)</c>.</summary>
+    private static bool IsTextConstructor(FunctionCall call) =>
+        call.CallTarget is null && call.ReturnType is not { Count: > 0 }
+        && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } scalar
+        && (scalar == ScalarFunctions.JsonObject || scalar == ScalarFunctions.JsonArray);
+
+    /// <summary>
+    /// Whether <paramref name="expression"/> is JSON of type <c>nvarchar(max)</c>, which makes a CASE over it text rather than
+    /// JSON where it is never folded: JSON built from rows, <c>json_object</c> or <c>json_array</c>, or <c>json_query</c> of one.
+    /// </summary>
+    private bool MaxJson(ScalarExpression expression, ReadScope scope) => NeverFoldedAsJson(expression, scope)
+        || (Strip(expression) is FunctionCall { CallTarget: null, Parameters: [var inner] } call
+            && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery && MaxJson(inner, scope));
 
     /// <summary>Whether <paramref name="expression"/> reads a stored column of a table, never a constant, nor computed from one.</summary>
     private bool StoredColumn(ScalarExpression expression, ReadScope? scope) =>
@@ -133,22 +149,23 @@ internal sealed partial class Typer
     /// <c>A_union_over_json_built_from_rows_is_text_in_every_row</c>).
     /// </summary>
     private bool NeverFoldedAsJson(ScalarExpression expression, ReadScope scope) =>
-        BuiltFromRows(expression, scope)
-        || (Strip(expression) is FunctionCall { CallTarget: null } call && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) is { } scalar
-            && (scalar == ScalarFunctions.JsonObject || scalar == ScalarFunctions.JsonArray));
+        BuiltFromRows(expression, scope) || (Strip(expression) is FunctionCall call && IsTextConstructor(call));
 
     /// <summary>
     /// Whether a CASE or IIF over JSON nests as text both in FOR JSON and in <c>json_object</c>, whatever the plan: every
     /// condition compares a stored column of a table with a literal other than NULL, or tests it for NULL, so the server never
-    /// folds it to one result; and its last result is absent, NULL, a string literal or <c>json_query</c> of one. In
+    /// folds it to one result; one of its results is JSON of type <c>nvarchar(max)</c> (<see cref="MaxJson"/>), since of a
+    /// shorter type it stays JSON; and its last result is absent, NULL, a string literal or <c>json_query</c> of one. In
     /// <c>json_object</c> a CASE whose last result is JSON it builds nests as JSON (observed:
     /// <c>A_case_over_json_on_a_tables_column_is_text_where_its_last_result_is_null_or_a_literal</c>), and a condition on a
     /// parameter is folded under OPTION (RECOMPILE), so neither is typed.
     /// </summary>
     private bool NestsAsText(TSqlFragment at, ReadScope scope) => at switch
     {
-        SearchedCaseExpression searched => searched.WhenClauses.All(w => OnStoredColumns(w.WhenExpression, scope)) && LastResultConstant(searched.ElseExpression),
-        IIfCall iif => OnStoredColumns(iif.Predicate, scope) && LastResultConstant(iif.ElseExpression),
+        SearchedCaseExpression searched => searched.WhenClauses.All(w => OnStoredColumns(w.WhenExpression, scope)) && LastResultConstant(searched.ElseExpression)
+            && searched.WhenClauses.Select(w => w.ThenExpression).Append(searched.ElseExpression).OfType<ScalarExpression>().Any(r => MaxJson(r, scope)),
+        IIfCall iif => OnStoredColumns(iif.Predicate, scope) && LastResultConstant(iif.ElseExpression)
+            && (MaxJson(iif.ThenExpression, scope) || MaxJson(iif.ElseExpression, scope)),
         _ => false,
     };
 

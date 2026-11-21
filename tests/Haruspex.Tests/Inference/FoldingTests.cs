@@ -86,13 +86,15 @@ public class FoldingTests
     [Fact]
     public void Nullif_of_two_literals_counts_the_digits_it_folds_to_inside_an_expression_and_its_types_as_a_query()
     {
-        // Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query.
+        // Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values.
         Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(1, 0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(5, 5.0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,33)", Typed(Procedure("SELECT s.frac + NULLIF(70000, 0) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,37)", Typed(Procedure("SELECT s.frac + NULLIF(1, '0') AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT s.frac + NULLIF(1, s.id) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
         Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT NULLIF(1, 0) FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT COALESCE(s.frac, NULLIF(1, 0)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
+        Assert.StartsWith("decimal(38,35)", Typed(Procedure("SELECT IIF(s.id > 0, s.frac, NULLIF(1, 0)) AS v FROM dbo.sale AS s;")), StringComparison.Ordinal);
     }
 
     // ---- JSON ------------------------------------------------------------------------------------------------------------
@@ -131,6 +133,21 @@ public class FoldingTests
         foreach (var name in new[] { "a", "b", "c", "d", "e" })
             Assert.True(IsUnknown(doc, name), name);
         Assert.Contains(doc.Unknowns, u => u.Detail.Contains("json_object (observed), which one shape can't say", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Json_shorter_than_max_through_a_case_on_a_column_is_not_typed()
+    {
+        // Json_of_a_type_shorter_than_max_stays_json_through_case_and_coalesce: json_query of a literal (nvarchar(4000)) or of a
+        // cast to nvarchar(200) nests as JSON through the CASE, so the CASE is typed only beside a result of nvarchar(max) JSON.
+        var doc = Procedure("""
+            SELECT t.id, CASE WHEN t.x IS NOT NULL THEN JSON_QUERY(N'{"a":1}') END AS a,
+                   IIF(t.x IS NOT NULL, JSON_QUERY(CAST(JSON_OBJECT('id': t.x) AS nvarchar(200))), NULL) AS b,
+                   COALESCE(JSON_QUERY(CAST((SELECT JSON_ARRAYAGG(u.qty) FROM dbo.u AS u WHERE u.t_id = t.id) AS nvarchar(200))), N'[]') AS c
+            FROM dbo.t AS t FOR JSON PATH;
+            """);
+        foreach (var name in new[] { "a", "b", "c" })
+            Assert.True(IsUnknown(doc, name), name);
     }
 
     [Fact]

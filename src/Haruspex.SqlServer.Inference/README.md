@@ -1133,8 +1133,9 @@ observed in each position before it was typed (`CaseObservationTests`):
   constant never NULL is folded to it and keeps its JSON (`COALESCE(JSON_QUERY(N'[1]'), '[]')` nests `[1]`, and so does a
   derived table's or a view's `json_query` of a literal, or a subquery's, even over a table). JSON built from a table's rows is
   never folded ("What the server folds", below): a `FOR JSON` subquery, even one without FROM, a `json_arrayagg` or
-  `json_objectagg` subquery, converted to `nvarchar(max)` or not, `json_query` of one or of a table's stored column, and
-  `json_object` (`Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level`). And in `json_object` a
+  `json_objectagg` subquery, converted to `nvarchar(max)` or not, `json_query` of one, and
+  `json_object`, each `nvarchar(max)` (`Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level`; JSON of a
+  shorter type stays JSON, `Json_of_a_type_shorter_than_max_stays_json_through_case_and_coalesce`). And in `json_object` a
   COALESCE whose last argument is JSON built here (`json_array()`, another `FOR JSON` subquery) nests as JSON, as a CASE does.
   So a COALESCE whose first argument is one of those, or whose every live argument is built from rows, and whose last
   argument is a string literal or `json_query` of one, is JSON text where it nests; any other COALESCE with a live argument is
@@ -1178,19 +1179,22 @@ comparison with NULL, `OR 1 = 1` and `AND 1 = 0` are folded. Every such int coun
 Two places count differently. A derived table's literal counts its own digits as a set operation's query as it stands, alone,
 in parentheses or as what a constant `IIF` folds to, but its type's inside any expression
 (`A_derived_tables_literal_counts_its_own_digits_only_as_a_set_operations_query`); `Typer.OperandOf` is told which. And `NULLIF` of two
-numeric literals is `tinyint` as a query, but inside an expression is folded to its first literal, or to NULL (one digit) when
-they are equal (`Nullif_of_two_literals_is_folded_inside_an_expression_but_not_as_a_set_operations_query`).
+literals is `tinyint` as a query and beside a `COALESCE`'s or `CASE`'s other values, but in arithmetic is folded to its first
+literal, or to NULL (one digit) when they are equal (`Nullif_of_two_literals_is_folded_inside_arithmetic_but_not_beside_other_values`).
 
 **When it decides how a value nests**, the plan matters: a derived table's `json_query(N'[1]')` is folded into a `COALESCE`
 over it, and a parameter's value under `OPTION (RECOMPILE)`. JSON built from a table's rows never is (`Typer.BuiltFromRows`): a
-`FOR JSON` subquery, a `json_arrayagg` or `json_objectagg` subquery (cast or converted to a string or not), `json_query` of one
-or of a stored column of a table, and `json_object` or `json_array` of one. So:
+`FOR JSON` subquery, a `json_arrayagg` or `json_objectagg` subquery (cast or converted to `nvarchar(max)` or not), `json_query`
+of one, and `json_object` or `json_array` of one or of a stored column. Each is `nvarchar(max)`, which matters: JSON of a
+shorter type (`json_query` of a literal is `nvarchar(4000)`, of a column the column's type) stays JSON through `COALESCE`,
+`CASE` and `NULLIF` (`Json_of_a_type_shorter_than_max_stays_json_through_case_and_coalesce`), so a `CASE` is typed only when
+one of its results is such `nvarchar(max)` JSON. So:
 
 | Over JSON | Typed as JSON text when | Observed |
 |---|---|---|
 | `COALESCE` | its first argument is built from rows, or `json_object`, and its last is a string literal or `json_query` of one | `Coalesce_over_json_built_from_rows_is_text_wherever_it_nests_at_every_level` |
 | `UNION`, `UNION ALL` | a query's JSON is built from rows, or `json_object`; then every row is text | `A_union_over_json_built_from_rows_is_text_in_every_row` |
-| `CASE`, `IIF` | every condition compares a stored column with a literal, or tests it for NULL, and the last result is absent, NULL, a string literal or `json_query` of one | `A_case_over_json_on_a_tables_column_is_text_where_its_last_result_is_null_or_a_literal` |
+| `CASE`, `IIF` | every condition compares a stored column with a literal, or tests it for NULL, a result is `nvarchar(max)` JSON, and the last result is absent, NULL, a string literal or `json_query` of one | `A_case_over_json_on_a_tables_column_is_text_where_its_last_result_is_null_or_a_literal` |
 | `NULLIF` | its first argument is JSON text | `Nullif_over_json_text_is_text_or_null_in_every_context` |
 
 Each is text in a rowset, in `FOR JSON` and in `json_object` alike. The rest are unknown: a `UNION` of `json_query` of constants
