@@ -347,6 +347,9 @@ from its alias type `Name`, and `unit` is exactly three characters because `ncha
   `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy). One
   application's output can be split too, into a module per schema with a shared file for what they share, so that code imports
   only what it uses ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)).
+- **Why a type is what it is**: `haruspex explain shop.list_orders note` prints a field's derivation, the columns it is read
+  from and each rule that acted on it, with where in the SQL, from the committed IR alone
+  ([`explain`](docs/command-line.md#explain)). The generated code's comments name the command for each field.
 
 ## What it guarantees, and what it can't see
 
@@ -382,8 +385,8 @@ Available now, as well as procedures: **query files**, queries kept in the appli
 
 Next: **packages**, rather than building from source.
 
-Possible later, with no date: checking hand-written schemas against a procedure, checking each consuming application before
-a database change is deployed, and `haruspex explain`. Not planned: connecting to a database
+Possible later, with no date: checking hand-written schemas against a procedure, and checking each consuming application
+before a database change is deployed. Not planned: connecting to a database
 ([decision 0001](docs/decisions/0001-infer-from-source-never-a-live-database.md)), building SQL at run time, or an API over
 the database.
 
