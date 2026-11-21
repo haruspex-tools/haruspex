@@ -72,7 +72,8 @@ internal static class Facets
 
         if (facets?.Length is { } length)
         {
-            var exactLength = length.Unit == IrLengthUnit.Utf16 || length.Encoding == IrByteEncoding.SingleByte;
+            // Zod counts a string's length in code points (observed: ZodObservationTests), so a length in them is exact.
+            var exactLength = length.Unit is IrLengthUnit.Utf16 or IrLengthUnit.CodePoints || length.Encoding == IrByteEncoding.SingleByte;
             code = code.Then(length.IsFixed && exactLength ? "length" : "max", Count(length.Value));
             if (length.Unit == IrLengthUnit.Bytes && !exactLength)
                 notes.Add(BytesNote(scalar.Sql ?? "The string", length));

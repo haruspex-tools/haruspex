@@ -185,6 +185,22 @@ public class CorpusFiguresTests
     }
 
     [Fact]
+    public void Any_json_a_declaration_says_is_typed_and_counted_apart_and_shown_only_where_there_is_some()
+    {
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [Procedure("s.p", [Rowset("Row")])],
+            new Dictionary<string, IrObjectType> { ["Row"] = new([Field("extra", new IrJsonText(new IrAnyJson())), Field("live", new IrAnyJson(ObjectOrArray: true)), Field("n", new IrScalar(IrScalarKind.Number, null, "int"))]) },
+            []);
+
+        var figures = CorpusFigures.Count(document);
+
+        Assert.Equal((3, 3, 2), (figures.Fields, figures.FieldsTyped, figures.FieldsOfAnyJson));
+        Assert.Contains("| Fields typed as any JSON, declared so | 2 |", CorpusFiguresPage.FigureRows(figures), StringComparison.Ordinal);
+        Assert.DoesNotContain("any JSON", CorpusFiguresPage.FigureRows(figures with { FieldsOfAnyJson = 0 }), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Json_text_of_unknown_content_is_typed_and_counted_apart()
     {
         var document = new IrDocument(

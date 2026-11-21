@@ -360,12 +360,18 @@ public static class IrComparison
         /// A reference on each side: a change of name is said, and the two types are compared field by field, once for each
         /// pair of names, so that a type that reaches itself ends the walk.
         /// </summary>
+        private static string Openness(IrObjectType type) => type.Open ? "an object that may hold other keys" : "an object of its keys alone";
+
         private void Reference(IrPathSegment[] path, string was, string now)
         {
             if (was != now)
                 Add(IrChangeKind.TypeRenamed, path, was, now);
             if (!followed.Add((was, now)))
                 return;
+
+            // Whether its values may hold keys it doesn't list decides what a strict schema of it refuses.
+            if (before.Types[was].Open != after.Types[now].Open)
+                Add(IrChangeKind.TypeChanged, path, Openness(before.Types[was]), Openness(after.Types[now]));
             Named(path, before.Types[was].Fields, after.Types[now].Fields, f => f.Name, IrChangeKind.FieldRemoved, IrChangeKind.FieldAdded, IrChangeKind.FieldsReordered, f => IrClaimText.Value(f.Type, f.Nullable), Field);
 
             void Field(IrPathSegment[] field, IrField before, IrField after)

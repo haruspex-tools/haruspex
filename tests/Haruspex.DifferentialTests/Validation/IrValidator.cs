@@ -168,6 +168,11 @@ public static partial class IrValidator
                     else if (text.Content is { } content)
                         Content(content, value.GetString()!, path, general);
                     return;
+                case IrAnyJson any:
+                    // Any JSON value is one, and narrowed, an object or an array.
+                    if (any.ObjectOrArray && value.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))
+                        Violation(path, "a JSON object or array", Shorten(value.GetRawText()));
+                    return;
                 case IrScalar scalar:
                     if (JsonScalarProblem(scalar, value) is { } claim)
                         Violation(path, claim, value.GetRawText());

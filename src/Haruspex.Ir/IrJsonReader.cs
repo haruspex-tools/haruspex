@@ -548,6 +548,7 @@ public static class IrJsonReader
             // Left out when false: a type that is not recursive says nothing.
             Recursive = json.OptionalBoolean("recursive") ?? false,
             NameDeclared = json.OptionalBoolean("nameDeclared") ?? false,
+            Open = json.OptionalBoolean("open") ?? false,
             Identity = json.OptionalObject("identity") is { } identity ? Identity(identity) : null,
         };
         json.End();

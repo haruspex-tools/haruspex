@@ -82,6 +82,9 @@ public static class ConfigReader
     {
         public List<Diagnostic> Problems { get; } = [];
 
+        /// <summary>The schema files the declarations read, each read once.</summary>
+        private SchemaFiles SchemaFiles => field ??= new(directory, Problems);
+
         public HaruspexConfig Root(JsonValue value, string directory)
         {
             var config = new HaruspexConfig { File = file, Directory = directory, Reserved = reserved };
@@ -152,6 +155,9 @@ public static class ConfigReader
                     case "procedures":
                         config = config with { Procedures = [.. Procedures(member.Value, path)] };
                         break;
+                    case "columns":
+                        config = config with { Columns = [.. Columns(member.Value, path)] };
+                        break;
                     case "session":
                         config = config with { Session = Session(member.Value, path) };
                         break;
@@ -174,7 +180,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
                         break;
                 }
             }
@@ -915,10 +921,10 @@ public static class ConfigReader
                 return null;
             }
 
-            if (SchemaRoot(schema, Child(path, schema.Name)) is not var (schemaFile, root, rootPath))
+            if (SchemaRoot(schema, Child(path, schema.Name)) is not { } document)
                 return null;
 
-            var translator = new DeclaredSchema(schemaFile, root, rootPath, Problems, procedure, types);
+            var translator = DeclaredSchema.ForResults(document, Problems, SchemaFiles, procedure, types);
             return json ? translator.Json(index, mayBeAbsent) : translator.Rowset(index);
         }
 
@@ -926,32 +932,99 @@ public static class ConfigReader
         /// Where a declared result's schema is: written in place, or in a file of its own, relative to this one like every path
         /// here, whose problems are reported in it. Null when it can't be read.
         /// </summary>
-        private (string File, JsonValue Root, string RootPath)? SchemaRoot(JsonMember schema, string schemaPath)
+        private SchemaDocument? SchemaRoot(JsonMember schema, string schemaPath)
         {
             switch (schema.Value)
             {
-                case JsonObjectValue:
-                    return (file, schema.Value, schemaPath);
+                case JsonObjectValue or JsonOtherValue { Kind: JsonTokenType.True or JsonTokenType.False }:
+                    return new SchemaDocument(file, schema.Value, schemaPath);
                 case JsonStringValue { Value.Length: > 0 } reference:
-                    var schemaFile = Path.GetFullPath(Path.Combine(directory, reference.Value));
-                    byte[] bytes;
-                    try
-                    {
-                        bytes = File.ReadAllBytes(schemaFile);
-                    }
-                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                    {
-                        Report(ConfigCodes.Unreadable, reference, schemaPath, $"cannot read the schema {reference.Value}: {e.Message}");
-                        return null;
-                    }
-
-                    var parsed = ConfigJson.Parse(bytes, schemaFile);
-                    Problems.AddRange(parsed.Diagnostics);
-                    return parsed is Succeeded<JsonValue> { Value: var read } ? (schemaFile, read, "") : null;
+                    return SchemaFiles.Load(Path.GetFullPath(Path.Combine(directory, reference.Value)), At(reference, schemaPath), reference.Value);
                 default:
                     Report(ConfigCodes.WrongKind, schema.Value, schemaPath, "must be a JSON Schema, or the path of a file holding one, relative to this file.");
                     return null;
             }
+        }
+
+        /// <summary>
+        /// <c>columns</c>: each a column, <c>schema.table.column</c>, and what it holds, <c>{ "json": "file#pointer" }</c>: the JSON
+        /// Schema file of its JSON, relative to this file, and a JSON Pointer to the schema inside it when it isn't the whole file.
+        /// Whether the project has the column, and whether it can hold text, is checked against the project
+        /// (<c>DeclaredColumns</c> in the inference).
+        /// </summary>
+        private List<ColumnDeclaration> Columns(JsonValue value, string path)
+        {
+            var columns = new List<ColumnDeclaration>();
+            if (Object(value, path) is not { } block)
+                return columns;
+            foreach (var entry in block.Members)
+            {
+                var entryPath = Child(path, entry.Name);
+                var at = new JsonLocation(file, entryPath, entry.Line, entry.Column);
+                if (!ColumnDeclaration.TryParseKey(entry.Name, out var table, out var column, out var problem))
+                {
+                    Problems.Add(ConfigCodes.BadPattern.At(at, problem));
+                    continue;
+                }
+
+                if (columns.Any(c => c.Table == table && string.Equals(c.Column, column, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Problems.Add(ConfigCodes.KeyTwice.At(at, "names a column declared above under another spelling: a column is declared once."));
+                    continue;
+                }
+
+                if (Object(entry.Value, entryPath) is not { } body)
+                    continue;
+                JsonStringValue? json = null;
+                foreach (var member in body.Members)
+                {
+                    if (member.Name == "json")
+                        json = NonEmpty(member.Value, Child(entryPath, "json")) is not null ? (JsonStringValue)member.Value : null;
+                    else
+                        Unknown(member, Child(entryPath, member.Name), "json");
+                }
+
+                if (json is null)
+                {
+                    if (!body.Members.Any(m => m.Name == "json"))
+                        Report(ConfigCodes.NeedsAnother, body, entryPath, "needs \"json\": the path of the JSON Schema of what the column holds, relative to this file.");
+                    continue;
+                }
+
+                if (Column(entry.Name, table, column, json, Child(entryPath, "json"), at) is { } declared)
+                    columns.Add(declared);
+            }
+
+            return columns;
+        }
+
+        /// <summary>One column's declaration, its schema read and translated; null when it has a problem (reported).</summary>
+        private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at)
+        {
+            var hash = json.Value.IndexOf('#', StringComparison.Ordinal);
+            var schemaPath = hash < 0 ? json.Value : json.Value[..hash];
+            var pointer = hash < 0 ? null : json.Value[(hash + 1)..];
+            var errors = Problems.Count(p => p.IsError);
+            var full = Path.GetFullPath(Path.Combine(directory, schemaPath));
+            if (SchemaFiles.Load(full, At(json, jsonPath), schemaPath) is not { } document)
+                return null;
+            if (JsonPointer.Resolve(document.Root, "", pointer ?? "") is not var (root, rootPath))
+            {
+                Report(ConfigCodes.MissingReference, json, jsonPath, $"points at \"{pointer}\" in {schemaPath}, which names nothing: a pointer is a JSON Pointer, such as #/$defs/person.");
+                return null;
+            }
+
+            var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
+            var translator = DeclaredSchema.ForColumn(document, (root, rootPath), Problems, SchemaFiles, key, types);
+            var content = translator.Column();
+            if (content is null || Problems.Count(p => p.IsError) != errors)
+                return null;
+            var record = new IrColumnDeclaration(
+                key,
+                SchemaFiles.Relative(full),
+                string.IsNullOrEmpty(pointer) ? null : pointer,
+                translator.Files.ToEquatableMap(SchemaFiles.Relative, SchemaFiles.Sha256));
+            return new ColumnDeclaration(table, column, content, types.ToEquatableMap(t => t.Key, t => t.Value), record, at);
         }
 
         private PathOverride? PathOverride(JsonMember entry, string path)

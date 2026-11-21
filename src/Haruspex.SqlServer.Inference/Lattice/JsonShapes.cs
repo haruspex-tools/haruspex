@@ -41,6 +41,12 @@ internal static class JsonShapes
         if (b is UnknownShape)
             return b;
 
+        // Any JSON holds every JSON value, and narrowed, every object and array (docs/decisions/0094-any-json-is-a-type-of-its-own.md).
+        if (a is AnyJsonShape { ObjectOrArray: false } || (a is AnyJsonShape && Below(b, a)))
+            return a;
+        if (b is AnyJsonShape { ObjectOrArray: false } || (b is AnyJsonShape && Below(a, b)))
+            return b;
+
         switch (a, b)
         {
             case (TupleShape x, TupleShape y) when x.Items.Count == y.Items.Count:
@@ -88,11 +94,11 @@ internal static class JsonShapes
         (ArrayShape x, ArrayShape y) => Same(x.Items, y.Items) && NullReasons.Same(x.ItemsNullableBecause, y.ItemsNullableBecause) && x.MinItems == y.MinItems && x.MaxItems == y.MaxItems,
         (TupleShape x, TupleShape y) => x.Items.Count == y.Items.Count
             && x.Items.Zip(y.Items).All(p => Same(p.First.Type, p.Second.Type) && NullReasons.Same(p.First.NullableBecause, p.Second.NullableBecause)),
-        (ObjectShape x, ObjectShape y) => x.Fields.Count == y.Fields.Count
+        (ObjectShape x, ObjectShape y) => x.Open == y.Open && x.Fields.Count == y.Fields.Count
             && x.Fields.Zip(y.Fields).All(p => p.First.Name == p.Second.Name && p.First.Presence == p.Second.Presence
                 && Same(p.First.Type, p.Second.Type) && NullReasons.Same(p.First.NullableBecause, p.Second.NullableBecause)),
         (RecordShape x, RecordShape y) => Same(x.Values, y.Values) && NullReasons.Same(x.ValuesNullableBecause, y.ValuesNullableBecause),
-        (JsonTextShape x, JsonTextShape y) => x.Content is null || y.Content is null ? x.Content is null && y.Content is null : Same(x.Content, y.Content),
+        (JsonTextShape x, JsonTextShape y) => SameText(x.Text, y.Text) && (x.Content is null || y.Content is null ? x.Content is null && y.Content is null : Same(x.Content, y.Content)),
         (UnionShape x, UnionShape y) => SameVariants(x.Variants, y.Variants),
         _ => a == b,
     };
@@ -103,7 +109,8 @@ internal static class JsonShapes
     /// below one variant; scalars of one type by their facets (<see cref="ScalarFacets.Below"/>); arrays by their items, null
     /// reasons and counts, a tuple below an array whose items cover each of its own; tuples position by position; objects of the
     /// same keys key by key, a key present the same way (or never null, so present either way); records by their values; JSON
-    /// text by its content, none (unknown content) being the top. Reasons are compared as sets. Written apart from
+    /// text by its content and its string's type, none (unknown content) being the top; and anything is below any JSON, an object
+    /// or an array below any JSON object or array. Reasons are compared as sets. Written apart from
     /// <see cref="Join"/>, so that the law tests can check the join against it.
     /// </summary>
     public static bool Below(Shape a, Shape b) => (a, b) switch
@@ -112,6 +119,8 @@ internal static class JsonShapes
         (UnknownShape, _) => false,
         (UnionShape x, _) => x.Variants.All(v => Below(v, b)),
         (_, UnionShape y) => y.Variants.Any(v => Below(a, v)),
+        (_, AnyJsonShape { ObjectOrArray: false }) => true,
+        (ArrayShape or TupleShape or ObjectShape or RecordShape or AnyJsonShape { ObjectOrArray: true }, AnyJsonShape) => true,
         (ScalarShape x, ScalarShape y) => x.Type with { Facets = null } == y.Type with { Facets = null } && ScalarFacets.Below(x.Type.Facets, y.Type.Facets),
         (ArrayShape x, ArrayShape y) => Below(x.Items, y.Items) && NullReasons.Below(x.ItemsNullableBecause, y.ItemsNullableBecause)
             && (x.MinItems ?? 0) >= (y.MinItems ?? 0) && (y.MaxItems is null || (x.MaxItems is { } most && most <= y.MaxItems)),
@@ -119,15 +128,21 @@ internal static class JsonShapes
             && x.Items.Count >= (y.MinItems ?? 0) && (y.MaxItems is null || x.Items.Count <= y.MaxItems),
         (TupleShape x, TupleShape y) => x.Items.Count == y.Items.Count
             && x.Items.Zip(y.Items).All(p => Below(p.First.Type, p.Second.Type) && NullReasons.Below(p.First.NullableBecause, p.Second.NullableBecause)),
-        (ObjectShape x, ObjectShape y) => x.Fields.Count == y.Fields.Count
+        (ObjectShape x, ObjectShape y) => (!x.Open || y.Open) && x.Fields.Count == y.Fields.Count
             && x.Fields.Zip(y.Fields).All(p => p.First.Name == p.Second.Name
                 && (p.First.Presence == p.Second.Presence || p.First.NullableBecause.Count == 0)
                 && Below(p.First.Type, p.Second.Type) && NullReasons.Below(p.First.NullableBecause, p.Second.NullableBecause)),
         (RecordShape x, RecordShape y) => Below(x.Values, y.Values) && NullReasons.Below(x.ValuesNullableBecause, y.ValuesNullableBecause),
         (ObjectShape { Fields.Count: 0 }, RecordShape) => true,
-        (JsonTextShape x, JsonTextShape y) => y.Content is null || (x.Content is not null && Below(x.Content, y.Content)),
+        (JsonTextShape x, JsonTextShape y) => SameText(x.Text, y.Text) && (y.Content is null || (x.Content is not null && Below(x.Content, y.Content))),
         _ => a == b,
     };
+
+    /// <summary>
+    /// Whether two JSON texts are strings of one type: the same column type, or both <c>nvarchar(max)</c>, the text JSON built here
+    /// is (<see cref="JsonTextShape.Text"/>).
+    /// </summary>
+    public static bool SameText(ScalarShape? a, ScalarShape? b) => a is null ? b is null : b is not null && a.SameType(b);
 
     /// <summary>Whether two unions' variants match one to one, each pair the same (<see cref="Same"/>, an equivalence, so a first match will do).</summary>
     private static bool SameVariants(EquatableArray<Shape> x, EquatableArray<Shape> y)
@@ -174,7 +189,7 @@ internal static class JsonShapes
             fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)) { From = f.From });
         }
 
-        return new ObjectShape([.. fields]);
+        return new ObjectShape([.. fields]) { Open = x.Open || y.Open };
     }
 
     /// <summary>An array of the items of two arrays or tuples: each item of either, between the fewest and most of both.</summary>

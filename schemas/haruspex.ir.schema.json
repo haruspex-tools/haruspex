@@ -6,7 +6,7 @@
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.28 for a document that declares a column's JSON (columns, or what only a declaration gives: any JSON, or a fact from a declaration, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.28 for a document that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
         "0.28",
         "0.27",
@@ -811,6 +811,10 @@
           "description": "Whether the config file gave the type its name; left out when the naming rules did.",
           "type": "boolean"
         },
+        "open": {
+          "description": "Whether its values may hold keys it doesn't list, of any value (0.28): JSON a column is declared to hold; left out when they hold only its fields' keys.",
+          "type": "boolean"
+        },
         "identity": {
           "$ref": "#/$defs/identity"
         },
@@ -1496,7 +1500,8 @@
         "unit": {
           "enum": [
             "utf16",
-            "bytes"
+            "bytes",
+            "code-points"
           ]
         },
         "encoding": {

@@ -211,7 +211,14 @@ internal sealed class SqlProject
                 declarations.TryAdd(name, new DeclaredResults(declared.Results, declared.IrTypes, declared.Why));
         }
 
-        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries).Select(d => d with { Source = recorded(d.Source) });
+        // A column declared to hold JSON is part of the column's type, so inference reads it wherever the column is read; a
+        // declaration the project can't hold stops the run, before anything is inferred from it.
+        var columnProblems = ColumnDeclarationCheck.Check(config.Columns, model, (view, column) => IrInference.ViewColumnSources(model, view, column));
+        if (columnProblems.Count > 0)
+            return new Failed<IrDocument>([.. columnProblems]);
+        List<DeclaredColumn> columns = [.. config.Columns.Select(c => new DeclaredColumn(c.Table, c.Column, c.Content, c.Types, c.Record))];
+
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()
@@ -220,7 +227,7 @@ internal sealed class SqlProject
             .ToList();
 
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
-        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session).Value;
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns).Value;
         // Each script the locations point into is recorded with its hash, for explain to match a file against before it shows a line.
         return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries))
             .Select(document => document with { Source = document.Source with { Files = ScriptFiles.Of(document, folderOf) } });

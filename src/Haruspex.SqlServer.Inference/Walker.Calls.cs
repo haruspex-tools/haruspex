@@ -216,7 +216,7 @@ internal sealed partial class Walker
 
         var (walked, name) = target switch
         {
-            ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at), (ObjectName?)callee.Name),
+            ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at, source), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
             SystemProcedureCall { Procedure: var system } => (SystemCalled(system, state, needEscapes, Text(execute), at), (ObjectName?)system.Name),
         };
@@ -398,7 +398,7 @@ internal sealed partial class Walker
     {
         var track = ResultTrack.None;
         foreach (var result in declaration.Results)
-            track = track.Append(new ResultShape(result.Encoding, IrShapes.ToShape(result.Type, declaration.Types, name, at), result.AbsentBecause, result.Cardinality), at);
+            track = track.Append(new ResultShape(result.Encoding, IrShapes.ToShape(result.Type, declaration.Types, $"The declared results of {name}", at), result.AbsentBecause, result.Cardinality), at);
         return track;
     }
 

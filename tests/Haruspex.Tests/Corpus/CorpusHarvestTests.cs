@@ -91,7 +91,7 @@ public class CorpusHarvestTests
     private static IrObject Procedure(string id, EquatableArray<IrResult>? results) => new(id, id, IrObjectKind.Procedure, "p.sql:1:1", [], results);
 
     private static CorpusFigures Figures(params (string Reason, int Fields, int Procedures)[] reasons) =>
-        new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [.. reasons.Select(r => new CorpusFigures.Reason(r.Reason, r.Fields, 0, r.Procedures, 0))]);
+        new(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, [.. reasons.Select(r => new CorpusFigures.Reason(r.Reason, r.Fields, 0, r.Procedures, 0))]);
 
     [Fact]
     public void Figures_of_several_databases_are_summed_count_by_count_and_reason_by_reason()

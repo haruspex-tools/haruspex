@@ -9,6 +9,8 @@ every result the column's value reaches, through `json_query`, `FOR JSON`, varia
 functions and `INSERT … EXEC`. Read plainly, the column is JSON text of the schema's type; through `json_query`, live JSON of it.
 The IR records each declaration with the hash of every schema file it read (`columns`, IR 0.28), so that a changed schema is a
 change `haruspex check` reports, and lists, under `overrides`, a `column-json` claim on each object that reads a declared column.
+An object of a column's JSON may hold keys its schema doesn't list (it is `open`) unless the schema closes it, since its writer
+is an application, not `FOR JSON`; no emitter refuses such a key.
 It completes [decision 0017](0017-stored-json-is-typed-only-by-declaration.md): stored JSON is typed only by declaration, and this is
 the declaration.
 
@@ -29,5 +31,12 @@ rather than at every result that shows it.
 declaration as part of that type, rather than as an exception to how claims are applied, lets every rule that carries a column's
 type carry this one too, and keeps the claim in one place, where a person made it.
 
-**In the code:** `IrColumnDeclaration`, `IrDocument.Columns`, `IrOverrideSetting.ColumnJson`, `IrComparison`; the IR README, "Column
-declarations".
+**What it costs.** The plain read of a declared column is JSON text in the IR, which has no SQL type, so its `sql` and its length
+are no longer written there (the generated code checks the JSON inside instead); `from` still names the column and its type.
+A temporary table's column of a type other than `nvarchar(max)` doesn't carry the declaration, as it doesn't carry JSON built
+here: a shorter type may cut the text short.
+
+**In the code:** `ColumnDeclaration`, `DeclaredSchema` and `ColumnDeclarationCheck` in the config layer; `DeclaredColumn`,
+`DeclaredColumns` and `IrInference.ViewColumnSources` in the SQL Server front end; `IrColumnDeclaration`, `IrDocument.Columns`,
+`IrObjectType.Open`, `IrOverrideSetting.ColumnJson`, `IrComparison`; the IR README, "Column declarations"; the Inference README,
+"JSON declared for a column"; `DeclaredColumnTests`, `DeclaredColumnObservationTests`, `ColumnDeclarationTests`.

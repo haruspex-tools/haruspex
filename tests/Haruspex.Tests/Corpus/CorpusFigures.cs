@@ -18,6 +18,7 @@ namespace Haruspex.Tests.Corpus;
 /// <param name="Fields">Leaf fields in the type table.</param>
 /// <param name="FieldsTyped">Of those, the ones with no unknown in them.</param>
 /// <param name="FieldsOfJsonText">Of the typed ones, those that hold JSON text whose content isn't known.</param>
+/// <param name="FieldsOfAnyJson">Of the typed ones, those that hold any JSON, which a column's declaration says (0.28).</param>
 /// <param name="Results">Result sets of the procedures whose results are listed.</param>
 /// <param name="ResultsUnknown">Of those, the ones whose shape is unknown, outside the named types they refer to.</param>
 /// <param name="Unknowns">Everything unknown, by reason, in ordinal order of the reason.</param>
@@ -32,6 +33,7 @@ internal sealed record CorpusFigures(
     int Fields,
     int FieldsTyped,
     int FieldsOfJsonText,
+    int FieldsOfAnyJson,
     int Results,
     int ResultsUnknown,
     IReadOnlyList<CorpusFigures.Reason> Unknowns)
@@ -44,7 +46,9 @@ internal sealed record CorpusFigures(
         "union of a reference and an unknown, say) is counted as one unknown field, so that no unknown goes uncounted. Each " +
         "named type is counted once, however many results share it.\n" +
         "- **A typed field** has no unknown in its type. A field holding JSON text whose content isn't known counts as typed, " +
-        "since the IR claims it is a string holding JSON; how many there are is shown beside it.\n" +
+        "since the IR claims it is a string holding JSON; how many there are is shown beside it. So does a field holding any " +
+        "JSON, which a column's declaration says (`{}`): the IR claims it is JSON, of a shape its writer chose, which is not " +
+        "something haruspex failed to see; how many there are is shown beside it where there are any.\n" +
         "- **A result of unknown shape** has an unknown in its type outside the named types it refers to, or is JSON text " +
         "whose content isn't known. A result whose whole shape is unknown has no fields, so it adds nothing to the fields " +
         "counted: the procedures it leaves with no fields are counted apart, and the headline says how many procedures are " +
@@ -77,7 +81,7 @@ internal sealed record CorpusFigures(
         // The type table: each leaf field once. A table type's row is what a client sends, a parameter's, not a field a result
         // returns, so it isn't counted here; its parameter is counted among the parameters.
         var untypedTypes = new HashSet<string>(StringComparer.Ordinal);
-        int fields = 0, typed = 0, jsonText = 0;
+        int fields = 0, typed = 0, jsonText = 0, anyJson = 0;
         foreach (var (name, type) in document.Types.Where(t => t.Value.Identity?.Owner != IrTypeOwner.TableType))
         {
             foreach (var field in type.Fields.Where(f => IsField(f.Type)))
@@ -89,6 +93,8 @@ internal sealed record CorpusFigures(
                     typed++;
                     if (IsUnknownJsonText(field.Type))
                         jsonText++;
+                    if (IrTypeTree.Within(field.Type).Any(t => t is IrAnyJson))
+                        anyJson++;
                 }
                 else
                 {
@@ -164,6 +170,7 @@ internal sealed record CorpusFigures(
             fields,
             typed,
             jsonText,
+            anyJson,
             results,
             resultsUnknown,
             [.. byReason.Values]);
@@ -192,6 +199,7 @@ internal sealed record CorpusFigures(
             Total(f => f.Fields),
             Total(f => f.FieldsTyped),
             Total(f => f.FieldsOfJsonText),
+            Total(f => f.FieldsOfAnyJson),
             Total(f => f.Results),
             Total(f => f.ResultsUnknown),
             [.. reasons]);

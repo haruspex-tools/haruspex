@@ -92,7 +92,8 @@ public sealed record IrDocument(
 
     /// <summary>
     /// Whether it says anything only a declaration of a column's JSON gives (0.28): a declaration in <see cref="Columns"/>, any
-    /// JSON (<see cref="IrAnyJson"/>) anywhere, or a fact a declaration states (<see cref="IrFactSourceKind.Declared"/>).
+    /// JSON (<see cref="IrAnyJson"/>) anywhere, a fact a declaration states (<see cref="IrFactSourceKind.Declared"/>), or an open
+    /// object type (<see cref="IrObjectType.Open"/>).
     /// </summary>
     internal bool Declares => Columns.Count > 0 || IrDocumentDeclared.First(this) is not null;
 

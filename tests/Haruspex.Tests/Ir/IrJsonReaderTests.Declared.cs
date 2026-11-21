@@ -81,6 +81,7 @@ public partial class IrJsonReaderTests
             json["irVersion"] = IrDocument.BytesVersion;
             json.Remove("columns");
             json["overrides"] = new JsonArray();
+            json["types"]!["OrderRow"]!.AsObject().Remove("open");
             Field(json, "mode")["type"] = JsonNode.Parse("""{ "kind": "string" }""");
             Field(json, "mode")["presence"] = "always";
         });
@@ -97,11 +98,29 @@ public partial class IrJsonReaderTests
             json["irVersion"] = IrDocument.BytesVersion;
             json.Remove("columns");
             json["overrides"] = new JsonArray();
+            json["types"]!["OrderRow"]!.AsObject().Remove("open");
             Field(json, "extras")["type"] = JsonNode.Parse("""{ "kind": "json-text" }""");
             Field(json, "live")["type"] = JsonNode.Parse("""{ "kind": "string" }""");
         });
 
         Assert.Equal("$.types.OrderRow.fields[17].type.minLength", e.Path);
+    }
+
+    [Fact]
+    public void An_open_object_in_a_document_labelled_before_0_28_is_refused_by_its_path()
+    {
+        var e = RefusedDeclared(json =>
+        {
+            json["irVersion"] = IrDocument.BytesVersion;
+            json.Remove("columns");
+            json["overrides"] = new JsonArray();
+            Field(json, "extras")["type"] = JsonNode.Parse("""{ "kind": "json-text" }""");
+            Field(json, "live")["type"] = JsonNode.Parse("""{ "kind": "string" }""");
+            Field(json, "mode")["type"] = JsonNode.Parse("""{ "kind": "string" }""");
+            Field(json, "mode")["presence"] = "always";
+        });
+
+        Assert.Equal("$.types.OrderRow.open", e.Path);
     }
 
     [Fact]

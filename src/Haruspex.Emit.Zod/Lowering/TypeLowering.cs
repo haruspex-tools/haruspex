@@ -29,7 +29,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         IrJsonText { Content: { } content } => new Noted(new JsonText(Type(content, IrEncoding.Json)), new ZodNote("A string holding JSON, checked against the schema inside.")),
         IrJsonText => new Noted(Z("string"), new ZodNote("A string holding JSON.")),
 
-        // z.json() accepts every value JSON.parse gives and nothing else (observed in the pinned Zod: JsonValueTests).
+        // z.json() accepts every value JSON.parse gives and nothing else (observed in the pinned Zod: ZodObservationTests).
         IrAnyJson { ObjectOrArray: true } => new Noted(Z("union", new ArrayLiteral([Z("record", Z("string"), Z("json")), Z("array", Z("json"))])), new ZodNote("Any JSON object or array.")),
         IrAnyJson => new Noted(Z("json"), new ZodNote("Any JSON value.")),
         IrUnknownType unknown => new Noted(Z("unknown"), new ZodNote($"Not known ({IrWireNames.Of(unknown.Reason)}); the IR's unknowns say why.")),
@@ -98,10 +98,13 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
         }
     }
 
-    /// <summary>The keys of a variant that is an object, or a plain array of one; null for any other.</summary>
+    /// <summary>
+    /// The keys of a variant that is an object, or a plain array of one; null for any other, and for an open object, which may hold
+    /// any key, so that no key can be refused to tell it apart.
+    /// </summary>
     private List<string>? ObjectKeys(IrType type) => type switch
     {
-        IrRef reference when types.TryGetValue(reference.Name, out var target) => [.. target.Fields.Select(f => f.Name)],
+        IrRef reference when types.TryGetValue(reference.Name, out var target) && !target.Open => [.. target.Fields.Select(f => f.Name)],
         IrArray { Items: IrRef reference, MinItems: null, MaxItems: null, ItemsNullable: false } => ObjectKeys(reference),
         _ => null,
     };

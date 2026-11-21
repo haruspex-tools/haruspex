@@ -181,9 +181,33 @@
         "minLength": 3,
         "pattern": "^(?:[^\\[*?]|\\[(?:[^\\]]|\\]\\])*\\])*$"
       }
+    },
+    "columns": {
+      "description": "Columns declared to hold JSON of a schema, keyed by the column's three-part name (schema.table.column, with T-SQL brackets around a part that holds a dot). The declaration is part of the column's type: every value read from the column holds JSON of the schema, wherever it goes.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/column"
+      },
+      "propertyNames": {
+        "description": "A three-part name: schema.table.column.",
+        "pattern": "^(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+$"
+      }
     }
   },
   "$defs": {
+    "column": {
+      "description": "What a column holds.",
+      "type": "object",
+      "properties": {
+        "json": {
+          "description": "The JSON Schema file of the JSON the column holds, relative to this file, with a JSON Pointer after # to a schema inside it when it isn't the whole file: schemas/party.schema.json#/$defs/person.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["json"],
+      "additionalProperties": false
+    },
     "queryEntry": {
       "description": "A folder, a file or a pattern of query files, relative to this file, never above its folder.",
       "type": "string",

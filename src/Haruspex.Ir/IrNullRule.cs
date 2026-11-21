@@ -170,7 +170,8 @@ public enum IrNullRule
 
     /// <summary>
     /// The config file declares it may be null, or absent: in results declared for a procedure whose results cannot be
-    /// inferred. <see cref="IrNullReason.At"/> is the procedure declared.
+    /// inferred, where <see cref="IrNullReason.At"/> is the procedure declared; or (0.28) in the JSON a column is declared to
+    /// hold, where it is the column, <c>schema.table.column</c>.
     /// </summary>
     Declared,
 

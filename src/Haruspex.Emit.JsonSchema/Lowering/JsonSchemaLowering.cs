@@ -172,7 +172,8 @@ internal static class JsonSchemaLowering
 
         // A table type's row is strict whatever the setting, as the parameters are: a key it doesn't list is a misspelt column,
         // which would otherwise be sent as NULL (decision 0076).
-        if (options.Objects == JsonSchemaObjects.Strict || row)
+        // An open object (JSON a column is declared to hold) may hold keys it doesn't list, so it is never closed.
+        if ((options.Objects == JsonSchemaObjects.Strict && !type.Open) || row)
             schema = schema.With(Keyword.AdditionalProperties, new SchemaValue.Boolean(false));
         return type.Identity switch
         {

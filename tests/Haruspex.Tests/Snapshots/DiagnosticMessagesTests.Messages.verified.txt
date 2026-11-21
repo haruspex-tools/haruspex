@@ -119,7 +119,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -197,16 +197,10 @@ HAR3104
 haruspex.json:1:125: error HAR3104: procedures["lib.p"].results.json: the JSON document itself is never null; when a query may match no rows, use "mayBeAbsent": true.
 
 HAR3105
-haruspex.json:1:166: error HAR3105: procedures["lib.p"].results.json.properties.a: needs a "type".
-
-HAR3106
-haruspex.json:1:135: error HAR3106: procedures["lib.p"].results.json.type: can have only one type besides "null": a value of several types is not supported yet.
+haruspex.json:1:166: error HAR3105: procedures["lib.p"].results.json.properties.a: needs a type other than "null".
 
 HAR3107
 haruspex.json:1:135: error HAR3107: procedures["lib.p"].results.json.type: "date" is not a JSON Schema type: use string, integer, number, boolean, object, array or null.
-
-HAR3108
-haruspex.json:1:125: error HAR3108: procedures["lib.p"].results.json: needs "properties" (its keys), or "additionalProperties" (the type of every value, for an object whose keys are data).
 
 HAR3109
 haruspex.json:1:204: error HAR3109: procedures["lib.p"].results.json.required: names "b", which is not in "properties".
@@ -214,17 +208,17 @@ haruspex.json:1:204: error HAR3109: procedures["lib.p"].results.json.required: n
 HAR3110
 haruspex.json:1:166: error HAR3110: procedures["lib.p"].results.json.properties.a: may be both left out and null, which haruspex can't express yet: FOR JSON leaves a null out, so make the key required, or not nullable.
 
-HAR3111
-haruspex.json:1:125: error HAR3111: procedures["lib.p"].results.json: needs "items", the schema of its items.
-
 HAR3112
-haruspex.json:1:135: error HAR3112: procedures["lib.p"].results.json.$ref: can refer only to "#/$defs/…" or "#/definitions/…" of the same schema.
+haruspex.json:1:135: error HAR3112: procedures["lib.p"].results.json.$ref: refers to https://example.com/order.schema.json, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it.
 
 HAR3113
-haruspex.json:1:135: error HAR3113: procedures["lib.p"].results.json.$ref: refers to "#/$defs/missing", which the schema does not define.
+haruspex.json:1:135: error HAR3113: procedures["lib.p"].results.json.$ref: refers to "#/$defs/missing", which names nothing: a fragment is a JSON Pointer, such as #/$defs/person.
 
 HAR3114
 haruspex.json:1:224: error HAR3114: procedures["lib.p"].results.json.$defs.node.properties.next.$ref: refers to "#/$defs/node" inside itself: a recursive schema is not supported yet.
+
+HAR3115
+schemas/extra.schema.json:1:1: error HAR3115: allows the JSON null at its top, which haruspex can't type in a column's text yet. A column with no value is NULL in SQL, which its own nullability says, so leave "null" out here.
 
 HAR3150
 haruspex.json:1:155: warning HAR3150: procedures["lib.p"].results.json.format: "ipv4" is not a format haruspex checks, so the generated schema does not check it.
@@ -297,6 +291,9 @@ haruspex.json:1:122: warning HAR4111: procedures["lib.get_book"].paths["[].copie
 
 HAR4112
 haruspex.json:1:119: error HAR4112: procedures["lib.get_book"].sets: names 2 result sets, but lib.get_book returns one result set. Name every set it returns, in order, or none.
+
+HAR4113
+haruspex.json:1:90: error HAR4113: columns["lib.book.copies"]: lib.book.copies is of the type int, which can't hold JSON text: only a string type (char, varchar, nchar, nvarchar) or json can.
 
 HAR4201
 haruspex.json:1:93: error HAR4201: procedures["lib.get_book"]: haruspex infers the results of lib.get_book, and the declaration disagrees at results: the inference says 1 result set, the declaration 0. A declaration is for results that can't be inferred; to correct inferred results, override a path under "paths".

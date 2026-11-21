@@ -201,7 +201,9 @@ public static partial class IrCombination
                 var fields = own.Fields.ToList();
                 foreach (var was in partnered.ToList())
                     fields = Fields(name, was, fields);
-                return own with { Fields = [.. fields] };
+
+                // Open in either, open combined: it must accept the keys either's values may hold.
+                return own with { Fields = [.. fields], Open = own.Open || partnered.Any(was => baseline.Types[was].Open) };
             }
         }
 

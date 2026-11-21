@@ -97,15 +97,16 @@ reason.
 | [HAR3103](HAR3103.md) | error | A rowset's column isn't a scalar |
 | [HAR3104](HAR3104.md) | error | A JSON document declared nullable |
 | [HAR3105](HAR3105.md) | error | A schema without a type |
-| [HAR3106](HAR3106.md) | error | A schema of several types |
+| [HAR3106](HAR3106.md) | error | A schema of several types (retired) |
 | [HAR3107](HAR3107.md) | error | Not a JSON Schema type |
-| [HAR3108](HAR3108.md) | error | An object schema without properties |
+| [HAR3108](HAR3108.md) | error | An object schema without properties (retired) |
 | [HAR3109](HAR3109.md) | error | A required key that isn't a property |
 | [HAR3110](HAR3110.md) | error | A key both optional and nullable |
-| [HAR3111](HAR3111.md) | error | An array schema without items |
+| [HAR3111](HAR3111.md) | error | An array schema without items (retired) |
 | [HAR3112](HAR3112.md) | error | A reference outside the schema |
 | [HAR3113](HAR3113.md) | error | A reference to nothing |
 | [HAR3114](HAR3114.md) | error | A recursive schema |
+| [HAR3115](HAR3115.md) | error | A column's JSON declared null at its top |
 | [HAR3150](HAR3150.md) | warning | A format haruspex doesn't check |
 | [HAR3151](HAR3151.md) | warning | A keyword haruspex doesn't check |
 | [HAR3152](HAR3152.md) | warning | A keyword ignored beside a reference |
@@ -135,6 +136,7 @@ reason.
 | [HAR4110](HAR4110.md) | warning | A nullability the inference already proves |
 | [HAR4111](HAR4111.md) | warning | Exact values the inference already proves |
 | [HAR4112](HAR4112.md) | error | Set names that don't match the result sets |
+| [HAR4113](HAR4113.md) | error | A column that can't hold declared JSON |
 | [HAR4201](HAR4201.md) | error | Declared results disagree with the inference |
 | [HAR4202](HAR4202.md) | warning | Declared results the inference already gives |
 | [HAR4203](HAR4203.md) | warning | Declared results nothing uses |

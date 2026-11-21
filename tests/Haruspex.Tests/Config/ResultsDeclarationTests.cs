@@ -192,7 +192,7 @@ public class ResultsDeclarationTests
     public void A_problem_in_a_schema_file_is_reported_in_that_file()
     {
         using var dir = new TempDirectory();
-        dir.File("schemas/row.schema.json", "{\n  \"type\": \"object\",\n  \"properties\": { \"x\": { \"type\": [\"string\", \"integer\"] } }\n}\n");
+        dir.File("schemas/row.schema.json", "{\n  \"type\": \"object\",\n  \"properties\": { \"x\": { \"type\": \"array\" } }\n}\n");
 
         var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": "schemas/row.schema.json" }, "why": "dynamic" } } }""", dir);
 
@@ -200,7 +200,7 @@ public class ResultsDeclarationTests
         var at = Assert.IsType<JsonLocation>(problem.At);
         Assert.Equal(Path.Combine(dir.Path, "schemas", "row.schema.json"), at.File);
         Assert.Equal(3, at.Line);
-        Assert.Contains("one type", problem.Message, StringComparison.Ordinal);
+        Assert.Contains("a rowset's column holds a scalar", problem.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -225,12 +225,12 @@ public class ResultsDeclarationTests
     [InlineData("""{ "results": { "rowset": { "type": "object", "properties": { "a": { "type": "string" } }, "required": [] } }, "why": "x" }""", "every column of a rowset is always there")]
     [InlineData("""{ "results": { "rowset": { "type": "array" } }, "why": "x" }""", "a rowset is declared by the schema of one row")]
     [InlineData("""{ "results": { "json": { "type": ["object", "null"], "properties": {} } }, "why": "x" }""", "use \"mayBeAbsent\"")]
-    [InlineData("""{ "results": { "json": { "properties": {} } }, "why": "x" }""", "needs a \"type\"")]
+    [InlineData("""{ "results": { "json": { "type": "null" } }, "why": "x" }""", "needs a type other than \"null\"")]
     [InlineData("""{ "results": { "json": { "type": "object", "properties": { "a": { "type": ["string", "null"] } } } }, "why": "x" }""", "may be both left out and null")]
-    [InlineData("""{ "results": { "json": { "type": "object" } }, "why": "x" }""", "needs \"properties\"")]
-    [InlineData("""{ "results": { "json": { "type": "array" } }, "why": "x" }""", "needs \"items\"")]
+    [InlineData("""{ "results": { "json": false }, "why": "x" }""", "allows no value at all")]
     [InlineData("""{ "results": { "json": { "$ref": "#/$defs/a", "$defs": { "a": { "type": "array", "items": { "$ref": "#/$defs/a" } } } } }, "why": "x" }""", "inside itself: a recursive schema")]
-    [InlineData("""{ "results": { "json": { "$ref": "other.json#/a" } }, "why": "x" }""", "only to \"#/$defs/")]
+    [InlineData("""{ "results": { "json": { "$ref": "https://example.com/a.json" } }, "why": "x" }""", "which is not a local file")]
+    [InlineData("""{ "results": { "json": { "$ref": "#/$defs/a" } }, "why": "x" }""", "which names nothing")]
     public void A_wrong_declaration_is_an_error(string block, string expected)
     {
         var read = Read($$"""{ "procedures": { "rpt.search": {{block}} } }""");
@@ -242,11 +242,11 @@ public class ResultsDeclarationTests
     [Fact]
     public void A_keyword_not_supported_is_a_warning_and_is_not_checked()
     {
-        var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": { "type": "object", "properties": { "a": { "type": "string", "maxLength": 5 } } } }, "why": "x" } } }""");
+        var read = Read("""{ "procedures": { "rpt.search": { "results": { "rowset": { "type": "object", "properties": { "a": { "type": "string", "pattern": "^a" } } } }, "why": "x" } } }""");
 
         Assert.IsType<Succeeded<HaruspexConfig>>(read);
         Assert.Equal(
-            ["haruspex.json:1:119: warning HAR3151: procedures[\"rpt.search\"].results.rowset.properties.a.maxLength: is not supported yet, so the generated schema does not check it."],
+            ["haruspex.json:1:119: warning HAR3151: procedures[\"rpt.search\"].results.rowset.properties.a.pattern: is not supported yet, so the generated schema does not check it."],
             Problems(read));
     }
 

@@ -4,7 +4,10 @@ using Haruspex.Ir;
 
 namespace Haruspex.Tests.Emit.Zod;
 
-/// <summary>Any JSON (0.28) in Zod: <c>z.json()</c>, which the pinned Zod observes accepting every JSON value and nothing else.</summary>
+/// <summary>
+/// What a declaration gives (0.28) in Zod: any JSON, <c>z.json()</c>, which the pinned Zod observes accepting every JSON value and
+/// nothing else; and a maximum length in code points, which Zod's own check counts (both observed in <c>ZodObservationTests</c>).
+/// </summary>
 public partial class ZodEmitterTests
 {
     [Theory]
@@ -23,5 +26,15 @@ public partial class ZodEmitterTests
         var ts = ZodEmitter.Emit(OneResult(IrEncoding.Rowset, Field("v", new IrJsonText(new IrAnyJson())))).Expected();
 
         Assert.Contains("jsonText(() => z.json())", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_maximum_length_in_code_points_is_z_max_which_counts_them()
+    {
+        var text = new IrScalar(IrScalarKind.String, null, null, new IrFacets(Length: new IrLength(128, IsFixed: false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Declared, "shop.orders.settings"))));
+
+        var ts = ZodEmitter.Emit(OneResult(IrEncoding.Json, Field("v", text))).Expected();
+
+        Assert.Matches(@"\n  v: z\.string\(\)\.max\(128\)( /\*[^\n]*\*/)?,\n", ts);
     }
 }

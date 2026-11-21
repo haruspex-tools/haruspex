@@ -49,7 +49,7 @@ internal sealed partial class Typer
             : throw new InvalidOperationException($"{relation.Name} is bound, but nothing it holds was attached."),
         DerivedTable derived => Derived(derived, scope),
         ValuesTable values => ValuesList(values, scope.In(values.Rows)),
-        ViewRelation { View: var view } => summaries.View(view, hinted || ReadUncommitted(scope)),
+        ViewRelation { View: var view } => summaries.View(view, hinted || ReadUncommitted(scope), source),
         TableFunctionCall call => TableFunction(call, scope.In(call.Arguments)),
         OpenJsonCall openJson => OpenJsonRelation(openJson, scope.In(openJson.Arguments)),
         SeriesCall series => GenerateSeries(series, scope.In(series.Arguments)),

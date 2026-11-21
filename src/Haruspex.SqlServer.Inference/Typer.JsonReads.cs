@@ -125,13 +125,18 @@ internal sealed partial class Typer
 
                 return all;
             case (ObjectShape obj, JsonKey(var key)):
+                // A key an open object doesn't list may be there, holding any JSON (a column's declared JSON): not known.
                 if (obj.Fields.FirstOrDefault(f => f.Name == key) is not { } field)
-                    return new Found(null, true, false);
+                    return obj.Open ? null : new Found(null, true, false);
                 var nullable = field.NullableBecause.Count > 0;
-                var missing = field.Presence == IrPresence.OmittedWhenNull && nullable;
+
+                // A key left out when null is missing exactly when null; one left out whatever its value (optional, in a column's
+                // declared JSON) may be missing, and null too where it may be null.
+                var missing = field.Presence == IrPresence.Optional || (field.Presence == IrPresence.OmittedWhenNull && nullable);
+                var nullHere = nullable && field.Presence != IrPresence.OmittedWhenNull;
                 if (Follow(field.Type, steps, from + 1) is not { } below)
                     return null;
-                return below with { MayBeMissing = below.MayBeMissing || missing || (nullable && from + 1 < steps.Count), MayBeNull = below.MayBeNull || (nullable && !missing && from + 1 == steps.Count) };
+                return below with { MayBeMissing = below.MayBeMissing || missing || (nullable && from + 1 < steps.Count), MayBeNull = below.MayBeNull || (nullHere && from + 1 == steps.Count) };
             case (TupleShape tuple, JsonIndex(var index)):
                 if (index >= tuple.Items.Count)
                     return new Found(null, true, false);
@@ -369,6 +374,8 @@ internal sealed partial class Typer
     /// <summary>The keys OPENJSON gives over a document: an object's names, an array's positions while bounded; null otherwise.</summary>
     private static IReadOnlyList<string>? Keys(Shape document) => document switch
     {
+        // An open object may hold keys it doesn't list, so its keys are not a set.
+        ObjectShape { Open: true } => null,
         ObjectShape obj => [.. obj.Fields.Select(f => f.Name).Order(StringComparer.Ordinal)],
         TupleShape tuple => [.. Enumerable.Range(0, tuple.Items.Count).Select(i => i.ToString(CultureInfo.InvariantCulture))],
         ArrayShape { MaxItems: { } most } when most <= 100 => [.. Enumerable.Range(0, most).Select(i => i.ToString(CultureInfo.InvariantCulture))],
@@ -386,13 +393,15 @@ internal sealed partial class Typer
         var all = new HashSet<int>();
         switch (document)
         {
+            case ObjectShape { Open: true }:
+                return null;
             case ObjectShape obj:
                 foreach (var field in obj.Fields)
                 {
                     if (TypeOf(field.Type) is not { } t)
                         return null;
                     all.UnionWith(t);
-                    if (field.NullableBecause.Count > 0 && field.Presence == IrPresence.Always)
+                    if (field.NullableBecause.Count > 0 && field.Presence != IrPresence.OmittedWhenNull)
                         all.Add(0);
                 }
 

@@ -1,0 +1,209 @@
+{
+  "irVersion": "0.28",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/staged_routes.sql": "376e0d4446aa193421927085b190d625c311652432b1f822affd46248bedc2c5"
+    }
+  },
+  "objects": [
+    {
+      "id": "parcels.staged_routes",
+      "name": "StagedRoutes",
+      "kind": "procedure",
+      "at": "procedures/staged_routes.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "StagedRoutesRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/staged_routes.sql:6:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "StagedRoutesRouteItem": {
+      "kind": "object",
+      "open": true,
+      "identity": {
+        "procedure": "parcels.staged_routes",
+        "path": "results[0][].route[]"
+      },
+      "fields": [
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "depot"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.parcel.route"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "depot",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "StagedRoutesRouteItem2": {
+      "kind": "object",
+      "open": true,
+      "identity": {
+        "procedure": "parcels.staged_routes",
+        "path": "results[0][].route[]"
+      },
+      "fields": [
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "address"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.parcel.route"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "postcode",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "line",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "optional",
+          "nullable": false
+        }
+      ]
+    },
+    "StagedRoutesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.staged_routes",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "route",
+          "type": {
+            "kind": "array",
+            "items": {
+              "kind": "union",
+              "variants": [
+                {
+                  "ref": "StagedRoutesRouteItem"
+                },
+                {
+                  "ref": "StagedRoutesRouteItem2"
+                }
+              ]
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "columns": [
+    {
+      "column": "parcels.parcel.extra",
+      "schema": "schemas/extra.schema.json",
+      "files": {
+        "schemas/extra.schema.json": "472291066421206dc5fcd304132d9fdfb046a84a78d70445db2c42c82932b661"
+      }
+    },
+    {
+      "column": "parcels.parcel.options",
+      "schema": "schemas/options.schema.json",
+      "files": {
+        "schemas/options.schema.json": "53f54affcc1662009b8a064da5b0b4c1b72e33ef9db4292c353b69460e8c92d3"
+      }
+    },
+    {
+      "column": "parcels.parcel.route",
+      "schema": "schemas/stops.schema.json",
+      "pointer": "/$defs/route",
+      "files": {
+        "schemas/stops.schema.json": "c5bae5bc1f32a26e87711e8b18dcdfdd3bc05719672aecc6cd7d4f9e3acebd7f"
+      }
+    }
+  ],
+  "unknowns": [],
+  "overrides": [
+    {
+      "object": "parcels.staged_routes",
+      "path": "results",
+      "setting": "column-json",
+      "via": "parcels.parcel.route"
+    }
+  ],
+  "folds": {}
+}

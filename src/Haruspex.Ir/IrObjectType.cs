@@ -26,4 +26,13 @@ public sealed record IrObjectType(EquatableArray<IrField> Fields)
     /// (<c>docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md</c>).
     /// </summary>
     public bool NameDeclared { get; init; }
+
+    /// <summary>
+    /// Whether its values may hold keys it doesn't list, each of any JSON value (0.28): an object in JSON a column is declared to
+    /// hold, whose schema doesn't close it with <c>additionalProperties: false</c>, since whoever wrote it may have added others.
+    /// An object the database builds holds only its fields' keys. An emitter must accept such keys, or set them aside, and never
+    /// refuse a value for one: not under a strict objects policy, and not to tell a union's variants apart
+    /// (docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md).
+    /// </summary>
+    public bool Open { get; init; }
 }

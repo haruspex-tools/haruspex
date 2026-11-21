@@ -65,6 +65,7 @@ public static class IrClaimText
     private static string Unit(IrLength length) => (length.Unit, length.Encoding) switch
     {
         (IrLengthUnit.Utf16, _) => "",
+        (IrLengthUnit.CodePoints, _) => " code points",
         (IrLengthUnit.Bytes, IrByteEncoding.Unknown) => " bytes",
         (IrLengthUnit.Bytes, var encoding) => $" bytes ({IrWireNames.Of(encoding)})",
     };

@@ -98,6 +98,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         // An unknown content claims nothing more than "JSON", which the node already says; the unknown is reported where
         // json_query makes the text live, if it does.
         JsonTextShape text => new IrJsonText(text.Content is null or UnknownShape ? null : Convert(text.Content, owner, id, path + "<json>")),
+        AnyJsonShape any => new IrAnyJson(any.ObjectOrArray),
         RecursiveShape recursive => Node(recursive.Function, id),
         TableRowShape row => Row(row),
         NeverShape never => Reported(id, path, IrUnknownReason.UnresolvedRecursion, "The function called here never returns a value: every return calls itself again.", never.At.ToString()),
@@ -228,7 +229,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         foreach (var field in obj.Fields)
             fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause) { From = field.From });
 
-        types[key] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path) };
+        types[key] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path), Open = obj.Open };
         return new IrRef(key);
     }
 

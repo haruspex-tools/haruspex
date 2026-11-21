@@ -34,6 +34,13 @@ each is a `QueryFile` (`QueryFileReader`), one batch read as the application sen
 inferred against the model as a procedure's body is. What it holds besides the SQL is the parameters' declarations in its
 comments, and nothing else of the file's is read; the inference reference's "Query files" says how its parameters are typed.
 
+Some facts are no script's to give, and the config file states them as claims a person makes: the results of a procedure whose
+SQL is built as it runs, and the JSON a table's column holds, which only the team that writes it can vouch for
+([decision 0093](../decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). Neither is read into the
+model, which stays what the scripts say. The config layer reads each into the IR's terms (`DeclaredSchema`), and inference takes
+them beside the model as inputs (`DeclaredResults`, `DeclaredColumn`): a column's declaration completes its type, read wherever
+the column is read, as its SQL type is.
+
 ## A script becomes the model, in three steps
 
 ```mermaid

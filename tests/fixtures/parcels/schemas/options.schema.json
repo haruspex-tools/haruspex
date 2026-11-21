@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A parcel's delivery options",
+  "type": "object",
+  "properties": {
+    "speed": { "enum": ["standard", "express"] },
+    "signature": { "type": "boolean" },
+    "note": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+    "window": {
+      "type": "object",
+      "properties": { "from": { "type": "string", "format": "time" }, "to": { "type": "string", "format": "time" } },
+      "required": ["from", "to"],
+      "additionalProperties": false
+    },
+    "attempts": { "type": "integer", "format": "int32" }
+  },
+  "required": ["speed", "signature"],
+  "additionalProperties": false
+}

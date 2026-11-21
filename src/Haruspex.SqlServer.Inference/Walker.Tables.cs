@@ -342,6 +342,7 @@ internal sealed partial class Walker
     private static Value Rewritten(Value column, string where, SourceLocation at) => column.Shape switch
     {
         ScalarShape scalar => column with { Shape = scalar.WithFacets(ScalarFacets.TypeOnly(scalar.Type.Facets)) },
+        JsonTextShape { Text: { } text } => column with { Shape = text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)) },
         JsonTextShape => column with { Shape = SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at) },
         UnknownShape => column,
         _ => Value.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, $"{where} is changed in place by .WRITE, which is not modelled for what it holds.", at)),

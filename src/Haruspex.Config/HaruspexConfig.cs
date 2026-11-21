@@ -67,6 +67,12 @@ public sealed record HaruspexConfig
     /// </summary>
     public SessionOptions Session { get; init; } = SessionOptions.NotKnown;
 
+    /// <summary>
+    /// The columns declared to hold JSON of a schema (<c>columns</c>), each translated into the IR, in the order written; empty when
+    /// the file declares none.
+    /// </summary>
+    public EquatableArray<ColumnDeclaration> Columns { get; init; } = [];
+
     /// <summary>The warnings the file acknowledges (<c>acknowledge</c>), each by its code and subject, in the order written.</summary>
     public EquatableArray<Acknowledgement> Acknowledged { get; init; } = [];
 

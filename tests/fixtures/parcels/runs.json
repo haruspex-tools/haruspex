@@ -1,0 +1,32 @@
+// The runs of the parcels fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means.
+{
+  "setups": {
+    // Any JSON is any JSON, a scalar too, which a plain read returns as it is (json_query would refuse it).
+    "a scalar extra": "UPDATE parcels.parcel SET extra = N'\"loose\"' WHERE parcel_id = 4;",
+    // FOR JSON over no rows returns no row at all, so each of its results may be absent.
+    "no parcels": "DELETE FROM parcels.parcel;"
+  },
+
+  "runs": [
+    { "name": "get_parcel, every option", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 1 } },
+    { "name": "get_parcel, required options only", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 2 } },
+    { "name": "get_parcel, no options", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 4 } },
+    { "name": "get_parcel, no extra", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 3 } },
+    { "name": "get_parcel, a scalar extra", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 4 }, "setup": "a scalar extra" },
+    { "name": "parcel_feed", "procedure": "parcels.parcel_feed" },
+    { "name": "parcel_feed, no parcels", "procedure": "parcels.parcel_feed", "setup": "no parcels" },
+    { "name": "options_text", "procedure": "parcels.options_text" },
+    { "name": "options_text, no parcels", "procedure": "parcels.options_text", "setup": "no parcels" },
+    { "name": "staged_options", "procedure": "parcels.staged_options" },
+    { "name": "staged_options, no parcels", "procedure": "parcels.staged_options", "setup": "no parcels" },
+    { "name": "options_by_view", "procedure": "parcels.options_by_view" },
+    { "name": "options_by_view, no parcels", "procedure": "parcels.options_by_view", "setup": "no parcels" },
+    { "name": "options_of_one, every option", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 1 } },
+    { "name": "options_of_one, a null note", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 3 } },
+    { "name": "options_of_one, no options", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 4 } },
+    { "name": "routes", "procedure": "parcels.routes" },
+    { "name": "staged_routes", "procedure": "parcels.staged_routes" },
+    { "name": "staged_routes, no parcels", "procedure": "parcels.staged_routes", "setup": "no parcels" }
+  ]
+}

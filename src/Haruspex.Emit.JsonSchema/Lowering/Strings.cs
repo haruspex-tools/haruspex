@@ -75,6 +75,9 @@ internal static class Strings
     private static int UnitsPerCodePoint(IrLength length) => (length.Unit, length.Encoding) switch
     {
         (IrLengthUnit.Utf16, _) => 2,
+
+        // JSON Schema counts code points too, so a length in them is exact.
+        (IrLengthUnit.CodePoints, _) => 1,
         (IrLengthUnit.Bytes, IrByteEncoding.SingleByte) => 1,
         (IrLengthUnit.Bytes, IrByteEncoding.DoubleByte) => 2,
 
@@ -85,7 +88,7 @@ internal static class Strings
     /// <summary>How a length was widened into code points, when it was; null for a single-byte collation's, which is exact.</summary>
     private static SchemaNote? Widened(string sql, IrLength length, int? fewest)
     {
-        if (length.Unit == IrLengthUnit.Bytes && length.Encoding == IrByteEncoding.SingleByte)
+        if ((length.Unit == IrLengthUnit.Bytes && length.Encoding == IrByteEncoding.SingleByte) || length.Unit == IrLengthUnit.CodePoints)
             return null;
         if (length.Unit == IrLengthUnit.Utf16)
         {

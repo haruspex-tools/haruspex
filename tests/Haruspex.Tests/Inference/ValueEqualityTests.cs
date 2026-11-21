@@ -261,13 +261,18 @@ public class ValueEqualityTests
         {
             0 or 1 => ScalarShape.FromIr(Scalar()),
             2 => Unknown(),
-            3 => random.Next(2) == 0 ? new NeverShape(Pick(Places)) : new RecursiveShape(new ObjectName("dbo", random.Next(2) == 0 ? "tree" : "Tree")),
+            3 => random.Next(3) switch
+            {
+                0 => new NeverShape(Pick(Places)),
+                1 => new RecursiveShape(new ObjectName("dbo", random.Next(2) == 0 ? "tree" : "Tree")),
+                _ => new AnyJsonShape(random.Next(2) == 0),
+            },
             4 => new ArrayShape(Shape(depth - 1), ReasonList(), random.Next(2) == 0 ? null : 1, null),
             5 => new TupleShape([.. Enumerable.Range(0, random.Next(3)).Select(_ => new ElementShape(Shape(depth - 1), ReasonList()))]),
             6 => new ObjectShape([.. Enumerable.Range(0, random.Next(1, 3)).Select(i => new FieldShape(i == 0 ? "id" : "name", Shape(depth - 1), random.Next(2) == 0 ? IrPresence.Always : IrPresence.OmittedWhenNull, ReasonList()))]),
             7 => new UnionShape([Shape(depth - 1), Shape(depth - 1)]),
             8 => new RecordShape(Shape(depth - 1), ReasonList()),
-            _ => new JsonTextShape(random.Next(2) == 0 ? null : Shape(depth - 1)),
+            _ => new JsonTextShape(random.Next(2) == 0 ? null : Shape(depth - 1)) { Text = random.Next(3) == 0 ? ScalarShape.FromIr(new IrScalar(IrScalarKind.String, null, "varchar(400)")) : null },
         };
 
         /// <summary>The shape with one fact changed, at the first place a walk down its first children reaches.</summary>
@@ -284,8 +289,9 @@ public class ValueEqualityTests
             ObjectShape obj => new ObjectShape([obj.Fields[0] with { Type = Changed(obj.Fields[0].Type) }, .. obj.Fields.Skip(1)]),
             UnionShape union => new UnionShape([.. union.Variants.SkipLast(1), Changed(union.Variants[^1])]),
             RecordShape record => record with { Values = Changed(record.Values) },
-            JsonTextShape { Content: null } => new JsonTextShape(new NeverShape(Places[0])),
-            JsonTextShape text => new JsonTextShape(Changed(text.Content)),
+            AnyJsonShape any => new AnyJsonShape(!any.ObjectOrArray),
+            JsonTextShape { Content: null } text => text with { Content = new NeverShape(Places[0]) },
+            JsonTextShape text => text with { Content = Changed(text.Content) },
         };
 
         private IrScalar Scalar() => random.Next(4) switch

@@ -169,6 +169,7 @@ public static class IrWireNames
     {
         IrLengthUnit.Utf16 => "utf16",
         IrLengthUnit.Bytes => "bytes",
+        IrLengthUnit.CodePoints => "code-points",
     };
 
     /// <summary>How a length in bytes encodes its text (<c>encoding</c>).</summary>

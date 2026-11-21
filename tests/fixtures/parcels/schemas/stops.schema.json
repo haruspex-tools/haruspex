@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Shared definitions; the route column is declared with the one named route.",
+  "$defs": {
+    "route": { "type": "array", "items": { "$ref": "#/$defs/stop" }, "minItems": 1 },
+    "stop": {
+      "oneOf": [
+        { "type": "object", "properties": { "kind": { "const": "depot" }, "depot": { "type": "string" } }, "required": ["kind", "depot"] },
+        { "type": "object", "properties": { "kind": { "const": "address" }, "postcode": { "type": "string" }, "line": { "type": "string" } }, "required": ["kind", "postcode"] }
+      ]
+    }
+  }
+}

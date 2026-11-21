@@ -80,6 +80,9 @@ internal sealed partial class Typer
         return value.Shape switch
         {
             ScalarShape { BuiltIn: var type } => type,
+
+            // A column's JSON is a string of the column's type; JSON built here is nvarchar(max).
+            JsonTextShape { Text: { } text } => text.BuiltIn,
             JsonTextShape => new ScalarType(BuiltInType.NVarChar, -1),
             _ => null,
         };

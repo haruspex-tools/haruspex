@@ -170,7 +170,7 @@ internal static class ParameterLowering
             : $"its function sends it as {sql}, and the server refuses it (error 8016), where sent otherwise it is cut short.";
         var note = (length.Unit, length.Encoding) switch
         {
-            (IrLengthUnit.Utf16, _) => null,
+            (IrLengthUnit.Utf16 or IrLengthUnit.CodePoints, _) => null,
             (_, IrByteEncoding.SingleByte) => $"{sql} holds only its collation's code page, and replaces any other character without an error.",
             (_, IrByteEncoding.DoubleByte) => $"{sql} counts bytes of a double-byte code page, so a value of {n} characters or fewer may take more; {sent} A character the code page lacks is replaced.",
             _ => $"{sql} counts bytes and its collation isn't declared, so a value of {n} characters or fewer may take more; {sent} A character its code page lacks is replaced.",

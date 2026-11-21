@@ -48,7 +48,7 @@ internal sealed partial class Typer
                 return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
             var arguments = parameters.Select((p, i) => KeyValuePair.Create(new LocalName(p.Name), Argument(p, call.Parameters[i], scope)));
-            return summaries.TableFunction(function, [.. arguments], ReadUncommitted(scope));
+            return summaries.TableFunction(function, [.. arguments], ReadUncommitted(scope), source);
         }
     }
 

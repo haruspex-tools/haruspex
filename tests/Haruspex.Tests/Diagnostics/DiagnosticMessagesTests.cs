@@ -201,6 +201,10 @@ public class DiagnosticMessagesTests
         Config($"\"procedures\": {{ \"lib.p\": {{ \"results\": {results}, \"why\": \"its SQL is built as it runs\" }} }}",
             "CREATE PROCEDURE lib.p @sql nvarchar(max) AS EXEC sp_executesql @sql;");
 
+    /// <summary>A run whose config file declares <c>lib.book.extra</c> to hold JSON of <paramref name="schema"/>, in a file of its own.</summary>
+    private static string[] DeclaresColumn(string schema) =>
+        Cli([GetBook], $"{{ {Plain}, \"columns\": {{ \"lib.book.extra\": {{ \"json\": \"schemas/extra.schema.json\" }} }} }}", arrange: f => f.File("schemas/extra.schema.json", schema));
+
     /// <summary>A run whose config file overrides <c>lib.get_book</c>'s path with <paramref name="setting"/>.</summary>
     private static string[] Override(string path, string setting, params string[] sql) =>
         Config($"\"procedures\": {{ \"lib.get_book\": {{ \"paths\": {{ \"{path}\": {setting} }} }} }}", sql.Length == 0 ? [GetBook] : sql);
@@ -289,16 +293,15 @@ public class DiagnosticMessagesTests
         (3102, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"integer\" }, \"b\": { \"type\": \"integer\" } }, \"required\": [\"a\"] } }")),
         (3103, () => Declares("{ \"rowset\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"array\", \"items\": { \"type\": \"integer\" } } } } }")),
         (3104, () => Declares("{ \"json\": { \"type\": [\"array\", \"null\"], \"items\": { \"type\": \"integer\" } } }")),
-        (3105, () => Declares("{ \"json\": { \"type\": \"object\", \"properties\": { \"a\": { \"minimum\": 1 } } } }")),
-        (3106, () => Declares("{ \"json\": { \"type\": [\"string\", \"integer\"] } }")),
+        (3105, () => Declares("{ \"json\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"null\" } } } }")),
         (3107, () => Declares("{ \"json\": { \"type\": \"date\" } }")),
-        (3108, () => Declares("{ \"json\": { \"type\": \"object\" } }")),
         (3109, () => Declares("{ \"json\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": \"integer\" } }, \"required\": [\"b\"] } }")),
         (3110, () => Declares("{ \"json\": { \"type\": \"object\", \"properties\": { \"a\": { \"type\": [\"integer\", \"null\"] } } } }")),
-        (3111, () => Declares("{ \"json\": { \"type\": \"array\" } }")),
-        (3112, () => Declares("{ \"json\": { \"$ref\": \"other.json#/$defs/a\" } }")),
+        (3112, () => Declares("{ \"json\": { \"$ref\": \"https://example.com/order.schema.json\" } }")),
         (3113, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/missing\" } }")),
         (3114, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/node\", \"$defs\": { \"node\": { \"type\": \"object\", \"properties\": { \"next\": { \"$ref\": \"#/$defs/node\" } } } } } }")),
+        (3115, () => DeclaresColumn("{ \"type\": [\"object\", \"null\"], \"properties\": {} }")),
+        (4113, () => Cli([GetBook], $"{{ {Plain}, \"columns\": {{ \"lib.book.copies\": {{ \"json\": \"schemas/copies.schema.json\" }} }} }}", arrange: f => f.File("schemas/copies.schema.json", "{}"))),
         (3150, () => Declares("{ \"json\": { \"type\": \"string\", \"format\": \"ipv4\" } }")),
         (3151, () => Declares("{ \"json\": { \"type\": \"string\", \"pattern\": \"^a\" } }")),
         (3152, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/a\", \"type\": \"string\", \"$defs\": { \"a\": { \"type\": \"string\" } } } }")),

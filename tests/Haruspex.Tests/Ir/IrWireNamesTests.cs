@@ -80,7 +80,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Length_units_keep_their_names() => Assert.Equal(
-        ["utf16", "bytes"],
+        ["utf16", "bytes", "code-points"],
         Names<IrLengthUnit>(IrWireNames.Of));
 
     [Fact]

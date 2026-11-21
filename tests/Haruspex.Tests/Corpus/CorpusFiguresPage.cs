@@ -143,7 +143,7 @@ internal static class CorpusFiguresPage
         | Fields | {N(f.Fields)} |
         | Fields typed | {N(f.FieldsTyped)} |
         | Fields typed as JSON text whose content isn't known | {N(f.FieldsOfJsonText)} |
-        | Results | {N(f.Results)} |
+        {(f.FieldsOfAnyJson > 0 ? $"| Fields typed as any JSON, declared so | {N(f.FieldsOfAnyJson)} |\n" : "")}| Results | {N(f.Results)} |
         | Results of unknown shape | {N(f.ResultsUnknown)} |
 
         """);

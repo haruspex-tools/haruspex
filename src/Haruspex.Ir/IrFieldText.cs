@@ -17,6 +17,24 @@ public static class IrFieldText
     public const string KeyLeftOutWhenNull = "FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null";
 
     /// <summary>
+    /// Why a key may be left out whatever its value (<see cref="IrPresence.Optional"/>), in <paramref name="document"/>: one of the
+    /// two databases a combined document holds against doesn't return it, or leaves it out when null where the other sends null;
+    /// or (0.28) the schema a column is declared with doesn't require it. In the words every emitter and <c>haruspex explain</c> use.
+    /// </summary>
+    public static string LeftOutWhateverItsValue(IrDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        const string Combined = "one of the two databases doesn't return the key, or leaves it out when null where the other sends null";
+        const string Declared = "the schema a column is declared to hold doesn't require the key";
+        return (document.Source.Baseline is null, document.Columns.Count > 0) switch
+        {
+            (true, _) => Declared,
+            (false, true) => Combined + "; or " + Declared,
+            (false, false) => Combined,
+        };
+    }
+
+    /// <summary>
     /// The lines that explain a field of <paramref name="typeName"/> at the level <paramref name="comments"/> asks for: none for a
     /// field that is no surprise unless every field is explained, and none at all under <see cref="IrComments.None"/>.
     /// </summary>
@@ -54,7 +72,7 @@ public static class IrFieldText
         }
 
         if (field.Presence == IrPresence.Optional)
-            lines.Add("May be left out: one of the two databases doesn't return the key, or leaves it out when null where the other sends null.");
+            lines.Add($"May be left out: {LeftOutWhateverItsValue(document)}.");
         else if (IrSurprises.AbsentWhenNull(field))
             lines.Add($"Left out when null, as {KeyLeftOutWhenNull}.");
 

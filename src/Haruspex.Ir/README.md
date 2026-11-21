@@ -137,7 +137,7 @@ of program handle one.
   is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
   document labelled 0.23 or 0.24; must refuse a document labelled 0.26 without `tableTypes`, and one labelled before 0.26 with
   them; must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none; and must
-  refuse `columns`, any JSON and a fact from a declaration in a document labelled before 0.28, and a document labelled 0.28
+  refuse `columns`, any JSON, a fact from a declaration and an open object in a document labelled before 0.28, and a document labelled 0.28
   that says none of them;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
   `utf16` or with an `encoding`;
@@ -166,7 +166,7 @@ find the cycles itself, "Recursive types"). `IrJsonReader` doesn't check them; a
 checks what a reader must refuse except what JSON Schema can't express: a number's form, a key given twice in one object, a `ref`
 that names no type, what ties a table-valued parameter to its type's definition and rows, whether a document holds a binary
 value, which decides whether it is labelled 0.27, and what ties a `column-json` claim and a declaration's files to the declaration,
-or whether a document holds any JSON or a fact from a declaration, which decides whether it is labelled 0.28.
+or whether a document holds any JSON, a fact from a declaration or an open object, which decides whether it is labelled 0.28.
 
 ## A document
 
@@ -352,7 +352,7 @@ A type node is one of these, and nothing else:
 | import | `{ "kind": "import", "name", "from" }` | a value the config file declares to be of the application's own schema: `name`, exported by the module `from`. `from` is a path relative to the folder the IR file is in, when it starts `./` or `../`, and otherwise a name the target resolves itself (a package, a path alias). Emitters import and use it as it is, so the value is still checked, by that schema, which receives the value as it arrives: the string, where it replaces JSON text |
 | unknown | `{ "kind": "unknown", "reason" }` | a value of any shape: nothing is claimed. The document's `unknowns` says why, and where |
 
-A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "identity"?, "fields": […] }`; each field is
+A named object type, in `types`, is `{ "kind": "object", "recursive"?, "nameDeclared"?, "open"?, "identity"?, "fields": […] }`; each field is
 `{ "name", "type", "presence", "nullable", "nullableBecause"?, "from"?, "sides"? }`. `presence` is `always` (the key is there, null or not),
 `omittedWhenNull` (the key is left out when the value is null), or (0.24) `optional` (the key may be left out whatever its
 value, and when it is there, its value is null only with a reason). A combined document has `optional` where one of its
@@ -361,7 +361,11 @@ JSON a column is declared to hold, for a key the schema doesn't require: the app
 the schema allows null. `recursive` may be left out
 when false. `nameDeclared` (0.23) is `true` when the config file gave the type its name rather than
 the naming rules, and may be left out when false: an emitter that declares a shape several types share once declares it under such a
-name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `identity` is left
+name ([decision 0071](../../docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)). `open` (0.28) is
+`true` when its values may hold keys it doesn't list, each of any JSON value: an object in JSON a column is declared to hold, whose
+schema doesn't close it, since the application that wrote it may have added others; it may be left out when false, when its values
+hold only its fields' keys, as every object the database builds does. An emitter must never refuse a value of an open type for a key
+it doesn't list: not under a strict objects setting, and not to tell a union's variants apart. `identity` is left
 out only in a document built by hand.
 
 **Where a field came from** (0.25). `from` lists the table columns the field's value is read from, in the order the SQL first
@@ -524,7 +528,7 @@ null.
 
 | Facet | Meaning |
 |---|---|
-| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units) or `bytes` (of the stored encoding). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
+| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
@@ -619,7 +623,7 @@ reads only its own version, or one whose every document means the same in it ([d
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
 
 **0.28** (21 Nov 2026, declared JSON). A document's `columns`, each column the config file declares to hold JSON of a schema
-("Column declarations", above); the type node `any-json`, any JSON value, and narrowed, any object or array ("Type nodes", above);
+("Column declarations", above); the type node `any-json`, any JSON value, and narrowed, any object or array ("Type nodes", above); an object type's `open`;
 the fact source `declared`; the override setting `column-json`; and the presence `optional` in a document of one database, for a
 key a declared schema doesn't require
 ([decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),

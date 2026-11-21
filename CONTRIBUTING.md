@@ -230,6 +230,7 @@ split into parts along the constructs it covers. The families today:
 | JSON assembled as text | `JsonAssembledTests` | `JsonAssembledObservationTests` | `tests/fixtures/beads` | "JSON assembled as text" |
 | JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
+| JSON declared for a column | `DeclaredColumnTests` | `DeclaredColumnObservationTests` | `tests/fixtures/parcels` | "JSON declared for a column", [decision 0093](docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Precision lost | `PrecisionLossTests` | `PrecisionLossObservationTests`, `PrecisionLossGridTests` | `tests/fixtures/assays` | "Precision lost" |

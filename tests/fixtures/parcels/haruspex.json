@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "columns": {
+    "parcels.parcel.options": { "json": "schemas/options.schema.json" },
+    "parcels.parcel.route": { "json": "schemas/stops.schema.json#/$defs/route" },
+    "parcels.parcel.extra": { "json": "schemas/extra.schema.json" }
+  }
+}

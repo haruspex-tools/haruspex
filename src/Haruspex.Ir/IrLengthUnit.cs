@@ -8,4 +8,10 @@ public enum IrLengthUnit
 
     /// <summary>Bytes of the stored encoding (see <see cref="IrLength.Encoding"/>).</summary>
     Bytes,
+
+    /// <summary>
+    /// Unicode code points (0.28), as JSON Schema's <c>maxLength</c> counts a string's length: a character outside the Basic
+    /// Multilingual Plane is one, though it takes two UTF-16 code units, and so is a lone surrogate. Only a declaration gives it.
+    /// </summary>
+    CodePoints,
 }

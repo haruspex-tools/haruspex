@@ -111,14 +111,14 @@ public static class ConfigCodes
     /// <summary>A schema without a type, or with only <c>null</c>.</summary>
     public static DiagnosticCode NoType { get; } = new(3105, Error, "A schema without a type");
 
-    /// <summary>A schema of several types besides <c>null</c>, which isn't supported yet.</summary>
-    public static DiagnosticCode SeveralTypes { get; } = new(3106, Error, "A schema of several types");
+    /// <summary>Retired: a schema of several types is read as a union of them.</summary>
+    public static DiagnosticCode SeveralTypes { get; } = new(3106, Error, "A schema of several types") { Retired = true };
 
     /// <summary>A type that JSON Schema doesn't have.</summary>
     public static DiagnosticCode NotAType { get; } = new(3107, Error, "Not a JSON Schema type");
 
-    /// <summary>An object schema with neither <c>properties</c> nor <c>additionalProperties</c>.</summary>
-    public static DiagnosticCode NoProperties { get; } = new(3108, Error, "An object schema without properties");
+    /// <summary>Retired: an object schema without properties is read as an object whose keys are data, every value any JSON.</summary>
+    public static DiagnosticCode NoProperties { get; } = new(3108, Error, "An object schema without properties") { Retired = true };
 
     /// <summary>A <c>required</c> that names a key <c>properties</c> doesn't have.</summary>
     public static DiagnosticCode RequiredUnknownKey { get; } = new(3109, Error, "A required key that isn't a property");
@@ -126,8 +126,8 @@ public static class ConfigCodes
     /// <summary>A key that may be both left out and null, which can't be expressed yet.</summary>
     public static DiagnosticCode OptionalAndNullable { get; } = new(3110, Error, "A key both optional and nullable");
 
-    /// <summary>An array schema without <c>items</c>.</summary>
-    public static DiagnosticCode NoItems { get; } = new(3111, Error, "An array schema without items");
+    /// <summary>Retired: an array schema without items is read as an array of any JSON.</summary>
+    public static DiagnosticCode NoItems { get; } = new(3111, Error, "An array schema without items") { Retired = true };
 
     /// <summary>A <c>$ref</c> outside the schema's own definitions.</summary>
     public static DiagnosticCode ForeignReference { get; } = new(3112, Error, "A reference outside the schema");
@@ -137,6 +137,9 @@ public static class ConfigCodes
 
     /// <summary>A schema that refers to itself, which isn't supported yet.</summary>
     public static DiagnosticCode RecursiveSchema { get; } = new(3114, Error, "A recursive schema");
+
+    /// <summary>A column's declared JSON allows the JSON null at its top, which the IR's JSON text can't say yet.</summary>
+    public static DiagnosticCode NullColumnJson { get; } = new(3115, Error, "A column's JSON declared null at its top");
 
     /// <summary>A <c>format</c> haruspex doesn't check, so the generated schema doesn't either.</summary>
     public static DiagnosticCode UncheckedFormat { get; } = new(3150, Warning, "A format haruspex doesn't check");
@@ -215,6 +218,9 @@ public static class ConfigCodes
     /// return, or results that can't be listed, so there is nothing to name.
     /// </summary>
     public static DiagnosticCode SetsMiscounted { get; } = new(4112, Error, "Set names that don't match the result sets");
+
+    /// <summary>A column declared to hold JSON that can't: not a table's, computed, not of a string type, or not in the project.</summary>
+    public static DiagnosticCode ColumnNotDeclarable { get; } = new(4113, Error, "A column that can't hold declared JSON");
 
     /// <summary>Declared results that disagree with what haruspex infers.</summary>
     public static DiagnosticCode DeclarationDisagrees { get; } = new(4201, Error, "Declared results disagree with the inference");

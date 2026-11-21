@@ -145,12 +145,12 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         {
             switch (a.Shape, b.Shape)
             {
-                case (JsonTextShape x, JsonTextShape y):
-                    return (new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)), false, null);
-                case (JsonTextShape, ScalarShape text) when SqlTypes.IsNVarCharMax(text):
-                    return (text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
-                case (ScalarShape text, JsonTextShape) when SqlTypes.IsNVarCharMax(text):
-                    return (text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
+                case (JsonTextShape x, JsonTextShape y) when JsonShapes.SameText(x.Text, y.Text):
+                    return (new JsonTextShape(x.Content is null || y.Content is null ? null : JsonShapes.Join(x.Content, y.Content)) { Text = JoinedText(x.Text, y.Text) }, false, null);
+                case (JsonTextShape json, ScalarShape text) when IsTextOf(json, text):
+                    return (JoinedText(json.Text, text) ?? text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
+                case (ScalarShape text, JsonTextShape json) when IsTextOf(json, text):
+                    return (JoinedText(text, json.Text) ?? text.WithFacets(ScalarFacets.TypeOnly(text.Type.Facets)), false, NotJson(at, what));
             }
         }
 
@@ -159,6 +159,16 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
 
         return (new UnknownShape(IrUnknownReason.UnsupportedExpression, $"{what} holds values of different shapes on different paths, which are not joined yet.", at), false, null);
     }
+
+    /// <summary>
+    /// Whether <paramref name="text"/> is a string of the type <paramref name="json"/>'s text is: its column's type, or
+    /// <c>nvarchar(max)</c> for JSON built here.
+    /// </summary>
+    private static bool IsTextOf(JsonTextShape json, ScalarShape text) => json.Text is { } own ? own.SameType(text) : SqlTypes.IsNVarCharMax(text);
+
+    /// <summary>Two strings of one type joined, with the facets both prove; null when either is not known as one.</summary>
+    private static ScalarShape? JoinedText(ScalarShape? a, ScalarShape? b) =>
+        a is not null && b is not null ? a.Joined(b, ScalarFacets.Join(a.Type.Facets, b.Type.Facets)) : null;
 
     private static UnknownShape NotJson(SourceLocation at, string what) =>
         new(IrUnknownReason.JsonShapeUnknown, $"{what} holds JSON built here on some paths and other text on others, which meet {at}.", at);

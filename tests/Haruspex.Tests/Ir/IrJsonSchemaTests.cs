@@ -163,6 +163,7 @@ public class IrJsonSchemaTests
         (typeof(IrRef), nameof(IrRef.Name), "ref", "ref"),
         (typeof(IrJsonText), nameof(IrJsonText.Content), "jsonText", "content"),
         (typeof(IrAnyJson), nameof(IrAnyJson.ObjectOrArray), "anyJson", "objectOrArray"),
+        (typeof(IrObjectType), nameof(IrObjectType.Open), "objectType", "open"),
         (typeof(IrImport), nameof(IrImport.Name), "import", "name"),
         (typeof(IrImport), nameof(IrImport.From), "import", "from"),
         (typeof(IrUnknownType), nameof(IrUnknownType.Reason), "unknownType", "reason"),

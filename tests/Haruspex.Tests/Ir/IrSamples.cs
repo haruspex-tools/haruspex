@@ -275,12 +275,14 @@ internal static class IrSamples
     {
         Types = Binary.Types.ToDictionary(t => t.Key, t => t.Key != "OrderRow" ? t.Value : t.Value with
         {
+            Open = true,
             Fields =
             [
                 .. t.Value.Fields,
                 new IrField("extras", new IrJsonText(new IrAnyJson()), IrPresence.Always, [Column]),
                 new IrField("live", new IrAnyJson(ObjectOrArray: true), IrPresence.OmittedWhenNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, "procedures/get_order.sql:6:9")]),
                 new IrField("mode", new IrScalar(IrScalarKind.String, null, null, new IrFacets(
+                    Length: new IrLength(10, IsFixed: false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Declared, "sales.orders.settings")),
                     MinLength: new IrMinLength(1, new IrFactSource(IrFactSourceKind.Declared, "sales.orders.settings")),
                     Values: new IrValueSet([new IrValue("fast", IsString: true), new IrValue("slow", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Declared, "sales.orders.settings")]))), IrPresence.Optional, []),
             ],

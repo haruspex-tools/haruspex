@@ -1761,7 +1761,8 @@ outer join's ON proves its columns as it proves an aliased one's
 The code is `Typer.Json.cs and Walker.Json.cs`, `Typer.JsonReads.cs`, `JsonSlot.cs` and `JsonLiterals.cs`. JSON built
 in the project (`FOR JSON`, the constructors, a function returning JSON, a JSON literal) keeps its shape on every route inside
 the project to where it is read, and `json_query`, `OPENJSON` and `JSON_VALUE` there use it. JSON stored in a permanent table's
-column is never traced: someone else may write it. Every rule is observed in `JsonTracingObservationTests`.
+column is never traced: someone else may write it. It is typed only by a declaration ("JSON declared for a column", below).
+Every rule is observed in `JsonTracingObservationTests`.
 
 | Route | How the JSON goes |
 |---|---|
@@ -1838,6 +1839,48 @@ column is never traced: someone else may write it. Every rule is observed in `Js
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
   whose SQL type is not recorded: it may be `json`); a column `SELECT … INTO` made, later written with live JSON; `OPENJSON`'s
   `value` as JSON text.
+
+## JSON declared for a column
+
+The code is `DeclaredColumns.cs`, `DeclaredColumn.cs`, `Typer.FromColumn` and `Typer.JsonQuery`; the input is read from the
+config file by Haruspex.Config (`columns`), and observed in `DeclaredColumnObservationTests`. A table's column the config file
+declares to hold JSON of a schema holds it whoever wrote it: the declaration completes the column's type, as a person's claim
+([decision 0017](../../docs/decisions/0017-stored-json-is-typed-only-by-declaration.md),
+[decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). So it is read at
+every read of the column, as the column's SQL type is, and goes wherever the value goes: through a CTE, a view, a function, a
+variable, a temporary table or table variable of `nvarchar(max)`, and `INSERT … EXEC`, by the routes JSON built here takes
+(above).
+
+| Read | What it is |
+|---|---|
+| plainly, of a string type | JSON text of the schema's type (`JsonTextShape`), a string of the column's own type, which an expression over it is typed from (`JsonTextShape.Text`): `LEN(c)`, `c + 'x'` |
+| plainly, of `json` | live JSON of the schema's type, as any `json` value is |
+| in `FOR JSON` or a constructor | as any value of its type: a string column is escaped text, which holds the JSON; a `json` column nests as JSON |
+| `json_query(c)` | live JSON of the schema's type, narrowed to what `json_query` returns |
+
+- **`json_query` returns an object or an array, and errs on anything else.** JSON text that is a scalar, `null` among them, empty
+  or blank text, and text that isn't JSON are error 13609 under a lax path as under a strict one, not NULL
+  (`Json_query_of_stored_text_that_is_not_an_object_or_array_is_an_error`). So of the schema's type it keeps the variants that are
+  an object or an array; any JSON is narrowed to any object or array; and content that is only ever a scalar is unknown, since
+  every call fails. An object or an array comes back as the same JSON value, though not always the same text: blank text before
+  it and text after it are dropped, and an escape is read
+  (`Json_query_of_stored_text_returns_an_object_or_array_as_the_same_json`).
+- **Keys.** A key the schema doesn't require may be left out whatever its value (`optional`), and is null only where its
+  schema allows null; a required key is always there. An object whose schema doesn't close it (`additionalProperties: false`)
+  is `open`: it may hold keys it doesn't list, which no emitter refuses.
+- **Paths into it** (`JSON_VALUE`, `OPENJSON` with or without `WITH`) read its content by the rules for JSON built here (above),
+  as they read any JSON text whose content is known: a key the schema doesn't require may be missing, so a lax path to it may be
+  NULL; a key an open object doesn't list may hold anything, so a path to it is read as over JSON not built here, and the keys
+  `OPENJSON` gives of one are no set (`A_lax_path_to_a_key_not_required_may_find_nothing_so_is_nullable`). What
+  else a path into declared JSON can claim, and its observations, is a later row's.
+- **What the database proves alone isn't read.** The `json` type holds only an object or an array
+  (`The_json_type_refuses_json_that_is_a_scalar`), and an `ISJSON` constraint proves JSON of some kind; neither is read yet.
+- **Claims.** Each object whose results may hold a declared column's JSON lists a `column-json` override naming the column in
+  `via`: its body reads the column, or a body it reaches does (a view, a function, a procedure it calls), which `DeclaredColumns`
+  finds from what each body read and reached, since a summary is worked out once. A trigger a write fires is not followed for
+  it. The document lists every declaration (`columns`), used or not, with its files' hashes.
+- **A view's column can't be declared**: it holds what it reads, and gets the declaration from the table column; declaring one
+  is HAR4113, naming the table column it reads (`IrInference.ViewColumnSources`).
 
 ## JSON assembled as text
 

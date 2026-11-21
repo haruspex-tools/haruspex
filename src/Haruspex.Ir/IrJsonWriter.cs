@@ -317,6 +317,8 @@ public static class IrJsonWriter
             json.WriteBoolean("recursive", true);
 
         // Likewise only when true: a name the naming rules gave says nothing.
+        if (type.Open)
+            json.WriteBoolean("open", true);
         if (type.NameDeclared)
             json.WriteBoolean("nameDeclared", true);
         if (type.Identity is { } identity)
@@ -594,8 +596,9 @@ public static class IrJsonWriter
     /// Whether <paramref name="text"/> is how the IR writes a number: an optional minus, digits without a leading zero, and
     /// optionally a point and more digits, with no exponent. The reader holds a file to the same form.
     /// </summary>
-    internal static bool IsPlainDecimal(string text)
+    public static bool IsPlainDecimal(string text)
     {
+        ArgumentNullException.ThrowIfNull(text);
         var body = text.StartsWith('-') ? text[1..] : text;
         var parts = body.Split('.');
         return parts.Length <= 2 && parts.All(p => p.Length > 0 && p.All(char.IsAsciiDigit))

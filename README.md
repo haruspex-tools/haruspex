@@ -361,6 +361,19 @@ and system procedures, and objects outside the project unless their DACPACs are 
 results. Nor can it see the caller's session `SET` options, unless `session` in `haruspex.json` declares them
 ([decision 0038](docs/decisions/0038-the-callers-session-is-declared.md)).
 
+Nor can it see what JSON stored in a column holds: another application, an import or a script run by hand may have written
+it, so it is typed only when declared ([decision 0017](docs/decisions/0017-stored-json-is-typed-only-by-declaration.md)). A
+JSON Schema file declares it once, for the column:
+
+```jsonc
+"columns": { "shop.orders.settings": { "json": "schemas/order-settings.schema.json" } }
+```
+
+The declaration is part of the column's type, so it goes wherever the column's value goes, through views, functions, variables
+and temporary tables: read plainly, the column is a string the generated code parses and checks against the schema, and through
+`json_query` it is that JSON, nested as JSON. It is a claim about every writer there ever was, checked at run time like any other
+([the configuration](docs/configuration.md#json-stored-in-a-column-columns)).
+
 The more the database declares, the more the types say: a `CHECK` constraint becomes a value set or a range, and a key a
 query filters on in full means at most one row. Overrides in `haruspex.json` are for what a database doesn't declare.
 
@@ -381,7 +394,8 @@ On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 notice. Don't depend on it yet.
 
 Available now, as well as procedures: **query files**, queries kept in the application's own `.sql` files
-([the configuration](docs/configuration.md#query-files-queries)).
+([the configuration](docs/configuration.md#query-files-queries)); and **declared JSON columns**, JSON stored in a column typed by
+a JSON Schema ([the configuration](docs/configuration.md#json-stored-in-a-column-columns)).
 
 Next: **packages**, rather than building from source.
 

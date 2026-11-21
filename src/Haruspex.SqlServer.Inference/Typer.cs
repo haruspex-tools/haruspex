@@ -435,9 +435,21 @@ internal sealed partial class Typer(
         if (scope.Facts.Proved(source, ColumnKey.Of(bound)) == Facts.Proof.OfTheValue)
             because.Clear();
 
+        // A column declared to hold JSON of a schema holds it whoever wrote it: its type, completed by the config file. A json
+        // column's is live JSON, as any json value is; any other's is a string of the column's type, holding JSON
+        // (docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md). Only a table's column can be
+        // declared, so a view's gets it from the table's, read through its query, and a computed column is never one.
+        var json = !column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.Type == BuiltInType.Json;
+        if (computed is null && summaries.DeclaredColumns.Content(column, this.source) is { } content)
+        {
+            return json
+                ? new Value(content, [.. because], IsLiveJson: true)
+                : Value.Computed(new JsonTextShape(content) { Text = ColumnShape(table, table.Name.ToString(), column) as ScalarShape }, [.. because]);
+        }
+
         // A json column nests as JSON inside FOR JSON and the constructors (observed), but what it holds is data.
         // Through a driver it is text, which Rowset makes of any live value.
-        if (!column.IsComputed && SchemaRules.ResolveType(model, column.Type)?.Type == BuiltInType.Json)
+        if (json)
         {
             return new Value(
                 Unsupported(IrUnknownReason.JsonShapeUnknown, $"{table.Name}.{column.Name} is a json column: its shape is in the data, not the schema.", column.At),
@@ -559,7 +571,10 @@ internal sealed partial class Typer(
         if (argument.IsLiveJson || argument.Shape is UnknownShape)
             return argument;
         if (argument.Shape is JsonTextShape { Content: { } shape })
-            return shape is UnknownShape unknown ? Value.Unknown(unknown) : new Value(shape, argument.NullableBecause, IsLiveJson: true);
+        {
+            var queried = ObjectOrArray(shape, call);
+            return queried is UnknownShape unknown ? Value.Unknown(unknown) : new Value(queried, argument.NullableBecause, IsLiveJson: true);
+        }
         if (Assembled(argument, call.Parameters[0]) is { } assembled)
             return assembled is UnknownShape notKnown ? Value.Unknown(notKnown) : new Value(assembled, argument.NullableBecause, IsLiveJson: true);
         if (argument.JsonWhy is { } why)
@@ -568,6 +583,26 @@ internal sealed partial class Typer(
         // json_query over text (a column, a variable) makes it live JSON, but its shape is in data haruspex cannot see.
         return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here, so its shape is unknown.", At(call)));
     }
+
+    /// <summary>
+    /// What <c>json_query</c> gives of text holding JSON of <paramref name="shape"/>: an object or an array, which it returns as
+    /// JSON, unchanged as a value (observed: Json_query_of_stored_text_returns_an_object_or_array_as_the_same_json). Text that is
+    /// a JSON scalar, <c>null</c> included, is an error (13609) under a lax path too (observed:
+    /// Json_query_of_stored_text_that_is_not_an_object_or_array_is_an_error), so a variant of the content that is one never
+    /// arrives, and content that is only ever one makes every call fail. JSON built here is an object or an array already.
+    /// </summary>
+    private Shape ObjectOrArray(Shape shape, FunctionCall call) => shape switch
+    {
+        AnyJsonShape => new AnyJsonShape(ObjectOrArray: true),
+        UnionShape union when union.Variants.Where(v => ObjectOrArray(v, call) is not UnknownShape).ToList() is { Count: > 0 } kept =>
+            kept.Count == 1 ? ObjectOrArray(kept[0], call) : new UnionShape([.. kept.Select(v => ObjectOrArray(v, call))]),
+        ScalarShape or UnionShape => Failing(call),
+        _ => shape,
+    };
+
+    /// <summary>Why a call of <c>json_query</c> over JSON that is only ever a scalar never returns.</summary>
+    private UnknownShape Failing(FunctionCall call) =>
+        Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON declared to be a scalar, which json_query refuses with an error (13609), so it never returns a value.", At(call));
 
     // ---- scalar functions ---------------------------------------------------------------------------------
     //
@@ -584,7 +619,7 @@ internal sealed partial class Typer(
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
         // A function's body read in a statement that reads uncommitted reads its tables so too.
-        var (result, why) = summaries.Function(callee, at, ReadUncommitted(scope));
+        var (result, why) = summaries.Function(callee, at, ReadUncommitted(scope), source);
         if (result is null)
             return Value.Unknown(why!); // Never null: Find gives a return or why there is none.
 

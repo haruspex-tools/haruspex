@@ -58,7 +58,7 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
         }
 
         if (field.Presence == IrPresence.Optional)
-            Say(output, "  absent: one of the two databases doesn't return the key, or leaves it out when null where the other sends null");
+            Say(output, "  absent: " + IrFieldText.LeftOutWhateverItsValue(document));
         else if (IrSurprises.AbsentWhenNull(field))
             Say(output, "  absent when null: " + IrFieldText.KeyLeftOutWhenNull);
 

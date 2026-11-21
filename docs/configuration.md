@@ -297,13 +297,9 @@ exits as before (the `check` command will fail it).
   rows (FOR JSON then returns no row at all); the generated schema then accepts `null`, and its summary names the declaration as
   the reason ("null when absent, as the config file declares"). A schema is written inline, or as the path of a file holding it, relative to
   this file; a problem in a file is reported in that file, with its line.
-- **The schema keywords read:** `type` (one type, with `"null"` when it may be null), `properties` and `required`, `items`,
-  `minItems` and `maxItems`, `additionalProperties` (alone, for an object whose keys are data), `$ref` to the schema's own
-  `$defs` or `definitions` (not recursive), and `format`: `date`, `time`, `date-time` (with an offset), `date-time-local`
-  (without one, as SQL Server writes `datetime2`), `uuid`, and `int32` or `int64` on an `integer`. An `integer` without a
-  format is checked as a number. Annotations (`title`, `description`, `$schema`, …) are ignored. **Any other keyword is a
-  warning** and is not checked, so the generated type is wider than the schema, never narrower. A key of a JSON object that
-  is not `required` may be left out but is never null, as `FOR JSON` writes it; one that may be both is an error.
+- **The schema keywords read** are those of [The JSON Schemas a declaration reads](#the-json-schemas-a-declaration-reads), below.
+  A key of a JSON object that is not `required` may be left out but is never null, as `FOR JSON` writes it; one that may be both
+  is an error.
 - **Any procedure** can be declared: one that isn't selected, or isn't in the project. A call of it contributes the declared
   result sets to its caller, and the caller's IR lists that claim (an override with `via`). What it does to temporary tables
   is not known either way, so after a call of it they are unknown. A declaration that no selected procedure uses is a
@@ -320,6 +316,65 @@ exits as before (the `check` command will fail it).
 - **Declared results are checked at runtime**, like everything else: the generated validator rejects output that doesn't
   fit the declaration, so a wrong one fails loudly on real data.
 
+
+## JSON stored in a column: `columns`
+
+A column that stores JSON holds whatever its writers wrote, and nothing in the project shows every writer there ever was, so
+haruspex types it only when it is declared ([decision 0017](decisions/0017-stored-json-is-typed-only-by-declaration.md)).
+`columns` declares it, once for the column, with a JSON Schema file:
+
+```jsonc
+"columns": {
+  "shop.orders.settings": { "json": "schemas/order-settings.schema.json" },
+  "shop.parties.details": { "json": "schemas/party.schema.json#/$defs/person" },
+  "shop.steps.args": { "json": "schemas/anything.schema.json" }   // {}: any JSON
+}
+```
+
+- **The key** is the column, `schema.table.column`, a part that holds a dot in brackets (`[sales.eu].orders.settings`). It must be
+  a table's column, not computed, of a string type (`char`, `varchar`, `nchar`, `nvarchar`, directly or through an alias type) or
+  `json`; anything else is HAR4113. A view's column holds what it reads, so it gets the declaration from the table column, and
+  declaring it is HAR4113, naming that column.
+- **`json`** is the schema file, relative to this file, with a JSON Pointer after `#` to a schema inside it when it isn't the
+  whole file. A reference in the schema to another file is read relative to the file it is written in.
+- **The declaration is part of the column's type**, so it goes wherever the column's value goes: through views, functions,
+  variables, temporary tables, table variables and `INSERT … EXEC`
+  ([decision 0093](decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). Read plainly, the column is
+  a string holding JSON of the schema's type, which the generated code parses and checks (`jsonText(() => …)` in Zod).
+  Through `json_query` it is that JSON, live, nested as JSON in `FOR JSON`; and since `json_query` returns only an object or an
+  array, and errs on anything else, only the schema's objects and arrays reach it.
+- **A key the schema doesn't require** may be left out, and may be null only where its schema allows `null`: an application may
+  write it either way, unlike `FOR JSON`. An object its schema doesn't close (with `false` for its other keys) may hold other keys,
+  which the generated code never refuses, whatever `objects` says. The top of the schema can't allow `null` (HAR3115): a column
+  with no value is NULL in SQL, which its own nullability says.
+- **`{}` (or `true`) declares any JSON**, a type of its own: the column holds JSON, which nests as JSON and is checked as JSON
+  (`z.json()`), but its shape is the writer's ([decision 0094](decisions/0094-any-json-is-a-type-of-its-own.md)).
+- **The IR records each declaration** with the SHA-256 of every schema file it read, so a change to a schema's text is a change
+  `check` reports, and each object whose results may hold a declared column's JSON lists the claim (an override with `via`).
+- **A declaration is checked at runtime**, like everything else: the generated validator rejects a value that doesn't fit it, so
+  a wrong schema fails loudly, on real data. It is a claim about every writer there ever was, which only the team can make.
+
+## The JSON Schemas a declaration reads
+
+Declared results and declared columns read a JSON Schema (draft 2020-12), and translate it into haruspex's own types. The subset
+read:
+
+| Keyword | How it is read |
+|---|---|
+| `type` | One type or several, with `"null"` when the value may be null. Several types are a value of any of them, each with the keywords written for it. A schema without a `type` is any JSON, and a keyword that applies only to one type is then a warning. |
+| `properties`, `required` | An object's keys. Without `properties`, an object whose keys are data, each value of `additionalProperties`, or any JSON when that is not given. In a column's JSON a key not `required` may be left out whatever its value; in declared results it is left out only when null. |
+| `additionalProperties` | Alone, the type of every value of an object whose keys are data. `false` beside `properties` closes the object: in a column's JSON an object it doesn't close may hold keys it doesn't list, which the generated code never refuses; a declared result's object holds only its keys, as `FOR JSON` writes it, and the `objects` setting decides what happens to any other. A schema beside `properties` is a warning, and not checked. |
+| `items`, `minItems`, `maxItems` | An array's items and how many there are. Without `items`, an array of any JSON. |
+| `enum`, `const` | A set of strings, of numbers (in plain decimal form), or both, which the generated schema checks exactly; `null` in it makes the value nullable. A set with any other kind of value is a warning, and the schema is read without it. |
+| `anyOf`, `oneOf` | A value of any branch: a union. `oneOf` is read as `anyOf`, which also accepts a value two branches accept: wider, so never refusing a value the schema allows. A branch of `null` alone makes the value nullable. A keyword beside them is a warning, and not checked. |
+| `minLength`, `maxLength` | A string's minimum and maximum length, counted in code points as JSON Schema counts them, as the generated checks do too (Zod's own check counts code points, observed in `ZodObservationTests`). |
+| `format` | `date`, `time`, `date-time` (with an offset), `date-time-local` (without one, as SQL Server writes `datetime2`), `uuid`, and `int32` or `int64` on an `integer`. An `integer` without a format is checked as a number; one of `int64` follows the rule for large integers in JSON. In a column's JSON, `time`, `date-time` and `date-time-local` are read as strings, with HAR3150: an application may write forms RFC 3339 allows (a time's offset, a lower-case `t` or `z`, a leap second) that the checks of SQL Server's forms refuse. Any other format is a warning, HAR3150, and not checked. |
+| `$ref` | A JSON Pointer in the same document (`#/$defs/person`), or another local file, relative to the file that refers to it, with a pointer after `#` or without one for the whole file. A reference to a schema on the network is an error: haruspex never fetches one. A schema that refers to itself is an error, since a recursive one isn't supported yet. |
+| `{}`, `true` | Any JSON value: an object, an array, a string, a number, a boolean or `null`, of any content. It is a type of its own, not an unknown ([decision 0094](decisions/0094-any-json-is-a-type-of-its-own.md)). |
+
+Annotations (`title`, `description`, `$schema`, `$comment`, `examples`, …) are ignored. **Any other keyword is a warning**,
+HAR3151, and is not checked, so the generated type is wider than the schema, never narrower. `pattern` is one, until a row carries
+it over exactly.
 ## What is written: `emit`
 
 `generate` writes the IR, `haruspex.ir.json`, to the output folder, and beside it what `emit` names, each made from the IR

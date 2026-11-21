@@ -22,7 +22,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="declarations">The results declared for procedures whose results can't be inferred.</param>
 /// <param name="warnings">Where this run of inference adds what could not be checked, once each (<see cref="DmlTriggers"/>); the run returns them.</param>
 /// <param name="session">The options the callers' connections are declared to set.</param>
-internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session)
+/// <param name="columns">The columns declared to hold JSON of a schema.</param>
+internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session, IReadOnlyList<DeclaredColumn> columns)
 {
     /// <summary>
     /// The options the callers' connections are declared to set, which every body runs under: a procedure, the procedures it
@@ -34,6 +35,9 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     private readonly FunctionSummaries uncommittedFunctions = new(model, uncommitted: true);
     private readonly ViewSummaries views = new(model);
     private readonly ProcedureCalls procedures = new(model, declarations);
+
+    /// <summary>The columns declared to hold JSON of a schema, and which bodies read them, directly or through others.</summary>
+    public DeclaredColumns DeclaredColumns { get; } = new(model, columns);
 
     /// <summary>What every body of the model binds to, shared by every body read, so each query is bound once.</summary>
     public Bindings Bindings { get; } = new(model);
@@ -63,21 +67,40 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// What a call of the scalar function <paramref name="name"/> returns, or why it is not known; read uncommitted, the
     /// keys of what its body reads don't hold, and a recursive one gives its declared type only.
     /// </summary>
-    public FunctionSummaries.OneOf Function(ObjectName name, SourceLocation at, bool uncommitted) =>
-        (uncommitted ? uncommittedFunctions : functions).Find(name, at, this);
+    /// <param name="reader">The body that calls it, which reaches the function's.</param>
+    public FunctionSummaries.OneOf Function(ObjectName name, SourceLocation at, bool uncommitted, SourceSpan reader)
+    {
+        if (model.FindFunction(name) is { } function)
+            DeclaredColumns.Reached(reader, function.Span);
+        return (uncommitted ? uncommittedFunctions : functions).Find(name, at, this);
+    }
 
     /// <summary>What a view holds, read once per way of reading it.</summary>
-    public LocalRelationValues View(View view, bool uncommitted) => views.Read(view, uncommitted, this);
+    /// <param name="reader">The body that reads it, which reaches the view's.</param>
+    public LocalRelationValues View(View view, bool uncommitted, SourceSpan reader)
+    {
+        DeclaredColumns.Reached(reader, view.Span);
+        return views.Read(view, uncommitted, this);
+    }
 
     /// <summary>What a call of a table-valued function holds, with its parameters holding <paramref name="arguments"/>.</summary>
-    public LocalRelationValues TableFunction(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted) =>
-        views.Function(function, arguments, uncommitted, this);
+    /// <param name="reader">The body that calls it, which reaches the function's.</param>
+    public LocalRelationValues TableFunction(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted, SourceSpan reader)
+    {
+        DeclaredColumns.Reached(reader, function.Span);
+        return views.Function(function, arguments, uncommitted, this);
+    }
 
     /// <summary>One procedure's results, as the outermost call.</summary>
     public ProcedureAnalysis Analyse(Procedure procedure) => procedures.Analyse(procedure, this);
 
     /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
-    public Walked Follow(Procedure callee, CallContext context, SourceLocation at) => procedures.Follow(callee, context, at, this);
+    /// <param name="reader">The body that calls it, which reaches the callee's.</param>
+    public Walked Follow(Procedure callee, CallContext context, SourceLocation at, SourceSpan reader)
+    {
+        DeclaredColumns.Reached(reader, callee.Span);
+        return procedures.Follow(callee, context, at, this);
+    }
 
     /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
     public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) => procedures.Declared(name);
