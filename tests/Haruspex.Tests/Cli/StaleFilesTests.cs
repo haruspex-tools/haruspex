@@ -385,8 +385,8 @@ public class StaleFilesTests
     [Fact]
     public void An_entry_with_a_letter_generate_never_writes_is_refused_so_it_cannot_name_a_file_this_run_wrote()
     {
-        // Windows' and macOS's file systems take the Kelvin sign for K, so the entry is kiln.zod.ts there, which this run writes;
-        // it compares as another name, so only refusing it keeps that file.
+        // macOS's file system takes the Kelvin sign for K, so the entry is kiln.zod.ts there, which this run writes; it compares
+        // as another name, so only refusing it keeps that file.
         const string Kelvin = "\u212A";
         using var folder = Shop(BothModules.Replace("\"admin\": [\"admin\"]", "\"kiln\": [\"admin\"]", StringComparison.Ordinal));
         Assert.Equal(0, Run(folder, "generate").ExitCode);

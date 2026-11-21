@@ -20,7 +20,7 @@ the list anew. The list is the only thing it trusts for removal: it never looks 
 - **Case.** An entry this run writes again is not removed, however its case differs, where the folder's file system ignores
   case: a module renamed `Admin` to `admin` keeps the file this run wrote. Where the file system tells case apart, the old file
   is a file apart, and is removed. Holding entries to ASCII is what makes this exact: such a file system folds other letters its
-  own way (Windows' and macOS's take the Kelvin sign for `K`), so an entry with one could name a file this run wrote under a
+  own way (macOS's takes the Kelvin sign for `K`), so an entry with one could name a file this run wrote under a
   name that compares as another.
 - **A run narrowed by `--include` removes nothing**, and carries what it didn't write onto the new list. It is a one-off look at
   part of the module; removing whole modules because of it would be a surprise, and the next full run removes what is gone.

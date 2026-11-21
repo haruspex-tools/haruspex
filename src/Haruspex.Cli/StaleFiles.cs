@@ -84,9 +84,9 @@ internal static class StaleFiles
 
         // generate writes names of ASCII letters, digits, '.', '-' and '_' alone (a module's name is held to them, decision 0074), so
         // any other character is an edit. Holding entries to them also makes the comparison with this run's files exact: a file
-        // system that ignores case folds ASCII as ToUpperInvariant does, while other letters (the Kelvin sign, which Windows' and
-        // macOS's file systems take for K) or an accent composed another way could name a file this run wrote under a name that
-        // compares as another. A backslash, a colon and a name of '.' or nothing are refused by the same rule.
+        // system that ignores case folds ASCII as ToUpperInvariant does, but may fold other letters its own way (macOS's takes the
+        // Kelvin sign for K) and take an accent composed another way as the same, so an entry with either could name a file this
+        // run wrote under a name that compares as another. A backslash, a colon and a name of '.' or nothing are refused too.
         if (names.Any(n => n.Length == 0 || n == "." || !n.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_')))
             return "isn't a path generate writes, names of ASCII letters, digits, '.', '-' and '_' joined by /";
         return null;
