@@ -1,4 +1,5 @@
 using System.Globalization;
+using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -83,8 +84,8 @@ internal sealed partial class Typer
     /// </summary>
     private static (bool Null, decimal Value, int Digits)? Folded(ScalarExpression expression)
     {
-        if (IntegerLiteralOf(expression) is { } literal && NumberOf(expression) is { } number)
-            return (false, number, literal.Value.TrimStart('0').Length is var n and > 0 ? n : 1);
+        if (IntegerLiteralOf(expression) is var (literal, negative) && NumberOf(expression) is { } number)
+            return (false, number, IntDigits.CountOf(literal.Value, negative));
         if (Strip(expression) is not NullIfExpression nullIf || Folded(nullIf.FirstExpression) is not { } a)
             return null;
         if (a.Null)

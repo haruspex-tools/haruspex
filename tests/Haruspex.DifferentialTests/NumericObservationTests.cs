@@ -72,6 +72,62 @@ public class NumericObservationTests(SqlServerFixture server)
                 """));
     }
 
+    [Theory]
+    [InlineData("-1", 1)]
+    [InlineData("-0", 1)]
+    [InlineData("-9", 1)]
+    [InlineData("-10", 2)]
+    [InlineData("-99", 2)]
+    [InlineData("-100", 3)]
+    [InlineData("-999", 3)]
+    [InlineData("-1000", 4)]
+    [InlineData("-9999", 4)]
+    [InlineData("-10000", 6)]
+    [InlineData("-70000", 6)]
+    [InlineData("-99999", 6)]
+    [InlineData("-100000", 6)]
+    [InlineData("-999999", 6)]
+    [InlineData("-1000000", 7)]
+    [InlineData("-99999999", 8)]
+    [InlineData("-1000000000", 10)]
+    [InlineData("-2147483647", 10)]
+    [InlineData("-2147483648", 10)]
+    [InlineData("10000", 5)]
+    [InlineData("99999", 5)]
+    [InlineData("(-70000)", 6)]
+    [InlineData("-(70000)", 6)]
+    [InlineData("-00070000", 6)]
+    public async Task A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five(string literal, int digits)
+    {
+        // An int literal counts its own digits beside a decimal; negated, one of five digits (-10000 to -99999) counts six, in
+        // every operator, on either side, past 38 digits, and beside a decimal in COALESCE and UNION. Any other length counts
+        // its own, and so does a positive literal of five. FoldingObservationTests sees the same at every compatibility level.
+        var p = digits + 6;
+        Assert.Equal(
+            $"a decimal({p},5), b decimal({p},5), c decimal({p},5), e decimal({p},{p}), g decimal({digits},0), h decimal({p},5), "
+            + $"k decimal({digits + 5},5), l decimal(38,{38 - digits}), n decimal(38,{38 - digits}), o decimal(38,{37 - digits})",
+            await Describe($"""
+                SELECT d55 + {literal} AS a, d55 - {literal} AS b, d55 * {literal} AS c, d55 / {literal} AS e, d380 % {literal} AS g,
+                       {literal} + d55 AS h, COALESCE(d55, {literal}) AS k, d3838 + {literal} AS l, d3838 - {literal} AS n,
+                       d3838 * {literal} AS o
+                FROM {Row}
+                """));
+        Assert.Equal($"u decimal({digits + 5},5)", await Describe($"SELECT d55 AS u FROM {Row} UNION ALL SELECT {literal}"));
+    }
+
+    [Fact]
+    public async Task A_negative_decimal_literal_counts_its_own_digits()
+    {
+        // Only an int literal counts one more: a decimal literal is numeric of its own digits, negated or not.
+        Assert.Equal(
+            "a numeric(6,5), b numeric(6,5), c numeric(11,5), e numeric(11,5), g numeric(11,5), h numeric(38,33), k numeric(38,33)",
+            await Describe($"""
+                SELECT d55 + -0.5 AS a, d55 + 0.5 AS b, d55 + -70000.0 AS c, d55 + 70000.0 AS e, d55 + -99999.5 AS g,
+                       d3838 + -70000.0 AS h, d3838 + 70000.0 AS k
+                FROM {Row}
+                """));
+    }
+
     [Fact]
     public async Task Modulo_has_the_documented_precision_and_scale_and_integers_and_money_keep_their_type()
     {

@@ -49,6 +49,24 @@ internal sealed record IntDigits
     /// <summary>An integer literal's own digits, which the server counts exactly.</summary>
     public static IntDigits Literal(int digits) => new(digits, digits);
 
+    /// <summary>
+    /// The digits the server counts for an int literal written <paramref name="text"/> (digits, perhaps with a sign and leading
+    /// zeros), negated or not: its own, at least one, except that a negative one of five digits, <c>-10000</c> to <c>-99999</c>,
+    /// counts six.
+    /// </summary>
+    /// <remarks>
+    /// The exception is observed, not documented: in every arithmetic operator, on either side, past 38 digits, beside a decimal
+    /// in <c>COALESCE</c> and <c>UNION</c>, folded from <c>NULLIF</c>, and at every compatibility level, while every other length
+    /// from one to ten, negative or not, counts its own (A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five,
+    /// A_negative_five_digit_literal_counts_six_digits_at_every_level_alone_or_folded_from_nullif). Counting five there gave a
+    /// scale one too large, a claim looser than the server's but not its type.
+    /// </remarks>
+    public static int CountOf(string text, bool negative)
+    {
+        var own = text.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
+        return own == 5 && negative != text.StartsWith('-') ? 6 : own;
+    }
+
     /// <summary>Whether the count may be fewer than 10, depending on whether the server folds the expression to a constant.</summary>
     public bool IsUncertain => Least != Most;
 

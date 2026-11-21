@@ -99,8 +99,8 @@ internal sealed partial class Typer
     {
         if (TypeOf(value) is not { } type)
             return null;
-        if (IntegerLiteralOf(expression) is { } literal)
-            return new Operand(type, literal.Value.TrimStart('-', '+').TrimStart('0').Length is var n and > 0 ? n : 1);
+        if (IntegerLiteralOf(expression) is var (literal, negative))
+            return new Operand(type, IntDigits.CountOf(literal.Value, negative));
 
         // Inside an expression the server counts a column's type's digits even when it is a derived table's literal; only as a
         // set operation's query, as it stands, does a column count its literal's digits. NULLIF of two literals it folds in
@@ -119,11 +119,12 @@ internal sealed partial class Typer
     /// <summary>Whether the server may count an int's digits as a literal's or as its type's, depending on what it folds.</summary>
     private static bool Uncertain(Value value) => value.Shape is ScalarShape { BuiltIn.Type: var type } && type == BuiltInType.Int && !value.IsLiveJson && value.Digits.IsUncertain;
 
-    /// <summary>An integer literal, through parentheses and a sign.</summary>
-    private static IntegerLiteral? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
+    /// <summary>An integer literal, through parentheses and signs, with whether the signs negate it.</summary>
+    private static (IntegerLiteral Literal, bool Negative)? IntegerLiteralOf(ScalarExpression expression) => Strip(expression) switch
     {
-        IntegerLiteral literal => literal,
-        UnaryExpression { UnaryExpressionType: UnaryExpressionType.Negative or UnaryExpressionType.Positive } unary => IntegerLiteralOf(unary.Expression),
+        IntegerLiteral literal => (literal, false),
+        UnaryExpression { UnaryExpressionType: UnaryExpressionType.Negative or UnaryExpressionType.Positive } unary =>
+            IntegerLiteralOf(unary.Expression) is var (literal, negative) ? (literal, negative != (unary.UnaryExpressionType == UnaryExpressionType.Negative)) : null,
         _ => null,
     };
 
@@ -648,9 +649,10 @@ internal sealed partial class Typer
             // (observed, same test), not the literal's type, and is not modelled.
             if (literal.Value.StartsWith('-') || literal.Value.StartsWith('+'))
                 return NotModelled(unary, "negating a signed literal is not modelled.");
-            // The parser gives 2147483648 as a numeric literal, being beyond int.
-            return literal.Value.TrimStart('0') == "2147483648"
-                ? Typed(ScalarType.Of(BuiltInType.Int), [], unary)
+            // The parser gives 2147483648 as a numeric literal, being beyond int. An int literal negated counts the digits the
+            // server counts for it, which are not always its own (IntDigits.CountOf).
+            return literal.Value.TrimStart('0') == "2147483648" ? Typed(ScalarType.Of(BuiltInType.Int), [], unary)
+                : literal is IntegerLiteral integer ? Integer(integer, negative: true)
                 : Expression(literal, scope);
         }
 

@@ -83,6 +83,20 @@ public class FoldingTests
         Assert.Equal("decimal(38,28) precision-loss", Typed(Procedure("SELECT s.frac AS v FROM dbo.sale AS s UNION ALL SELECT ISNULL(w.one, 2) FROM (SELECT 1 AS one) AS w;")));
     }
 
+    [Theory]
+    [InlineData("s.frac + -70000", "decimal(38,32)")]
+    [InlineData("s.frac - -70000", "decimal(38,32)")]
+    [InlineData("s.frac + (-70000)", "decimal(38,32)")]
+    [InlineData("s.frac + NULLIF(-70000, 0)", "decimal(38,32)")]
+    [InlineData("s.frac + NULLIF(NULLIF(-70000, 0), 0)", "decimal(38,32)")]
+    [InlineData("s.price / NULLIF(-70000, 0)", "decimal(16,9)")]
+    [InlineData("s.frac + -9999", "decimal(38,34)")]
+    [InlineData("s.frac + -100000", "decimal(38,32)")]
+    // A_negative_five_digit_literal_counts_six_digits_at_every_level_alone_or_folded_from_nullif: price is decimal(9,2), so
+    // divided by six digits its scale is 2 + 6 + 1.
+    public void A_negative_five_digit_literal_counts_six_digits_alone_or_folded_from_nullif(string expression, string type) =>
+        Assert.StartsWith(type + " ", Typed(Procedure($"SELECT {expression} AS v FROM dbo.sale AS s;")) + " ", StringComparison.Ordinal);
+
     [Fact]
     public void Nullif_of_two_literals_counts_the_digits_it_folds_to_inside_an_expression_and_its_types_as_a_query()
     {

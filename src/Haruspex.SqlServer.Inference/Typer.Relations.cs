@@ -307,17 +307,15 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// An integer literal within int's range is an int, never null; a larger one is numeric of its own digits (observed:
-    /// A_literals_type_is_its_own_digits_or_characters). The parser gives <c>-2147483648</c> as one literal, which is int's
-    /// least value, an int (observed in the same test).
+    /// An integer literal within int's range is an int, never null, counting the digits the server counts for it
+    /// (<see cref="IntDigits.CountOf"/>), <paramref name="negative"/> when a sign before it negates it; a larger one is numeric
+    /// of its own digits (observed: A_literals_type_is_its_own_digits_or_characters). The parser gives <c>-2147483648</c> as
+    /// one literal, which is int's least value, an int (observed in the same test).
     /// </summary>
-    private Value Integer(IntegerLiteral literal)
+    private Value Integer(IntegerLiteral literal, bool negative = false)
     {
         if (long.TryParse(literal.Value, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out var n) && n is >= int.MinValue and <= int.MaxValue)
-        {
-            var own = literal.Value.TrimStart('-', '+').TrimStart('0').Length is var d and > 0 ? d : 1;
-            return new Value(SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.Int), At(literal)), []) { Digits = IntDigits.Literal(own) };
-        }
+            return new Value(SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.Int), At(literal)), []) { Digits = IntDigits.Literal(IntDigits.CountOf(literal.Value, negative)) };
 
         var digits = literal.Value.TrimStart('-', '+').TrimStart('0').Length;
         return digits <= 38

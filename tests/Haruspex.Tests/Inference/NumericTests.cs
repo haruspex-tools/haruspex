@@ -91,6 +91,51 @@ public class NumericTests
                 """));
     }
 
+    [Theory]
+    [InlineData("-1", 1)]
+    [InlineData("-0", 1)]
+    [InlineData("-9", 1)]
+    [InlineData("-10", 2)]
+    [InlineData("-99", 2)]
+    [InlineData("-100", 3)]
+    [InlineData("-999", 3)]
+    [InlineData("-1000", 4)]
+    [InlineData("-9999", 4)]
+    [InlineData("-10000", 6)]
+    [InlineData("-70000", 6)]
+    [InlineData("-99999", 6)]
+    [InlineData("-100000", 6)]
+    [InlineData("-999999", 6)]
+    [InlineData("-1000000", 7)]
+    [InlineData("-99999999", 8)]
+    [InlineData("-1000000000", 10)]
+    [InlineData("-2147483647", 10)]
+    [InlineData("-2147483648", 10)]
+    [InlineData("10000", 5)]
+    [InlineData("99999", 5)]
+    [InlineData("(-70000)", 6)]
+    [InlineData("-(70000)", 6)]
+    [InlineData("-00070000", 6)]
+    public void A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five(string literal, int digits)
+    {
+        // A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five, the same expressions: d55 is decimal(5,5),
+        // d380 decimal(38,0) and d3838 decimal(38,38).
+        var doc = Procedure($"""
+            SELECT d55 + {literal} AS a, d55 - {literal} AS b, d55 * {literal} AS c, d55 / {literal} AS e, d380 % {literal} AS g,
+                   {literal} + d55 AS h, COALESCE(d55, {literal}) AS k, d3838 + {literal} AS l, d3838 - {literal} AS n,
+                   d3838 * {literal} AS o
+            FROM dbo.t;
+            """);
+        var p = digits + 6;
+        Assert.Equal(
+            $"a decimal({p},5), b decimal({p},5), c decimal({p},5), e decimal({p},{p}), g decimal({digits},0), h decimal({p},5), "
+            + $"k decimal({digits + 5},5), l decimal(38,{38 - digits}), n decimal(38,{38 - digits}), o decimal(38,{37 - digits})",
+            string.Join(", ", Fields(doc).Select(f => f.Name + " " + (f.Type as IrScalar)?.Sql)));
+        Assert.Equal(
+            $"u decimal({digits + 5},5)",
+            string.Join(", ", Fields(Procedure($"SELECT d55 AS u FROM dbo.t UNION ALL SELECT {literal};")).Select(f => f.Name + " " + (f.Type as IrScalar)?.Sql)));
+    }
+
     [Fact]
     public void Division_and_modulo_by_a_literal_of_at_least_1_cannot_divide_by_zero_or_overflow()
     {

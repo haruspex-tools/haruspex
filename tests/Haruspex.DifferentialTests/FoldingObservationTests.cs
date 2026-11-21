@@ -221,6 +221,19 @@ public class FoldingObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_negative_five_digit_literal_counts_six_digits_at_every_level_alone_or_folded_from_nullif()
+    {
+        // A_negative_int_literal_counts_its_own_digits_but_six_when_it_has_five, at every level and plan, and through the NULLIFs
+        // arithmetic folds: -70000 counts six digits, so beside decimal(38,38) the scale is 32, and decimal(19,4) divided by it
+        // has the scale 4 + 6 + 1. -9999 counts four and -100000 six, as their own.
+        var types = await Types(Budget,
+            "CAST(0.5 AS decimal(38,38)) + -70000", "CAST(0.5 AS decimal(38,38)) - -70000", "CAST(0.5 AS decimal(38,38)) + (-70000)",
+            "CAST(0.5 AS decimal(38,38)) + NULLIF(-70000, 0)", "CAST(0.5 AS decimal(38,38)) + NULLIF(NULLIF(-70000, 0), 0)",
+            "p.budget / NULLIF(-70000, 0)", "CAST(0.5 AS decimal(38,38)) + -9999", "CAST(0.5 AS decimal(38,38)) + -100000");
+        Assert.Equal(["decimal(38,32)", "decimal(38,32)", "decimal(38,32)", "decimal(38,32)", "decimal(38,32)", "decimal(26,11)", "decimal(38,34)", "decimal(38,32)"], types);
+    }
+
+    [Fact]
     public async Task Division_by_nullif_of_zero_is_null_and_by_zero_an_error_unless_ansi_warnings_and_arithabort_are_both_off()
     {
         // The second product has no credits. NULLIF makes the division NULL under any options; dividing by the zero itself is
