@@ -458,7 +458,8 @@ removed. Commit the list with the other files: it is generated, and `check` comp
   (it writes ASCII letters, digits, `.`, `-` and `_`), or is reached through a symbolic link is never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
   folder is ever removed, even one a removed file leaves empty.
 - **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
-  file the run wrote.
+  file the run wrote, under the module's new name: the old file is renamed as it is replaced, so the names on disk are the
+  ones the imports and the list say.
 - **`check`** fails at each file the next `generate` would remove ([HAR6042](diagnostics/HAR6042.md)), and when the list is
   missing, as for any other file.
 

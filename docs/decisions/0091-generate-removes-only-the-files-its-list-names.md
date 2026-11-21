@@ -18,7 +18,8 @@ the list anew. The list is the only thing it trusts for removal: it never looks 
 - **A file edited by hand is still removed** when the list names it: the outputs are generated, and each says so (a comment at
   the top of the TypeScript, the JSON Schema's `description`, the list's `about`).
 - **Case.** An entry this run writes again is not removed, however its case differs, where the folder's file system ignores
-  case: a module renamed `Admin` to `admin` keeps the file this run wrote. Where the file system tells case apart, the old file
+  case: a module renamed `Admin` to `admin` keeps the file this run wrote, which writing renames to `admin`, so the name on
+  disk is the one the list says. Where the file system tells case apart, the old file
   is a file apart, and is removed. Holding entries to ASCII is what makes this exact: such a file system folds other letters its
   own way (macOS's takes the Kelvin sign for `K`), so an entry with one could name a file this run wrote under a
   name that compares as another.

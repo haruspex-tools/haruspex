@@ -107,7 +107,7 @@ internal static class Generate
             // File.WriteAllText writes UTF-8 without a byte order mark.
             foreach (var file in staged)
                 File.WriteAllText(file.Temporary, file.Text);
-            var placed = new List<(Staged File, bool Had)>();
+            var placed = new List<(Staged File, string? Had)>();
             try
             {
                 foreach (var file in staged)
@@ -122,10 +122,10 @@ internal static class Generate
                 if (stuck.Count > 0)
                 {
                     // Each new file left beside the old ones has its old one, the backup, as the one copy left: it is kept.
-                    foreach (var p in stuck.Where(p => p.Had))
+                    foreach (var p in stuck.Where(p => p.Had is not null))
                         kept.Add(p.File.Backup);
                     var fresh = stuck.Select(p => DiagnosticFormatter.PathAsShown(p.File.Path)).ToList();
-                    var backups = stuck.Where(p => p.Had).Select(p => DiagnosticFormatter.PathAsShown(p.File.Backup)).ToList();
+                    var backups = stuck.Where(p => p.Had is not null).Select(p => DiagnosticFormatter.PathAsShown(p.File.Backup)).ToList();
                     return ModuleRun.Refused<EquatableArray<string>>(CliCodes.CannotWrite,
                         $"cannot write to {DiagnosticFormatter.PathAsShown(folder)}: {e.Message} Files written before it could not be put back ({string.Join("; ", stuck.Select(p => p.Failure))}), so {EnglishList.Of(fresh)} {(fresh.Count == 1 ? "is" : "are")} new and the others are not{(backups.Count > 0 ? $"; the old {(backups.Count == 1 ? "one is" : "ones are")} kept at {EnglishList.Of(backups)}" : "")}.");
                 }
@@ -202,11 +202,14 @@ internal static class Generate
                 break;
         }
 
-        var temporary = Path.Join(module.Out, $".{OutputList.FileName}.{Guid.NewGuid():N}.tmp");
+        var run = Guid.NewGuid().ToString("N");
+        var temporary = Path.Join(module.Out, $".{OutputList.FileName}.{run}.tmp");
+        var backup = Path.Join(module.Out, $".{OutputList.FileName}.{run}.old");
         try
         {
             File.WriteAllText(temporary, OutputList.Text([.. names, .. kept]));
-            File.Move(temporary, list, overwrite: true);
+            PutInPlace(temporary, list, backup);
+            Remove(backup);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -221,17 +224,27 @@ internal static class Generate
     }
 
     /// <summary>
-    /// Puts a file back as it was after a later one could not be put in place: the old one from its backup, or none when there
-    /// was none. Null when it is back; otherwise what the file system said.
+    /// Puts a file back as it was after a later one could not be put in place: the old one from its backup, under the name it had
+    /// (<paramref name="had"/>), or none when there was none. Null when it is back; otherwise what the file system said.
     /// </summary>
-    private static string? PutBack(bool hadIr, string backup, string path)
+    private static string? PutBack(string? had, string backup, string path)
     {
         try
         {
-            if (hadIr)
-                File.Move(backup, path, overwrite: true);
-            else
+            if (had is null)
+            {
                 File.Delete(path);
+            }
+            else if (had == path)
+            {
+                File.Move(backup, path, overwrite: true);
+            }
+            else
+            {
+                File.Delete(path);
+                File.Move(backup, had);
+            }
+
             return null;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
@@ -241,19 +254,57 @@ internal static class Generate
     }
 
     /// <summary>
-    /// Moves <paramref name="temporary"/> to <paramref name="path"/>, keeping what was there at <paramref name="backup"/> when
-    /// one is given; whether there was a file there.
+    /// Moves <paramref name="temporary"/> to <paramref name="path"/>, keeping what was there at <paramref name="backup"/>; the
+    /// path the file it replaced had, or null when there was none.
     /// </summary>
-    private static bool PutInPlace(string temporary, string path, string? backup)
+    /// <remarks>
+    /// Where the file system ignores case (macOS's and Windows' by default), the path finds a file whose name differs only by case,
+    /// and replacing it keeps that name: a module renamed <c>Admin</c> to <c>ADMIN</c> would stay <c>Admin.zod.ts</c> on disk while
+    /// the imports and the list say <c>ADMIN.zod.ts</c>, which <c>check</c> on a file system that tells case apart then fails. So
+    /// such a file is moved aside to the backup, and the new one written under the exact name. The file is the one this run
+    /// replaces either way; only its name changes.
+    /// </remarks>
+    private static string? PutInPlace(string temporary, string path, string backup)
     {
         if (!File.Exists(path))
         {
             File.Move(temporary, path);
-            return false;
+            return null;
         }
 
-        File.Replace(temporary, path, backup);
-        return true;
+        var had = NameOnDisk(path);
+        if (had == path)
+        {
+            File.Replace(temporary, path, backup);
+            return path;
+        }
+
+        File.Move(had, backup);
+        try
+        {
+            File.Move(temporary, path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            File.Move(backup, had);
+            throw;
+        }
+
+        return had;
+    }
+
+    /// <summary>
+    /// The path of the file <paramref name="path"/> finds, as the folder spells its name: <paramref name="path"/> itself, unless the
+    /// file system ignores case and the file is named otherwise. Generated names are ASCII (decision 0091), so the comparison
+    /// that finds it is ASCII's.
+    /// </summary>
+    private static string NameOnDisk(string path)
+    {
+        var file = new FileInfo(path);
+        var names = file.Directory?.EnumerateFiles(file.Name, new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive, RecurseSubdirectories = false })
+            .Select(f => f.Name)
+            .ToList() ?? [];
+        return names.Contains(file.Name, StringComparer.Ordinal) || names is not [var only] ? path : Path.Join(file.DirectoryName, only);
     }
 
     /// <summary>Removes a temporary file the write made; one that can't be removed is left, the write's outcome standing.</summary>

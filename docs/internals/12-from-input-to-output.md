@@ -236,7 +236,10 @@ as a rename allows. Every file is written in full to a temporary name in the out
 is a rename within one file system: POSIX promises such a rename is atomic, so a reader sees the old file or the new one, never
 part of either; Windows makes no such promise for the replacing call .NET uses there, so on Windows the guarantee is only that
 each file is written in full before it is put in place. Then each is put in place in turn, the IR first, keeping the old one
-aside; if one can't be, those already in place are put back as they were. Two cases can still leave them out of step, and the
+aside; if one can't be, those already in place are put back as they were. Where the file system ignores case, the name a file is
+written under can find an old file named otherwise, `Admin.zod.ts` for `ADMIN.zod.ts`, and replacing that file keeps its name,
+so the old one is moved aside first and the new one written under the exact name (and put back under its old name if the run
+fails): two renames rather than one, so a reader may briefly find neither. Two cases can still leave them out of step, and the
 CLI's README names both: a process killed between two renames, and a file system that refuses to put one back, when the error
 says so and keeps that file's backup. A run that fails earlier writes nothing, and doesn't even create the folder, since the
 folder is made in `Generate.Write`, after every other step has succeeded.

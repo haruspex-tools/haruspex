@@ -397,6 +397,65 @@ public partial class CliTests
     }
 
     [Fact]
+    public void A_file_whose_name_differs_only_by_case_is_written_under_the_name_generate_means()
+    {
+        using var folder = Emitting("""["zod"]""");
+        var outDir = Path.Combine(folder.Path, "out");
+        Assert.Equal(0, RunIn(folder.Path, "generate").ExitCode);
+        RenameByCase(outDir, HaruspexCli.ZodFileName, "Haruspex.Zod.ts");
+        RenameByCase(outDir, "haruspex.files.json", "HARUSPEX.FILES.JSON");
+
+        var (exitCode, _, error) = RunIn(folder.Path, "generate");
+
+        // Where the file system ignores case, the old files were the ones replaced, renamed; where it doesn't, each is a file
+        // apart, which generate leaves, since the run finds no list of its own to go by.
+        Assert.True(exitCode == 0, error);
+        Assert.Equal(
+            IgnoresCase(outDir) ? ["haruspex.files.json", "haruspex.ir.json", "haruspex.zod.ts"] : ["HARUSPEX.FILES.JSON", "Haruspex.Zod.ts", "haruspex.files.json", "haruspex.ir.json", "haruspex.zod.ts"],
+            Files(outDir));
+        Assert.Contains("export const ListBaskets", File.ReadAllText(Path.Combine(outDir, HaruspexCli.ZodFileName)), StringComparison.Ordinal);
+    }
+
+    /// <summary>Renames a file to a name that differs only by case, through another name, as a file system that ignores case needs.</summary>
+    private static void RenameByCase(string folder, string from, string to)
+    {
+        File.Move(Path.Combine(folder, from), Path.Combine(folder, to + ".renaming"));
+        File.Move(Path.Combine(folder, to + ".renaming"), Path.Combine(folder, to));
+    }
+
+    [Fact]
+    public void A_write_that_fails_puts_a_file_renamed_by_case_back_under_its_old_name()
+    {
+        using var folder = Emitting("""["zod", "json-schema"]""");
+        var outDir = Path.Combine(folder.Path, "out");
+        Directory.CreateDirectory(outDir);
+        File.WriteAllText(Path.Combine(outDir, "HARUSPEX.ZOD.TS"), "the old module\n");
+        Directory.CreateDirectory(Path.Combine(outDir, HaruspexCli.JsonSchemaFileName)); // a folder where the schema would go
+
+        var (exitCode, _, error) = RunIn(folder.Path, "generate");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("haruspex: error HAR6008: cannot write to ", error, StringComparison.Ordinal);
+        Assert.Equal("the old module\n", File.ReadAllText(Path.Combine(outDir, "HARUSPEX.ZOD.TS")));
+        Assert.Equal(["HARUSPEX.ZOD.TS", "haruspex.jsonschema.json"], Files(outDir));
+    }
+
+    /// <summary>Whether the file system <paramref name="folder"/> is on finds a file by a name that differs only by case.</summary>
+    private static bool IgnoresCase(string folder)
+    {
+        var probe = Path.Combine(folder, "case-probe");
+        File.WriteAllText(probe, "");
+        try
+        {
+            return File.Exists(Path.Combine(folder, "CASE-PROBE"));
+        }
+        finally
+        {
+            File.Delete(probe);
+        }
+    }
+
+    [Fact]
     public void A_run_that_fails_before_writing_creates_nothing_not_even_the_output_folder()
     {
         using var root = new TempDirectory();
