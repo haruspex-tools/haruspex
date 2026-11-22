@@ -1,6 +1,7 @@
 -- Seed for tests/fixtures/values. Invented data chosen to reach the edge cases: every type's maximum and minimum
 -- (and strings of their full length),
--- non-zero and zero fractions of a second, non-zero and zero offsets, padded and empty fixed-length strings, a
+-- non-zero and zero fractions of a second, non-zero and zero offsets, padded and empty fixed-length strings, an nchar(5)
+-- holding two characters outside the Basic Multilingual Plane (5 UTF-16 code units with its padding, but 3 code points), a
 -- row whose every nullable column is null, and rows where only part of a nested object is null.
 INSERT INTO vals.sample
     (sample_id, label, tiny, small, whole, big, dec_19_2, dec_38_0, num_9_3, dec_5_5, cash, small_cash, approx, approx_real,
@@ -11,7 +12,7 @@ VALUES
      '2026-03-04T05:06:07', '2026-03-04T05:06:07.123', '2026-03-04T05:06:07.1234567',
      '2026-03-04T05:06:07+05:30', '2026-03-04T05:06:07.5-08:00', '2026-03-04T05:06:07.1234567+01:00',
      '2026-03-04T05:06:00', '2026-03-04T05:06:07.997', 'c0ffee00-1234-4abc-8def-0123456789ab',
-     'AB', N'AB', 'AB', N'with "quotes", a \ and a line break' + NCHAR(10)),
+     'AB', NCHAR(0xD83D) + NCHAR(0xDE00) + NCHAR(0xD83D) + NCHAR(0xDE00), 'AB', N'with "quotes", a \ and a line break' + NCHAR(10)),
     (2, N'maxima: every type at its largest values', 255, 32767, 2147483647, 9223372036854775807, 99999999999999999.99,
      99999999999999999999999999999999999999, 999999.999, 0.99999, 922337203685477.5807, 214748.3647, 1.79e308, 3.40e38,
      1, '9999-12-31', '23:59:59', '23:59:59.999', '23:59:59.9999999',

@@ -4,6 +4,8 @@
 // The notes on properties below rest on these facts:
 // - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
 //   elsewhere n bounds the length from above.
+// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
+//   may take more than one, so a fixed or least length holds fewer code points than it counts.
 // - A value set from a CHECK constraint holds as the database compares strings, where case, accents and trailing spaces
 //   may differ, so it is a note rather than z.enum.
 import { z } from 'zod'
@@ -56,15 +58,18 @@ export const TicketRowsRowSchema = z.object({
   tag_utf8: z.string().max(12).nullable(),
   /** char(4) counts bytes and UTF-8 takes up to four a character, so the length is at most 4. */
   pad_utf8: z.string().max(4).nullable(),
+  /** char(8) pads to 8 bytes and UTF-8 takes up to four a character, so the length is 2 to 8 code points. */
+  fill_utf8: z.string().min(2).max(8),
   muted: z.int32().nullable(),
   restored: z.int32().gt(0).nullable(),
   late: z.int32().nullable(),
   /**
+   * At least 2 UTF-16 code units, which is at least 1 code point.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain chk.ticket_rows owner_name
    */
-  owner_name: z.string().min(2).max(20).nullable(),
+  owner_name: z.string().min(1).max(20).nullable(),
   /**
    * One of "A", "B", as the database compares strings.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).

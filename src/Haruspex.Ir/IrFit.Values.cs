@@ -169,7 +169,8 @@ public static partial class IrFit
 
             /// <summary>
             /// The lengths: what is given may be no longer than what accepts, in the same unit, and exactly as long when that is
-            /// fixed; and no shorter than its minimum. A length counted in another unit can't be compared, so it doesn't fit.
+            /// fixed; and no shorter than its minimum, in UTF-16 code units, of which a fixed length given in bytes may hold fewer
+            /// (<see cref="IrLength.FewestUtf16Units"/>). A length counted in another unit can't be compared, so it doesn't fit.
             /// </summary>
             private void Length(IrPathSegment[] path, IrFacets was, IrFacets now)
             {
@@ -180,7 +181,7 @@ public static partial class IrFit
                     Refuse(IrChangeKind.LengthChanged, path, Refusal, IrClaimText.Length(was.Length), IrClaimText.Length(now.Length));
                 }
 
-                var shortest = Math.Max(now.MinLength?.Value ?? 0, now.Length is { IsFixed: true, Value: var fixedAt } ? fixedAt : 0);
+                var shortest = Math.Max(now.MinLength?.Value ?? 0, now.Length?.FewestUtf16Units ?? 0);
                 if (was.MinLength is { } minimum && shortest < minimum.Value)
                     Refuse(IrChangeKind.MinLengthChanged, path, Refusal, IrClaimText.MinLength(was.MinLength), IrClaimText.MinLength(now.MinLength));
             }

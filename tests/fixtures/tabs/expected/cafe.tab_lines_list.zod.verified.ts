@@ -13,8 +13,8 @@ export const TabLinesListResult1RowSchema = z.object({
   title: z.string().max(30),
   /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
   amount: z.number().multipleOf(1e-2),
-  /** char(4) pads to 4 bytes and its collation isn't declared, so the length is at most 4. */
-  code: z.string().max(4).nullable(),
+  /** char(4) pads to 4 bytes and its collation isn't declared, so the length is 1 to 4 code points. */
+  code: z.string().min(1).max(4).nullable(),
 })
 export type TabLinesListResult1Row = z.infer<typeof TabLinesListResult1RowSchema>
 

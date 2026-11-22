@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -49,47 +50,32 @@ internal static class Strings
             schema = schema.With(Keyword.Pattern, new SchemaValue.Text($"^(?:{string.Join("|", items)}) *$"));
         }
 
-        int? fewest = null;
-        int? most = null;
-        if (facets?.Length is { } length)
-        {
-            most = length.Value;
-            if (length.IsFixed)
-                fewest = Ceiling(length.Value, UnitsPerCodePoint(length));
-            if (Widened(scalar.Sql ?? "The string", length, fewest) is { } note)
-                notes.Add(note);
-        }
+        // JSON Schema counts code points, of which SQL Server's units hold fewer: the length is a maximum of them, and a fixed
+        // length or a minimum a minimum of the fewest they can hold (IrLength.FewestCodePoints).
+        var fewest = Math.Max(facets?.Length?.FewestCodePoints ?? 0, facets?.MinLength?.FewestCodePoints ?? 0);
+        if (facets?.Length is { } length && Widened(scalar.Sql ?? "The string", length) is { } note)
+            notes.Add(note);
+        if (facets?.MinLength is { Value: > 1 } minLength)
+            notes.Add(new SchemaNote($"At least {minLength.Value} UTF-16 code units, which is at least {CodePoints(minLength.FewestCodePoints)}.", JsonSchemaCaveat.CodePoints));
 
-        if (facets?.MinLength is { } minLength)
-        {
-            var points = Ceiling(minLength.Value, 2);
-            fewest = Math.Max(fewest ?? 0, points);
-            if (minLength.Value > 1)
-                notes.Add(new SchemaNote($"At least {minLength.Value} UTF-16 code units, which is at least {points} code points.", JsonSchemaCaveat.CodePoints));
-        }
-
-        return schema.With(Keyword.MinLength, fewest > 0 ? fewest : null).With(Keyword.MaxLength, most).Noted(notes);
+        return schema.With(Keyword.MinLength, fewest > 0 ? fewest : null).With(Keyword.MaxLength, facets?.Length?.Value).Noted(notes);
     }
 
-    /// <summary>The most units of <paramref name="length"/> one code point takes.</summary>
-    private static int UnitsPerCodePoint(IrLength length) => (length.Unit, length.Encoding) switch
+    private static string CodePoints(int count) => count == 1 ? "1 code point" : $"{count.ToString(CultureInfo.InvariantCulture)} code points";
+
+    /// <summary>
+    /// How a length was widened into code points, when it was; null for an exact one: a single-byte collation's, one in code points,
+    /// or a fixed length whose every value is as many code points (one UTF-16 code unit).
+    /// </summary>
+    private static SchemaNote? Widened(string sql, IrLength length)
     {
-        (IrLengthUnit.Utf16, _) => 2,
-
-        // JSON Schema counts code points too, so a length in them is exact.
-        (IrLengthUnit.CodePoints, _) => 1,
-        (IrLengthUnit.Bytes, IrByteEncoding.SingleByte) => 1,
-        (IrLengthUnit.Bytes, IrByteEncoding.DoubleByte) => 2,
-
-        // UTF-8, or an encoding not known: no character set SQL Server stores takes more than four bytes a character.
-        (IrLengthUnit.Bytes, _) => 4,
-    };
-
-    /// <summary>How a length was widened into code points, when it was; null for a single-byte collation's, which is exact.</summary>
-    private static SchemaNote? Widened(string sql, IrLength length, int? fewest)
-    {
-        if ((length.Unit == IrLengthUnit.Bytes && length.Encoding == IrByteEncoding.SingleByte) || length.Unit == IrLengthUnit.CodePoints)
+        var fewest = length.FewestCodePoints;
+        if ((length.Unit == IrLengthUnit.Bytes && length.Encoding == IrByteEncoding.SingleByte) || length.Unit == IrLengthUnit.CodePoints
+            || (length.IsFixed && fewest == length.Value))
+        {
             return null;
+        }
+
         if (length.Unit == IrLengthUnit.Utf16)
         {
             return length.IsFixed
@@ -107,8 +93,6 @@ internal static class Strings
         var range = length.IsFixed ? $"{fewest} to {length.Value}" : $"at most {length.Value}";
         return new SchemaNote($"{counts} and {why}, so the length is {range} code points.", JsonSchemaCaveat.ByteLengths);
     }
-
-    private static int Ceiling(int units, int perCodePoint) => (units + perCodePoint - 1) / perCodePoint;
 
     /// <summary>
     /// Text as a literal of an ECMA-262 regular expression with the <c>u</c> flag, as JSON Schema's <c>pattern</c> is: each

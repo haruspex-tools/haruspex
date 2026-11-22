@@ -16,7 +16,7 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code points.",
+          "description": "SQL type nvarchar(20). Facts: minLength from the check chk.ck_owner_name. At least 2 UTF-16 code units, which is at least 1 code point.",
           "type": "string",
           "minLength": 1,
           "maxLength": 20

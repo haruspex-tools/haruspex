@@ -47,8 +47,9 @@ internal static class Unions
             var limit = wideChecks.Select(Length).DefaultIfEmpty(int.MaxValue).Min();
             return narrowRoot switch
             {
-                // JavaScript and .NET both count a string's length in UTF-16 code units, as z.string().max does.
-                { Method: "enum", Arguments: [ArrayLiteral items] } => items.Items.All(i => i is Text text && text.Value.Length <= limit),
+                // Zod counts a string's length in code points (observed: ZodObservationTests), as .NET's runes do, a lone surrogate
+                // being one.
+                { Method: "enum", Arguments: [ArrayLiteral items] } => items.Items.All(i => i is Text text && text.Value.EnumerateRunes().Count() <= limit),
                 { Method: "string" } => narrowChecks.Any(c => c.Method is "max" or "length" && Length(c) <= limit) || limit == int.MaxValue,
                 _ => false,
             };

@@ -9,6 +9,9 @@ internal enum ZodCaveat
     /// <summary><c>varchar(n)</c> and <c>char(n)</c> count bytes, so <c>n</c> bounds the length exactly only in a single-byte collation.</summary>
     ByteLengths,
 
+    /// <summary>Zod counts a string's length in code points, of which SQL Server's units hold fewer, so a fixed length is a range of them.</summary>
+    CodePoints,
+
     /// <summary>A value set a CHECK constraint states holds as the database compares strings, so it is noted rather than an enum.</summary>
     CollationValueSets,
 

@@ -46,6 +46,25 @@ public partial class ExpressionTests
     /// <summary>The type and the reasons to be null, as one string: <c>decimal(10,2) nullable-column</c>.</summary>
     private static string Typed(IrDocument doc, string name) => string.Join(" ", [Sql(doc, name), .. Rules(doc, name).Select(r => IrWireNames.Of(r))]);
 
+    [Fact]
+    public void An_nchar_a_value_is_converted_to_is_at_most_its_length_and_at_least_one_fewer()
+    {
+        // Converted under a supplementary-character collation, a value is cut before a pair that doesn't fit and not padded, so
+        // nchar(3) may hold 2 code units and nchar(1) none (observed:
+        // A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points). A stored one is exactly n.
+        var doc = Procedure("DECLARE @v nchar(3) = N'ab'; SELECT CAST(label AS nchar(3)) AS c, @v AS v, CAST(label AS nchar(1)) AS one FROM dbo.t;");
+
+        foreach (var name in (string[])["c", "v"])
+        {
+            var facets = Assert.IsType<IrScalar>(Field(doc, name).Type).Facets!;
+            Assert.Equal((3, false, 2), (facets.Length!.Value, facets.Length.IsFixed, facets.MinLength!.Value));
+        }
+
+        var one = Assert.IsType<IrScalar>(Field(doc, "one").Type).Facets!;
+        Assert.Equal((1, false), (one.Length!.Value, one.Length.IsFixed));
+        Assert.Null(one.MinLength);
+    }
+
     // ---- literals ----------------------------------------------------------------------------------------------------
 
     [Fact]

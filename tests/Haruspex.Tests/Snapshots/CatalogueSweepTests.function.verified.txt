@@ -2703,7 +2703,7 @@ GREATEST(f25, f25) -> float number/float
 GREATEST(c3, c3) -> char(3) string {length=3}
 GREATEST(v10, v10) -> varchar(10) string {length<=10}
 GREATEST(vx, vx) -> varchar(8000) string {length<=8000}
-GREATEST(nc3, nc3) -> nchar(3) string {length=3}
+GREATEST(nc3, nc3) -> nchar(3) string {length<=3}
 GREATEST(nv10, nv10) -> nvarchar(10) string {length<=10}
 GREATEST(nvx, nvx) -> nvarchar(4000) string {length<=4000}
 GREATEST(dt, dt) -> date date
@@ -4585,7 +4585,7 @@ CHOOSE(id, f25, f25) -> float number/float null:out-of-range
 CHOOSE(id, c3, c3) -> char(3) string null:out-of-range {length=3}
 CHOOSE(id, v10, v10) -> varchar(10) string null:out-of-range {length<=10}
 CHOOSE(id, vx, vx) -> varchar(max) string null:out-of-range
-CHOOSE(id, nc3, nc3) -> nchar(3) string null:out-of-range {length=3}
+CHOOSE(id, nc3, nc3) -> nchar(3) string null:out-of-range {length<=3}
 CHOOSE(id, nv10, nv10) -> nvarchar(10) string null:out-of-range {length<=10}
 CHOOSE(id, nvx, nvx) -> nvarchar(max) string null:out-of-range
 CHOOSE(id, dt, dt) -> date date null:out-of-range
@@ -4625,7 +4625,7 @@ IIF(id > 1, f25, f25) -> float number/float
 IIF(id > 1, c3, c3) -> char(3) string {length=3}
 IIF(id > 1, v10, v10) -> varchar(10) string {length<=10}
 IIF(id > 1, vx, vx) -> varchar(max) string
-IIF(id > 1, nc3, nc3) -> nchar(3) string {length=3}
+IIF(id > 1, nc3, nc3) -> nchar(3) string {length<=3}
 IIF(id > 1, nv10, nv10) -> nvarchar(10) string {length<=10}
 IIF(id > 1, nvx, nvx) -> nvarchar(max) string
 IIF(id > 1, dt, dt) -> date date
@@ -4705,7 +4705,7 @@ COALESCE(f25, NULL) -> float number/float
 COALESCE(c3, NULL) -> char(3) string {length=3}
 COALESCE(v10, NULL) -> varchar(10) string {length<=10}
 COALESCE(vx, NULL) -> varchar(max) string
-COALESCE(nc3, NULL) -> nchar(3) string {length=3}
+COALESCE(nc3, NULL) -> nchar(3) string {length<=3}
 COALESCE(nv10, NULL) -> nvarchar(10) string {length<=10}
 COALESCE(nvx, NULL) -> nvarchar(max) string
 COALESCE(dt, NULL) -> date date

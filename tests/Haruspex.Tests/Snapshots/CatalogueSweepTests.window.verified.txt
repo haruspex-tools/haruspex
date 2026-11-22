@@ -540,7 +540,7 @@ LEAD(f25, 1, f25) OVER (ORDER BY id) -> float number/float
 LEAD(c3, 1, c3) OVER (ORDER BY id) -> char(3) string {length=3}
 LEAD(v10, 1, v10) OVER (ORDER BY id) -> varchar(10) string {length<=10}
 LEAD(vx, 1, vx) OVER (ORDER BY id) -> varchar(max) string
-LEAD(nc3, 1, nc3) OVER (ORDER BY id) -> nchar(3) string {length=3}
+LEAD(nc3, 1, nc3) OVER (ORDER BY id) -> nchar(3) string {length<=3}
 LEAD(nv10, 1, nv10) OVER (ORDER BY id) -> nvarchar(10) string {length<=10}
 LEAD(nvx, 1, nvx) OVER (ORDER BY id) -> nvarchar(max) string
 LEAD(dt, 1, dt) OVER (ORDER BY id) -> date date

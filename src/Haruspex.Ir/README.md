@@ -535,11 +535,20 @@ null.
 
 | Facet | Meaning |
 |---|---|
-| `maxLength` / `length` | at most, or exactly (padded), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
+| `maxLength` / `length` | at most, or exactly (padded, as a stored `nchar(n)` or `char(n)` is), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
 | `minLength` | at least `value` UTF-16 code units |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
 | `values` | the value is one of `items` (strings, or numbers as plain decimal text). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020). `canonical` (0.20): the value's canonical form under the fold `fold` names (see `folds`) is an item's, so an emitter may map a value to the item whose canonical form it has and then treat the set as exact; its items are in ordinal order, and where two share a canonical form, a value maps to the first. `fold` is there exactly when `match` is `canonical` |
+
+A length is the server's, in its unit. A target that counts another, as Zod and JSON Schema count code points, reads it through
+`IrLength.FewestCodePoints` and `IrMinLength.FewestCodePoints`: a maximum of any unit is a maximum of code points, since a code point
+takes at least one of each, but a fixed length or a minimum is a minimum only of the fewest code points a value of it can hold
+(an `nchar(4)` holding two emoji is two). `IrLength.FewestUtf16Units` gives the same for a minimum in UTF-16 code units, which is
+how a fixed length becomes a minimum when two documents are combined. A value converted to `nchar(n)` rather than stored, by
+`CAST`, a variable or a parameter read in the body, is `maxLength` n and `minLength` n - 1: under a supplementary-character (`_SC`)
+collation a conversion cuts a value before a pair that doesn't fit and doesn't pad it
+([decision 0095](../../docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)).
 
 Every count (a length, `digits`, `minItems`, `maxItems`) is a whole number from 0 to 2,147,483,647.
 

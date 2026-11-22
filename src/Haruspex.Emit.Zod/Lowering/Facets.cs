@@ -31,10 +31,11 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// parts and divides by a power of ten. That is the nearest double only while the integer fits in 2^53 (precision
 /// 15 or less); beyond it the double may land a little past a bound, so for wider types bounds and values are
 /// left out of rowsets. A bigint arrives as a string, so its range can't be checked as a number.</para>
-/// <para><b>Strings.</b> <c>nvarchar(n)</c> counts UTF-16 code units, as JavaScript does, so its length is exact.
-/// <c>varchar(n)</c> counts bytes, which is the same in a single-byte collation and only an upper bound in UTF-8 or a
-/// double-byte one; <c>char(n)</c> pads to <c>n</c> bytes, so <c>.length(n)</c> holds only in a single-byte
-/// collation. A set of strings from a CHECK constraint matches under the database's collation (case, accents and
+/// <para><b>Strings.</b> Zod counts a string's length in code points; <c>nvarchar(n)</c> counts UTF-16 code units, of which a
+/// code point is one or two, and <c>varchar(n)</c> bytes, of which it is one in a single-byte collation and up to four in UTF-8 or
+/// two in a double-byte one. So <c>n</c> is always a maximum, and a fixed length (<c>nchar(n)</c>, <c>char(n)</c>) or a minimum is
+/// a minimum only of the fewest code points it can hold: <c>.length(n)</c> only in a single-byte collation (or for one code unit),
+/// and otherwise <c>.min</c> of <c>n</c> divided by the most a code point takes, rounded up. A set of strings from a CHECK constraint matches under the database's collation (case, accents and
 /// trailing spaces may differ), so it is a comment, never <c>z.enum</c>; only an exact set is, and a canonical one, whose values are
 /// first mapped to the item they equal by the fold the IR gives (<c>z.preprocess(canonicalOf(…), z.enum([…]))</c>). Under a binary
 /// collation it is exact but for trailing spaces, which <c>.regex(/^(?:a|b)\u0020*$/)</c> says exactly (the type stays
@@ -67,17 +68,28 @@ internal static class Facets
             code = code.Then("regex", new PaddedValues([.. items]));
         }
 
-        if (facets?.MinLength is { } minLength)
-            code = code.Then("min", Count(minLength.Value));
-
-        if (facets?.Length is { } length)
+        // Zod counts a string's length in code points (observed: ZodObservationTests), and SQL Server in UTF-16 code units or
+        // bytes, of which a code point takes one or more. So the length is a maximum of code points, and a fixed length or a minimum
+        // is a minimum only of the fewest code points it can hold: two emoji fill an nchar(4) (observed in the differential tests,
+        // A_string_s_length_is_counted_by_the_server_in_code_units_or_bytes_and_by_zod_in_code_points). Where the fewest is the
+        // length itself, the length is exact.
+        var fewest = Math.Max(facets?.Length?.FewestCodePoints ?? 0, facets?.MinLength?.FewestCodePoints ?? 0);
+        if (facets?.Length is { } filled && fewest == filled.Value)
         {
-            // Zod counts a string's length in code points (observed: ZodObservationTests), so a length in them is exact.
-            var exactLength = length.Unit is IrLengthUnit.Utf16 or IrLengthUnit.CodePoints || length.Encoding == IrByteEncoding.SingleByte;
-            code = code.Then(length.IsFixed && exactLength ? "length" : "max", Count(length.Value));
-            if (length.Unit == IrLengthUnit.Bytes && !exactLength)
-                notes.Add(BytesNote(scalar.Sql ?? "The string", length));
+            code = code.Then("length", Count(filled.Value));
         }
+        else
+        {
+            if (fewest > 0)
+                code = code.Then("min", Count(fewest));
+            if (facets?.Length is { } most)
+                code = code.Then("max", Count(most.Value));
+        }
+
+        if (facets?.Length is { } length && LengthNote(scalar.Sql ?? "The string", length) is { } lengthNote)
+            notes.Add(lengthNote);
+        if (facets?.MinLength is { Value: > 1 } minLength)
+            notes.Add(new ZodNote($"At least {minLength.Value} UTF-16 code units, which is at least {CodePoints(minLength.FewestCodePoints)}.", ZodCaveat.CodePoints));
 
         return WithNotes(code, notes);
     }
@@ -87,11 +99,23 @@ internal static class Facets
         notes.Reverse().Aggregate(code, (inner, note) => new Noted(inner, note));
 
     /// <summary>
-    /// Why a length counted in bytes is only an upper bound on the length in characters: the collation takes more than one
-    /// byte a character, or isn't declared. (A single-byte collation's length is exact and needs no note.)
+    /// Why a length isn't exact in code points, when it isn't: a fixed length in UTF-16 code units, of which a code point may take
+    /// two, or one in bytes of a collation that takes more than one byte a character, or isn't declared. Null for an exact one: a
+    /// maximum of code units, or any length in a single-byte collation or in code points.
     /// </summary>
-    private static ZodNote BytesNote(string sql, IrLength length)
+    private static ZodNote? LengthNote(string sql, IrLength length)
     {
+        if (length.IsFixed && length.FewestCodePoints == length.Value)
+            return null;
+        if (length.Unit == IrLengthUnit.Utf16)
+        {
+            return length.IsFixed
+                ? new ZodNote($"{sql} is exactly {length.Value} UTF-16 code units, which is {length.FewestCodePoints} to {length.Value} code points.", ZodCaveat.CodePoints)
+                : null;
+        }
+
+        if (length.Unit != IrLengthUnit.Bytes || length.Encoding == IrByteEncoding.SingleByte)
+            return null;
         var counts = length.IsFixed ? $"{sql} pads to {length.Value} bytes" : $"{sql} counts bytes";
         var why = length.Encoding switch
         {
@@ -99,8 +123,11 @@ internal static class Facets
             IrByteEncoding.DoubleByte => "its double-byte collation takes up to two a character",
             _ => "its collation isn't declared",
         };
-        return new ZodNote($"{counts} and {why}, so the length is at most {length.Value}.", ZodCaveat.ByteLengths);
+        var range = length.IsFixed ? $"{length.FewestCodePoints} to {length.Value} code points" : $"at most {length.Value}";
+        return new ZodNote($"{counts} and {why}, so the length is {range}.", ZodCaveat.ByteLengths);
     }
+
+    private static string CodePoints(int count) => count == 1 ? "1 code point" : $"{Count(count).Value} code points";
 
     /// <summary>A number as it arrives in <paramref name="json"/> or a row, with its range, step and value set as checks.</summary>
     public static ZodExpression Number(IrScalar scalar, bool json)
@@ -170,10 +197,12 @@ internal static class Facets
             }
 
             default:
-                // A declaration's enum, in JSON: JSON.parse reads a value and the literal written here as the same decimal, so to
-                // the same double, and z.literal compares them exactly. Only a declared set, so far: other exact sets of numbers of
-                // no format would hold the same way, but writing them so changes modules this change has no reason to touch.
-                if (json && facets?.Values?.From is { Count: > 0 } from && from.All(f => f.Kind == IrFactSourceKind.Declared) && ExactNumbers(facets) is { } exact)
+                // An exact set of numbers of no format, in JSON: a declaration's enum, a number written into JSON in the SQL's text
+                // (json_query('[2024]')), or a bit converted to text. Each is an exact decimal SQL Server hands on as written, so
+                // JSON.parse reads a value and the literal written here as the same decimal, so to the same double, and z.literal
+                // compares them exactly; the differential tests run every fixture's output through it. Not a float's: FOR JSON
+                // writes one with 16 significant digits, which may not read back as its literal's double.
+                if (json && scalar.Format is null && ExactNumbers(facets) is { } exact)
                     return exact;
 
                 // Floating point, or a number of no stated format: inclusive bounds only, since an exclusive one can't

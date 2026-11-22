@@ -25,8 +25,8 @@ export const MenuPricesRowSchema = z.object({
    * Why: haruspex explain cafe.menu_prices pence
    */
   pence: z.int32().nullable(),
-  /** char(4) pads to 4 bytes and its collation isn't declared, so the length is at most 4. */
-  code: z.string().max(4),
+  /** char(4) pads to 4 bytes and its collation isn't declared, so the length is 1 to 4 code points. */
+  code: z.string().min(1).max(4),
   /**
    * varchar(17) counts bytes and its collation isn't declared, so the length is at most 17.
    * Its type is varchar(17), where cafe.menu_item.short_code is char(4) and cafe.menu_item.item_id is int: what it is computed with makes it another type.

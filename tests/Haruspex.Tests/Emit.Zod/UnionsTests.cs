@@ -17,6 +17,7 @@ public class UnionsTests
         ["a bare number over a literal"] = (Z("number"), Z("literal", new ArrayLiteral([new Number("1")]))),
         ["a longer maximum over a shorter one"] = (Z("string").Then("max", new Number("60")), Z("string").Then("max", new Number("13"))),
         ["a maximum over an enum that fits it"] = (Z("string").Then("max", new Number("5")), Z("enum", new ArrayLiteral([new Text("SPARE")]))),
+        ["a maximum over an enum value of as many code points, though more code units"] = (Z("string").Then("max", new Number("2")), Z("enum", new ArrayLiteral([new Text("\U0001F600\U0001F600")]))),
         ["a bare string over a string with checks"] = (Z("string"), Z("string").Then("min", new Number("1")).Then("regex", new PaddedValues(["a"]))),
         ["a note, which changes nothing accepted"] = (new Noted(Z("string").Then("max", new Number("8")), new ZodNote("A note.")), Z("string").Then("max", new Number("8"))),
     };

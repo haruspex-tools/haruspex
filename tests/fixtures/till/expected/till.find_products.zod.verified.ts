@@ -8,8 +8,8 @@ import { z } from 'zod'
 
 export const FindProductsRowSchema = z.object({
   product_id: z.int32(),
-  /** char(8) pads to 8 bytes and its collation isn't declared, so the length is at most 8. */
-  sku: z.string().max(8),
+  /** char(8) pads to 8 bytes and its collation isn't declared, so the length is 2 to 8 code points. */
+  sku: z.string().min(2).max(8),
   name: z.string().max(40),
   /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
   label: z.string().max(20).nullable(),

@@ -2,8 +2,6 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 //
 // The notes on properties below rest on these facts:
-// - varchar(n) and char(n) count bytes, not characters. A character is one byte only in a single-byte collation, so
-//   elsewhere n bounds the length from above.
 // - A value set from a CHECK constraint holds as the database compares strings, where case, accents and trailing spaces
 //   may differ, so it is a note rather than z.enum.
 import { z } from 'zod'
@@ -20,11 +18,8 @@ const jsonText = (content: () => z.ZodType): z.ZodString =>
 
 export const CustomerJobsJobsSchema = z.object({
   id: z.int32(),
-  /**
-   * One of "N", "W", "D", "X", as the database compares strings.
-   * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
-   */
-  status: z.string().max(1),
+  /** One of "N", "W", "D", "X", as the database compares strings. */
+  status: z.string().length(1),
 })
 export type CustomerJobsJobs = z.infer<typeof CustomerJobsJobsSchema>
 

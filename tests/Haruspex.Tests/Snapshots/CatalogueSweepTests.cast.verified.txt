@@ -16,7 +16,7 @@ CAST(bt AS float(25)) -> float number/float
 CAST(bt AS char(3)) -> char(3) string {length=3}
 CAST(bt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(bt AS varchar(max)) -> varchar(max) string
-CAST(bt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(bt AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(bt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(bt AS nvarchar(max)) -> nvarchar(max) string
 CAST(bt AS date) -> unknown unsupported-expression: CAST(bt AS date): SQL Server refuses to convert bit to date.
@@ -52,7 +52,7 @@ CAST(ti AS float(25)) -> float number/float
 CAST(ti AS char(3)) -> char(3) string {length=3}
 CAST(ti AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(ti AS varchar(max)) -> varchar(max) string
-CAST(ti AS nchar(3)) -> nchar(3) string {length=3}
+CAST(ti AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(ti AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(ti AS nvarchar(max)) -> nvarchar(max) string
 CAST(ti AS date) -> unknown unsupported-expression: CAST(ti AS date): SQL Server refuses to convert tinyint to date.
@@ -88,7 +88,7 @@ CAST(si AS float(25)) -> float number/float
 CAST(si AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(si AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(si AS varchar(max)) -> varchar(max) string
-CAST(si AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(si AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(si AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(si AS nvarchar(max)) -> nvarchar(max) string
 CAST(si AS date) -> unknown unsupported-expression: CAST(si AS date): SQL Server refuses to convert smallint to date.
@@ -124,7 +124,7 @@ CAST(i AS float(25)) -> float number/float
 CAST(i AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(i AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(i AS varchar(max)) -> varchar(max) string
-CAST(i AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(i AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(i AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(i AS nvarchar(max)) -> nvarchar(max) string
 CAST(i AS date) -> unknown unsupported-expression: CAST(i AS date): SQL Server refuses to convert int to date.
@@ -160,7 +160,7 @@ CAST(bi AS float(25)) -> float number/float
 CAST(bi AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(bi AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(bi AS varchar(max)) -> varchar(max) string
-CAST(bi AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(bi AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(bi AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(bi AS nvarchar(max)) -> nvarchar(max) string
 CAST(bi AS date) -> unknown unsupported-expression: CAST(bi AS date): SQL Server refuses to convert bigint to date.
@@ -196,7 +196,7 @@ CAST(d52 AS float(25)) -> float number/float
 CAST(d52 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d52 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(d52 AS varchar(max)) -> varchar(max) string
-CAST(d52 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d52 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(d52 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(d52 AS nvarchar(max)) -> nvarchar(max) string
 CAST(d52 AS date) -> unknown unsupported-expression: CAST(d52 AS date): SQL Server refuses to convert decimal(5,2) to date.
@@ -232,7 +232,7 @@ CAST(d380 AS float(25)) -> float number/float
 CAST(d380 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d380 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d380 AS varchar(max)) -> varchar(max) string
-CAST(d380 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d380 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(d380 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d380 AS nvarchar(max)) -> nvarchar(max) string
 CAST(d380 AS date) -> unknown unsupported-expression: CAST(d380 AS date): SQL Server refuses to convert decimal(38,0) to date.
@@ -268,7 +268,7 @@ CAST(d3838 AS float(25)) -> float number/float
 CAST(d3838 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(d3838 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d3838 AS varchar(max)) -> varchar(max) string
-CAST(d3838 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(d3838 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(d3838 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(d3838 AS nvarchar(max)) -> nvarchar(max) string
 CAST(d3838 AS date) -> unknown unsupported-expression: CAST(d3838 AS date): SQL Server refuses to convert decimal(38,38) to date.
@@ -304,7 +304,7 @@ CAST(n102 AS float(25)) -> float number/float
 CAST(n102 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(n102 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(n102 AS varchar(max)) -> varchar(max) string
-CAST(n102 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(n102 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(n102 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(n102 AS nvarchar(max)) -> nvarchar(max) string
 CAST(n102 AS date) -> unknown unsupported-expression: CAST(n102 AS date): SQL Server refuses to convert numeric(10,2) to date.
@@ -340,7 +340,7 @@ CAST(m AS float(25)) -> float number/float
 CAST(m AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(m AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(m AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(m AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(m AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(m AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(m AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(m AS date) -> unknown unsupported-expression: CAST(m AS date): SQL Server refuses to convert money to date.
@@ -376,7 +376,7 @@ CAST(sm AS float(25)) -> float number/float
 CAST(sm AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(sm AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(sm AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(sm AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(sm AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(sm AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(sm AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(sm AS date) -> unknown unsupported-expression: CAST(sm AS date): SQL Server refuses to convert smallmoney to date.
@@ -412,7 +412,7 @@ CAST(f AS float(25)) -> float number/float
 CAST(f AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(f AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(f AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(f AS date) -> unknown unsupported-expression: CAST(f AS date): SQL Server refuses to convert float to date.
@@ -448,7 +448,7 @@ CAST(r AS float(25)) -> float number/float
 CAST(r AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(r AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(r AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(r AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(r AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(r AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(r AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(r AS date) -> unknown unsupported-expression: CAST(r AS date): SQL Server refuses to convert real to date.
@@ -484,7 +484,7 @@ CAST(f24 AS float(25)) -> float number/float
 CAST(f24 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f24 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f24 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(f24 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f24 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(f24 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f24 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(f24 AS date) -> unknown unsupported-expression: CAST(f24 AS date): SQL Server refuses to convert real to date.
@@ -520,7 +520,7 @@ CAST(f25 AS float(25)) -> float number/float
 CAST(f25 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(f25 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f25 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(f25 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(f25 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(f25 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(f25 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(f25 AS date) -> unknown unsupported-expression: CAST(f25 AS date): SQL Server refuses to convert float to date.
@@ -556,7 +556,7 @@ CAST(c3 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(c3 AS char(3)) -> char(3) string {length=3}
 CAST(c3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(c3 AS varchar(max)) -> varchar(max) string
-CAST(c3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(c3 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(c3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(c3 AS nvarchar(max)) -> nvarchar(max) string
 CAST(c3 AS date) -> date date null:arithmetic-overflow
@@ -592,7 +592,7 @@ CAST(v10 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(v10 AS char(3)) -> char(3) string {length=3}
 CAST(v10 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(v10 AS varchar(max)) -> varchar(max) string
-CAST(v10 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(v10 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(v10 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(v10 AS nvarchar(max)) -> nvarchar(max) string
 CAST(v10 AS date) -> date date null:arithmetic-overflow
@@ -628,7 +628,7 @@ CAST(vx AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(vx AS char(3)) -> char(3) string {length=3}
 CAST(vx AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(vx AS varchar(max)) -> varchar(max) string
-CAST(vx AS nchar(3)) -> nchar(3) string {length=3}
+CAST(vx AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(vx AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(vx AS nvarchar(max)) -> nvarchar(max) string
 CAST(vx AS date) -> date date null:arithmetic-overflow
@@ -700,7 +700,7 @@ CAST(nv10 AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(nv10 AS char(3)) -> char(3) string {length=3}
 CAST(nv10 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(nv10 AS varchar(max)) -> varchar(max) string
-CAST(nv10 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(nv10 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(nv10 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(nv10 AS nvarchar(max)) -> nvarchar(max) string
 CAST(nv10 AS date) -> date date null:arithmetic-overflow
@@ -736,7 +736,7 @@ CAST(nvx AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(nvx AS char(3)) -> char(3) string {length=3}
 CAST(nvx AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(nvx AS varchar(max)) -> varchar(max) string
-CAST(nvx AS nchar(3)) -> nchar(3) string {length=3}
+CAST(nvx AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(nvx AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(nvx AS nvarchar(max)) -> nvarchar(max) string
 CAST(nvx AS date) -> date date null:arithmetic-overflow
@@ -772,7 +772,7 @@ CAST(dt AS float(25)) -> unknown unsupported-expression: CAST(dt AS float(25)): 
 CAST(dt AS char(3)) -> char(3) string {length=3}
 CAST(dt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt AS varchar(max)) -> varchar(max) string
-CAST(dt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dt AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(dt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(dt AS nvarchar(max)) -> nvarchar(max) string
 CAST(dt AS date) -> date date
@@ -808,7 +808,7 @@ CAST(tm3 AS float(25)) -> unknown unsupported-expression: CAST(tm3 AS float(25))
 CAST(tm3 AS char(3)) -> char(3) string {length=3}
 CAST(tm3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(tm3 AS varchar(max)) -> varchar(max) string
-CAST(tm3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(tm3 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(tm3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(tm3 AS nvarchar(max)) -> nvarchar(max) string
 CAST(tm3 AS date) -> unknown unsupported-expression: CAST(tm3 AS date): SQL Server refuses to convert time(3) to date.
@@ -844,7 +844,7 @@ CAST(dtm AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(dtm AS char(3)) -> char(3) string {length=3}
 CAST(dtm AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dtm AS varchar(max)) -> varchar(max) string
-CAST(dtm AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dtm AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(dtm AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(dtm AS nvarchar(max)) -> nvarchar(max) string
 CAST(dtm AS date) -> date date
@@ -880,7 +880,7 @@ CAST(dt23 AS float(25)) -> unknown unsupported-expression: CAST(dt23 AS float(25
 CAST(dt23 AS char(3)) -> char(3) string {length=3}
 CAST(dt23 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dt23 AS varchar(max)) -> varchar(max) string
-CAST(dt23 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dt23 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(dt23 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(dt23 AS nvarchar(max)) -> nvarchar(max) string
 CAST(dt23 AS date) -> date date
@@ -916,7 +916,7 @@ CAST(sdt AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(sdt AS char(3)) -> char(3) string {length=3}
 CAST(sdt AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(sdt AS varchar(max)) -> varchar(max) string
-CAST(sdt AS nchar(3)) -> nchar(3) string {length=3}
+CAST(sdt AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(sdt AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(sdt AS nvarchar(max)) -> nvarchar(max) string
 CAST(sdt AS date) -> date date
@@ -952,7 +952,7 @@ CAST(dto3 AS float(25)) -> unknown unsupported-expression: CAST(dto3 AS float(25
 CAST(dto3 AS char(3)) -> char(3) string {length=3}
 CAST(dto3 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(dto3 AS varchar(max)) -> varchar(max) string
-CAST(dto3 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(dto3 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(dto3 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(dto3 AS nvarchar(max)) -> nvarchar(max) string
 CAST(dto3 AS date) -> date date
@@ -988,7 +988,7 @@ CAST(u AS float(25)) -> unknown unsupported-expression: CAST(u AS float(25)): SQ
 CAST(u AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(u AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(u AS varchar(max)) -> varchar(max) string
-CAST(u AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(u AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(u AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(u AS nvarchar(max)) -> nvarchar(max) string
 CAST(u AS date) -> unknown unsupported-expression: CAST(u AS date): SQL Server refuses to convert uniqueidentifier to date.
@@ -1024,7 +1024,7 @@ CAST(bin4 AS float(25)) -> unknown unsupported-expression: CAST(bin4 AS float(25
 CAST(bin4 AS char(3)) -> char(3) string {length=3}
 CAST(bin4 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(bin4 AS varchar(max)) -> varchar(max) string
-CAST(bin4 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(bin4 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(bin4 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(bin4 AS nvarchar(max)) -> nvarchar(max) string
 CAST(bin4 AS date) -> date date null:arithmetic-overflow
@@ -1060,7 +1060,7 @@ CAST(vb10 AS float(25)) -> unknown unsupported-expression: CAST(vb10 AS float(25
 CAST(vb10 AS char(3)) -> char(3) string {length=3}
 CAST(vb10 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(vb10 AS varchar(max)) -> varchar(max) string
-CAST(vb10 AS nchar(3)) -> nchar(3) string {length=3}
+CAST(vb10 AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(vb10 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(vb10 AS nvarchar(max)) -> nvarchar(max) string
 CAST(vb10 AS date) -> date date null:arithmetic-overflow
@@ -1204,7 +1204,7 @@ CAST(1 AS float(25)) -> float number/float
 CAST(1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1 AS varchar(max)) -> varchar(max) string
-CAST(1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1 AS nvarchar(max)) -> nvarchar(max) string
 CAST(1 AS date) -> unknown unsupported-expression: CAST(1 AS date): SQL Server refuses to convert int to date.
@@ -1240,7 +1240,7 @@ CAST(12345 AS float(25)) -> float number/float
 CAST(12345 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(12345 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(12345 AS varchar(max)) -> varchar(max) string
-CAST(12345 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(12345 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(12345 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(12345 AS nvarchar(max)) -> nvarchar(max) string
 CAST(12345 AS date) -> unknown unsupported-expression: CAST(12345 AS date): SQL Server refuses to convert int to date.
@@ -1276,7 +1276,7 @@ CAST(2.50 AS float(25)) -> float number/float
 CAST(2.50 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(2.50 AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(2.50 AS varchar(max)) -> varchar(max) string
-CAST(2.50 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(2.50 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(2.50 AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(2.50 AS nvarchar(max)) -> nvarchar(max) string
 CAST(2.50 AS date) -> unknown unsupported-expression: CAST(2.50 AS date): SQL Server refuses to convert numeric(3,2) to date.
@@ -1312,7 +1312,7 @@ CAST('ab' AS float(25)) -> float number/float null:arithmetic-overflow
 CAST('ab' AS char(3)) -> char(3) string {length=3}
 CAST('ab' AS varchar(10)) -> varchar(10) string {length<=10}
 CAST('ab' AS varchar(max)) -> varchar(max) string
-CAST('ab' AS nchar(3)) -> nchar(3) string {length=3}
+CAST('ab' AS nchar(3)) -> nchar(3) string {length<=3}
 CAST('ab' AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST('ab' AS nvarchar(max)) -> nvarchar(max) string
 CAST('ab' AS date) -> date date null:arithmetic-overflow
@@ -1348,7 +1348,7 @@ CAST(N'ab' AS float(25)) -> float number/float null:arithmetic-overflow
 CAST(N'ab' AS char(3)) -> char(3) string {length=3}
 CAST(N'ab' AS varchar(10)) -> varchar(10) string {length<=10}
 CAST(N'ab' AS varchar(max)) -> varchar(max) string
-CAST(N'ab' AS nchar(3)) -> nchar(3) string {length=3}
+CAST(N'ab' AS nchar(3)) -> nchar(3) string {length<=3}
 CAST(N'ab' AS nvarchar(10)) -> nvarchar(10) string {length<=10}
 CAST(N'ab' AS nvarchar(max)) -> nvarchar(max) string
 CAST(N'ab' AS date) -> date date null:arithmetic-overflow
@@ -1384,7 +1384,7 @@ CAST(1e0 AS float(25)) -> float number/float
 CAST(1e0 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST(1e0 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1e0 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST(1e0 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST(1e0 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST(1e0 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST(1e0 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST(1e0 AS date) -> unknown unsupported-expression: CAST(1e0 AS date): SQL Server refuses to convert float to date.
@@ -1420,7 +1420,7 @@ CAST($1 AS float(25)) -> float number/float
 CAST($1 AS char(3)) -> char(3) string null:arithmetic-overflow {length=3}
 CAST($1 AS varchar(10)) -> varchar(10) string null:arithmetic-overflow {length<=10}
 CAST($1 AS varchar(max)) -> varchar(max) string null:arithmetic-overflow
-CAST($1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length=3}
+CAST($1 AS nchar(3)) -> nchar(3) string null:arithmetic-overflow {length<=3}
 CAST($1 AS nvarchar(10)) -> nvarchar(10) string null:arithmetic-overflow {length<=10}
 CAST($1 AS nvarchar(max)) -> nvarchar(max) string null:arithmetic-overflow
 CAST($1 AS date) -> unknown unsupported-expression: CAST($1 AS date): SQL Server refuses to convert money to date.

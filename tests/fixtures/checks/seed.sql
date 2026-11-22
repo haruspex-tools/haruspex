@@ -10,21 +10,22 @@ VALUES (1, N'Al', N'A'),
 
 INSERT INTO chk.ticket
     (ticket_id, owner_id, code, alt_code, status, priority, score, level, discount, rate, big, title, note, region, sigil,
-     tag_utf8, pad_utf8, muted, restored, late)
+     tag_utf8, pad_utf8, fill_utf8, muted, restored, late)
 VALUES
     -- Lower edges.
     (-2147483648, 1, N'ABCDEFGH', N'ZYXWVUTS', 'open', 1, -10, 1, 0, 0.0001, 0, N'x', 'n', 'NE', 'a.b',
-     'abcdefghijkl', 'ABCD', -2147483648, 1, NULL),
-    -- Upper edges. Six two-byte characters fill varchar(12) in UTF-8; one fills char(4) with two spaces.
+     'abcdefghijkl', 'ABCD', NCHAR(0xD83D) + NCHAR(0xDE00) + NCHAR(0xD83D) + NCHAR(0xDE00), -2147483648, 1, NULL),
+    -- Upper edges. Six two-byte characters fill varchar(12) in UTF-8; one fills char(4) with two spaces. (Above, two emoji fill
+    -- char(8) in UTF-8: 8 bytes, 2 code points.)
     (2147483647, 2, N'A', NULL, 'held', 5, 99, 2, 100, 0.9999, 9223372036854775807, REPLICATE(N'T', 60), REPLICATE('n', 30), 'sw', 'c+d   ',
-     REPLICATE(N'é', 6), N'é', 2147483647, 2147483647, 2147483647),
+     REPLICATE(N'é', 6), N'é', 'abcdefgh', 2147483647, 2147483647, 2147483647),
     -- Everything nullable null, no owner, no events, and a status in another case.
     (3, NULL, N'C3', NULL, 'CLOSED', NULL, NULL, 4, NULL, NULL, NULL, N'Three', NULL, NULL, '(x)',
-     NULL, NULL, NULL, NULL, NULL),
+     NULL, NULL, DEFAULT, NULL, NULL, NULL),
     -- A status with trailing spaces, at the column's full length; and a value ck_ticket_muted would refuse, written
     -- after ticket_nocheck.sql disabled it.
     (4, NULL, N'D4', NULL, 'open      ', NULL, NULL, NULL, NULL, NULL, NULL, N'Four', NULL, NULL, NULL,
-     NULL, NULL, -5, NULL, NULL);
+     NULL, NULL, DEFAULT, -5, NULL, NULL);
 
 INSERT INTO chk.ticket_event (event_id, ticket_id, kind, minutes)
 VALUES (-2147483648, -2147483648, N'open', 1),

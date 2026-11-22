@@ -30,22 +30,18 @@ export const LockersResult1RowSchema = z.object({
   locker_no: z.int32().nullable(),
   /**
    * One of "S", "L", as the database compares strings.
-   * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain rink.lockers '#1.size'
    */
-  size: z.string().max(1).nullable(),
+  size: z.string().length(1).nullable(),
 })
 export type LockersResult1Row = z.infer<typeof LockersResult1RowSchema>
 
 export const LockersResult2RowSchema = z.object({
   locker_no: z.int32(),
-  /**
-   * One of "S", "L", as the database compares strings.
-   * char(1) pads to 1 bytes and its collation isn't declared, so the length is at most 1.
-   */
-  size: z.string().max(1),
+  /** One of "S", "L", as the database compares strings. */
+  size: z.string().length(1),
   /**
    * varchar(40) counts bytes and its collation isn't declared, so the length is at most 40.
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).

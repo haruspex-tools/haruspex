@@ -4,6 +4,8 @@
 // optional rather than nullable.
 //
 // The notes on properties below rest on these facts:
+// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
+//   may take more than one, so a fixed or least length holds fewer code points than it counts.
 // - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
 //   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
@@ -19,7 +21,8 @@ export type GetComponentsNodeProduct = z.infer<typeof GetComponentsNodeProductSc
 
 export const GetComponentsNodeSchema = z.object({
   quantity: z.number().min(1).max(999999.99).multipleOf(1e-2),
-  unit: z.string().length(3),
+  /** nchar(3) is exactly 3 UTF-16 code units, which is 2 to 3 code points. */
+  unit: z.string().min(2).max(3),
   product: GetComponentsNodeProductSchema,
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).

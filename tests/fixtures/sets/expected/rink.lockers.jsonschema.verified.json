@@ -60,7 +60,7 @@
           "maximum": 2147483647
         },
         "size": {
-          "description": "SQL type char(1). Facts: values from the check rink.ck_locker_size. One of \"S\", \"L\", as the database compares strings. char(1) pads to 1 bytes and its collation isn't declared, so the length is 1 to 1 code points. May be null: unmatched-row (procedures/lockers.sql:9:17). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain rink.lockers '#1.size'",
+          "description": "SQL type char(1). Facts: values from the check rink.ck_locker_size. One of \"S\", \"L\", as the database compares strings. May be null: unmatched-row (procedures/lockers.sql:9:17). May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row). To change it: if the data rules it out, declare it in the config file with \"nullable\": false and why. Why: haruspex explain rink.lockers '#1.size'",
           "type": [
             "string",
             "null"
@@ -87,7 +87,7 @@
           "maximum": 2147483647
         },
         "size": {
-          "description": "SQL type char(1). Facts: values from the check rink.ck_locker_size. One of \"S\", \"L\", as the database compares strings. char(1) pads to 1 bytes and its collation isn't declared, so the length is 1 to 1 code points.",
+          "description": "SQL type char(1). Facts: values from the check rink.ck_locker_size. One of \"S\", \"L\", as the database compares strings.",
           "type": "string",
           "minLength": 1,
           "maxLength": 1
