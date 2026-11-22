@@ -97,6 +97,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0092](0092-a-key-named-proto-is-refused-by-the-typescript-emitters.md) | 21 Nov 2026 | A key named `__proto__` is refused by the TypeScript emitters |
 | [0093](0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md) | 21 Nov 2026 | A column's JSON is part of its type, completed by the config |
 | [0094](0094-any-json-is-a-type-of-its-own.md) | 21 Nov 2026 | Any JSON is a type of its own |
+| [0097](0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md) | 22 Nov 2026 | A path into JSON of known shape is walked step by step |
 
 ## Writing a record
 

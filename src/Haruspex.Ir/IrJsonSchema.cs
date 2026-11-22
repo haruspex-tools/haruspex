@@ -59,10 +59,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, and (0.28) the columns the config file declares to hold JSON of a schema. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document in which a reason says what makes it so (a detail, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -90,16 +90,17 @@ public static class IrJsonSchema
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
 
-        // A document labelled 0.28 may say anything a 0.27 one may, and a key left out whatever its value in a document of one
+        // A document labelled 0.29 may say anything a 0.28 one may. One labelled 0.28 may say anything a 0.27 one may, and a key left out whatever its value in a document of one
         // database too, since a column's declared JSON says it. One labelled earlier declares no column, and: one labelled 0.23 never names a baseline, one
         // labelled 0.24 always does, and one labelled 0.25, 0.26 or 0.27 may; one of those that names none says nothing only a
         // combined document says. One labelled 0.26 always defines table types, one labelled 0.27 may, and one labelled earlier never does.
         ("anyOf", new JsonArray(
             Node(
                 ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.CurrentVersion))),
+                    ("irVersion", Node(("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion)))),
                     ("source", Node(("required", Names("baseline"))))))),
             OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: null, optional: true),
+            OneDatabaseOf(IrDocument.DeclaredVersion, tableTypes: null, optional: true),
             Node(
                 ("not", Node(("required", Names("columns")))),
                 ("anyOf", new JsonArray(
@@ -311,7 +312,8 @@ public static class IrJsonSchema
             "One reason a value can be null.",
             ["rule", "at"],
             ("rule", Vocabulary<IrNullRule>(IrWireNames.Of)),
-            ("at", Text("What the rule applies to: a column or a source location.")))),
+            ("at", Text("What the rule applies to: a column or a source location.")),
+            ("detail", Text("What makes it so, in words, when there is more to say than the rule (0.29): for a value read from JSON at a path, the steps that may find nothing or null.")))),
         ("type", Node(
             ("description", "A type node: a reference to a named type, or a kind."),
             ("anyOf", new JsonArray([.. TypeNodes.Select(Ref)])))),

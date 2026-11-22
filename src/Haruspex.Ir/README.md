@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.28
+# Haruspex.Ir: the IR format, version 0.29
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.28, whose documents that say less are labelled 0.27, 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
+version 0.29, whose documents that say less are labelled 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json); the reasons behind the format are in the
@@ -130,15 +130,16 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
+- must read `irVersion` first and must refuse a document of any version but 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional` (but in a document labelled
-  0.28), a reason whose rule
+  0.28 or later), a reason whose rule
   is `not-in-both` and a field's `sides`; must refuse a field's `from` or `sides`, and a source's `path` or `files`, in a
   document labelled 0.23 or 0.24; must refuse a document labelled 0.26 without `tableTypes`, and one labelled before 0.26 with
   them; must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none; and must
   refuse `columns`, any JSON, a fact from a declaration and an open object in a document labelled before 0.28, and a document labelled 0.28
-  that says none of them;
+  that says none of them; and must refuse a reason's `detail` in a document labelled before 0.29, and a document labelled 0.29 in
+  which no reason has one;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
   `utf16` or with an `encoding`;
 - must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
@@ -166,7 +167,8 @@ find the cycles itself, "Recursive types"). `IrJsonReader` doesn't check them; a
 checks what a reader must refuse except what JSON Schema can't express: a number's form, a key given twice in one object, a `ref`
 that names no type, what ties a table-valued parameter to its type's definition and rows, whether a document holds a binary
 value, which decides whether it is labelled 0.27, and what ties a `column-json` claim and a declaration's files to the declaration,
-or whether a document holds any JSON, a fact from a declaration or an open object, which decides whether it is labelled 0.28.
+or whether a document holds any JSON, a fact from a declaration or an open object, which decides whether it is labelled 0.28, or a
+reason's `detail`, which decides whether it is labelled 0.29.
 
 ## A document
 
@@ -175,7 +177,8 @@ or whether a document holds any JSON, a fact from a declaration or an open objec
   "irVersion": "0.25",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
                                       // (0.26 when it defines a table type: "Table types", below; 0.27 when it
                                       // holds a binary value: "Logical kinds", below; 0.28 when it declares a
-                                      // column's JSON: "Column declarations", below)
+                                      // column's JSON: "Column declarations", below; 0.29 when a reason says
+                                      // what makes it so: "Null reasons", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -396,7 +399,11 @@ front end's to say, from what its engine writes ([SQL Server's](../Haruspex.SqlS
 
 A value can be null, a key absent or a result missing only for a reason, and the reason says why, never which construct
 of which dialect made it ([decision 0025](../../docs/decisions/0025-null-reasons-in-neutral-terms.md)). Each reason is
-`{ "rule", "at" }`, `at` pointing at the construct or the column. A reader must refuse a `rule` not in this list.
+`{ "rule", "at", "detail"? }`, `at` pointing at the construct or the column. `detail` (0.29) says what, there, makes it so, in
+words, when there is more to say than the rule: for a value read from JSON at a path, the steps that may find nothing or `null`
+("`$.address` may be left out, as the schema doesn't require it"), which `explain` prints beside the rule
+([decision 0097](../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). It is prose for a person,
+not a claim: a reader must not read meaning from its words. A reader must refuse a `rule` not in this list.
 
 | `rule` | The value can be null because |
 |---|---|
@@ -622,6 +629,12 @@ hash makes a change to its text a change to the document, which `haruspex check`
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
 reads only its own version, or one whose every document means the same in it ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md)). One file
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
+
+**0.29** (22 Nov 2026, paths into JSON). A reason's `detail`, what makes it so in words ("Null reasons", above;
+[decision 0097](../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). Only a document in which a
+reason has one is labelled 0.29: every 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 document is a 0.29 document in which none does,
+meaning the same, so this reader reads all seven
+([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), twelfth amendment).
 
 **0.28** (21 Nov 2026, declared JSON). A document's `columns`, each column the config file declares to hold JSON of a schema
 ("Column declarations", above); the type node `any-json`, any JSON value, and narrowed, any object or array ("Type nodes", above); an object type's `open`;

@@ -70,7 +70,7 @@ public partial class IrJsonReaderTests
             Field(json, "mode")["presence"] = "always";
         });
 
-        Assert.Equal("$.columns is given in a document of IR 0.27: a document that declares a column's JSON is IR 0.28.", e.Message);
+        Assert.Equal("$.columns is given in a document of IR 0.27: a document that declares a column's JSON is IR 0.28 or later.", e.Message);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public partial class IrJsonReaderTests
     [Fact]
     public void A_document_labelled_0_28_that_declares_nothing_is_refused()
     {
-        var e = RefusedBinary(json => json["irVersion"] = IrDocument.CurrentVersion);
+        var e = RefusedBinary(json => json["irVersion"] = IrDocument.DeclaredVersion);
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Contains("declares none", e.Message, StringComparison.Ordinal);

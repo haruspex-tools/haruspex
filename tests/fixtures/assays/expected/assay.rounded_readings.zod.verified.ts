@@ -142,8 +142,9 @@ export type RoundedReadingsResult3Row = z.infer<typeof RoundedReadingsResult3Row
 
 export const RoundedReadingsResult4RowSchema = z.object({
   /**
-   * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent).
+   * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
    * May be null: a decimal rounded to fewer places is null under a caller's NUMERIC_ROUNDABORT on with ANSI_WARNINGS and ARITHABORT off (precision-loss).
+   * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.
    * To change it: declare the callers' NUMERIC_ROUNDABORT off in the config file's "session".
    * Why: haruspex explain assay.rounded_readings '#4.level'
    */

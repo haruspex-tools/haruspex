@@ -11,14 +11,14 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// OPENJSON and JSON_VALUE over JSON built here: they read a document whose shape is known, so what they give is
-// known too. Each rule was observed on SQL Server 2025 RTM-CU10 (JsonTracingObservationTests). See README.md, "JSON built
-// here, traced".
+// OPENJSON, JSON_VALUE and json_query with a path over JSON whose shape is known, built here or declared for a column: they read
+// a document whose shape is known, so what they give at a path is known too. Each rule was observed on SQL Server 2025 RTM-CU10
+// (JsonTracingObservationTests, DeclaredColumnObservationTests). See README.md, "JSON built here, traced" and "Paths into JSON".
 internal sealed partial class Typer
 {
     /// <summary>
-    /// The JSON a document argument holds when it was built here: live JSON its shape, JSON text its content, a literal that is a
-    /// JSON document its parsed shape; and why it may be NULL. Null when not known (data, or unknown).
+    /// The JSON a document argument holds when its shape is known (built here, or declared for a column): live JSON its shape, JSON
+    /// text its content, a literal that is a JSON document its parsed shape; and why it may be NULL. Null when not known.
     /// </summary>
     private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, ReadScope scope)
     {
@@ -31,132 +31,40 @@ internal sealed partial class Typer
 
     // ---- paths --------------------------------------------------------------------------------------------------------
 
-    /// <summary>A JSON path: whether it is strict, and its steps.</summary>
-    private sealed record JsonPath(bool Strict, EquatableArray<JsonStep> Steps);
-
-    /// <summary>A step of a JSON path: a key of an object, or an index into an array.</summary>
-    private abstract record JsonStep
-    {
-        private protected JsonStep()
-        {
-        }
-    }
-
-    /// <summary>A key of an object, as the path writes it.</summary>
-    private sealed record JsonKey(string Name) : JsonStep;
-
-    /// <summary>An index into an array, from 0.</summary>
-    private sealed record JsonIndex(int Position) : JsonStep;
-
     /// <summary>
-    /// Reads a path such as <c>'strict $.lines[0]."unit price"'</c>: <c>lax</c> or <c>strict</c>, <c>$</c>, then keys and
-    /// indexes. Null for anything else (a wildcard, a malformed path), which is not read.
+    /// What a literal path finds in <paramref name="document"/> (<see cref="JsonPathWalk"/>), warning when the shape says it can
+    /// never find anything there; null when the path is not a literal that is read, or what it finds is not known.
     /// </summary>
-    private static JsonPath? ParsePath(string text)
+    private (JsonPath Path, JsonPathWalk.Found Found)? Walk(Shape document, ScalarExpression pathArgument, TSqlFragment call)
     {
-        var s = text.Trim();
-        var strict = false;
-        if (s.StartsWith("strict ", StringComparison.OrdinalIgnoreCase))
-            (strict, s) = (true, s[7..].TrimStart());
-        else if (s.StartsWith("lax ", StringComparison.OrdinalIgnoreCase))
-            s = s[4..].TrimStart();
-        if (s.Length == 0 || s[0] != '$')
+        if (LiteralOf(pathArgument) is not ({ } literal and StringLiteral, false) || JsonPath.Parse(literal.Value, out _) is not { } path
+            || JsonPathWalk.Follow(document, path) is not { } found)
+        {
             return null;
-
-        var steps = new List<JsonStep>();
-        var i = 1;
-        while (i < s.Length)
-        {
-            if (s[i] == '.' && i + 1 < s.Length && s[i + 1] == '"')
-            {
-                var end = s.IndexOf('"', i + 2);
-                if (end < 0 || s[(i + 2)..end].Contains('\\', StringComparison.Ordinal))
-                    return null;
-                steps.Add(new JsonKey(s[(i + 2)..end]));
-                i = end + 1;
-            }
-            else if (s[i] == '.')
-            {
-                var start = ++i;
-                while (i < s.Length && (char.IsLetterOrDigit(s[i]) || s[i] is '_' or '$'))
-                    i++;
-                if (i == start)
-                    return null;
-                steps.Add(new JsonKey(s[start..i]));
-            }
-            else if (s[i] == '[')
-            {
-                var end = s.IndexOf(']', i);
-                if (end < 0 || !int.TryParse(s[(i + 1)..end], NumberStyles.None, CultureInfo.InvariantCulture, out var index))
-                    return null;
-                steps.Add(new JsonIndex(index));
-                i = end + 1;
-            }
-            else
-            {
-                return null;
-            }
         }
 
-        return new JsonPath(strict, [.. steps]);
+        if (found.NeverThere)
+        {
+            summaries.Warn(InferenceCodes.PathFindsNothing.At(
+                At(call),
+                $"{Text(call)} reads `{path.Prefix(path.Steps.Count)}`, which the JSON there never has ({string.Join("; ", found.Notes)}), so it is always NULL under a lax path and an error under a strict one. Check the path against the JSON's shape or schema."));
+        }
+
+        return (path, found);
     }
 
     /// <summary>
-    /// What a path finds in a JSON value: its shape when present and not null (null when it is never there, or always JSON null),
-    /// whether it may be missing, and whether it may be JSON null. Null when the path goes where the shape says nothing (a
-    /// record's keys, an array's items by index, a recursive node), which is not read.
+    /// Why a value read from JSON at a path may be NULL: <c>json-null-or-absent</c> at <paramref name="at"/>, with the steps that
+    /// make it so.
     /// </summary>
-    private sealed record Found(Shape? Shape, bool MayBeMissing, bool MayBeNull);
+    private static IrNullReason PathNull(SourceLocation at, JsonPathWalk.Found found) =>
+        new(IrNullRule.JsonNullOrAbsent, at.ToString()) { Detail = Detail(found) };
 
-    private static Found? Follow(Shape shape, EquatableArray<JsonStep> steps, int from = 0)
-    {
-        if (from == steps.Count)
-            return new Found(shape, false, false);
-        switch (shape, steps[from])
-        {
-            case (UnionShape union, _):
-                Found? all = null;
-                foreach (var variant in union.Variants)
-                {
-                    if (Follow(variant, steps, from) is not { } one)
-                        return null;
-                    all = all is null ? one : Either(all, one);
-                }
-
-                return all;
-            case (ObjectShape obj, JsonKey(var key)):
-                // A key an open object doesn't list may be there, holding any JSON (a column's declared JSON): not known.
-                if (obj.Fields.FirstOrDefault(f => f.Name == key) is not { } field)
-                    return obj.Open ? null : new Found(null, true, false);
-                var nullable = field.NullableBecause.Count > 0;
-
-                // A key left out when null is missing exactly when null; one left out whatever its value (optional, in a column's
-                // declared JSON) may be missing, and null too where it may be null.
-                var missing = field.Presence == IrPresence.Optional || (field.Presence == IrPresence.OmittedWhenNull && nullable);
-                var nullHere = nullable && field.Presence != IrPresence.OmittedWhenNull;
-                if (Follow(field.Type, steps, from + 1) is not { } below)
-                    return null;
-                return below with { MayBeMissing = below.MayBeMissing || missing || (nullable && from + 1 < steps.Count), MayBeNull = below.MayBeNull || (nullHere && from + 1 == steps.Count) };
-            case (TupleShape tuple, JsonIndex(var index)):
-                if (index >= tuple.Items.Count)
-                    return new Found(null, true, false);
-                var item = tuple.Items[index];
-                if (Follow(item.Type, steps, from + 1) is not { } inner)
-                    return null;
-                var itemNull = item.NullableBecause.Count > 0;
-                return inner with { MayBeMissing = inner.MayBeMissing || (itemNull && from + 1 < steps.Count), MayBeNull = inner.MayBeNull || (itemNull && from + 1 == steps.Count) };
-            case (ObjectShape or TupleShape or ArrayShape or ScalarShape or JsonTextShape, _):
-                // A key of an array or a scalar, an index of an object or a scalar: not there.
-                return shape is ArrayShape && steps[from] is JsonIndex ? null : new Found(null, true, false);
-            default:
-                return null;
-        }
-
-        static Found Either(Found a, Found b) => new(
-            a.Shape is null ? b.Shape : b.Shape is null ? a.Shape : JsonShapes.Join(a.Shape, b.Shape),
-            a.MayBeMissing || b.MayBeMissing,
-            a.MayBeNull || b.MayBeNull);
-    }
+    /// <summary>
+    /// The steps of a path that may find nothing or null, each named by the path as far as it, for <c>explain</c>: <c>`$.address`
+    /// may be left out, as the schema doesn't require it</c>. Null when none is known.
+    /// </summary>
+    private static string? Detail(JsonPathWalk.Found found) => found.Notes.Count == 0 ? null : string.Join("; ", found.Notes);
 
     /// <summary>
     /// The values a document's rows are, for OPENJSON: an array's items (each may be JSON null when its items may be), an
@@ -272,12 +180,12 @@ internal sealed partial class Typer
     /// A_loss_of_precision_is_null_when_numeric_roundabort_is_on_and_ansi_warnings_and_arithabort_are_off, "a JSON number read
     /// by OPENJSON into a decimal"): a document's numbers may have any number of places. Into money it rounds unseen.
     /// </summary>
-    private Value OpenJsonColumn(SqlType? declared, SourceLocation where)
+    private Value OpenJsonColumn(SqlType? declared, SourceLocation where, IrNullReason? why = null)
     {
         var shape = Unpadded(SqlTypes.ToConvertedShape(model, declared, where));
         EquatableArray<IrNullReason> because =
         [
-            new IrNullReason(IrNullRule.JsonNullOrAbsent, where.ToString()),
+            why ?? new IrNullReason(IrNullRule.JsonNullOrAbsent, where.ToString()),
             .. shape is ScalarShape { BuiltIn.IsDecimal: true } ? PrecisionLoss(summaries.Session, where) : [],
         ];
         return Value.Computed(shape, because);
@@ -286,11 +194,11 @@ internal sealed partial class Typer
     // ---- OPENJSON -----------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// The columns OPENJSON gives over a document built here, or null when its document is not (the general rule then holds).
-    /// Without WITH, <c>key</c> and <c>type</c> take value sets where the shape fixes them, and <c>value</c> is never null when no
-    /// row's value can be JSON null. With WITH, a column is never null where its path finds a value in every row that is never
-    /// JSON null and converts without failing (<see cref="Converted"/>); under a <c>strict</c> path a missing value is an error,
-    /// not a NULL (observed). An AS JSON column holds the object or array there, live, and NULL for anything else.
+    /// The columns OPENJSON gives over a document of known shape, built here or declared, or null when it is not known (the general
+    /// rule then holds). A row path finds the object or array to open; anything else there gives no rows under a lax path and an
+    /// error under a strict one (observed: Openjson_opens_only_an_object_or_array_at_its_path), so only its objects and arrays
+    /// are rows. Without WITH, <c>key</c> and <c>type</c> take value sets where the shape fixes them, and <c>value</c> is never null
+    /// when no row's value can be JSON null. With WITH, see <see cref="WithColumn"/>.
     /// </summary>
     private List<Value>? TracedOpenJson(OpenJsonTableReference reference, ReadScope scope, SourceLocation at)
     {
@@ -298,78 +206,125 @@ internal sealed partial class Typer
             return null;
         if (reference.RowPattern is { } pattern)
         {
-            if (pattern is not StringLiteral { Value: var text } || ParsePath(text) is not { } root || Follow(document, root.Steps) is not { Shape: { } inner } found || found.MayBeMissing || found.MayBeNull)
+            if (Walk(document, pattern, reference) is not (_, { Shape: { } inner }) || ObjectsAndArrays(inner) is not { } opened)
                 return null;
-            document = inner;
+            document = opened;
         }
 
         if (Rows(document) is not { } rows)
             return null;
-        static IrNullReason JsonValue(SourceLocation where) => new(IrNullRule.JsonNullOrAbsent, where.ToString());
 
         if (reference.SchemaDeclarationItems.Count == 0)
         {
             var key = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at);
             var type = (ScalarShape)SqlTypes.ToConvertedShape(ScalarType.Of(BuiltInType.TinyInt), at);
-            var from = new IrFactSource(IrFactSourceKind.Engine, "OPENJSON over JSON built here");
+            var from = new IrFactSource(IrFactSourceKind.Engine, "OPENJSON over JSON whose shape is known");
             var keys = Keys(document);
             var types = Types(document);
             var mayBeNull = types is null || types.Contains(0);
             return
             [
                 Value.Computed(keys is null ? key : key with { Type = key.Type with { Facets = WithValues(key.Type.Facets, new IrValueSet([.. keys.Select(k => new IrValue(k, IsString: true))], IrValueMatch.Exact, [from])) } }, []),
-                Value.Computed(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at), mayBeNull ? [JsonValue(at)] : []),
+                Value.Computed(SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at), mayBeNull ? [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())] : []),
                 Value.Computed(types is null ? type : type with { Type = type.Type with { Facets = WithValues(type.Type.Facets, new IrValueSet([.. types.Order().Select(n => new IrValue(n.ToString(CultureInfo.InvariantCulture), IsString: false))], IrValueMatch.Exact, [from])) } }, []),
             ];
         }
 
-        var values = new List<Value>();
-        foreach (var item in reference.SchemaDeclarationItems)
+        return [.. reference.SchemaDeclarationItems.Select(item => WithColumn(item, rows))];
+    }
+
+    /// <summary>
+    /// An OPENJSON WITH column over rows of known shape: what its path finds in every row, joined
+    /// (<see cref="JsonPathWalk.Found"/>), then converted to its declared type. JSON <c>null</c> there is NULL under either mode;
+    /// nothing there, or a value of the wrong kind, is NULL under a lax path and an error under a strict one (observed:
+    /// Openjson_with_under_a_strict_path_errs_where_nothing_is_there_but_gives_null_for_null). A scalar column is typed by its
+    /// declared SQL type, never by the JSON's: see <see cref="ScalarColumn"/>.
+    /// </summary>
+    private Value WithColumn(SchemaDeclarationItemOpenjson item, List<(Shape Shape, bool MayBeNull)> rows)
+    {
+        var column = item.ColumnDefinition;
+        var where = At(column);
+        var text = item.Mapping is StringLiteral mapping ? mapping.Value : $"$.\"{column.ColumnIdentifier.Value.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
+        var path = JsonPath.Parse(text, out _);
+        JsonPathWalk.Found? found = null;
+        foreach (var (row, rowNull) in rows)
         {
-            var column = item.ColumnDefinition;
-            var where = At(column);
-            var path = ParsePath(item.Mapping is StringLiteral mapping ? mapping.Value : $"$.\"{column.ColumnIdentifier.Value}\"");
-            Found? found = null;
-            foreach (var (row, rowNull) in rows)
+            var one = path is null ? null : rowNull ? new JsonPathWalk.Found(null, true, false, ["a row may be JSON null, which has nothing below it"]) : JsonPathWalk.Follow(row, path);
+            if (one is null)
             {
-                var one = path is null ? null : rowNull ? new Found(null, true, false) : Follow(row, path.Steps);
-                if (one is null)
-                {
-                    found = null;
-                    break;
-                }
-
-                found = found is null ? one : new Found(
-                    found.Shape is null ? one.Shape : one.Shape is null ? found.Shape : JsonShapes.Join(found.Shape, one.Shape),
-                    found.MayBeMissing || one.MayBeMissing,
-                    found.MayBeNull || one.MayBeNull);
+                found = null;
+                break;
             }
 
-            // Every row has it, not null, or a strict path fails where it is missing.
-            var present = found is { Shape: not null, MayBeNull: false } && (!found.MayBeMissing || path is { Strict: true });
-            if (item.AsJson)
-            {
-                values.Add(present && found is { Shape: ObjectShape or TupleShape or ArrayShape or RecordShape }
-                    ? new Value(found.Shape, [], IsLiveJson: true)
-                    : found?.Shape is { } some && Openable(some)
-                        ? new Value(some, [JsonValue(where)], IsLiveJson: true)
-                        : new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{column.ColumnIdentifier.Value} is JSON read from a document whose shape there is not known.", where), [JsonValue(where)], IsLiveJson: true));
-                continue;
-            }
-
-            var declared = SyntaxReader.Type(column.DataType);
-            if (declared is not null && found?.Shape is ScalarShape scalar && Converted(scalar, declared, where) is { } converted)
-                values.Add(present ? converted : converted.WithNullableBecause([JsonValue(where)]));
-            else
-                values.Add(OpenJsonColumn(declared, where));
+            found = found is null ? one : JsonPathWalk.Either(found, one);
         }
 
-        return values;
+        IrNullReason Because() => path is not null && found is not null ? PathNull(where, found) : new IrNullReason(IrNullRule.JsonNullOrAbsent, where.ToString());
+        if (item.AsJson)
+        {
+            // Only an object or an array is given; under a strict path anything else is an error.
+            if (path is null || found?.Shape is not { } some || ObjectsAndArrays(some) is not { } opened)
+                return new Value(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{column.ColumnIdentifier.Value} is JSON read from a document whose shape there is not known.", where), [Because()], IsLiveJson: true);
+            var given = !found.MayBeNull && (path.Strict || (!found.MayBeMissing && found.Variants.All(IsObjectOrArray)));
+            return new Value(opened, given ? [] : [Because()], IsLiveJson: true);
+        }
 
-        // An object or array, or a union of them: what AS JSON gives when it gives anything.
-        static bool Openable(Shape shape) => shape is ObjectShape or TupleShape or ArrayShape or RecordShape
-            || (shape is UnionShape u && u.Variants.All(Openable));
+        return ScalarColumn(SyntaxReader.Type(column.DataType), found, path, where, Because);
     }
+
+    /// <summary>
+    /// A scalar OPENJSON WITH column of <paramref name="declared"/> over what its path finds. Never NULL where every row has a
+    /// scalar there that is never JSON null (or the path is strict, so that nothing there, or an object or array, is an error),
+    /// and its conversion to the
+    /// declared type either keeps the value (<see cref="Converted"/>, which also keeps its facts) or fails with an error rather
+    /// than NULL (<see cref="ConversionNull"/>). A conversion that can fail is a run-time error, not a type.
+    /// </summary>
+    private Value ScalarColumn(SqlType? declared, JsonPathWalk.Found? found, JsonPath? path, SourceLocation where, Func<IrNullReason> because)
+    {
+        if (declared is null || found is null || path is null)
+            return OpenJsonColumn(declared, where);
+        var present = found is { Shape: not null, MayBeNull: false } && (path.Strict || (!found.MayBeMissing && found.Variants.All(v => v is ScalarShape)));
+        if (found.Shape is ScalarShape scalar && Converted(scalar, declared, where) is { } converted)
+            return present ? converted : converted.WithNullableBecause([because()]);
+        if (present && SqlTypes.Modelled(SchemaRules.ResolveType(model, declared)?.Scalar) is { } target && ConversionNull(target, where) is { } reasons)
+            return Value.Computed(Unpadded(SqlTypes.ToConvertedShape(model, declared, where)), reasons);
+        return OpenJsonColumn(declared, where, because());
+    }
+
+    /// <summary>
+    /// Why a JSON scalar converted to <paramref name="target"/> by OPENJSON's WITH may be NULL, or null when that is not known. A
+    /// value that doesn't convert is an error, with two exceptions, which are NULL only when the caller's session has
+    /// ANSI_WARNINGS and ARITHABORT off: a number too large for a number type, and a string out of range for datetime or
+    /// smalldatetime; a decimal may also be rounded to NULL (observed:
+    /// Openjson_with_errs_on_a_value_that_does_not_convert_but_gives_null_for_overflow_under_the_callers_options). A string type
+    /// takes anything, cut short.
+    /// </summary>
+    private EquatableArray<IrNullReason>? ConversionNull(ScalarType target, SourceLocation where) => target switch
+    {
+        { IsString: true } => [],
+        { IsDecimal: true } => NullReasons.Join(Overflow(summaries.Session, where), PrecisionLoss(summaries.Session, where)),
+        { IsInteger: true } => Overflow(summaries.Session, where),
+        _ when target.Type.IsAnyOf(BuiltInType.Money, BuiltInType.SmallMoney, BuiltInType.Float, BuiltInType.Real, BuiltInType.DateTime, BuiltInType.SmallDateTime) => Overflow(summaries.Session, where),
+        _ when target.Type.IsAnyOf(BuiltInType.Bit, BuiltInType.Date, BuiltInType.DateTime2, BuiltInType.DateTimeOffset, BuiltInType.Time, BuiltInType.UniqueIdentifier) => [],
+        _ => null,
+    };
+
+    /// <summary>Whether a value of <paramref name="shape"/> is always an object or an array: never a scalar.</summary>
+    private static bool IsObjectOrArray(Shape shape) =>
+        shape is ObjectShape or RecordShape or TupleShape or ArrayShape or AnyJsonShape { ObjectOrArray: true };
+
+    /// <summary>
+    /// The objects and arrays among what <paramref name="shape"/> may be, which are what <c>json_query</c>, a row path and an
+    /// AS JSON column give: any JSON narrowed to them; null when it is never one.
+    /// </summary>
+    private static Shape? ObjectsAndArrays(Shape shape) => shape switch
+    {
+        ObjectShape or RecordShape or TupleShape or ArrayShape => shape,
+        AnyJsonShape => new AnyJsonShape(ObjectOrArray: true),
+        UnionShape union when union.Variants.Select(ObjectsAndArrays).OfType<Shape>().ToList() is { Count: > 0 } kept =>
+            kept.Count == 1 ? kept[0] : kept.Aggregate(JsonShapes.Join),
+        _ => null,
+    };
 
     /// <summary>The keys OPENJSON gives over a document: an object's names, an array's positions while bounded; null otherwise.</summary>
     private static IReadOnlyList<string>? Keys(Shape document) => document switch
@@ -452,46 +407,97 @@ internal sealed partial class Typer
     // ---- JSON_VALUE ---------------------------------------------------------------------------------------------------
 
     /// <summary>
-    /// <c>JSON_VALUE(doc, path)</c> over a document built here: nvarchar(4000), never null where the path finds a value in the
-    /// document that is never JSON null, is a scalar, and is at most 4,000 characters (or a strict path, which makes anything
-    /// else an error); a string keeps its length bound and value set, and true or false is <c>'true'</c> or <c>'false'</c>
-    /// (observed: Json_value_over_json_built_here_gives_its_scalars_as_text). Null when the document or path is not read.
+    /// <c>JSON_VALUE(doc, path)</c> over a document of known shape: nvarchar(4000) (observed for every string type of document and
+    /// for json), the text of the scalar the path finds. JSON <c>null</c> there is NULL under either mode; nothing there, an object
+    /// or an array, or text longer than 4,000 UTF-16 code units (a string's, or a number's as it is written) is NULL under a lax
+    /// path and an error under a strict one (observed: Json_value_gives_null_for_what_it_cannot_return_under_lax_and_errs_under_strict,
+    /// Json_value_counts_its_4000_characters_in_utf_16_code_units_after_unescaping). A string keeps its length bound and value set;
+    /// true or false is <c>'true'</c> or <c>'false'</c>; a number is its text as written (<c>1.0</c>, <c>1e3</c> and <c>-0</c>
+    /// stay as they are), so it keeps no fact (observed: Json_value_of_a_number_is_its_text_as_written). Null when the document or
+    /// path is not read.
     /// </summary>
     private Value? TracedJsonValue(FunctionCall call, ReadScope scope)
     {
-        if (call.Parameters.Count != 2 || LiteralOf(call.Parameters[1]) is not ({ } literal and StringLiteral, false) || ParsePath(literal.Value) is not { } path)
-            return null;
-        if (DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull) || Follow(document, path.Steps) is not { } found)
-            return null;
-        var at = At(call);
-        var type = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at);
-
-        // A NULL document gives NULL.
-        var nullable = NullReasons.Join(documentNull, [new IrNullReason(IrNullRule.JsonNullOrAbsent, at.ToString())]);
-        if (found.Shape is not ScalarShape { Type: var scalar } foundScalar)
-            return Value.Computed(type, nullable);
-
-        var facets = type.Type.Facets;
-        var fits = true;
-        switch (scalar.Kind)
+        if (call.Parameters.Count != 2 || DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull)
+            || Walk(document, call.Parameters[1], call) is not ({ } path, { } found))
         {
-            case IrScalarKind.String when scalar.Format is null:
-                var longest = foundScalar.BuiltIn is { IsMax: false } t ? t.Length
-                    : scalar.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
-                    : (int?)null;
-                fits = longest is { } n && n <= 4000;
-                if (fits)
-                    facets = (facets ?? new IrFacets()) with { MinLength = scalar.Facets?.MinLength, Values = scalar.Facets?.Values };
-                break;
-            case IrScalarKind.Boolean:
-                facets = (facets ?? new IrFacets()) with
-                {
-                    Values = new IrValueSet([new IrValue("false", IsString: true), new IrValue("true", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "JSON_VALUE of true or false")]),
-                };
-                break;
+            return null;
         }
 
-        var present = !found.MayBeNull && (!found.MayBeMissing || path.Strict) && (fits || path.Strict);
-        return Value.Computed(type.WithFacets(facets), present ? documentNull : nullable);
+        var at = At(call);
+        var type = (ScalarShape)SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, 4000), at);
+        var texts = found.Variants.Select(TextOf).ToList();
+
+        // NULL for a NULL document, for JSON null, and under lax for anything it cannot give.
+        var givesAll = texts.All(t => t is { Fits: true });
+        var nullable = found.MayBeNull || (!path.Strict && (found.MayBeMissing || !givesAll));
+        var because = nullable ? NullReasons.Join(documentNull, [PathNull(at, Noted(found, givesAll))]) : documentNull;
+        var facets = texts is [{ Facets: { } only }] ? (type.Type.Facets ?? new IrFacets()) with { MinLength = only.MinLength, Values = only.Values } : type.Type.Facets;
+        return Value.Computed(type.WithFacets(facets), because);
+
+        // A note for a value it cannot give, beside the steps' own.
+        static JsonPathWalk.Found Noted(JsonPathWalk.Found found, bool givesAll) =>
+            givesAll ? found : found with { Notes = [.. found.Notes, "JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path"] };
+    }
+
+    /// <summary>
+    /// What <c>JSON_VALUE</c> gives of a JSON value of <paramref name="shape"/>: whether it is a scalar whose text always fits in
+    /// 4,000 UTF-16 code units, and the facts its text keeps; null when it is not a scalar, which it never gives.
+    /// </summary>
+    private static (bool Fits, IrFacets? Facets)? TextOf(Shape shape)
+    {
+        switch (shape)
+        {
+            case ScalarShape { Type: { Kind: IrScalarKind.String, Format: null } scalar } text:
+                var longest = text.BuiltIn is { IsMax: false } t ? t.Length
+                    : scalar.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
+                    : scalar.Facets?.Length is { IsFixed: false, Unit: IrLengthUnit.CodePoints } codePoints ? 2 * codePoints.Value
+                    : (int?)null;
+                var fits = longest is { } n && n <= 4000;
+                return (fits, fits ? new IrFacets(MinLength: scalar.Facets?.MinLength, Values: scalar.Facets?.Values) : null);
+            case ScalarShape { Type.Kind: IrScalarKind.Boolean }:
+                return (true, new IrFacets(Values: new IrValueSet([new IrValue("false", IsString: true), new IrValue("true", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "JSON_VALUE of true or false")])));
+            case ScalarShape { Type.Kind: IrScalarKind.Number } number:
+                // FOR JSON writes a SQL number in a few characters, and a JSON literal's numbers are known; a number declared for a
+                // column may be written in any number of digits (1.000…), and its text is what JSON_VALUE gives.
+                return (number.BuiltIn is not null || (number.Type.Facets?.Values is { } values && values.From.All(f => f.Kind != IrFactSourceKind.Declared)), null);
+            case ScalarShape or JsonTextShape:
+                // A date, time or GUID as FOR JSON writes it is short; a string holding JSON may be of any length.
+                return (shape is ScalarShape { BuiltIn: not null }, null);
+            default:
+                return null;
+        }
+    }
+
+    // ---- json_query with a path ---------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// <c>json_query(doc, path)</c> over a document of known shape: the object or array the path finds, live, as it is there
+    /// (observed: Json_query_with_a_path_gives_the_object_or_array_there_and_null_under_lax_for_anything_else). JSON <c>null</c>
+    /// there is NULL under either mode; nothing there, or a scalar, is NULL under a lax path and an error under a strict one. A
+    /// path that finds only scalars, or nothing, never gives a value, which is an unknown with that reason; so is a path that is
+    /// not a literal, or not read, and a document whose shape is not known.
+    /// </summary>
+    private Value JsonQueryAt(FunctionCall call, ReadScope scope)
+    {
+        var at = At(call);
+        if (LiteralOf(call.Parameters[1]) is not ({ } literal and StringLiteral, false))
+            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON at a path that is not a literal, so what it finds is not known.", at));
+        if (JsonPath.Parse(literal.Value, out var why) is null)
+            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON at a path that is not read: {why}.", at));
+        if (DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull))
+            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here or declared, so its shape is unknown.", at));
+        if (Walk(document, call.Parameters[1], call) is not ({ } path, { } found))
+            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON whose shape at that path is not known.", at));
+        if (found.Shape is not { } shape || ObjectsAndArrays(shape) is not { } given)
+        {
+            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, path.Strict
+                ? $"{Text(call)} never finds an object or array, so under its strict path every call is an error."
+                : $"{Text(call)} never finds an object or array, so it is always NULL.", at));
+        }
+
+        var always = !found.MayBeNull && (path.Strict || (!found.MayBeMissing && found.Variants.All(IsObjectOrArray)));
+        var noted = found.Variants.All(IsObjectOrArray) ? found : found with { Notes = [.. found.Notes, "json_query gives NULL for a scalar there under a lax path"] };
+        return new Value(given, always ? documentNull : NullReasons.Join(documentNull, [PathNull(at, noted)]), IsLiveJson: true);
     }
 }

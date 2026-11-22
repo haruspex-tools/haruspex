@@ -109,6 +109,9 @@ db/p1.sql:1:34: note HAR2025: N'[' + string_agg(convert(nvarchar(max), b.id), N'
 HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 
+HAR2102
+db/p1.sql:1:34: warning HAR2102: json_value(N'{"shelf": 3}', '$.room') reads `$.room`, which the JSON there never has (`$.room` is never there: the object has no key `room`), so it is always NULL under a lax path and an error under a strict one. Check the path against the JSON's shape or schema.
+
 HAR3001
 haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: …
 
@@ -455,7 +458,7 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.

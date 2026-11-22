@@ -47,6 +47,18 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
 
     private readonly Dictionary<SourceLocation, Diagnostic> jsonText = [];
 
+    private readonly HashSet<Diagnostic> warned = [];
+
+    /// <summary>
+    /// Adds a warning of what inference found wrong in a body, once, however often the body is walked (a JSON path that never
+    /// finds anything, <see cref="InferenceCodes.PathFindsNothing"/>).
+    /// </summary>
+    public void Warn(Diagnostic warning)
+    {
+        if (warned.Add(warning))
+            warnings.Add(warning);
+    }
+
     /// <summary>
     /// The places a body reads JSON assembled as text, one note each (<see cref="JsonTextNotes"/>): those the SQL shows by its
     /// construction are found without typing, but text read through a variable, <c>'[' + @ids + ']'</c>, only by it.

@@ -31,6 +31,8 @@
     { "name": "claimed_options, no parcels", "procedure": "parcels.claimed_options", "setup": "no parcels" },
     { "name": "routes", "procedure": "parcels.routes" },
     { "name": "staged_routes", "procedure": "parcels.staged_routes" },
-    { "name": "staged_routes, no parcels", "procedure": "parcels.staged_routes", "setup": "no parcels" }
+    { "name": "staged_routes, no parcels", "procedure": "parcels.staged_routes", "setup": "no parcels" },
+    { "name": "parcel_paths", "procedure": "parcels.parcel_paths" },
+    { "name": "parcel_paths, no parcels", "procedure": "parcels.parcel_paths", "setup": "no parcels" }
   ]
 }

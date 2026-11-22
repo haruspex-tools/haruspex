@@ -924,7 +924,7 @@
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "json-null-or-absent",
+              "rule": "arithmetic-overflow",
               "at": "procedures/rounded_readings.sql:42:45"
             },
             {

@@ -262,6 +262,7 @@ public class DiagnosticMessagesTests
         (2024, () => Query("SELECT @label AS label;")),
         (2025, () => Cli(["CREATE PROCEDURE lib.p AS SELECT N'[' + string_agg(convert(nvarchar(max), b.id), N',') + N']' AS ids FROM lib.book AS b;"])),
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
+        (2102, () => Cli(["CREATE PROCEDURE lib.p AS SELECT json_value(N'{\"shelf\": 3}', '$.room') AS room;"])),
 
         (3001, () => Cli([GetBook], $"{{ {Plain}, \"procedures\": {{ \"lib.get_book\": {{ \"results\": {{ \"rowset\": \"schemas\" }}, \"why\": \"w\" }} }} }}", arrange: f => Directory.CreateDirectory(Path.Combine(f.Path, "schemas")))),
         (3002, () => Cli([GetBook], "{ \"source\": ")),

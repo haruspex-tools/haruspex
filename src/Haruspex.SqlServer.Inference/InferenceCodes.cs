@@ -14,6 +14,12 @@ public static class InferenceCodes
     /// <summary>A write to a table the project doesn't define, so its triggers, which could return results, can't be seen.</summary>
     public static DiagnosticCode UndefinedWriteTarget { get; } = new(2101, DiagnosticSeverity.Warning, "A write to an object the project doesn't define");
 
+    /// <summary>
+    /// A JSON path that never finds a value in JSON whose shape is known, since the shape can never have what it asks for: a key
+    /// a closed object doesn't have, a key of a string or an array, an index past a fixed array's end.
+    /// </summary>
+    public static DiagnosticCode PathFindsNothing { get; } = new(2102, DiagnosticSeverity.Warning, "A JSON path that never finds a value");
+
     /// <summary>An unknown for <see cref="IrUnknownReason.UnsupportedStatement"/>.</summary>
     public static DiagnosticCode UnsupportedStatement { get; } = Unknown(2001, "A statement that isn't modelled yet");
 

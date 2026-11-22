@@ -25,9 +25,10 @@ public partial class JsonTracingTests
         // A shorter string is cut short, never null.
         Assert.False(Field(doc, "short").Nullable);
 
-        // A narrower number may overflow; a key FOR JSON leaves out when null is NULL, and under strict is an error, but then
-        // the call fails; a key never there is NULL.
-        Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(Field(doc, "small")));
+        // A narrower number may overflow, which is an error but NULL under the callers' ANSI_WARNINGS and ARITHABORT off (observed:
+        // Openjson_with_errs_on_a_value_that_does_not_convert_but_gives_null_for_overflow_under_the_callers_options); a key FOR
+        // JSON leaves out when null is NULL, and under strict is an error, but then the call fails; a key never there is NULL.
+        Assert.Equal([IrNullRule.ArithmeticOverflow], Rules(Field(doc, "small")));
         Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(Field(doc, "colour")));
         Assert.False(Field(doc, "strict_colour").Nullable);
         Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(Field(doc, "missing")));

@@ -21,6 +21,7 @@ through `json_query`, nested by `FOR JSON`, and through a temporary table, a vie
 | `parcels.options_of_one` | through a variable, and a scalar function returning the column |
 | `parcels.claimed_options` | through `UPDATE … OUTPUT … INTO` a table variable |
 | `parcels.routes`, `parcels.staged_routes` | through `INSERT … EXEC` |
+| `parcels.parcel_paths` | paths into each: `JSON_VALUE` under lax and strict, through the route's union and past its fewest items, `json_query` at a path, `OPENJSON`'s keys and types, `OPENJSON … WITH` and a row path ([decision 0097](../../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)) |
 
 The seed has options with every key, with only the required ones, with a `null` note, and none at all; routes of one stop and of
 both kinds, one stop with a key its schema doesn't list; a note of exactly 200 code points outside the Basic Multilingual Plane,

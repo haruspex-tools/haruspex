@@ -399,6 +399,8 @@ public static class IrJsonWriter
             json.WriteStartObject();
             json.WriteString("rule", IrWireNames.Of(reason.Rule));
             json.WriteString("at", reason.At);
+            if (reason.Detail is { } detail)
+                json.WriteString("detail", detail);
             json.WriteEndObject();
         }
 

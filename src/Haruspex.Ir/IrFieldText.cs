@@ -66,7 +66,9 @@ public static class IrFieldText
         // An unknown's own null reason says what its line above already has.
         foreach (var rule in reasons.Select(r => r.Rule).Where(r => r != IrNullRule.Unknown || field.Type is not IrUnknownType).Distinct())
         {
-            lines.Add($"May be null: {IrReasons.Text(rule)} ({IrWireNames.Of(rule)}).");
+            // What made it so, where a reason says (a JSON path's steps, 0.29), once each.
+            var details = reasons.Where(r => r.Rule == rule && r.Detail is not null).Select(r => r.Detail).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+            lines.Add($"May be null: {IrReasons.Text(rule)} ({IrWireNames.Of(rule)}){(details.Count > 0 ? ": " + string.Join("; ", details) : "")}.");
             if (IrReasons.WayOut(rule) is { } way)
                 ways.Add(way);
         }

@@ -154,7 +154,7 @@ The version is read first, before anything else in the file. A file of any versi
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -241,6 +241,13 @@ none of these keeps its label, so every document written before is still written
 six. The label is checked as 0.27's is, by finding what only a declaration gives wherever it can be (`IrDocumentDeclared`)
 ([decision 0093](../decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),
 [decision 0094](../decisions/0094-any-json-is-a-type-of-its-own.md)).
+
+Version 0.29 adds a reason's `detail`: what, at its place, makes a value null, in words, which `explain` prints. A value read from
+JSON at a path carries the steps that may find nothing or `null` there ("`$.address` may be left out, as the schema doesn't require
+it"), so the person reading the generated code can see which step to change. It is prose, not a claim, and the reader reads no
+meaning from it. A document in which no reason has one keeps its label, and the 0.29 reader reads all seven; the label is checked
+by finding a detail wherever a reason can be (`IrDocumentExplained`)
+([decision 0097](../decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

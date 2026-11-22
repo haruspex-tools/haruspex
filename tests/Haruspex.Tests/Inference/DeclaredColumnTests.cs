@@ -13,7 +13,7 @@ namespace Haruspex.Tests.Inference;
 /// docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md. What SQL Server does with stored JSON is
 /// observed in <c>DeclaredColumnObservationTests</c>; the fixture is <c>tests/fixtures/parcels</c>.
 /// </summary>
-public class DeclaredColumnTests
+public partial class DeclaredColumnTests
 {
     private const string Tables = """
         CREATE SCHEMA shop;

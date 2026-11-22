@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.29",
   "source": {
     "dialect": "tsql",
     "files": {
@@ -245,7 +245,8 @@
           "nullableBecause": [
             {
               "rule": "json-null-or-absent",
-              "at": "procedures/part_rows.sql:12:29"
+              "at": "procedures/part_rows.sql:12:29",
+              "detail": "`$.colour` is left out when it is null"
             }
           ]
         }
@@ -304,7 +305,7 @@
               ],
               "from": [
                 {
-                  "engine": "OPENJSON over JSON built here"
+                  "engine": "OPENJSON over JSON whose shape is known"
                 }
               ]
             }
@@ -347,7 +348,7 @@
               ],
               "from": [
                 {
-                  "engine": "OPENJSON over JSON built here"
+                  "engine": "OPENJSON over JSON whose shape is known"
                 }
               ]
             }

@@ -42,6 +42,7 @@ HAR2023 N A SQLCMD variable a deployment replaces [Haruspex.SqlServer.Inference.
 HAR2024 N A query file's parameter its uses don't decide [Haruspex.SqlServer.Inference.InferenceCodes.UndecidedParameter]
 HAR2025 N JSON built as text [Haruspex.SqlServer.Inference.InferenceCodes.JsonBuiltAsText]
 HAR2101 W A write to an object the project doesn't define [Haruspex.SqlServer.Inference.InferenceCodes.UndefinedWriteTarget]
+HAR2102 W A JSON path that never finds a value [Haruspex.SqlServer.Inference.InferenceCodes.PathFindsNothing]
 HAR3001 E A config file can't be read [Haruspex.Config.ConfigCodes.Unreadable]
 HAR3002 E The config file isn't JSON [Haruspex.Config.ConfigCodes.NotJson]
 HAR3003 E A key is written twice in one object [Haruspex.Config.ConfigCodes.KeyTwice]

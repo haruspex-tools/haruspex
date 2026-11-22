@@ -115,6 +115,7 @@ public class IrJsonSchemaTests
         (typeof(IrFieldSide), nameof(IrFieldSide.From), "side", "from"),
         (typeof(IrNullReason), nameof(IrNullReason.Rule), "reason", "rule"),
         (typeof(IrNullReason), nameof(IrNullReason.At), "reason", "at"),
+        (typeof(IrNullReason), nameof(IrNullReason.Detail), "reason", "detail"),
         (typeof(IrScalar), nameof(IrScalar.Kind), "scalar", "kind"),
         (typeof(IrScalar), nameof(IrScalar.Format), "scalar", "format"),
         (typeof(IrScalar), nameof(IrScalar.Sql), "scalar", "sql"),
@@ -243,7 +244,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace Haruspex.DifferentialTests;
 /// rests on when it is read (docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md). Each test makes
 /// its table in a write session, rolled back, alone in the test database while it lasts. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class DeclaredColumnObservationTests(SqlServerFixture server)
+public partial class DeclaredColumnObservationTests(SqlServerFixture server)
 {
     /// <summary>
     /// Stores <paramref name="text"/> in a column of <paramref name="type"/>, then returns the first column of

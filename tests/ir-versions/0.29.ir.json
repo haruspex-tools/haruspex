@@ -1,0 +1,810 @@
+{
+  "irVersion": "0.29",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/parcel_paths.sql": "d9063e5594bb64fb282b6a592e80a1af5f1b7bcdb21166637c261da45099a2ca",
+      "tables/parcel.sql": "496c541fc3779bd5f6adc23e71f5a06c7861d5ea8058f493313bbf0db577b999"
+    }
+  },
+  "objects": [
+    {
+      "id": "parcels.parcel_paths",
+      "name": "ParcelPaths",
+      "kind": "procedure",
+      "at": "procedures/parcel_paths.sql:6:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ParcelPathsResult1Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/parcel_paths.sql:10:1"
+            }
+          ],
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ParcelPathsResult2Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ParcelPathsResult3Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ParcelPathsResult4Row"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ParcelPathsResult1DeliveryWindow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.parcel_paths",
+        "path": "results[0][].delivery_window"
+      },
+      "fields": [
+        {
+          "name": "from",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "to",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ParcelPathsResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.parcel_paths",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "parcels.parcel.parcel_id",
+              "sql": "int",
+              "at": "tables/parcel.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "speed",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "standard",
+                "express"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.parcel.options"
+                }
+              ]
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "signature",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "false",
+                "true"
+              ],
+              "from": [
+                {
+                  "engine": "JSON_VALUE of true or false"
+                }
+              ]
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "from": {
+                "declared": "parcels.parcel.options"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:13:8",
+              "detail": "`$.note` may be left out, as the schema doesn't require it; `$.note` may be null"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "window_from",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:14:8",
+              "detail": "`$.window` may be left out, as the schema doesn't require it; JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "attempts",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:15:8",
+              "detail": "`$.attempts` may be left out, as the schema doesn't require it; JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "first_kind",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "depot",
+                "address"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.parcel.route"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "parcels.parcel.route",
+              "sql": "varchar(4000)",
+              "at": "tables/parcel.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "second_postcode",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:17:8",
+              "detail": "`$[1]` may be past the end of the array; `$[1].postcode` is not a key the type lists, and the object may hold others of any value; JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.route",
+              "sql": "varchar(4000)",
+              "at": "tables/parcel.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "scanner",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.extra"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:18:8",
+              "detail": "`$` may hold any JSON, so `$.scanner` may be anything or nothing; JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.extra",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:10:5"
+            }
+          ]
+        },
+        {
+          "name": "delivery_window",
+          "type": {
+            "ref": "ParcelPathsResult1DeliveryWindow"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:19:8",
+              "detail": "`$.window` may be left out, as the schema doesn't require it"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.options",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "tags",
+          "type": {
+            "kind": "any-json",
+            "objectOrArray": true
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "parcels.parcel.extra"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:20:8",
+              "detail": "`$` may hold any JSON, so `$.tags` may be anything or nothing; json_query gives NULL for a scalar there under a lax path"
+            }
+          ],
+          "from": [
+            {
+              "column": "parcels.parcel.extra",
+              "sql": "nvarchar(max)",
+              "at": "tables/parcel.sql:10:5"
+            }
+          ]
+        }
+      ]
+    },
+    "ParcelPathsResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.parcel_paths",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "parcels.parcel.parcel_id",
+              "sql": "int",
+              "at": "tables/parcel.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "key",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "attempts",
+                "note",
+                "signature",
+                "speed",
+                "window"
+              ],
+              "from": [
+                {
+                  "engine": "OPENJSON over JSON whose shape is known"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "type",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [0,1,2,3,5
+              ],
+              "from": [
+                {
+                  "engine": "OPENJSON over JSON whose shape is known"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "ParcelPathsResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.parcel_paths",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "parcels.parcel.parcel_id",
+              "sql": "int",
+              "at": "tables/parcel.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(7)",
+            "maxLength": {
+              "value": 7,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(7)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "depot",
+                "address"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.parcel.route"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "depot",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:32:63",
+              "detail": "`$.depot` is not a key the type lists, and the object may hold others of any value"
+            }
+          ]
+        },
+        {
+          "name": "floor",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/parcel_paths.sql:32:93",
+              "detail": "`$.floor` is not a key the type lists, and the object may hold others of any value"
+            }
+          ]
+        }
+      ]
+    },
+    "ParcelPathsResult4Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.parcel_paths",
+        "path": "results[3][]"
+      },
+      "fields": [
+        {
+          "name": "parcel_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "parcels.parcel.parcel_id",
+              "sql": "int",
+              "at": "tables/parcel.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "window_to",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "columns": [
+    {
+      "column": "parcels.parcel.extra",
+      "schema": "schemas/extra.schema.json",
+      "files": {
+        "schemas/extra.schema.json": "472291066421206dc5fcd304132d9fdfb046a84a78d70445db2c42c82932b661"
+      }
+    },
+    {
+      "column": "parcels.parcel.options",
+      "schema": "schemas/options.schema.json",
+      "files": {
+        "schemas/options.schema.json": "53f54affcc1662009b8a064da5b0b4c1b72e33ef9db4292c353b69460e8c92d3"
+      }
+    },
+    {
+      "column": "parcels.parcel.route",
+      "schema": "schemas/stops.schema.json",
+      "pointer": "/$defs/route",
+      "files": {
+        "schemas/stops.schema.json": "c5bae5bc1f32a26e87711e8b18dcdfdd3bc05719672aecc6cd7d4f9e3acebd7f"
+      }
+    }
+  ],
+  "unknowns": [],
+  "overrides": [
+    {
+      "object": "parcels.parcel_paths",
+      "path": "results",
+      "setting": "column-json",
+      "via": "parcels.parcel.extra"
+    },
+    {
+      "object": "parcels.parcel_paths",
+      "path": "results",
+      "setting": "column-json",
+      "via": "parcels.parcel.options"
+    },
+    {
+      "object": "parcels.parcel_paths",
+      "path": "results",
+      "setting": "column-json",
+      "via": "parcels.parcel.route"
+    }
+  ],
+  "folds": {}
+}

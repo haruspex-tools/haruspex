@@ -371,7 +371,8 @@ JSON Schema file declares it once, for the column:
 
 The declaration is part of the column's type, so it goes wherever the column's value goes, through views, functions, variables
 and temporary tables: read plainly, the column is a string the generated code parses and checks against the schema, and through
-`json_query` it is that JSON, nested as JSON. It is a claim about every writer there ever was, checked at run time like any other
+`json_query` it is that JSON, nested as JSON; a path into it (`JSON_VALUE(c, '$.address.city')`, `json_query` with a path,
+`OPENJSON`) is typed from the schema a step at a time, nullable where a step may find nothing. It is a claim about every writer there ever was, checked at run time like any other
 ([the configuration](docs/configuration.md#json-stored-in-a-column-columns)).
 
 The more the database declares, the more the types say: a `CHECK` constraint becomes a value set or a range, and a key a

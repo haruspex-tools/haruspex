@@ -168,6 +168,7 @@ public partial class FunctionTableTests
             return (m.Groups["name"].Value, source[m.Index..(end < 0 ? source.Length : end)]);
         });
 
-    [GeneratedRegex(@"\[(?:Fact|Theory)[^\]]*\]\s*(?:\[[^\]]*\]\s*)*public (?:async Task|void) (?<name>\w+)\(")]
+    // Between the attributes, a comment, and inside one a string that may hold a bracket ([InlineData("$.k[3]")]).
+    [GeneratedRegex(@"\[(?:Fact|Theory)[^\]]*\]\s*(?:(?://[^\n]*\n|\[(?:""(?:[^""\\]|\\.)*""|[^\]""])*\])\s*)*public (?:async Task|void) (?<name>\w+)\(")]
     private static partial Regex TestMethod();
 }

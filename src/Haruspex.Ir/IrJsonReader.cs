@@ -154,8 +154,8 @@ public static class IrJsonReader
         if (baseline is null && version == IrDocument.CombinedVersion)
             throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or later.");
         var tableTypes = json.OptionalObject("tableTypes");
-        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion))
-            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, {IrDocument.BytesVersion} when it holds a binary value, or {IrDocument.CurrentVersion} when it declares a column's JSON.");
+        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.DeclaredVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion))
+            throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, {IrDocument.BytesVersion} when it holds a binary value, or {IrDocument.DeclaredVersion} or later when it declares a column's JSON.");
         if (tableTypes is null && version == IrDocument.TableTypesVersion)
             throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
 
@@ -174,10 +174,11 @@ public static class IrJsonReader
         json.End();
         if (baseline is null)
             OneDatabase(document, version);
-        if (version is not (IrDocument.CurrentVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
+        if (version is not (IrDocument.CurrentVersion or IrDocument.DeclaredVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
         HoldsBytesAsLabelled(document, version);
         DeclaresAsLabelled(document, version);
+        ExplainsAsLabelled(document, version);
         return document;
     }
 
@@ -220,17 +221,27 @@ public static class IrJsonReader
                 throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but a \"column-json\" claim names a column the document declares in $.columns.");
         }
 
-        if (version == IrDocument.CurrentVersion)
-        {
-            if (!document.Declares)
-                throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a column's JSON, and this one declares none. One that declares none is labelled {IrDocument.BytesVersion} or earlier, by what else it says.");
+        if (version == IrDocument.DeclaredVersion && !document.Declares)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a column's JSON, and this one declares none. One that declares none is labelled {IrDocument.BytesVersion} or earlier, by what else it says.");
+        if (version is IrDocument.DeclaredVersion or IrDocument.CurrentVersion)
             return;
-        }
-
         if (document.Columns.Count > 0)
-            throw new IrFormatException("$.columns", $"is given in a document of IR {version}: a document that declares a column's JSON is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.columns", $"is given in a document of IR {version}: a document that declares a column's JSON is IR {IrDocument.DeclaredVersion} or later.");
         if (IrDocumentDeclared.First(document) is var (path, what))
-            throw new IrFormatException(path, $"is {what}, given in a document of IR {version}: only a declaration gives it, in IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(path, $"is {what}, given in a document of IR {version}: only a declaration gives it, in IR {IrDocument.DeclaredVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses a reason's detail (0.29) in a document labelled before 0.29, by its path, and a document labelled 0.29 that explains
+    /// no reason, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void ExplainsAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentExplained.First(document);
+        if (version == IrDocument.CurrentVersion && first is null)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document in which a reason says what makes it so, and in this one none does. One in which none does is labelled {IrDocument.DeclaredVersion} or earlier, by what else it says.");
+        if (version != IrDocument.CurrentVersion && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a reason says what makes it so in IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>
@@ -358,8 +369,8 @@ public static class IrJsonReader
     private static void HoldsBytesAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentScalars.Of(document).FirstOrDefault(s => s.Scalar.Kind == IrScalarKind.Bytes);
-        if (first.Scalar is not null && version is not (IrDocument.BytesVersion or IrDocument.CurrentVersion))
-            throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.BytesVersion}, or {IrDocument.CurrentVersion} when it declares a column's JSON.");
+        if (first.Scalar is not null && version is not (IrDocument.BytesVersion or IrDocument.DeclaredVersion or IrDocument.CurrentVersion))
+            throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.BytesVersion}, or {IrDocument.DeclaredVersion} or later when it declares a column's JSON.");
         if (first.Scalar is null && version == IrDocument.BytesVersion)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a binary value, and this one holds none. One that holds none is labelled {IrDocument.TableTypesVersion} or earlier, by what else it says.");
     }
@@ -406,8 +417,8 @@ public static class IrJsonReader
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
             {
                 var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
-                if (field.Presence == IrPresence.Optional && version != IrDocument.CurrentVersion)
-                    throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", which only a document combining two databases (IR 0.24 or later), or one declaring a column's JSON (IR {IrDocument.CurrentVersion}), says.");
+                if (field.Presence == IrPresence.Optional && version is not (IrDocument.DeclaredVersion or IrDocument.CurrentVersion))
+                    throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", which only a document combining two databases (IR 0.24 or later), or one declaring a column's JSON (IR {IrDocument.DeclaredVersion} or later), says.");
                 if (field.Sides is not null)
                     throw new IrFormatException(at + ".sides", $"is given, {Why}.");
                 Rules(at + ".nullableBecause", field.NullableBecause);
@@ -649,7 +660,7 @@ public static class IrJsonReader
 
     private static IrNullReason Reason(IrJsonObject json)
     {
-        var reason = new IrNullReason(json.Name<IrNullRule>("rule", IrWireNames.TryParse, "a null rule"), json.String("at"));
+        var reason = new IrNullReason(json.Name<IrNullRule>("rule", IrWireNames.TryParse, "a null rule"), json.String("at")) { Detail = json.OptionalString("detail") };
         json.End();
         return reason;
     }

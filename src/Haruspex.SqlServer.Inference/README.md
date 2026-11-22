@@ -1816,8 +1816,9 @@ Every rule is observed in `JsonTracingObservationTests`.
   each type back into itself is unchanged, so its facts and `values` hold (integers, decimals, strings, `bit`, `date`,
   `datetime2`, `datetimeoffset`, `uniqueidentifier`, `money`; not `float`, whose text `FOR JSON` writes may round); a string
   into any string type is never NULL, cut short past its length, so only that type's facts hold unless every value fits; an
-  integer into a wider integer is the same number; a narrower number overflows (244, or NULL under the caller's options) and
-  a `bit`, written `true` or `false`, is not a number (245), so those stay nullable. A `varchar` or `char` back into itself goes
+  integer into a wider integer is the same number. Any other conversion is typed as "Paths into JSON" (below) says: a value that
+  doesn't convert is an error, so a narrower number is NULL only where it overflows under the callers' options
+  (`arithmetic-overflow`), and a `bit`, written `true` or `false`, into a number is an error (245). A `varchar` or `char` back into itself goes
   through the database's code page, which may change a character that is not ASCII (`α` from a Greek column comes back `a`:
   `Openjson_with_converts_a_varchar_to_the_databases_code_page`), so its value set holds only when every value is ASCII. An
   `nchar(n)` column is not padded, so it is at most n, not exactly n, unless it reads an `nchar(n)` value, which FOR JSON writes
@@ -1832,8 +1833,8 @@ Every rule is observed in `JsonTracingObservationTests`.
   from itself) grows at every pass. After two passes, a place whose JSON still changes is widened to unknown content naming the
   loop (`Walker.Widened`), which joins to itself, so the loop reaches its fixed point and only that JSON is unknown, not the whole
   procedure's results.
-- **Paths** read: `lax` or `strict`, `$`, keys (quoted or not) and indexes into a tuple. A wildcard, an index into an array of
-  unknown length, a record's key or a recursive node is not read, and the general rule holds.
+- **Paths** are read and walked along the shape as "Paths into JSON" (below) says; a wildcard, a range or a recursive node is not
+  walked, and the general rule holds.
 - **Conversions** of JSON built here keep it, or its text, as "Conversions" above says.
 - **Not traced**, each claiming no more than before: a stored column; `varchar(max)` and shorter types; a `#table` column
   `SELECT … INTO` makes from live JSON that is not syntactically a `FOR JSON` subquery or constructor (a view's column, say,
@@ -1868,11 +1869,8 @@ variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EX
 - **Keys.** A key the schema doesn't require may be left out whatever its value (`optional`), and is null only where its
   schema allows null; a required key is always there. An object whose schema doesn't close it (`additionalProperties: false`)
   is `open`: it may hold keys it doesn't list, which no emitter refuses.
-- **Paths into it** (`JSON_VALUE`, `OPENJSON` with or without `WITH`) read its content by the rules for JSON built here (above),
-  as they read any JSON text whose content is known: a key the schema doesn't require may be missing, so a lax path to it may be
-  NULL; a key an open object doesn't list may hold anything, so a path to it is read as over JSON not built here, and the keys
-  `OPENJSON` gives of one are no set (`A_lax_path_to_a_key_not_required_may_find_nothing_so_is_nullable`). What
-  else a path into declared JSON can claim, and its observations, is a later row's.
+- **Paths into it** (`JSON_VALUE`, `json_query` with a path, `OPENJSON` with or without `WITH`) walk the schema's type, as they
+  walk any JSON whose shape is known ("Paths into JSON", below).
 - **What the database proves alone isn't read.** The `json` type holds only an object or an array
   (`The_json_type_refuses_json_that_is_a_scalar`), and an `ISJSON` constraint proves JSON of some kind; neither is read yet.
 - **Claims.** Each object whose results may hold a declared column's JSON lists a `column-json` override naming the column in
@@ -1881,6 +1879,77 @@ variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EX
   it. The document lists every declaration (`columns`), used or not, with its files' hashes.
 - **A view's column can't be declared**: it holds what it reads, and gets the declaration from the table column; declaring one
   is HAR4113, naming the table column it reads (`IrInference.ViewColumnSources`).
+
+## Paths into JSON
+
+The code is `JsonPath.cs` (the grammar), `JsonPathWalk.cs` (the walk) and `Typer.JsonReads.cs` (each function's rules);
+observed in `DeclaredColumnObservationTests.Paths.cs`, tested in `DeclaredColumnTests.Paths.cs`, and run in the `parcels`
+fixture's `parcel_paths`. Why: [decision 0097](../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md).
+`JSON_VALUE`, `json_query` with a path and `OPENJSON` read JSON at a path. Where the JSON's shape is known (built here, or a
+column's declared JSON) and the path is a literal the reader reads, the path is walked along the type, the abstract counterpart of
+the server's walk of a document: each step finds the type there, and says whether it may find nothing or `null`, and why.
+
+**The grammar**, as observed (`A_path_is_read_as_the_server_reads_it`, `A_path_the_server_does_not_read_is_an_error_on_every_call`):
+`lax` or `strict`, in lower case only (`LAX $` is error 13607), with or without a blank before `$`; then keys and indexes, with
+blanks allowed around the path, before a step and inside an index's brackets. An unquoted key is ASCII letters, digits and `_`, not
+first a digit; a quoted key holds anything, `"` for a quote. An index is decimal digits. `[*]` and `[1 to 2]` are accepted and find
+several values (`JSON_VALUE` gives NULL, `json_query` text that is not one JSON value), so they are not walked; `[last]` and
+`[0,1]` are refused (13660). A path the reader isn't sure of is not walked: reading one the server refuses would claim nothing
+wrong, since every call fails, but reading one it accepts as other steps would.
+
+**The walk** (`JsonPathWalk.Follow`), step by step:
+
+| At | A step finds | It may find nothing | It may find `null` |
+|---|---|---|---|
+| a key an object lists | the key's type | where the schema doesn't require it, or FOR JSON leaves it out when null | where its type allows null |
+| a key an open object doesn't list | any JSON | yes | yes |
+| a key a closed object doesn't have | nothing, ever (HAR2102) | always | no |
+| a key of a map (`additionalProperties` with a schema, `json_objectagg`) | the map's values | yes: its keys are data | where its values may be |
+| an index of an array | its items | past its fewest items (`minItems`); never past its most (HAR2102) | where its items may be |
+| an index of a fixed array (`json_array`) | that item, or nothing past its end (HAR2102) | | where it may be |
+| any step of any JSON | any JSON | yes | yes |
+| a key of an array or a scalar, an index of an object or a scalar | nothing, ever (HAR2102) | always | no |
+| a union | what each variant finds, joined | where any does | where any does |
+
+A recursive node or an unknown is not walked, and the function falls back to its own rule. Any JSON at the end of a path may be
+`null` itself. Each step that may find nothing or `null` adds a note, which the value's null reason carries (`detail`, IR 0.29) and
+`explain` prints: "`$.address` may be left out, as the schema doesn't require it".
+
+**What each function gives** of what the walk finds, each observed:
+
+| Function | JSON `null` there | Nothing there | The wrong kind there | What it gives |
+|---|---|---|---|---|
+| `JSON_VALUE` | NULL | NULL under lax, an error under strict | an object or array, or text past 4,000 UTF-16 code units: NULL under lax, an error under strict | `nvarchar(4000)`, the scalar's text |
+| `json_query` with a path | NULL | NULL under lax, an error under strict | a scalar: NULL under lax, an error under strict | the object or array there, live JSON |
+| `OPENJSON` at a row path | no rows | no rows under lax, an error under strict | a scalar: no rows under lax, an error under strict | rows of the object or array there |
+| `OPENJSON … WITH`, a scalar column | NULL | NULL under lax, an error under strict | an object or array: NULL under lax, an error under strict | its declared SQL type |
+| `OPENJSON … WITH`, an `AS JSON` column | NULL | NULL under lax, an error under strict | a scalar: NULL under lax, an error under strict | the object or array there, live JSON |
+
+- **`JSON_VALUE` gives a scalar's text** (`Json_value_gives_null_for_what_it_cannot_return_under_lax_and_errs_under_strict`,
+  `Json_value_of_a_number_is_its_text_as_written`, `Json_value_counts_its_4000_characters_in_utf_16_code_units_after_unescaping`,
+  `Json_value_is_nvarchar_4000_over_every_type_of_document`): a string's own text, unescaped, which keeps its least length and
+  value set; `true` or `false`; a number's text as written (`1.0`, `1e3` and `-0` stay so), which keeps no fact. A string or
+  number is NULL under lax when its text may be longer than 4,000 UTF-16 code units: a string whose length the schema doesn't
+  bound (`maxLength` n code points bounds it at 2n units), and a declared number, whose text the schema doesn't bound
+  (`1.000…0` is an integer); a number FOR JSON writes from a SQL type is short.
+- **`json_query` with a path** gives the object or array there, of the schema's type, live; a union keeps its objects and arrays
+  (`Json_query_with_a_path_gives_the_object_or_array_there_and_null_under_lax_for_anything_else`). A path that never finds one is
+  unknown, saying so (every call is NULL, or under strict an error); so is a path that isn't a literal or isn't read, and JSON
+  whose shape isn't known.
+- **`OPENJSON` at a row path** opens only an object or array there (`Openjson_opens_only_an_object_or_array_at_its_path`); an
+  object of no keys has no rows, and under strict is refused as a scalar is.
+- **A `WITH` column is typed by its declared SQL type, never by the schema**
+  (`Openjson_with_under_a_strict_path_errs_where_nothing_is_there_but_gives_null_for_null`). Where every row has a scalar there
+  that is never `null` (or the path is strict), it is never NULL when its conversion keeps the value (into its own type, or a
+  string into a string, which also keeps its facts), or when a value that doesn't convert is an error: into a string type, cut
+  short; into `bit`, `date`, `datetime2`, `datetimeoffset`, `time` or `uniqueidentifier`. Into a number type, `datetime` or
+  `smalldatetime` a value too large or out of range is an error but NULL under the callers' `ANSI_WARNINGS` and `ARITHABORT` off
+  (`arithmetic-overflow`), and into a decimal it may be rounded to NULL (`precision-loss`)
+  (`Openjson_with_errs_on_a_value_that_does_not_convert_but_gives_null_for_overflow_under_the_callers_options`,
+  `Openjson_with_gives_null_for_overflow_under_the_callers_ansi_warnings_and_arithabort_off`,
+  `Openjson_with_into_bit_or_a_string_never_gives_null_for_a_scalar`). A conversion that can fail is a run-time error, not a type.
+- **`OPENJSON` without `WITH`** gives `key` as the keys of a closed object (no set for an open one or a map) and `type` as the
+  kinds its values may be (0 for `null`, 1 a string, 2 a number, 3 `true` or `false`, 4 an array, 5 an object).
 
 ## JSON assembled as text
 

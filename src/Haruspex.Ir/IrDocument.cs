@@ -19,13 +19,20 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that declares a column's JSON is written in (0.28): one that lists a
+    /// The newest IR format version, the one a document that explains a null reason is written in (0.29): one in which a reason
+    /// says, in words, what makes it so (<see cref="IrNullReason.Detail"/>), as a value read from JSON at a path does. The IR is
+    /// versioned separately from the tool, because it is a file that other programs read: a change that would break a reader
+    /// changes this. Why: docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md.
+    /// </summary>
+    public const string CurrentVersion = "0.29";
+
+    /// <summary>
+    /// The version a document that explains no reason but declares a column's JSON is written in (0.28): one that lists a
     /// declaration in <see cref="Columns"/>, or holds what only a declaration gives, any JSON (<see cref="IrAnyJson"/>) or a fact
-    /// a declaration states (<see cref="IrFactSourceKind.Declared"/>). The IR is versioned separately from the tool, because it is
-    /// a file that other programs read: a change that would break a reader changes this.
+    /// a declaration states (<see cref="IrFactSourceKind.Declared"/>).
     /// Why: docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md.
     /// </summary>
-    public const string CurrentVersion = "0.28";
+    public const string DeclaredVersion = "0.28";
 
     /// <summary>
     /// The version a document that declares nothing but holds a binary value is written in (0.27, a scalar of kind
@@ -62,17 +69,19 @@ public sealed record IrDocument(
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.27, 0.26, 0.25, 0.24 and 0.23, every document of
-    /// which is a 0.28 document that declares nothing, holds no binary value and says no more than its version could, meaning the same. 0.23 added a result
+    /// The versions a reader reads, as decision 0024 says: the current one, and 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, every document
+    /// of which is a 0.29 document that explains no reason, declares nothing, holds no binary value and says no more than its version
+    /// could, meaning the same. 0.23 added a result
     /// set's name (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
     /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
     /// source does.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it declares a column's JSON (<see cref="Declares"/>); else <see cref="BytesVersion"/> when it
+    /// <see cref="CurrentVersion"/> when it explains a reason (<see cref="Explains"/>); else <see cref="DeclaredVersion"/> when it
+    /// declares a column's JSON (<see cref="Declares"/>); else <see cref="BytesVersion"/> when it
     /// holds a binary value (<see cref="HoldsBytes"/>); else <see cref="TableTypesVersion"/>
     /// when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
     /// value came from, which a document inferred from SQL almost always does; else <see cref="CombinedVersion"/> when it combines
@@ -81,7 +90,8 @@ public sealed record IrDocument(
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        Declares ? CurrentVersion
+        Explains ? CurrentVersion
+        : Declares ? DeclaredVersion
         : HoldsBytes ? BytesVersion
         : TableTypes.Count > 0 ? TableTypesVersion
         : Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
@@ -96,6 +106,9 @@ public sealed record IrDocument(
     /// object type (<see cref="IrObjectType.Open"/>).
     /// </summary>
     internal bool Declares => Columns.Count > 0 || IrDocumentDeclared.First(this) is not null;
+
+    /// <summary>Whether any reason in it says what makes it so (0.29): a <see cref="IrNullReason.Detail"/> anywhere.</summary>
+    internal bool Explains => IrDocumentExplained.First(this) is not null;
 
     /// <summary>Whether any of its values is a binary one (0.27): a scalar of kind <see cref="IrScalarKind.Bytes"/> anywhere.</summary>
     internal bool HoldsBytes => IrDocumentScalars.Of(this).Any(s => s.Scalar.Kind == IrScalarKind.Bytes);
