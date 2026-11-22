@@ -64,4 +64,16 @@ public partial class IrCombinationTests
         Assert.Equal(document.TableTypes, combined.Document.TableTypes);
         Assert.Equal(Row(document), Row(combined.Document));
     }
+
+    [Fact]
+    public void A_fold_only_a_table_type_s_column_names_is_kept_and_the_combined_file_reads_back()
+    {
+        // An identity column leaves the type without a row type, so the column's set is the only one that names its fold.
+        var document = Taking("CREATE TYPE shop.lines AS TABLE (serial int IDENTITY(1, 1) PRIMARY KEY, state varchar(10) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (state IN ('open', 'held', 'closed')));");
+
+        var combined = Combine(document, document).Document;
+
+        Assert.Equal(["Latin1_General_100_CI_AS.codepage"], combined.Folds.Keys);
+        Assert.Equal(combined, IrJsonReader.Read(IrJsonWriter.Write(combined)));
+    }
 }

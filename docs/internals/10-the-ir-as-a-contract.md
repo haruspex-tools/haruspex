@@ -232,7 +232,10 @@ in bytes. Labels are ordered, so a document that holds a binary value is labelle
 type, and one that holds none keeps the label the rest of it earns; the 0.27 reader reads all five. A label is a promise about
 the whole document, so the reader must find a binary value wherever one can be (a parameter, a result, a field, a table type's
 column, inside a union or a JSON text's content) before it can say the label is right, which `IrDocumentScalars` does in one place
-([decision 0081](../decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)).
+([decision 0081](../decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)). The table of folds is filled from
+the same walk (`IrDocumentFolds`), for the same reason: a table type with an identity column has no row type, so a canonical set on
+one of its columns stands nowhere else, and a walk of the parameters, results and named types alone once wrote a file whose set
+named a fold its table left out, which the reader then refused.
 
 Version 0.28 adds what a column declared to hold JSON of a schema brings: the declarations themselves (`columns`, each with the
 hash of every schema file it read), a type node for any JSON value (`any-json`), a fact whose source is a declaration, a claim that

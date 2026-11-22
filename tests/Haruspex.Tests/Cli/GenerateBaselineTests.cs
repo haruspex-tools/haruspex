@@ -120,6 +120,24 @@ public class GenerateBaselineTests
     }
 
     [Fact]
+    public void A_fold_only_a_table_type_s_column_names_survives_a_baseline_and_check_agrees()
+    {
+        // An identity column leaves the type without a row type, so the column's set is the only one that names its fold.
+        const string Crates = "CREATE TYPE shop.crate_list AS TABLE (serial int IDENTITY(1, 1) PRIMARY KEY, state varchar(10) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (state IN ('open', 'held', 'closed')));";
+        const string CountCrates = "CREATE PROCEDURE shop.count_crates @crates shop.crate_list READONLY AS\nSELECT count(*) AS crates FROM @crates;";
+        using var folder = Project(GetOrder + "\nGO\n" + CountCrates, GetOrder + "\nGO\n" + CountCrates);
+        folder.File("release/db/types.sql", Crates);
+        folder.File("db/types.sql", Crates);
+
+        Assert.Equal(0, Run(folder, "generate", "--baseline", "release/db").ExitCode);
+        var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/db");
+
+        Assert.Equal("", error);
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"Latin1_General_100_CI_AS.codepage\": {", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_config_file_s_baseline_is_used_by_generate_and_the_command_line_s_wins()
     {
         using var folder = Project(GetOrder, Edit(GetOrder, "o.status FROM", "o.status, o.channel FROM"), config: Edit(Config, "\"out\"", "\"baseline\": \"release/db\", \"out\""));

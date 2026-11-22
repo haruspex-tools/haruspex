@@ -63,6 +63,27 @@ public class CheckTests
         Assert.Equal("haruspex: 1 procedure, no unknowns. generated is up to date.\n", output);
     }
 
+    /// <summary>A table type with an identity column, so no row type, and a closed set of values its collation folds.</summary>
+    private const string Crates = """
+        CREATE TYPE shop.crate_list AS TABLE (
+            serial int IDENTITY(1, 1) PRIMARY KEY,
+            state varchar(10) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (state IN ('open', 'held', 'closed')));
+        """;
+
+    private const string CountCrates = "CREATE PROCEDURE shop.count_crates @crates shop.crate_list READONLY AS\nSELECT count(*) AS crates FROM @crates;";
+
+    [Fact]
+    public void Check_passes_on_what_generate_wrote_when_only_a_table_type_s_column_names_a_fold()
+    {
+        using var folder = Generated(procedures: CountCrates, tables: Crates);
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal("", error);
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"Latin1_General_100_CI_AS.codepage\": {", File.ReadAllText(Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName)), StringComparison.Ordinal);
+    }
+
     private const string EmitsBoth = """{ "source": "db", "out": "generated", "emit": ["zod", "json-schema"], "schemas": { "shop": { "include": ["*"] } } }""";
 
     [Fact]

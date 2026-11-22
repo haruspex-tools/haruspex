@@ -5,16 +5,16 @@ namespace Haruspex.Ir;
 /// <summary>The folds a document's canonical value sets name (<see cref="IrDocument.Folds"/>), and the table that holds exactly them.</summary>
 public static class IrDocumentFolds
 {
-    /// <summary>The names of the folds the document's value sets name, in the parameters, the results and the type table.</summary>
+    /// <summary>
+    /// The names of the folds the document's value sets name, wherever a type stands: the parameters, the results, the type table
+    /// and the table types' columns. A table type with an identity, computed or rowversion column has no row type, so its
+    /// column is the only place its set stands; the reader refuses a file whose fold table leaves any of these out.
+    /// </summary>
     public static IReadOnlySet<string> Named(IrDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type))
-            .Concat(document.Objects.SelectMany(o => o.Parameters.Select(p => p.Type)))
-            .Concat(document.Objects.SelectMany(o => o.Results ?? []).Select(r => r.Type))
-            .SelectMany(IrTypeTree.Within)
-            .OfType<IrScalar>()
-            .Select(s => s.Facets?.Values?.Fold)
+        return IrDocumentScalars.Of(document)
+            .Select(s => s.Scalar.Facets?.Values?.Fold)
             .OfType<string>()
             .ToHashSet(StringComparer.Ordinal);
     }

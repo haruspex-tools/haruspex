@@ -279,16 +279,8 @@ public static partial class IrCombination
         };
 
         /// <summary>The folds the combined document's value sets name, each as the candidate defines it, or the baseline where it doesn't.</summary>
-        private EquatableMap<string, IrFold> Folds(Dictionary<string, IrObjectType> types, List<IrObject> objects)
-        {
-            var named = types.Values.SelectMany(t => t.Fields.Select(f => f.Type))
-                .Concat(objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? [])))
-                .SelectMany(IrTypeTree.Within)
-                .OfType<IrScalar>()
-                .Select(s => s.Facets?.Values?.Fold)
-                .OfType<string>()
-                .Distinct(StringComparer.Ordinal);
-            return named.ToEquatableMap(f => f, f => candidate.Folds.TryGetValue(f, out var fold) ? fold : baseline.Folds[f]);
-        }
+        private EquatableMap<string, IrFold> Folds(IrDocument combined) =>
+            IrDocumentFolds.Named(combined).Order(StringComparer.Ordinal)
+                .ToEquatableMap(f => f, f => candidate.Folds.TryGetValue(f, out var fold) ? fold : baseline.Folds[f]);
     }
 }
