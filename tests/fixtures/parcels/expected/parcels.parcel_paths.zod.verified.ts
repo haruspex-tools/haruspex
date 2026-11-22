@@ -30,7 +30,7 @@ export const ParcelPathsResult1RowSchema = z.object({
    * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.
    * Why: haruspex explain parcels.parcel_paths '#1.note'
    */
-  note: z.string().min(1).max(4000).optional(),
+  note: z.string().min(1).max(200).optional(),
   /**
    * Its type is nvarchar(4000), where parcels.parcel.options is nvarchar(max): what it is computed with makes it another type.
    * May be null: it is read from JSON, which may hold null or nothing there (json-null-or-absent): `$.window` may be left out, as the schema doesn't require it; JSON_VALUE gives NULL for an object, an array or text longer than 4,000 characters there under a lax path.

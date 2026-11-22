@@ -192,6 +192,25 @@ public class ExplainTests
     }
 
     [Fact]
+    public void A_value_read_from_json_at_a_path_names_the_step_that_may_find_nothing_in_text_and_in_json()
+    {
+        using var folder = Generated(OrderSummary + """
+
+            GO
+            CREATE PROCEDURE shop.last_line AS
+            SELECT JSON_VALUE((SELECT TOP (1) l.shipped_at FROM shop.order_line AS l ORDER BY l.line_id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), '$.shipped_at') AS shipped;
+            """);
+
+        var text = Run(folder, "explain", "shop.last_line", "shipped").Output;
+        using var json = JsonDocument.Parse(Run(folder, "explain", "shop.last_line", "shipped", "--json").Output);
+
+        Assert.Contains("null json-null-or-absent at procedures.sql:", text, StringComparison.Ordinal);
+        Assert.Contains("it is read from JSON, which may hold null or nothing there: `$.shipped_at` is left out when it is null", text, StringComparison.Ordinal);
+        var reason = Assert.Single(Assert.Single(json.RootElement.GetProperty("fields").EnumerateArray()).GetProperty("nullableBecause").EnumerateArray(), r => r.GetProperty("rule").GetString() == "json-null-or-absent");
+        Assert.Equal("`$.shipped_at` is left out when it is null", reason.GetProperty("detail").GetString());
+    }
+
+    [Fact]
     public void Json_carries_its_version_and_the_ir_s_codes_with_each_step_s_line()
     {
         using var folder = Generated();

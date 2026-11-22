@@ -97,7 +97,8 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
 
         foreach (var reason in because)
         {
-            Say(output, $"{indent}null {IrWireNames.Of(reason.Rule)} at {reason.At}: {IrReasons.Text(reason.Rule)}");
+            // What made it so there, where the reason says (a JSON path's steps, IR 0.29).
+            Say(output, $"{indent}null {IrWireNames.Of(reason.Rule)} at {reason.At}: {IrReasons.Text(reason.Rule)}{(reason.Detail is { } detail ? ": " + detail : "")}");
             Shown(output, Located(reason, from), baseline, indent + "  ");
         }
     }
@@ -379,6 +380,8 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
             w.WriteStartObject();
             Code(w, "rule", IrWireNames.Of(reason.Rule), IrReasons.Text(reason.Rule), inline: true);
             w.WriteString("at", reason.At);
+            if (reason.Detail is { } detail)
+                w.WriteString("detail", detail);
             Line(w, Located(reason, from), baseline);
             w.WriteBoolean("declared", IrSurprises.IsDeclared(reason.Rule));
             w.WriteEndObject();

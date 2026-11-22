@@ -16,12 +16,14 @@ public partial class DeclaredColumnTests
 {
     private const string Order = """
         { "type": "object", "additionalProperties": false,
-          "required": ["mode", "rush", "count", "lines", "tags", "contact", "extra", "name"],
+          "required": ["mode", "rush", "count", "lines", "tags", "contact", "extra", "name", "short", "long"],
           "properties": {
             "mode": { "enum": ["fast", "slow"] },
             "rush": { "type": "boolean" },
             "note": { "type": ["string", "null"], "maxLength": 100 },
             "name": { "type": "string" },
+            "short": { "type": "string", "maxLength": 2000 },
+            "long": { "type": "string", "maxLength": 2001 },
             "count": { "type": "integer" },
             "address": { "type": "object", "additionalProperties": false, "required": ["city"],
                          "properties": { "city": { "type": "string", "maxLength": 50 }, "floor": { "type": "integer" } } },
@@ -101,6 +103,26 @@ public partial class DeclaredColumnTests
 
         Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(doc, "name"));
         Assert.False(Field(doc, "strict_name").Nullable);
+    }
+
+    [Fact]
+    public void A_declared_max_length_of_n_code_points_is_at_most_2n_utf_16_units_and_holds_of_the_text()
+    {
+        var doc = RunPaths("""
+            CREATE PROCEDURE shop.p AS
+            SELECT JSON_VALUE(o.settings, '$.short') AS short, JSON_VALUE(o.settings, '$.long') AS long, j.whole
+            FROM shop.orders AS o CROSS APPLY OPENJSON(o.settings) WITH (whole nvarchar(max) '$.short') AS j
+            WHERE o.settings IS NOT NULL;
+            """).Expected();
+
+        // 2,000 code points are at most 4,000 units, which JSON_VALUE gives; 2,001 may be 4,002, which it gives as NULL under lax.
+        Assert.False(Field(doc, "short").Nullable);
+        Assert.Equal([IrNullRule.JsonNullOrAbsent], Rules(doc, "long"));
+
+        // The text is the same string, so the declared maximum, in code points, holds of it.
+        var declared = new IrLength(2000, false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Declared, "shop.orders.settings"));
+        Assert.Equal(declared, Assert.IsType<IrScalar>(Field(doc, "short").Type).Facets!.Length);
+        Assert.Equal(declared, Assert.IsType<IrScalar>(Field(doc, "whole").Type).Facets!.Length);
     }
 
     [Fact]
@@ -288,6 +310,17 @@ public partial class DeclaredColumnTests
 
         Assert.Equal([IrNullRule.ArithmeticOverflow], Rules(doc, "count"));
         Assert.False(Field(doc, "rush").Nullable);
+    }
+
+    [Theory]
+    [InlineData("v int 'strict $'")]
+    [InlineData("v nvarchar(max) 'strict $' AS JSON")]
+    public void Openjson_with_at_dollar_over_rows_that_may_be_json_null_is_null_there_under_strict_too(string column)
+    {
+        var doc = RunPaths($"CREATE PROCEDURE shop.p AS SELECT j.v FROM OPENJSON(N'[{{\"a\": 1}}, 1, null]') WITH ({column}) AS j;").Expected();
+
+        // NULL for the null row itself, not only (into int) where a number overflows under the callers' options.
+        Assert.Contains(IrNullRule.JsonNullOrAbsent, Rules(doc, "v"));
     }
 
     [Fact]

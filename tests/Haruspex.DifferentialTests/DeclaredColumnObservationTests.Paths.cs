@@ -190,6 +190,17 @@ public partial class DeclaredColumnObservationTests
     }
 
     [Theory]
+    // $ is the row itself, so a row that is JSON null is NULL there, under a strict path too; below $ it is nothing (13608).
+    [InlineData("[1,null]", "n int 'strict $'", "1", null)]
+    [InlineData("""[{"a":1},null]""", "n nvarchar(max) 'strict $' AS JSON", """{"a":1}""", null)]
+    public async Task Openjson_with_at_strict_dollar_gives_a_null_row_as_null(string text, string column, string first, string? second)
+    {
+        Assert.Equal(first, await Stored(text, $"SELECT j.n FROM dbo.obs_stored AS s CROSS APPLY OPENJSON(s.v) WITH ({column}) AS j ORDER BY CASE WHEN j.n IS NULL THEN 1 ELSE 0 END OFFSET 0 ROWS;"));
+        Assert.Equal(second, await Stored(text, $"SELECT j.n FROM dbo.obs_stored AS s CROSS APPLY OPENJSON(s.v) WITH ({column}) AS j ORDER BY CASE WHEN j.n IS NULL THEN 1 ELSE 0 END OFFSET 1 ROWS;"));
+        Assert.Equal(13608, (await Assert.ThrowsAsync<SqlException>(() => Stored(text, "SELECT j.n FROM dbo.obs_stored AS s CROSS APPLY OPENJSON(s.v) WITH (n int 'strict $.a') AS j;"))).Number);
+    }
+
+    [Theory]
     // A value that doesn't convert is an error, under the callers' ANSI_WARNINGS and ARITHABORT off as well.
     [InlineData("\"abc\"", "int", false, 245)]
     [InlineData("1.5", "int", false, 245)]

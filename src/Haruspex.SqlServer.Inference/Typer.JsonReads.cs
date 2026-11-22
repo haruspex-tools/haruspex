@@ -135,13 +135,11 @@ internal sealed partial class Typer
         // A string into a string: never NULL, cut short past the target's length (observed). Its facts hold when every value fits.
         if (sourceType.Kind == IrScalarKind.String && into.IsString && (from is null ? sourceType.Format is null : from.IsString))
         {
-            var longest = from is { IsMax: false } ? from.Length
-                : sourceType.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
-                : (int?)null;
+            var longest = MostUtf16Units(source);
             var ascii = sourceType.Facets?.Values is { } values && values.Items.All(v => v.Text.All(c => c <= '\u007f'));
             var fits = into.IsMax || (longest is { } n && n <= into.Length);
             var keeps = fits && (into.Type.IsAnyOf(BuiltInType.NVarChar) || (into.Type.IsAnyOf(BuiltInType.VarChar) && from is null && ascii));
-            return Value.Computed(keeps ? toShape.WithFacets(Keep(to.Facets, sourceType.Facets)) : toShape, []);
+            return Value.Computed(keeps ? toShape.WithFacets(Kept(to.Facets, sourceType.Facets)) : toShape, []);
         }
 
         // An integer into a wider integer, or a JSON literal's integers into an integer type that holds them: the same numbers.
@@ -156,10 +154,33 @@ internal sealed partial class Typer
         return null;
 
         static bool Within(ExactDecimal d, ScalarType type) => type.Type.Least is { } least && type.Type.Greatest is { } greatest && d >= least && d <= greatest;
+    }
 
-        // A string's facts that hold of the same values in the target type: its length bound and its set.
-        static IrFacets? Keep(IrFacets? type, IrFacets? source) =>
-            source is null ? type : (type ?? new IrFacets()) with { MinLength = source.MinLength, Values = source.Values };
+    /// <summary>
+    /// The most UTF-16 code units a string's text can hold, when bounded: its SQL type's length, its longest value, or a declared
+    /// <c>maxLength</c> of n code points, which are at most 2n units (a character outside the Basic Multilingual Plane is one code
+    /// point and two units; observed: Json_value_counts_its_4000_characters_in_utf_16_code_units_after_unescaping).
+    /// </summary>
+    private static int? MostUtf16Units(ScalarShape text) =>
+        text.BuiltIn is { IsMax: false } type ? type.Length
+        : text.Type.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
+        : text.Type.Facets?.Length is { IsFixed: false, Unit: IrLengthUnit.CodePoints } declared ? 2 * declared.Value
+        : null;
+
+    /// <summary>
+    /// The facts of a string read unchanged into a type whose own facts are <paramref name="type"/> (by JSON_VALUE, or OPENJSON's
+    /// WITH into a string that holds it whole): its least length and value set, and a declared maximum in code points where it says
+    /// at least as much as the type's own length does (n code points are at most 2n units or, of ASCII text, bytes), since the text
+    /// is the same string.
+    /// </summary>
+    private static IrFacets? Kept(IrFacets? type, IrFacets? source)
+    {
+        if (source is null)
+            return type;
+        var kept = (type ?? new IrFacets()) with { MinLength = source.MinLength, Values = source.Values };
+        return source.Length is { IsFixed: false, Unit: IrLengthUnit.CodePoints } declared && (type?.Length is not { } own || 2 * declared.Value <= own.Value)
+            ? kept with { Length = declared }
+            : kept;
     }
 
     /// <summary>
@@ -249,7 +270,13 @@ internal sealed partial class Typer
         JsonPathWalk.Found? found = null;
         foreach (var (row, rowNull) in rows)
         {
-            var one = path is null ? null : rowNull ? new JsonPathWalk.Found(null, true, false, ["a row may be JSON null, which has nothing below it"]) : JsonPathWalk.Follow(row, path);
+            // A row that may be JSON null: at $ itself the column is NULL there (observed: Openjson_with_at_strict_dollar_gives_a_null_row_as_null),
+            // and below it there is nothing (13608 under strict).
+            var one = path is null ? null : JsonPathWalk.Follow(row, path) is not { } walked ? null
+                : !rowNull ? walked
+                : JsonPathWalk.Either(walked, path.Steps.Count == 0
+                    ? new JsonPathWalk.Found(null, false, true, ["a row may be JSON null"])
+                    : new JsonPathWalk.Found(null, true, false, ["a row may be JSON null, which has nothing below it"]));
             if (one is null)
             {
                 found = null;
@@ -432,7 +459,7 @@ internal sealed partial class Typer
         var givesAll = texts.All(t => t is { Fits: true });
         var nullable = found.MayBeNull || (!path.Strict && (found.MayBeMissing || !givesAll));
         var because = nullable ? NullReasons.Join(documentNull, [PathNull(at, Noted(found, givesAll))]) : documentNull;
-        var facets = texts is [{ Facets: { } only }] ? (type.Type.Facets ?? new IrFacets()) with { MinLength = only.MinLength, Values = only.Values } : type.Type.Facets;
+        var facets = texts is [{ Facets: { } only }] ? Kept(type.Type.Facets, only) : type.Type.Facets;
         return Value.Computed(type.WithFacets(facets), because);
 
         // A note for a value it cannot give, beside the steps' own.
@@ -449,12 +476,8 @@ internal sealed partial class Typer
         switch (shape)
         {
             case ScalarShape { Type: { Kind: IrScalarKind.String, Format: null } scalar } text:
-                var longest = text.BuiltIn is { IsMax: false } t ? t.Length
-                    : scalar.Facets?.Values is { } set && set.Items.All(v => v.IsString) ? set.Items.Max(v => v.Text.Length)
-                    : scalar.Facets?.Length is { IsFixed: false, Unit: IrLengthUnit.CodePoints } codePoints ? 2 * codePoints.Value
-                    : (int?)null;
-                var fits = longest is { } n && n <= 4000;
-                return (fits, fits ? new IrFacets(MinLength: scalar.Facets?.MinLength, Values: scalar.Facets?.Values) : null);
+                var fits = MostUtf16Units(text) is { } n && n <= 4000;
+                return (fits, fits ? scalar.Facets : null);
             case ScalarShape { Type.Kind: IrScalarKind.Boolean }:
                 return (true, new IrFacets(Values: new IrValueSet([new IrValue("false", IsString: true), new IrValue("true", IsString: true)], IrValueMatch.Exact, [new IrFactSource(IrFactSourceKind.Engine, "JSON_VALUE of true or false")])));
             case ScalarShape { Type.Kind: IrScalarKind.Number } number:

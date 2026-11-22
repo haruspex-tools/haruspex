@@ -1912,7 +1912,8 @@ wrong, since every call fails, but reading one it accepts as other steps would.
 | a union | what each variant finds, joined | where any does | where any does |
 
 A recursive node or an unknown is not walked, and the function falls back to its own rule. Any JSON at the end of a path may be
-`null` itself. Each step that may find nothing or `null` adds a note, which the value's null reason carries (`detail`, IR 0.29) and
+`null` itself, and so may a row of `OPENJSON` read at `$` (`strict $` gives the row's own value, NULL for a `null` row:
+`Openjson_with_at_strict_dollar_gives_a_null_row_as_null`); below `$` a `null` row has nothing. Each step that may find nothing or `null` adds a note, which the value's null reason carries (`detail`, IR 0.29) and
 `explain` prints: "`$.address` may be left out, as the schema doesn't require it".
 
 **What each function gives** of what the walk finds, each observed:
@@ -1927,8 +1928,9 @@ A recursive node or an unknown is not walked, and the function falls back to its
 
 - **`JSON_VALUE` gives a scalar's text** (`Json_value_gives_null_for_what_it_cannot_return_under_lax_and_errs_under_strict`,
   `Json_value_of_a_number_is_its_text_as_written`, `Json_value_counts_its_4000_characters_in_utf_16_code_units_after_unescaping`,
-  `Json_value_is_nvarchar_4000_over_every_type_of_document`): a string's own text, unescaped, which keeps its least length and
-  value set; `true` or `false`; a number's text as written (`1.0`, `1e3` and `-0` stay so), which keeps no fact. A string or
+  `Json_value_is_nvarchar_4000_over_every_type_of_document`): a string's own text, unescaped, which keeps its least length, value
+  set and a declared `maxLength` (in code points, where it says at least as much as `nvarchar(4000)`; so does a `WITH` column that
+  holds the string whole); `true` or `false`; a number's text as written (`1.0`, `1e3` and `-0` stay so), which keeps no fact. A string or
   number is NULL under lax when its text may be longer than 4,000 UTF-16 code units: a string whose length the schema doesn't
   bound (`maxLength` n code points bounds it at 2n units), and a declared number, whose text the schema doesn't bound
   (`1.000…0` is an integer); a number FOR JSON writes from a SQL type is short.

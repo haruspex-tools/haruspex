@@ -348,7 +348,8 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
   value, an index past an array's fewest items or a key of a map makes the result nullable under a lax path, and `explain` names
   the step. An `OPENJSON … WITH` column is typed by its declared SQL type, not the schema's. A path the schema can never have, such
   as a key a closed object doesn't list, is warned of (HAR2102)
-  ([decision 0097](decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)).
+  ([decision 0097](decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). A declaration also claims that no
+  key is written twice in one object: SQL Server's paths read the first of two, and `JSON.parse` the last.
 - **A key the schema doesn't require** may be left out, and may be null only where its schema allows `null`: an application may
   write it either way, unlike `FOR JSON`. An object its schema doesn't close (with `false` for its other keys) may hold other keys,
   which the generated code keeps (`z.looseObject` in Zod), whatever `objects` says. The top of the schema can't allow `null` (HAR3115): a column

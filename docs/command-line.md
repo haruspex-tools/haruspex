@@ -319,7 +319,7 @@ HAR6037.
 `derived`, false for an IR older than 0.25; `object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
 has one, `nullable`, `presence`, whether it is a `surprise`, whether its type differs from its columns' (`typeDiffers`), `from`
 (each `column`, `sql`, `at`, and `line` when the SQL is at hand), `nullableBecause` (each `rule`, its `text` and `page`, `at`,
-`line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
+`detail` when the reason says what made it so there, such as a JSON path's steps, `line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
 `text`, `page`), and the `explain` command. A field named in full adds the config file's `override` when there is one, `sides`
 for a combined field (`baseline` and `candidate`, each with its `source`, or `null` where that database doesn't return the
 key, and for the baseline whether it says where its fields came from, `derived`) or `sameInBoth` where both give it alike, and

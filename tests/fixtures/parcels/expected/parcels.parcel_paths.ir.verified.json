@@ -221,10 +221,10 @@
             "kind": "string",
             "sql": "nvarchar(4000)",
             "maxLength": {
-              "value": 4000,
-              "unit": "utf16",
+              "value": 200,
+              "unit": "code-points",
               "from": {
-                "type": "nvarchar(4000)"
+                "declared": "parcels.parcel.options"
               }
             },
             "minLength": {
