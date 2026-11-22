@@ -170,7 +170,7 @@ public partial class RefinementTests
     public void A_key_a_statement_anywhere_may_drop_is_no_key(string drop, IrCardinality expected)
     {
         // A_dropped_key_holds_no_longer_and_its_primary_keys_columns_stay_not_null: as for ALTER INDEX … DISABLE, wherever it is,
-        // since whether it runs isn't knowable, and by the same naming rule. The key is added by ALTER TABLE (K7) or declared.
+        // since whether it runs isn't knowable, and by the same naming rule. The key is added by ALTER TABLE or declared.
         var doc = Infer(
             ("k.sql", "CREATE TABLE dbo.k (id int NOT NULL, code int NOT NULL, other int NOT NULL CONSTRAINT uq_k_other UNIQUE);\nGO\nCREATE TABLE dbo.other (id int NOT NULL);"),
             ("alter.sql", "ALTER TABLE dbo.k ADD CONSTRAINT uq_k_code UNIQUE (code);"),

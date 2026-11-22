@@ -10,7 +10,7 @@ makes a schema refuse a key. A set every call returns that is missing fails unde
 ([decision 0060](0060-a-call-returns-its-one-result-itself.md) stands). This extends
 [decision 0008](0008-objects-strip-unknown-keys-by-default.md) from a result's keys to a procedure's result sets.
 
-**Context.** Agreed with Richard on 17 Nov 2026, after a real application's trial of the npm preview: an application and its
+**Context.** Agreed with the maintainer on 17 Nov 2026, after a real application's trial of the npm preview: an application and its
 database deploy separately, and in most teams the database goes first. A result gaining a key was already survived, by 0008. A
 procedure gaining a result set was survived only by accident of how the functions read their sets, by position, with nothing
 said or tested, and nothing refused it under `"strict"`. A missing set, meanwhile, read as `[]` or `null`, which passed a schema

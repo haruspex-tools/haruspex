@@ -1,11 +1,16 @@
 # No history that leads nowhere (docs/style.md, "No history as narrative"). The plan's slice names, its review
-# rounds and its design document are private, so a public reader can't follow them: name the construct, the README
-# section or the observed test instead, and give a dated decision where the past explains the code.
+# rounds, its notes and its design document are private, so a public reader can't follow them: name the construct,
+# the README section or the observed test instead, and give a dated decision where the past explains the code.
 #
-# A slice name is a number and a letter (6g, 2b), often written bare ("since 6h", "(6g)", "6c's rule"), so those
-# forms are flagged too. A "slice" of data, or a span's Slice, names no slice and passes. Each token has its own
-# self-test line in tests/prose/fixtures. check.sh applies the same tokens to the SQL files, which Vale doesn't read,
-# so they must be regular expressions that Go and Perl read alike.
+# A slice name is a number and a letter (6g, 2b), often written bare ("since 6h", "(6g)", "6c's rule"), or one or
+# two capitals, a number and perhaps a letter and a digit (C1, V1b, CM5, 6n2), cited as "(K1)", "CM5's" or "the CM5
+# split"; a row of the plan is "row 6r". The capitals are matched case-sensitively, inside (?-i:…), so a lower-case
+# alias such as a window's "(w1)" passes, and "row" is followed by a slice name, never any word, so "row by row" and
+# "row 3 of the table" pass. The notes the plan's sessions write are "the brief" and "the hand-over", and the session
+# that runs them is "the top-level session". A "slice" of data, a span's Slice, "in brief", a diagnostic's code
+# (HAR4001's) and "hand over the connection" name none of these and pass. Each token has its own self-test line in
+# tests/prose/fixtures. check.sh applies the same tokens to the files Vale doesn't read (SQL, scripts, project files)
+# and to test names, so they must be regular expressions that Go and Perl read alike.
 extends: existence
 message: "'%s' points into the project's private history; name what it points at: the construct, the README section or the observed test."
 level: error
@@ -21,3 +26,12 @@ tokens:
   - \b(?:since|before|until|after|in|of|from|building) \d{1,2}[a-l]\b
   - \b\d{1,2}[a-l]'s\b
   - \(\d{1,2}[a-l][,;:)]
+  - (?-i:\b[A-Z]{1,2}\d{1,2}[a-z]?\d?'s\b)
+  - (?-i:\([A-Z]{1,2}\d{1,2}[a-z]?\d?[,;:)])
+  - \b(?:the|since|before|until|after|in|of|from|by|building) (?-i:[A-Z]{1,2}\d{1,2}[a-z]?\d?\b)
+  - \brow \d{1,2}[a-z]\d?\b
+  - \bthe brief\b
+  - \bhand-?over\b
+  - \btop-level session\b
+  - \bquestions round\b
+  - \bchecklist items? \d+\b

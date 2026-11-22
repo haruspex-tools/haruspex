@@ -38,7 +38,7 @@ could name any. The warning names them, or says that no script of the project is
 target with something in it, are reported whatever they touch, since what they do could be anything. A target is reported once by
 its name, however many projects define it. A project of another SDK is refused ([HAR1010](../diagnostics/HAR1010.md)).
 
-**Context.** A real application of about 115 legacy SSDT projects, read as folders, gets no collation, so none of the value
+**Context.** A real application of many legacy SSDT projects, read as folders, gets no collation, so none of the value
 sets its packages make enums. Its project files carry the collation, and say which of the files beside them are built. A
 project file is MSBuild, a language with its own expressions, functions and imports, which a database project uses little of:
 properties, conditions on the configuration, items, and the SDK's or SSDT's targets.

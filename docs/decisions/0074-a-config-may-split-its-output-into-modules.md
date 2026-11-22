@@ -14,11 +14,10 @@ name starts with a letter and has only letters, digits, `_` and `-`, since it na
 case ([HAR3024](../diagnostics/HAR3024.md)). The IR stays one file, `haruspex.ir.json`, recording no module, and so does the
 mapping helper, the same for every module. Every exported name is the one the unsplit output gives, so switching the split on or
 moving a schema between modules renames nothing. There is no `index.ts` that re-exports the modules. Without `split`, every file
-is byte for byte what it was. The top-level session recommended this design on 18 Nov 2026, without a questions round, and Richard
-accepted it on 19 Nov 2026.
+is byte for byte what it was. The maintainer accepted this design on 19 Nov 2026.
 
-**Context.** Every reader of a generated module imports all of it: on a real application's trial, 585 KB of Zod for 216
-procedures. A reviewer of a generated diff wants the change in the file of the schema that changed. Several config files already
+**Context.** Every reader of a generated module imports all of it, which on a real application's trial was a large file. A
+reviewer of a generated diff wants the change in the file of the schema that changed. Several config files already
 give several modules, sharing nothing, for parts of an application that are apart; one config split into modules is for one
 application whose output is too big to read as one file.
 

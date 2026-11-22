@@ -76,28 +76,48 @@ spelling() {
   files '*.md' '*.cs' '.github/workflows/*.yml' | "$cspell" --no-progress --file-list stdin
 }
 
-# Vale doesn't read SQL, so the tokens of haruspex.History are applied to .sql files here, with Perl: "file:line:rule" for
+# Vale reads only Markdown and the comments in C#, so the tokens of haruspex.History are applied here, with Perl, to the
+# other files a reader reads: the SQL, the scripts, the workflows and the project files. Each prints "file:line:rule" for
 # each line that has one. The tokens are read from the rule's YAML, so the two can't drift apart.
-history_in_sql() {
-  local pattern
-  pattern=$(sed -n '/^tokens:/,$ s/^  - //p' .vale/styles/haruspex/History.yml | paste -sd '|' -)
-  perl -ne 'BEGIN { $p = shift } print "$ARGV:$.:haruspex.History\n" if /$p/i; close ARGV if eof' "$pattern" "$@"
+history_tokens() { sed -n '/^tokens:/,$ s/^  - //p' .vale/styles/haruspex/History.yml | paste -sd '|' -; }
+
+history_in_text() {
+  perl -ne 'BEGIN { $p = shift } print "$ARGV:$.:haruspex.History\n" if /$p/i; close ARGV if eof' "$(history_tokens)" "$@"
+}
+
+# A test's name is an identifier, which Vale skips, and is read as a sentence: each method's name in a C# file, its
+# underscores read as spaces, is checked against the same tokens, and against a slice name standing alone as a word,
+# which a name has no brackets or possessive to show (The_CM5_split_…, Typed_as_K1c_said). A window or an alias in
+# lower case (w1, t2) and a diagnostic's code (HAR4001) are no slice name.
+history_in_test_names() {
+  perl -ne 'BEGIN { $p = shift }
+    while (/\b(?:void|Task)\s+(\w+)\s*\(/g) {
+      (my $name = $1) =~ tr/_/ /;
+      print "$ARGV:$.:haruspex.History\n" if $name =~ /$p|(?-i:\b[A-Z]{1,2}\d{1,2}[a-z]?\d?\b)|\b\d{1,2}[a-l]\d?\b/i;
+    }
+    close ARGV if eof' "$(history_tokens)" "$@"
 }
 
 style() {
-  local found sql
+  local found other
   # Fails here, saying why, if neither a local Vale nor a local Docker can run it.
   run_vale --version > /dev/null || return 1
   # "file:line:col:rule:message" becomes "file:line:rule". Vale exits 1 here: the fixtures break every rule.
   found=$(run_vale --output=line "$fixtures/style.md" "$fixtures/style.cs" | cut -d: -f1,2,4)
   expect "$fixtures/style.expected" "$found" style || return 1
-  found=$(history_in_sql "$fixtures/history.sql")
+  found=$(history_in_text "$fixtures/history.sql")
   expect "$fixtures/history.expected" "$found" "style (SQL)" || return 1
+  found=$(history_in_test_names "$fixtures/style.cs")
+  expect "$fixtures/test-names.expected" "$found" "style (test names)" || return 1
+  # The rule's own file quotes what it rules out.
   # shellcheck disable=SC2046
-  sql=$(history_in_sql $(files '*.sql'))
-  if [ -n "$sql" ]; then
-    printf '%s\n' "$sql" >&2
-    echo "style: the SQL above names the project's private history (haruspex.History)." >&2
+  other=$(history_in_text $(files '*.sql' '*.mjs' '*.js' '*.ts' '*.sh' '*.yml' '*.yaml' '*.jsonc' '*.csproj' '*.props' \
+    '*.targets' '*.sqlproj' '.editorconfig' ':!.vale/styles/haruspex/History.yml'))
+  # shellcheck disable=SC2046
+  other=$(printf '%s\n' "$other" "$(history_in_test_names $(files '*.cs'))" | sed '/^$/d')
+  if [ -n "$other" ]; then
+    printf '%s\n' "$other" >&2
+    echo "style: the lines above name the project's private history (haruspex.History)." >&2
     return 1
   fi
   # One argument per file. The repository's paths have no spaces, which `git ls-files` would otherwise quote.

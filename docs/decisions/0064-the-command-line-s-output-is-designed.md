@@ -28,7 +28,7 @@
 
 **Context.** The command is run many times a day, by a developer after each change to the database and by CI on each push.
 It used to print every diagnostic, one note for each unknown, then one line. A database with many unknowns printed them all
-on every run, the same each time, so a new warning or a field that became nullable was hard to see among them. Richard asked,
+on every run, the same each time, so a new warning or a field that became nullable was hard to see among them. The maintainer asked,
 on 16 Nov 2026, for a command line designed for that use: quiet when nothing changed, and saying what did. The quality bar
 asks for GitHub annotations and SARIF for CI. The repository is private now and will be public.
 

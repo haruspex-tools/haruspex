@@ -1065,7 +1065,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   two integer digits.
 - **Outside the domain** (`A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options`):
   `SQRT` of a negative, `LOG` of 0 or less or to a base of 0 or 1, `LOG10` of 0 or less, `POWER` as above, are error 3623 by
-  default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off. The brief expected an error under any options;
+  default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off. An error under any options was expected;
   the server says otherwise, so these are nullable for **`domain-error`** (IR 0.15), a rule of its own because the cause is
   not an overflow. `SQRT` of a `tinyint` or a `bit` cannot be. No bound proves an argument positive yet (a `CHECK (x > 0)`
   would), which is left for a corpus that needs it.
@@ -1254,7 +1254,7 @@ the condition can take when that column is NULL and everything else is anything:
 | anything else: the column inside `ISNULL`, `COALESCE`, `CASE` or any expression, `IS [NOT] DISTINCT FROM`, `EXISTS` | anything (`A_null_inside_isnull_coalesce_or_case_can_make_the_predicate_true`, `Is_distinct_from_is_never_unknown`) |
 
 `AND`, `OR` and `NOT` combine the sets by three-valued logic, treating their operands as independent, which can only add
-values. The column is proved non-null when TRUE is not in the set. This gives every rule the brief listed and nothing more:
+values. The column is proved non-null when TRUE is not in the set. This gives the rules below and nothing more:
 
 - conjuncts at the top refine, each on its own (`UNKNOWN AND x` is never TRUE);
 - under `OR`, only what every disjunct proves (`Or_keeps_a_null_when_any_disjunct_can_be_true`);
@@ -1747,7 +1747,7 @@ outer join's ON proves its columns as it proves an aliased one's
   too, so such a column is also `precision-loss` ("Precision lost" above, `Typer.OpenJsonColumn`).
   So it has its type's facets, and is nullable with `json-null-or-absent`: NULL where the JSON holds `null` or, under a lax path,
   where nothing is there or an object or array stands where a scalar is declared.
-- **`strict` does not make a column non-null** (a deviation from the brief, which expected it to): it turns a missing
+- **`strict` does not make a column non-null**, as it might seem to: it turns a missing
   property into an error (13608), but a JSON `null` under a strict path is still NULL
   (`Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null`,
   `Openjson_with_a_strict_path_that_is_missing_is_an_error_not_a_null`). Whether the document holds `null` is the data's.
@@ -2347,8 +2347,7 @@ holds the current row. Observed in `FunctionObservationTests`.
 - **`ROW_NUMBER`**, **`RANK`**, **`DENSE_RANK`**, **`NTILE`**: `bigint`, never null (`NTILE` of NULL or 0 is an error, 4116)
   (`Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input`).
 - **`COUNT`** (`int`) and **`COUNT_BIG`** (`bigint`): 0 over an empty frame, never NULL; but `COUNT` keeps `count-overflow`, as
-  without a window: it is the same `int`, and a partition of more than 2,147,483,647 rows cannot be read to observe otherwise
-  (a deliberate departure from the brief, which said never null).
+  without a window: it is the same `int`, and a partition of more than 2,147,483,647 rows cannot be read to observe otherwise.
 - **`SUM`**, **`MIN`**, **`MAX`**: typed as the aggregates (`SUM`'s overflow rule included); NULL when every value in the frame
   is, so with the argument's reasons, and when the frame may be empty (`empty-frame`), over a column never null too. `MIN` and
   `MAX` keep the argument's facets. `AVG` and the rest are not modelled, with a window or without.

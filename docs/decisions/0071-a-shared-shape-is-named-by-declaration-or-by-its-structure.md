@@ -9,7 +9,7 @@ declared once, and each of them is exported as that one schema. It is declared u
 constant the module doesn't export, named `shape` and the first six hexadecimal digits of the SHA-256 of its schema as the module
 writes it (`shape3f2a9c`), taking more digits only when another shape of the module, or an imported name, already has them. The
 IR records which names the config file gave (`nameDeclared`, 0.23). The JSON Schema document is unchanged: each named type is
-written in full in `$defs`, under its own name. Richard accepted the design on 18 Nov 2026.
+written in full in `$defs`, under its own name. The maintainer accepted the design on 18 Nov 2026.
 
 **Context.** Identical shapes were declared once under the first type in the module's order, and the rest were aliases of it:
 a trial of the npm preview on a real application found `OrdersResult2RowSchema = InvoicesResult3RowSchema` for a one-row

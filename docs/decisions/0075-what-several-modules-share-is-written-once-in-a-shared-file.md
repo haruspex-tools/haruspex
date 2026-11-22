@@ -34,7 +34,7 @@ And a shape a trial application's procedures shared was shared 123 times; writin
   write; marked internal, a team's API tools and `stripInternal` leave it out.
 - *A shared file of the functions' prelude* (`shared.mssql.ts`), so that one `ParameterError` class is thrown by every module and
   `instanceof` holds across them. The prelude is the same in every module and decision 0056 already tells errors apart by name
-  and kind, as an application with several configs does; one more shared file is left for Richard to decide (CM5's hand-over).
+  and kind, as an application with several configs does; whether to add one more shared file is left for the maintainer to decide.
 - *In JSON Schema, an `$id` in each document*, so that references resolve wherever the documents are loaded from. An `$id` is a
   URI, and any value would name a place haruspex doesn't know; a relative `$ref` resolves against the name a consumer gives the
   document, which is its file's.

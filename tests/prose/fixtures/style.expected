@@ -5,6 +5,8 @@ tests/prose/fixtures/style.cs:7:haruspex.ToolName
 tests/prose/fixtures/style.cs:10:haruspex.Punctuation
 tests/prose/fixtures/style.cs:10:haruspex.Spelling
 tests/prose/fixtures/style.cs:13:haruspex.History
+tests/prose/fixtures/style.cs:16:haruspex.History
+tests/prose/fixtures/style.cs:19:haruspex.History
 tests/prose/fixtures/style.md:6:haruspex.Headings
 tests/prose/fixtures/style.md:10:haruspex.Hype
 tests/prose/fixtures/style.md:12:haruspex.Minimisers
@@ -30,3 +32,15 @@ tests/prose/fixtures/style.md:56:haruspex.History
 tests/prose/fixtures/style.md:58:haruspex.History
 tests/prose/fixtures/style.md:60:haruspex.History
 tests/prose/fixtures/style.md:62:haruspex.History
+tests/prose/fixtures/style.md:66:haruspex.History
+tests/prose/fixtures/style.md:68:haruspex.History
+tests/prose/fixtures/style.md:70:haruspex.History
+tests/prose/fixtures/style.md:72:haruspex.History
+tests/prose/fixtures/style.md:74:haruspex.History
+tests/prose/fixtures/style.md:76:haruspex.History
+tests/prose/fixtures/style.md:78:haruspex.History
+tests/prose/fixtures/style.md:80:haruspex.History
+tests/prose/fixtures/style.md:82:haruspex.History
+tests/prose/fixtures/style.md:84:haruspex.History
+tests/prose/fixtures/style.md:86:haruspex.History
+tests/prose/fixtures/style.md:88:haruspex.History

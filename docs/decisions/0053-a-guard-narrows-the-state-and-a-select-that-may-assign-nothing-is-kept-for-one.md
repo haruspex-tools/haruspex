@@ -18,7 +18,7 @@ A guard that proves the `SELECT` read a row puts those values back: `@@ROWCOUNT`
 witness proved not NULL. An assignment to any of its variables ends it, and so does every statement but that `IF` for
 `@@ROWCOUNT`.
 
-**A row an existence guard found** (added the same day, after Richard chose it). `IF NOT EXISTS (SELECT … FROM t WHERE k =
+**A row an existence guard found** (added the same day, after the maintainer chose it). `IF NOT EXISTS (SELECT … FROM t WHERE k =
 @k) RETURN` leaves a `FoundRow` in `FlowState.Found`: the table, the guard's equalities, and whether the row is **held** for
 later reads, which needs a transaction the body began and still has open, and either a lock the guard keeps (a hint of
 `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or the `SERIALIZABLE` or `REPEATABLE READ` level for a guard
