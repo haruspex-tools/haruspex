@@ -52,8 +52,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// <c>COLLATE</c> on the column or a literal in the condition decides the comparison instead of the column's collation, so a set
 /// compared so is always <see cref="ValueComparison.Collation"/> (observed: CheckConstraintObservationTests).</para>
 /// <para><b>Minimum length.</b> <c>LEN</c> does not count trailing spaces, and counts a character (a surrogate pair
-/// under an <c>_SC</c> collation, several bytes in UTF-8) as one, so a value's UTF-16 length is at least its
-/// <c>LEN</c>. <c>col &lt;&gt; ''</c> is FALSE for an empty string (and for spaces, which compare equal to it), so
+/// under a supplementary-character collation, several bytes in UTF-8) as one, so a value's UTF-16 length is at least its
+/// <c>LEN</c>, and under a supplementary-character collation its code points are (<see cref="MinLengthFact.InCodePoints"/>). <c>col &lt;&gt; ''</c> is FALSE for an empty string (and for spaces, which compare equal to it), so
 /// the value has at least one character.</para>
 /// </remarks>
 public static class CheckReader
@@ -91,8 +91,17 @@ public static class CheckReader
         var proved = reader.Condition(check.Expression);
         // A COLLATE on the column or a literal it is compared with decides the comparison, by SQL Server's precedence, so the
         // column's collation says nothing of it (observed: A_collate_in_a_check_decides_how_it_compares): such a set is a note.
-        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings));
+        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings), !reader.Collated && CountsCodePoints(collation));
     }
+
+    /// <summary>
+    /// Whether <c>LEN</c> counts a surrogate pair as one character under <paramref name="collation"/>, so that a minimum it proves
+    /// is in code points: a supplementary-character collation, named <c>_SC</c> or <c>_UTF8</c>, or of version 140, which is one
+    /// by default (observed: Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation). Under any other,
+    /// or when the collation is not known, it counts UTF-16 code units, which a minimum then counts, and which hold under either.
+    /// </summary>
+    private static bool CountsCodePoints(string? collation) =>
+        collation is not null && collation.Split('_').Any(t => t.Equals("SC", StringComparison.OrdinalIgnoreCase) || t.Equals("UTF8", StringComparison.OrdinalIgnoreCase) || t == "140");
 
     /// <summary>
     /// How a column's strings compare with a CHECK's: exactly but for trailing spaces under a binary collation
@@ -154,9 +163,9 @@ public static class CheckReader
     {
         public bool IsValueSet => (Numbers is not null || Strings is not null) && Min is null && Max is null && MinLength is null;
 
-        public ColumnFacts ToFacts(ResolvedType type, FactSource from, (ValueComparison Comparison, CollationFold? Fold) strings) => new(
+        public ColumnFacts ToFacts(ResolvedType type, FactSource from, (ValueComparison Comparison, CollationFold? Fold) strings, bool codePoints) => new(
             type,
-            MinLength: MinLength is { } length ? new MinLengthFact(length, from) : null,
+            MinLength: MinLength is { } length ? new MinLengthFact(length, from) { InCodePoints = codePoints } : null,
             Min: Min is { } min ? new BoundFact(min.Value, min.Inclusive, from) : null,
             Max: Max is { } max ? new BoundFact(max.Value, max.Inclusive, from) : null,
             Values: Numbers is not null || Strings is not null

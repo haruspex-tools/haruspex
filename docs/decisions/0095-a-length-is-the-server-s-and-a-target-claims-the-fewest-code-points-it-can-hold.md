@@ -39,9 +39,12 @@ of one emoji to `nchar(1)` is empty. A UTF-8 `char(8)` holding two emoji is 8 by
 **Reason.** Each layer keeps its own unit: the IR the server's, each emitter its target's, and one conversion between them that
 every reader shares, so a length is read the same way everywhere.
 
-**Not decided here.** `IrMinLength` has no unit and counts UTF-16 code units, so a minimum given in code points (a declaration's
-`minLength`, or a CHECK's `LEN` under `_SC`) is read as that many code units, which is sound, and then claimed as half as many code
-points. A unit on the minimum is an IR change, for a later version.
+**Amended** (22 Nov 2026, IR 0.29, with [decision 0097](0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). A minimum
+has a unit too: UTF-16 code units, or code points for a declaration's `minLength` and a CHECK's `LEN` under a supplementary-character
+collation (`_SC`, `_UTF8`, or version 140), which count code points (observed:
+`Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation`). A minimum in code points is claimed as it is;
+one in code units, as before, as half as many code points. Under an unknown collation `LEN` stays in code units, which hold under
+either. Two minima in different units are compared by what each guarantees in the other's (`IrMinLength.Implies`).
 
 **In the code:** `IrLength`, `IrMinLength`; `SqlTypes.Converted` and `Typer.Unpadded` in the SQL Server front end; the Zod
 emitter's `Facets.String`, the JSON Schema emitter's `Strings`, `IrCombination` and `IrFit`; the IR README's "Facets".

@@ -64,6 +64,24 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     public async Task A_collate_in_a_check_decides_how_it_compares(string column, string condition, string value, bool stored) =>
         Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s varchar(10) COLLATE {column} NULL CHECK ({condition}));", $"INSERT INTO dbo.obs VALUES ('{value}')"));
 
+    [Theory]
+    // LEN counts a surrogate pair as one character under a supplementary-character collation (_SC, _UTF8, or version 140, which is
+    // one by default) and as two under any other, so a CHECK on LEN bounds code points only there.
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_CI_AS_SC", true)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8", true)]
+    [InlineData("nvarchar(10) COLLATE Japanese_XJIS_140_CI_AS", true)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_CI_AS", false)]
+    public async Task Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation(string column, bool asOne)
+    {
+        var setup = $"CREATE TABLE dbo.obs_len (c {column} NULL CHECK (LEN(c) >= 2));";
+
+        // Two emoji are two characters under either; one emoji is one only under a supplementary-character collation.
+        Assert.True(await Succeeds(setup, "INSERT INTO dbo.obs_len (c) VALUES (NCHAR(55357) + NCHAR(56832) + NCHAR(55357) + NCHAR(56832))"));
+        Assert.Equal(!asOne, await Succeeds(setup, "INSERT INTO dbo.obs_len (c) VALUES (NCHAR(55357) + NCHAR(56832))"));
+        var one = Convert.ToInt32(await Query($"CREATE TABLE dbo.obs_len (c {column} NULL); INSERT INTO dbo.obs_len (c) VALUES (NCHAR(55357) + NCHAR(56832));", "SELECT LEN(c) FROM dbo.obs_len;"), System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal(asOne ? 1 : 2, one);
+    }
+
     [Fact]
     public async Task A_binary_collation_still_ignores_trailing_spaces()
     {

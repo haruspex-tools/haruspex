@@ -116,6 +116,7 @@ public class IrJsonSchemaTests
         (typeof(IrNullReason), nameof(IrNullReason.Rule), "reason", "rule"),
         (typeof(IrNullReason), nameof(IrNullReason.At), "reason", "at"),
         (typeof(IrNullReason), nameof(IrNullReason.Detail), "reason", "detail"),
+        (typeof(IrMinLength), nameof(IrMinLength.Unit), "minLength", "unit"),
         (typeof(IrScalar), nameof(IrScalar.Kind), "scalar", "kind"),
         (typeof(IrScalar), nameof(IrScalar.Format), "scalar", "format"),
         (typeof(IrScalar), nameof(IrScalar.Sql), "scalar", "sql"),
@@ -137,6 +138,7 @@ public class IrJsonSchemaTests
         (typeof(IrMinLength), nameof(IrMinLength.Value), "minLength", "value"),
         (typeof(IrMinLength), nameof(IrMinLength.From), "minLength", "from"),
         (typeof(IrMinLength), nameof(IrMinLength.FewestCodePoints), "minLength", null), // derived from its value; not written
+        (typeof(IrMinLength), nameof(IrMinLength.FewestUtf16Units), "minLength", null), // derived from its value; not written
         (typeof(IrDigits), nameof(IrDigits.Precision), "digits", "precision"),
         (typeof(IrDigits), nameof(IrDigits.Scale), "digits", "scale"),
         (typeof(IrDigits), nameof(IrDigits.From), "digits", "from"),

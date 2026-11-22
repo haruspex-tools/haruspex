@@ -232,16 +232,16 @@ public static class IrJsonReader
     }
 
     /// <summary>
-    /// Refuses a reason's detail (0.29) in a document labelled before 0.29, by its path, and a document labelled 0.29 that explains
-    /// no reason, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// Refuses a reason's detail or a minimum length's unit (0.29) in a document labelled before 0.29, by its path, and a document
+    /// labelled 0.29 that has neither, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
     /// </summary>
     private static void ExplainsAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentExplained.First(document);
         if (version == IrDocument.CurrentVersion && first is null)
-            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document in which a reason says what makes it so, and in this one none does. One in which none does is labelled {IrDocument.DeclaredVersion} or earlier, by what else it says.");
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document in which a reason says what makes it so or a minimum length is in code points, and this one has neither. One that has neither is labelled {IrDocument.DeclaredVersion} or earlier, by what else it says.");
         if (version != IrDocument.CurrentVersion && first is { } path)
-            throw new IrFormatException(path, $"is given in a document of IR {version}: a reason says what makes it so in IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a reason's detail and a minimum length's unit are IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>
@@ -783,7 +783,11 @@ public static class IrJsonReader
 
     private static IrMinLength MinLength(IrJsonObject json)
     {
-        var minLength = new IrMinLength(json.Count("value"), Source(json.Object("from")));
+        // UTF-16 code units when it says no unit; the one unit it may say is code points (0.29), so that each minimum is written one way.
+        var unit = json.OptionalName<IrLengthUnit>("unit", IrWireNames.TryParse, "a length's unit");
+        if (unit is not (null or IrLengthUnit.CodePoints))
+            throw new IrFormatException(json.PathOf("unit"), $"is \"{IrWireNames.Of(unit.Value)}\": a minimum length in UTF-16 code units says no unit, and the one it may say is \"code-points\".");
+        var minLength = new IrMinLength(json.Count("value"), Source(json.Object("from"))) { Unit = unit ?? IrLengthUnit.Utf16 };
         json.End();
         return minLength;
     }

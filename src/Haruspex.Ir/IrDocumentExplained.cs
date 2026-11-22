@@ -1,13 +1,18 @@
 namespace Haruspex.Ir;
 
 /// <summary>
-/// Where a document first says what makes a reason so (0.29): a <see cref="IrNullReason.Detail"/>. What
-/// <see cref="IrDocument.Explains"/> asks, and where the reader says a detail is out of place in an older document.
+/// Where a document first says what only 0.29 says: what makes a reason so (a <see cref="IrNullReason.Detail"/>), or a minimum
+/// length in code points (<see cref="IrMinLength.Unit"/>). What <see cref="IrDocument.Explains"/> asks, and where the reader says
+/// such a thing is out of place in an older document.
 /// </summary>
 internal static class IrDocumentExplained
 {
-    /// <summary>The path of the first reason with a detail, in the order of the file; null when there is none.</summary>
-    public static string? First(IrDocument document)
+    /// <summary>The path of the first reason with a detail, then of the first minimum in code points; null when there is none.</summary>
+    public static string? First(IrDocument document) =>
+        FirstDetail(document)
+        ?? IrDocumentScalars.Of(document).Where(s => s.Scalar.Facets?.MinLength?.Unit == IrLengthUnit.CodePoints).Select(s => s.Path + ".minLength.unit").FirstOrDefault();
+
+    private static string? FirstDetail(IrDocument document)
     {
         foreach (var (obj, i) in document.Objects.Select((o, i) => (o, i)))
         {

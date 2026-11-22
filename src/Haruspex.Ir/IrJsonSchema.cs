@@ -59,10 +59,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words, and a minimum length in code points. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document in which a reason says what makes it so (a detail, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -326,7 +326,12 @@ public static class IrJsonSchema
             ("unit", Vocabulary<IrLengthUnit>(IrWireNames.Of)),
             ("encoding", Vocabulary(IrWireNames.Of, IrByteEncoding.Unknown)),
             ("from", Ref("factSource")))),
-        ("minLength", Closed("A string's minimum length in UTF-16 code units.", ["value", "from"], ("value", Integer()), ("from", Ref("factSource")))),
+        ("minLength", Closed(
+            "A string's minimum length, in UTF-16 code units, or (0.29) in code points when its unit says so.",
+            ["value", "from"],
+            ("value", Integer()),
+            ("unit", Node(("description", "What value counts when not UTF-16 code units (0.29)."), ("const", IrWireNames.Of(IrLengthUnit.CodePoints)))),
+            ("from", Ref("factSource")))),
         ("digits", Closed(
             "A decimal's precision and scale.",
             ["precision", "scale", "from"],

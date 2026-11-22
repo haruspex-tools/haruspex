@@ -506,6 +506,17 @@ public partial class IrFitTests
     }
 
     [Fact]
+    public void A_minimum_in_code_units_fits_one_in_code_points_only_where_its_fewest_code_points_reach_it()
+    {
+        var before = WithField(Infer(ListOrders), "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(3, Declared) { Unit = IrLengthUnit.CodePoints } }));
+        var four = WithField(before, "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(4, Declared) }));
+        var six = WithField(before, "customer", t => Faceted(t, f => f with { MinLength = new IrMinLength(6, Declared) }));
+
+        Assert.Equal(["refused: shop.list_orders results[0][].customer: minimum length changed from at least 3 code points to at least 4"], Fit(before, four));
+        Assert.Empty(Fit(before, six));
+    }
+
+    [Fact]
     public void A_fixed_length_in_utf_8_bytes_does_not_fit_a_minimum_of_as_many_code_units()
     {
         // char(8) of UTF-8 may hold two emoji, 4 UTF-16 code units, which a minimum of 6 refuses.

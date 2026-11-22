@@ -357,7 +357,7 @@ public partial class ColumnDeclarationTests
         var facets = Assert.IsType<IrScalar>(Declared(dir, """{ "type": "string", "minLength": 2, "maxLength": 128 }""").Content).Facets;
 
         IrFactSource from = new(IrFactSourceKind.Declared, Key);
-        Assert.Equal(new IrMinLength(2, from), facets?.MinLength);
+        Assert.Equal(new IrMinLength(2, from) { Unit = IrLengthUnit.CodePoints }, facets?.MinLength);
         Assert.Equal(new IrLength(128, IsFixed: false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, from), facets?.Length);
     }
 

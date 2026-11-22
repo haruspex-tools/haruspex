@@ -278,7 +278,7 @@ public static class IrComparison
         {
             if ((was.Length?.Value, was.Length?.IsFixed, was.Length?.Unit, was.Length?.Encoding) != (now.Length?.Value, now.Length?.IsFixed, now.Length?.Unit, now.Length?.Encoding))
                 Add(IrChangeKind.LengthChanged, path, IrClaimText.Length(was.Length), IrClaimText.Length(now.Length));
-            if (was.MinLength?.Value != now.MinLength?.Value)
+            if ((was.MinLength?.Value, was.MinLength?.Unit) != (now.MinLength?.Value, now.MinLength?.Unit))
                 Add(IrChangeKind.MinLengthChanged, path, IrClaimText.MinLength(was.MinLength), IrClaimText.MinLength(now.MinLength));
             if ((was.Digits?.Precision, was.Digits?.Scale) != (now.Digits?.Precision, now.Digits?.Scale))
                 Add(IrChangeKind.DigitsChanged, path, IrClaimText.Digits(was.Digits), IrClaimText.Digits(now.Digits));

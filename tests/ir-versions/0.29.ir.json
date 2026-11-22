@@ -229,6 +229,7 @@
             },
             "minLength": {
               "value": 1,
+              "unit": "code-points",
               "from": {
                 "declared": "parcels.parcel.options"
               }

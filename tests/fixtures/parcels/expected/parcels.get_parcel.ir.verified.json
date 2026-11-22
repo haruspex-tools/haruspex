@@ -1,5 +1,5 @@
 {
-  "irVersion": "0.28",
+  "irVersion": "0.29",
   "source": {
     "dialect": "tsql",
     "files": {
@@ -104,6 +104,7 @@
             },
             "minLength": {
               "value": 1,
+              "unit": "code-points",
               "from": {
                 "declared": "parcels.parcel.options"
               }

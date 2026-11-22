@@ -75,10 +75,14 @@ public static partial class IrCombination
         /// </summary>
         private static IrMinLength? Shortest(IrFacets was, IrFacets now)
         {
+            // The one the other implies, or, of two in different units that don't imply each other, the fewer code units both hold.
             var (a, b) = (Least(was), Least(now));
-            return a is null || b is null ? null : a.Value <= b.Value ? a : b;
+            return a is null || b is null ? null
+                : b.Implies(a) ? a
+                : a.Implies(b) ? b
+                : new IrMinLength(Math.Min(a.FewestUtf16Units, b.FewestUtf16Units), a.From);
 
-            static IrMinLength? Least(IrFacets facets) => facets.Length is { IsFixed: true } fixedAt && (facets.MinLength is null || facets.MinLength.Value < fixedAt.FewestUtf16Units)
+            static IrMinLength? Least(IrFacets facets) => facets.Length is { IsFixed: true } fixedAt && (facets.MinLength is null || !facets.MinLength.Implies(new IrMinLength(fixedAt.FewestUtf16Units, fixedAt.From)))
                 ? new IrMinLength(fixedAt.FewestUtf16Units, fixedAt.From)
                 : facets.MinLength;
         }
@@ -189,7 +193,8 @@ public static partial class IrCombination
             sql ??= length is not null && length == old.Length && length != facets.Length ? was.Sql : now.Sql;
             return (now with { Sql = sql, Facets = narrowed.IsEmpty ? null : narrowed }, null);
 
-            static IrMinLength? Longest(IrMinLength? x, IrMinLength? y) => x is null ? y : y is null ? x : x.Value >= y.Value ? x : y;
+            // Both hold, so either may be kept: the one that implies the other, or the first.
+            static IrMinLength? Longest(IrMinLength? x, IrMinLength? y) => x is null ? y : y is null ? x : y.Implies(x) ? y : x;
 
             static int? Rank(IrFormat? format) => format switch
             {

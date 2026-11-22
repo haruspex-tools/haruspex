@@ -71,7 +71,7 @@ internal static class SqlTypes
             ? scalar.WithFacets(facets with
             {
                 Length = length with { IsFixed = false },
-                MinLength = length.Value > 1 && (facets.MinLength is null || facets.MinLength.Value < length.Value - 1)
+                MinLength = length.Value > 1 && (facets.MinLength is null || !facets.MinLength.Implies(new IrMinLength(length.Value - 1, length.From)))
                     ? new IrMinLength(length.Value - 1, length.From)
                     : facets.MinLength,
             })
@@ -159,7 +159,7 @@ internal static class SqlTypes
             Length: facts.Length is { } length
                 ? new IrLength(length.Value, length.IsFixed, length.Unit == TextUnit.Utf16 ? IrLengthUnit.Utf16 : IrLengthUnit.Bytes, Encoding(length.Encoding), Source(length.From))
                 : null,
-            MinLength: facts.MinLength is { } minLength ? new IrMinLength(minLength.Value, Source(minLength.From)) : null,
+            MinLength: facts.MinLength is { } minLength ? new IrMinLength(minLength.Value, Source(minLength.From)) { Unit = minLength.InCodePoints ? IrLengthUnit.CodePoints : IrLengthUnit.Utf16 } : null,
             Digits: facts.Digits is { } digits ? new IrDigits(digits.Precision, digits.Scale, Source(digits.From)) : null,
             Min: Bound(facts.Min),
             Max: Bound(facts.Max),

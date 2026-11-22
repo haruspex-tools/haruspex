@@ -525,6 +525,10 @@ public static class IrJsonWriter
         {
             json.WriteStartObject("minLength");
             json.WriteNumber("value", minLength.Value);
+
+            // Left out in UTF-16 code units, so that a minimum that says nothing new is written as before 0.29.
+            if (minLength.Unit != IrLengthUnit.Utf16)
+                json.WriteString("unit", IrWireNames.Of(minLength.Unit));
             WriteSource(json, minLength.From);
             json.WriteEndObject();
         }

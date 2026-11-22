@@ -6,7 +6,7 @@ namespace Haruspex.Ir;
 /// nullability is the field's.
 /// </summary>
 /// <param name="Length">The string's length: a maximum, or a fixed length.</param>
-/// <param name="MinLength">The string's minimum length in UTF-16 code units.</param>
+/// <param name="MinLength">The string's minimum length, in its unit.</param>
 /// <param name="Digits">The decimal's precision and scale.</param>
 /// <param name="Min">The number's lower bound.</param>
 /// <param name="Max">The number's upper bound.</param>

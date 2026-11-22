@@ -19,8 +19,9 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that explains a null reason is written in (0.29): one in which a reason
-    /// says, in words, what makes it so (<see cref="IrNullReason.Detail"/>), as a value read from JSON at a path does. The IR is
+    /// The newest IR format version, the one a document that explains a null reason, or counts a minimum length in code points, is
+    /// written in (0.29): one in which a reason says, in words, what makes it so (<see cref="IrNullReason.Detail"/>), as a value
+    /// read from JSON at a path does, or a minimum's unit is code points (<see cref="IrMinLength.Unit"/>). The IR is
     /// versioned separately from the tool, because it is a file that other programs read: a change that would break a reader
     /// changes this. Why: docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md.
     /// </summary>
@@ -107,7 +108,7 @@ public sealed record IrDocument(
     /// </summary>
     internal bool Declares => Columns.Count > 0 || IrDocumentDeclared.First(this) is not null;
 
-    /// <summary>Whether any reason in it says what makes it so (0.29): a <see cref="IrNullReason.Detail"/> anywhere.</summary>
+    /// <summary>Whether it says what only 0.29 says: a <see cref="IrNullReason.Detail"/>, or a minimum length in code points, anywhere.</summary>
     internal bool Explains => IrDocumentExplained.First(this) is not null;
 
     /// <summary>Whether any of its values is a binary one (0.27): a scalar of kind <see cref="IrScalarKind.Bytes"/> anywhere.</summary>

@@ -88,7 +88,7 @@ internal static class Facets
 
         if (facets?.Length is { } length && LengthNote(scalar.Sql ?? "The string", length) is { } lengthNote)
             notes.Add(lengthNote);
-        if (facets?.MinLength is { Value: > 1 } minLength)
+        if (facets?.MinLength is { Value: > 1, Unit: IrLengthUnit.Utf16 } minLength)
             notes.Add(new ZodNote($"At least {minLength.Value} UTF-16 code units, which is at least {CodePoints(minLength.FewestCodePoints)}.", ZodCaveat.CodePoints));
 
         return WithNotes(code, notes);

@@ -238,6 +238,15 @@ public partial class JsonSchemaEmitterTests
     }
 
     [Fact]
+    public void A_minimum_in_code_points_is_the_schema_s_own_min_length_with_no_note()
+    {
+        var minimum = Value(Text(minLength: new IrMinLength(4, new IrFactSource(IrFactSourceKind.Declared, "shop.orders.settings")) { Unit = IrLengthUnit.CodePoints }));
+
+        AssertSchema("""{ "type": "string", "minLength": 4 }""", minimum);
+        Assert.DoesNotContain("UTF-16", Description(minimum), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void An_array_carries_its_items_nullability_and_length()
     {
         var value = Value(new IrArray(new IrScalar(IrScalarKind.Boolean, null, "bit")) { ItemsNullableBecause = [Column], MinItems = 1, MaxItems = 3 });

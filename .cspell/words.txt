@@ -116,6 +116,7 @@ xmlnamespaces
 arrayagg
 datareader
 wansung
+xjis
 
 # CTEs and UDDT (a user-defined data type), as ScriptDom's type names spell them (WithCtesAndXmlNamespaces,
 # CreateTypeUddtStatement)

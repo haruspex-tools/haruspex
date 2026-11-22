@@ -181,9 +181,12 @@ public static partial class IrFit
                     Refuse(IrChangeKind.LengthChanged, path, Refusal, IrClaimText.Length(was.Length), IrClaimText.Length(now.Length));
                 }
 
-                var shortest = Math.Max(now.MinLength?.Value ?? 0, now.Length?.FewestUtf16Units ?? 0);
-                if (was.MinLength is { } minimum && shortest < minimum.Value)
+                // What the value now guarantees, its minimum or a fixed length's fewest code units, must imply the minimum accepted.
+                if (was.MinLength is { } minimum && now.MinLength?.Implies(minimum) != true
+                    && !(now.Length is { IsFixed: true } filled && new IrMinLength(filled.FewestUtf16Units, filled.From).Implies(minimum)))
+                {
                     Refuse(IrChangeKind.MinLengthChanged, path, Refusal, IrClaimText.MinLength(was.MinLength), IrClaimText.MinLength(now.MinLength));
+                }
             }
 
             /// <summary>

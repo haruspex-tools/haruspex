@@ -87,9 +87,9 @@ refused by its label.
 
 **Amended a twelfth time** (22 Nov 2026, IR 0.29, [decision 0097](0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)).
 The 0.29 reader reads 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 too, by the same test: 0.29 added only a reason's `detail`, what makes
-it so in words, and every document of those versions is a 0.29 document in which no reason has one, meaning the same. A detail in
-a document labelled before 0.29 is refused by its path, and a document labelled 0.29 in which no reason has one is refused by its
-label.
+it so in words, and a minimum length's `unit` for a minimum in code points, and every document of those versions is a 0.29 document
+with neither, meaning the same (a minimum that says no unit counts UTF-16 code units, as it always did). Either in a document labelled
+before 0.29 is refused by its path, and a document labelled 0.29 that has neither is refused by its label.
 
 **See also:** [The IR as a contract](../internals/10-the-ir-as-a-contract.md), "A version the reader doesn't read";
 [`tests/ir-versions`](../../tests/ir-versions/README.md).

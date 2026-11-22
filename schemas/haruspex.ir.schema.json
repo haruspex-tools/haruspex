@@ -2,11 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
   "title": "haruspex.ir.json",
-  "description": "An IR file of version 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words. The format is described in src/Haruspex.Ir/README.md.",
+  "description": "An IR file of version 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words, and a minimum length in code points. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
   "properties": {
     "irVersion": {
-      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.29 for a document in which a reason says what makes it so (a detail, which this schema can't require), else 0.28 for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.29 for a document in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else 0.28 for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
       "enum": [
         "0.29",
         "0.28",
@@ -1583,13 +1583,17 @@
       "additionalProperties": false
     },
     "minLength": {
-      "description": "A string's minimum length in UTF-16 code units.",
+      "description": "A string's minimum length, in UTF-16 code units, or (0.29) in code points when its unit says so.",
       "type": "object",
       "properties": {
         "value": {
           "type": "integer",
           "minimum": 0,
           "maximum": 2147483647
+        },
+        "unit": {
+          "description": "What value counts when not UTF-16 code units (0.29).",
+          "const": "code-points"
         },
         "from": {
           "$ref": "#/$defs/factSource"

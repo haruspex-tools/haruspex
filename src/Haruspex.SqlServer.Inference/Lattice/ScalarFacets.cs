@@ -43,7 +43,10 @@ internal static class ScalarFacets
             : a.Length is { IsFixed: false } x && b.Length is { IsFixed: false } y && x.Unit == y.Unit && x.Encoding == y.Encoding
                 ? x.Value >= y.Value ? x : y
                 : null;
-        var minLength = a.MinLength is { } ma && b.MinLength is { } mb ? (ma.Value <= mb.Value ? ma : mb) : null;
+        // The minimum both allow: the one the other implies, or, of two that don't imply each other, the fewer code units both hold.
+        var minLength = a.MinLength is { } ma && b.MinLength is { } mb
+            ? mb.Implies(ma) ? ma : ma.Implies(mb) ? mb : new IrMinLength(Math.Min(ma.FewestUtf16Units, mb.FewestUtf16Units), ma.From)
+            : null;
         var digits = a.Digits is { } da && b.Digits is { } db && da == db with { From = da.From } ? da : null;
         var joined = new IrFacets(length, minLength, digits, Bounds.Looser(a.Min, b.Min, BoundSide.Lower, BoundOf), Bounds.Looser(a.Max, b.Max, BoundSide.Upper, BoundOf), Union(a.Values, b.Values));
         return joined.IsEmpty ? null : joined;
@@ -65,7 +68,7 @@ internal static class ScalarFacets
         if (a is null)
             return false;
         return Holds(a.Length, b.Length, (x, y) => x.Unit == y.Unit && x.Encoding == y.Encoding && (y.IsFixed ? x.IsFixed && x.Value == y.Value : x.Value <= y.Value))
-            && Holds(a.MinLength, b.MinLength, (x, y) => x.Value >= y.Value)
+            && Holds(a.MinLength, b.MinLength, (x, y) => x.Implies(y))
             && Holds(a.Digits, b.Digits, (x, y) => x.Precision == y.Precision && x.Scale == y.Scale)
             && Holds(a.Min, b.Min, (x, y) => BoundBelow(x, y, BoundSide.Lower))
             && Holds(a.Max, b.Max, (x, y) => BoundBelow(x, y, BoundSide.Upper))
@@ -86,7 +89,7 @@ internal static class ScalarFacets
         if (a is null || b is null)
             return a is null && b is null;
         return Same(a.Length, b.Length, (x, y) => x with { From = y.From } == y)
-            && Same(a.MinLength, b.MinLength, (x, y) => x.Value == y.Value)
+            && Same(a.MinLength, b.MinLength, (x, y) => (x.Value, x.Unit) == (y.Value, y.Unit))
             && Same(a.Digits, b.Digits, (x, y) => x with { From = y.From } == y)
             && Same(a.Min, b.Min, (x, y) => x with { From = y.From } == y)
             && Same(a.Max, b.Max, (x, y) => x with { From = y.From } == y)

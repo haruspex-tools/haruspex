@@ -138,8 +138,8 @@ of program handle one.
   document labelled 0.23 or 0.24; must refuse a document labelled 0.26 without `tableTypes`, and one labelled before 0.26 with
   them; must refuse a binary value in a document labelled before 0.27, and a document labelled 0.27 that holds none; and must
   refuse `columns`, any JSON, a fact from a declaration and an open object in a document labelled before 0.28, and a document labelled 0.28
-  that says none of them; and must refuse a reason's `detail` in a document labelled before 0.29, and a document labelled 0.29 in
-  which no reason has one;
+  that says none of them; and must refuse a reason's `detail` and a minimum length's `unit` in a document labelled before 0.29, and a
+  document labelled 0.29 that has neither;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
   `utf16` or with an `encoding`;
 - must refuse a parameter's `tableType` that names no table type in `tableTypes`, a table type no parameter names, a parameter
@@ -168,7 +168,7 @@ checks what a reader must refuse except what JSON Schema can't express: a number
 that names no type, what ties a table-valued parameter to its type's definition and rows, whether a document holds a binary
 value, which decides whether it is labelled 0.27, and what ties a `column-json` claim and a declaration's files to the declaration,
 or whether a document holds any JSON, a fact from a declaration or an open object, which decides whether it is labelled 0.28, or a
-reason's `detail`, which decides whether it is labelled 0.29.
+reason's `detail` or a minimum length in code points, which decides whether it is labelled 0.29.
 
 ## A document
 
@@ -178,7 +178,8 @@ reason's `detail`, which decides whether it is labelled 0.29.
                                       // (0.26 when it defines a table type: "Table types", below; 0.27 when it
                                       // holds a binary value: "Logical kinds", below; 0.28 when it declares a
                                       // column's JSON: "Column declarations", below; 0.29 when a reason says
-                                      // what makes it so: "Null reasons", below)
+                                      // what makes it so: "Null reasons", below, or a minimum length is in
+                                      // code points: "Facets", below)
   "source": { "dialect": "tsql",      // the package is left out for a folder of scripts or a project file, the references for a folder
     "package": "sales.dacpac", "sha256": "3f1c…",
     "references": [{ "package": "ledger.dacpac", "sha256": "9a0e…", "database": "$(Ledger)" }],
@@ -536,7 +537,7 @@ null.
 | Facet | Meaning |
 |---|---|
 | `maxLength` / `length` | at most, or exactly (padded, as a stored `nchar(n)` or `char(n)` is), `value` of `unit`: `utf16` (UTF-16 code units), `bytes` (of the stored encoding), or (0.28) `code-points` (Unicode code points, as JSON Schema's `maxLength` counts them, a character outside the Basic Multilingual Plane and a lone surrogate one each; only a declaration gives it, as a maximum). With `bytes`, `encoding` is `single-byte` (a byte is a code unit: exact), `utf-8` or `double-byte` (a character takes several, so a maximum is an upper bound on UTF-16 length and a fixed length is only a maximum), or left out when unknown. A scalar has one or the other, never both. A binary value's (0.27) counts its bytes, `bytes` with no `encoding`, since they encode no text: `binary(32)` is exactly 32, `varbinary(8000)` at most 8,000 |
-| `minLength` | at least `value` UTF-16 code units |
+| `minLength` | at least `value` UTF-16 code units, or (0.29) code points when `unit` is `code-points`, its one other value: a declaration's `minLength`, and `LEN` under a supplementary-character collation, count code points. A reader must refuse any other `unit` |
 | `digits` | an exact decimal of at most `precision` digits, `scale` of them after the point |
 | `min` / `max` | a bound, `inclusive` or not. `value` is a JSON number written as plain decimal text (`99999999999999999.99`, `-9223372036854775808`), so a reader that parses decimals loses nothing |
 | `values` | the value is one of `items` (strings, or numbers as plain decimal text). `match` is `exact`, or `collation`: equal under the database's string comparison, which may ignore case, accents and trailing spaces, so `"Open "` can be a value of a set holding `"open"`. A `collation` set is true but not exact, and an emitter must not treat it as an enum. `padded`: one of the items followed by any number of spaces (U+0020). `canonical` (0.20): the value's canonical form under the fold `fold` names (see `folds`) is an item's, so an emitter may map a value to the item whose canonical form it has and then treat the set as exact; its items are in ordinal order, and where two share a canonical form, a value maps to the first. `fold` is there exactly when `match` is `canonical` |
@@ -545,7 +546,9 @@ A length is the server's, in its unit. A target that counts another, as Zod and 
 `IrLength.FewestCodePoints` and `IrMinLength.FewestCodePoints`: a maximum of any unit is a maximum of code points, since a code point
 takes at least one of each, but a fixed length or a minimum is a minimum only of the fewest code points a value of it can hold
 (an `nchar(4)` holding two emoji is two). `IrLength.FewestUtf16Units` gives the same for a minimum in UTF-16 code units, which is
-how a fixed length becomes a minimum when two documents are combined. A value converted to `nchar(n)` rather than stored, by
+how a fixed length becomes a minimum when two documents are combined. A minimum in code points is claimed as it is, and is at least
+as many code units (`IrMinLength.FewestUtf16Units`); two minima in different units are compared by what each guarantees in the
+other's (`IrMinLength.Implies`): 6 code units imply 3 code points, but 4 code units and 3 code points imply neither. A value converted to `nchar(n)` rather than stored, by
 `CAST`, a variable or a parameter read in the body, is `maxLength` n and `minLength` n - 1: under a supplementary-character (`_SC`)
 collation a conversion cuts a value before a pair that doesn't fit and doesn't pad it
 ([decision 0095](../../docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)).
@@ -640,9 +643,11 @@ reads only its own version, or one whose every document means the same in it ([d
 from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md).
 
 **0.29** (22 Nov 2026, paths into JSON). A reason's `detail`, what makes it so in words ("Null reasons", above;
-[decision 0097](../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). Only a document in which a
-reason has one is labelled 0.29: every 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 document is a 0.29 document in which none does,
-meaning the same, so this reader reads all seven
+[decision 0097](../../docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)); and a minimum length's `unit`,
+`code-points` for a minimum in code points ("Facets", above;
+[decision 0095](../../docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)).
+Only a document that has one of these is labelled 0.29: every 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 document is a 0.29 document that
+has neither, meaning the same, so this reader reads all seven
 ([decision 0024](../../docs/decisions/0024-an-ir-reader-refuses-other-versions.md), twelfth amendment).
 
 **0.28** (21 Nov 2026, declared JSON). A document's `columns`, each column the config file declares to hold JSON of a schema

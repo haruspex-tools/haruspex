@@ -50,4 +50,23 @@ public class IrLengthTests
     [InlineData(5, 3)]
     public void A_minimum_in_utf_16_code_units_is_half_as_many_code_points_rounded_up(int units, int codePoints) =>
         Assert.Equal(codePoints, new IrMinLength(units, Type).FewestCodePoints);
+
+    [Fact]
+    public void A_minimum_in_code_points_is_that_many_code_points_and_at_least_as_many_code_units()
+    {
+        var least = new IrMinLength(5, Type) { Unit = IrLengthUnit.CodePoints };
+
+        Assert.Equal((5, 5), (least.FewestCodePoints, least.FewestUtf16Units));
+    }
+
+    [Theory]
+    // 6 code units are at least 3 code points; 3 code points at least 3 code units, not 4.
+    [InlineData(6, IrLengthUnit.Utf16, 3, IrLengthUnit.CodePoints, true)]
+    [InlineData(5, IrLengthUnit.Utf16, 3, IrLengthUnit.CodePoints, true)]
+    [InlineData(4, IrLengthUnit.Utf16, 3, IrLengthUnit.CodePoints, false)]
+    [InlineData(3, IrLengthUnit.CodePoints, 3, IrLengthUnit.Utf16, true)]
+    [InlineData(3, IrLengthUnit.CodePoints, 4, IrLengthUnit.Utf16, false)]
+    [InlineData(4, IrLengthUnit.CodePoints, 3, IrLengthUnit.CodePoints, true)]
+    public void A_minimum_implies_another_only_where_its_fewest_units_reach_the_other_s(int value, IrLengthUnit unit, int otherValue, IrLengthUnit otherUnit, bool implies) =>
+        Assert.Equal(implies, new IrMinLength(value, Type) { Unit = unit }.Implies(new IrMinLength(otherValue, Type) { Unit = otherUnit }));
 }

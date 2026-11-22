@@ -342,7 +342,7 @@ internal sealed class DeclaredSchema
                 {
                     Facets = new IrFacets(
                         Length: most is { } m ? new IrLength(m, IsFixed: false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, Fact) : null,
-                        MinLength: least is { } l ? new IrMinLength(l, Fact) : null),
+                        MinLength: least is { } l ? new IrMinLength(l, Fact) { Unit = IrLengthUnit.CodePoints } : null),
                 };
         }
 

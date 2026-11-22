@@ -242,11 +242,12 @@ six. The label is checked as 0.27's is, by finding what only a declaration gives
 ([decision 0093](../decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),
 [decision 0094](../decisions/0094-any-json-is-a-type-of-its-own.md)).
 
-Version 0.29 adds a reason's `detail`: what, at its place, makes a value null, in words, which `explain` prints. A value read from
+Version 0.29 adds a minimum length's unit, code points, which a declaration's `minLength` and `LEN` under a supplementary-character
+collation count, so that they are claimed as they are rather than as half as many; and a reason's `detail`: what, at its place, makes a value null, in words, which `explain` prints. A value read from
 JSON at a path carries the steps that may find nothing or `null` there ("`$.address` may be left out, as the schema doesn't require
 it"), so the person reading the generated code can see which step to change. It is prose, not a claim, and the reader reads no
 meaning from it. A document in which no reason has one keeps its label, and the 0.29 reader reads all seven; the label is checked
-by finding a detail wherever a reason can be (`IrDocumentExplained`)
+by finding a detail wherever a reason can be, or a minimum in code points wherever a scalar can be (`IrDocumentExplained`)
 ([decision 0097](../decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)).
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads

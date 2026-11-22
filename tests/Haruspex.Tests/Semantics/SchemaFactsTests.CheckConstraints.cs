@@ -130,6 +130,18 @@ public partial class SchemaFactsTests
     public void Len_and_not_empty_give_a_minimum_length(string definition, int min) =>
         Assert.Equal(min, Column(definition).MinLength!.Value);
 
+    [Theory]
+    // LEN counts a surrogate pair as one character under a supplementary-character collation (_SC, _UTF8, or a version 140
+    // collation) and as two otherwise (observed: Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation),
+    // so its minimum is in code points only there. An unknown collation keeps UTF-16 units, which hold under either.
+    [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS_SC NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("nvarchar(20) COLLATE Japanese_XJIS_140_CI_AS NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("nvarchar(20) NULL CHECK (LEN(c) >= 3)", false)]
+    public void A_len_minimum_is_in_code_points_only_under_a_supplementary_character_collation(string definition, bool codePoints) =>
+        Assert.Equal((3, codePoints), (Column(definition).MinLength!.Value, Column(definition).MinLength!.InCodePoints));
+
     [Fact]
     public void A_table_constraint_on_one_column_is_read()
     {

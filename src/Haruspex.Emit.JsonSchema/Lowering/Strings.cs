@@ -55,7 +55,7 @@ internal static class Strings
         var fewest = Math.Max(facets?.Length?.FewestCodePoints ?? 0, facets?.MinLength?.FewestCodePoints ?? 0);
         if (facets?.Length is { } length && Widened(scalar.Sql ?? "The string", length) is { } note)
             notes.Add(note);
-        if (facets?.MinLength is { Value: > 1 } minLength)
+        if (facets?.MinLength is { Value: > 1, Unit: IrLengthUnit.Utf16 } minLength)
             notes.Add(new SchemaNote($"At least {minLength.Value} UTF-16 code units, which is at least {CodePoints(minLength.FewestCodePoints)}.", JsonSchemaCaveat.CodePoints));
 
         return schema.With(Keyword.MinLength, fewest > 0 ? fewest : null).With(Keyword.MaxLength, facets?.Length?.Value).Noted(notes);

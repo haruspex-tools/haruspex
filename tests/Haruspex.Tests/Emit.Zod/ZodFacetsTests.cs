@@ -90,6 +90,10 @@ public class ZodFacetsTests
         Assert.Equal(zod, Json(Text("nvarchar(20)", new IrFacets(Length: new IrLength(20, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Type), MinLength: new IrMinLength(least, Check)))));
 
     [Fact]
+    public void A_minimum_in_code_points_is_claimed_exactly_with_no_note() =>
+        Assert.Equal("z.string().min(5).max(20)", Json(Text("nvarchar(20)", new IrFacets(Length: new IrLength(20, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Type), MinLength: new IrMinLength(5, Check) { Unit = IrLengthUnit.CodePoints }))));
+
+    [Fact]
     public void A_fixed_length_and_a_minimum_claim_the_greater_of_their_code_points() =>
         Assert.Equal(
             "z.string().min(3).max(8) // char(8) pads to 8 bytes and UTF-8 takes up to four a character, so the length is 2 to 8 code points. At least 6 UTF-16 code units, which is at least 3 code points.",

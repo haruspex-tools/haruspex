@@ -70,8 +70,14 @@ public static class IrClaimText
         (IrLengthUnit.Bytes, var encoding) => $" bytes ({IrWireNames.Of(encoding)})",
     };
 
-    /// <summary>A minimum length: <c>at least 1</c>, or <c>none</c>.</summary>
-    public static string MinLength(IrMinLength? length) => length is null ? "none" : "at least " + Count(length.Value);
+    /// <summary>A minimum length: <c>at least 1</c> (UTF-16 code units), <c>at least 1 code point</c>, or <c>none</c>.</summary>
+    public static string MinLength(IrMinLength? length) => length switch
+    {
+        null => "none",
+        { Unit: IrLengthUnit.CodePoints, Value: 1 } => "at least 1 code point",
+        { Unit: IrLengthUnit.CodePoints } => $"at least {Count(length.Value)} code points",
+        _ => "at least " + Count(length.Value),
+    };
 
     /// <summary>A decimal's digits: <c>precision 10, scale 2</c>, or <c>none</c>.</summary>
     public static string Digits(IrDigits? digits) => digits is null ? "none" : $"precision {Count(digits.Precision)}, scale {Count(digits.Scale)}";

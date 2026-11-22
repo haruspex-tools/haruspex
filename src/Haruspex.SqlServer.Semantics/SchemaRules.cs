@@ -204,7 +204,7 @@ public static class SchemaRules
     {
         Min = Bounds.Tighter(facts.Min, proved.Min, BoundSide.Lower, m => m.Bound),
         Max = Bounds.Tighter(facts.Max, proved.Max, BoundSide.Upper, m => m.Bound),
-        MinLength = proved.MinLength is { } m && (facts.MinLength is null || m.Value > facts.MinLength.Value) ? m : facts.MinLength,
+        MinLength = proved.MinLength is { } m && (facts.MinLength is null || !facts.MinLength.Implies(m)) ? m : facts.MinLength,
         Values = Intersect(facts.Values, proved.Values),
     };
 
