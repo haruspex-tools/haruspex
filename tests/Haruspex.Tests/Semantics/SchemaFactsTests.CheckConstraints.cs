@@ -131,14 +131,23 @@ public partial class SchemaFactsTests
         Assert.Equal(min, Column(definition).MinLength!.Value);
 
     [Theory]
-    // LEN counts a surrogate pair as one character under a supplementary-character collation (_SC, _UTF8, or a version 140
-    // collation) and as two otherwise (observed: Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation),
-    // so its minimum is in code points only there. An unknown collation keeps UTF-16 units, which hold under either.
+    // LEN counts a surrogate pair as one character, so its minimum is in code points, only where it was observed to
+    // (Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation): of nvarchar, under _SC or a version
+    // 140 collation that isn't binary; of varchar, under _UTF8, binary too. Anything else, an unknown collation or a COLLATE in
+    // the condition keeps UTF-16 code units, which hold under either.
     [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS_SC NULL CHECK (LEN(c) >= 3)", true)]
-    [InlineData("varchar(20) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (LEN(c) >= 3)", true)]
     [InlineData("nvarchar(20) COLLATE Japanese_XJIS_140_CI_AS NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (LEN(c) >= 3)", true)]
+    [InlineData("nvarchar(20) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("nvarchar(20) COLLATE Japanese_XJIS_140_BIN NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("nvarchar(20) COLLATE Japanese_XJIS_140_BIN2 NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_CI_AS_SC NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("varchar(20) COLLATE Japanese_XJIS_140_CI_AS NULL CHECK (LEN(c) >= 3)", false)]
     [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS NULL CHECK (LEN(c) >= 3)", false)]
     [InlineData("nvarchar(20) NULL CHECK (LEN(c) >= 3)", false)]
+    [InlineData("nvarchar(20) COLLATE Latin1_General_100_CI_AS_SC NULL CHECK (LEN(c COLLATE Latin1_General_100_CI_AS) >= 3)", false)]
     public void A_len_minimum_is_in_code_points_only_under_a_supplementary_character_collation(string definition, bool codePoints) =>
         Assert.Equal((3, codePoints), (Column(definition).MinLength!.Value, Column(definition).MinLength!.InCodePoints));
 

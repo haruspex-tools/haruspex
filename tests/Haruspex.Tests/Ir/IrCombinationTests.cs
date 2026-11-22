@@ -158,6 +158,23 @@ public partial class IrCombinationTests
     }
 
     [Fact]
+    public void Minima_in_different_units_that_imply_neither_combine_as_the_fewer_code_units_both_hold()
+    {
+        // A CHECK of LEN >= 4 under Latin1_General_100_CI_AS is 4 code units; under _SC, 3 code points, which are at least 3 code
+        // units. Neither implies the other, and both hold at least 3 code units.
+        const string Codes = "CREATE TABLE shop.codes (id int NOT NULL PRIMARY KEY, code nvarchar(20) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (LEN(code) >= 4));";
+        const string List = "CREATE PROCEDURE shop.list_codes AS SELECT c.code FROM shop.codes AS c;";
+        var baseline = Infer(List, Codes);
+        var candidate = Infer(List, Edit(Edit(Codes, "_CI_AS ", "_CI_AS_SC "), ">= 4", ">= 3"));
+
+        var combined = Combine(baseline, candidate);
+
+        var least = ((IrScalar)Field(combined.Document, "shop.list_codes", "code").Type).Facets!.MinLength!;
+        Assert.Equal((3, IrLengthUnit.Utf16), (least.Value, least.Unit));
+        FitsBoth(combined, baseline, candidate);
+    }
+
+    [Fact]
     public void A_fixed_length_in_utf_16_code_units_is_a_minimum_of_as_many()
     {
         // A stored nchar(4) is always 4 code units (observed in the differential tests'

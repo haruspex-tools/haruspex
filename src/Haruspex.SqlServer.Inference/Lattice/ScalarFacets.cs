@@ -43,9 +43,11 @@ internal static class ScalarFacets
             : a.Length is { IsFixed: false } x && b.Length is { IsFixed: false } y && x.Unit == y.Unit && x.Encoding == y.Encoding
                 ? x.Value >= y.Value ? x : y
                 : null;
-        // The minimum both allow: the one the other implies, or, of two that don't imply each other, the fewer code units both hold.
+        // The minimum both allow: the one the other implies, or, of two in different units that don't imply each other, the fewer
+        // code units both hold. Its source is the left's, which implies it as the right does: with minima in two units, keeping the
+        // weaker one's own source would make the join's witness depend on how three are grouped.
         var minLength = a.MinLength is { } ma && b.MinLength is { } mb
-            ? mb.Implies(ma) ? ma : ma.Implies(mb) ? mb : new IrMinLength(Math.Min(ma.FewestUtf16Units, mb.FewestUtf16Units), ma.From)
+            ? (mb.Implies(ma) ? ma : ma.Implies(mb) ? mb : new IrMinLength(Math.Min(ma.FewestUtf16Units, mb.FewestUtf16Units), ma.From)) with { From = ma.From }
             : null;
         var digits = a.Digits is { } da && b.Digits is { } db && da == db with { From = da.From } ? da : null;
         var joined = new IrFacets(length, minLength, digits, Bounds.Looser(a.Min, b.Min, BoundSide.Lower, BoundOf), Bounds.Looser(a.Max, b.Max, BoundSide.Upper, BoundOf), Union(a.Values, b.Values));

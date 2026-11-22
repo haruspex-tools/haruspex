@@ -244,6 +244,22 @@ public class LatticeLawTests
     }
 
     [Fact]
+    public void Minima_in_different_units_join_as_the_one_the_other_implies_or_the_fewer_code_units_both_hold()
+    {
+        IrFactSource check = new(IrFactSourceKind.Check, "ck_code");
+        IrFacets Least(int value, IrLengthUnit unit) => new(MinLength: new IrMinLength(value, check) { Unit = unit });
+
+        // 4 code units and 3 code points imply neither: both hold 3 code units.
+        Assert.Equal((3, IrLengthUnit.Utf16), Of(ScalarFacets.Join(Least(4, IrLengthUnit.Utf16), Least(3, IrLengthUnit.CodePoints))));
+        Assert.Equal((3, IrLengthUnit.Utf16), Of(ScalarFacets.Join(Least(3, IrLengthUnit.CodePoints), Least(4, IrLengthUnit.Utf16))));
+
+        // 6 code units imply 3 code points, so the join is the 3 code points.
+        Assert.Equal((3, IrLengthUnit.CodePoints), Of(ScalarFacets.Join(Least(6, IrLengthUnit.Utf16), Least(3, IrLengthUnit.CodePoints))));
+
+        static (int, IrLengthUnit) Of(IrFacets? facets) => (facets!.MinLength!.Value, facets.MinLength.Unit);
+    }
+
+    [Fact]
     public void Equal_facts_from_different_sources_are_kept_with_the_left_ones_source()
     {
         // Both sides' values have exactly this length, or these digits, whichever constraint proved it: the fact holds of
@@ -414,7 +430,7 @@ public class LatticeLawTests
         EquatableArray<IrNullReason> reasons => string.Join(",", reasons.Select(r => $"{r.Rule}@{r.At}")),
         ScalarShape s => $"{s.Type.Sql}{(s.Type.Facets is null ? "" : "{" + Show(new Box<IrFacets>(s.Type.Facets)) + "}")}",
         Box<IrFacets> { Of: var f } => f is null ? "no facets"
-            : $"len {f.Length?.Value}{(f.Length?.IsFixed == true ? "!" : "")}/{f.Length?.From.Kind} min {f.MinLength?.Value} lo {f.Min?.Value}{(f.Min?.Inclusive == true ? "]" : ")")}/{f.Min?.From.Kind} hi {f.Max?.Value}/{f.Max?.From.Kind} in [{string.Join(",", f.Values?.Items.Select(i => i.Text) ?? [])}]",
+            : $"len {f.Length?.Value}{(f.Length?.IsFixed == true ? "!" : "")}/{f.Length?.From.Kind} min {f.MinLength?.Value}{(f.MinLength?.Unit == IrLengthUnit.CodePoints ? "cp" : "")} lo {f.Min?.Value}{(f.Min?.Inclusive == true ? "]" : ")")}/{f.Min?.From.Kind} hi {f.Max?.Value}/{f.Max?.From.Kind} in [{string.Join(",", f.Values?.Items.Select(i => i.Text) ?? [])}]",
         UnknownShape u => $"unknown {u.Reason} {u.Detail}@{u.At}",
         ArrayShape a => $"array({Show(a.Items)}; null[{Show(a.ItemsNullableBecause)}]; {a.MinItems}..{a.MaxItems})",
         TupleShape t => $"tuple({string.Join(", ", t.Items.Select(e => Show(e.Type) + " null[" + Show(e.NullableBecause) + "]"))})",

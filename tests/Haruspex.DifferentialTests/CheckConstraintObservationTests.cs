@@ -65,11 +65,19 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
         Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s varchar(10) COLLATE {column} NULL CHECK ({condition}));", $"INSERT INTO dbo.obs VALUES ('{value}')"));
 
     [Theory]
-    // LEN counts a surrogate pair as one character under a supplementary-character collation (_SC, _UTF8, or version 140, which is
-    // one by default) and as two under any other, so a CHECK on LEN bounds code points only there.
+    // LEN counts a surrogate pair as one character of nvarchar under _SC or a version 140 collation that isn't binary, and of
+    // varchar under _UTF8, binary too; as two otherwise (a code page has no such character, so varchar stores it as two). So a
+    // CHECK on LEN bounds code points only there.
     [InlineData("nvarchar(10) COLLATE Latin1_General_100_CI_AS_SC", true)]
-    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8", true)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8", true)]
     [InlineData("nvarchar(10) COLLATE Japanese_XJIS_140_CI_AS", true)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8", true)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2_UTF8", true)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2_UTF8", false)]
+    [InlineData("nvarchar(10) COLLATE Japanese_XJIS_140_BIN", false)]
+    [InlineData("nvarchar(10) COLLATE Japanese_XJIS_140_BIN2", false)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC", false)]
+    [InlineData("varchar(10) COLLATE Japanese_XJIS_140_CI_AS", false)]
     [InlineData("nvarchar(10) COLLATE Latin1_General_100_CI_AS", false)]
     public async Task Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation(string column, bool asOne)
     {

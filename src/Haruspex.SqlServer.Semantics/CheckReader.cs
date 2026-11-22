@@ -91,17 +91,28 @@ public static class CheckReader
         var proved = reader.Condition(check.Expression);
         // A COLLATE on the column or a literal it is compared with decides the comparison, by SQL Server's precedence, so the
         // column's collation says nothing of it (observed: A_collate_in_a_check_decides_how_it_compares): such a set is a note.
-        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings), !reader.Collated && CountsCodePoints(collation));
+        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings), !reader.Collated && CountsCodePoints(type, collation));
     }
 
     /// <summary>
-    /// Whether <c>LEN</c> counts a surrogate pair as one character under <paramref name="collation"/>, so that a minimum it proves
-    /// is in code points: a supplementary-character collation, named <c>_SC</c> or <c>_UTF8</c>, or of version 140, which is one
-    /// by default (observed: Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation). Under any other,
-    /// or when the collation is not known, it counts UTF-16 code units, which a minimum then counts, and which hold under either.
+    /// Whether <c>LEN</c> of a <paramref name="type"/> column under <paramref name="collation"/> counts a surrogate pair as one
+    /// character, so that a minimum it proves is in code points. Observed
+    /// (Len_counts_a_surrogate_pair_as_one_only_under_a_supplementary_character_collation): of <c>nchar</c> and <c>nvarchar</c>,
+    /// under an <c>_SC</c> collation, or one of version 140 that is not binary (<c>_BIN</c> and <c>_BIN2</c> count two), but not
+    /// under <c>_UTF8</c> alone (<c>Latin1_General_100_BIN2_UTF8</c> counts two); of <c>char</c> and <c>varchar</c>, under a
+    /// <c>_UTF8</c> collation, binary too, and under no other (a code page has no such character). Under anything else, or when the
+    /// collation or type is not known, it counts UTF-16 code units, which a minimum then counts, and which hold under either.
     /// </summary>
-    private static bool CountsCodePoints(string? collation) =>
-        collation is not null && collation.Split('_').Any(t => t.Equals("SC", StringComparison.OrdinalIgnoreCase) || t.Equals("UTF8", StringComparison.OrdinalIgnoreCase) || t == "140");
+    private static bool CountsCodePoints(ResolvedType type, string? collation)
+    {
+        if (collation is null || type.Scalar is not { IsString: true } scalar)
+            return false;
+        var parts = collation.Split('_');
+        bool Has(string part) => parts.Any(t => t.Equals(part, StringComparison.OrdinalIgnoreCase));
+        return scalar.IsNational
+            ? Has("SC") || (Has("140") && !Has("BIN") && !Has("BIN2"))
+            : Has("UTF8");
+    }
 
     /// <summary>
     /// How a column's strings compare with a CHECK's: exactly but for trailing spaces under a binary collation

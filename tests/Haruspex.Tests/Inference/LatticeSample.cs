@@ -64,7 +64,15 @@ internal sealed class LatticeSample(int seed)
             2 => new IrLength(10, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Source()),
             _ => new IrLength(10, true, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Source()),
         };
-        var minLength = random.Next(3) switch { 0 => null, 1 => new IrMinLength(1, Source()), _ => new IrMinLength(3, Source()) };
+        // Minima in both units, some implying others and some (4 code units, 3 code points) neither.
+        var minLength = random.Next(5) switch
+        {
+            0 => null,
+            1 => new IrMinLength(1, Source()),
+            2 => new IrMinLength(3, Source()),
+            3 => new IrMinLength(4, Source()),
+            _ => new IrMinLength(3, Source()) { Unit = IrLengthUnit.CodePoints },
+        };
         var values = random.Next(3) == 0 ? new IrValueSet([new IrValue(random.Next(2) == 0 ? "a" : "b", true)], IrValueMatch.Exact, [Source()]) : null;
         var facets = new IrFacets(Length: length, MinLength: minLength, Values: values);
         return facets.IsEmpty ? null : facets;
