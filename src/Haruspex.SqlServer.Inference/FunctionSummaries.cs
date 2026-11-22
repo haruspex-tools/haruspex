@@ -37,7 +37,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <b>Recursion</b> is solved per strongly connected component of the call graph (Tarjan), components below first. In a
 /// component whose functions call each other or themselves, each function's result starts as no information
 /// (<see cref="NeverShape"/>, nothing nullable), and every body is read again with the previous step's results until no
-/// result changes: the least fixed point, which describes every call that returns, by induction on its depth. A call
+/// result changes: a fixed point, which describes every call that returns, by induction on its depth, however it was
+/// reached, and the least one when the steps are monotone. A call
 /// of a function in the component gives a reference to its node rather than the node itself: its object, or the object
 /// items of its array (what FOR JSON PATH and <c>json_object</c> build), so that each step's shape is finite and the
 /// steps can settle. Any other result (a tuple, a record) is not named and so grows at each step. Nullability only

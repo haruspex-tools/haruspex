@@ -166,7 +166,8 @@ The runtime check is there so that the application can trust its types, and so t
 
 Nor is haruspex free of assumptions. It states each one where it is made rather than leaving holes to be found, for
 example that a caller doesn't read uncommitted data
-([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
+([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)), and the README lists them all, with the
+gaps known today ([what it guarantees](../../README.md#what-it-guarantees-and-what-it-cant-see)).
 
 ### What unknown means
 

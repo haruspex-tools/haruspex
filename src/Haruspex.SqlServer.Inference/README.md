@@ -384,8 +384,7 @@ raced; an inner `COMMIT` of nested transactions keeps it. A `CATCH` starts with 
 body's known to be open: whether every error that reaches one leaves the transaction open with its locks is not observed
 (a deadlock victim's was seen to), so it claims less (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
-assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
-not seen, which only claims less.
+assignment to a variable the guard compared with.
 
 ## Result sets are positional
 
@@ -548,8 +547,9 @@ it never returns, then the result sets its last walk returned, until a walk retu
 `FixedPoint.MostPasses`, the one cap every solver has). The assumption must hold for the temporary tables the recursive call starts from, which the
 procedure may have written before calling itself; so the walk starts from the join of the tables it was called with and
 those of every recursive call met, and when a call widens them, it starts over from the wider tables. A recursive call both
-under `INSERT … EXEC` and outside it is `unresolved-recursion`. With monotone steps result sets only grow between walks, so this reaches the least fixed
-point, which describes every call that returns, by induction on its depth; the bound on walks is what makes it end
+under `INSERT … EXEC` and outside it is `unresolved-recursion`. A walk that returns what was assumed is a fixed
+point, which describes every call that returns, by induction on its depth, however it was reached; with monotone steps
+result sets only grow between walks, so it is also the least. The bound on walks is what makes it end
 ([the guide, chapter 7](../../docs/internals/07-summaries-and-recursion.md)). A procedure that returns more result sets at each depth never settles and is
 `unresolved-recursion`. Every temporary table that the procedures the recursive call can reach write is unknown after it:
 that part is not iterated. Calls nest at most 32 deep (error 217, `Calls_nest_at_most_32_deep`), which fails the call, so it

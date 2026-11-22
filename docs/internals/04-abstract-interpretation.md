@@ -30,8 +30,10 @@ unknown, the top, which allows every value and so is sound, and the analysis alw
 
 **Soundness** is one property of each transfer function: whatever concrete values its inputs hold, the concrete result is
 among those its output allows. If every transfer function and every join is sound, so is the whole analysis, by induction
-over the program, and through the fixed points, since iterating a sound step from a sound start stays sound (the argument
-is the 1977 paper's). That is why
+over the program, and through the fixed points: a description that a sound step gives back, or one that allows at least
+everything the step gives from it (a *post-fixed point*, which is what a widened loop settles on), describes every run (the
+argument is the 1977 paper's). How the iteration reached it doesn't matter. The descriptions on the way are not claims,
+since the first is the bottom, which describes no run, so a cap gives unknown, never the last of them. That is why
 haruspex can argue for a claim one rule at a time, and why each rule is observed on a real server
 ([decision 0007](../decisions/0007-every-engine-rule-is-observed.md)): a rule observed is a transfer function shown sound
 on its cases.

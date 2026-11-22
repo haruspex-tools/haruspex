@@ -27,8 +27,9 @@ whether a row is there, whether an aggregate is), which every reader of a column
 - *Facts as two stacks*, as they were. Two kinds of proof are one environment with a strength, and immutability makes
   leaving a query or a branch a matter of keeping the environment from before, not of popping the right list.
 
-**Reason.** The argument that each solver is sound and ends is one argument (monotone steps from below, a test that is
-never coarser than equality, a cap that jumps to the top) and is now made once, in one place, and tested there
+**Reason.** The argument that each solver is sound and ends is one argument (a state the step gives back is sound however it
+was reached, a test that is never coarser than equality, a cap that jumps to the top; monotone steps from below make it
+the least) and is now made once, in one place, and tested there
 (`FixedPointTests`). One environment of facts, with one lookup per question, cannot be read half.
 
 **See also:** [the guide, "Flow, joins and fixed points"](../internals/06-flow-joins-and-fixed-points.md);
