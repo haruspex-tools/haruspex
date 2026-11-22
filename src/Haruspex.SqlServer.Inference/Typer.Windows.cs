@@ -21,7 +21,8 @@ internal sealed partial class Typer
     /// 0 over an empty frame.</item>
     /// <item><c>SUM</c>, <c>MIN</c> and <c>MAX</c>: typed as the aggregates; NULL when every value in the frame is, so with the
     /// argument's reasons, and over a frame that may be empty (<c>empty-frame</c>), over a column never null too.</item>
-    /// <item><c>FIRST_VALUE</c> and <c>LAST_VALUE</c>: the argument with its facts, and <c>empty-frame</c>.</item>
+    /// <item><c>FIRST_VALUE</c> and <c>LAST_VALUE</c>: the argument with its facts, and <c>empty-frame</c>; the argument is read in
+    /// another row, where what a branch proved of the current one doesn't hold (<see cref="Facts.InAnotherRow"/>).</item>
     /// <item><c>LAG</c> and <c>LEAD</c>: see <see cref="Offset"/>.</item>
     /// <item><c>PERCENTILE_CONT</c> (float, over a number or a bit) and <c>PERCENTILE_DISC</c> (its argument's type and facts): NULLs are
     /// skipped, so NULL only when every value in the partition is.</item>
@@ -83,7 +84,7 @@ internal sealed partial class Typer
 
             case WindowResult.Argument:
             {
-                var argument = Expression(call.Parameters[0], scope);
+                var argument = Expression(call.Parameters[0], rule.AnotherRow ? scope.InAnotherRow() : scope);
                 if (argument.Shape is UnknownShape)
                     return argument;
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
@@ -96,7 +97,7 @@ internal sealed partial class Typer
             }
 
             case WindowResult.Offset:
-                return Offset(call, scope);
+                return Offset(call, scope, rule);
 
             default:
             {
@@ -146,31 +147,27 @@ internal sealed partial class Typer
     /// NUMERIC_ROUNDABORT on as well (observed in PrecisionLossObservationTests). A NULL offset is NULL; offset 0 is the row itself (observed:
     /// Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type).
     /// Without a default it gives x's values only, so x's facts; with one, which may be outside them, only the type's.
+    /// x is read in another row, unless the offset is 0, so what a branch proved of the current row doesn't hold of it; the offset
+    /// and the default are read in the current row (observed:
+    /// A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read).
     /// </summary>
-    private Value Offset(FunctionCall call, ReadScope scope)
+    private Value Offset(FunctionCall call, ReadScope scope, WindowRule rule)
     {
         var parameters = call.Parameters;
-        var value = Expression(parameters[0], scope);
+        var itself = parameters.Count >= 2 && Strip(parameters[1]) is IntegerLiteral { Value: var n } && n.TrimStart('0').Length == 0;
+        var value = Expression(parameters[0], rule.AnotherRow && !itself ? scope.InAnotherRow() : scope);
         if (value.Shape is UnknownShape)
             return value;
         if (value.IsLiveJson || value.Shape is not ScalarShape)
             return NotModelled(call, "LAG or LEAD of a value that is not a scalar is not modelled.");
 
         EquatableArray<IrNullReason> offsetBecause = [];
-        var itself = false;
-        if (parameters.Count >= 2)
+        if (parameters.Count >= 2 && !itself)
         {
-            if (Strip(parameters[1]) is IntegerLiteral { Value: var n } && n.TrimStart('0').Length == 0)
-            {
-                itself = true;
-            }
-            else
-            {
-                var offset = Expression(parameters[1], scope);
-                if (offset.Shape is UnknownShape)
-                    return offset;
-                offsetBecause = offset.NullableBecause;
-            }
+            var offset = Expression(parameters[1], scope);
+            if (offset.Shape is UnknownShape)
+                return offset;
+            offsetBecause = offset.NullableBecause;
         }
 
         if (parameters.Count < 3 || Strip(parameters[2]) is NullLiteral)

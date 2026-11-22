@@ -14,6 +14,12 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="TooFewValues">Whether it is NULL over fewer than two values: the sample statistics.</param>
 /// <param name="Average">For <see cref="WindowResult.Statistic"/>, whether it is <c>AVG</c>, typed by its argument.</param>
 /// <param name="RefusesBit">Whether the server refuses it over a bit: <c>MIN</c> and <c>MAX</c>.</param>
+/// <param name="AnotherRow">
+/// Whether its value is read from one other row, where what a branch proved of the current row doesn't hold
+/// (<see cref="Facts.InAnotherRow"/>): <c>FIRST_VALUE</c>, <c>LAST_VALUE</c>, and <c>LAG</c> and <c>LEAD</c> unless the offset is
+/// 0. An aggregate or a percentile skips NULLs over a partition, or a frame, that holds the current row, so a branch's proof holds
+/// for it.
+/// </param>
 internal sealed record WindowRule(
     WindowResult Result,
     BuiltInType? Type = null,
@@ -21,4 +27,5 @@ internal sealed record WindowRule(
     bool EmptyFrame = false,
     bool TooFewValues = false,
     bool Average = false,
-    bool RefusesBit = false);
+    bool RefusesBit = false,
+    bool AnotherRow = false);

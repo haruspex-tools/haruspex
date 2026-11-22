@@ -1112,7 +1112,9 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `subtotal-row`. Only values that are the same
   wherever they are read in a row are proved: a column, a variable or parameter (one value throughout an expression), and an
   aggregate of the query being read (computed once per group, so `CASE WHEN SUM(x) IS NULL THEN 0 ELSE SUM(x) END` is never
-  NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. CHOOSE's
+  NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. A window
+  function that reads another row (`LAG`, `LEAD`, `FIRST_VALUE`, `LAST_VALUE`) reads its value without the branch's proofs of
+  columns, rows and aggregates, which hold only in the current row ("Window functions"). CHOOSE's
   values are not refined: which one is taken is a number, not a condition.
 - **Closed sets.** When every result other than `NULL` is a string literal, or every one a number, the value is one of them,
   exactly: a `values` facet with `match` `exact` and `from` `{ "expression": <location> }`. A literal is `varchar` or
@@ -2357,6 +2359,13 @@ holds the current row. Observed in `FunctionObservationTests`.
   the current one's peers (with it) are read, the current row among them
   (`A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column`).
 - **`FIRST_VALUE`**, **`LAST_VALUE`**: the argument, with its facets, and `empty-frame`.
+- **Another row's value.** `FIRST_VALUE`, `LAST_VALUE`, and `LAG` and `LEAD` unless the offset is 0, read their value in another
+  row than the current one, so what a `CASE` or `IIF` branch proved of the current row's columns, rows and aggregates doesn't
+  hold there: `CASE WHEN x IS NOT NULL THEN LAG(x, 1, 0) OVER (ORDER BY id) END` is NULL where the row before has a NULL `x`.
+  A filter (`WHERE`, `ON`, `HAVING`) holds of every row the query keeps, and a variable has one value throughout, so both still
+  hold (`Facts.InAnotherRow`). `LAG`'s offset and default are read in the current row. An aggregate or a percentile skips NULLs
+  over a partition, or a frame, holding the current row, so a branch's proof still holds there
+  (`A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read`).
 - **`LAG(x [, offset [, default]])`**, **`LEAD`**: `x`'s type. Past the partition's edge NULL (`window-edge`), unless a default
   is given (not the `NULL` literal), which is converted to `x`'s type: a long string cut, `1.9` to 1, an overflow an error or
   NULL under the caller's options (`arithmetic-overflow`, unless it fits); with one, only the type's facets hold. A NULL offset

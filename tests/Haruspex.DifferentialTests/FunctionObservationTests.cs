@@ -383,6 +383,40 @@ public partial class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read()
+    {
+        // q is NULL in rows 1 and 3. A branch that tests the current row's q proves nothing of the q that LAG, LEAD and FIRST_VALUE
+        // read from a neighbour, or LAST_VALUE from the last row: a, b, c and d are NULL in rows where q isn't. LAG's default and
+        // offset are read in the current row (e is never NULL; f reads row 1 from rows 2 and 4, offsets 1 and 3 from their own q); a percentile and an aggregate
+        // over a frame holding the current row skip NULLs (g, h).
+        const string rows = """
+            CREATE TABLE dbo.obs_b (id int NOT NULL PRIMARY KEY, q int NULL);
+            INSERT INTO dbo.obs_b VALUES (1, NULL), (2, 7), (3, NULL), (4, 9), (5, NULL);
+            """;
+        Assert.Equal(
+            "id,a,b,c,d,e,f,g,h: 1,0,0,0,0,0,0,0,0;2,null,null,null,null,0,1,7,7;3,0,0,0,0,0,0,0,0;4,null,null,null,null,0,1,7,9;5,0,0,0,0,0,0,0,0",
+            (await Run([rows], """
+                SELECT id, CASE WHEN q IS NOT NULL THEN LAG(q, 1, 0) OVER (ORDER BY id) ELSE 0 END AS a,
+                       CASE WHEN q IS NOT NULL THEN LEAD(q, 1, 0) OVER (ORDER BY id) ELSE 0 END AS b,
+                       CASE WHEN q IS NOT NULL THEN FIRST_VALUE(q) OVER (ORDER BY id) ELSE 0 END AS c,
+                       IIF(q IS NULL, 0, LAST_VALUE(q) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)) AS d,
+                       CASE WHEN q IS NOT NULL THEN LAG(0, 1, q) OVER (ORDER BY id) ELSE 0 END AS e,
+                       CASE WHEN q IS NOT NULL THEN LAG(id, q - 6, 0) OVER (ORDER BY id) ELSE 0 END AS f,
+                       CASE WHEN q IS NOT NULL THEN PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY q) OVER () ELSE 0 END AS g,
+                       CASE WHEN q IS NOT NULL THEN MAX(q) OVER (ORDER BY id) ELSE 0 END AS h
+                FROM dbo.obs_b ORDER BY id;
+                """)).ToString());
+
+        // An aggregate a branch tests is the current group's: the previous group's MAX is NULL. A filter holds in every row read.
+        Assert.Equal(
+            "g,a: 1,0;2,null",
+            (await Run([rows], "SELECT id AS g, CASE WHEN MAX(q) IS NOT NULL THEN LAG(MAX(q), 1, 0) OVER (ORDER BY id) ELSE 0 END AS a FROM dbo.obs_b WHERE id < 3 GROUP BY id ORDER BY g;")).ToString());
+        Assert.Equal(
+            "id,a,b: 2,0,7;4,7,7",
+            (await Run([rows], "SELECT id, LAG(q, 1, 0) OVER (ORDER BY id) AS a, FIRST_VALUE(q) OVER (ORDER BY id) AS b FROM dbo.obs_b WHERE q IS NOT NULL ORDER BY id;")).ToString());
+    }
+
+    [Fact]
     public async Task Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input()
     {
         Assert.Equal(
