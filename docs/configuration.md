@@ -42,7 +42,7 @@ otherwise silently do nothing.
   "schemas": {                              // keyed by the schema's name as it is
     "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
     "audit": { "include": ["*"], "prefix": "Audit" },                          // AuditGetOrder
-    "RDF.": { "include": ["GetPropertyList"], "naming": { "case": "preserve" } }
+    "Ledger.": { "include": ["GetEntryList"], "naming": { "case": "preserve" } }
   },
 
   "procedures": {
@@ -147,7 +147,7 @@ override can still declare it exact (`"values": "exact"`).
 ## Which procedures are typed: `schemas`
 
 Settings are per schema. Each key of `schemas` is a schema's name exactly as in the database: no brackets, dots
-allowed (`"RDF."`). Its block holds:
+allowed (`"Ledger."`). Its block holds:
 
 - `include` and `exclude`: patterns matching the schema's procedures by their **own names**, ignoring case. `*` matches
   any characters, `?` one; brackets make what they hold literal (`[a*b]`). `exclude` wins over `include`.
