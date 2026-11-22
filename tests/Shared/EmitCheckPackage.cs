@@ -15,6 +15,16 @@ internal static class EmitCheckPackage
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// The longest command line <see cref="TryRun(string, string[], string, out string, out string)"/> starts, on every platform:
+    /// cmd.exe's limit, 8,191 characters. Windows starts a program with one command line of at most 32,767 characters, and a
+    /// <c>.cmd</c> such as <c>npm.cmd</c> runs through cmd.exe, whose limit is lower. A list of files that grows with the fixtures
+    /// would pass the limit on Windows alone, failing there and nowhere else (observed 21 Nov 2026: "The filename or extension is
+    /// too long" from <c>JsonSchemaMetaSchemaTests</c>, given every emitted document by name). Refused everywhere, a growing list is
+    /// caught on the platform it is written on; such a list goes in a folder, and the program is given the folder.
+    /// </summary>
+    internal const int LongestCommandLine = 8191;
+
+    /// <summary>
     /// Skips the calling test when Node.js can't be run, or fails it when <c>HARUSPEX_REQUIRE_NODE=1</c> (as CI sets
     /// it), so a runner without Node fails instead of quietly skipping.
     /// </summary>
@@ -80,6 +90,13 @@ internal static class EmitCheckPackage
     /// <summary>As <c>TryRun</c>, with variables added to the program's environment, such as a secret kept off its command line.</summary>
     public static bool TryRun(string file, string[] args, string workingDirectory, IReadOnlyDictionary<string, string> environment, out string output, out string why)
     {
+        if (CommandLineLength(file, args) is var length and > LongestCommandLine)
+        {
+            output = "";
+            why = $"{file}: its command line would be {length:N0} characters, more than the {LongestCommandLine:N0} Windows allows a program run through cmd.exe, so it is refused on every platform. Write the files to a folder and pass the folder.";
+            return false;
+        }
+
         var start = new ProcessStartInfo(file)
         {
             WorkingDirectory = workingDirectory,
@@ -121,4 +138,12 @@ internal static class EmitCheckPackage
             return process.ExitCode == 0;
         }
     }
+
+    /// <summary>
+    /// The length of the command line Windows would be given for <paramref name="file"/> and <paramref name="args"/>, at most, when
+    /// no part holds a quote or ends with a backslash, as none the tests pass does. .NET quotes only a part that needs it (one that
+    /// holds a space, for example) and puts a space before each argument; this counts every part as quoted. A backslash is doubled
+    /// only before a quote, so a Windows path's backslashes add nothing.
+    /// </summary>
+    internal static int CommandLineLength(string file, string[] args) => file.Length + 2 + args.Sum(arg => arg.Length + 3);
 }

@@ -71,11 +71,19 @@ public class ReportFormatTests
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, $"the {format} reports were not validated");
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
         using var folder = new TempDirectory();
-        var files = Documents(format).Select(d => folder.File($"{d.Name}.{format}.json", d.Text)).ToArray();
+        var written = 0;
+        foreach (var (name, text) in Documents(format))
+        {
+            folder.File($"{name}.{format}.json", text);
+            written++;
+        }
 
+        // The folder, not each file: the command line stays short however many documents there are (EmitCheckPackage.TryRun).
+        // The script reads the folder itself, so the count it prints is checked too: a check that read nothing would pass.
         Assert.True(
-            EmitCheckPackage.TryRun("node", [Path.Combine("src", "validate.mjs"), Path.Combine(RepositoryPaths.Root, schema), .. files], RepositoryPaths.EmitCheck, out var output, out var why),
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "validate.mjs"), Path.Combine(RepositoryPaths.Root, schema), folder.Path], RepositoryPaths.EmitCheck, out var output, out var why),
             $"A {format} report doesn't validate against {schema} ({why}):\n{output}");
+        Assert.Contains($"{written} document(s), 0 failed", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -87,6 +95,7 @@ public class ReportFormatTests
         Assert.True(
             EmitCheckPackage.TryRun("node", [Path.Combine("src", "meta-schema.mjs"), Path.Combine(RepositoryPaths.Root, "schemas", "haruspex.output.schema.json")], RepositoryPaths.EmitCheck, out var output, out var why),
             $"schemas/haruspex.output.schema.json is not a valid schema ({why}):\n{output}");
+        Assert.Contains("1 document(s), 0 failed", output, StringComparison.Ordinal);
     }
 
     [Fact]

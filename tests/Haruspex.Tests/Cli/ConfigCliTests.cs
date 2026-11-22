@@ -284,6 +284,21 @@ public class ConfigCliTests
         Assert.False(Directory.Exists(Path.Combine(copy.Path, "out")));
     }
 
+    // The config layer holds a schema file by its full path, as it holds the config file; the reports show each from the working
+    // directory, with / on Windows too, so a developer reads the path they wrote.
+    [Fact]
+    public void A_problem_in_a_column_s_schema_file_names_the_file_from_the_working_directory()
+    {
+        using var copy = ShopWith("""{ "schemas": { "shop": { "include": ["*"] } }, "columns": { "shop.customer.name": { "json": "schemas/name.schema.json" } } }""");
+        copy.File("schemas/name.schema.json", """{ "$ref": "https://example.com/name.json" }""");
+
+        var (exitCode, output, error) = Run(copy.Path, "generate", "--out", Path.Combine(copy.Path, "out"));
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal("schemas/name.schema.json:1:11: error HAR3112: $ref: refers to https://example.com/name.json, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it.\n", error);
+    }
+
     [Fact]
     public void An_include_in_the_file_that_matches_nothing_is_an_error_with_its_line()
     {

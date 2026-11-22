@@ -35,8 +35,16 @@ public partial class ColumnDeclarationTests
     private static string[] Problems(TempDirectory dir, string schema)
     {
         dir.File("schemas/settings.schema.json", schema);
-        return [.. Read(dir).Diagnostics.Select(d => d.ToString().Replace(dir.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal).Replace('\\', '/'))];
+        return Problems(dir, Read(dir));
     }
+
+    /// <summary>
+    /// The problems of <paramref name="read"/>, with the folder left out of their file names. The config layer holds each file by
+    /// its full path and a diagnostic prints it with <c>/</c> on every platform (<see cref="DiagnosticFormatter.PathAsShown"/>), so
+    /// the folder is left out in that form: on Windows, <c>C:/Users/…/</c>, not <c>C:\Users\…\</c>.
+    /// </summary>
+    private static string[] Problems(TempDirectory dir, Outcome<HaruspexConfig> read) =>
+        [.. Problems(read).Select(p => p.Replace(DiagnosticFormatter.PathAsShown(dir.Path) + "/", "", StringComparison.Ordinal))];
 
     private static string Sha256(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
 
@@ -110,7 +118,7 @@ public partial class ColumnDeclarationTests
 
         Assert.Equal(
             ["haruspex.json:1:50: error HAR3113: columns[\"shop.orders.settings\"].json: points at \"/$defs/person\" in schemas/party.schema.json, which names nothing: a pointer is a JSON Pointer, such as #/$defs/person."],
-            Problems(Read(dir, "schemas/party.schema.json#/$defs/person")).Select(p => p.Replace(dir.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal)));
+            Problems(dir, Read(dir, "schemas/party.schema.json#/$defs/person")));
     }
 
     [Fact]
@@ -440,7 +448,7 @@ public partial class ColumnDeclarationTests
 
         Assert.Equal(
             ["haruspex.json:1:50: error HAR3112: columns[\"shop.orders.settings\"].json: refers to https://example.com/settings.json, which is not a local file: haruspex never fetches a schema, so keep a copy beside this one and refer to it."],
-            Problems(Read(dir, "https://example.com/settings.json")).Select(p => p.Replace(dir.Path + Path.DirectorySeparatorChar, "", StringComparison.Ordinal)));
+            Problems(dir, Read(dir, "https://example.com/settings.json")));
     }
 
     [Fact]
