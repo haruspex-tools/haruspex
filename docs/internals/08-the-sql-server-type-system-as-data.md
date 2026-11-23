@@ -288,7 +288,8 @@ The same test runs each expression haruspex claims never NULL, or bounded, over 
 caller's options that make an overflow NULL, and checks each value against the claim. An error ends a statement for every
 row, so one edge row that can't be converted (`'abc'` into `int`, a date past 9999-12-31) would hide what the others give.
 An expression that errors over the whole table therefore runs again a row at a time, and every row that gives a value is
-checked. A claim goes unchecked only when every row errors, and those claims are a snapshot of their own
+checked. A canary shows that it is: a false claim of never NULL, over an expression that errors on one row and is NULL on
+the others, must be reported from the rows read alone. A claim goes unchecked only when every row errors, and those claims are a snapshot of their own
 (`tests/Haruspex.DifferentialTests/Snapshots`), so a new one shows in review. Among them, an expression the server refuses
 to compile must be the kind the type check leaves, over a type inference doesn't model. Read a row at a time, the sweep
 found `DATEADD` with a `decimal(38,0)`, `float` or `real` number claimed never NULL, where the conversion of the number to

@@ -15,9 +15,10 @@ namespace Haruspex.DifferentialTests;
 /// unknown in haruspex too, except over a type inference doesn't model (<see cref="ReadsAnUnmodelledType"/>).
 /// </summary>
 /// <remarks>
-/// This checks the type, which is the server's to describe. Why a value may be null, and the facets, are not: the server
-/// describes no reasons, and the facets of a type are its range and digits, which <c>BuiltInTypeObservationTests</c> observes
-/// type by type. The reasons rest on the observation tests each rule names.
+/// The first theory checks the type, which is the server's to describe; not why a value may be null, nor the facets, since the
+/// server describes neither. The second checks those against the values the server gives: each claim of never null, a range or
+/// a length, over rows at every type's edges. Neither shows a reason is needed, only that a claim without one holds; the
+/// reasons rest on the observation tests each rule names.
 /// </remarks>
 public class CatalogueSweepGridTests(SqlServerFixture server)
 {
@@ -55,6 +56,12 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
         var claims = CatalogueSweep.Infer(form)
             .Where(o => o.Field is { Type: IrScalar scalar } field && (field.NullableBecause.Count == 0 || scalar.Facets is { Min: not null } or { Max: not null } or { Length: not null }))
             .ToList();
+
+        // The canary, a claim known to be false: never null, over an expression that fails on edge row 0 and so over the whole
+        // table, and is NULL on every other row. It runs with the rest, and must be reported from the rows read again alone,
+        // which shows that those rows are checked and not only read.
+        var canary = claims.Count;
+        claims.Add(new CatalogueSweep.Outcome(Canary, new IrField("e", new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int"), IrPresence.Always, []), null));
         var cancel = TestContext.Current.CancellationToken;
         var edgeRows = Enumerable.Range(0, CatalogueSweep.EdgeRows().Count).ToList();
         var whole = await RunOverEdges(claims, [.. Enumerable.Range(0, claims.Count).Select(n => (n, (int?)null))], cancel);
@@ -68,8 +75,11 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
         var reread = byRow.Rows.Select(r => (r.Claim, r.Row)).Concat(byRow.Errors.Select(e => (e.Claim, e.Row))).Distinct().ToList();
         Assert.Equal(failed.Count * edgeRows.Count, reread.Count);
 
-        var problems = whole.Rows.Concat(byRow.Rows).SelectMany(row => Problems(claims[row.Claim], row)).Distinct().ToList();
-        Assert.True(problems.Count == 0, $"{problems.Count} of {claims.Count} claims fail at the edges:\n" + string.Join("\n", problems));
+        var problems = whole.Rows.Concat(byRow.Rows).SelectMany(row => Problems(claims[row.Claim], row).Select(p => (row.Claim, Problem: p))).Distinct().ToList();
+        Assert.Contains(problems, p => p.Claim == canary && p.Problem == $"{Canary} (edge row 1 alone): claimed never null, and NULL");
+        var broken = problems.Where(p => p.Claim != canary).ToList();
+        Assert.True(broken.Count == 0, $"{broken.Select(p => p.Claim).Distinct().Count()} of {claims.Count - 1} claims fail at the edges, "
+            + $"in {broken.Count} problems:\n" + string.Join("\n", broken.Select(p => p.Problem)));
 
         // A claim no row of which runs claims nothing the sweep can see. Each is kept as a snapshot with its errors, so that a
         // new one shows in review; the server refuses some when it compiles them, which is a claim the type sweep counts and
@@ -82,6 +92,9 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
             + (refusals[i].StartsWith('!') ? "refused " + refusals[i][1..] : string.Join(", ", byRow.Errors.Where(e => e.Claim == n).Select(e => e.Error).Distinct().Order())));
         MatchesSnapshot(form, string.Concat(lines.Select(l => l + "\n")));
     }
+
+    /// <summary>The edge test's canary: an error on edge row 0, NULL on every other.</summary>
+    private const string Canary = "CASE WHEN id = 0 THEN CAST(N'x' AS int) END";
 
     /// <summary>The temporary copy of the edge table a query reads in the edge test's read session.</summary>
     private static string Temporary(string sql) => sql.Replace("dbo.g", "#g", StringComparison.Ordinal);

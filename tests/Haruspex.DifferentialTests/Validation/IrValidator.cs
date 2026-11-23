@@ -540,9 +540,11 @@ public static partial class IrValidator
 
             if (facets.MinLength is { } minLength)
             {
-                if (text.Length < minLength.Value)
-                    return $"at least {minLength.Value} UTF-16 code units ({scalar.Sql})";
-                if (text.Length == minLength.Value)
+                // In its unit (0.29): code points as EnumerateRunes counts them, a lone surrogate as one, or UTF-16 code units.
+                var (measure, unit) = minLength.Unit == IrLengthUnit.CodePoints ? (text.EnumerateRunes().Count(), "code points") : (text.Length, "UTF-16 code units");
+                if (measure < minLength.Value)
+                    return $"at least {minLength.Value} {unit} ({scalar.Sql})";
+                if (measure == minLength.Value)
                     edge($"min length {minLength.Value}");
             }
 

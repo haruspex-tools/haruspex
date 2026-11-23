@@ -99,6 +99,18 @@ public class FacetValidationTests
     }
 
     [Fact]
+    public void A_minimum_length_in_code_points_counts_a_surrogate_pair_as_one()
+    {
+        // "😀😀" is two code points and four UTF-16 code units, so it is short of a minimum of 3 code points; "😀😀a" is at it.
+        var facets = new IrFacets(MinLength: new IrMinLength(3, From) { Unit = IrLengthUnit.CodePoints });
+
+        Assert.Single(Json(Text("nvarchar(9)", facets), "\"\uD83D\uDE00\uD83D\uDE00\"").Violations);
+        Assert.Single(Row(Text("nvarchar(9)", facets), "\uD83D\uDE00\uD83D\uDE00").Violations);
+        Assert.Equal(["min length 3"], Edges(Json(Text("nvarchar(9)", facets), "\"\uD83D\uDE00\uD83D\uDE00a\"")));
+        Assert.Equal(["min length 3"], Edges(Row(Text("nvarchar(9)", facets), "\uD83D\uDE00\uD83D\uDE00a")));
+    }
+
+    [Fact]
     public void An_exact_set_of_strings_is_matched_exactly()
     {
         var facets = new IrFacets(Values: new IrValueSet([new IrValue("open", true)], IrValueMatch.Exact, [From]));
