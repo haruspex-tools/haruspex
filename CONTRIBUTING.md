@@ -87,7 +87,7 @@ failures, `tests/emit-check/src/json-text-once.mjs`, the evidence that the JSON 
 never hand over,
 `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
 `tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
-with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema, and the IR's, against the draft 2020-12
+with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema, the IR's and the config file's, against the draft 2020-12
 meta-schema and compiles it in Ajv's strict mode, `tests/emit-check/src/verdicts.mjs`, which gives Ajv's verdict on each IR file
 the tests hold the IR's schema and reader to, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
 `tests/emit-check/src/functions.mjs`, through which they call it through the generated functions. CI sets

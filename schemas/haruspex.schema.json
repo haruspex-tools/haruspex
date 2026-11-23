@@ -288,6 +288,8 @@
       "dependentSchemas": {
         "results": {
           "not": {
+            "type": "object",
+            "properties": { "paths": true },
             "required": [
               "paths"
             ]
@@ -345,16 +347,22 @@
         "why": {
           "anyOf": [
             {
+              "type": "object",
+              "properties": { "nullable": true },
               "required": [
                 "nullable"
               ]
             },
             {
+              "type": "object",
+              "properties": { "type": true },
               "required": [
                 "type"
               ]
             },
             {
+              "type": "object",
+              "properties": { "values": true },
               "required": [
                 "values"
               ]
@@ -364,21 +372,29 @@
       },
       "anyOf": [
         {
+          "type": "object",
+          "properties": { "name": true },
           "required": [
             "name"
           ]
         },
         {
+          "type": "object",
+          "properties": { "nullable": true },
           "required": [
             "nullable"
           ]
         },
         {
+          "type": "object",
+          "properties": { "type": true },
           "required": [
             "type"
           ]
         },
         {
+          "type": "object",
+          "properties": { "values": true },
           "required": [
             "values"
           ]
@@ -477,11 +493,15 @@
       },
       "anyOf": [
         {
+          "type": "object",
+          "properties": { "rowset": true },
           "required": [
             "rowset"
           ]
         },
         {
+          "type": "object",
+          "properties": { "json": true },
           "required": [
             "json"
           ]
@@ -490,12 +510,16 @@
       "dependentSchemas": {
         "rowset": {
           "not": {
+            "type": "object",
+            "properties": { "json": true },
             "required": [
               "json"
             ]
           }
         },
         "mayBeAbsent": {
+          "type": "object",
+          "properties": { "json": true },
           "required": [
             "json"
           ]

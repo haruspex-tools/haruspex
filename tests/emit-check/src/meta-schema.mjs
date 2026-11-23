@@ -1,7 +1,7 @@
 // Checks generated JSON Schema documents against the draft 2020-12 meta-schema, and that each compiles under Ajv's strict mode,
 // which refuses a keyword it doesn't know, a format no plugin asserts and a pattern that isn't a valid regular expression with
-// the u flag. Called by JsonSchemaMetaSchemaTests with the folder it wrote the documents to, and by ReportFormatTests with one
-// document (documents.mjs); exit code 1 when any fails.
+// the u flag. Called by JsonSchemaMetaSchemaTests with the folder it wrote the documents to, and by ReportFormatTests,
+// IrJsonSchemaTests and ConfigSchemaTests with one document (documents.mjs); exit code 1 when any fails.
 import { readFile } from 'node:fs/promises'
 import Ajv2020 from 'ajv/dist/2020.js'
 import addFormats from 'ajv-formats'

@@ -42,6 +42,23 @@ public class ConfigSchemaTests
 
     public static TheoryData<string> Invalid { get; } = [.. Directory.GetFiles(Path.Combine(Examples, "invalid")).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal)];
 
+    /// <summary>
+    /// The schema is checked against the draft 2020-12 meta-schema and compiled in Ajv's strict mode, as an editor's validator or a
+    /// consumer would compile it, as the IR's is (<c>IrJsonSchemaTests</c>): strict mode refuses a keyword it doesn't know, a
+    /// <c>required</c> beside no <c>type</c> and a property required where none is defined.
+    /// </summary>
+    [Fact]
+    public void The_schema_is_a_valid_2020_12_schema_that_ajv_compiles_in_strict_mode()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the config schema was not compiled with Ajv");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "meta-schema.mjs"), SchemaPath], RepositoryPaths.EmitCheck, out var output, out var why),
+            $"schemas/haruspex.schema.json doesn't compile in Ajv's strict mode ({why}):\n{output}");
+        Assert.Contains("1 document(s), 0 failed", output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_schema_is_a_2020_12_schema_with_its_id()
     {
