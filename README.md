@@ -408,9 +408,6 @@ fails loudly, with an error saying which, rather than reaching the application's
 each needs a decision or a larger change before the code handles it. They aren't every bug: a rule of the analysis found
 wrong is fixed as a bug, in a change of its own, and isn't listed here.
 
-- **A bulk load in the project's own code.** A `BULK INSERT` without `CHECK_CONSTRAINTS`, or an `INSERT … WITH
-  (IGNORE_CONSTRAINTS)` from `OPENROWSET(BULK …)`, leaves its target's `CHECK` constraints untrusted, but haruspex still
-  claims them, as it doesn't after an `ALTER TABLE … NOCHECK` in the project. <!-- Known gap: remove this item when a bulk load in the project's code is read as a NOCHECK of its target's checks. -->
 - **Masked columns.** A caller without the `UNMASK` permission receives a column `MASKED WITH` a function, and any value
   computed from it, as the mask (with `default()`, `0` for a number and `xxxx` for a
   string), which can break a range, a value set or a fixed
@@ -421,10 +418,6 @@ wrong is fixed as a bug, in a change of its own, and isn't listed here.
 - **A disabled key in an extracted DACPAC.** An extract doesn't mark a primary key or unique constraint whose nonclustered
   index is disabled, so a query on that key is claimed to return at most one row though the table may hold duplicates. A
   unique index disabled on its own is marked, and read. <!-- Known gap: remove this item when a key in an extract is no longer taken as enforced, or the assumption is decided and moved to the list above. -->
-- **A snapshot read after a locking guard.** A procedure that checks that a row exists with `UPDLOCK, HOLDLOCK` and then
-  reads it without a hint is claimed to find it. Under snapshot isolation, in a transaction that has already read before the
-  check, the read sees the transaction's snapshot, which may not hold the row, whether the procedure or its caller set the
-  level. <!-- Known gap: remove this item when a lock is taken to hold a row only for a read known to see current committed data. -->
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 

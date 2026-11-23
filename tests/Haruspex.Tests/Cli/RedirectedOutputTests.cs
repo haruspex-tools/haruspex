@@ -15,7 +15,7 @@ public class RedirectedOutputTests
     /// output sent to files, and then records the console's output code page, which haruspex would change by setting
     /// <see cref="Console.OutputEncoding"/>. It is read through PowerShell because <c>chcp</c> shows the input code page, which that
     /// leaves alone (observed: after such a run, <c>chcp</c> said 437 and the output code page was 65001). Each name below is
-    /// outside 437, so a stream written in the console's code page holds <c>?</c> for each of its letters (F047, observed before
+    /// outside 437, so a stream written in the console's code page holds <c>?</c> for each of its letters (observed before
     /// the fix). The process gets a console of its own, without a window, so that the console of whoever runs the tests is never
     /// changed.
     /// </summary>

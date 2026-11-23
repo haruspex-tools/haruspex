@@ -97,7 +97,7 @@ internal static class ReferenceFinder
     /// On Windows, asking whether a file on a share exists connects to the share's host, and Windows offers that host the user's
     /// credentials. The recorded path is written into a package by whoever built it, where no one sees it without unzipping the
     /// package, and packages are followed transitively, a NuGet package's included; so following it would let a stranger's package
-    /// choose a host for haruspex to contact, against <c>SECURITY.md</c>'s promise that it makes no network connection (F041). A
+    /// choose a host for haruspex to contact, against <c>SECURITY.md</c>'s promise that it makes no network connection. A
     /// device path may also name a share (<c>\\?\UNC\…</c>), or something that isn't a file at all, such as a pipe.
     /// </para>
     /// <para>

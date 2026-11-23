@@ -587,7 +587,7 @@ public class DacpacReaderTests
     }
 
     // On Windows, looking for a file on a share is a connection to its host, which is offered the user's credentials: a package
-    // someone else built, or one inside a NuGet package, would choose the host (F041). Each spelling below names a share or a
+    // someone else built, or one inside a NuGet package, would choose the host. Each spelling below names a share or a
     // device on Windows (\??\ is the NT object manager's own prefix, which .NET passes through as a device path), and the test is
     // the same on every platform, so a Mac or Linux run catches a share being tried again.
     [Theory]

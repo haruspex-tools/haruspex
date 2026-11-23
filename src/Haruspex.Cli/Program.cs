@@ -19,7 +19,7 @@ internal static class Program
     /// <para>
     /// <see cref="Console.Out"/> and <see cref="Console.Error"/> encode in the console's encoding. On Windows that is the console's
     /// output code page (437, 850, 932 and so on), redirected or not, so a name outside it reached a JSON or SARIF report as
-    /// <c>?</c> (F047, observed on Windows under code page 437: a table named in Cyrillic written as <c>dock.??????</c>). Elsewhere
+    /// <c>?</c> (observed on Windows under code page 437: a table named in Cyrillic written as <c>dock.??????</c>). Elsewhere
     /// it follows the locale, which is UTF-8 almost everywhere but not by rule.
     /// </para>
     /// <para>
