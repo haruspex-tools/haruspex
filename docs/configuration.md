@@ -80,7 +80,8 @@ isn't read ([HAR1012](diagnostics/HAR1012.md)). The IR records the package and e
 for it (`source.package`, `source.references`).
 
 A referenced package is looked for beside the package that refers to it, where a build leaves it; then in each folder
-`references` lists, in order, relative to this file; and last at the path the package recorded when it was built. One found
+`references` lists, in order, relative to this file; and last at the path the package recorded when it was built, unless that
+path names a share or a device (`\\server\share\…`), which is never looked in. One found
 nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) that lists every place looked, and the run goes on: whatever would
 have come from it is unknown, and each such unknown says the package it may be in.
 

@@ -462,7 +462,6 @@ public class DacpacReaderTests
 
     [Theory]
     [InlineData(@"C:\build\bin\Debug\other.dacpac")]
-    [InlineData(@"\\server\share\other.dacpac")]
     [InlineData(@"\build\other.dacpac")]
     public void A_path_rooted_the_Windows_way_is_listed_as_recorded_and_never_under_the_referrer_s_folder(string recorded)
     {
@@ -478,6 +477,34 @@ public class DacpacReaderTests
         Assert.EndsWith($"looked for at {DiagnosticFormatter.PathAsShown(Path.Combine(dir.Path, "other.dacpac"))}, {recorded}. Put it beside app.dacpac, or name its folder in \"references\" in the config file.", warning.Message, StringComparison.Ordinal);
         if (!OperatingSystem.IsWindows())
             Assert.Equal(recorded, looked[^1]);
+    }
+
+    // On Windows, looking for a file on a share is a connection to its host, which is offered the user's credentials: a package
+    // someone else built, or one inside a NuGet package, would choose the host (F041). Each spelling below names a share or a
+    // device on Windows, and the test is the same on every platform, so a Mac or Linux run catches a share being tried again.
+    [Theory]
+    [InlineData(@"\\host\share\x.dacpac")]
+    [InlineData("//host/share/x.dacpac")]
+    [InlineData(@"/\host\share\x.dacpac")]
+    [InlineData(@"\\?\UNC\host\share\x.dacpac")]
+    [InlineData(@"\\?\C:\build\x.dacpac")]
+    [InlineData(@"\\.\pipe\x.dacpac")]
+    public void A_recorded_path_naming_a_share_or_a_device_is_never_looked_for_and_the_warning_says_so(string recorded)
+    {
+        using var dir = new TempDirectory();
+        var app = Path.Combine(dir.Path, "app");
+        var shared = Path.Combine(dir.Path, "shared");
+        Directory.CreateDirectory(app);
+        Directory.CreateDirectory(shared);
+        var package = Path.Combine(app, "app.dacpac");
+        TestPackage.Write(package, TestPackage.Procedure("dbo", "p", "SELECT 1 AS one"), references: new TestPackage.Reference("other.dacpac", Recorded: recorded));
+
+        var looked = ReferenceFinder.Candidates(new PackageReference(recorded, "other.dacpac", null), package, [shared]);
+        var read = DacpacReader.Read(package, [shared]);
+
+        Assert.Equal([Path.Combine(app, "x.dacpac"), Path.Combine(app, "other.dacpac"), Path.Combine(shared, "x.dacpac"), Path.Combine(shared, "other.dacpac")], looked);
+        var warning = Assert.Single(read.Diagnostics, d => d.Code == SourceCodes.ReferenceNotFound);
+        Assert.Contains($"other.dacpac, and not at {recorded}, which names a share or a device, where haruspex never looks. Put it beside", warning.Message, StringComparison.Ordinal);
     }
 
     [Fact]

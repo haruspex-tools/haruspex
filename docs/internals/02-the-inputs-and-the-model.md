@@ -199,7 +199,8 @@ other way, by the DacFx API as community SDKs make one, is read as a build, the 
 reader follows them, breadth first, reading each package of the same database once into the one model, which is what the
 database is: the sum of its packages. It looks for each beside the package that refers to it, where a build leaves it, then
 in the folders the config file's `references` names, and only last at the path recorded when the package was built, which is a
-path on another machine ([decision 0040](../decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). A package
+path on another machine ([decision 0040](../decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md)). A recorded
+path that names a share is never looked in: on Windows that would connect to a server the package's builder chose. A package
 of another database, or `master.dacpac`, is read the same way into a model of its own, which the model holds under the name a
 body writes the database by (`DatabaseModel.Databases`). A three-part name then reads a table there, handed on as this database
 sees it: named with its database, with its alias types resolved there and each column's collation that database's

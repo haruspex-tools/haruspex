@@ -47,5 +47,14 @@ A project has no equivalent of a package's recorded path, the last place above f
 its build uses, already first. A package a project refers to is then read as above, its own references found as a package's are.
 A reference to a database on another server is noted and not read, from a package as from a project.
 
+**Amended** (22 Nov 2026). A recorded path that names a share or a device, beginning with two slashes of either kind
+(`\\server\share\…`, `//server/share/…`, `\\?\…`, `\\.\…`), is never looked for, on any platform; the warning quotes it and
+says so. On Windows, asking whether a file on a share exists connects to its server, which Windows offers the user's
+credentials, and the recorded path is chosen by whoever built the package, which may be a stranger's or one inside a NuGet
+package. Following it broke the promise in `SECURITY.md` that haruspex makes no network connection. Testing the text rather
+than asking the platform keeps the rule the same everywhere, so that it is tested on every platform; elsewhere
+`//server/share/…` is a local folder, and passing it by costs only the last place, the build machine's. A project file's paths
+need no such rule: each is joined to the project's folder, so none can name a share.
+
 **See also:** [The inputs and the model](../internals/02-the-inputs-and-the-model.md), "A DACPAC becomes the same model"; `ReferenceFinder`,
 `DacpacReader`; [HAR1003](../diagnostics/HAR1003.md).

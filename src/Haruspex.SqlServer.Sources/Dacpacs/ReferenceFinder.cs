@@ -11,9 +11,11 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// leaves every package it references, in the referring one's <c>bin</c> folder;</item>
 /// <item>in each folder of the config file's <c>references</c>, in order, under the same names;</item>
 /// <item>at the path recorded when the referring package was built, made full against the referring package's folder when it
-/// is relative; a path rooted the other platform's way (<c>C:\build\…</c>, <c>\\server\share\…</c> read on Linux) as
+/// is relative; a path rooted the other platform's way (<c>C:\build\…</c> or <c>\build\…</c> read on Linux) as
 /// recorded, since it can't be a place here and joining it to a folder would make one that never exists.</item>
 /// </list>
+/// A recorded path that names a share or a device (<c>\\host\share\…</c>, <c>//host/share/…</c>, <c>\\?\…</c>,
+/// <c>\\.\…</c>) is never looked for, on any platform: the warning quotes it and says so (<see cref="NamesShareOrDevice"/>).
 /// </summary>
 /// <remarks>
 /// The recorded path comes last because it is a path on the machine that built the package (observed: an absolute path under
@@ -27,12 +29,13 @@ internal static class ReferenceFinder
     /// <param name="referrer">The path of the package that records it.</param>
     /// <param name="searchFolders">The config file's <c>references</c> folders, full paths.</param>
     public static IReadOnlyList<string> Candidates(PackageReference reference, string referrer, IReadOnlyList<string> searchFolders) =>
-        [.. Made(reference, referrer, searchFolders).Append(RecordedPlace(reference, referrer)).Distinct(StringComparer.Ordinal)];
+        [.. Made(reference, referrer, searchFolders).Concat(RecordedPlace(reference, referrer) is { } recorded ? [recorded] : []).Distinct(StringComparer.Ordinal)];
 
     /// <summary>
     /// The places looked, as the warning that the package isn't found lists them: each place haruspex made, beside the referrer or
     /// in a folder of references, as haruspex prints a path (<see cref="DiagnosticFormatter.PathAsShown"/>), and then the path
-    /// the package recorded, exactly as recorded, unless a place already listed is the one it names.
+    /// the package recorded, exactly as recorded, unless a place already listed is the one it names; or, when it names a share or
+    /// a device, saying it wasn't looked for.
     /// </summary>
     /// <remarks>
     /// The recorded path is quoted, as a project's paths are quoted from the project (<c>..\archive\loans.sql</c>), because it is
@@ -44,7 +47,9 @@ internal static class ReferenceFinder
     {
         var made = Made(reference, referrer, searchFolders).Distinct(StringComparer.Ordinal).ToList();
         var shown = made.Select(DiagnosticFormatter.PathAsShown).ToList();
-        if (!made.Contains(RecordedPlace(reference, referrer), StringComparer.Ordinal))
+        if (NamesShareOrDevice(reference.FileName))
+            shown.Add($"and not at {reference.FileName}, which names a share or a device, where haruspex never looks");
+        else if (RecordedPlace(reference, referrer) is { } recorded && !made.Contains(recorded, StringComparer.Ordinal))
             shown.Add(reference.FileName);
         return shown;
     }
@@ -68,16 +73,40 @@ internal static class ReferenceFinder
 
     /// <summary>
     /// The place the recorded path names here: made full against the referrer's folder when relative, or as recorded when rooted
-    /// the other platform's way.
+    /// the other platform's way; or null when it names a share or a device, which is never looked for.
     /// </summary>
-    private static string RecordedPlace(PackageReference reference, string referrer)
+    private static string? RecordedPlace(PackageReference reference, string referrer)
     {
         var recorded = reference.FileName;
+        if (NamesShareOrDevice(recorded))
+            return null;
         if (DiskPath.IsRootedElsewhere(recorded))
             return recorded;
         var here = recorded.Replace('\\', Path.DirectorySeparatorChar);
         return Path.GetFullPath(Path.IsPathRooted(here) ? here : Path.Join(Beside(referrer), here));
     }
+
+    /// <summary>
+    /// Whether <paramref name="recorded"/> begins with two separators, of either kind, which on Windows names a share
+    /// (<c>\\host\share\…</c>, <c>//host/share/…</c>, <c>\\?\UNC\…</c>) or a device (<c>\\?\C:\…</c>, <c>\\.\pipe\…</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// On Windows, asking whether a file on a share exists connects to the share's host, and Windows offers that host the user's
+    /// credentials. The recorded path is written into a package by whoever built it, where no one sees it without unzipping the
+    /// package, and packages are followed transitively, a NuGet package's included; so following it would let a stranger's package
+    /// choose a host for haruspex to contact, against <c>SECURITY.md</c>'s promise that it makes no network connection (F041). A
+    /// device path may also name a share (<c>\\?\UNC\…</c>), or something that isn't a file at all, such as a pipe.
+    /// </para>
+    /// <para>
+    /// The test is on the text, the same on every platform, so that the rule can be tested anywhere. Elsewhere <c>//host/share</c>
+    /// is the local folder <c>/host/share</c>, and passing it by costs only the one place a build on another machine left a
+    /// package, which is almost never there; the copy beside the referrer, or in a folder of <c>references</c>, is the one to
+    /// read. A project file can't reach a share this way: each path it gives is joined to its own folder.
+    /// </para>
+    /// </remarks>
+    private static bool NamesShareOrDevice(string recorded) =>
+        recorded.Length >= 2 && (recorded[0] is '\\' or '/') && (recorded[1] is '\\' or '/');
 
     /// <summary>The folder of the package that records the reference.</summary>
     private static string Beside(string referrer) => Path.GetDirectoryName(Path.GetFullPath(referrer)) ?? ".";
