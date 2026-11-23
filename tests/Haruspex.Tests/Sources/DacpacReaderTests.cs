@@ -667,4 +667,16 @@ public class DacpacReaderTests
         Assert.All(parameters.Where(p => p.Name is "@Orders" or "@OrderLines"), p => Assert.True(p.IsReadOnly));
         Assert.All(parameters.Where(p => p.Name is not ("@Orders" or "@OrderLines")), p => Assert.False(p.IsReadOnly));
     }
+
+    [Fact]
+    public void A_deployment_script_that_may_move_a_synonym_to_another_target_is_defined_twice()
+    {
+        // As a project's deployment script is (decision 0112): which target stands once deployed isn't known.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, TestPackage.Synonym("dbo", "bin", "[dbo].[ingot]"), postdeploy: "IF @@SERVERNAME = N'x' BEGIN DROP SYNONYM dbo.bin; CREATE SYNONYM dbo.bin FOR dbo.mould; END\r\n");
+
+        var twice = Assert.Single(read.Diagnostics, d => d.Code == SourceCodes.DefinedTwice);
+        Assert.Equal(new SourceLocation("smelter.dacpac/postdeploy.sql", 1, 52), twice.At);
+        Assert.Empty(read.Model.Synonyms);
+    }
 }

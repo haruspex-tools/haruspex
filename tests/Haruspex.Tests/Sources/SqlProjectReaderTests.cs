@@ -144,6 +144,24 @@ public partial class SqlProjectReaderTests
             read.Model.FindProcedure(new ObjectName("dbo", "list"))!.Redefinition);
     }
 
+    [Fact]
+    public void A_deployment_script_that_may_move_a_synonym_to_another_target_is_defined_twice()
+    {
+        // Which target stands once deployed isn't known: reported where the CREATE is, and the synonym is left out (decision 0112).
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/bin.sql", "CREATE SYNONYM dbo.bin FOR dbo.ingot;"),
+            ("p/deploy/post.sql", "IF @@SERVERNAME = N'x' BEGIN DROP SYNONYM dbo.bin; CREATE SYNONYM dbo.bin FOR dbo.mould; END\n"));
+
+        var twice = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DefinedTwice, twice.Code);
+        Assert.Equal(new SourceLocation("deploy/post.sql", 1, 52), twice.At);
+        Assert.Empty(read.Model.Synonyms);
+    }
+
     [Theory]
     // Another sqlcmd command: every object the script names is doubted.
     [InlineData(":on error exit\nALTER TABLE dbo.ingot ALTER COLUMN grade int NULL;\n", "deploy/post.sql:1:1", false)]
