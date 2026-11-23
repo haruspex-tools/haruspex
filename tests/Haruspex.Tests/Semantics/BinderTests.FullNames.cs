@@ -93,12 +93,13 @@ public partial class BinderTests
 
     [Theory]
     [InlineData("SELECT dbo.t.name FROM t;", true)]
-    [InlineData("SELECT shop.orders.status FROM orders;", true)]
+    [InlineData("SELECT shop.orders.status FROM orders;", false)]
     [InlineData("SELECT dbo.orders.status FROM orders;", false)]
     public void A_one_part_name_in_from_is_exposed_under_the_schema_it_resolves_to(string statement, bool binds)
     {
-        // Observed: A_one_part_name_is_exposed_under_the_schema_it_resolves_to. Only shop has orders, so a caller it runs for at
-        // all reads shop.orders, under whatever default schema.
+        // Observed: A_one_part_name_is_exposed_under_the_schema_it_resolves_to. The sample is dbo.p, in which orders is dbo's
+        // (A_name_the_procedures_schema_lacks_is_dbos_and_never_another_schemas), though only shop has one: so no column binds
+        // to it under shop's name, and dbo.orders is no table, whose columns are unknown.
         var body = new Sample(statement, Shop);
         var reference = statement["SELECT ".Length..statement.IndexOf(" FROM", StringComparison.Ordinal)];
 
@@ -106,12 +107,12 @@ public partial class BinderTests
     }
 
     [Fact]
-    public void A_one_part_name_whose_schema_depends_on_the_caller_leaves_a_full_name_unbound()
+    public void A_one_part_name_in_a_procedure_is_exposed_under_its_schemas_name_though_another_schema_has_it()
     {
-        // dbo.t and other.t: which one t reads, and so which full name it is exposed under, is the caller's default schema's.
+        // dbo.t and other.t: in dbo.p, t is dbo's whoever calls (A_name_in_a_dbo_procedure_is_dbos_for_a_caller_whose_default_schema_has_one).
         var body = new Sample("SELECT dbo.t.code FROM t;", "CREATE SCHEMA other;\nGO\nCREATE TABLE other.t (id int NOT NULL, code int NOT NULL);\nGO\n");
 
-        Assert.Equal(BindingProblemKind.UnresolvedTable, Assert.IsType<UnboundSource>(body.Resolve("dbo.t.code")).Problem.Kind);
+        Assert.Equal("dbo.t", Assert.IsType<TableColumn>(body.Resolve("dbo.t.code")).Table.Name.ToString());
     }
 
     [Fact]

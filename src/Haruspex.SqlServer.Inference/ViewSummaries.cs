@@ -37,8 +37,8 @@ internal sealed class ViewSummaries(DatabaseModel model)
         {
             found = function switch
             {
-                InlineFunction inline => new Typer(model, function.Span, summaries, arguments, function.AnsiNullsOff, uncommitted).ReadInline(inline),
-                TableFunction declared => new Walker(model, function.Span, summaries, arguments, ansiNullsOff: function.AnsiNullsOff, uncommittedReads: uncommitted).ReadReturnTable(declared),
+                InlineFunction inline => new Typer(model, function.Span, SchemaSearch.Within(function), summaries, arguments, function.AnsiNullsOff, uncommitted).ReadInline(inline),
+                TableFunction declared => new Walker(model, function.Span, SchemaSearch.Within(function), summaries, arguments, ansiNullsOff: function.AnsiNullsOff, uncommittedReads: uncommitted).ReadReturnTable(declared),
                 _ => throw new ArgumentException("Not a table-valued function.", nameof(function)),
             };
         }
@@ -73,7 +73,7 @@ internal sealed class ViewSummaries(DatabaseModel model)
 
         try
         {
-            found = new Typer(model, view.Span, summaries, ansiNullsOff: view.AnsiNullsOff, uncommittedReads: uncommitted).ReadView(view);
+            found = new Typer(model, view.Span, SchemaSearch.Within(view), summaries, ansiNullsOff: view.AnsiNullsOff, uncommittedReads: uncommitted).ReadView(view);
         }
         finally
         {

@@ -405,6 +405,43 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_null_in_an_in_list_makes_the_check_pass_anything() => Assert.True(await Succeeds("CREATE TABLE dbo.obs (i int NULL CHECK (i IN (1, NULL)));", "INSERT INTO dbo.obs VALUES (5)"));
 
+    [Theory]
+    [InlineData("CREATE TABLE dbo.obs (a int NULL NOT NULL);")]
+    [InlineData("CREATE TABLE dbo.obs (a int NOT NULL NULL);")]
+    [InlineData("CREATE TABLE dbo.obs (b int NULL); ALTER TABLE dbo.obs ADD a int NULL NOT NULL;")]
+    [InlineData("DECLARE @t TABLE (a int NULL NOT NULL);")]
+    [InlineData("CREATE TABLE #obs (a int NOT NULL NULL);")]
+    [InlineData("CREATE TYPE dbo.obs_t AS TABLE (a int NULL NOT NULL);")]
+    [InlineData("CREATE FUNCTION dbo.obs_f() RETURNS @r TABLE (a int NULL NOT NULL) AS BEGIN RETURN; END;")]
+    // A column declared both NULL and NOT NULL, in either order, is refused wherever a table is declared (Msg 8150, "Multiple
+    // NULL constraints"), so how SyntaxReader.Table reads one describes no table that exists.
+    public async Task A_column_declared_both_null_and_not_null_is_refused(string declaration) =>
+        Assert.Equal(8150, (await ObservedCall.Run(server, [], declaration)).Error);
+
+    /// <summary>
+    /// Nullable columns whose set, bound and minimum length are each spelt with <c>OR col IS NULL</c>, and one whose
+    /// <c>IS NULL</c> is of an expression of it, not of the column.
+    /// </summary>
+    private const string OrIsNull = """
+        CREATE TABLE dbo.obs (
+            status varchar(10) NULL CHECK (status IS NULL OR status IN ('open', 'shut')),
+            n int NULL CHECK (n > 0 OR n IS NULL),
+            s varchar(5) NULL CHECK (len(s) > 0 OR s IS NULL),
+            m int NULL CHECK (m IN (1, 2) OR NULLIF(m, 5) IS NULL));
+        """;
+
+    [Theory]
+    [InlineData("INSERT INTO dbo.obs (status, n, s) VALUES (NULL, NULL, NULL)", true)]
+    [InlineData("INSERT INTO dbo.obs (status, n, s) VALUES ('open', 1, 'a')", true)]
+    [InlineData("INSERT INTO dbo.obs (status) VALUES ('other')", false)]
+    [InlineData("INSERT INTO dbo.obs (n) VALUES (0)", false)]
+    [InlineData("INSERT INTO dbo.obs (s) VALUES ('')", false)]
+    [InlineData("INSERT INTO dbo.obs (m) VALUES (5)", true)]
+    // col IS NULL is FALSE for a non-null value, so the other side alone decides it: CheckReader reads it so. An expression's
+    // IS NULL is not: NULLIF(m, 5) is NULL for 5, which is stored.
+    public async Task An_in_list_or_is_null_check_refuses_a_value_outside_the_set(string insert, bool stored) =>
+        Assert.Equal(stored, await Succeeds(OrIsNull, insert));
+
     // ---- alias types --------------------------------------------------------------------------------
 
     [Theory]

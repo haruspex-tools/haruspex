@@ -32,7 +32,7 @@ internal sealed class QueryFiles(DatabaseModel model, Summaries summaries)
             HasDefault: false,
             IsOutput: false)).ToList();
 
-        var walked = new Walker(model, file.Span, summaries, context: CallContext.Top).Walk(parameters, file.Statements, undecided: undecided);
+        var walked = new Walker(model, file.Span, SchemaSearch.Caller, summaries, context: CallContext.Top).Walk(parameters, file.Statements, undecided: undecided);
         if (walked.Blocker is { } blocker)
             return new ProcedureAnalysis([.. shapes], null, blocker, walked.Declared);
         if (walked.End is null)
@@ -85,8 +85,8 @@ internal sealed class QueryFiles(DatabaseModel model, Summaries summaries)
         foreach (var statement in file.Statements.Statements)
             copy.Statements.Add(statement);
 
-        var uses = new ParameterUses(model, file.Span, summaries.Bindings.For(file.Span));
-        new Walker(model, file.Span, summaries, context: CallContext.Top, uses: uses).Walk(file.Declared, copy);
+        var uses = new ParameterUses(model, file.Span, summaries.Bindings.For(file.Span, SchemaSearch.Caller));
+        new Walker(model, file.Span, SchemaSearch.Caller, summaries, context: CallContext.Top, uses: uses).Walk(file.Declared, copy);
         return uses.Found;
     }
 

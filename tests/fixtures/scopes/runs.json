@@ -8,6 +8,7 @@
 
   "runs": [
     { "name": "cte_hides_a_table", "procedure": "lib.cte_hides_a_table" },
+    { "name": "counters_of_its_own_schema", "procedure": "lib.counters_of_its_own_schema" },
     { "name": "cte_ends_with_its_statement", "procedure": "lib.cte_ends_with_its_statement" },
     { "name": "alias_reused_inside", "procedure": "lib.alias_reused_inside" },
     { "name": "correlated_two_levels", "procedure": "lib.correlated_two_levels" },

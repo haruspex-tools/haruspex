@@ -118,11 +118,11 @@ every column. Once bound, it is exactly what `p.name` would be: binding is all t
   `product.name` (SQL Server's error 4104). A full name an inner query doesn't expose (its table has an alias, is the table of
   that name in another schema, or is a CTE or derived table of that name) is looked for outward, as any qualifier is; one it
   exposes too is the inner query's.
-- A name written with its schema is exposed so. A **one-part name** in FROM is exposed under the schema it resolves to *for the
-  caller*: `FROM product` exposes `dbo.product` to a caller whose default schema is `dbo`, `shop.product` to one whose
-  default schema is `shop`. Which object a one-part name reads is the same question (`SchemaNames.Resolve`), so when the
-  project has it in one schema only, that is the schema; when several schemas have it, which full name binds is the caller's,
-  and the column is unknown with the source's reason.
+- A name written with its schema is exposed so. A **one-part name** in FROM is exposed under the schema it resolves to, which
+  is the question of which object it reads (`SchemaNames.Resolve`, below): in a procedure of `shop`, `FROM product` exposes
+  `shop.product` if `shop` has one and `dbo.product` if not. In a query file it is the caller's: `FROM product` exposes
+  `dbo.product` to a caller whose default schema is `dbo`, `shop.product` to one whose default schema is `shop`, so when
+  several schemas have the name, which full name binds is the caller's, and the column is unknown with the source's reason.
 - A view, a synonym and a table-valued function are exposed under their own names, a synonym not under its target's. A
   temporary table is exposed under **any** schema (`dbo.#picked.note` and `shop.#picked.note` both bind), and a CTE under none.
 - Two sources of one query can't be exposed under one table name, even in two schemas: SQL Server refuses the FROM (error
@@ -158,11 +158,22 @@ A one-part name is looked for in the names the body has defined first, and in th
    at most (`Binder.Temporary`; observed: `A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own`,
    `A_temporary_table_is_made_or_dropped_with_three_parts_at_most`).
 5. **The schema**: a table, a view (read from its definition), a synonym or a function. A schema-qualified name means
-   itself. A name without a schema is resolved in the caller's default schema and then in `dbo`, which the source can't
-   tell, so it means the one object of that name if exactly one schema has it, and is ambiguous if more do
-   (`SchemaNames.Resolve`, the one rule for every kind of name: a FROM, a write's target, an `EXEC`, a function, an alias
-   type). It gives the decision itself, `OneObject`, `SeveralObjects` or `NoObject` (which then means `dbo`'s), and each user
-   says only what it makes of each.
+   itself. Where SQL Server looks for a name without a schema depends on where the name is written (`SchemaSearch`):
+   - In a **module's definition**, a procedure's, view's, function's or trigger's (a trigger is in its table's schema), it
+     looks in the module's own schema and then in `dbo`, whoever calls the module and whoever created it. That holds for a
+     table, view, synonym or function in FROM, a write's target, and an alias or table type in a parameter, a return type, a
+     `DECLARE`, a table variable's column or `OPENJSON`'s `WITH`. So such a name means one object, or none, and never another
+     schema's: in a procedure of `shop`, `product` that only `archive` has is no table, and the procedure fails for every
+     caller (error 208). A synonym's target without a schema is looked for in the synonym's schema and then in `dbo` the same
+     way.
+   - Everywhere else it looks in the **caller's default schema** and then in `dbo`, which the source can't tell: in a query
+     file, in dynamic SQL, and in an `EXEC` even inside a module. So the name means the one object of that name if exactly one
+     schema has it, and is ambiguous if more do. A table's or table type's column type follows whoever creates it, which the
+     source can't tell either.
+
+   Each was observed as dbo and as a user whose default schema is another (`BindingObservationTests.ModuleSchema.cs`).
+   `SchemaNames.Resolve` is the one rule for every kind of name. It gives the decision itself, `OneObject`, `SeveralObjects` or
+   `NoObject` (which then means `dbo`'s), and each user says only what it makes of each.
 
 Each thing a FROM can read that is not a table of the schema is a `RelationSymbol`: a `CommonTable`, a `DerivedTable` (with its
 query, bound), a `ValuesTable`, a `ViewRelation`, a `TableFunctionCall`, an `OpenJsonCall`, a `SeriesCall`, a

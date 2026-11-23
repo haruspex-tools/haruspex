@@ -94,9 +94,22 @@ public partial class SchemaFactsTests
         Assert.Equal(items, string.Join("|", Column(definition).Values!.Strings!));
 
     [Theory]
+    [InlineData("varchar(10) NULL CHECK (c IS NULL OR c IN ('open', 'shut'))")]
+    [InlineData("varchar(10) NULL CHECK (c IN ('open', 'shut') OR c IS NULL)")]
+    // How a nullable column's set is often written, though a CHECK passes NULL anyway (observed:
+    // An_in_list_or_is_null_check_refuses_a_value_outside_the_set).
+    public void An_in_list_or_is_null_gives_the_lists_set_of_strings(string definition) =>
+        Assert.Equal("open|shut", string.Join("|", Column(definition).Values!.Strings!));
+
+    [Theory]
     [InlineData("int NULL CHECK (c IN (3, 1, 2))", "1,2,3")]
     [InlineData("int NULL CHECK (c = 1 OR c = 2 OR (c = 4))", "1,2,4")]
     [InlineData("int NULL CHECK (c IN (1, 2) OR c = -3)", "-3,1,2")]
+    // col IS NULL is FALSE for every non-null value, never the TRUE side of an OR (observed:
+    // An_in_list_or_is_null_check_refuses_a_value_outside_the_set).
+    [InlineData("int NULL CHECK (c = 1 OR c IS NULL)", "1")]
+    [InlineData("int NULL CHECK (c IS NULL OR c IN (2, 1))", "1,2")]
+    [InlineData("int NULL CHECK ((c) IS NULL OR (c IN (1, 2) OR c IS NULL))", "1,2")]
     [InlineData("int NULL CHECK (5 = c)", "5")]
     [InlineData("decimal(5, 2) NULL CHECK (c IN (1.5, 2.25, 3))", "1.5,2.25,3")]
     // Values the type can't hold are dropped: tinyint has no -1.
@@ -129,6 +142,9 @@ public partial class SchemaFactsTests
     // A conjunct that isn't understood is skipped; the rest still holds.
     [InlineData("int NULL CHECK (c > 0 AND c % 2 = 0)", "exclusive 0", "2147483647")]
     [InlineData("int NULL CHECK (c IS NOT NULL AND c <= 9)", "-2147483648", "9")]
+    // A bound OR'd with col IS NULL is the bound's alone.
+    [InlineData("int NULL CHECK (c > 0 OR c IS NULL)", "exclusive 0", "2147483647")]
+    [InlineData("int NULL CHECK (c IS NULL OR c BETWEEN 1 AND 5)", "1", "5")]
     public void Between_and_comparisons_give_bounds(string definition, string min, string max)
     {
         var facts = Column(definition);
@@ -155,6 +171,7 @@ public partial class SchemaFactsTests
     [InlineData("varchar(20) NULL CHECK (c <> '')", 1)]
     [InlineData("nvarchar(20) NULL CHECK (c != N'')", 1)]
     [InlineData("nvarchar(20) NULL CHECK (len(c) > 0 AND len(c) >= 4)", 4)]
+    [InlineData("nvarchar(20) NULL CHECK (len(c) > 0 OR c IS NULL)", 1)]
     public void Len_and_not_empty_give_a_minimum_length(string definition, int min) =>
         Assert.Equal(min, Column(definition).MinLength!.Value);
 
@@ -200,9 +217,18 @@ public partial class SchemaFactsTests
     [InlineData("int NULL CHECK (c % 2 = 0)", null, null)]
     // A NULL among the values makes IN UNKNOWN for any value outside them, which passes.
     [InlineData("int NULL CHECK (c IN (1, NULL))", null, null)]
-    // OR with anything but another value set: either side could be the TRUE one.
+    // OR with anything but another value set: either side could be the TRUE one (col IS NULL never is: see the tests of what
+    // is read).
     [InlineData("int NULL CHECK (c = 1 OR c > 10)", null, null)]
-    [InlineData("int NULL CHECK (c = 1 OR c IS NULL)", null, null)]
+    [InlineData("int NULL CHECK (c = 1 OR c IS NOT NULL)", null, null)]
+    [InlineData("int NULL CHECK (c = 1 OR c % 2 = 0 OR c IS NULL)", null, null)]
+    // col IS NULL is FALSE for every non-null value, so a CHECK of it alone, or AND'd with it, passes none: the column is
+    // always null, which is not claimed.
+    [InlineData("int NULL CHECK (c IS NULL)", null, null)]
+    [InlineData("int NULL CHECK (c IS NULL AND c IN (1, 2))", null, null)]
+    // Only a column's own IS NULL passes no non-null value: NULLIF(c, 5) IS NULL passes 5 (observed:
+    // An_in_list_or_is_null_check_refuses_a_value_outside_the_set).
+    [InlineData("int NULL CHECK (c IN (1, 2) OR NULLIF(c, 5) IS NULL)", null, null)]
     // A literal that doesn't fit the column's precision and scale, or of another type: not read, rather than
     // modelling how SQL Server converts the two to a common type.
     [InlineData("money NULL CHECK (c >= 1.00004)", null, null)]

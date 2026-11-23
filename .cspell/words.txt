@@ -81,6 +81,8 @@ releaseapplock
 repeatableread
 replacer
 roundabort
+rowguid
+rowguidcol
 rowcount
 rowset
 rowsets

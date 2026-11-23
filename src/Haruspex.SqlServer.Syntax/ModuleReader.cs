@@ -19,10 +19,11 @@ public static class ModuleReader
     {
         ArgumentNullException.ThrowIfNull(definition);
         var span = SyntaxReader.Span(file, definition);
+        var name = SyntaxReader.Name(definition.ProcedureReference.Name);
         return new Procedure(
-            SyntaxReader.Name(definition.ProcedureReference.Name),
+            name,
             span,
-            Parameters(definition.Parameters, span),
+            Parameters(definition.Parameters, span, name.Schema),
             Body(definition.StatementList, definition.MethodSpecifier));
     }
 
@@ -37,10 +38,10 @@ public static class ModuleReader
         ArgumentNullException.ThrowIfNull(definition);
         var span = SyntaxReader.Span(file, definition);
         var name = SyntaxReader.Name(definition.Name);
-        var parameters = Parameters(definition.Parameters, span);
+        var parameters = Parameters(definition.Parameters, span, name.Schema);
         return definition.ReturnType switch
         {
-            ScalarFunctionReturnType scalar => new ScalarFunction(name, span, parameters, SyntaxReader.Type(scalar.DataType), Body(definition.StatementList, definition.MethodSpecifier))
+            ScalarFunctionReturnType scalar => new ScalarFunction(name, span, parameters, SyntaxReader.Type(scalar.DataType, name.Schema), Body(definition.StatementList, definition.MethodSpecifier))
             {
                 ReturnsNullOnNullInput = definition.Options?.Any(o => o.OptionKind == FunctionOptionKind.ReturnsNullOnNullInput) == true,
             },
@@ -111,10 +112,14 @@ public static class ModuleReader
     /// <summary>A procedure's or function's parameters, in declaration order.</summary>
     /// <param name="parameters">The parameters as ScriptDom parsed them.</param>
     /// <param name="within">The span of the definition they are in.</param>
-    public static EquatableArray<Parameter> Parameters(IEnumerable<ProcedureParameter> parameters, SourceSpan within)
+    /// <param name="moduleSchema">
+    /// The schema of the procedure or function, where a type named without a schema is looked for before <c>dbo</c>; null for a
+    /// query file's declared parameters, which have no module.
+    /// </param>
+    public static EquatableArray<Parameter> Parameters(IEnumerable<ProcedureParameter> parameters, SourceSpan within, string? moduleSchema)
     {
         ArgumentNullException.ThrowIfNull(parameters);
-        return [.. parameters.Select(p => new Parameter(p.VariableName.Value, SyntaxReader.Type(p.DataType), p.Modifier == ParameterModifier.Output, p.Value, within.At(p)) { IsReadOnly = p.Modifier == ParameterModifier.ReadOnly })];
+        return [.. parameters.Select(p => new Parameter(p.VariableName.Value, SyntaxReader.Type(p.DataType, moduleSchema), p.Modifier == ParameterModifier.Output, p.Value, within.At(p)) { IsReadOnly = p.Modifier == ParameterModifier.ReadOnly })];
     }
 
     /// <summary>What a definition runs: its statements, a CLR method, or nothing when it has neither.</summary>
@@ -130,5 +135,5 @@ public static class ModuleReader
     /// function declares its table with no variable, so its table is named as the function is.
     /// </summary>
     private static DeclaredTable ReturnTable(ObjectName function, DeclareTableVariableBody declaration, SourceSpan within) =>
-        SyntaxReader.Declared(declaration.VariableName?.Value ?? function.ToString(), declaration.Definition, within.Within(declaration));
+        SyntaxReader.Declared(declaration.VariableName?.Value ?? function.ToString(), declaration.Definition, within.Within(declaration), function.Schema);
 }

@@ -77,12 +77,16 @@ public sealed class BodyDeclarations
     /// <param name="statements">Its body.</param>
     /// <param name="returnTable">A multi-statement function's return table, which its body fills as a table variable; null for a procedure.</param>
     /// <param name="source">Where the object whose body it is was read.</param>
-    public static BodyDeclarations Read(DatabaseModel model, IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable, SourceSpan source)
+    /// <param name="search">
+    /// Where a type the body names without a schema is looked for: a module's schema, then dbo, or the caller's in a query file.
+    /// </param>
+    public static BodyDeclarations Read(DatabaseModel model, IReadOnlyList<Parameter> parameters, StatementList statements, DeclaredTable? returnTable, SourceSpan source, SchemaSearch search)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(statements);
         ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(search);
         var found = new Collector();
         statements.Accept(found);
 
@@ -94,14 +98,14 @@ public sealed class BodyDeclarations
             var name = new LocalName(element.VariableName.Value);
             if (parameters.Any(p => new LocalName(p.Name) == name) || locals.Any(v => v.Name == name) || tables.Any(t => new LocalName(t.Name) == name))
                 continue;
-            var type = SyntaxReader.Type(element.DataType);
+            var type = SyntaxReader.Type(element.DataType, search.Own);
             if (SchemaRules.ResolveTableType(model, type) is { } tableType)
                 tables.Add(tableType.As(element.VariableName.Value));
             else
                 locals.Add(new LocalVariable(name, type, source.At(element)));
         }
 
-        var declared = found.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t)));
+        var declared = found.Tables.Select(t => SyntaxReader.Declared(t.VariableName.Value, t.Definition, source.Within(t), search.Own));
         foreach (var table in returnTable is null ? declared : declared.Prepend(returnTable))
         {
             if (!tables.Any(t => new LocalName(t.Name) == new LocalName(table.Name)))

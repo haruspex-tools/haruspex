@@ -25,6 +25,14 @@ INSERT INTO dbo.shelf (shelf_id, label)
 VALUES (1, 'A1'),
        (2, 'B2');
 
+-- lib's labels are longer than counter_code's 6 characters and than dbo's column; dbo's is NULL.
+INSERT INTO lib.lending_counter (counter_id, label)
+VALUES (1, 'periodicals'),
+       (2, 'maps');
+
+INSERT INTO dbo.lending_counter (counter_id, label)
+VALUES (1, NULL);
+
 INSERT INTO [lib.annex].[reading.room] (room_id, seats, note)
 VALUES (1, 12, N'Quiet'),
        (2, 4, NULL);

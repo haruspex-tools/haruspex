@@ -30,33 +30,41 @@ public sealed partial class Binder
 
     /// <summary>
     /// The objects a name written as the target of a write may mean, by the rule <see cref="Bind"/> resolves table names
-    /// with: a schema-qualified name means itself; an unqualified one, the one table, view or synonym of that name if exactly
-    /// one schema has it, every one of them if more do (which is written depends on the caller's default schema), and
-    /// <c>dbo</c>'s when none does. Empty for a name in another database or on a linked server, which the project cannot show.
+    /// with: a schema-qualified name means itself; an unqualified one, what <see cref="SchemaNames.Resolve"/> finds among the
+    /// tables, views and synonyms (every one of them where it finds several, since which is written depends on the caller's
+    /// default schema), and <c>dbo</c>'s when it finds none. Empty for a name in another database or on a linked server, which
+    /// the project cannot show.
     /// </summary>
     /// <param name="name">The name as written; a temporary table's or a body's own relation's is not asked about.</param>
     public IReadOnlyList<ObjectName> ResolveWritten(SchemaObjectName name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        return ResolveWritten(name.ServerIdentifier is not null || name.DatabaseIdentifier is not null, name.SchemaIdentifier?.Value, name.BaseIdentifier.Value);
+        return ResolveWritten(name.ServerIdentifier is not null || name.DatabaseIdentifier is not null, name.SchemaIdentifier?.Value, name.BaseIdentifier.Value, search);
     }
 
-    /// <summary>The objects a synonym's name may mean, by the rule <see cref="ResolveWritten(SchemaObjectName)"/> gives.</summary>
-    /// <param name="target">The name the synonym stands for.</param>
-    public IReadOnlyList<ObjectName> ResolveWritten(SynonymTarget target)
+    /// <summary>
+    /// The objects a synonym's target may mean, by the rule <see cref="ResolveWritten(SchemaObjectName)"/> gives, except that a
+    /// target without a schema is looked for in the synonym's schema and then in <c>dbo</c>, whoever reads it (see
+    /// <see cref="SchemaSearch"/>).
+    /// </summary>
+    /// <param name="synonym">The synonym.</param>
+    public IReadOnlyList<ObjectName> ResolveWritten(Synonym synonym)
     {
-        ArgumentNullException.ThrowIfNull(target);
-        return ResolveWritten(target.Server is not null || target.Database is not null, target.Schema, target.Name);
+        ArgumentNullException.ThrowIfNull(synonym);
+        var target = synonym.For;
+        return ResolveWritten(target.Server is not null || target.Database is not null, target.Schema, target.Name, SchemaSearch.Within(synonym));
     }
 
-    private List<ObjectName> ResolveWritten(bool elsewhere, string? schema, string name)
+    private List<ObjectName> ResolveWritten(bool elsewhere, string? schema, string name, SchemaSearch searched)
     {
         if (elsewhere)
             return [];
         if (schema is not null)
             return [new ObjectName(schema, name)];
-        // A function is read, never written: every table, view or synonym of the name may be what is written.
-        return SchemaNames.Resolve(Readable().Where(o => o is not Function), name) switch
+        // By the caller's rule, a function is read, never written: every table, view or synonym of the name may be what is
+        // written. In a module's definition the name means its schema's object, or dbo's, whatever it is, a function included.
+        var objects = searched.Own is null ? Readable().Where(o => o is not Function) : Readable();
+        return SchemaNames.Resolve(objects, name, searched) switch
         {
             OneObject one => [one.Named.Name],
             SeveralObjects several => [.. several.Candidates.Select(c => c.Name)],
@@ -71,8 +79,9 @@ public sealed partial class Binder
 
     /// <summary>
     /// Binds what an <c>EXEC</c> runs: a procedure of the project, or why its results cannot be known from the project. An
-    /// unqualified name resolves like a table's (see <see cref="Bind"/>): to the one procedure of that name, if exactly
-    /// one schema has it, since SQL Server looks in the caller's default schema and then in <c>dbo</c>.
+    /// unqualified name resolves by the caller's rule even inside a module (<see cref="SchemaSearch.Caller"/>): to the one
+    /// procedure of that name, if exactly one schema has it, since SQL Server looks in the caller's default schema and then in
+    /// <c>dbo</c>.
     /// </summary>
     /// <param name="execute">The <c>EXEC</c>'s specification: of a statement, or of <c>INSERT … EXEC</c>.</param>
     public CallTarget BindCall(ExecuteSpecification execute)
@@ -126,7 +135,8 @@ public sealed partial class Binder
                 : new UnknowableCall(UnknowableCallKind.MissingProcedure, objectName, Missing(objectName, text), at);
         }
 
-        return SchemaNames.Resolve(Model.Procedures, own) switch
+        // Observed: An_exec_or_dynamic_sql_in_a_procedure_follows_the_caller. The module's own schema is passed over.
+        return SchemaNames.Resolve(Model.Procedures, own, SchemaSearch.Caller) switch
         {
             OneObject one => new ProcedureCall((Procedure)one.Named, at),
             SeveralObjects several => new UnknowableCall(UnknowableCallKind.AmbiguousProcedure, null,

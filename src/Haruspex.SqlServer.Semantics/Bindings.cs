@@ -29,7 +29,11 @@ public sealed class Bindings(DatabaseModel model)
 
     /// <summary>The binder of one body.</summary>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
-    public Binder For(SourceSpan source) => new(this, source);
+    /// <param name="search">
+    /// Where a name the body writes without a schema is looked for: <see cref="SchemaSearch.Within(SchemaObject)"/> the module for a
+    /// module's body, <see cref="SchemaSearch.Caller"/> for a query file's.
+    /// </param>
+    public Binder For(SourceSpan source, SchemaSearch search) => new(this, source, search);
 
     /// <summary>
     /// What a body declares (<see cref="BodyDeclarations"/>), read once for each body, so that the names in force there, which
@@ -39,13 +43,14 @@ public sealed class Bindings(DatabaseModel model)
     /// <param name="body">Its statements; null for a body of one expression or query, which declares nothing.</param>
     /// <param name="returnTable">A multi-statement function's return table, or null.</param>
     /// <param name="source">Where the object whose body it is was read.</param>
-    public BodyDeclarations Declarations(IReadOnlyList<Parameter> parameters, StatementList? body, DeclaredTable? returnTable, SourceSpan source)
+    /// <param name="search">Where a type the body names without a schema is looked for (<see cref="BodyDeclarations.Read"/>).</param>
+    public BodyDeclarations Declarations(IReadOnlyList<Parameter> parameters, StatementList? body, DeclaredTable? returnTable, SourceSpan source, SchemaSearch search)
     {
         ArgumentNullException.ThrowIfNull(parameters);
         var key = body ?? (object)parameters;
         if (!declarations.TryGetValue(key, out var found))
         {
-            found = body is null ? BodyDeclarations.Of(Model, parameters) : BodyDeclarations.Read(Model, parameters, body, returnTable, source);
+            found = body is null ? BodyDeclarations.Of(Model, parameters) : BodyDeclarations.Read(Model, parameters, body, returnTable, source, search);
             declarations[key] = found;
         }
 

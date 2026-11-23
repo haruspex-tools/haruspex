@@ -63,9 +63,10 @@ public static class SchemaRules
                 if (BuiltInType.SystemAlias(type) is { } system)
                     return system;
 
-                // An unqualified name resolves in the caller's default schema and then in dbo, and the source does not
-                // say whose. With exactly one type of that name in the project, a script that deployed used that one.
-                // CLR types count, so that one can't be mistaken for an alias of the same name.
+                // An unqualified name resolves as any name does where it is written (SchemaSearch): in a module's schema and
+                // then in dbo, or, in a table's column, the creator's default schema and then dbo, whose the source doesn't
+                // say; with exactly one type of that name in the project, a script that deployed used that one. CLR types
+                // count, so that one can't be mistaken for an alias of the same name.
                 if (FindUserType(model, type) is not AliasType { BaseType: { Kind: SqlTypeKind.BuiltIn } builtIn } alias)
                     return null;
                 return new ResolvedType(builtIn, alias.Name.ToString(), alias.Nullability);
@@ -76,8 +77,8 @@ public static class SchemaRules
 
     /// <summary>
     /// The table type a parameter or variable is declared with, found as an alias type is (<see cref="ResolveType"/>): by its
-    /// schema when it names one, and otherwise when exactly one type of that name is defined; null when it is no table type the
-    /// model defines.
+    /// schema when it names one, and otherwise as <see cref="SchemaNames.Resolve"/> finds it from where it is written; null when
+    /// it is no table type the model defines.
     /// </summary>
     public static TableType? ResolveTableType(DatabaseModel model, SqlType? type)
     {
@@ -85,11 +86,14 @@ public static class SchemaRules
         return type is { Kind: SqlTypeKind.Named } ? FindUserType(model, type) as TableType : null;
     }
 
-    /// <summary>The user type a name refers to, by its schema or as the only one of that name; null when there is none or several.</summary>
+    /// <summary>
+    /// The user type a name refers to, by its schema, or as the one of that name found from where it is written (observed:
+    /// An_alias_type_in_a_module_is_looked_for_in_the_modules_schema); null when there is none or several.
+    /// </summary>
     private static UserType? FindUserType(DatabaseModel model, SqlType type) =>
         type.Schema is { } schema
             ? model.FindUserType(new ObjectName(schema, type.Name))
-            : SchemaNames.Resolve(model.UserTypes, type.Name) is OneObject { Named: UserType one } ? one : null;
+            : SchemaNames.Resolve(model.UserTypes, type.Name, SchemaSearch.Of(type)) is OneObject { Named: UserType one } ? one : null;
 
     /// <summary>The bytes of a <c>rowversion</c>, which SQL Server stores as <c>binary(8)</c>.</summary>
     public static int RowVersionBytes => 8;

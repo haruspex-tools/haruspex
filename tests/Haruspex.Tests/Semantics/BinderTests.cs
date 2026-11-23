@@ -36,7 +36,7 @@ public partial class BinderTests
             Assert.Empty(read.Diagnostics);
             var procedure = read.Model.FindProcedure(new ObjectName("dbo", "p"))!;
             Statement = Assert.Single(((SqlBody)procedure.Body).Statements.Statements);
-            Binder = new Bindings(read.Model).For(procedure.Span);
+            Binder = new Bindings(read.Model).For(procedure.Span, SchemaSearch.Within(procedure));
         }
 
         public TSqlStatement Statement { get; }
@@ -346,7 +346,7 @@ public partial class BinderTests
         Assert.Empty(read.Diagnostics);
         var procedure = read.Model.FindProcedure(new ObjectName("dbo", "p"))!;
         var statements = ((SqlBody)procedure.Body).Statements;
-        return (new Bindings(read.Model).For(procedure.Span).Declarations(procedure.Parameters, statements), statements);
+        return (new Bindings(read.Model).For(procedure.Span, SchemaSearch.Within(procedure)).Declarations(procedure.Parameters, statements), statements);
     }
 
     [Fact]

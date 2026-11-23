@@ -36,9 +36,22 @@ public static class ObservedCall
             await create.ExecuteNonQueryAsync(cancel);
         }
 
+        await using var command = session.Command(call);
+        return await Read(command, errorsAsMessages, cancel);
+    }
+
+    /// <summary>
+    /// Runs <paramref name="command"/>, reading every result set as a client does: the outcome <see cref="Run"/> gives, for a
+    /// session of a test's own (a <see cref="ScratchDatabase"/>'s).
+    /// </summary>
+    /// <param name="command">The command, on an open connection.</param>
+    /// <param name="errorsAsMessages">As <see cref="Run"/>'s.</param>
+    /// <param name="cancel">Cancels the call.</param>
+    public static async Task<CallOutcome> Read(SqlCommand command, bool errorsAsMessages, CancellationToken cancel)
+    {
+        ArgumentNullException.ThrowIfNull(command);
         var sets = new List<string>();
         var messages = new List<int>();
-        await using var command = session.Command(call);
         var connection = command.Connection;
         void OnMessage(object sender, SqlInfoMessageEventArgs e) => messages.AddRange(e.Errors.Cast<SqlError>().Where(x => x.Class > 10).Select(x => x.Number));
         connection.InfoMessage += OnMessage;

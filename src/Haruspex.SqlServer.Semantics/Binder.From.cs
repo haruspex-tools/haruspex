@@ -230,8 +230,9 @@ public sealed partial class Binder
 
     /// <summary>
     /// The full name a table, view, synonym or temporary table named in FROM without an alias is known by: as written with its
-    /// schema; a one-part name under the schema it resolves to, which is the one schema that has it, or dbo; a temporary table
-    /// under any schema. Null for a CTE and the body's other relations, for a name whose schema depends on the caller, and for
+    /// schema; a one-part name under the schema it resolves to (<see cref="SchemaNames.Resolve"/>), or dbo; a temporary table
+    /// under any schema. Null for a CTE and the body's other relations, for a name whose schema depends on the caller (in a query
+    /// file, where several schemas have the name), and for
     /// a name of another database: SQL Server binds a full name to it only when that database is the one the query runs in
     /// (observed: A_full_name_binds_a_source_named_with_this_databases_name), which the project can't say.
     /// </summary>
@@ -246,7 +247,7 @@ public sealed partial class Binder
             return new ExposedName(schema, one);
         if (names.Find(one) is { } relation)
             return relation is TemporaryTable ? new ExposedName(null, one) : null;
-        return SchemaNames.Resolve(Readable(), one) switch
+        return SchemaNames.Resolve(Readable(), one, search) switch
         {
             OneObject only => new ExposedName(only.Named.Name.Schema, only.Named.Name.Name),
             NoObject none => new ExposedName(none.InDbo.Schema, none.InDbo.Name),
@@ -285,8 +286,8 @@ public sealed partial class Binder
         if (name.SchemaIdentifier is not null)
             return InSchema(SyntaxReader.Name(name), at);
 
-        // Views, synonyms and functions count too: a caller may read one of them instead of a table.
-        return SchemaNames.Resolve(Readable(), name.BaseIdentifier.Value) switch
+        // Views, synonyms and functions count too: a body may read one of them instead of a table.
+        return SchemaNames.Resolve(Readable(), name.BaseIdentifier.Value, search) switch
         {
             OneObject one => InSchema(one.Named.Name, at),
             NoObject none => InSchema(none.InDbo, at),
@@ -327,8 +328,8 @@ public sealed partial class Binder
     }
 
     /// <summary>
-    /// What a synonym reads: a name of this database (with its schema: one without depends on the caller's default schema), or a
-    /// name of another database the source holds. A synonym for a synonym, here or there, is refused when it is read (observed:
+    /// What a synonym reads: a name of this database (one without a schema is looked for in the synonym's schema and then in
+    /// <c>dbo</c>), or a name of another database the source holds. A synonym for a synonym, here or there, is refused when it is read (observed:
     /// Msg 470, "Synonym chaining is not allowed", for a chain, a cycle and a synonym for itself, though each can be created),
     /// so it is unknown with that reason, and following a synonym never goes further than its one target.
     /// </summary>
@@ -337,18 +338,22 @@ public sealed partial class Binder
         UnresolvedTarget Unresolved(string detail) => new(Problem(BindingProblemKind.UnresolvedTable, detail, at));
         if (target.Server is not null)
             return Unresolved($"The synonym {synonym.Name} stands for {target}, on another server, which is not modelled.");
-        if (target.Schema is not { } schema)
-            return Unresolved($"The synonym {synonym.Name} stands for {target}, which names no schema, so what it reads depends on the caller's default schema.");
         if (target.Database is null)
         {
-            var name = new ObjectName(schema, target.Name);
-            return Model.FindReadable(name) is Synonym
+            // A target without a schema is the synonym's schema's, or else dbo's, whoever reads it (see SchemaSearch); a script
+            // that deploys has one object of a name in a schema.
+            var name = target.Schema is { } schema ? new ObjectName(schema, target.Name) : ResolveWritten(synonym) is [var only] ? only : (ObjectName?)null;
+            if (name is not { } found)
+                return Unresolved($"The synonym {synonym.Name} stands for {target}, and its schema has more than one object of that name.");
+            return Model.FindReadable(found) is Synonym
                 ? Unresolved(Chained(synonym.Name, target))
-                : InSchema(name, at);
+                : InSchema(found, at);
         }
 
+        if (target.Schema is not { } otherSchema)
+            return Unresolved($"The synonym {synonym.Name} stands for {target}, which names no schema, so what it reads depends on the caller's default schema.");
         return Model.Databases.TryGetValue(target.Database, out var other)
-            ? InOtherDatabase(other, target.Database, new ObjectName(schema, target.Name), at, synonym.Name)
+            ? InOtherDatabase(other, target.Database, new ObjectName(otherSchema, target.Name), at, synonym.Name)
             : Unresolved($"The synonym {synonym.Name} stands for {target}, in another database the source doesn't hold.");
     }
 
@@ -402,14 +407,13 @@ public sealed partial class Binder
             return view.Redefinition is null ? view.Columns : null;
         if (view.Redefinition is not null || view.Query.QueryExpression is not { } query || ForOf(query) is not null)
             return null;
-        var binder = bindings.For(view.Span);
+        var binder = bindings.For(view.Span, SchemaSearch.Within(view));
         var names = binder.BindWith(view.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty).Names;
         return binder.Bind(query, null, names).Listed(view.Columns);
     });
 
     /// <summary>
-    /// The function a call in FROM names. An unqualified name resolves in the caller's default schema and then in dbo, as a
-    /// table's does: the one function of that name when exactly one schema has it.
+    /// The function a call in FROM names. An unqualified name resolves as a table's does (<see cref="SchemaNames.Resolve"/>).
     /// </summary>
     private Callee Callee(SchemaObjectName name)
     {
@@ -417,7 +421,7 @@ public sealed partial class Binder
             return new ForeignCallee();
         if (name.SchemaIdentifier is not null)
             return Model.FindFunction(SyntaxReader.Name(name)) is { } function ? new KnownCallee(function) : new MissingCallee();
-        return SchemaNames.Resolve(Model.Functions, name.BaseIdentifier.Value) switch
+        return SchemaNames.Resolve(Model.Functions, name.BaseIdentifier.Value, search) switch
         {
             OneObject one => new KnownCallee((Function)one.Named),
             SeveralObjects several => new AmbiguousCallee(name.BaseIdentifier.Value, [.. several.Candidates.Cast<Function>()]),
@@ -440,8 +444,8 @@ public sealed partial class Binder
             {
                 if (inline.Query.QueryExpression is not { } query || ForOf(query) is not null)
                     return null;
-                var binder = bindings.For(inline.Span);
-                var names = binder.BindWith(inline.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty.WithDeclarations(bindings.Declarations(inline.Parameters, null, null, inline.Span))).Names;
+                var binder = bindings.For(inline.Span, SchemaSearch.Within(inline));
+                var names = binder.BindWith(inline.Query.WithCtesAndXmlNamespaces, NameEnvironment.Empty.WithDeclarations(bindings.Declarations(inline.Parameters, null, null, inline.Span, SchemaSearch.Within(inline)))).Names;
                 return binder.Bind(query, null, names).Listed([]);
             }),
             TableFunction table => [.. table.Returns.Columns.Select(c => c.Name)],

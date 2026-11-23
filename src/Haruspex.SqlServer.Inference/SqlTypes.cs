@@ -13,14 +13,19 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 internal static class SqlTypes
 {
-    /// <summary>A function's declared return type: its kind, with an alias resolved, but no facets.</summary>
+    /// <summary>
+    /// A CLR function's declared return type: its kind, with an alias resolved, but no facets, since nothing has observed SQL
+    /// Server converting the value a .NET method returns to it. A T-SQL function's value is converted, so its return type is
+    /// typed as <see cref="ToConvertedShape(DatabaseModel, SqlType?, SourceLocation)"/> types a variable.
+    /// </summary>
     public static Shape ToShape(DatabaseModel model, SqlType? type, SourceLocation at) =>
         SchemaRules.ResolveType(model, type) is { } resolved
             ? ToShape(new ColumnFacts(resolved), resolved, at, withFacets: false)
             : Unsupported(type, at);
 
     /// <summary>
-    /// A value read inside a body after SQL Server converted it to <paramref name="type"/>, such as a function's parameter:
+    /// A value read inside a body after SQL Server converted it to <paramref name="type"/>, such as a function's parameter or a
+    /// T-SQL function's value:
     /// the type's facts hold, because the conversion cuts a string short and rounds a decimal (observed; an overflow is an
     /// error, not a value). No collation is known, so a <c>varchar</c>'s byte length has no encoding.
     /// </summary>

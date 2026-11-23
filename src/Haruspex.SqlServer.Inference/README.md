@@ -2666,7 +2666,10 @@ in `tests/Haruspex.DifferentialTests/JsonFunctionObservationTests.cs`:
   body; such a call is nullable (`null-input`) when an argument may be null.
 - **Any other function** gives its declared return type, nullable (`function-result`): a scalar function may return
   NULL from any body. That includes a JSON body returned as a type shorter than `nvarchar(max)` (observed:
-  `nvarchar(10)` cuts the text to `[{"id":1,"`), and any body with control flow.
+  `nvarchar(10)` cuts the text to `[{"id":1,"`), and any body with control flow. A T-SQL body's value is converted to that
+  type as a variable's is (cut short, rounded, padded; an overflow is an error, or NULL with `ANSI_WARNINGS` and
+  `ARITHABORT` off), so the type keeps its length, digits and range (`A_scalar_functions_value_is_converted_to_its_declared_return_type`).
+  A CLR function's keeps none: nothing has observed SQL Server converting what a .NET method returns.
 - **A function that calls itself**, directly or through others, gives a recursive type named after it
   (`<Function>Node`): its object, or the object items of its array. It is found as a least fixed point, starting from
   no information and reading every body again until nothing changes, at most 4 steps per function in the cycle plus 4.

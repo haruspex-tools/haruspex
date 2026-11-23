@@ -402,7 +402,7 @@ internal sealed partial class Typer
                 continue;
             }
 
-            values.Add(OpenJsonColumn(SyntaxReader.Type(column.DataType), where));
+            values.Add(OpenJsonColumn(SyntaxReader.Type(column.DataType, search.Own), where));
         }
 
         if (names.Distinct(StringComparer.OrdinalIgnoreCase).Count() != names.Count)
