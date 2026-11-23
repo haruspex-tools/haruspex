@@ -32,6 +32,33 @@ public partial class DmlTests
         Assert.Contains("nested", unknown.Detail, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("sales", false)]
+    [InlineData("dbo", true)]
+    // Observed: A_name_in_a_trigger_is_looked_for_in_its_tables_schema. The trigger on sales.shelf writes note without a
+    // schema: sales.note, whatever the caller's default schema, so only sales.note's trigger is fired (dbo.p's own rule would
+    // take dbo.note).
+    public void A_name_written_in_a_trigger_is_its_tables_schemas(string loud, bool known)
+    {
+        var doc = Doc(
+            ("tables", """
+                CREATE TABLE sales.shelf (id int NOT NULL);
+                GO
+                CREATE TABLE sales.note (text nvarchar(50) NULL);
+                GO
+                CREATE TABLE dbo.note (text nvarchar(50) NULL);
+                GO
+                """),
+            ("trigger", "CREATE TRIGGER sales.shelf_noted ON sales.shelf AFTER UPDATE AS INSERT INTO note (text) VALUES (N'changed');"),
+            ("loud", $"CREATE TRIGGER {loud}.note_loud ON {loud}.note AFTER INSERT AS SELECT N'noted' AS what;"),
+            ("p", "CREATE PROCEDURE dbo.p AS UPDATE sales.shelf SET id = 1; SELECT 1 AS a;"));
+
+        if (known)
+            Assert.Single(Results(doc));
+        else
+            Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(doc).Reason);
+    }
+
     [Fact]
     public void A_trigger_that_returns_nothing_adds_nothing()
     {

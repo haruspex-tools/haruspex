@@ -226,6 +226,9 @@ public partial class SchemaFactsTests
     // always null, which is not claimed.
     [InlineData("int NULL CHECK (c IS NULL)", null, null)]
     [InlineData("int NULL CHECK (c IS NULL AND c IN (1, 2))", null, null)]
+    // Only a column's own IS NULL passes no non-null value: NULLIF(c, 5) IS NULL passes 5 (observed:
+    // An_in_list_or_is_null_check_refuses_a_value_outside_the_set).
+    [InlineData("int NULL CHECK (c IN (1, 2) OR NULLIF(c, 5) IS NULL)", null, null)]
     // A literal that doesn't fit the column's precision and scale, or of another type: not read, rather than
     // modelling how SQL Server converts the two to a common type.
     [InlineData("money NULL CHECK (c >= 1.00004)", null, null)]

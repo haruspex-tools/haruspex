@@ -418,21 +418,27 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     public async Task A_column_declared_both_null_and_not_null_is_refused(string declaration) =>
         Assert.Equal(8150, (await ObservedCall.Run(server, [], declaration)).Error);
 
-    /// <summary>A nullable column whose set, bound and minimum length are each spelt with <c>OR col IS NULL</c>.</summary>
+    /// <summary>
+    /// Nullable columns whose set, bound and minimum length are each spelt with <c>OR col IS NULL</c>, and one whose
+    /// <c>IS NULL</c> is of an expression of it, not of the column.
+    /// </summary>
     private const string OrIsNull = """
         CREATE TABLE dbo.obs (
             status varchar(10) NULL CHECK (status IS NULL OR status IN ('open', 'shut')),
             n int NULL CHECK (n > 0 OR n IS NULL),
-            s varchar(5) NULL CHECK (len(s) > 0 OR s IS NULL));
+            s varchar(5) NULL CHECK (len(s) > 0 OR s IS NULL),
+            m int NULL CHECK (m IN (1, 2) OR NULLIF(m, 5) IS NULL));
         """;
 
     [Theory]
-    [InlineData("INSERT INTO dbo.obs VALUES (NULL, NULL, NULL)", true)]
-    [InlineData("INSERT INTO dbo.obs VALUES ('open', 1, 'a')", true)]
+    [InlineData("INSERT INTO dbo.obs (status, n, s) VALUES (NULL, NULL, NULL)", true)]
+    [InlineData("INSERT INTO dbo.obs (status, n, s) VALUES ('open', 1, 'a')", true)]
     [InlineData("INSERT INTO dbo.obs (status) VALUES ('other')", false)]
     [InlineData("INSERT INTO dbo.obs (n) VALUES (0)", false)]
     [InlineData("INSERT INTO dbo.obs (s) VALUES ('')", false)]
-    // col IS NULL is FALSE for a non-null value, so the other side alone decides it: CheckReader reads it so.
+    [InlineData("INSERT INTO dbo.obs (m) VALUES (5)", true)]
+    // col IS NULL is FALSE for a non-null value, so the other side alone decides it: CheckReader reads it so. An expression's
+    // IS NULL is not: NULLIF(m, 5) is NULL for 5, which is stored.
     public async Task An_in_list_or_is_null_check_refuses_a_value_outside_the_set(string insert, bool stored) =>
         Assert.Equal(stored, await Succeeds(OrIsNull, insert));
 

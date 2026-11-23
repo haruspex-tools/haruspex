@@ -48,7 +48,7 @@ public partial class BindingObservationTests
     private async Task<string> AsBoth(string[] setup, string call)
     {
         var asDbo = await Run(setup, call);
-        var asOther = await Run(setup, $"EXECUTE AS USER = 'obs_other'; {call} REVERT;");
+        var asOther = await Run(setup, AsOther(call));
         return $"dbo: {asDbo} // obs_other: {asOther}";
     }
 
@@ -64,7 +64,7 @@ public partial class BindingObservationTests
         foreach (var batch in setup)
             await database.ExecuteAsync(batch, token);
         var asDbo = await Committed(database, call, token);
-        var asOther = await Committed(database, $"EXECUTE AS USER = 'obs_other'; {call} REVERT;", token);
+        var asOther = await Committed(database, AsOther(call), token);
         return $"dbo: {asDbo} // obs_other: {asOther}";
     }
 
@@ -76,6 +76,15 @@ public partial class BindingObservationTests
 #pragma warning restore CA2100
         return await ObservedCall.Read(command, errorsAsMessages: false, token);
     }
+
+    /// <summary>
+    /// <paramref name="call"/> as obs_other, reverting whatever it does: an error that ends the batch (5313, say) would
+    /// otherwise skip REVERT and hand the pooled connection back still impersonating, and the next test to take it fails
+    /// ("the session is in the kill state"). Run as dynamic SQL so that its compile errors are caught too; every call names
+    /// its objects with a schema or EXECs them, so compiling it in the inner batch changes nothing it reads.
+    /// </summary>
+    private static string AsOther(string call) =>
+        $"EXECUTE AS USER = 'obs_other'; BEGIN TRY EXEC (N'{call.Replace("'", "''", StringComparison.Ordinal)}'); END TRY BEGIN CATCH REVERT; THROW; END CATCH; REVERT;";
 
     /// <summary>What <see cref="AsBoth"/> gives when both users see <paramref name="outcome"/>.</summary>
     private static string Both(string outcome) => $"dbo: {outcome} // obs_other: {outcome}";
@@ -206,15 +215,23 @@ public partial class BindingObservationTests
                 "EXEC obs_a.obs_p '1';"));
 
     [Theory]
-    [InlineData("CREATE TABLE obs_a.obs_made (c obs_ty);", "obs_made")]
-    [InlineData("CREATE TYPE obs_a.obs_made AS TABLE (c obs_ty);", "TT_obs_made_%")]
-    // A table's or table type's column is not in a module: its alias type is the creator's default schema's, here dbo's, though
-    // the table is in obs_a. So the project can't say which type it is when several schemas have one of that name.
-    public async Task An_alias_type_in_a_tables_column_follows_whoever_creates_it(string create, string table) =>
+    [InlineData("CREATE TABLE obs_a.obs_made (c obs_ty);", "obs_made", false, "dbo.obs_ty")]
+    [InlineData("CREATE TYPE obs_a.obs_made AS TABLE (c obs_ty);", "TT_obs_made_%", false, "dbo.obs_ty")]
+    [InlineData("CREATE TABLE obs_a.obs_made (c obs_ty);", "obs_made", true, "obs_b.obs_ty")]
+    [InlineData("CREATE TYPE obs_a.obs_made AS TABLE (c obs_ty);", "TT_obs_made_%", true, "obs_b.obs_ty")]
+    // A table's or table type's column is not in a module: its alias type is the creator's default schema's (dbo's for dbo,
+    // obs_b's for obs_other), though the table is in obs_a. So the project can't say which type it is when several schemas
+    // have one of that name. obs_other creates through EXEC, since a statement in the batch of EXECUTE AS compiles as the
+    // batch's user.
+    public async Task An_alias_type_in_a_tables_column_follows_whoever_creates_it(string create, string table, bool byOther, string type) =>
         Assert.Equal(
-            Both("type: dbo.obs_ty"),
+            Both($"type: {type}"),
             await AsBothCommitted(
-                [.. Types, create],
+                [
+                    .. Types,
+                    "GRANT CREATE TABLE, CREATE TYPE TO obs_other; GRANT ALTER ON SCHEMA::obs_a TO obs_other;",
+                    byOther ? $"EXECUTE AS USER = 'obs_other'; EXEC (N'{create}'); REVERT;" : create,
+                ],
                 $"SELECT SCHEMA_NAME(y.schema_id) + '.' + y.name AS type FROM sys.columns AS c JOIN sys.types AS y ON y.user_type_id = c.user_type_id WHERE OBJECT_NAME(c.object_id) LIKE '{table}';"));
 
     [Fact]
