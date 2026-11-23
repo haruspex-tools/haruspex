@@ -278,11 +278,21 @@ was once found only in a private corpus. So a sweep, `CatalogueSweep`, runs a co
 each kind through the operators that type a value (`+`, `-`, `*`, `/`, `%`, a sign, `CAST` into every type, `ISNULL` over
 every pair, the aggregates, and the counts beside every operand): nearly 11,000 expressions, each a procedure of its own.
 `CatalogueSweepTests` holds what haruspex infers for each as a snapshot, so a change to any row changes a line.
-`CatalogueSweepGridTests` asks the server for the type of each one haruspex types, and runs those it claims never NULL or
-bounded over rows at every type's edges, so the snapshot holds only what the server does. What it found wrong was one kind of claim: expressions the server refuses when the procedure is created (a `CAST` the
+`CatalogueSweepGridTests` asks the server for the type of each one haruspex types, so the snapshot holds only what the server
+does. What it found wrong was one kind of claim: expressions the server refuses when the procedure is created (a `CAST` the
 chart refuses, an `ISNULL` whose values don't convert implicitly, `MIN` of a `bit`), which haruspex typed. They are unknown
 now. One kind is counted and left: `ISNULL` whose second value is of a type inference doesn't model, whose
 value haruspex can't see, so can't see the refusal either.
+
+The same test runs each expression haruspex claims never NULL, or bounded, over rows at every type's edges, under the
+caller's options that make an overflow NULL, and checks each value against the claim. An error ends a statement for every
+row, so one edge row that can't be converted (`'abc'` into `int`, a date past 9999-12-31) would hide what the others give.
+An expression that errors over the whole table therefore runs again a row at a time, and every row that gives a value is
+checked. A claim goes unchecked only when every row errors, and those claims are a snapshot of their own
+(`tests/Haruspex.DifferentialTests/Snapshots`), so a new one shows in review. Among them, an expression the server refuses
+to compile must be the kind the type check leaves, over a type inference doesn't model. Read a row at a time, the sweep
+found `DATEADD` with a `decimal(38,0)`, `float` or `real` number claimed never NULL, where the conversion of the number to
+`bigint` overflows to NULL.
 
 ## Limits
 

@@ -124,15 +124,15 @@ DATEADD(day, si, dt) -> date date
 DATEADD(day, i, dt) -> date date
 DATEADD(day, bi, dt) -> date date
 DATEADD(day, d52, dt) -> date date
-DATEADD(day, d380, dt) -> date date
+DATEADD(day, d380, dt) -> date date null:arithmetic-overflow
 DATEADD(day, d3838, dt) -> date date
 DATEADD(day, n102, dt) -> date date
 DATEADD(day, m, dt) -> date date
 DATEADD(day, sm, dt) -> date date
-DATEADD(day, f, dt) -> date date
-DATEADD(day, r, dt) -> date date
-DATEADD(day, f24, dt) -> date date
-DATEADD(day, f25, dt) -> date date
+DATEADD(day, f, dt) -> date date null:arithmetic-overflow
+DATEADD(day, r, dt) -> date date null:arithmetic-overflow
+DATEADD(day, f24, dt) -> date date null:arithmetic-overflow
+DATEADD(day, f25, dt) -> date date null:arithmetic-overflow
 DATEADD(day, c3, dt) -> unknown unsupported-expression: DATEADD(day, c3, dt): a number of this type is not modelled.
 DATEADD(day, v10, dt) -> unknown unsupported-expression: DATEADD(day, v10, dt): a number of this type is not modelled.
 DATEADD(day, vx, dt) -> unknown unsupported-expression: DATEADD(day, vx, dt): a number of this type is not modelled.

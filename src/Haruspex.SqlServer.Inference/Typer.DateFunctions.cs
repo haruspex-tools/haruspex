@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Collections;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
@@ -58,8 +59,11 @@ internal sealed partial class Typer
         || (type.IsInteger && NumberOf(expression) is >= -53690 and <= 2958463);
 
     /// <summary>
-    /// <c>DATEADD(part, n, d)</c>: d's type, or datetime for a string or an integer; NULL when n or d is. An overflow is an
-    /// error (517) under any session options.
+    /// <c>DATEADD(part, n, d)</c>: d's type, or datetime for a string or an integer; NULL when n or d is. A date past its type's
+    /// range is an error (517) under any session options, but n is first converted to bigint, and a number past bigint's
+    /// range overflows that conversion, which is NULL under a caller's ANSI_WARNINGS and ARITHABORT off (8115 with them on), so
+    /// it may be NULL unless n always converts (<see cref="ConvertsToBigInt"/>; observed:
+    /// Dateadd_converts_its_number_to_bigint_which_past_its_range_is_null_under_the_callers_ansi_warnings_off).
     /// </summary>
     private Value DateAdd(FunctionCall call, ReadScope scope)
     {
@@ -67,13 +71,28 @@ internal sealed partial class Typer
         if (unknown is not null)
             return unknown;
         // The NULL literal as the number does not compile (error 8116), where a NULL variable gives NULL.
-        if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0]) is not { IsNumber: true })
+        if (Strip(call.Parameters[1]) is NullLiteral || TypeOf(values[0]) is not { IsNumber: true } number)
             return NotModelled(call, "a number of this type is not modelled.");
         var date = DateOperand(values[1], call.Parameters[2]);
         if (date is null)
             return NotModelled(call, "a date of this type is not modelled.");
-        return Typed(date.IsDateOrTime ? date : ScalarType.Of(BuiltInType.DateTime), NullReasons.Join(Reasons(values), DatetimeOverflow([(date, call.Parameters[2])], call)), call);
+        var reasons = NullReasons.Join(Reasons(values), DatetimeOverflow([(date, call.Parameters[2])], call));
+        if (!ConvertsToBigInt(number, call.Parameters[1]))
+            reasons = NullReasons.Join(reasons, Overflow(call));
+        return Typed(date.IsDateOrTime ? date : ScalarType.Of(BuiltInType.DateTime), reasons, call);
     }
+
+    /// <summary>
+    /// Whether a number converts to bigint without an overflow: an integer; money or smallmoney, whose greatest value has 15
+    /// integer digits; a decimal or numeric of at most 18 integer digits, whose fraction the conversion drops; or a literal
+    /// within bigint's range. A decimal of 19 integer digits, a float and a real may be past it (observed in the test
+    /// <see cref="DateAdd"/> names).
+    /// </summary>
+    private static bool ConvertsToBigInt(ScalarType number, ScalarExpression expression) =>
+        number.IsInteger || number.IsMoney || (number.IsDecimal && number.Precision - number.Scale <= 18)
+        || (NumberOf(expression) is { } n && n >= long.MinValue && n <= long.MaxValue)
+        || (LiteralOf(expression) is ({ } literal and RealLiteral, _)
+            && double.TryParse(literal.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var real) && Math.Abs(real) < 9e18);
 
     /// <summary><c>DATEPART</c>, <c>YEAR</c>, <c>MONTH</c>, <c>DAY</c> (int) and <c>DATENAME</c> (nvarchar(30), whose names
     /// depend on the session's language, so no closed set): NULL when the date is.</summary>

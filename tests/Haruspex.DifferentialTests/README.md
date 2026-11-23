@@ -83,10 +83,13 @@ emitter's mistakes. It checks what the IR claims:
   its variants (IR 0.3);
 - JSON text with a `content` parses to a value of that type, checked at `<path><json>` (IR 0.4), in JSON and in a
   rowset; a recursive type is checked at every depth the data reaches (IR 0.4);
-- every scalar keeps its facets (IR 0.2): a length in its unit (UTF-16 code units, or UTF-8 bytes when the IR
-  says so, and otherwise only as an upper bound), a minimum length, digits, bounds compared exactly from the
-  decimal text (never through a double), and value sets. An `exact` set is matched exactly; a `collation` set
-  ignoring case and trailing spaces, which is what the fixtures' collations ignore.
+- every scalar keeps its facets (IR 0.2): a length in its unit (UTF-16 code units, code points, or UTF-8 bytes
+  when the IR says so, and otherwise only as an upper bound), a binary value's length in bytes (exact when fixed), a
+  minimum length, digits, bounds compared exactly from the decimal text (never through a double), and value sets. An
+  `exact` set is matched exactly; a `padded` one after removing trailing spaces; a `collation` set ignoring case and
+  trailing spaces, which is what the fixtures' collations ignore; and a `canonical` set through the document's fold for
+  it;
+- any JSON value narrowed to an object or an array is one, and a date-time's offset is within -14:00 to +14:00.
 
 What the statement walk relies on (which result sets arrive when a branch is not taken, a path returns early or an
 error is raised; what temporary tables, table variables and `SELECT … INTO` give; how a recursive CTE's columns are
