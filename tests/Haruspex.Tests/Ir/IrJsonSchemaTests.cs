@@ -252,6 +252,23 @@ public class IrJsonSchemaTests
         Assert.Equal([IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
+    /// <summary>
+    /// The schema is checked against the draft 2020-12 meta-schema and compiled in Ajv's strict mode, as a consumer who follows the
+    /// guide would compile it: strict mode refuses a keyword it doesn't know, a <c>required</c> beside no <c>type</c> and a
+    /// property required where none is defined, any of which a validator written for these tests alone could miss.
+    /// </summary>
+    [Fact]
+    public void The_schema_is_a_valid_2020_12_schema_that_ajv_compiles_in_strict_mode()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the IR schema was not compiled with Ajv");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+
+        Assert.True(
+            EmitCheckPackage.TryRun("node", [Path.Combine("src", "meta-schema.mjs"), SchemaPath], RepositoryPaths.EmitCheck, out var output, out var why),
+            $"{SchemaFile} doesn't compile in Ajv's strict mode ({why}):\n{output}");
+        Assert.Contains("1 document(s), 0 failed", output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Every_null_rule_is_in_the_schema_by_its_wire_name() =>
         Assert.Equal(
@@ -320,6 +337,50 @@ public class IrJsonSchemaTests
         using var instance = JsonDocument.Parse(text);
         Assert.NotEmpty(Schema().Validate(instance.RootElement));
         Assert.Throws<IrFormatException>(() => IrJsonReader.Read(text));
+    }
+
+    /// <summary>
+    /// What the tests above check with <see cref="SchemaSubset"/>, Ajv checks too: every file haruspex writes passes, and every breakage
+    /// gets the same verdict from both. A keyword the subset read differently from a real validator would otherwise pass both the
+    /// schema and these tests.
+    /// </summary>
+    [Fact]
+    public void Ajv_gives_every_written_file_and_every_breakage_the_verdict_the_schema_subset_gives()
+    {
+        var documents = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var snapshot in Snapshots)
+            documents[snapshot.Data] = File.ReadAllText(Path.Combine(RepositoryPaths.Fixtures, snapshot.Data));
+        foreach (var fixture in Fixture.All)
+            documents[$"{fixture.Name}, inferred"] = IrJsonWriter.Write(fixture.Ir);
+        foreach (var run in Corpus.Corpus.Runs)
+            documents[$"{run.Corpus.Name}, inferred"] = IrJsonWriter.Write(run.Document);
+        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared]).Select((d, i) => (d, i)))
+            documents[$"sample {i}"] = IrJsonWriter.Write(sample);
+        var written = documents.Keys.ToHashSet(StringComparer.Ordinal);
+        foreach (var (name, breakage) in Breakages)
+            documents[name] = Broken(IrSamples.Everything, breakage);
+        foreach (var (name, breakage) in BinaryBreakages)
+            documents["binary: " + name] = Broken(IrSamples.Binary, breakage);
+
+        var verdicts = AjvVerdicts.Of(SchemaPath, documents);
+
+        Assert.All(documents, d =>
+        {
+            using var instance = JsonDocument.Parse(d.Value);
+            var subset = Schema().Validate(instance.RootElement);
+            Assert.True(subset.Count == 0 == (verdicts[d.Key].Count == 0), $"{d.Key}: Ajv says {Verdict(verdicts[d.Key])}, the schema subset {Verdict(subset)}.");
+            if (written.Contains(d.Key))
+                Assert.True(verdicts[d.Key].Count == 0, $"{d.Key}: Ajv refuses a file haruspex writes: {Verdict(verdicts[d.Key])}.");
+        });
+
+        static string Verdict(List<string> errors) => errors.Count == 0 ? "valid" : string.Join("; ", errors);
+    }
+
+    private static string Broken(IrDocument document, Action<JsonObject> breakage)
+    {
+        var json = JsonNode.Parse(IrJsonWriter.Write(document))!.AsObject();
+        breakage(json);
+        return json.ToJsonString();
     }
 
     [Fact]

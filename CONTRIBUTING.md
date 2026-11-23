@@ -84,8 +84,9 @@ against the module committed beside it (`ExampleAppTests`). The same package hol
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
 failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
 `tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
-with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
-meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
+with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema, and the IR's, against the draft 2020-12
+meta-schema and compiles it in Ajv's strict mode, `tests/emit-check/src/verdicts.mjs`, which gives Ajv's verdict on each IR file
+the tests hold the IR's schema and reader to, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
 `tests/emit-check/src/functions.mjs`, through which they call it through the generated functions. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip. A test gives a script the folder it
 wrote its files to, never a list of the files: Windows refuses a command line past a fixed length, so the tests refuse one past

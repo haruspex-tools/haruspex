@@ -97,7 +97,7 @@ table, with the reason, as written another way; a property added to a record fai
 The schema is strict where the format is closed. Every object refuses a property it doesn't list
 (`additionalProperties: false`), every vocabulary is an `enum`, and a flag must agree with its reasons: `nullable: true`
 with at least one entry in `nullableBecause`, and `nullable: false` with none. Every integer is a count, from 0 to the
-largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode. Three rules it
+largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode, as a consumer who validates with it would; `IrJsonSchemaTests` compiles it so and gives Ajv every file it checks, so that a keyword the tests' own validator read differently from Ajv would fail. Three rules it
 can't state. Two because JSON Schema sees a document after it is parsed: a number's form (a bound written `1e5` passes the
 schema, though the IR writes every number as plain decimal text so that a reader can take it exactly, and the reader
 refuses any other form; the schema's descriptions say so), and a key given twice in one object, which a parser keeps one
