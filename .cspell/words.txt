@@ -128,10 +128,11 @@ subpatterns
 
 # Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes,
 # NETSDK1022; msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura,
-# kysely, pgtyped, sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit; mklink:
-# the Windows command that makes a junction; chcp: the Windows command that sets and shows a console's code page; realpath: the
-# POSIX call that reads a path as it is on disk; libc: the C library, as npm's package.json field names it; readelf: the binutils
-# tool that reads an ELF binary's notes)
+# kysely, pgtyped, sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit;
+# mklink: the Windows command that makes a junction; chcp: the Windows command that sets and shows a console's code page;
+# realpath: the POSIX call that reads a path as it is on disk; libc: the C library, as npm's package.json field names it;
+# readelf: the binutils tool that reads an ELF binary's notes; globalroot: Windows's object-manager name for the root of its
+# namespace, as in \??\GLOBALROOT\Device\Mup, a device path that names a share)
 codegen
 dacfx
 dacpac
@@ -164,6 +165,7 @@ pgtyped
 scriban
 mklink
 chcp
+globalroot
 realpath
 libc
 readelf

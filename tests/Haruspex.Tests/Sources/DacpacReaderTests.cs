@@ -481,7 +481,8 @@ public class DacpacReaderTests
 
     // On Windows, looking for a file on a share is a connection to its host, which is offered the user's credentials: a package
     // someone else built, or one inside a NuGet package, would choose the host (F041). Each spelling below names a share or a
-    // device on Windows, and the test is the same on every platform, so a Mac or Linux run catches a share being tried again.
+    // device on Windows (\??\ is the NT object manager's own prefix, which .NET passes through as a device path), and the test is
+    // the same on every platform, so a Mac or Linux run catches a share being tried again.
     [Theory]
     [InlineData(@"\\host\share\x.dacpac")]
     [InlineData("//host/share/x.dacpac")]
@@ -489,6 +490,8 @@ public class DacpacReaderTests
     [InlineData(@"\\?\UNC\host\share\x.dacpac")]
     [InlineData(@"\\?\C:\build\x.dacpac")]
     [InlineData(@"\\.\pipe\x.dacpac")]
+    [InlineData(@"\??\UNC\host\share\x.dacpac")]
+    [InlineData(@"\??\GLOBALROOT\Device\Mup\host\share\x.dacpac")]
     public void A_recorded_path_naming_a_share_or_a_device_is_never_looked_for_and_the_warning_says_so(string recorded)
     {
         using var dir = new TempDirectory();

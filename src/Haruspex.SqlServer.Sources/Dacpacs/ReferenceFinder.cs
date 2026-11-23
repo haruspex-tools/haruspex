@@ -15,7 +15,8 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// recorded, since it can't be a place here and joining it to a folder would make one that never exists.</item>
 /// </list>
 /// A recorded path that names a share or a device (<c>\\host\share\…</c>, <c>//host/share/…</c>, <c>\\?\…</c>,
-/// <c>\\.\…</c>) is never looked for, on any platform: the warning quotes it and says so (<see cref="NamesShareOrDevice"/>).
+/// <c>\\.\…</c>, <c>\??\…</c>) is never looked for, on any platform: the warning quotes it and says so
+/// (<see cref="NamesShareOrDevice"/>).
 /// </summary>
 /// <remarks>
 /// The recorded path comes last because it is a path on the machine that built the package (observed: an absolute path under
@@ -87,8 +88,9 @@ internal static class ReferenceFinder
     }
 
     /// <summary>
-    /// Whether <paramref name="recorded"/> begins with two separators, of either kind, which on Windows names a share
-    /// (<c>\\host\share\…</c>, <c>//host/share/…</c>, <c>\\?\UNC\…</c>) or a device (<c>\\?\C:\…</c>, <c>\\.\pipe\…</c>).
+    /// Whether <paramref name="recorded"/> begins the way .NET on Windows recognises a share or a device: with two separators,
+    /// of either kind (<c>\\host\share\…</c>, <c>//host/share/…</c>, <c>\\?\UNC\…</c>, <c>\\?\C:\…</c>, <c>\\.\pipe\…</c>), or with
+    /// <c>\??\</c>, the NT object manager's own prefix (<c>\??\UNC\host\share\…</c>, <c>\??\GLOBALROOT\Device\Mup\…</c>).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -99,6 +101,12 @@ internal static class ReferenceFinder
     /// device path may also name a share (<c>\\?\UNC\…</c>), or something that isn't a file at all, such as a pipe.
     /// </para>
     /// <para>
+    /// These are the two beginnings .NET's own path code treats as other than a drive or a folder, its <c>IsUnc</c> and
+    /// <c>IsDevice</c> (which takes <c>\??\</c> only as written, with backslashes): so the rule is complete for the paths .NET
+    /// hands to Windows. Every other recorded path is a drive path, rooted or relative, or relative to the drive in use; observed
+    /// on Windows, <c>/??/…</c>, <c>\??/…</c> and a path with a leading space are local.
+    /// </para>
+    /// <para>
     /// The test is on the text, the same on every platform, so that the rule can be tested anywhere. Elsewhere <c>//host/share</c>
     /// is the local folder <c>/host/share</c>, and passing it by costs only the one place a build on another machine left a
     /// package, which is almost never there; the copy beside the referrer, or in a folder of <c>references</c>, is the one to
@@ -106,7 +114,8 @@ internal static class ReferenceFinder
     /// </para>
     /// </remarks>
     private static bool NamesShareOrDevice(string recorded) =>
-        recorded.Length >= 2 && (recorded[0] is '\\' or '/') && (recorded[1] is '\\' or '/');
+        (recorded.Length >= 2 && (recorded[0] is '\\' or '/') && (recorded[1] is '\\' or '/'))
+        || recorded.StartsWith(@"\??\", StringComparison.Ordinal);
 
     /// <summary>The folder of the package that records the reference.</summary>
     private static string Beside(string referrer) => Path.GetDirectoryName(Path.GetFullPath(referrer)) ?? ".";
