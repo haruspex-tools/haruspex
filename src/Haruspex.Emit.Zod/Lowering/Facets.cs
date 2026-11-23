@@ -24,13 +24,18 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// value to the step with a relative tolerance of 4 ε, which the error of parsing both cannot exceed, so it never
 /// rejects a true multiple: <c>tests/emit-check/src/multiple-of.mjs</c> checks over a million decimal strings of
 /// every precision and scale, including 0.07, 1.1 and 123.45 (a one-off sweep of ten million found none either),
-/// and the differential tests run every seeded row through the generated schemas.
+/// and the differential tests run every seeded JSON result through the generated schemas.
 /// Past about 2^50 steps the tolerance exceeds half a step and the check accepts anything, which is weaker, never
 /// wrong.</para>
 /// <para><b>Rowsets.</b> The mssql (tedious) driver builds a decimal or money value as a double from its integer
 /// parts and divides by a power of ten. That is the nearest double only while the integer fits in 2^53 (precision
 /// 15 or less); beyond it the double may land a little past a bound, so for wider types bounds and values are
-/// left out of rowsets. A bigint arrives as a string, so its range can't be checked as a number.</para>
+/// left out of rowsets. The step is kept whatever the precision, because the driver's value passes it wherever the check
+/// can refuse anything. While the integer is below 2^53 and the scale is 22 or less, the driver divides two exact doubles, so
+/// its value is the double <c>JSON.parse</c> gives, which the sweep covers. Past 2^53 the ratio to the step is so large that
+/// Zod's tolerance accepts every value. Only a scale above 22 adds a rounding, since 10^s is then not a double, and
+/// <c>multiple-of.mjs</c> divides as the driver does at each such scale. The differential tests hand rowset values to the
+/// schemas as SqlClient reads them, converted to the nearest double, not through the driver's arithmetic. A bigint arrives as a string, so its range can't be checked as a number.</para>
 /// <para><b>Strings.</b> Zod counts a string's length in code points; <c>nvarchar(n)</c> counts UTF-16 code units, of which a
 /// code point is one or two, and <c>varchar(n)</c> bytes, of which it is one in a single-byte collation and up to four in UTF-8 or
 /// two in a double-byte one. So <c>n</c> is always a maximum, and a fixed length (<c>nchar(n)</c>, <c>char(n)</c>) or a minimum is

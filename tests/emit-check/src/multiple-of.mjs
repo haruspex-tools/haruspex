@@ -9,6 +9,9 @@
 // place too many is rejected. (Past about 2^50 steps the tolerance exceeds half a step and anything is accepted,
 // which is weaker, never wrong.)
 //
+// The driver builds a rowset's decimal by its own arithmetic rather than JSON.parse's, which differs only past scale 22; the
+// sweep below those covers it.
+//
 // Run by EmitCheckTests; takes a few seconds. Deterministic: the random sweep uses a fixed seed.
 import { z } from 'zod'
 
@@ -63,6 +66,18 @@ for (let i = 0; i < 300000; i++) {
   const integer = digits.slice(0, precision - scale).replace(/^0+(?=\d)/, '') || '0'
   accept(scale, (random() < 0.5 ? '-' : '') + integer + (scale > 0 ? '.' + digits.slice(precision - scale) : ''))
 }
+
+// A rowset's decimal as the mssql driver builds it (tedious 20.3.9, value-parser.js readNumeric): its unscaled integer, exact
+// below 2^53, divided by Math.pow(10, scale). Up to scale 22 both are exact doubles, so the quotient is the double JSON.parse
+// gives and the sweeps above cover it. Past 22, 10^scale is not a double, so the driver's value can differ from JSON.parse's by
+// a rounding; these are the values where the check still bites, small unscaled integers at every such scale.
+for (let scale = 23; scale <= 38; scale++)
+  for (let unscaled = 1; unscaled <= 20000; unscaled++) {
+    checked++
+    const value = unscaled / Math.pow(10, scale)
+    if (!z.number().multipleOf(Number(`1e-${scale}`)).safeParse(value).success && failures.length < 20)
+      failures.push(`scale ${scale}: ${unscaled} as the driver divides it was rejected`)
+  }
 
 // Not vacuous: one decimal place too many is rejected.
 for (let scale = 0; scale <= 6; scale++)
