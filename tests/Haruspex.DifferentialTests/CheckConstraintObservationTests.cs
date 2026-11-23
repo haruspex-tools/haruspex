@@ -83,6 +83,49 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
             CollationCatalogue.Names.Order(StringComparer.Ordinal).Select(n => $"{n} {CollationCatalogue.CodePage(n)}"));
     }
 
+    [Fact]
+    public async Task A_unicode_only_collation_is_no_databases_collation()
+    {
+        // A collation of no code page (Indic_General_100_CI_AS, Assamese_100_CI_AS) holds only nvarchar: CREATE DATABASE refuses
+        // each with Msg 453, so the config refuses one as the database's collation. Each is tried, and none is ever made.
+        server.Require();
+        var token = TestContext.Current.CancellationToken;
+        await using var scratch = await server.ScratchAsync();
+        await using var connection = await scratch.OpenAsync(token);
+        await using var command = new SqlCommand("""
+            SET NOCOUNT ON;
+            DECLARE @tried TABLE (name sysname, error int);
+            DECLARE @name sysname, @error int;
+            DECLARE each CURSOR LOCAL FAST_FORWARD FOR
+                SELECT name FROM sys.fn_helpcollations() WHERE COLLATIONPROPERTY(name, 'CodePage') = 0;
+            OPEN each;
+            FETCH each INTO @name;
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                SET @error = 0;
+                BEGIN TRY
+                    EXEC (N'CREATE DATABASE haruspex_test_unicode_only COLLATE ' + @name);
+                    EXEC (N'DROP DATABASE haruspex_test_unicode_only');
+                END TRY
+                BEGIN CATCH
+                    SET @error = ERROR_NUMBER();
+                END CATCH;
+                INSERT @tried VALUES (@name, @error);
+                FETCH each INTO @name;
+            END;
+            SELECT name, error FROM @tried;
+            """, connection) { CommandTimeout = 300 };
+        await using var reader = await command.ExecuteReaderAsync(token);
+        var tried = new Dictionary<string, int>(StringComparer.Ordinal);
+        while (await reader.ReadAsync(token))
+            tried.Add(reader.GetString(0), reader.GetInt32(1));
+
+        Assert.Equal(
+            CollationCatalogue.Names.Where(n => CollationCatalogue.CodePage(n) == CollationCatalogue.UnicodeOnly).Order(StringComparer.Ordinal),
+            tried.Keys.Order(StringComparer.Ordinal));
+        Assert.All(tried, t => Assert.Equal(453, t.Value));
+    }
+
     [Theory]
     // An N'…' literal outranks varchar, so a code-page column is converted to Unicode and compared by the collation's Unicode
     // rules, which are not its code-page rules: under SQL_Latin1_General_CP1_CI_AS 'v²' equals N'v2', a NUL is ignored, and 'ß'

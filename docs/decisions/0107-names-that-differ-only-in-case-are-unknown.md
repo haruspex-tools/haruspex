@@ -6,7 +6,8 @@
 case. Where two columns of one table, or two variables or table variables of one body, have names that differ only in case
 (`[Code]` and `[code]`, `@Total` and `@total`), a reference to either is unknown, with a reason naming both. A `SELECT *` gives each
 of them as unknown, and the table's other columns as before. This covers a table of the schema, a table type, a body's
-temporary tables and table variables, and the `inserted` and `deleted` of a write.
+temporary tables and table variables, and the `inserted` and `deleted` of a write. A CHECK constraint proves nothing of
+either column (a table type's row included), since its names too are matched ignoring case.
 
 **Context.** Matched ignoring case, one of two such columns is read for the other: on a database of
 `Latin1_General_100_CS_AS`, with `Code varchar(10) NOT NULL`, `code int NULL`, `qty int NULL CHECK (qty BETWEEN 1 AND 5)` and
@@ -25,7 +26,11 @@ variable (Msg 134). So their presence is proof that the matching is wrong there,
 
 **Reason.** With no such pair, matching without case gives what matching by case gives, for any script that deploys. With one,
 an unknown with a reason claims nothing, and the rest of the table and the body are typed as before. The check is made where a
-name is looked up (`Binder.Resolve`, `Binder.Star`, `BodyDeclarations`), so no route reads one name for the other.
+name is looked up in a body (`Binder.Resolve`, `Binder.Star`, `BodyDeclarations`), and where a CHECK is read
+(`CheckReader.Read`), whose facts reach a table type's row without a lookup. The model's other lookups by column name
+(`ITable.Column` in a view's columns (`Typer.Views.cs`) and `Cardinality`'s keys, `DeclaredColumns`, `ColumnDeclarationCheck`,
+`KnownTable.IndexOf`) still take the first of a pair. None was found to give a wrong type, since every read of such a column
+is unknown, but they are not guarded.
 
-**In the code:** `Binder.CaseVariants`, `CaseVariantVariable`; tests in `BinderTests.CaseVariants.cs` and
-`ConstructTests.CaseVariants.cs`.
+**In the code:** `Binder.CaseVariants`, `CaseVariantVariable`, `CheckReader.Read`; tests in `BinderTests.CaseVariants.cs`,
+`ConstructTests.CaseVariants.cs`, `ParameterTests.CaseVariants.cs` and `SchemaFactsTests.CheckConstraints.cs`.

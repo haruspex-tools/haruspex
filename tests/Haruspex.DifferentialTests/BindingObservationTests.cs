@@ -50,9 +50,9 @@ public partial class BindingObservationTests(SqlServerFixture server)
     [Fact]
     public async Task A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own()
     {
-        // SQL Server ignores every part of a temporary table's name but the last ("Database name 'tempdb' ignored"), even a
-        // server it has no link to, for every statement that makes, writes, reads or drops it: so Binder.Temporary reads
-        // dbo.#t, tempdb..#t and srv.tempdb.dbo.#t as #t, and a write through any of them changes the table.
+        // SQL Server ignores every part of a temporary table's name but the last ("Database name 'tempdb' ignored"), for every
+        // statement that makes, writes, reads or drops it, and in a read or a write even a server it has no link to: so
+        // Binder.Temporary reads dbo.#t, tempdb..#t and srv.tempdb.dbo.#t as #t, and a write through any of them changes the table.
         Assert.Equal(
             "a: 2;3;4;10",
             await Select("""
@@ -67,6 +67,15 @@ public partial class BindingObservationTests(SqlServerFixture server)
                 SELECT a FROM #copy ORDER BY a;
                 """));
     }
+
+    [Theory]
+    // Making, copying into or dropping a temporary table takes three parts at most: a fourth is refused when the batch is
+    // compiled (Msg 117, "The maximum is 2" prefixes), though a read or a write takes one.
+    [InlineData("CREATE TABLE srv.tempdb.dbo.#obs (a int NOT NULL);")]
+    [InlineData("CREATE TABLE #obs (a int NOT NULL); SELECT * INTO srv.tempdb.dbo.#copy FROM #obs;")]
+    [InlineData("CREATE TABLE #obs (a int NOT NULL); DROP TABLE srv.tempdb.dbo.#obs;")]
+    public async Task A_temporary_table_is_made_or_dropped_with_three_parts_at_most(string batch) =>
+        Assert.Equal(117, (await Run([Rows], batch)).Error);
 
     [Theory]
     // Two names that differ only in case are refused where names are compared without case: two columns in a table of this

@@ -53,6 +53,5 @@ its comment. A literal without `N` and outside printable ASCII is converted to t
 whatever the column (observed: `A_literal_without_n_is_converted_to_the_databases_code_page_before_it_is_compared`), so such a set
 keeps its comment under a binary collation too.
 
-**See also:** [Semantics]
-(../../src/Haruspex.SqlServer.Semantics/README.md), "What it guarantees";
+**See also:** [Semantics](../../src/Haruspex.SqlServer.Semantics/README.md), "What it guarantees";
 [the IR README](../../src/Haruspex.Ir/README.md), "folds"; [Configuration](../configuration.md), "The database's collation".

@@ -332,4 +332,19 @@ public partial class SchemaFactsTests
     [InlineData("int NULL CHECK (c IS NOT NULL)")]
     public void A_constraint_never_makes_a_column_non_null(string definition) =>
         Assert.False(NeverNull($"CREATE TABLE dbo.t (c {definition});"));
+
+    [Theory]
+    // Two columns whose names differ only in case, as a database of a case-sensitive collation allows: the CHECK names one, and
+    // ignoring case it would be read for both. Neither is narrowed past its type (decision 0107); a CHECK on another column still is.
+    [InlineData("qty")]
+    [InlineData("Qty")]
+    public void A_check_on_one_of_two_columns_whose_names_differ_only_in_case_proves_nothing_of_either(string column)
+    {
+        var model = Model("CREATE TABLE dbo.t (id int NOT NULL CHECK (id > 0), qty int NULL CHECK (qty BETWEEN 1 AND 5), Qty int NOT NULL);");
+        var table = model.FindTable(new ObjectName("dbo", "t"))!;
+        var facts = SchemaRules.ColumnFacts(model, table, table.Columns.Single(c => c.Name == column));
+
+        Assert.Equal(("-2147483648", "2147483647"), (Bound(facts.Min), Bound(facts.Max)));
+        Assert.Equal("0", Bound(SchemaRules.ColumnFacts(model, table, table.Column("id")!).Min).Replace("exclusive ", "", StringComparison.Ordinal));
+    }
 }

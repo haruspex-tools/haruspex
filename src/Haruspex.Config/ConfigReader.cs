@@ -117,8 +117,12 @@ public static class ConfigReader
                         if (NonEmpty(member.Value, path) is { } collation)
                         {
                             // A name off the list is refused rather than read as some collation's: misspelt, it would have
-                            // been read as single-byte, and a char(n) typed as exactly n characters.
-                            if (CollationCatalogue.IsKnown(collation))
+                            // been read as single-byte, and a char(n) typed as exactly n characters. A collation of no code page
+                            // holds only nvarchar, and SQL Server refuses it as a database's (Msg 453, observed:
+                            // A_unicode_only_collation_is_no_databases_collation), so it can't be this setting either.
+                            if (CollationCatalogue.CodePage(collation) == CollationCatalogue.UnicodeOnly)
+                                Report(ConfigCodes.WrongKind, member.Value, path, $"is \"{collation}\", a collation of Unicode only, which no database can have (SQL Server refuses it with error 453): give the database's own, which SELECT DATABASEPROPERTYEX(DB_NAME(), 'Collation') shows.");
+                            else if (CollationCatalogue.IsKnown(collation))
                                 config = config with { Collation = collation };
                             else if (collation.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
                                 Report(ConfigCodes.WrongKind, member.Value, path, $"is \"{collation}\", which SQL Server has no collation of: check its spelling against sys.fn_helpcollations(), such as Latin1_General_100_CI_AS.");

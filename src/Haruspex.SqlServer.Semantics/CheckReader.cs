@@ -22,6 +22,9 @@ namespace Haruspex.SqlServer.Semantics;
 /// observed, and kept as CheckConstraintObservationTests. What the source can't show is a live database that has
 /// drifted from it: a constraint disabled by hand on the server, or by a NOCHECK in dynamic SQL, is outside static analysis, and a project's facts
 /// hold only for a database deployed from it and not changed since.</para>
+/// <para><b>Names that differ only in case.</b> Nothing is read for a column when the table has another whose name differs from
+/// its only in case, as a database of a case-sensitive collation allows: a constraint's names are matched ignoring case, so it
+/// would be read for both (decision 0107).</para>
 /// <para><b>What is read.</b> A constraint that refers to this column and no other, trusted as above, whose condition is built from these by AND (each conjunct on its own) and OR (only of
 /// value sets):</para>
 /// <list type="bullet">
@@ -74,6 +77,11 @@ public static class CheckReader
 
         // A disabled or NOT FOR REPLICATION constraint does not check every row.
         if (check.DisabledAt is not null || check.IsNotForReplication)
+            return null;
+
+        // A column another's name differs from only in case: the constraint's names can't be told apart without the database's
+        // collation, which haruspex doesn't model, and read ignoring case one column's CHECK would narrow both (decision 0107).
+        if (table.Columns.Any(other => Same(other.Name, column.Name) && !other.Name.Equals(column.Name, StringComparison.Ordinal)))
             return null;
 
         // Only constraints on this column alone.
