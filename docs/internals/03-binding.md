@@ -101,6 +101,11 @@ it gives a `Resolution`:
   saying why: `AmbiguousColumn`, `MissingColumn`, `UnmodelledReference` (four-part names, pseudo-columns), `UnboundSource`
   (a source that can't itself be bound, its problem moved to where the column is read). Every unresolved case becomes an
   unknown with its reason in the IR, never a guess.
+- **Names that differ only in case.** Names are matched ignoring case. Two columns of one source whose names differ only in
+  case (`[Code]` and `[code]`) can exist only where names are compared by case, which haruspex doesn't model, so a reference to
+  either, and a star's column for either, is an `AmbiguousColumn` naming both, rather than the first
+  ([decision 0107](../decisions/0107-names-that-differ-only-in-case-are-unknown.md)). Two variables are a `CaseVariantVariable`
+  in the same way.
 
 ### A full name
 
@@ -147,7 +152,11 @@ A one-part name is looked for in the names the body has defined first, and in th
    statement: whether its `CREATE TABLE` ran, what an `ALTER TABLE` did, or what the caller created. That is a fact about the
    path, which only the walk knows ([chapter 6](06-flow-joins-and-fixed-points.md)), so the walk passes each temporary table's
    columns in as part of the names in force. Which declaration `#t` means is not the path's: a procedure can create a given
-   `#t` once at most (observed: `A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it`).
+   `#t` once at most (observed: `A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it`). SQL Server
+   ignores every other part of a temporary table's name, so `dbo.#t` and `tempdb..#t` are `#t` wherever they are written, a
+   write's target included, and so is `srv.tempdb.dbo.#t` in a read or a write; making or dropping the table takes three parts
+   at most (`Binder.Temporary`; observed: `A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own`,
+   `A_temporary_table_is_made_or_dropped_with_three_parts_at_most`).
 5. **The schema**: a table, a view (read from its definition), a synonym or a function. A schema-qualified name means
    itself. A name without a schema is resolved in the caller's default schema and then in `dbo`, which the source can't
    tell, so it means the one object of that name if exactly one schema has it, and is ambiguous if more do

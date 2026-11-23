@@ -142,12 +142,16 @@ is located in it, as when the DACPAC is the source.
 
 A column without `COLLATE` takes the database's default collation. A `.dacpac` records it, and a `.sqlproj` gives it; a folder
 of scripts doesn't, so `collation` declares it. A package's or a project's own wins, and one that disagrees with `collation` is
-a warning ([HAR6010](diagnostics/HAR6010.md)).
+a warning ([HAR6010](diagnostics/HAR6010.md)). The name must be one SQL Server 2025 has, as `sys.fn_helpcollations()` lists
+them, in any case, and not one of Unicode only (such as `Indic_General_100_CI_AS`), which no database can have; any other is
+an error at the setting ([HAR3005](diagnostics/HAR3005.md)). A name haruspex can't place
+is never read as some other collation's, which a misspelt `_UTF8` would otherwise be: the lengths of `char` and `varchar`
+depend on the collation's encoding.
 
 The collation decides how a `CHECK` constraint's set of strings is typed. For a `char` or `varchar` column under a collation
 haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `Latin1_General_100_CI_AS`,
 `Latin1_General_100_CS_AS`, `Latin1_General_100_CI_AI`), a set of plain strings (ASCII letters and digits, space, `_`, `-`,
-`.`) is an enum: a value is first mapped to the string it equals under the collation, so `'PAID'` and `'paid '` both arrive as
+`.`), written without `N`, is an enum: a value is first mapped to the string it equals under the collation, so `'PAID'` and `'paid '` both arrive as
 `"paid"` ([decision 0043](decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). Any other set, and
 every set of an `nchar` or `nvarchar` column, is a comment saying the values match as the database compares strings; an
 override can still declare it exact (`"values": "exact"`).

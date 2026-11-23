@@ -32,12 +32,40 @@ public partial class SchemaFactsTests
     [InlineData("nvarchar(10) COLLATE Latin1_General_100_CS_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE French_CI_AS NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
+    // A name no collation has: not read as binary, though it says BIN2.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2_UFT8 NULL CHECK (c IN ('open'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open', 'café'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open', 'OPEN'))", ValueComparison.Collation)]
     // A literal outside ASCII in a code-page column could be converted to another character ('?') before comparing.
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'é'))", ValueComparison.Collation)]
     [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('a\\b'))", ValueComparison.Collation)]
     public void A_set_of_strings_is_exact_but_for_trailing_spaces_only_under_a_binary_collation(string definition, ValueComparison comparison) =>
+        Assert.Equal(comparison, Column(definition).Values!.Comparison);
+
+    [Theory]
+    // An N'…' literal outranks varchar, so the column is converted to Unicode and compared by the collation's Unicode rules,
+    // not the code-page rules the fold records (observed: A_national_literal_compares_a_code_page_column_by_unicode_rules).
+    [InlineData("varchar(10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CHECK (c IN (N'v1', N'v2'))", ValueComparison.Collation)]
+    [InlineData("varchar(10) COLLATE Latin1_General_100_CI_AS NULL CHECK (c IN ('open', N'shut'))", ValueComparison.Collation)]
+    [InlineData("char(6) COLLATE Latin1_General_100_CS_AS NULL CHECK (c = N'open')", ValueComparison.Collation)]
+    // Under a binary collation printable ASCII is the same code point either way, so the set stays exact but for spaces.
+    [InlineData("varchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'v1', N'v2'))", ValueComparison.Padded)]
+    // The same strings written without N fold canonically.
+    [InlineData("varchar(10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL CHECK (c IN ('v1', 'v2'))", ValueComparison.Canonical)]
+    public void A_national_literal_against_a_code_page_column_gives_no_canonical_fold(string definition, ValueComparison comparison) =>
+        Assert.Equal(comparison, Column(definition).Values!.Comparison);
+
+    [Theory]
+    // A literal without N is varchar in the database's code page, whatever the column is, so a character outside printable ASCII
+    // may already be another ('Ω' becomes 'O') when it is compared (observed:
+    // A_literal_without_n_is_converted_to_the_databases_code_page_before_it_is_compared).
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN ('Ω', 'ok'))", ValueComparison.Collation)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (c IN ('Ā', 'ok'))", ValueComparison.Collation)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN NULL CHECK (c = 'a\\b')", ValueComparison.Collation)]
+    // Written with N, or in printable ASCII, the literal is what is compared.
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2 NULL CHECK (c IN (N'Ω', 'ok'))", ValueComparison.Padded)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_BIN2_UTF8 NULL CHECK (c IN (N'Ā', 'ok'))", ValueComparison.Padded)]
+    public void A_literal_without_n_outside_printable_ascii_is_not_read_as_written(string definition, ValueComparison comparison) =>
         Assert.Equal(comparison, Column(definition).Values!.Comparison);
 
     [Theory]
@@ -328,4 +356,19 @@ public partial class SchemaFactsTests
     [InlineData("int NULL CHECK (c IS NOT NULL)")]
     public void A_constraint_never_makes_a_column_non_null(string definition) =>
         Assert.False(NeverNull($"CREATE TABLE dbo.t (c {definition});"));
+
+    [Theory]
+    // Two columns whose names differ only in case, as a database of a case-sensitive collation allows: the CHECK names one, and
+    // ignoring case it would be read for both. Neither is narrowed past its type (decision 0107); a CHECK on another column still is.
+    [InlineData("qty")]
+    [InlineData("Qty")]
+    public void A_check_on_one_of_two_columns_whose_names_differ_only_in_case_proves_nothing_of_either(string column)
+    {
+        var model = Model("CREATE TABLE dbo.t (id int NOT NULL CHECK (id > 0), qty int NULL CHECK (qty BETWEEN 1 AND 5), Qty int NOT NULL);");
+        var table = model.FindTable(new ObjectName("dbo", "t"))!;
+        var facts = SchemaRules.ColumnFacts(model, table, table.Columns.Single(c => c.Name == column));
+
+        Assert.Equal(("-2147483648", "2147483647"), (Bound(facts.Min), Bound(facts.Max)));
+        Assert.Equal("0", Bound(SchemaRules.ColumnFacts(model, table, table.Column("id")!).Min).Replace("exclusive ", "", StringComparison.Ordinal));
+    }
 }

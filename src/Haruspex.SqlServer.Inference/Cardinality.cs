@@ -396,7 +396,7 @@ internal sealed partial class Cardinality(DatabaseModel model, Binder binder)
             {
                 ParameterVariable parameter => KeyValue.Of(SchemaRules.ResolveType(model, parameter.Parameter.Type)?.Type),
                 LocalVariable local => KeyValue.Of(SchemaRules.ResolveType(model, local.Type)?.Type),
-                UndeclaredVariable => null,
+                UndeclaredVariable or CaseVariantVariable => null,
             },
             ColumnReferenceExpression reference => binder.Resolve(reference, scope.Bound) switch
             {

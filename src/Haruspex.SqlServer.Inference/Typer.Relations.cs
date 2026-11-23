@@ -22,7 +22,7 @@ internal sealed partial class Typer
     {
         ParameterVariable parameter => DeclaredShape(parameter.Parameter.Type, parameter.Parameter.At, resolved.Name, out _),
         LocalVariable local => DeclaredShape(local.Type, local.At, local.Name, out _),
-        UndeclaredVariable => null,
+        UndeclaredVariable or CaseVariantVariable => null,
     };
 
     /// <summary>What a table variable holds as declared; JSON written to it is in the state (<see cref="Holding"/>).</summary>
@@ -84,6 +84,8 @@ internal sealed partial class Typer
         if (resolved is ParameterVariable && parameters.TryGetValue(resolved.Name, out var argument))
             return argument;
         var name = resolved.Name;
+        if (resolved is CaseVariantVariable variants)
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, variants.Why, At(variable)));
         if (resolved is UndeclaredVariable || !scope.State.Variables.TryGetValue(name, out var value))
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The variable {name} is not declared.", At(variable)));
 

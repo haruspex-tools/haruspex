@@ -24,7 +24,11 @@ public sealed class BodyDeclarations
     private readonly Dictionary<string, List<DeclareCursorStatement>> cursors = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<DeclareVariableElement, VariableResolution> elements = new(ReferenceEqualityComparer.Instance);
 
-    private BodyDeclarations(IReadOnlyList<Parameter> parameters, IReadOnlyList<LocalVariable> locals, IReadOnlyList<DeclaredTable> tableVariables)
+    /// <param name="parameters">The parameters.</param>
+    /// <param name="locals">The variables, each once.</param>
+    /// <param name="tableVariables">The table variables, each once.</param>
+    /// <param name="declared">Every name declared, as written, each time it is: a parameter's, a variable's or a table variable's.</param>
+    private BodyDeclarations(IReadOnlyList<Parameter> parameters, IReadOnlyList<LocalVariable> locals, IReadOnlyList<DeclaredTable> tableVariables, IEnumerable<string> declared)
     {
         Parameters = parameters;
         Variables = locals;
@@ -33,10 +37,17 @@ public sealed class BodyDeclarations
             variables.TryAdd(new LocalName(parameter.Name), new ParameterVariable(parameter));
         foreach (var local in locals)
             variables.TryAdd(local.Name, local);
+
+        // Names that differ only in case are one name here; declared both ways, they prove the server compares names by case.
+        foreach (var same in declared.GroupBy(n => new LocalName(n)))
+        {
+            if (same.Distinct(StringComparer.Ordinal).ToList() is { Count: > 1 } variants)
+                variables[same.Key] = new CaseVariantVariable(same.Key, [.. variants]);
+        }
     }
 
     /// <summary>A body that declares nothing and has no parameters: a view's.</summary>
-    public static BodyDeclarations None { get; } = new([], [], []);
+    public static BodyDeclarations None { get; } = new([], [], [], []);
 
     /// <summary>Its parameters, in order.</summary>
     public IReadOnlyList<Parameter> Parameters { get; }
@@ -53,7 +64,7 @@ public sealed class BodyDeclarations
     public static BodyDeclarations Of(DatabaseModel model, IReadOnlyList<Parameter> parameters)
     {
         ArgumentNullException.ThrowIfNull(parameters);
-        return new(parameters, [], TableParameters(model, parameters));
+        return new(parameters, [], TableParameters(model, parameters), parameters.Select(p => p.Name));
     }
 
     /// <summary>Each table-valued parameter whose type the model defines, as the table it is.</summary>
@@ -97,7 +108,11 @@ public sealed class BodyDeclarations
                 tables.Add(table);
         }
 
-        var result = new BodyDeclarations(parameters, locals, tables);
+        var declaredNames = parameters.Select(p => p.Name)
+            .Concat(found.Variables.Select(e => e.VariableName.Value))
+            .Concat(found.Tables.Select(t => t.VariableName.Value))
+            .Concat(returnTable is null ? [] : [returnTable.Name]);
+        var result = new BodyDeclarations(parameters, locals, tables, declaredNames);
         foreach (var element in found.Variables)
             result.elements[element] = result.Variable(new LocalName(element.VariableName.Value));
         foreach (var cursor in found.Cursors)

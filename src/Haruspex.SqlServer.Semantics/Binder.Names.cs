@@ -9,17 +9,21 @@ namespace Haruspex.SqlServer.Semantics;
 public sealed partial class Binder
 {
     /// <summary>
-    /// The local temporary table a name written as a table means: its name, when it is of one part and starts with one
-    /// <c>#</c>; null for any other. A global one (<c>##t</c>) is shared with every session, which may change it at any time,
-    /// so it is read as a permanent table is. The walk keeps what each holds by this name, and a body can create a given
-    /// <c>#t</c> once (observed: A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it).
+    /// The local temporary table a name written as a table means: its last part, when that starts with one <c>#</c>; null for
+    /// any other. SQL Server ignores every other part of such a name, whatever schema, database or server it names
+    /// (<c>dbo.#t</c>, <c>tempdb..#t</c>): a statement that reads or writes it takes up to four parts (<c>srv.tempdb.dbo.#t</c>),
+    /// and one that makes or drops it up to three, refusing a fourth with Msg 117 (observed:
+    /// A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own,
+    /// A_temporary_table_is_made_or_dropped_with_three_parts_at_most), so a write through such a name
+    /// is a write to the table, which the walk must see. A global one (<c>##t</c>) is shared with every session, which may
+    /// change it at any time, so it is read as a permanent table is. The walk keeps what each holds by this name, and a body
+    /// can create a given <c>#t</c> once (observed: A_procedure_cannot_create_a_temporary_table_twice_even_after_dropping_it).
     /// </summary>
     /// <param name="name">The name as a statement writes it: <c>CREATE TABLE</c>, <c>DROP TABLE</c>, <c>SELECT … INTO</c>, a FROM.</param>
     public static LocalName? Temporary(SchemaObjectName name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        return name is { ServerIdentifier: null, DatabaseIdentifier: null, SchemaIdentifier: null, BaseIdentifier.Value: var own }
-            && own.StartsWith('#') && !own.StartsWith("##", StringComparison.Ordinal)
+        return name is { BaseIdentifier.Value: var own } && own.StartsWith('#') && !own.StartsWith("##", StringComparison.Ordinal)
             ? new LocalName(own)
             : null;
     }

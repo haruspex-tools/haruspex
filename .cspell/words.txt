@@ -8,6 +8,7 @@ arithabort
 charindex
 checkident
 clob
+collationproperty
 cume
 databasepropertyex
 datalength
@@ -36,6 +37,7 @@ getapplock
 getdate
 getutcdate
 hashbytes
+helpcollations
 hierarchyid
 holdlock
 infomsgs

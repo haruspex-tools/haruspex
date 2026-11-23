@@ -211,16 +211,16 @@ public sealed partial class Binder
                     // generates when it creates the table), so their names are not in the project.
                     return Unexpanded(BindingProblemKind.UnsupportedStar, $"{table.Name} is a graph table, whose * adds pseudo-columns named by the server when it creates the table.", star);
                 case TableTarget { Table: var table }:
-                    columns.AddRange(Starred(table).Select(c => new StarColumn(c.Column.Name, new TableColumn(source, table, c.Column))));
+                    columns.AddRange(Starred(table).Select(c => Column(c.Column.Name, table.Columns.Select(t => t.Name), table.Name.ToString(), () => new TableColumn(source, table, c.Column))));
                     break;
                 case RelationTarget { Relation: PseudoTable { Written: { } written } pseudo }:
-                    columns.AddRange(Starred(written).Select(c => new StarColumn(c.Column.Name, new RelationColumn(source, pseudo, c.Ordinal))));
+                    columns.AddRange(Starred(written).Select(c => Column(c.Column.Name, written.Columns.Select(t => t.Name), pseudo.Name, () => new RelationColumn(source, pseudo, c.Ordinal))));
                     break;
                 case RelationTarget { Relation: TableVariable { Declaration: var declared } variable }:
-                    columns.AddRange(Starred(declared).Select(c => new StarColumn(c.Column.Name, new RelationColumn(source, variable, c.Ordinal))));
+                    columns.AddRange(Starred(declared).Select(c => Column(c.Column.Name, declared.Columns.Select(t => t.Name), variable.Name, () => new RelationColumn(source, variable, c.Ordinal))));
                     break;
                 case RelationTarget { Relation: { Columns: { } names } relation }:
-                    columns.AddRange(names.Select((n, i) => new StarColumn(n, new RelationColumn(source, relation, i))));
+                    columns.AddRange(names.Select((n, i) => Column(n, names, relation.Name, () => new RelationColumn(source, relation, i))));
                     break;
                 case RelationTarget:
                     return new UnlistedStar(source);
@@ -230,6 +230,10 @@ public sealed partial class Binder
         }
 
         return new ExpandedStar([.. columns]);
+
+        // A star reads every column, so one whose name another's differs from only in case is unknown, as a reference to it is.
+        StarColumn Column(string name, IEnumerable<string> all, string relation, Func<Resolution> bound) =>
+            new(name, CaseVariants(all, name) is { } variants ? InCase(relation, variants, At(star)) : bound());
     }
 
     /// <summary>

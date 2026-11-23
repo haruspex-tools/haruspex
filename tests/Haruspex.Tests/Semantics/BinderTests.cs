@@ -383,15 +383,23 @@ public partial class BinderTests
 
     [Theory]
     [InlineData("#t", "#t")]
+    [InlineData("[#t]", "#t")]
     [InlineData("##t", null)]
-    [InlineData("dbo.#t", null)]
     [InlineData("t", null)]
-    public void A_local_temporary_table_is_a_one_part_name_of_one_hash(string written, string? temporary)
+    [InlineData("dbo.t", null)]
+    // SQL Server ignores every part but the last of a temporary table's name (observed:
+    // A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own), a server's too.
+    [InlineData("dbo.#t", "#t")]
+    [InlineData("nowhere.#t", "#t")]
+    [InlineData("tempdb..#t", "#t")]
+    [InlineData("master.dbo.#t", "#t")]
+    [InlineData("srv.tempdb.dbo.#t", "#t")]
+    [InlineData("dbo.##t", null)]
+    public void A_local_temporary_table_is_a_name_whose_last_part_starts_with_one_hash(string written, string? temporary)
     {
-        var name = new SchemaObjectName();
-        foreach (var part in written.Split('.'))
-            name.Identifiers.Add(new Identifier { Value = part });
+        var name = new TSql170Parser(initialQuotedIdentifiers: true).ParseSchemaObjectName(new StringReader(written), out var errors);
 
+        Assert.Empty(errors);
         Assert.Equal(temporary, Binder.Temporary(name)?.Text);
     }
 }

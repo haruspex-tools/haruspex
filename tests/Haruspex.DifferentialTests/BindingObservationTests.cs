@@ -46,4 +46,45 @@ public partial class BindingObservationTests(SqlServerFixture server)
     // refused when read (Msg 470), so haruspex reads one as unknown rather than following it (Binder.Through).
     public async Task Synonym_chaining_is_refused_when_read(string first, string second) =>
         Assert.Equal(470, (await Run([Rows, first, second], "SELECT x.id FROM dbo.obs_a AS x;")).Error);
+
+    [Fact]
+    public async Task A_temporary_table_named_with_a_schema_database_or_server_is_the_sessions_own()
+    {
+        // SQL Server ignores every part of a temporary table's name but the last ("Database name 'tempdb' ignored"), for every
+        // statement that makes, writes, reads or drops it, and in a read or a write even a server it has no link to: so
+        // Binder.Temporary reads dbo.#t, tempdb..#t and srv.tempdb.dbo.#t as #t, and a write through any of them changes the table.
+        Assert.Equal(
+            "a: 2;3;4;10",
+            await Select("""
+                CREATE TABLE nowhere.#obs (a int NOT NULL);
+                INSERT INTO dbo.#obs VALUES (1);
+                INSERT INTO master.dbo.#obs VALUES (2);
+                INSERT INTO tempdb..#obs VALUES (3);
+                INSERT INTO srv.tempdb.dbo.#obs VALUES (4);
+                UPDATE tempdb..#obs SET a = a * 10 WHERE a = 1;
+                SELECT * INTO dbo.#copy FROM tempdb.dbo.#obs;
+                DROP TABLE tempdb..#obs;
+                SELECT a FROM #copy ORDER BY a;
+                """));
+    }
+
+    [Theory]
+    // Making, copying into or dropping a temporary table takes three parts at most: a fourth is refused when the batch is
+    // compiled (Msg 117, "The maximum is 2" prefixes), though a read or a write takes one.
+    [InlineData("CREATE TABLE srv.tempdb.dbo.#obs (a int NOT NULL);")]
+    [InlineData("CREATE TABLE #obs (a int NOT NULL); SELECT * INTO srv.tempdb.dbo.#copy FROM #obs;")]
+    [InlineData("CREATE TABLE #obs (a int NOT NULL); DROP TABLE srv.tempdb.dbo.#obs;")]
+    public async Task A_temporary_table_is_made_or_dropped_with_three_parts_at_most(string batch) =>
+        Assert.Equal(117, (await Run([Rows], batch)).Error);
+
+    [Theory]
+    // Two names that differ only in case are refused where names are compared without case: two columns in a table of this
+    // database or of tempdb (2705), two variables in a batch under this server's collation (134). On a database of
+    // Latin1_General_100_CS_AS the table is made, and its columns code and Code are two (observed by hand, 22 Nov 2026). So a pair
+    // proves names are compared by case, and haruspex reads a reference to either as unknown (decision 0107).
+    [InlineData("CREATE TABLE dbo.obs_case (Code varchar(10) NULL, code int NULL);", 2705)]
+    [InlineData("CREATE TABLE #obs_case (Code varchar(10) NULL, code int NULL);", 2705)]
+    [InlineData("DECLARE @Total int; DECLARE @total varchar(10);", 134)]
+    public async Task Names_that_differ_only_in_case_are_refused_where_names_are_compared_without_case(string batch, int error) =>
+        Assert.Equal(error, (await Run([Rows], batch)).Error);
 }

@@ -149,6 +149,38 @@ public class ConfigReaderTests
         Assert.Contains("no collation's name", Assert.Single(wrong.Diagnostics).Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    // A misspelt name would otherwise be read as a single-byte collation's, and a char(n) typed as exactly n characters.
+    [InlineData("Latin1_General_100_CI_AS_SC_UFT8")]
+    [InlineData("Japanes_XJIS_140_CI_AS")]
+    [InlineData("Nonsense")]
+    public void A_collation_sql_server_does_not_have_is_an_error_at_the_setting(string name)
+    {
+        var wrong = Read($$"""{ "collation": "{{name}}" }""");
+
+        var diagnostic = Assert.Single(wrong.Diagnostics);
+        Assert.Equal(ConfigCodes.WrongKind, diagnostic.Code);
+        Assert.Contains($"\"{name}\", which SQL Server has no collation of", diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // A collation of no code page holds only nvarchar, and SQL Server refuses it as a database's (Msg 453, observed:
+    // A_unicode_only_collation_is_no_databases_collation).
+    [InlineData("Indic_General_100_CI_AS")]
+    [InlineData("assamese_100_ci_as")]
+    public void A_unicode_only_collation_is_an_error_at_the_setting(string name)
+    {
+        var wrong = Read($$"""{ "collation": "{{name}}" }""");
+
+        var diagnostic = Assert.Single(wrong.Diagnostics);
+        Assert.Equal(ConfigCodes.WrongKind, diagnostic.Code);
+        Assert.Contains($"\"{name}\", a collation of Unicode only, which no database can have", diagnostic.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_collation_name_is_read_ignoring_case_as_sql_server_reads_it() =>
+        Assert.Equal("latin1_general_100_ci_as", Read("""{ "collation": "latin1_general_100_ci_as" }""").Expected().Collation);
+
     [Fact]
     public void An_empty_object_is_a_valid_config_with_every_default()
     {
