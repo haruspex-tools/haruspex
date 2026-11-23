@@ -21,16 +21,21 @@ witness proved not NULL. An assignment to any of its variables ends it, and so d
 **A row an existence guard found** (added the same day, after the maintainer chose it). `IF NOT EXISTS (SELECT … FROM t WHERE k =
 @k) RETURN` leaves a `FoundRow` in `FlowState.Found`: the table, the guard's equalities, and whether the row is **held** for
 later reads, which needs a transaction the body began and still has open, and either a lock the guard keeps (a hint of
-`UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or the `SERIALIZABLE` or `REPEATABLE READ` level for a guard
-with no hint that lowers it) or the transaction's snapshot (`SNAPSHOT` isolation, for a guard and a read at that level with no
-table hint). `FlowState.Transactions` and
-`FlowState.Isolation` carry what that needs. A keyed read whose WHERE is only equalities the guard tested is one row when the
+`UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or the `SERIALIZABLE` or `REPEATABLE READ` level for a
+guard with no hint that lowers it) or the transaction's snapshot (`SNAPSHOT` isolation, for a guard and a read at that level
+with no table hint). `FlowState.Transactions` and
+`FlowState.Isolation` carry what that needs. A lock keeps the row as it is committed now, so it holds it only for a read of
+what is committed now: one with a hint of its own that reads past the snapshot (`READCOMMITTEDLOCK`, or a hint that takes a
+lock), or one at a level the body set that is not `SNAPSHOT`. A read at `SNAPSHOT` reads the transaction's snapshot, which may
+predate the row, so a lock-holding guard there leaves a read with no hint raced; and since a caller's snapshot transaction does
+the same and is not seen, so does a body that sets no level (corrected 22 Nov 2026, audit finding F010; see "Amended 22 Nov
+2026" below). A keyed read whose WHERE is only equalities the guard tested is one row when the
 row is held; when it isn't, nothing is claimed and the reason a subquery of it may be NULL is the race, `read-twice` at the
 guard, as for `COALESCE`'s second read. The fact ends at a write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` (the body's own removal is no race), and at an assignment to a variable the guard compared with; the end of the
 outermost transaction, on any path, makes it raced, and so does reaching a `CATCH`, since whether every error that
-reaches one leaves the transaction and its locks in place is not observed. A caller's transaction or isolation level is not seen: declaring them is
-a later row.
+reaches one leaves the transaction and its locks in place is not observed. A caller's transaction or isolation level is not
+seen: declaring them is a later row.
 
 **Context.** Bodies check their inputs and their reads before using them, and haruspex threw the check away: after
 `if @order_id is null return`, `select @order_id` was nullable, and after `select @name = p.name … where p.id = @id; if
@@ -41,12 +46,17 @@ guard inside a loop holds on its pass only; any statement between a `SELECT` and
 own test included, leaves the count other than the `SELECT`'s; a variable that held a value before the `SELECT` proves nothing
 by holding one after it.
 
-For the existence guard, observed with a second session deleting the row between guard and read, each in a database of
-its own (`StatementFlowObservationTests.ExistenceGuards.cs`): read committed, read committed snapshot, locking hints without a
+For the existence guard, observed with a second session deleting the row between guard and read, each in a database of its own
+(`StatementFlowObservationTests.ExistenceGuards.cs`): read committed, read committed snapshot, locking hints without a
 transaction, a transaction without them, and snapshot isolation without a transaction all let the delete land, and the read
-finds nothing; each locking hint and level above, inside a transaction, makes the delete wait and the read find the row, and
-an inner `COMMIT` of nested transactions keeps the lock; `SNAPSHOT` in a transaction lets the delete go ahead and still reads
-the row, unless the read uses `READCOMMITTEDLOCK` or the level is set back first.
+finds nothing; each locking hint and level above, inside a transaction, makes the delete wait and the read find the row, and an
+inner `COMMIT` of nested transactions keeps the lock; `SNAPSHOT` in a transaction lets the delete go ahead and still reads the
+row, unless the read uses `READCOMMITTEDLOCK` or the level is set back first. A guard with `UPDLOCK, HOLDLOCK` in a snapshot
+transaction that read before it, while another session inserted and committed the row, found the row, and a read with no hint
+then found nothing, whether the body or its caller began the snapshot transaction, and a caller's open snapshot transaction
+that had read nothing before the call did the same while the guard waited on another session's insert; the read with
+`READCOMMITTEDLOCK`, `HOLDLOCK`, `SERIALIZABLE` or `REPEATABLEREAD`, or after `SET TRANSACTION ISOLATION LEVEL READ COMMITTED`,
+found it, with `UPDLOCK` or `XLOCK` failed the call (3960), and with `ROWLOCK`, `TABLOCK`, `PAGLOCK` or `NOWAIT` found nothing.
 
 **Alternatives.**
 - *Facts beside the state, as `Facts` holds a query's filters*, pushed at the guard and dropped at the next assignment. Every
@@ -64,11 +74,22 @@ the row, unless the read uses `READCOMMITTEDLOCK` or the level is set back first
   transaction), and `read-twice` already says it for `COALESCE`.
 - *Reading `@@ROWCOUNT` anywhere it is still the `SELECT`'s.* Which statements leave it alone is a list to observe statement
   by statement; straight after the `SELECT` is what bodies write, and anything else only claims less.
+- *Assuming the caller is not in an open snapshot transaction*, as decision 0016 assumes it does not read
+  uncommitted, and trusting a lock for a read with no hint in a body that sets no level. It would keep the claims of the
+  commonest form of the guard, but the assumption fails silently where it fails. Decision 0016 makes its assumption because
+  strictness would remove every key-based claim; here it removes only the claims of a guarded read in a body that sets no
+  level, which one `SET TRANSACTION ISOLATION LEVEL READ COMMITTED` brings back, and which changes no figure on the public
+  corpora.
 
 **Reason.** The principle asks for every fact the engine guarantees, and a guard is one: on the path that passes it the
 condition was not TRUE, and in a variable nothing but an assignment can change that. Each fact is in the lattice the walk
 already joins and iterates, so its soundness is the walk's: a narrowed value is below the value it narrows, an assignment
 replaces it, and a join keeps only what every path holds.
+
+**Amended 22 Nov 2026.** After audit finding F010 (critical): the decision held a row a guard's lock keeps for every later
+read, and the code said so ("whatever the read is"), so the guide's example of a guarded read could return NULL under a
+snapshot transaction. Claiming
+nothing where the body sets no level, rather than the assumption above, is provisional: the maintainer's to confirm.
 
 **In the code:** `Walker.Narrowed`, `Typer.Proves`, `Typer.ProvesRows` and `Typer.Finds` (`Typer.Guards.cs`),
 `PossibleAssignment`, `FoundRow`, `Cardinality.Guard`, `FlowState.Unassigned`, `FlowState.Possible`, `FlowState.Found`,

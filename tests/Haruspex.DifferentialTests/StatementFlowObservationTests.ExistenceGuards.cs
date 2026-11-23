@@ -112,10 +112,12 @@ public partial class StatementFlowObservationTests
 
     /// <summary>
     /// A snapshot transaction whose snapshot starts at a first read of another table, then waits while another session inserts
-    /// and commits the row, then runs the guard with <paramref name="hint"/> and reads the row: what the read found, or that
-    /// the guard returned.
+    /// and commits the row, then runs the guard with <paramref name="hint"/>, <paramref name="between"/>, and the read with
+    /// <paramref name="read"/>: what the read found, or that the guard returned. The guard and the read are in a transaction
+    /// the procedure begins; the snapshot transaction is the procedure's own, or with <paramref name="caller"/> its caller's,
+    /// in which the procedure's nests and which it doesn't see.
     /// </summary>
-    private static async Task<string> InsertedAfterTheSnapshot(ScratchDatabase scratch, string hint)
+    private static async Task<string> InsertedAfterTheSnapshot(ScratchDatabase scratch, string hint, string read = "", string between = "", bool caller = false)
     {
         var token = TestContext.Current.CancellationToken;
         await scratch.ExecuteAsync("""
@@ -124,22 +126,29 @@ public partial class StatementFlowObservationTests
             CREATE TABLE dbo.obs_order (order_id int NOT NULL PRIMARY KEY, placed_on date NOT NULL);
             CREATE TABLE dbo.obs_other (i int NOT NULL);
             """, token);
-        await scratch.ExecuteAsync($"""
-            CREATE OR ALTER PROCEDURE dbo.obs_card @id int AS
-            SET NOCOUNT ON;
+        const string snapshot = """
             SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
             BEGIN TRAN;
             DECLARE @n int = (SELECT COUNT(*) FROM dbo.obs_other);
             WAITFOR DELAY '00:00:01.500';
+            """;
+        const string snapshotCaller = $"SET NOCOUNT ON; {snapshot} EXEC dbo.obs_card 1; COMMIT;";
+        await scratch.ExecuteAsync($"""
+            CREATE OR ALTER PROCEDURE dbo.obs_card @id int AS
+            SET NOCOUNT ON;
+            {(caller ? "BEGIN TRAN;" : snapshot)}
             IF NOT EXISTS (SELECT 1 FROM dbo.obs_order {hint} WHERE order_id = @id) BEGIN COMMIT; RETURN; END
-            SELECT (SELECT o.placed_on FROM dbo.obs_order AS o WHERE o.order_id = @id) AS placed_on;
+            {between}
+            SELECT (SELECT o.placed_on FROM dbo.obs_order AS o {read} WHERE o.order_id = @id) AS placed_on;
             COMMIT;
             """, token);
 
         await using var guard = await scratch.OpenAsync(token);
         await using var inserter = await scratch.OpenAsync(token);
         var session = await ScratchDatabase.SessionOfAsync(guard, token);
-        await using var call = new SqlCommand("EXEC dbo.obs_card 1;", guard);
+#pragma warning disable CA2100 // Observation tests' own batches.
+        await using var call = new SqlCommand(caller ? snapshotCaller : "EXEC dbo.obs_card 1;", guard);
+#pragma warning restore CA2100
         var reading = call.ExecuteReaderAsync(token);
         await ScratchDatabase.InItsWaitforAsync(inserter, session, reading, token);
         await using (var insert = new SqlCommand("INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", inserter))
@@ -161,6 +170,119 @@ public partial class StatementFlowObservationTests
 
         Assert.Equal("returned", await InsertedAfterTheSnapshot(scratch, ""));
         Assert.Equal("null", await InsertedAfterTheSnapshot(scratch, "WITH (READCOMMITTEDLOCK)"));
+    }
+
+    /// <summary>
+    /// A snapshot transaction that reads nothing before the guard: the guard, with <c>UPDLOCK, HOLDLOCK</c>, waits on another
+    /// session's uncommitted insert of the row, which commits once the guard is seen waiting, and then the read: what it found,
+    /// or that the guard returned. The snapshot transaction is the procedure's own, or with <paramref name="caller"/> its
+    /// caller's, begun straight before the call.
+    /// </summary>
+    private static async Task<string> CommittedWhileTheGuardWaits(ScratchDatabase scratch, bool caller)
+    {
+        var token = TestContext.Current.CancellationToken;
+        await scratch.ExecuteAsync("""
+            DROP TABLE IF EXISTS dbo.obs_order;
+            CREATE TABLE dbo.obs_order (order_id int NOT NULL PRIMARY KEY, placed_on date NOT NULL);
+            """, token);
+        await scratch.ExecuteAsync($"""
+            CREATE OR ALTER PROCEDURE dbo.obs_card @id int AS
+            SET NOCOUNT ON;
+            {(caller ? "" : "SET TRANSACTION ISOLATION LEVEL SNAPSHOT;")}
+            BEGIN TRAN;
+            IF NOT EXISTS (SELECT 1 FROM dbo.obs_order WITH (UPDLOCK, HOLDLOCK) WHERE order_id = @id) BEGIN COMMIT; RETURN; END
+            SELECT (SELECT o.placed_on FROM dbo.obs_order AS o WHERE o.order_id = @id) AS placed_on;
+            COMMIT;
+            """, token);
+        const string callerBatch = "SET NOCOUNT ON; SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN; EXEC dbo.obs_card 1; COMMIT;";
+
+        await using var guard = await scratch.OpenAsync(token);
+        await using var inserter = await scratch.OpenAsync(token);
+        await using var watcher = await scratch.OpenAsync(token);
+        var session = await ScratchDatabase.SessionOfAsync(guard, token);
+        var blocker = await ScratchDatabase.SessionOfAsync(inserter, token);
+        await using (var insert = new SqlCommand("BEGIN TRAN; INSERT INTO dbo.obs_order VALUES (1, '2026-11-16');", inserter))
+            await insert.ExecuteNonQueryAsync(token);
+
+#pragma warning disable CA2100 // Observation tests' own batches.
+        await using var call = new SqlCommand(caller ? callerBatch : "EXEC dbo.obs_card 1;", guard);
+#pragma warning restore CA2100
+        var reading = call.ExecuteReaderAsync(token);
+        await ScratchDatabase.BlockedByAsync(watcher, session, blocker, reading, token);
+        await using (var commit = new SqlCommand("COMMIT;", inserter))
+            await commit.ExecuteNonQueryAsync(token);
+
+        await using var reader = await reading;
+        if (!await reader.ReadAsync(token))
+            return "returned";
+        return await reader.IsDBNullAsync(0, token) ? "null" : reader.GetDateTime(0).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public async Task A_callers_snapshot_transaction_that_has_read_nothing_still_misses_the_row_the_guard_waited_for()
+    {
+        // With the body's own snapshot transaction and the guard its first read, the read found the row: the guard's locking
+        // read did not start the snapshot before it waited. With a caller's open snapshot transaction that had read nothing
+        // before the call, the read missed it: the snapshot had begun before the insert committed. When it begins is not
+        // something the rule relies on: a lock is never trusted for a read with no hint at snapshot isolation.
+        await using var scratch = await server.ScratchAsync();
+        await scratch.ExecuteAsync("ALTER DATABASE CURRENT SET ALLOW_SNAPSHOT_ISOLATION ON;", TestContext.Current.CancellationToken);
+
+        var body = await CommittedWhileTheGuardWaits(scratch, caller: false);
+        var caller = await CommittedWhileTheGuardWaits(scratch, caller: true);
+        Assert.Equal("body 2026-11-16, caller null", $"body {body}, caller {caller}");
+    }
+
+    [Fact]
+    public async Task A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now()
+    {
+        // The guard's lock waits for the insert and finds the row, but a read at snapshot isolation reads the transaction's
+        // snapshot, which began before the insert, and finds nothing: whether the procedure began the snapshot transaction or
+        // its caller did. A read with READCOMMITTEDLOCK, or after the level is set to read committed, reads what is committed
+        // now, and the lock keeps the row there.
+        await using var scratch = await server.ScratchAsync();
+        await scratch.ExecuteAsync("ALTER DATABASE CURRENT SET ALLOW_SNAPSHOT_ISOLATION ON;", TestContext.Current.CancellationToken);
+        const string readCommitted = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
+
+        Assert.Equal("null", await InsertedAfterTheSnapshot(scratch, Locks));
+        Assert.Equal("null", await InsertedAfterTheSnapshot(scratch, Locks, caller: true));
+        Assert.Equal("2026-11-16", await InsertedAfterTheSnapshot(scratch, Locks, read: "WITH (READCOMMITTEDLOCK)"));
+        Assert.Equal("2026-11-16", await InsertedAfterTheSnapshot(scratch, Locks, between: readCommitted));
+        Assert.Equal("2026-11-16", await InsertedAfterTheSnapshot(scratch, Locks, between: readCommitted, caller: true));
+    }
+
+    private const string Locks = "WITH (UPDLOCK, HOLDLOCK)";
+
+    [Theory]
+    [InlineData("WITH (UPDLOCK)", "error 3960")]
+    [InlineData("WITH (XLOCK)", "error 3960")]
+    [InlineData("WITH (HOLDLOCK)", "2026-11-16")]
+    [InlineData("WITH (SERIALIZABLE)", "2026-11-16")]
+    [InlineData("WITH (REPEATABLEREAD)", "2026-11-16")]
+    [InlineData("WITH (ROWLOCK)", "null")]
+    [InlineData("WITH (TABLOCK)", "null")]
+    [InlineData("WITH (PAGLOCK)", "null")]
+    [InlineData("WITH (NOWAIT)", "null")]
+    public async Task A_read_at_snapshot_isolation_reads_what_is_committed_now_only_with_a_hint_that_takes_a_lock(string read, string found)
+    {
+        // A read with a hint that takes a lock reads what is committed now, where the guard's lock keeps the row: one that
+        // takes an update or exclusive lock, finding the row changed since the snapshot began, fails the call instead (3960,
+        // an update conflict). Neither returns the snapshot's empty answer. A hint that only says how to lock, or not to wait,
+        // takes no lock at snapshot isolation, and the read reads the snapshot.
+        await using var scratch = await server.ScratchAsync();
+        await scratch.ExecuteAsync("ALTER DATABASE CURRENT SET ALLOW_SNAPSHOT_ISOLATION ON;", TestContext.Current.CancellationToken);
+
+        string outcome;
+        try
+        {
+            outcome = await InsertedAfterTheSnapshot(scratch, Locks, read: read);
+        }
+        catch (SqlException e)
+        {
+            outcome = $"error {e.Number}";
+        }
+
+        Assert.Equal(found, outcome);
     }
 
     [Fact]

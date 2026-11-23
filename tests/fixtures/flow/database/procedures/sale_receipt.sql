@@ -1,10 +1,12 @@
 -- An existence guard: the sale is read with UPDLOCK and HOLDLOCK inside a transaction the procedure began, so no other
 -- session can delete it before the reads that follow, which find it (the receipt and the channel never null). After the
--- COMMIT nothing holds it, so a read then may find nothing, and says why at the guard (read-twice).
+-- COMMIT nothing holds it, so a read then may find nothing, and says why at the guard (read-twice). The level is set
+-- because a caller's snapshot transaction would make the unhinted reads read its snapshot, which may predate the sale.
 CREATE PROCEDURE flow.sale_receipt
     @sale_id int
 AS
 SET NOCOUNT ON;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 BEGIN TRANSACTION;
 IF NOT EXISTS (SELECT 1 FROM flow.sale WITH (UPDLOCK, HOLDLOCK) WHERE sale_id = @sale_id)
