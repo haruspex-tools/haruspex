@@ -4847,6 +4847,46 @@ TRY_CONVERT(int, 'ab') -> int number/int32 null:failed-conversion {[-2147483648 
 TRY_CONVERT(int, N'ab') -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
 TRY_CONVERT(int, 1e0) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
 TRY_CONVERT(int, $1) -> int number/int32 null:failed-conversion {[-2147483648 2147483647]}
+CONVERT(varchar(30), bt, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), ti, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), si, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), i, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), bi, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), d52, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), d380, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), d3838, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), n102, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), m, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), sm, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), f, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), r, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), f24, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), f25, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), c3, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), v10, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), vx, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), nc3, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), nv10, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), nvx, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), dt, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), tm3, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), dtm, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), dt23, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), sdt, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), dto3, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), u, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), bin4, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), vb10, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), x, CAST(NULL AS int)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONVERT(varchar(30), sv, CAST(NULL AS int)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+CONVERT(varchar(30), j, CAST(NULL AS int)) -> unknown (no unknown recorded)
+CONVERT(varchar(30), 1, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), 12345, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), 2.50, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), 'ab', CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), N'ab', CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
+CONVERT(varchar(30), 1e0, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
+CONVERT(varchar(30), $1, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
 JSON_OBJECT('k': bt) -> unknown (no unknown recorded)
 JSON_OBJECT('k': ti) -> unknown (no unknown recorded)
 JSON_OBJECT('k': si) -> unknown (no unknown recorded)

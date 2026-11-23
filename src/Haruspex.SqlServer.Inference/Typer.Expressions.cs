@@ -403,10 +403,22 @@ internal sealed partial class Typer
     /// type without a length is 30 long here, where a declaration's is 1 (observed:
     /// A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration), and so is a binary one (observed:
     /// A_binary_type_without_a_length_is_30_bytes_long_in_a_conversion). A conversion to x's own type changes
-    /// nothing, so the value keeps its facts. The format a style gives is not claimed. JSON built here converts by rules of
-    /// its own (<see cref="JsonCast"/>, <see cref="FromLiveJson"/>).
+    /// nothing, so the value keeps its facts. The format a style gives is not claimed, but a style that is NULL makes the
+    /// result NULL, whatever is converted, even an int into an int, so the style's reasons are the result's and the NULL
+    /// literal's is <c>null-literal</c> (observed: A_null_style_makes_convert_and_try_convert_null_whatever_they_convert). JSON
+    /// built here converts by rules of its own (<see cref="JsonCast"/>, <see cref="FromLiveJson"/>).
     /// </summary>
-    private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, bool styled = false, bool attempt = false)
+    private Value Cast(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, ScalarExpression? style = null, bool attempt = false)
+    {
+        var converted = Conversion(target, operand, call, scope, styled: style is not null, attempt);
+        if (style is null || converted.Shape is UnknownShape)
+            return converted;
+        var styling = Expression(style, scope);
+        return styling.Shape is UnknownShape ? styling : converted.WithNullableBecause(NullReasons.Join(converted.NullableBecause, styling.NullableBecause));
+    }
+
+    /// <summary>The conversion <see cref="Cast"/> describes, before a style's reasons are joined to it.</summary>
+    private Value Conversion(DataTypeReference target, ScalarExpression operand, TSqlFragment call, ReadScope scope, bool styled, bool attempt)
     {
         var type = SyntaxReader.Type(target);
         var resolved = SchemaRules.ResolveType(model, type)?.Scalar;

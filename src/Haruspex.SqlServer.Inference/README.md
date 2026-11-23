@@ -786,7 +786,9 @@ to them; the fixture is `kiosk`.
 Of the target type, whatever the style (`Cast_and_convert_are_of_the_target_type_whatever_the_style`); a string type without
 a length is 30 long in `CAST` and `CONVERT`, 1 in a declaration
 (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`); `numeric` alone is `numeric(18,0)`. The characters a style
-writes are not claimed. Null when the operand is, and for `arithmetic-overflow` unless every value of the operand's type fits
+writes are not claimed. Null when the operand is, or the style: a NULL style gives NULL whatever is converted, even an
+`int` into an `int`, where the style means nothing, so `CONVERT(varchar(30), d, @style)` is nullable for `@style`'s reasons, and
+for `null-literal` with the style `NULL` (`A_null_style_makes_convert_and_try_convert_null_whatever_they_convert`). And null for `arithmetic-overflow` unless every value of the operand's type fits
 (`Conversions.Converts`). The rule is a table, `Conversions.Table`, a row for each set of pairs and a condition on their
 arguments (`ConversionCondition`), each row naming the observation tests it rests on, among them
 `Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types`, which converts every pair a row allows at
