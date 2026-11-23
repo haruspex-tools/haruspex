@@ -46,6 +46,31 @@ public partial class FunctionTableTests
     }
 
     [Fact]
+    public void Every_clause_a_row_reads_is_observed_with_it_in_a_test_the_row_cites()
+    {
+        // OVER is not a clause a window function's rule chooses to read: it is the form, which the test above checks.
+        var written = new Dictionary<Clause, string>
+        {
+            [Clause.Distinct] = @"\(\s*DISTINCT\b",
+            [Clause.WithinGroup] = @"\bWITHIN\s+GROUP\b",
+            [Clause.NullTreatment] = @"\b(IGNORE|RESPECT)\s+NULLS\b",
+            [Clause.TrimSide] = @"\bTRIM\s*\(\s*(LEADING|TRAILING|BOTH)\b",
+            [Clause.KeyValuePairs] = @"'\s*:",
+            [Clause.JsonOrderBy] = @"\bjson_\w+agg\s*\([^()]*\bORDER\s+BY\b",
+            [Clause.NullOnNull] = @"\b(NULL|ABSENT)\s+ON\s+NULL\b",
+            [Clause.Returning] = @"\bRETURNING\b",
+            [Clause.ArrayWrapper] = @"\bWITH\s+ARRAY\s+WRAPPER\b",
+        };
+        Assert.Equal(CallClauses.All.Select(c => c.Clause).Where(c => c != Clause.Over), written.Keys);
+        var problems = Table
+            .SelectMany(t => written.Where(w => (t.Reads & w.Key) != Clause.None)
+                .Where(w => !t.ObservedIn.Any(name => Observations.TryGetValue(name, out var body) && Calls(body, t.Function) && Regex.IsMatch(body, w.Value, RegexOptions.IgnoreCase)))
+                .Select(w => $"{t.Function.Code}: reads {CallClauses.Written(w.Key)}, but no test it cites calls it with the clause"))
+            .ToList();
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+    }
+
+    [Fact]
     public void Every_reason_the_sweep_finds_a_call_may_be_null_is_one_its_row_declares()
     {
         // The sweep's arguments are never-null columns and literals, so each reason a call gives is its own.

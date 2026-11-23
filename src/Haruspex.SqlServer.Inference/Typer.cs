@@ -368,7 +368,30 @@ internal sealed partial class Typer(
         return new ObjectShape([.. fields]);
     }
 
-    internal Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
+    internal Value Expression(ScalarExpression expression, ReadScope scope) =>
+        expression is PrimaryExpression { Collation: not null } collated ? Collated(collated, scope) : Uncollated(expression, scope);
+
+    /// <summary>
+    /// An expression under <c>COLLATE</c>. A Unicode string keeps its characters under any collation, so its value is the
+    /// expression's. Any other string keeps its type and when it is NULL, but its characters are converted to the collation's
+    /// code page, where one may become another or be cut short: <c>'é'</c> is <c>'e'</c> under <c>Greek_CI_AS</c>, and as
+    /// <c>varchar(1)</c> is <c>''</c> under a UTF-8 collation, which needs two bytes for it. So nothing more than its type is
+    /// known of it (observed: Collate_keeps_a_unicode_strings_characters_and_may_change_or_cut_a_non_unicode_ones). The server
+    /// refuses <c>COLLATE</c> of anything else (447), so that is not modelled.
+    /// </summary>
+    private Value Collated(PrimaryExpression expression, ReadScope scope)
+    {
+        var value = Uncollated(expression, scope);
+        return value.Shape is UnknownShape ? value : TypeOf(value) switch
+        {
+            { IsString: true, IsNational: true } => value,
+            { IsString: true } type => Typed(type, value.NullableBecause, expression),
+            _ => NotModelled(expression, "COLLATE of a value that is not a string is not modelled."),
+        };
+    }
+
+    /// <summary>An expression, its <c>COLLATE</c> read by <see cref="Collated"/>.</summary>
+    private Value Uncollated(ScalarExpression expression, ReadScope scope) => expression switch
     {
         ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } action => MergeAction(action, scope),
         ColumnReferenceExpression column => Column(column, scope),
@@ -571,15 +594,13 @@ internal sealed partial class Typer(
         : new IrNullReason(IrNullRule.EmptySubquery, at.ToString());
 
     /// <summary>
-    /// <c>json_query</c>, with a path (<see cref="JsonQueryAt"/>) or without (<see cref="JsonQuery"/>). <c>WITH ARRAY WRAPPER</c>
-    /// gives an array of one element instead, the object or array found, or at a path a scalar too, which without it is NULL
-    /// (observed: Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too); it is not modelled,
-    /// so such a call is unknown rather than read as the call without it.
+    /// <c>json_query</c>, with a path (<see cref="JsonQueryAt"/>) or without (<see cref="JsonQuery"/>). Its row reads no clause, so
+    /// <c>WITH ARRAY WRAPPER</c>, which gives an array of one element instead, the object or array found, or at a path a scalar
+    /// too, which without it is NULL (observed: Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too),
+    /// has made the call unknown before it reaches here (decision 0113).
     /// </summary>
     private Value JsonQueryCall(FunctionCall call, ReadScope scope) =>
-        call.WithArrayWrapper ? NotModelled(call, "json_query WITH ARRAY WRAPPER, which gives an array of what it finds, is not modelled yet.")
-        : call.Parameters.Count == 2 ? JsonQueryAt(call, scope)
-        : JsonQuery(call, scope);
+        call.Parameters.Count == 2 ? JsonQueryAt(call, scope) : JsonQuery(call, scope);
 
     private Value JsonQuery(FunctionCall call, ReadScope scope)
     {
@@ -631,8 +652,10 @@ internal sealed partial class Typer(
 
     private Value CallFunction(FunctionCall call, ObjectName callee, ReadScope scope)
     {
+        // No clause is read of a user's function (decision 0113), and the server takes none but OVER and WITHIN GROUP, which it
+        // refuses for a scalar function when the procedure is created.
         var at = At(call);
-        if (call.OverClause is not null || call.WithinGroupClause is not null)
+        if (CallClauses.Of(call) != Clause.None)
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of call is not modelled: {Text(call)}", at));
 
         // A function's body read in a statement that reads uncommitted reads its tables so too.
@@ -702,12 +725,8 @@ internal sealed partial class Typer(
         var at = At(call);
         var name = function.Name;
 
-        // Forms the server rejects or that would change what an aggregate sees (a window, DISTINCT) are not modelled.
-        if (call.OverClause is not null || call.WithinGroupClause is not null || call.UniqueRowFilter != UniqueRowFilter.NotSpecified
-            || call.IgnoreRespectNulls is { Count: > 0 } || call.WithArrayWrapper)
-        {
-            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"This form of {name} is not modelled: {Text(call)}", at));
-        }
+        // Any clause but those its row reads (the pairs, the null option, RETURNING, and json_arrayagg's ORDER BY) has made the
+        // call unknown already, in Function (decision 0113).
 
         // RETURNING json changes the value's SQL type, not what it writes or how it nests (observed).
         if (call.ReturnType is { Count: > 0 } returns && returns is not [SqlDataTypeReference { SqlDataTypeOption: SqlDataTypeOption.Json }])

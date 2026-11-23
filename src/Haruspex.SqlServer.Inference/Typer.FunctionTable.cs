@@ -96,16 +96,16 @@ internal sealed partial class Typer
 
     private static FunctionTyping Typing(
         BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn,
-        Func<Typer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled) =>
-        new(function, arity, otherForms, rule, [.. nulls], [.. observedIn], readsOnlyItsArguments, type);
+        Func<Typer, ScalarExpression, ReadScope, Value>? type, bool readsOnlyItsArguments = true, OtherForms otherForms = OtherForms.FormNotModelled, Clause reads = Clause.None) =>
+        new(function, arity, otherForms, rule, [.. nulls], [.. observedIn], reads, readsOnlyItsArguments, type);
 
     private static FunctionCall Call(ScalarExpression call) => (FunctionCall)call;
 
-    private static FunctionTyping WindowRow(BuiltInFunction function, (int, int?) arity, string rule, IrNullRule[] nulls, string[] observedIn, WindowRule window) =>
-        Typing(function, arity, rule, nulls, observedIn, (a, e, s) => a.Window(Call(e), s, function, window), readsOnlyItsArguments: false, OtherForms.WindowNotModelled);
+    private static FunctionTyping WindowRow(BuiltInFunction function, (int, int?) arity, string rule, IrNullRule[] nulls, string[] observedIn, WindowRule window, Clause reads = Clause.None) =>
+        Typing(function, arity, rule, nulls, observedIn, (a, e, s) => a.Window(Call(e), s, function, window), readsOnlyItsArguments: false, OtherForms.WindowNotModelled, Clause.Over | reads);
 
-    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<Typer, ScalarExpression, ReadScope, Value> type) =>
-        Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled);
+    private static FunctionTyping AggregateRow(BuiltInFunction function, (int, int?)? arity, string rule, IrNullRule[] nulls, string[] observedIn, Func<Typer, ScalarExpression, ReadScope, Value> type, Clause reads = Clause.None) =>
+        Typing(function, arity, rule, nulls, observedIn, type, readsOnlyItsArguments: true, OtherForms.AggregateNotModelled, reads);
 
     /// <summary>Every row, one for each function of the catalogue.</summary>
     internal static ImmutableArray<FunctionTyping> FunctionTable { get; } =
@@ -144,7 +144,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.RTrim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], Call(e).Parameters.Count == 2 ? Call(e).Parameters[1] : null, s)),
 
         // TRIM(chars FROM s) is given as (chars, s).
-        Typing(ScalarFunctions.Trim, (1, 2), "the string's length, varying", [], [Trims], (a, e, s) => Call(e).Parameters.Count == 2 ? a.Trim(Call(e), Call(e).Parameters[1], Call(e).Parameters[0], s) : a.Trim(Call(e), Call(e).Parameters[0], null, s)),
+        Typing(ScalarFunctions.Trim, (1, 2), "the string's length, varying", [], [Trims, "Trim_from_one_side_keeps_the_strings_type_and_when_it_is_null"], (a, e, s) => Call(e).Parameters.Count == 2 ? a.Trim(Call(e), Call(e).Parameters[1], Call(e).Parameters[0], s) : a.Trim(Call(e), Call(e).Parameters[0], null, s), reads: Clause.TrimSide),
         Typing(ScalarFunctions.Upper, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
         Typing(ScalarFunctions.Lower, (1, 1), "the string's length, varying", [], [Trims], (a, e, s) => a.Trim(Call(e), Call(e).Parameters[0], null, s)),
         Typing(ScalarFunctions.Substring, (3, 3), "the string varying, as long as a literal length allows", [ArithmeticOverflow], [Parts, WideStarts], (a, e, s) => a.Part(e, Call(e).Parameters[0], [Call(e).Parameters[1], Call(e).Parameters[2]], Call(e).Parameters[2], s)),
@@ -220,8 +220,8 @@ internal sealed partial class Typer
         // ---- JSON ----
         Typing(ScalarFunctions.JsonValue, (2, 2), "nvarchar(4000), or the text of what JSON of known shape holds at its path", [JsonNullOrAbsent], ["Json_value_is_nvarchar_4000_and_null_for_a_json_null_a_missing_path_an_object_or_a_long_string", "Json_value_over_json_built_here_gives_its_scalars_as_text", "Json_value_gives_null_for_what_it_cannot_return_under_lax_and_errs_under_strict", Refusals], (a, e, s) => a.RefusedJsonDocument(Call(e), s) ?? a.TracedJsonValue(Call(e), s) ?? a.JsonValue(Call(e))),
         Typing(ScalarFunctions.JsonQuery, (1, 2), "the JSON it is given, or the object or array at its path, as JSON; unknown WITH ARRAY WRAPPER", [JsonNullOrAbsent], ["Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken", "Json_query_with_a_path_gives_the_object_or_array_there_and_null_under_lax_for_anything_else", "Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too"], (a, e, s) => a.JsonQueryCall(Call(e), s), readsOnlyItsArguments: false, otherForms: OtherForms.ExpressionNotModelled),
-        Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false),
-        Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.JsonObject, null, "an object of its keys, never null", [], ["Json_object_writes_a_repeated_literal_key_twice", "A_json_constructor_returning_json_is_the_constructor", "A_constructor_keeps_or_drops_nulls_by_its_option"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonObject), readsOnlyItsArguments: false, reads: Clause.KeyValuePairs | Clause.NullOnNull | Clause.Returning),
+        Typing(ScalarFunctions.JsonArray, null, "an array or tuple of its values, never null", [], ["An_aggregate_over_no_rows_is_null_not_empty", "A_json_constructor_returning_json_is_the_constructor", "A_constructor_keeps_or_drops_nulls_by_its_option"], (a, e, s) => a.Constructor(Call(e), s, ScalarFunctions.JsonArray), readsOnlyItsArguments: false, reads: Clause.NullOnNull | Clause.Returning),
 
         Typing(ScalarFunctions.IsJson, (1, 2), "int, 0 or 1", [], [Tests, ZeroOrOne], (a, e, s) => Within(a.IsJson(Call(e), s), 0, 1, "ISJSON")),
         Typing(ScalarFunctions.NewId, (0, 0), "uniqueidentifier, never null", [], [Tests], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.UniqueIdentifier), [], e), readsOnlyItsArguments: false),
@@ -239,23 +239,23 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.RegexpCount, (2, 4), "int, from 0", [ArithmeticOverflow], [Expressions, Matches], (a, e, s) => Within(a.RegexpPosition(Call(e), s, ScalarFunctions.RegexpCount), 0, int.MaxValue, "REGEXP_COUNT")),
 
         // ---- aggregates ----
-        AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow], (a, e, s) => a.Count(Call(e), s, big: false)),
-        AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off"], (a, e, s) => a.Count(Call(e), s, big: true)),
-        AggregateRow(AggregateFunctions.Sum, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Sum_widens_its_argument"], (a, e, s) => a.Sum(Call(e), s)),
-        AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does", LostPrecision], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg)),
-        AggregateRow(AggregateFunctions.Min, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Min)),
-        AggregateRow(AggregateFunctions.Max, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Max)),
-        AggregateRow(AggregateFunctions.Stdev, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics, "The_statistical_aggregates_overflow_only_over_float"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Stdev)),
-        AggregateRow(AggregateFunctions.StdevP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.StdevP)),
-        AggregateRow(AggregateFunctions.Var, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Var)),
-        AggregateRow(AggregateFunctions.VarP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.VarP)),
-        AggregateRow(AggregateFunctions.StringAgg, (2, 2), "varchar(8000) or nvarchar(4000), max over max", [EmptyAggregate], ["String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls", "String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off", Refusals], (a, e, s) => a.StringAggregate(Call(e), s)),
+        AggregateRow(AggregateFunctions.Count, (1, 1), "int", [CountOverflow], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", OneRow, "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Count(Call(e), s, big: false), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.CountBig, (1, 1), "bigint, never null", [], ["Count_over_more_rows_than_int_holds_is_null_under_the_callers_ansi_warnings_and_arithabort_off", "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Count(Call(e), s, big: true), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Sum, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow], ["Sum_widens_its_argument", "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Sum(Call(e), s), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Avg, (1, 1), "the argument's type, widened", [EmptyAggregate, ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Avg_is_typed_by_its_argument_with_or_without_a_window", "Avg_is_null_over_no_rows_and_overflows_as_sum_does", LostPrecision, "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Avg), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Min, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window", "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Min), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Max, (1, 1), "the argument, with its facets", [EmptyAggregate], [OneRow, "Min_and_max_of_a_bit_are_refused_with_or_without_a_window", "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.MinOrMax(Call(e), s, AggregateFunctions.Max), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Stdev, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics, "The_statistical_aggregates_overflow_only_over_float", "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Stdev), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.StdevP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics, "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.StdevP), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.Var, (1, 1), "float", [EmptyAggregate, TooFewValues, ArithmeticOverflow], [Statistics, "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.Var), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.VarP, (1, 1), "float", [EmptyAggregate, ArithmeticOverflow], [Statistics, "Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null"], (a, e, s) => a.Average(Call(e), s, AggregateFunctions.VarP), reads: Clause.Distinct),
+        AggregateRow(AggregateFunctions.StringAgg, (2, 2), "varchar(8000) or nvarchar(4000), max over max", [EmptyAggregate], ["String_agg_is_8000_bytes_unless_max_and_null_over_no_rows_or_only_nulls", "String_agg_past_its_limit_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off", Refusals, "String_agg_within_group_keeps_its_type_and_when_it_is_null"], (a, e, s) => a.StringAggregate(Call(e), s), reads: Clause.WithinGroup),
         AggregateRow(AggregateFunctions.ChecksumAgg, null, "not modelled: an aggregate, so one row without GROUP BY", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
         AggregateRow(AggregateFunctions.Grouping, null, "not modelled: an aggregate", [], ["Rollup_cube_and_grouping_sets_add_rows_whose_grouped_columns_are_null"], (a, e, s) => a.AggregateNotModelled(Call(e))),
         AggregateRow(AggregateFunctions.GroupingId, null, "not modelled: an aggregate", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
         AggregateRow(AggregateFunctions.ApproxCountDistinct, null, "not modelled: an aggregate, so one row without GROUP BY", [], [OtherAggregates], (a, e, s) => a.AggregateNotModelled(Call(e))),
-        AggregateRow(AggregateFunctions.JsonArrayAgg, null, "an array of its values, null over no rows", [EmptyAggregate], ["Json_arrayagg_follows_its_order_by"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonArrayAgg)),
-        AggregateRow(AggregateFunctions.JsonObjectAgg, null, "an object of its keys, null over no rows", [EmptyAggregate], ["Json_objectagg_keeps_every_duplicate_key"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonObjectAgg)),
+        AggregateRow(AggregateFunctions.JsonArrayAgg, null, "an array of its values, null over no rows", [EmptyAggregate], ["Json_arrayagg_follows_its_order_by", "A_json_constructor_returning_json_is_the_constructor", "An_aggregate_keeps_or_drops_nulls_by_its_option"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonArrayAgg), reads: Clause.NullOnNull | Clause.Returning | Clause.JsonOrderBy),
+        AggregateRow(AggregateFunctions.JsonObjectAgg, null, "an object of its keys, null over no rows", [EmptyAggregate], ["Json_objectagg_keeps_every_duplicate_key", "A_json_constructor_returning_json_is_the_constructor", "An_aggregate_keeps_or_drops_nulls_by_its_option"], (a, e, s) => a.Constructor(Call(e), s, AggregateFunctions.JsonObjectAgg), reads: Clause.KeyValuePairs | Clause.NullOnNull | Clause.Returning),
 
         // ---- window functions ----
         WindowRow(WindowFunctions.RowNumber, (0, 0), "bigint, never null", [], [Windowed, Ranking], new WindowRule(WindowResult.Fixed, BuiltInType.BigInt)),
@@ -276,8 +276,8 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.LastValue, (1, 1), "the argument, with its facets", [EmptyFrame], [Windowed, Frames], new WindowRule(WindowResult.Argument, EmptyFrame: true, AnotherRow: true)),
         WindowRow(WindowFunctions.Lag, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow, IrNullRule.PrecisionLoss], ["Lag_and_lead_are_null_past_the_partitions_edge_unless_a_default_is_given_which_is_converted_to_the_columns_type", LostPrecision], new WindowRule(WindowResult.Offset, AnotherRow: true)),
         WindowRow(WindowFunctions.Lead, (1, 3), "the argument's type, its facets without a default", [WindowEdge, ArithmeticOverflow, IrNullRule.PrecisionLoss], [Windowed], new WindowRule(WindowResult.Offset, AnotherRow: true)),
-        WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues)),
-        WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues)),
+        WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues), reads: Clause.WithinGroup),
+        WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues), reads: Clause.WithinGroup),
 
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
@@ -316,9 +316,9 @@ internal sealed partial class Typer
     }
 
     /// <summary>
-    /// A call of a built-in function, typed by its row (<see cref="TypingOf"/>): a number of arguments the row doesn't read gives
-    /// what the row says of other forms. Null when the expression calls no function the table holds; a call with OVER of one it
-    /// lacks is a window function not modelled.
+    /// A call of a built-in function, typed by its row (<see cref="TypingOf"/>): a clause the row doesn't read is not modelled,
+    /// and a number of arguments it doesn't read gives what the row says of other forms. Null when the expression calls no
+    /// function the table holds; a call with OVER of one it lacks is a window function not modelled.
     /// </summary>
     private Value? Function(ScalarExpression expression, ReadScope scope)
     {
@@ -326,6 +326,11 @@ internal sealed partial class Typer
         {
             return expression is FunctionCall { CallTarget: null, OverClause: not null } window ? WindowNotModelled(window) : null;
         }
+
+        // Read as the call without it, a clause would make the claim one about another call: json_query(x WITH ARRAY WRAPPER)
+        // is an array, not x (decision 0113).
+        if (expression is FunctionCall clauses && (CallClauses.Of(clauses) & ~typing.Reads) is var unread and not Clause.None)
+            return NotModelled(expression, $"{CallClauses.Written(unread)} in a call of {typing.Function.Name.ToUpperInvariant()} is not modelled.");
 
         int? count = expression switch
         {

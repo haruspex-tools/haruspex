@@ -137,7 +137,7 @@ internal sealed partial class Typer
 
     /// <summary>
     /// A literal, through parentheses, with whether it is negated; null for anything else, and for a literal holding a SQLCMD
-    /// variable, whose text is not its value (<see cref="Replaced"/>). Every rule that reads a literal's text (a value set, a
+    /// variable, whose text is not its value (<see cref="Replaced"/>), or under <c>COLLATE</c>. Every rule that reads a literal's text (a value set, a
     /// JSON document, a conversion that fits) finds it here, so none of them reads the written text of one.
     /// </summary>
     internal static (Literal Literal, bool Negative)? LiteralOf(ScalarExpression expression)
@@ -150,7 +150,8 @@ internal sealed partial class Typer
             e = Strip(unary.Expression);
         }
 
-        return e is Literal literal && !SqlcmdVariableReference.IsIn(literal) ? (literal, negative) : null;
+        // A literal under COLLATE may not hold the characters written (Collated), so it is not read as one.
+        return e is Literal { Collation: null } literal && !SqlcmdVariableReference.IsIn(literal) ? (literal, negative) : null;
     }
 
     /// <summary>A value the server computes, of this type: never folded to a constant, so it counts its type's digits.</summary>

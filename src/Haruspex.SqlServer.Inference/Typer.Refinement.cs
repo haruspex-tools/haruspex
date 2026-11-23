@@ -306,9 +306,13 @@ internal sealed partial class Typer
         return result;
     }
 
+    /// <summary>
+    /// An expression without its parentheses; not through one with <c>COLLATE</c>, which may change a string's characters
+    /// (<see cref="Collated"/>), so that no rule reads <c>('é') COLLATE Greek_CI_AS</c> as the literal it holds.
+    /// </summary>
     internal static ScalarExpression Strip(ScalarExpression e)
     {
-        while (e is ParenthesisExpression p)
+        while (e is ParenthesisExpression { Collation: null } p)
             e = p.Expression;
         return e;
     }

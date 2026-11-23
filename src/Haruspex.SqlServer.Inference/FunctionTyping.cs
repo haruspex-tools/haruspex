@@ -16,6 +16,10 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="Rule">The typing rule, in words: what type it gives.</param>
 /// <param name="MayBeNullBecause">The reasons it may be NULL that it adds to its arguments' (CatalogueSweepTests holds the sweep to these).</param>
 /// <param name="ObservedIn">The observation tests that establish the rule, each of which calls the function.</param>
+/// <param name="Reads">
+/// The clauses its rule reads (<see cref="CallClauses"/>); a call carrying any other is not modelled (decision 0113). Each is
+/// observed with the clause, in one of <paramref name="ObservedIn"/>, except <c>OVER</c>, which a window function's form is.
+/// </param>
 /// <param name="ReadsOnlyItsArguments">Whether it gives the same value when read again in one row, reading nothing but its arguments.</param>
 /// <param name="Type">The typing method; null for a rowset, which the relation readers type (<c>GenerateSeries</c>, <c>OpenJsonRelation</c>).</param>
 internal sealed record FunctionTyping(
@@ -25,5 +29,6 @@ internal sealed record FunctionTyping(
     string Rule,
     EquatableArray<IrNullRule> MayBeNullBecause,
     EquatableArray<string> ObservedIn,
+    Clause Reads,
     bool ReadsOnlyItsArguments,
     Func<Typer, ScalarExpression, ReadScope, Value>? Type);

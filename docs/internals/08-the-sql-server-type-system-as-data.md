@@ -231,7 +231,28 @@ holds the list as a snapshot, so a change to one shows in review, and checks no 
   other without it, so a citation of a test about another function, or about the same function in the other form, fails;
 - every reason the sweep finds a call may be NULL is one its row declares, so a row says no less than the code does;
 - the sweep reaches every function the table types (but `GROUPING` and `GROUPING_ID`, which need a `GROUP BY`);
-- a function's name is read nowhere else in Semantics or Inference.
+- a function's name is read nowhere else in Semantics or Inference;
+- each clause a row reads is in a test it cites that calls the function with the clause.
+
+### Clauses
+
+A call is more than a name and its arguments. `COUNT(DISTINCT x)`, `STRING_AGG(s, ',') WITHIN GROUP (ORDER BY n)`,
+`json_query(x WITH ARRAY WRAPPER)` and `TRIM(LEADING 'x' FROM s)` each carry a clause, which ScriptDom holds as a property of
+the call. A rule that doesn't read a property reads it as its default, so the call is typed as the call without it: the
+array wrapper, read that way, made `json_query` an object where the server returns an array. So each row says which clauses
+it reads (`FunctionTyping.Reads`, from the `Clause` flags), and the arm that types a call checks the clauses it carries against
+that first: one the row doesn't read makes the call unknown, saying which. A row reads a clause only where a test it cites calls
+the function with it, which `FunctionTableTests` checks.
+
+A list of what the rows read is complete only if it covers every property, so the typer keeps one more table,
+`AcceptedNodes`: every node type it accepts as an expression, the call nodes and the others (a column, a literal, `CASE`, an
+operator), with each property and how it is read. Most are read by the node's rule; a call's clauses are read row by row;
+`COLLATE`, which any expression may carry, is read once for all of them; and a property that can't change the result
+(a literal's `LiteralType`, which its node's type already says) is ignored, with the reason. `ClauseTableTests` reads ScriptDom
+by reflection and fails on a property the table lacks, on one it lists that the node lacks, and on a node type ScriptDom derives
+from a listed one, which would be typed as its base. A new version of ScriptDom that adds a clause therefore fails a test until
+someone decides how it is read, instead of being read as its default
+([decision 0113](../decisions/0113-a-clause-no-rule-reads-makes-the-call-unknown.md)).
 
 The sweep runs every function with each type in its argument, and `CatalogueSweepGridTests` holds what it types to the
 server twice. It asks the server for each call's type, which found calls haruspex typed and the server refuses when the

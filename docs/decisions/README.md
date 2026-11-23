@@ -100,6 +100,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0095](0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md) | 21 Nov 2026 | A length is the server's, and a target claims the fewest code points it can hold |
 | [0097](0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md) | 22 Nov 2026 | A path into JSON of known shape is walked step by step |
 | [0107](0107-names-that-differ-only-in-case-are-unknown.md) | 22 Nov 2026 | Names that differ only in case are unknown |
+| [0113](0113-a-clause-no-rule-reads-makes-the-call-unknown.md) | 23 Nov 2026 | A clause no rule reads makes the call unknown |
 
 ## Writing a record
 

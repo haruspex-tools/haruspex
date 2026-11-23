@@ -55,7 +55,8 @@ it, claim by claim.
 - **Unknowns stay local.** An unmodelled expression makes its column unknown, not its row; only what can't be placed (a
   result set of unknown shape) makes a procedure's results unknown.
 - **Anything new is unknown until modelled**, so teaching it a construct turns unknowns into claims and never makes an
-  existing claim wrong.
+  existing claim wrong. That holds of a new clause on a construct already modelled too: every property of every node the
+  typer accepts is listed with how it is read, and a test holds the list to ScriptDom ("Clauses", below).
 - **The same model gives the same document.**
 
 ## What it deliberately doesn't do
@@ -2175,6 +2176,35 @@ not listed is not modelled.
   `Isdate_and_isjson_give_0_or_1_and_isjson_null_for_null`), NULL when `s` is. **`NEWID()`**: `uniqueidentifier`, never null, and a
   new value at each call, so it is not read twice as one value
   (`Isjson_is_an_int_null_for_null_and_newid_a_uniqueidentifier_never_null`).
+
+### Clauses
+
+A clause of a call is read only by the rows that say so (`FunctionTyping.Reads`), and a call with any other is unknown, its
+reason naming the clause: read as the call without it, the claim would be about another call
+([decision 0113](../../docs/decisions/0113-a-clause-no-rule-reads-makes-the-call-unknown.md); the guide's
+[Clauses](../../docs/internals/08-the-sql-server-type-system-as-data.md#clauses)). Each read is observed in
+`ClauseObservationTests`:
+
+- **`DISTINCT`** in `COUNT`, `COUNT_BIG`, `SUM`, `AVG`, `MIN`, `MAX`, `STDEV`, `STDEVP`, `VAR` and `VARP` gives the type and the
+  reasons to be NULL the call gives without it. `STDEV` and `VAR` of two equal values are NULL with it, which `too-few-values`
+  says already. `ALL` is the call without a clause
+  (`Distinct_and_all_in_an_aggregate_keep_its_type_and_when_it_is_null`).
+- **`WITHIN GROUP`** changes only the order of `STRING_AGG`'s items
+  (`String_agg_within_group_keeps_its_type_and_when_it_is_null`); the percentiles need it.
+- **`TRIM(LEADING | TRAILING | BOTH chars FROM s)`** is typed as `TRIM(chars FROM s)`
+  (`Trim_from_one_side_keeps_the_strings_type_and_when_it_is_null`).
+- **A JSON constructor's** pairs, `NULL ON NULL` or `ABSENT ON NULL`, and `RETURNING json`, and `json_arrayagg`'s `ORDER BY`
+  (`A_json_constructor_returning_json_is_the_constructor`; "JSON constructors", below).
+- **Unknown:** `IGNORE NULLS` and `RESPECT NULLS`, `JSON_VALUE … RETURNING` (which SQL Server 2025 refuses:
+  `Json_value_returning_is_refused_by_this_server`), `WITH ARRAY WRAPPER`, any clause of a user's function, and any clause in
+  a call whose row doesn't read it (`UPPER(DISTINCT s)`, which ScriptDom parses).
+
+**`COLLATE`**, on any expression (`Typer.Collated`): a Unicode string keeps its value, characters and all. Any other string keeps
+its type and its reasons to be NULL, and nothing else, since its characters are converted to the collation's code page: `'é'`
+is `'e'` under `Greek_CI_AS`, and as `varchar(1)` is cut to `''` under a UTF-8 collation, which needs two bytes for it. So a
+CHECK's set, a literal's text and JSON's shape don't pass through it. `COLLATE` of anything else is refused by the server
+(447) and is unknown, and no rule reads a literal under `COLLATE` as the literal
+(`Collate_keeps_a_unicode_strings_characters_and_may_change_or_cut_a_non_unicode_ones`).
 
 ### Dates
 
