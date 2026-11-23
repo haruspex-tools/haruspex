@@ -94,6 +94,9 @@ public class EmitCheckTests
             Path.Combine(generated, "combined.mssql.ts"),
             MssqlEmitter.Emit(Combined(), new MssqlOptions { SchemaModule = "./combined.zod.js", IsReserved = TypeScriptNames.IsReserved }).Expected());
 
+        // Procedures named as the module's own helpers and the global types it writes, which must still compile.
+        File.WriteAllText(Path.Combine(generated, "names.zod.ts"), ZodEmitter.Emit(HelperNames()).Expected());
+
         // The mapping helper, which is the same for every module, once: src/mapping-usage.ts checks it against the fixtures' types,
         // and the lint holds it to the rules every generated file meets.
         File.WriteAllText(Path.Combine(generated, HaruspexCli.MappingFileName), MappingModule.Text);
@@ -107,6 +110,30 @@ public class EmitCheckTests
             var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, fixture.Name)], output, error, fixture.Folder);
             Assert.True(exitCode == 0, error.ToString());
         }
+    }
+
+    /// <summary>
+    /// Procedures each declaring a type named as a binding the module itself makes or a global type a helper could write: a module
+    /// with JSON text and a canonical value set, so that both helpers are in it, whose procedures are named <c>Fold</c>,
+    /// <c>Record</c>, <c>Map</c> and the other generic types of TypeScript's library, and, as a naming rule that keeps case would
+    /// name them, <c>z</c>, <c>jsonText</c>, <c>canonicalOf</c>, <c>canonicalForm</c> and <c>folds</c>. A declaration's name is a
+    /// type (and its schema a <c>…Schema</c> constant), so it clashes only with a type the module names: before the canonical helper
+    /// named none, a procedure named <c>Fold</c> made the module fail to compile (TS2300) while haruspex reported success.
+    /// </summary>
+    private static IrDocument HelperNames()
+    {
+        const string Tables = "CREATE TABLE names.item (id int NOT NULL PRIMARY KEY, state varchar(10) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (state IN ('open', 'shut')));";
+        string[] pascal = ["fold", "record", "map", "set", "array", "readonly_array", "partial", "promise", "object", "string", "date", "buffer", "json"];
+        string[] camel = ["z", "json_text", "canonical_of", "canonical_form", "folds"];
+        var procedures = string.Join(
+            "\nGO\n",
+            pascal.Concat(camel).Select(name =>
+                $"CREATE PROCEDURE names.[{name}] AS SELECT i.id, i.state, (SELECT j.state FROM names.item AS j WHERE j.id = i.id FOR JSON PATH) AS card FROM names.item AS i;"));
+        var document = InferProcedure.Infer("names.*", ("schema.sql", "CREATE SCHEMA names;"), ("tables.sql", Tables), ("procedures.sql", procedures));
+
+        // Under "case": "camel", or "preserve" with these names in the SQL, the first letter is lower case.
+        var lower = camel.Select(n => string.Concat(n.Split('_').Select(w => char.ToUpperInvariant(w[0]) + w[1..]))).ToHashSet(StringComparer.Ordinal);
+        return document with { Objects = [.. document.Objects.Select(o => lower.Contains(o.Name) ? o with { Name = char.ToLowerInvariant(o.Name[0]) + o.Name[1..] } : o)] };
     }
 
     /// <summary>

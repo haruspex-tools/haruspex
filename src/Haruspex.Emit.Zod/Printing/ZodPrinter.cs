@@ -50,31 +50,36 @@ internal static class ZodPrinter
 
     /// <summary>
     /// A canonical value set's mapping (<see cref="ZodExpression.Canonical"/>), by a fold as the IR README defines its canonical
-    /// form: a value becomes the item whose canonical form it has, the ordinally least where two share one; any other is left as it
-    /// is, for the enum to refuse. Each UTF-16 code unit is looked at alone, as the IR's fold is.
+    /// form: a value becomes the item whose canonical form it has, the first (the ordinally least, as the items are written) where
+    /// two share one; any other is left as it is, for the enum to refuse. Each UTF-16 code unit is looked at alone, as the IR's fold
+    /// is.
     /// </summary>
+    /// <remarks>
+    /// It names no type: a fold's shape is written out, its classes as pairs of a name and its characters, so neither a name of its
+    /// own (<c>Fold</c>) nor a global generic (<c>Record</c>, <c>Map</c>) can be taken from it by a procedure or type the module
+    /// declares under that name, which a type alias of the same name would shadow (<c>EmitCheckTests</c> compiles such a module). Its values, <c>canonicalOf</c>
+    /// and <c>folds</c>, can't clash with a declaration's names, which are types and <c>…Schema</c> constants.
+    /// </remarks>
     private const string CanonicalHelper = $$"""
 
         // A value set's canonical form, by a fold the IR gives for a column's collation: drop the characters it ignores, put each
-        // class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the item whose canonical form
-        // it has; any other value is left as it is, for the enum to refuse.
-        interface Fold { ignored: string; classes: Record<string, string> }
-        const canonicalForm = (fold: Fold, value: string): string => {
-          let form = ''
-          for (let i = 0; i < value.length; i++) {
-            const unit = value.charAt(i)
-            if (fold.ignored.includes(unit)) continue
-            form += Object.entries(fold.classes).find(([, units]) => units.includes(unit))?.[0] ?? unit
+        // class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the first item whose canonical
+        // form it has; any other value is left as it is, for the enum to refuse.
+        const canonicalOf = (
+          fold: { readonly ignored: string; readonly classes: readonly (readonly [string, string])[] },
+          items: readonly string[],
+        ): ((value: unknown) => unknown) => {
+          const formOf = (value: string): string => {
+            let form = ''
+            for (let i = 0; i < value.length; i++) {
+              const unit = value.charAt(i)
+              if (fold.ignored.includes(unit)) continue
+              form += fold.classes.find(([, units]) => units.includes(unit))?.[0] ?? unit
+            }
+            return form.replace(/ +$/, '')
           }
-          return form.replace(/ +$/, '')
-        }
-        const canonicalOf = (fold: Fold, items: readonly string[]): ((value: unknown) => unknown) => {
-          const byForm = new Map<string, string>()
-          for (const item of items) {
-            const form = canonicalForm(fold, item)
-            if (!byForm.has(form)) byForm.set(form, item)
-          }
-          return (value: unknown) => (typeof value === 'string' ? (byForm.get(canonicalForm(fold, value)) ?? value) : value)
+          const forms = items.map(formOf)
+          return (value: unknown) => (typeof value === 'string' ? (items[forms.indexOf(formOf(value))] ?? value) : value)
         }
 
         """;
@@ -104,12 +109,12 @@ internal static class ZodPrinter
             {
                 output.Append("  ").Append(DoubleQuoted(name)).Append(": {\n")
                     .Append("    ignored: ").Append(Units(fold.Ignored)).Append(",\n")
-                    .Append("    classes: { ")
-                    .Append(string.Join(", ", fold.Classes.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => DoubleQuoted(c.Key) + ": " + Units(c.Value))))
-                    .Append(" },\n  },\n");
+                    .Append("    classes: [")
+                    .Append(string.Join(", ", fold.Classes.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => "[" + DoubleQuoted(c.Key) + ", " + Units(c.Value) + "]")))
+                    .Append("],\n  },\n");
             }
 
-            output.Append("} satisfies Record<string, Fold>\n");
+            output.Append("} as const\n");
         }
 
         foreach (var declaration in module.Declarations)

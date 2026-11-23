@@ -19,8 +19,11 @@ internal sealed record ZodModule(
     EquatableArray<ZodDeclaration> Declarations,
     EquatableMap<string, IrFold>? Folds = null)
 {
-    /// <summary>The names the canonical value sets' helper and its folds bind in the module, which no imported name may take.</summary>
-    public static IReadOnlyList<string> CanonicalNames { get; } = ["Fold", "canonicalForm", "canonicalOf", "folds"];
+    /// <summary>
+    /// The names the canonical value sets' helper and its folds bind in the module, which no imported name may take. Both are values:
+    /// the helper binds no type, so no declaration's type can clash with it.
+    /// </summary>
+    public static IReadOnlyList<string> CanonicalNames { get; } = ["canonicalOf", "folds"];
 
     /// <summary>The name the JSON text helper binds in the module, which no imported name may take.</summary>
     public const string JsonTextHelperName = "jsonText";
