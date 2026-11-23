@@ -2171,9 +2171,14 @@ not listed is not modelled.
 - **`DATEFROMPARTS`**, `DATETIMEFROMPARTS`, `SMALLDATETIMEFROMPARTS` and, with a precision that must be a literal,
   `DATETIME2FROMPARTS`, `TIMEFROMPARTS`, `DATETIMEOFFSETFROMPARTS`: of their type, NULL when any part is. Only parts of an
   integer type narrower than `bigint` are read, so no conversion can overflow.
-- **An overflow is an error, not NULL**, under any session options: `DATEADD` (517), `DATEDIFF` (535), `EOMONTH` (517), a
-  part out of range (289) (`A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`). So none
-  has `arithmetic-overflow`, unlike `+` on a `datetime`.
+- **A date past its range is an error, not NULL**, under any session options: `DATEADD` (517), `DATEDIFF` (535), `EOMONTH`
+  (517), a part out of range (289) (`A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`).
+  So none has `arithmetic-overflow` for that, unlike `+` on a `datetime`.
+- **`DATEADD` converts its number to `bigint` first**, and that conversion is arithmetic: past `bigint`'s range it is 8115,
+  or NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off. So `DATEADD` has `arithmetic-overflow` unless the number
+  always converts: an integer, `money` or `smallmoney`, a `decimal` or `numeric` of at most 18 integer digits, or a literal
+  within `bigint`'s range. A `decimal(19,0)`, a `float` and a `real` may not
+  (`Dateadd_converts_its_number_to_bigint_which_past_its_range_is_null_under_the_callers_ansi_warnings_off`).
 - **`SYSDATETIME`**, `SYSUTCDATETIME` (`datetime2(7)`), **`GETDATE`**, `GETUTCDATE`, `CURRENT_TIMESTAMP` (`datetime`) and
   `SYSDATETIMEOFFSET` (`datetimeoffset(7)`) are never null (`The_current_date_and_time_functions_are_never_null`).
 - **`DATETRUNC(part, d)`** and **`DATE_BUCKET(part, width, d [, origin])`** of a date or time type: `d`'s type; NULL when `d` or

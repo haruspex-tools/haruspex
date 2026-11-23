@@ -152,6 +152,10 @@ public class IrValidatorTests
         { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07.500-08:00\"", true },
         { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07\"", false },
         { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07+0530\"", false },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07+14:00\"", true },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07-14:00\"", true },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07+14:01\"", false },
+        { IrScalarKind.Datetime, IrFormat.Offset, "\"2026-03-04T05:06:07-14:01\"", false },
         { IrScalarKind.Uuid, null, "\"6F9619FF-8B86-D011-B42D-00C04FC964FF\"", true },
         { IrScalarKind.Uuid, null, "\"6f9619ff-8b86-d011-b42d-00c04fc964ff\"", true },
         { IrScalarKind.Uuid, null, "\"6F9619FF8B86D011B42D00C04FC964FF\"", false },
@@ -184,6 +188,17 @@ public class IrValidatorTests
         Assert.Empty(ValidateRows("""[{"a":{"x":[1]}},{"a":"y"},{"a":null}]""", Field("a", unknown, nullable: true)).Violations);
         Assert.Empty(ValidateRows("""[{"a":1},{}]""", Field("a", unknown, IrPresence.OmittedWhenNull, nullable: true)).Violations);
         Single(ValidateRows("""[{"a":null}]""", Field("a", unknown, IrPresence.OmittedWhenNull, nullable: true)));
+    }
+
+    [Fact]
+    public void Any_json_narrowed_to_an_object_or_array_refuses_a_scalar()
+    {
+        var narrowed = Field("a", new IrAnyJson(ObjectOrArray: true));
+
+        Assert.Empty(ValidateRows("""[{"a":{"x":1}},{"a":[1]}]""", narrowed).Violations);
+        Assert.Equal("1", Single(ValidateRows("""[{"a":1}]""", narrowed)).Value);
+        Assert.Equal("\"x\"", Single(ValidateRows("""[{"a":"x"}]""", narrowed)).Value);
+        Assert.Empty(ValidateRows("""[{"a":1},{"a":"x"}]""", Field("a", new IrAnyJson())).Violations);
     }
 
     // ---- results ------------------------------------------------------------------------------------
@@ -229,6 +244,46 @@ public class IrValidatorTests
         Assert.Equal("results", v.Path);
         Assert.Contains("1 result set", v.Claim, StringComparison.Ordinal);
         Assert.Equal("2", v.Value);
+    }
+
+    [Theory]
+    [InlineData(IrCardinality.One, 0, false)]
+    [InlineData(IrCardinality.One, 1, true)]
+    [InlineData(IrCardinality.One, 2, false)]
+    [InlineData(IrCardinality.AtMostOne, 0, true)]
+    [InlineData(IrCardinality.AtMostOne, 1, true)]
+    [InlineData(IrCardinality.AtMostOne, 2, false)]
+    [InlineData(IrCardinality.Many, 2, true)]
+    public void A_rowset_returns_no_more_rows_than_its_cardinality_allows_and_one_when_it_is_one(IrCardinality cardinality, int rows, bool keeps)
+    {
+        var doc = Doc(RowsetResult("Row") with { Cardinality = cardinality }, ("Row", [Field("a", Scalar(IrScalarKind.String))]));
+
+        var report = IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["a"], [.. Enumerable.Repeat<IReadOnlyList<object?>>(["x"], rows)])]);
+
+        Assert.Equal(keeps, report.Violations.Count == 0);
+        if (!keeps)
+            Assert.Equal("results[0]", Single(report).Path);
+    }
+
+    [Theory]
+    [InlineData(IrCardinality.One, """[{"a":"x"}]""", true)]
+    [InlineData(IrCardinality.One, """[{"a":"x"},{"a":"y"}]""", false)]
+    [InlineData(IrCardinality.One, """{"a":"x"}""", true)]
+    [InlineData(IrCardinality.AtMostOne, """[{"a":"x"}]""", true)]
+    [InlineData(IrCardinality.AtMostOne, """[{"a":"x"},{"a":"y"}]""", false)]
+    [InlineData(IrCardinality.Many, """[{"a":"x"},{"a":"y"}]""", true)]
+    public void A_for_json_result_has_no_more_objects_than_its_cardinality_allows(IrCardinality cardinality, string json, bool keeps)
+    {
+        // Without the array wrapper the result is one object, which is one row. No row at all is an absent result, checked
+        // against its no-rows reason (A_json_result_with_no_rows_is_absent_which_needs_the_no_rows_reason).
+        var type = json.StartsWith('[') ? (IrType)new IrArray(new IrRef("Row")) : new IrRef("Row");
+        var doc = Doc(JsonResult(type) with { Cardinality = cardinality }, ("Row", [Field("a", Scalar(IrScalarKind.String))]));
+
+        var report = IrValidator.Validate(doc, "dbo.p", [Json(json)]);
+
+        Assert.Equal(keeps, report.Violations.Count == 0);
+        if (!keeps)
+            Assert.Contains("one row", Single(report).Claim, StringComparison.Ordinal);
     }
 
     private static readonly IrNullReason NotRun = new(IrNullRule.NotRun, "p.sql:2:1");
