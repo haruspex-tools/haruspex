@@ -42,6 +42,30 @@ public partial class RefinementTests
     }
 
     [Fact]
+    public void A_query_grouped_by_all_is_unknown()
+    {
+        // Group_by_all_returns_a_group_for_every_value_where_rejects_with_null_aggregates: its aggregates may be NULL over a column
+        // never null, WHERE proves nothing of its grouped columns, and a keyed filter doesn't bound its rows. Until that is
+        // modelled, every form that reads such a query is unknown: a result, a subquery, a derived table and an assignment.
+        var doc = Procedure("""
+            SELECT t.n, MAX(t.id) AS top_id FROM dbo.t AS t WHERE t.n IS NOT NULL GROUP BY ALL t.n;
+            SELECT (SELECT COUNT_BIG(*) FROM dbo.t AS t WHERE t.id = 1 GROUP BY ALL t.id) AS c;
+            SELECT d.top_id FROM (SELECT MAX(t.id) AS top_id FROM dbo.t AS t WHERE t.id = 1 GROUP BY ALL t.n) AS d;
+            DECLARE @top int = 0;
+            SELECT @top = MAX(t.id) FROM dbo.t AS t WHERE t.id = 1 GROUP BY ALL t.n;
+            SELECT @top AS top_id;
+            """);
+        Assert.Equal(4, Results(doc).Count);
+        for (var result = 0; result < 3; result++)
+            Assert.True(Results(doc)[result].Type is IrUnknownType || Fields(doc, result).All(f => f.Type is IrUnknownType), $"result {result}");
+        Assert.Equal(3, doc.Unknowns.Count);
+        Assert.All(doc.Unknowns, u => Assert.Equal((IrUnknownReason.UnsupportedQuery, true), (u.Reason, u.Detail.Contains("GROUP BY ALL is not modelled yet", StringComparison.Ordinal))));
+
+        // A variable keeps its declared type; what it was assigned is unknown, so it may be NULL for that.
+        Assert.Contains(IrNullRule.Unknown, Rules(Field(doc, "top_id", 3)));
+    }
+
+    [Fact]
     public void A_where_refines_an_aggregates_argument()
     {
         var doc = Procedure("SELECT MAX(t.name) AS high FROM dbo.t AS t WHERE t.name IS NOT NULL GROUP BY t.n;");

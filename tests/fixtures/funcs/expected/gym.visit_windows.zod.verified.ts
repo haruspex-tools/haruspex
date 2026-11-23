@@ -70,6 +70,7 @@ export const VisitWindowsRowSchema = z.object({
   room_after_next: z.int().min(0).max(255),
   same_room: z.int().min(0).max(255),
   first_room: z.int().min(0).max(255),
+  minutes_before_timed: z.int32().nullable(),
   /**
    * May be null: a window function over a frame that may hold no row is null there (empty-frame).
    * Why: haruspex explain gym.visit_windows next_room

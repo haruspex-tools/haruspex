@@ -794,7 +794,9 @@ to them; the fixture is `kiosk`.
 Of the target type, whatever the style (`Cast_and_convert_are_of_the_target_type_whatever_the_style`); a string type without
 a length is 30 long in `CAST` and `CONVERT`, 1 in a declaration
 (`A_string_type_without_a_length_is_30_long_in_a_cast_and_1_in_a_declaration`); `numeric` alone is `numeric(18,0)`. The characters a style
-writes are not claimed. Null when the operand is, and for `arithmetic-overflow` unless every value of the operand's type fits
+writes are not claimed. Null when the operand is, or the style: a NULL style gives NULL whatever is converted, even an
+`int` into an `int`, where the style means nothing, so `CONVERT(varchar(30), d, @style)` is nullable for `@style`'s reasons, and
+for `null-literal` with the style `NULL` (`A_null_style_makes_convert_and_try_convert_null_whatever_they_convert`). And null for `arithmetic-overflow` unless every value of the operand's type fits
 (`Conversions.Converts`). The rule is a table, `Conversions.Table`, a row for each set of pairs and a condition on their
 arguments (`ConversionCondition`), each row naming the observation tests it rests on, among them
 `Each_conversion_the_table_lists_keeps_every_value_at_the_edges_of_its_types`, which converts every pair a row allows at
@@ -1120,7 +1122,9 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   join's (and that source's row is proved there, as by WHERE), and a ROLLUP's `subtotal-row`. Only values that are the same
   wherever they are read in a row are proved: a column, a variable or parameter (one value throughout an expression), and an
   aggregate of the query being read (computed once per group, so `CASE WHEN SUM(x) IS NULL THEN 0 ELSE SUM(x) END` is never
-  NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. CHOOSE's
+  NULL). A subquery or a call may give another value when read again, so testing one proves nothing about it. A window
+  function that reads another row (`LAG`, `LEAD`, `FIRST_VALUE`, `LAST_VALUE`) reads its value without the branch's proofs of
+  columns, rows and aggregates, which hold only in the current row ("Window functions"). CHOOSE's
   values are not refined: which one is taken is a number, not a condition.
 - **Closed sets.** When every result other than `NULL` is a string literal, or every one a number, the value is one of them,
   exactly: a `values` facet with `match` `exact` and `from` `{ "expression": <location> }`. A literal is `varchar` or
@@ -1347,6 +1351,11 @@ themselves: what a query proved is what its row holds.
   never null, while `SUM` over no rows assigns NULL, for its own reason (`empty-aggregate`), not for one that the
   assignment may not happen. Any other query may assign once per row or not at all, and the variable is joined with what it
   held. A select list of assignments is an aggregate query as one of columns is.
+- `GROUP BY ALL` (deprecated, but still run) returns a group for each value of the grouped columns in every row read, whatever
+  `WHERE` keeps: `WHERE` only chooses the rows the aggregates read. So a group `WHERE` rejected has `MAX` NULL and `COUNT` 0,
+  `WHERE` proves nothing of a grouped column, and a filter fixing a key still gives a row per group
+  (`Group_by_all_returns_a_group_for_every_value_where_rejects_with_null_aggregates`). It is not modelled: a query grouped
+  by it is unknown (`unsupported-query`, `Typer.GroupedByAll`), as a result, a subquery, a derived table or an assignment.
 
 ### How many rows (`Cardinality.cs`)
 
@@ -1782,6 +1791,9 @@ Every rule is observed in `JsonTracingObservationTests`.
 | literal | its exact shape, when it is valid JSON of an object or array |
 | `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` | the join of its arguments' or results' JSON |
 
+- **`json_query … WITH ARRAY WRAPPER`** gives an array of one element: the object or array `json_query` finds, or, at a path, a
+  scalar too, which without the clause is NULL (`Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too`).
+  It is not modelled, so such a call is unknown (`Typer.JsonQueryCall`), never read as the call without it.
 - **Places.** A variable, and a declared column of a table variable, temporary table or multi-statement function's return
   table, of type `nvarchar(max)`, holds JSON as text, escaped where it nests, JSON again under `json_query`
   (`Json_built_here_keeps_its_content_through_variables_and_tables_until_json_query`). A shorter type cuts it short without
@@ -2369,6 +2381,13 @@ holds the current row. Observed in `FunctionObservationTests`.
   the current one's peers (with it) are read, the current row among them
   (`A_frame_that_may_leave_out_the_current_row_can_be_empty_and_give_null_over_a_never_null_column`).
 - **`FIRST_VALUE`**, **`LAST_VALUE`**: the argument, with its facets, and `empty-frame`.
+- **Another row's value.** `FIRST_VALUE`, `LAST_VALUE`, and `LAG` and `LEAD` unless the offset is 0, read their value in another
+  row than the current one, so what a `CASE` or `IIF` branch proved of the current row's columns, rows and aggregates doesn't
+  hold there: `CASE WHEN x IS NOT NULL THEN LAG(x, 1, 0) OVER (ORDER BY id) END` is NULL where the row before has a NULL `x`.
+  A filter (`WHERE`, `ON`, `HAVING`) holds of every row the query keeps, and a variable has one value throughout, so both still
+  hold (`Facts.InAnotherRow`). `LAG`'s offset and default are read in the current row. An aggregate or a percentile skips NULLs
+  over a partition, or a frame, holding the current row, so a branch's proof still holds there
+  (`A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read`).
 - **`LAG(x [, offset [, default]])`**, **`LEAD`**: `x`'s type. Past the partition's edge NULL (`window-edge`), unless a default
   is given (not the `NULL` literal), which is converted to `x`'s type: a long string cut, `1.9` to 1, an overflow an error or
   NULL under the caller's options (`arithmetic-overflow`, unless it fits); with one, only the type's facets hold. A NULL offset

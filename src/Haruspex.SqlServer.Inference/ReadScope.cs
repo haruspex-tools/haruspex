@@ -125,6 +125,10 @@ internal sealed class ReadScope
     public ReadScope InAggregate() =>
         new(Bound, State, Sources, Named, Facts, Query, Aggregating.Add(Query), FoldingMoot, Output, Fetched);
 
+    /// <summary>This scope reading a value of another row than the current one, as <c>LAG</c> does (<see cref="Facts.InAnotherRow"/>).</summary>
+    public ReadScope InAnotherRow() =>
+        new(Bound, State, Sources, Named, Facts.InAnotherRow(), Query, Aggregating, FoldingMoot, Output, Fetched);
+
     /// <summary>This scope reading <paramref name="expression"/> where whether the server folds it does not matter (<see cref="FoldingMoot"/>).</summary>
     public ReadScope FoldingMootAt(TSqlFragment expression) =>
         new(Bound, State, Sources, Named, Facts, Query, Aggregating, expression, Output, Fetched);

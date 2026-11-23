@@ -82,6 +82,50 @@ public partial class FunctionTests
     }
 
     [Fact]
+    public void A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read()
+    {
+        // Observed: A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read. The
+        // value argument is read in another row; LAG's offset and default, a percentile and an aggregate over a frame holding the
+        // current row are read in this one, and a filter or a variable holds in every row.
+        var doc = Procedure("""
+            DECLARE @k int = (SELECT MAX(v) FROM dbo.t);
+            SELECT CASE WHEN v IS NOT NULL THEN LAG(v, 1, 0) OVER (ORDER BY id) ELSE 0 END AS a,
+                   CASE WHEN v IS NOT NULL THEN LEAD(v, 1, 0) OVER (ORDER BY id) ELSE 0 END AS b,
+                   CASE WHEN v IS NOT NULL THEN FIRST_VALUE(v) OVER (ORDER BY id) ELSE 0 END AS c,
+                   IIF(v IS NULL, 0, LAST_VALUE(v) OVER (ORDER BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)) AS d,
+                   CASE WHEN v IS NOT NULL THEN LAG(v, 0) OVER (ORDER BY id) ELSE 0 END AS e,
+                   CASE WHEN v IS NOT NULL THEN LAG(0, 1, v) OVER (ORDER BY id) ELSE 0 END AS f,
+                   CASE WHEN v IS NOT NULL THEN PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY v) OVER () ELSE 0 END AS g2,
+                   CASE WHEN v IS NOT NULL THEN MAX(v) OVER (ORDER BY id) ELSE 0 END AS h,
+                   CASE WHEN @k IS NOT NULL THEN LAG(@k, 1, 0) OVER (ORDER BY id) ELSE 0 END AS i
+            FROM dbo.t;
+            """);
+        Assert.Equal("int nullable-column", Typed(doc, "a"));
+        Assert.Equal("int nullable-column", Typed(doc, "b"));
+        Assert.Equal("int nullable-column", Typed(doc, "c"));
+        Assert.Equal("int nullable-column", Typed(doc, "d"));
+        Assert.Equal("int", Typed(doc, "e"));
+        Assert.Equal("int", Typed(doc, "f"));
+        Assert.Equal("int", Typed(doc, "g2"));
+        Assert.Equal("int", Typed(doc, "h"));
+        Assert.Equal("int", Typed(doc, "i"));
+
+        // An aggregate a branch proves is the current group's; the previous group's may be NULL.
+        var grouped = Procedure("SELECT g, CASE WHEN MAX(v) IS NOT NULL THEN LAG(MAX(v), 1, 0) OVER (ORDER BY g) ELSE 0 END AS a FROM dbo.t GROUP BY g;");
+        Assert.StartsWith("int nullable-column", Typed(grouped, "a"), StringComparison.Ordinal);
+
+        // A filter holds of every row the query keeps, so of every row a window reads.
+        var filtered = Procedure("""
+            SELECT LAG(v, 1, 0) OVER (ORDER BY id) AS a, FIRST_VALUE(v) OVER (ORDER BY id) AS b,
+                   CASE WHEN v > 0 THEN LEAD(v, 1, 0) OVER (ORDER BY id) ELSE 0 END AS c
+            FROM dbo.t WHERE v IS NOT NULL;
+            """);
+        Assert.Equal("int", Typed(filtered, "a"));
+        Assert.Equal("int", Typed(filtered, "b"));
+        Assert.Equal("int", Typed(filtered, "c"));
+    }
+
+    [Fact]
     public void First_and_last_value_and_percentiles()
     {
         // A_frame_that_may_leave_out_the_current_row_can_be_empty_…; Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input.

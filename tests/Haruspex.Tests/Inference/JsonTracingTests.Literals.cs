@@ -24,6 +24,19 @@ public partial class JsonTracingTests
     }
 
     [Theory]
+    // Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too: an array, never the object
+    // json_query gives without the clause, so until it is modelled the call is unknown, with a path or without.
+    [InlineData("json_query(json_object('a': 1) WITH ARRAY WRAPPER)")]
+    [InlineData("""json_query(N'{"a":1}' WITH ARRAY WRAPPER)""")]
+    [InlineData("""json_query(N'{"a":{"b":1}}', '$.a' WITH ARRAY WRAPPER)""")]
+    public void Json_query_with_array_wrapper_is_unknown(string call)
+    {
+        var doc = Infer($"SELECT {call} AS x FOR JSON PATH;");
+
+        Assert.Contains("WITH ARRAY WRAPPER", Unknown(doc, "x").Detail, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("'1'", "bare JSON scalar")]
     [InlineData("'null'", "bare JSON scalar")]
     [InlineData("''", "not valid JSON")]

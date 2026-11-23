@@ -16,8 +16,10 @@ namespace Haruspex.SqlServer.Inference;
 /// A filter and a branch prove different things, which <see cref="Proof"/> keeps apart. A filter proves a column non-null
 /// wherever its source's row is there, so an outer join around the query may still null-extend it; a branch tested the
 /// value itself, in the same row after any grouping, so a column it proves is non-null whatever else made it nullable
-/// (observed: A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not). Sources are
-/// compared by reference, since two sources of one table in two scopes are equal as records.
+/// (observed: A_case_branch_runs_only_when_its_condition_is_true_and_later_ones_only_when_earlier_were_not), but only as read
+/// from that row: a window function that reads another row (<c>LAG</c>, <c>FIRST_VALUE</c>) reads it under
+/// <see cref="InAnotherRow"/>. Sources are compared by reference, since two sources of one table in two scopes are equal as
+/// records.
 /// </remarks>
 internal sealed class Facts
 {
@@ -46,6 +48,15 @@ internal sealed class Facts
 
     /// <summary>These facts and what <paramref name="found"/> proves: for reading a query's select list, or a branch.</summary>
     public Facts With(Found found) => found.AddedTo(this);
+
+    /// <summary>
+    /// These facts where a value is read from another row of the query's result than the one being read: the argument of
+    /// <c>LAG</c>, <c>LEAD</c>, <c>FIRST_VALUE</c> and <c>LAST_VALUE</c>. A filter holds of every row the query keeps, so of
+    /// every row a window reads, and a variable has one value throughout the statement; but a branch tested its columns, rows
+    /// and aggregates in the current row only, so those proofs are dropped (observed:
+    /// A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read).
+    /// </summary>
+    public Facts InAnotherRow() => new([.. frames.Select(f => f.Strength == Proof.OfTheValue ? f.OfVariablesOnly() : f)]);
 
     /// <summary>How strongly a column, by its source and key among the source's columns, is proved non-null.</summary>
     public Proof Proved(BoundSource source, ColumnKey key) =>
@@ -110,6 +121,17 @@ internal sealed class Facts
         public ImmutableHashSet<LocalName> Variables { get; } = variables;
 
         public ImmutableHashSet<AggregateKey> Aggregates { get; } = aggregates;
+
+        /// <summary>This frame with only what it proves of variables, which hold the same value in every row.</summary>
+        public Frame OfVariablesOnly() => new(
+            Strength,
+            Query,
+            Own,
+            Rolled,
+            ImmutableDictionary.Create<BoundSource, ImmutableHashSet<ColumnKey>>(ReferenceEqualityComparer.Instance),
+            ImmutableHashSet.Create<BoundSource>(ReferenceEqualityComparer.Instance),
+            Variables,
+            []);
     }
 
     /// <summary>

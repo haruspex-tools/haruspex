@@ -159,8 +159,17 @@
           "minimum": 0,
           "maximum": 255
         },
+        "minutes_before_timed": {
+          "description": "SQL type int. May be null: nullable-column (gym.visit.minutes).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
         "next_room": {
-          "description": "SQL type tinyint. May be null: empty-frame (procedures/visit_windows.sql:23:8). May be null: a window function over a frame that may hold no row is null there (empty-frame). Why: haruspex explain gym.visit_windows next_room",
+          "description": "SQL type tinyint. May be null: empty-frame (procedures/visit_windows.sql:24:8). May be null: a window function over a frame that may hold no row is null there (empty-frame). Why: haruspex explain gym.visit_windows next_room",
           "type": [
             "integer",
             "null"
@@ -212,6 +221,7 @@
         "room_after_next",
         "same_room",
         "first_room",
+        "minutes_before_timed",
         "next_room",
         "median_minutes",
         "median_room",

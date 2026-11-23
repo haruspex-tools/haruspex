@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/visit_windows.sql": "5b617854218b3225a806d9adfdc75e9a35fbdee398f8d998d33576987475aa41",
+      "procedures/visit_windows.sql": "e7a49b378a1759c6af6dda27cd4d11a20173c8450a31b96c98640e4517cd68b9",
       "tables/visit.sql": "29d53ac2ea982602701c5a3ba25e90a8dea3ffb23be4ebc2e6b0b4e497262616"
     }
   },
@@ -690,6 +690,43 @@
           ]
         },
         {
+          "name": "minutes_before_timed",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "gym.visit.minutes"
+            }
+          ],
+          "from": [
+            {
+              "column": "gym.visit.minutes",
+              "sql": "int",
+              "at": "tables/visit.sql:5:5"
+            }
+          ]
+        },
+        {
           "name": "next_room",
           "type": {
             "kind": "number",
@@ -715,7 +752,7 @@
           "nullableBecause": [
             {
               "rule": "empty-frame",
-              "at": "procedures/visit_windows.sql:23:8"
+              "at": "procedures/visit_windows.sql:24:8"
             }
           ],
           "from": [

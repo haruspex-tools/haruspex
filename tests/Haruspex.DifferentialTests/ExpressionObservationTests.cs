@@ -134,6 +134,21 @@ public partial class ExpressionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_null_style_makes_convert_and_try_convert_null_whatever_they_convert()
+    {
+        // A NULL style, from a variable or the literal, gives NULL whatever is converted: a date into text, text into text, an int
+        // into an int, where the style means nothing, JSON built here and text converted into json. A literal style gives the text.
+        Assert.Equal(
+            "a,b,c,d,e,f,g,h,k,l: null,null,null,null,null,null,null,2026-01-02 03:04:05,null,null",
+            (await Run("""
+                DECLARE @s int = NULL, @d datetime2(0) = '2026-01-02T03:04:05';
+                SELECT CONVERT(varchar(30), @d, @s) AS a, TRY_CONVERT(varchar(30), @d, @s) AS b, CONVERT(varchar(30), N'x', @s) AS c,
+                       CONVERT(int, 5, @s) AS d, TRY_CONVERT(int, 5, @s) AS e, CONVERT(varchar(30), @d, NULL) AS f, CONVERT(varbinary(4), 'ab', NULL) AS g,
+                       CONVERT(varchar(30), @d, 120) AS h, CONVERT(nvarchar(max), (SELECT 1 AS a FOR JSON PATH), @s) AS k, CONVERT(json, (SELECT 1 AS a FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), @s) AS l;
+                """)).ToString());
+    }
+
+    [Fact]
     public async Task An_overflow_is_an_error_by_default_and_null_under_the_callers_ansi_warnings_and_arithabort_off()
     {
         // A conversion that overflows, integer arithmetic past its type, a division by zero and a SUM past its type fail the
