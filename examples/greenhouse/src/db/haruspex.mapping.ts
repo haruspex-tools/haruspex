@@ -10,12 +10,12 @@
 type Decision = 'used' | `ignored: ${string}`
 
 /**
- * The variants of V whose keys a mapper accounts for: its objects, inside any lists and as a record's values, except a Date,
- * which is a value.
+ * The variants of V whose keys a mapper accounts for: its objects, inside any lists and as a record's values, except a Date
+ * and a binary value's Buffer (a Uint8Array), which are values.
  */
 type Objects<V> = V extends readonly (infer Item)[]
   ? Objects<Item>
-  : V extends Date
+  : V extends Date | Uint8Array
     ? never
     : V extends object
       ? string extends keyof V
@@ -68,7 +68,7 @@ type Narrowed<V, A> = V extends (infer Item)[]
   ? Narrowed<Item, A>[]
   : V extends readonly (infer Item)[]
     ? readonly Narrowed<Item, A>[]
-    : V extends Date
+    : V extends Date | Uint8Array
       ? V
       : V extends object
         ? string extends keyof V
