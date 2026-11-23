@@ -53,7 +53,7 @@ internal sealed record ScriptFile(string Path, string Relative, ScriptSettings S
 
     /// <summary>
     /// The script as ScriptDom parses it with the SQL Server 2025 grammar, from its text as the server would receive it from
-    /// sqlcmd; null when it doesn't parse, with each error added to <paramref name="diagnostics"/>, or can't be read (a link to
+    /// sqlcmd, each batch with the <c>QUOTED_IDENTIFIER</c> in force there (<see cref="ScriptParser"/>); null when it doesn't parse, with each error added to <paramref name="diagnostics"/>, or can't be read (a link to
     /// nothing, a file the user may not open, one another process holds), which is an error of the input, not of haruspex.
     /// </summary>
     public TSqlScript? Parse(ICollection<Diagnostic> diagnostics)
@@ -71,16 +71,8 @@ internal sealed record ScriptFile(string Path, string Relative, ScriptSettings S
             return null;
         }
 
-        // What the server would receive from sqlcmd, which an install script written for it needs.
-        using var reader = new StringReader(SqlcmdVariables.Substitute(text));
-
-        // The SQL Server 2025 grammar, with QUOTED_IDENTIFIER as the script starts with it, which decides whether "x" is a name.
-        var parser = new TSql170Parser(initialQuotedIdentifiers: Settings.QuotedIdentifier);
-        var fragment = parser.Parse(reader, out var errors);
-
-        // A parse error is a position the parser gives, not a fragment: the one place a location is made from a line and column.
-        foreach (var error in errors)
-            diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, new SourceLocation(Relative, error.Line, error.Column)));
-        return errors.Count == 0 ? fragment as TSqlScript : null;
+        // What the server would receive from sqlcmd, which an install script written for it needs, parsed batch by batch with
+        // QUOTED_IDENTIFIER as the script starts with it and as each SET in it leaves it, which decides whether "x" is a name.
+        return ScriptParser.Parse(SqlcmdVariables.Substitute(text), Relative, Settings.QuotedIdentifier, diagnostics);
     }
 }

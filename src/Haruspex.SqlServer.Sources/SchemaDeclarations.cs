@@ -51,8 +51,17 @@ internal sealed class SchemaDeclarations
     /// <summary>Each script's definition of each view, in the order read.</summary>
     public Dictionary<ObjectName, List<ViewDefinition>> Views { get; } = [];
 
-    /// <summary>The synonyms; of two of one name, the first read.</summary>
+    /// <summary>
+    /// The synonyms, each as its script leaves it (a synonym dropped and created again is its last <c>CREATE</c>); a second
+    /// definition of one name is reported (<see cref="Define{T}"/>).
+    /// </summary>
     public Dictionary<ObjectName, Synonym> Synonyms { get; } = [];
+
+    /// <summary>
+    /// Every <c>CREATE SYNONYM</c> that isn't a batch's own statement, read wherever it is: under <c>IF</c>, in a block or in a body,
+    /// or in a deployment script. Whether it runs isn't knowable, so it may (<see cref="SettleSynonyms"/>).
+    /// </summary>
+    public List<Synonym> ConditionalSynonyms { get; } = [];
 
     /// <summary>Every definition of every DML trigger, in the order read.</summary>
     public List<Trigger> Triggers { get; } = [];
@@ -126,6 +135,67 @@ internal sealed class SchemaDeclarations
         }
     }
 
+    /// <summary>
+    /// The synonyms the model holds, once every script is read; the first call reports what it finds, so it is made before a
+    /// read gathers its diagnostics. A synonym is the definition its batches leave. A <c>CREATE SYNONYM</c> that may run
+    /// (<see cref="ConditionalSynonyms"/>) and names another target leaves which target stands unknown: it is reported as a second
+    /// definition (HAR1002, which stops the run), as a <c>CREATE</c> after a drop that may not run is, and the synonym is left out.
+    /// One that only such statements create, all of them with one target, is that target: if none runs there is no synonym, and a
+    /// read through it fails rather than reads another object
+    /// (<c>docs/decisions/0112-a-script-is-parsed-as-the-server-parses-each-batch.md</c>).
+    /// </summary>
+    public IReadOnlyList<Synonym> SettleSynonyms()
+    {
+        if (synonymsInEffect is { } settled)
+            return settled;
+
+        var result = new List<Synonym>();
+        var conditional = ConditionalSynonyms.GroupBy(s => s.Name).ToDictionary(g => g.Key, g => g.ToList());
+        foreach (var synonym in Synonyms.Values)
+        {
+            var others = conditional.Remove(synonym.Name, out var created) ? created : [];
+            if (Reported(synonym, others))
+                result.Add(synonym);
+        }
+
+        foreach (var created in conditional.Values)
+        {
+            if (Reported(created[0], created.Skip(1)))
+                result.Add(created[0]);
+        }
+
+        return synonymsInEffect = result;
+    }
+
+    /// <summary>The synonyms <see cref="SettleSynonyms"/> settled, or null before it is called.</summary>
+    private List<Synonym>? synonymsInEffect;
+
+    /// <summary>
+    /// Whether every one of <paramref name="others"/> stands for what <paramref name="standing"/> does; each that doesn't is reported
+    /// where it is.
+    /// </summary>
+    private bool Reported(Synonym standing, IEnumerable<Synonym> others)
+    {
+        var agree = true;
+        foreach (var other in others.Where(o => !SameTarget(o.For, standing.For)))
+        {
+            Diagnostics.Add(new Diagnostic(
+                SourceCodes.DefinedTwice,
+                $"{other.Name} may be created again here, for {other.For} rather than {standing.For}, by a statement that may not run, so which definition stands isn't known.",
+                other.Span.Start));
+            agree = false;
+        }
+
+        return agree;
+    }
+
+    /// <summary>Whether two synonyms stand for the same name, compared part by part as SQL Server compares names, ignoring case.</summary>
+    private static bool SameTarget(SynonymTarget one, SynonymTarget other) =>
+        string.Equals(one.Server, other.Server, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(one.Database, other.Database, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(one.Schema, other.Schema, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(one.Name, other.Name, StringComparison.OrdinalIgnoreCase);
+
     private static List<Change<T>> Changes<T>(Dictionary<ObjectName, List<Change<T>>> changes, ObjectName name)
         where T : Module
     {
@@ -149,7 +219,7 @@ internal sealed class SchemaDeclarations
             DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }, alterAloneStands: false)
                 .Select(f => f.Redefinition is null && deployed(f.Name) is { } why ? f with { Redefinition = why } : f),
             DefinitionsInEffect.Views(Views).Select(v => v.Redefinition is null && deployed(v.Name) is { } why ? v with { Redefinition = why } : v),
-            Synonyms.Values,
+            SettleSynonyms(),
             Triggers,
             CascadingKeys,
             [.. TableChanges.Values, .. DefinitionsInEffect.TablesChangedAfter(Tables, TableChanges, PeriodDrops, UnreadDeployments)])

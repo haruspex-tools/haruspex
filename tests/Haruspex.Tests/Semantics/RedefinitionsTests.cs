@@ -24,6 +24,7 @@ public class RedefinitionsTests
         [RedefiningStatement.CreateFunction] = "CREATE FUNCTION",
         [RedefiningStatement.CreateOrAlterFunction] = "CREATE OR ALTER FUNCTION",
         [RedefiningStatement.UnreadScript] = "a deployment script that can't be read",
+        [RedefiningStatement.DropSynonym] = "DROP SYNONYM",
     };
 
     public static TheoryData<RedefiningStatement> Statements { get; } = [.. Enum.GetValues<RedefiningStatement>()];

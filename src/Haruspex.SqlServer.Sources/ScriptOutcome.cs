@@ -7,7 +7,7 @@ namespace Haruspex.SqlServer.Sources;
 /// What one script leaves of an object it names (<see cref="ScriptDefinitions{T}"/>): a definition it made, one it only altered
 /// from what stood before it, or none.
 /// </summary>
-/// <typeparam name="T">A procedure, a function, or a view's definition.</typeparam>
+/// <typeparam name="T">A procedure, a function, a view's definition, or a synonym.</typeparam>
 /// <param name="Name">The object.</param>
 /// <param name="Standing">The definition that stands once the script has run, or null when it leaves none.</param>
 /// <param name="At">Where <paramref name="Standing"/> is; null with it.</param>

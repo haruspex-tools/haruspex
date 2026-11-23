@@ -8,7 +8,7 @@ namespace Haruspex.SqlServer.Sources;
 /// <summary>
 /// Reads one parsed script into what the folder's scripts declare: each definition it makes, each statement that changes
 /// one later, and each statement that may disable or drop a constraint. It applies only its own order, to the procedures,
-/// functions and views it names (<see cref="ScriptDefinitions{T}"/>); the passes after every script is read
+/// functions, views and synonyms it names (<see cref="ScriptDefinitions{T}"/>); the passes after every script is read
 /// (<see cref="DefinitionsInEffect"/>, <see cref="ConstraintTrust"/>) settle what the model says.
 /// </summary>
 /// <remarks>
@@ -39,6 +39,9 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// <summary>The views this script defines, alters or drops, played in its order.</summary>
     private readonly ScriptDefinitions<ViewDefinition> views = new(into.Diagnostics);
 
+    /// <summary>The synonyms this script creates or drops, played in its order; there is no <c>ALTER SYNONYM</c>.</summary>
+    private readonly ScriptDefinitions<Synonym> synonyms = new(into.Diagnostics);
+
     /// <summary>A script that starts with the default settings, as a folder's does.</summary>
     public ScriptReader(string file, SchemaDeclarations into)
         : this(file, into, ScriptSettings.Default)
@@ -60,6 +63,26 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         into.Settle(procedures.Outcomes, into.Procedures, into.ProcedureChanges);
         into.Settle(functions.Outcomes, into.Functions, into.FunctionChanges);
         into.Settle(views.Outcomes);
+        SettleSynonyms();
+    }
+
+    /// <summary>
+    /// What the script leaves of each synonym it names. One it creates is defined, and a second from another script is reported,
+    /// as which of the two runs last a folder doesn't say. One it creates again after a drop that may not run is reported too: a
+    /// synonym has no record of a doubt (<see cref="Redefinition"/> is a module's or a table's), so the read stops rather than pick
+    /// one of the two targets. A drop of one another script creates is passed over: whichever runs first, a reference through the
+    /// synonym reads that script's target or fails because there is none, and never reads another.
+    /// </summary>
+    private void SettleSynonyms()
+    {
+        foreach (var outcome in synonyms.Outcomes)
+        {
+            if (outcome is not { Standing: { } made, Established: true, At: { } at })
+                continue;
+            into.Define(into.Synonyms, outcome.Name, made, at);
+            if (outcome.Why is { } doubt)
+                into.Diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{outcome.Name} is created again after a drop that may not run, so which definition stands isn't known.", doubt.At));
+        }
     }
 
     /// <summary>One statement of a batch: what it defines or changes, by kind, one reader each.</summary>
@@ -107,7 +130,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 var alteredFunction = ModuleReader.Function(alter, file) with { AnsiNullsOff = ansiNullsOff };
                 functions.Alter(alteredFunction.Name, alteredFunction, At(alter), Changed(alteredFunction.Name, RedefiningStatement.AlterFunction, alter));
                 break;
-            case DropProcedureStatement or DropFunctionStatement or DropViewStatement:
+            case DropProcedureStatement or DropFunctionStatement or DropViewStatement or DropSynonymStatement:
                 ReadModuleDrop((DropObjectsStatement)statement, certain: true);
                 break;
             case IfStatement { ElseStatement: null } guarded:
@@ -118,7 +141,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 break;
             case CreateSynonymStatement synonym:
                 var standsFor = ModuleReader.Synonym(synonym, file);
-                into.Synonyms.TryAdd(standsFor.Name, standsFor);
+                synonyms.Create(standsFor.Name, standsFor, At(synonym), orAlter: false);
                 break;
             case TriggerStatementBody trigger when ModuleReader.Trigger(trigger, file) is { } dml:
                 into.Triggers.Add(dml);
@@ -127,7 +150,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// A <c>DROP PROCEDURE</c>, <c>DROP FUNCTION</c> or <c>DROP VIEW</c> of one or more objects, with or without <c>IF EXISTS</c>:
+    /// A <c>DROP PROCEDURE</c>, <c>DROP FUNCTION</c>, <c>DROP VIEW</c> or <c>DROP SYNONYM</c> of one or more objects, with or without <c>IF EXISTS</c>:
     /// <paramref name="certain"/> when it runs whenever each exists.
     /// </summary>
     /// <param name="drop">The statement.</param>
@@ -149,6 +172,9 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 case DropViewStatement:
                     views.Drop(name, Changed(name, RedefiningStatement.DropView, drop), certain, type is null ? null : _ => Is("V"));
                     break;
+                case DropSynonymStatement:
+                    synonyms.Drop(name, Changed(name, RedefiningStatement.DropSynonym, drop), certain, type is null ? null : _ => Is("SN"));
+                    break;
             }
         }
     }
@@ -167,7 +193,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     };
 
     /// <summary>
-    /// The drops of procedures, functions and views an <c>IF</c> with no <c>ELSE</c> makes, alone or in a block. Under
+    /// The drops of procedures, functions, views and synonyms an <c>IF</c> with no <c>ELSE</c> makes, alone or in a block. Under
     /// <c>IF OBJECT_ID(N'name') IS NOT NULL</c> naming the object it drops, the drop runs whenever the object exists, as an
     /// unconditional one does (observed: A_procedure_dropped_and_created_again_runs_its_last_create); under any other condition
     /// it may not run. What else under an <c>IF</c> weakens a claim is <see cref="WeakeningStatements"/>'s.
@@ -176,7 +202,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     {
         IEnumerable<TSqlStatement> then = guarded.ThenStatement is BeginEndBlockStatement block ? block.StatementList.Statements : [guarded.ThenStatement];
         var exists = Existence(guarded.Predicate);
-        foreach (var drop in then.OfType<DropObjectsStatement>().Where(d => d is DropProcedureStatement or DropFunctionStatement or DropViewStatement))
+        foreach (var drop in then.OfType<DropObjectsStatement>().Where(d => d is DropProcedureStatement or DropFunctionStatement or DropViewStatement or DropSynonymStatement))
         {
             // An unqualified name means the caller's default schema in both, which needn't be dbo, so both must say the same.
             var certain = exists is { } tested && drop.Objects is [var target]

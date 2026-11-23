@@ -50,4 +50,7 @@ public enum RedefiningStatement
 
     /// <summary>A deployment script that can't be read in full, and names the object: what it does to it isn't known.</summary>
     UnreadScript,
+
+    /// <summary><c>DROP SYNONYM</c>: within its script, where a <c>CREATE SYNONYM</c> after it makes the synonym again.</summary>
+    DropSynonym,
 }

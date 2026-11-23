@@ -127,10 +127,14 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   declares, and an unqualified name may mean another table. A CHECK it adds is not read, which only claims less. A procedure, function or view is the
   definition that stands once its script has run, read in batch order (`ScriptDefinitions`): a stub created and then altered is
   its `ALTER`, one dropped and created again its last `CREATE` (decision 0080); one that two scripts define or change records the
-  second as a `Redefinition`. A synonym keeps the name it stands for. Every
+  second as a `Redefinition`. A synonym keeps the name it stands for, read in batch order too: one dropped and created again is
+  its last `CREATE`, and one two scripts create, or one created again after a drop that may not run, is HAR1002 (decision 0112); one that a `CREATE SYNONYM` under `IF`, in a block
+  or a body, or in a deployment script may move to another target is HAR1002 too. Every
   object keeps where it was read (`SourceSpan`).
 - **Settings a definition keeps are kept.** A procedure, function or view records whether `SET ANSI_NULLS OFF` came before
-  it in its file, since SQL Server keeps the setting it was created with.
+  it in its file, since SQL Server keeps the setting it was created with. Each batch is parsed with the `QUOTED_IDENTIFIER` the
+  server has where it starts, as every `SET` before it leaves it (`ScriptParser`, decision 0112), so `"x"` after `SET
+  QUOTED_IDENTIFIER OFF` is a string.
 - **Problems have a place.** Parse errors and objects defined twice are reported as diagnostics, with their file, line and
   column.
 - **Every statement that weakens a claim is read, wherever it is.** A `NOCHECK`, a bulk load without `CHECK_CONSTRAINTS`, a key
