@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/brief_or_full.sql": "cbe62a6bdb8ea8ef583b192b85450ca13b81d9a6d04335e78ba415c581982e2c",
+      "procedures/brief_or_full.sql": "904abe20283563c80b6f01db77ff25a18281714caf7aed20da3860fdc2b3e6f9",
       "tables/sale.sql": "c87c83debae4b14e62515c5987261f3306bcc27e4ec815d00fb5742f431c782a",
       "tables/shop.sql": "589a7bd3d641e7bd1818a947b160649b8db7f5a48754f5fe67f419d5bbaf8a49"
     }

@@ -9,5 +9,5 @@ deletes every shop, so the result is seen null.
 
 | Procedure | Covers |
 |---|---|
-| `bake.brief_or_full` | the brief branch first (each sale's id), then the full one (its id and loaves): the brief variant refuses `loaves` in its nested sales, so a full object reaches the full variant and keeps them |
+| `bake.brief_or_full` | the short branch first (each sale's id), then the full one (its id and loaves): the short variant refuses `loaves` in its nested sales, so a full object reaches the full variant and keeps them |
 | `bake.full_or_brief` | the same branches the other way round, so that neither order loses a key |

@@ -1,5 +1,5 @@
--- Two branches returning JSON objects of the same keys, whose nested sales differ: the brief branch's have only an id, the full
--- branch's the loaves as well. The Zod must keep a full object's loaves, though the brief variant comes first and its objects
+-- Two branches returning JSON objects of the same keys, whose nested sales differ: the short branch's have only an id, the full
+-- branch's the loaves as well. The Zod must keep a full object's loaves, though the short variant comes first and its objects
 -- have the same keys. bake.full_or_brief has the branches the other way round.
 CREATE PROCEDURE bake.brief_or_full
     @full bit = 0
