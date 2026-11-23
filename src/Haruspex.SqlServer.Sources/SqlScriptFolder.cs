@@ -66,7 +66,9 @@ public static class SqlScriptFolder
             declarations.Diagnostics.Add(SourceCodes.UnreadableScript.At(new FileLocation(directory), $"The folder can't be listed, so no script in it is read: {unexpanded}."));
 
         ReadInto(declarations, ScriptFile.InOrder(root, (listed ?? []).Select(path => Path.GetRelativePath(root, path)), listed: true));
-        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
+        // The model first: settling it reports what only every script together shows (SchemaDeclarations.SettleSynonyms).
+        var model = declarations.ToModel();
+        return new SchemaReadResult(model, [.. declarations.Diagnostics]);
     }
 
     /// <summary>A folder under the one read, as a person would name it from there.</summary>
@@ -91,7 +93,9 @@ public static class SqlScriptFolder
         // Three steps: which scripts, in which order; what each declares; and the passes that settle what is in effect.
         var declarations = new SchemaDeclarations();
         ReadInto(declarations, ScriptFile.InOrder(directory, files));
-        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
+        // The model first: settling it reports what only every script together shows (SchemaDeclarations.SettleSynonyms).
+        var model = declarations.ToModel();
+        return new SchemaReadResult(model, [.. declarations.Diagnostics]);
     }
 
     /// <summary>

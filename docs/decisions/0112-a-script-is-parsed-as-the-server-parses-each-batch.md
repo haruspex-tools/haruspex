@@ -36,9 +36,9 @@ whichever runs first, a reference through it reads the one target or fails becau
 **A synonym created where it may run.** A `CREATE SYNONYM` under `IF`, in a block, in a procedure's body or in a deployment
 script moves the synonym when it runs (observed), and whether it runs isn't knowable. When every such statement names the
 target the model has, or the model has none and they all name one, that target stands: if none runs, a read through the name
-fails rather than reads another object. When one names another target, the synonym is left out of the model, so a read through
-it is unresolved rather than typed from one of the two. A diagnostic would be better, but the passes that settle this run after
-a project's diagnostics are gathered; an unknown with a reason is sound meanwhile.
+fails rather than reads another object. When one names another target, which stands isn't known: it is HAR1002 at that
+`CREATE`, as a `CREATE` after a drop that may not run is, and the synonym is left out of the model. The pass that finds it runs
+once every script is read, before a read gathers its diagnostics (`SchemaDeclarations.SettleSynonyms`).
 
 **Context.** Audit run 1's F004 and F009. Folders of scripts SSMS generated for old procedures are where `QUOTED_IDENTIFIER` is
 off and `"…"` holds strings, and the whole file was parsed with it on: a string that happened to name a column was typed as

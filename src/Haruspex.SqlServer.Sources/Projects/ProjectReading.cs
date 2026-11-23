@@ -131,6 +131,7 @@ internal sealed class ProjectReading
         // Each project's deployment scripts, for what they change once the model is deployed, as a package's are.
         foreach (var script in deployment)
             DeploymentScripts.ReadFile(script, folder, declarations);
+        declarations.SettleSynonyms();
         diagnostics.AddRange(declarations.Diagnostics);
 
         // What the database lacks, once however many refer to it, naming each.

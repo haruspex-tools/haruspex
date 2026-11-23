@@ -309,13 +309,15 @@ public class DefinitionsInEffectTests
     [InlineData("if @@servername = N'x' begin drop synonym shop.bin; create synonym shop.bin for shop.bin_large; end")]
     [InlineData("create procedure shop.move_bins as drop synonym shop.bin; create synonym shop.bin for shop.bin_large;")]
     [InlineData("begin try create synonym shop.bin for shop.bin_large; end try begin catch select 1 as failed; end catch")]
-    public void A_synonym_a_statement_that_may_run_creates_for_another_target_is_left_out(string move)
+    public void A_synonym_a_statement_that_may_run_creates_for_another_target_is_defined_twice(string move)
     {
         // Observed: A_synonym_created_in_a_body_stands_for_the_body_s_target. Which target stands isn't known, and a synonym has no
-        // record of a doubt, so a name read through it is unresolved.
+        // record of a doubt, so the read stops, as for a CREATE after a drop that may not run, and the synonym is left out.
         var read = Read(("bin.sql", $"{SmallBins}\nGO\n{move}"));
 
-        Assert.Empty(read.Diagnostics);
+        var twice = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DefinedTwice, twice.Code);
+        Assert.Equal(3, Assert.IsType<SourceLocation>(twice.At).Line);
         Assert.Empty(read.Model.Synonyms);
     }
 
@@ -338,7 +340,9 @@ public class DefinitionsInEffectTests
         var read = Read(("bin.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_small;"));
         var two = Read(("a.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_small;"), ("b.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_large;"));
 
+        Assert.Empty(read.Diagnostics);
         Assert.Equal("shop.bin_small", Target(read));
+        Assert.Equal(SourceCodes.DefinedTwice, Assert.Single(two.Diagnostics).Code);
         Assert.Empty(two.Model.Synonyms);
     }
 }

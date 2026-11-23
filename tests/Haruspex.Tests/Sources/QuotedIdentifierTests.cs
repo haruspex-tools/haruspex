@@ -97,7 +97,7 @@ public class QuotedIdentifierTests
     [Theory]
     [InlineData("ALTER DATABASE CURRENT SET QUOTED_IDENTIFIER OFF;")]
     [InlineData("ALTER DATABASE [pottery] SET QUOTED_IDENTIFIER OFF WITH NO_WAIT;")]
-    [InlineData("ALTER DATABASE pottery SET ANSI_NULLS ON, QUOTED_IDENTIFIER OFF;")]
+    [InlineData("ALTER DATABASE pottery SET QUOTED_IDENTIFIER OFF, ANSI_NULLS ON;")]
     public void Altering_the_database_s_default_changes_nothing_a_connection_has_set(string set)
     {
         // Observed with sqlcmd, which sets the option when it connects: ALTER DATABASE can't run in the differential tests'

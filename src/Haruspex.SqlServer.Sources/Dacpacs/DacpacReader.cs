@@ -41,6 +41,7 @@ public static class DacpacReader
         var own = new SchemaDeclarations();
         var others = new Dictionary<string, DacPackage>(StringComparer.OrdinalIgnoreCase);
         var unread = packages.ReadInto(own, [root], others);
+        own.SettleSynonyms();
         diagnostics.AddRange(own.Diagnostics);
 
         // Each other database the package refers to, read with the packages of its own database; its references to a third
@@ -68,6 +69,7 @@ public static class DacpacReader
     {
         var declarations = new SchemaDeclarations();
         var unread = packages.ReadInto(declarations, [root], null, quiet: name.Equals(Master, StringComparison.OrdinalIgnoreCase));
+        declarations.SettleSynonyms();
         diagnostics.AddRange(declarations.Diagnostics);
         return declarations.ToModel(PackageReader.Settings(root), unread);
     }
