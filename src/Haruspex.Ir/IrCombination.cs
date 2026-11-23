@@ -126,12 +126,12 @@ public static partial class IrCombination
                 Unknowns(objects))
             {
                 Overrides = [.. candidate.Overrides.Where(o => kept.Contains(o.Object))],
-                Folds = Folds(types, objects),
                 TableTypes = TableTypes(objects),
 
                 // Both documents are read with one config file, so the candidate's declarations are the application's.
                 Columns = candidate.Columns,
             };
+            document = document with { Folds = Folds(document) };
             return new IrCombined(document, [.. findings.Distinct().OrderBy(f => f.Object, StringComparer.Ordinal)]);
         }
 

@@ -1,0 +1,20 @@
+// The runs of the bakehouse fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means.
+{
+  // The fixture is about which union variant keeps a value's keys, not about scalar facts, so the seed is not held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "no shops": "DELETE FROM bake.sale; DELETE FROM bake.shop;"
+  },
+
+  // Each procedure is run down both branches, so the full objects reach whichever variant comes first.
+  "runs": [
+    { "name": "brief_or_full, brief", "procedure": "bake.brief_or_full" },
+    { "name": "brief_or_full, full", "procedure": "bake.brief_or_full", "parameters": { "@full": true } },
+    { "name": "brief_or_full, no shops", "procedure": "bake.brief_or_full", "parameters": { "@full": true }, "setup": "no shops" },
+    { "name": "full_or_brief, full", "procedure": "bake.full_or_brief" },
+    { "name": "full_or_brief, brief", "procedure": "bake.full_or_brief", "parameters": { "@full": false } },
+    { "name": "full_or_brief, no shops", "procedure": "bake.full_or_brief", "setup": "no shops" }
+  ]
+}

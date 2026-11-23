@@ -141,6 +141,9 @@ npm install zod@4.6.7
 npm pkg set type=module
 ```
 
+The module needs zod 4.6.7 or a later 4.x: an earlier release of Zod 4 may count a string's length in UTF-16 code units rather
+than code points, and refuse a value the database returns.
+
 Save this as `check.ts` beside the module:
 
 ```ts haruspex-start check.ts

@@ -1,0 +1,14 @@
+check bake.sale ck_sale_loaves at tables/sale.sql:4:30
+column bake.sale.loaves smallint at tables/sale.sql:4:5
+column bake.sale.sale_id int at tables/sale.sql:2:5
+column bake.sale.shop_id int at tables/sale.sql:3:5
+column bake.shop.name nvarchar(30) at tables/shop.sql:3:5
+column bake.shop.shop_id int at tables/shop.sql:2:5
+key bake.sale unnamed (sale_id) at tables/sale.sql:2:26
+key bake.shop unnamed (shop_id) at tables/shop.sql:2:26
+parameter bake.brief_or_full @full at procedures/brief_or_full.sql:5:5
+parameter bake.full_or_brief @full at procedures/full_or_brief.sql:3:5
+procedure bake.brief_or_full at procedures/brief_or_full.sql:4:1
+procedure bake.full_or_brief at procedures/full_or_brief.sql:2:1
+table bake.sale at tables/sale.sql:1:1
+table bake.shop at tables/shop.sql:1:1

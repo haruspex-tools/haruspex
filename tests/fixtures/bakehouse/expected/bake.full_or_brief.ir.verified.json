@@ -1,0 +1,297 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/full_or_brief.sql": "79d76b1be22065eaa342d5e3d7d4805415426640a72c28bd7115e30a447cd0db",
+      "tables/sale.sql": "c87c83debae4b14e62515c5987261f3306bcc27e4ec815d00fb5742f431c782a",
+      "tables/shop.sql": "589a7bd3d641e7bd1818a947b160649b8db7f5a48754f5fe67f419d5bbaf8a49"
+    }
+  },
+  "objects": [
+    {
+      "id": "bake.full_or_brief",
+      "name": "FullOrBrief",
+      "kind": "procedure",
+      "at": "procedures/full_or_brief.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@full",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "FullOrBriefRow"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "FullOrBriefRow2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/full_or_brief.sql:8:5"
+            },
+            {
+              "rule": "no-rows",
+              "at": "procedures/full_or_brief.sql:12:5"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "FullOrBriefRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bake.full_or_brief",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bake.shop.shop_id",
+              "sql": "int",
+              "at": "tables/shop.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "sales",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FullOrBriefSale"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/full_or_brief.sql:9:9"
+            }
+          ]
+        }
+      ]
+    },
+    "FullOrBriefRow2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bake.full_or_brief",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bake.shop.shop_id",
+              "sql": "int",
+              "at": "tables/shop.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "sales",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FullOrBriefSale2"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/full_or_brief.sql:13:9"
+            }
+          ]
+        }
+      ]
+    },
+    "FullOrBriefSale": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bake.full_or_brief",
+        "path": "results[0][].sales[]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bake.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "loaves",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": 0,
+              "inclusive": false,
+              "from": {
+                "check": "bake.ck_sale_loaves"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bake.sale.loaves",
+              "sql": "smallint",
+              "at": "tables/sale.sql:4:5"
+            }
+          ]
+        }
+      ]
+    },
+    "FullOrBriefSale2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "bake.full_or_brief",
+        "path": "results[0][].sales[]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "bake.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:2:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

@@ -48,15 +48,22 @@ internal static class IrDocumentScalars
         }
     }
 
-    /// <summary>The nodes of one type, itself first, without following references, each with its path from <paramref name="path"/>.</summary>
-    private static IEnumerable<(string Path, IrType Node)> Within(IrType type, string path) => type switch
+    /// <summary>
+    /// The nodes of one type, itself first, without following references, each with its path from <paramref name="path"/>.
+    /// Which node holds which is <see cref="IrTypeTree.Children"/>'s to say, so that this walk can't miss a kind of node; only
+    /// how the file names each step is said here.
+    /// </summary>
+    private static IEnumerable<(string Path, IrType Node)> Within(IrType type, string path) =>
+        type is IrRef ? [] : [(path, type), .. IrTypeTree.Children(type).SelectMany((child, i) => Within(child.Type, path + Step(type, i)))];
+
+    /// <summary>The step of the file's JSON path from <paramref name="type"/> to its <paramref name="i"/>th child.</summary>
+    private static string Step(IrType type, int i) => type switch
     {
-        IrRef => [],
-        IrScalar or IrImport or IrUnknownType or IrAnyJson => [(path, type)],
-        IrArray array => [(path, type), .. Within(array.Items, path + ".items")],
-        IrTuple tuple => [(path, type), .. tuple.Items.SelectMany((element, i) => Within(element.Type, $"{path}.items[{i}].type"))],
-        IrRecord record => [(path, type), .. Within(record.Values, path + ".values")],
-        IrUnion union => [(path, type), .. union.Variants.SelectMany((variant, i) => Within(variant, $"{path}.variants[{i}]"))],
-        IrJsonText text => [(path, type), .. text.Content is { } content ? Within(content, path + ".content") : []],
+        IrArray => ".items",
+        IrTuple => $".items[{i}].type",
+        IrRecord => ".values",
+        IrUnion => $".variants[{i}]",
+        IrJsonText => ".content",
+        _ => throw new InvalidOperationException($"{type.GetType().Name} holds no type, so it has no step to one."),
     };
 }

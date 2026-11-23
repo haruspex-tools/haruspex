@@ -75,11 +75,12 @@ public class TypeLoweringTests
     [Fact]
     public void A_union_puts_the_variant_of_more_keys_first_and_each_refuses_the_others_keys()
     {
-        var union = new IrUnion([new IrRef("Small"), new IrArray(new IrRef("Large")), Text10]);
+        // An object is refused the keys only another object has; an array's objects only other arrays', since no value is both.
+        var union = new IrUnion([new IrRef("Small"), new IrArray(new IrRef("Large")), new IrRef("Large"), Text10]);
         var never = new ObjectLiteral([new ZodProperty("b", Z("never").Then("optional"))]);
 
         Assert.Equal(
-            new Union([Z("array", new Name("LargeSchema")), new Name("SmallSchema").Then("extend", never), String10]),
+            new Union([Z("array", new Name("LargeSchema")), new Name("LargeSchema"), new Name("SmallSchema").Then("extend", never), String10]),
             Lowering.Type(union, IrEncoding.Json));
     }
 

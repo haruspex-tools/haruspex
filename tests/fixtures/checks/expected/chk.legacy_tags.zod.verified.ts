@@ -2,8 +2,9 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 //
 // The notes on properties below rest on these facts:
-// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
-//   may take more than one, so a fixed or least length holds fewer code points than it counts.
+// - Zod 4.6.7 and later count a string's length in code points (earlier releases may count UTF-16 code units), and SQL
+//   Server in UTF-16 code units or bytes, of which a code point may take more than one, so a fixed or least length
+//   holds fewer code points than it counts.
 import { z } from 'zod'
 
 export const LegacyTagsRowSchema = z.object({
