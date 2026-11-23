@@ -82,6 +82,65 @@ public partial class IrJsonReaderTests
         Assert.StartsWith("is not JSON at line 3, byte 13: ", e.Problem, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// JSON may escape half of a UTF-16 surrogate pair alone, which parses but is no text: a value, a key or the version holding one is
+    /// refused at its path, as any other text that isn't the format is, and is not an error of the reader's own.
+    /// </summary>
+    [Theory]
+    [InlineData("\"dialect\": \"tsql\"", "\"dialect\": \"\\ud800\"", "$.source.dialect", "is a string that is not text")]
+    [InlineData("\"dialect\": \"tsql\"", "\"\\udc00\": \"tsql\"", "$.source", "has a key that is not text")]
+    [InlineData("\"due\"", "\"d\\udc00ue\"", ".type.values.items[0]", "is a string that is not text")]
+    public void Half_a_surrogate_pair_escaped_alone_is_refused_by_its_path(string written, string broken, string pathEnd, string problem)
+    {
+        var json = IrJsonWriter.Write(IrSamples.Everything);
+        Assert.Contains(written, json, StringComparison.Ordinal);
+
+        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(ReplaceFirst(json, written, broken)));
+
+        Assert.EndsWith(pathEnd, e.Path, StringComparison.Ordinal);
+        Assert.StartsWith(problem, e.Problem, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_version_that_escapes_half_a_surrogate_pair_is_no_version_and_refused_by_its_path()
+    {
+        var json = ReplaceFirst(IrJsonWriter.Write(IrSamples.Everything), $"\"irVersion\": \"{IrSamples.Everything.Version}\"", "\"irVersion\": \"0.2\\ud8009\"");
+
+        Assert.Null(IrJsonReader.VersionOf(json));
+        Assert.Equal("$.irVersion", Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json)).Path);
+    }
+
+    private static string ReplaceFirst(string text, string old, string replacement)
+    {
+        var at = text.IndexOf(old, StringComparison.Ordinal);
+        return text[..at] + replacement + text[(at + old.Length)..];
+    }
+
+    [Fact]
+    public void Two_objects_with_one_id_are_refused_by_the_second_s_path()
+    {
+        var e = Refused(json => json["objects"]!.AsArray().Add(json["objects"]![0]!.DeepClone()));
+
+        Assert.Equal($"$.objects[{IrSamples.Everything.Objects.Count}].id", e.Path);
+        Assert.EndsWith("an id an earlier object has: each object's id is its own.", e.Problem, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Two_fields_with_one_name_in_a_type_are_refused_by_the_second_s_path()
+    {
+        var e = Refused(json => json["types"]!["OrderRow"]!["fields"]!.AsArray().Add(FirstField(json).DeepClone()));
+
+        Assert.Equal($"$.types.OrderRow.fields[{IrSamples.Everything.Types["OrderRow"].Fields.Count}].name", e.Path);
+    }
+
+    [Fact]
+    public void Two_parameters_with_one_name_are_refused_by_the_second_s_path()
+    {
+        var e = Refused(json => json["objects"]![0]!["parameters"]!.AsArray().Add(json["objects"]![0]!["parameters"]![0]!.DeepClone()));
+
+        Assert.Equal($"$.objects[0].parameters[{IrSamples.Everything.Objects[0].Parameters.Count}].name", e.Path);
+    }
+
     [Fact]
     public void A_document_that_is_not_an_object_is_refused()
     {

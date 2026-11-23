@@ -209,11 +209,34 @@
           "type": "object",
           "not": {
             "type": "object",
-            "properties": {
-              "baseline": true
-            },
-            "required": [
-              "baseline"
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              }
             ]
           }
         },
@@ -221,6 +244,15 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
             "properties": {
               "fields": {
                 "type": "array",
@@ -228,11 +260,25 @@
                   "type": "object",
                   "not": {
                     "type": "object",
-                    "properties": {
-                      "sides": true
-                    },
-                    "required": [
-                      "sides"
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      }
                     ]
                   },
                   "properties": {
@@ -292,6 +338,19 @@
                     }
                   }
                 ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
               }
             }
           }
@@ -330,11 +389,118 @@
         "source": {
           "type": "object",
           "properties": {
-            "baseline": true
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": true
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "files": true
+                    },
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
           },
           "required": [
             "baseline"
-          ]
+          ],
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         }
       },
       "not": {
@@ -383,6 +549,15 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
             "properties": {
               "fields": {
                 "type": "array",
@@ -454,6 +629,19 @@
                     }
                   }
                 ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
               }
             }
           }
@@ -497,6 +685,42 @@
           "required": [
             "baseline"
           ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         }
       },
       "not": {
@@ -545,6 +769,15 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
             "properties": {
               "fields": {
                 "type": "array",
@@ -620,6 +853,19 @@
             }
           }
         },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        },
         "tableTypes": true
       },
       "required": [
@@ -649,6 +895,42 @@
           "required": [
             "baseline"
           ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         },
         "tableTypes": true
       },
@@ -687,6 +969,15 @@
           "type": "object",
           "additionalProperties": {
             "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
             "properties": {
               "fields": {
                 "type": "array",
@@ -761,6 +1052,19 @@
               }
             }
           }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         }
       },
       "not": {
@@ -787,6 +1091,42 @@
           "required": [
             "baseline"
           ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         }
       },
       "not": {
@@ -907,6 +1247,20 @@
           "required": [
             "baseline"
           ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1018,6 +1372,20 @@
           "required": [
             "baseline"
           ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -1278,6 +1646,105 @@
               "absentBecause"
             ]
           }
+        }
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "encoding": {
+            "const": "rowset"
+          },
+          "type": {
+            "not": {
+              "$ref": "#/$defs/rows"
+            }
+          }
+        },
+        "required": [
+          "encoding",
+          "type"
+        ]
+      }
+    },
+    "rows": {
+      "description": "What a rowset's type is: one statement's rows, or a union of several statements' when paths differ.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/statementRows"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "union"
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/statementRows"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "variants"
+          ]
+        }
+      ]
+    },
+    "statementRows": {
+      "description": "One statement's rows: an array of a named object type or of an unknown, an unknown, or what the config file declared them to be.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ref"
+                },
+                {
+                  "$ref": "#/$defs/unknownType"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
+        },
+        {
+          "$ref": "#/$defs/unknownType"
+        },
+        {
+          "$ref": "#/$defs/declaredType"
+        }
+      ]
+    },
+    "declaredType": {
+      "description": "A type the config file declared, or arrays of one.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/import"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "$ref": "#/$defs/declaredType"
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
         }
       ]
     },

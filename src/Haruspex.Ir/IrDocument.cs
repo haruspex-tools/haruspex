@@ -70,12 +70,9 @@ public sealed record IrDocument(
     public const string OneDatabaseVersion = "0.23";
 
     /// <summary>
-    /// The versions a reader reads, as decision 0024 says: the current one, and 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, every document
-    /// of which is a 0.29 document that explains no reason, declares nothing, holds no binary value and says no more than its version
-    /// could, meaning the same. 0.23 added a result
-    /// set's name (<see cref="IrResult.Name"/>), which decides the shape of the procedure's function, and whether a type's name was declared
-    /// (<see cref="IrObjectType.NameDeclared"/>), which a 0.22 file doesn't say; so no 0.22 file means what a 0.23 file of its
-    /// source does.
+    /// The versions a reader reads, newest first: the current one, and each older one every document of which is a current document
+    /// that means the same (0.28 back to 0.23, each a document that says nothing a later version added). Any other is refused.
+    /// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md, which says why 0.22 is not one.
     /// </summary>
     public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
@@ -95,9 +92,7 @@ public sealed record IrDocument(
         : Declares ? DeclaredVersion
         : HoldsBytes ? BytesVersion
         : TableTypes.Count > 0 ? TableTypesVersion
-        : Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
-            || Source.Path is not null || Source.Baseline?.Path is not null
-            ? SourcesVersion
+        : SaysSources ? SourcesVersion
         : Source.Baseline is null ? OneDatabaseVersion
         : CombinedVersion;
 
@@ -107,6 +102,14 @@ public sealed record IrDocument(
     /// object type (<see cref="IrObjectType.Open"/>).
     /// </summary>
     internal bool Declares => Columns.Count > 0 || IrDocumentDeclared.First(this) is not null;
+
+    /// <summary>
+    /// Whether it says what 0.25 added: where a field's value came from (<see cref="IrField.From"/>, <see cref="IrField.Sides"/>), or
+    /// where a source was read (<see cref="IrSource.Path"/>, <see cref="IrSource.Files"/>), its own or its baseline's.
+    /// </summary>
+    internal bool SaysSources =>
+        Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
+        || Source.Path is not null || Source.Baseline?.Path is not null;
 
     /// <summary>Whether it says what only 0.29 says: a <see cref="IrNullReason.Detail"/>, or a minimum length in code points, anywhere.</summary>
     internal bool Explains => IrDocumentExplained.First(this) is not null;

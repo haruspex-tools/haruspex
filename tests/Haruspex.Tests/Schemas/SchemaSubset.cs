@@ -177,7 +177,8 @@ internal sealed class SchemaSubset(JsonElement root)
         "string" => value.ValueKind == JsonValueKind.String,
         "boolean" => value.ValueKind is JsonValueKind.True or JsonValueKind.False,
         "number" => value.ValueKind == JsonValueKind.Number,
-        "integer" => value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out _),
+        // JSON Schema 2020-12 counts any number whose fractional part is zero as an integer, 100.0 and 1e2 included, as Ajv does.
+        "integer" => value.ValueKind == JsonValueKind.Number && (value.TryGetDecimal(out var number) ? decimal.Truncate(number) == number : double.IsInteger(value.GetDouble())),
         "null" => value.ValueKind == JsonValueKind.Null,
         _ => throw new NotSupportedException($"Unknown type {type}."),
     };

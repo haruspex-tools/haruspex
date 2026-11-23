@@ -50,4 +50,4 @@ written text's facts would type a procedure no server runs. Nothing else in a bo
 still claimed. The two corpora have no such literal, so their figures don't move.
 
 **See also:** [HAR2023](../diagnostics/HAR2023.md); [The inputs and the model](../internals/02-the-inputs-and-the-model.md),
-"SQLCMD variables"; [decision 0024](0024-an-ir-reader-refuses-other-versions.md), amended a fifth time.
+"SQLCMD variables"; [decision 0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md).

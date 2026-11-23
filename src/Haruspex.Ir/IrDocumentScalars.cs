@@ -3,7 +3,8 @@ namespace Haruspex.Ir;
 /// <summary>
 /// Every type node a document holds, with the JSON path of the node in the document's file: in a parameter, a result, a named type's
 /// field and a table type's column, nested ones included. What a version is labelled by when it depends on a kind of value
-/// (<see cref="IrDocument.HoldsBytes"/>, <see cref="IrDocument.Declares"/>), and where the reader says a node is out of place.
+/// (<see cref="IrDocument.HoldsBytes"/>, <see cref="IrDocument.Declares"/>), where the reader says a node is out of place, and where it
+/// finds every reference and value set it checks names something in the document.
 /// </summary>
 internal static class IrDocumentScalars
 {
@@ -12,7 +13,14 @@ internal static class IrDocumentScalars
         Nodes(document).Where(n => n.Node is IrScalar).Select(n => (n.Path, (IrScalar)n.Node));
 
     /// <summary>Each type node of <paramref name="document"/> but references, and its path, in the order of the file.</summary>
-    public static IEnumerable<(string Path, IrType Node)> Nodes(IrDocument document)
+    public static IEnumerable<(string Path, IrType Node)> Nodes(IrDocument document) => All(document).Where(n => n.Node is not IrRef);
+
+    /// <summary>Each reference of <paramref name="document"/> to a named type, and its path, in the order of the file.</summary>
+    public static IEnumerable<(string Path, IrRef Reference)> References(IrDocument document) =>
+        All(document).Where(n => n.Node is IrRef).Select(n => (n.Path, (IrRef)n.Node));
+
+    /// <summary>Each type node of <paramref name="document"/>, references included, and its path, in the order of the file.</summary>
+    private static IEnumerable<(string Path, IrType Node)> All(IrDocument document)
     {
         foreach (var (obj, i) in document.Objects.Select((o, i) => (o, i)))
         {
@@ -49,12 +57,12 @@ internal static class IrDocumentScalars
     }
 
     /// <summary>
-    /// The nodes of one type, itself first, without following references, each with its path from <paramref name="path"/>.
+    /// The nodes of one type, itself first, a reference as a node without following it, each with its path from <paramref name="path"/>.
     /// Which node holds which is <see cref="IrTypeTree.Children"/>'s to say, so that this walk can't miss a kind of node; only
     /// how the file names each step is said here.
     /// </summary>
     private static IEnumerable<(string Path, IrType Node)> Within(IrType type, string path) =>
-        type is IrRef ? [] : [(path, type), .. IrTypeTree.Children(type).SelectMany((child, i) => Within(child.Type, path + Step(type, i)))];
+        [(path, type), .. IrTypeTree.Children(type).SelectMany((child, i) => Within(child.Type, path + Step(type, i)))];
 
     /// <summary>The step of the file's JSON path from <paramref name="type"/> to its <paramref name="i"/>th child.</summary>
     private static string Step(IrType type, int i) => type switch

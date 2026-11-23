@@ -22,9 +22,11 @@ internal sealed class IrJsonObject
         Path = path;
         foreach (var property in element.EnumerateObject())
         {
+            var name = Text(() => property.Name, path, "has a key that");
+
             // System.Text.Json keeps both of two properties with one name; a document that says two things is refused.
-            if (!properties.TryAdd(property.Name, property.Value))
-                throw new IrFormatException(PathOf(property.Name), "appears twice.");
+            if (!properties.TryAdd(name, property.Value))
+                throw new IrFormatException(PathOf(name), "appears twice.");
         }
     }
 
@@ -60,6 +62,19 @@ internal sealed class IrJsonObject
 
     /// <summary>An optional string, null when left out.</summary>
     public string? OptionalString(string name) => Optional(name) is { } value ? AsString(value, PathOf(name)) : null;
+
+    /// <summary>A required SHA-256, as the IR writes one: 64 lower-case hexadecimal digits, as the schema's <c>pattern</c> says.</summary>
+    public string Sha256(string name) => AsSha256(Required(name), PathOf(name));
+
+    /// <summary>An optional SHA-256, null when left out.</summary>
+    public string? OptionalSha256(string name) => Optional(name) is { } value ? AsSha256(value, PathOf(name)) : null;
+
+    /// <summary>A required string that is not empty, as the schema's <c>minLength</c> of 1 says.</summary>
+    public string NonEmptyString(string name)
+    {
+        var text = String(name);
+        return text.Length > 0 ? text : throw new IrFormatException(PathOf(name), "is empty.");
+    }
 
     /// <summary>A required <c>true</c> or <c>false</c>.</summary>
     public bool Boolean(string name) => AsBoolean(Required(name), PathOf(name));
@@ -114,7 +129,35 @@ internal sealed class IrJsonObject
     /// <summary>A string, or an error naming <paramref name="path"/>.</summary>
     public static string AsString(JsonElement element, string path) =>
         // Never null: GetString is null only for a JSON null, and the element is a string.
-        element.ValueKind == JsonValueKind.String ? element.GetString()! : throw new IrFormatException(path, "must be a string.");
+        element.ValueKind == JsonValueKind.String ? Text(() => element.GetString()!, path, "is a string that") : throw new IrFormatException(path, "must be a string.");
+
+    /// <summary>
+    /// Text of the file as a .NET string: a key or a string value. JSON may escape half of a surrogate pair alone (<c>"\ud800"</c>),
+    /// which is well-formed JSON but no text, so the parser accepts it and only turning it into a string fails; that failure is
+    /// the file's, at <paramref name="path"/>, not the reader's.
+    /// </summary>
+    /// <param name="read">Turns the JSON into a string: <c>GetString</c> or a property's <c>Name</c>.</param>
+    /// <param name="path">Where the text is: the value's path, or the object's for a key.</param>
+    /// <param name="what">The start of the message, which says which: <c>is a string that</c>, <c>has a key that</c>.</param>
+    private static string Text(Func<string> read, string path, string what)
+    {
+        try
+        {
+            return read();
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new IrFormatException(path, $"{what} is not text: it escapes half of a UTF-16 surrogate pair alone.", e);
+        }
+    }
+
+    private static string AsSha256(JsonElement element, string path)
+    {
+        var text = AsString(element, path);
+        return text.Length == 64 && text.All(c => char.IsAsciiDigit(c) || c is >= 'a' and <= 'f')
+            ? text
+            : throw new IrFormatException(path, $"is \"{text}\", which is not a SHA-256 as the IR writes one: 64 lower-case hexadecimal digits.");
+    }
 
     private static bool AsBoolean(JsonElement element, string path) => element.ValueKind switch
     {

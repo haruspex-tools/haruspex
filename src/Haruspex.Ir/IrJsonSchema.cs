@@ -14,9 +14,10 @@ namespace Haruspex.Ir;
 /// <remarks>
 /// <para>
 /// What is written here by hand is the structure: which properties each object has and which are required, the same
-/// structure <see cref="IrJsonWriter"/> writes and <see cref="IrJsonReader"/> reads. Three tests hold the three together:
-/// every fixture's IR passes this schema, every file the writer writes reads back to the same bytes, and every property of
-/// every IR record is accounted for (<c>IrJsonSchemaTests</c>). A structure derived by reflection over the records would
+/// structure <see cref="IrJsonWriter"/> writes and <see cref="IrJsonReader"/> reads. Four tests hold the three together:
+/// every fixture's IR passes this schema, every file the writer writes reads back to the same bytes, every property of every
+/// IR record is accounted for (<c>IrJsonSchemaTests</c>), and the schema and the reader refuse the same files, but for the
+/// rules only the reader checks (<c>IrReaderSchemaAgreementTests</c>). A structure derived by reflection over the records would
 /// have to restate the writer's choices (keys named otherwise than their properties, flags written only when true, the
 /// facets beside the scalar's kind) as attributes on the model, a second copy of the writer that nothing would check.
 /// </para>
@@ -27,10 +28,10 @@ namespace Haruspex.Ir;
 /// <c>minItems</c>, <c>minProperties</c>, <c>maxProperties</c>, <c>minimum</c>, <c>maximum</c>, <c>minLength</c>, <c>pattern</c>,
 /// <c>anyOf</c>, <c>not</c> and <c>$ref</c>), written so that Ajv's strict mode compiles it: every <c>properties</c>,
 /// <c>required</c> and <c>items</c> beside the <c>type</c> it applies to, and every property required named in
-/// <c>properties</c> too. <c>IrJsonSchemaTests</c> compiles it so, with the Ajv <c>tests/emit-check</c> pins. Three things JSON Schema can't say: a number's form (a bound or a value set's number must be plain
-/// decimal text, with no exponent) and that no key is given twice, since it sees a document after parsing; and that a
-/// <c>ref</c> names a type in <c>types</c>, since it can't compare a value with a key elsewhere. The reader checks all three;
-/// the schema's descriptions state the first.
+/// <c>properties</c> too. <c>IrJsonSchemaTests</c> compiles it so, with the Ajv <c>tests/emit-check</c> pins.
+/// What JSON Schema can't say (a number's form, a key given
+/// twice, a name that names nothing or is given twice, and what a label says of the whole document) the reader checks alone: the IR
+/// README lists it under "Rules only the reader checks", and <c>IrReaderSchemaAgreementTests</c> holds the two to that list.
 /// </para>
 /// </remarks>
 public static class IrJsonSchema
@@ -112,30 +113,61 @@ public static class IrJsonSchema
     ];
 
     /// <summary>
-    /// A document labelled <paramref name="version"/>, of one database or combining two. One labelled before 0.26 defines no table
-    /// type, and one labelled 0.26 always does; one labelled before 0.28 declares no column. One of one database says nothing only a
-    /// combined document says: no field has <c>sides</c>, and no reason is <c>not-in-both</c>; nor, before 0.28, is a field's
-    /// presence <c>optional</c>, which from 0.28 a declared column's JSON says too.
+    /// A document labelled <paramref name="version"/>, of one database or combining two. One labelled before 0.25 says nothing of
+    /// where a value came from: no field has <c>from</c> or <c>sides</c>, and no source has <c>path</c> or <c>files</c>. One labelled
+    /// before 0.26 defines no table type, and one labelled 0.26 always does. One labelled before 0.28 declares no column, has no open
+    /// object type and makes no <c>column-json</c> claim. One of one database says nothing only a combined document says: no field has
+    /// <c>sides</c>, and no reason is <c>not-in-both</c>; nor, before 0.28, is a field's presence <c>optional</c>, which from 0.28 a
+    /// declared column's JSON says too.
     /// </summary>
     private static JsonObject Label(string version, bool combined)
     {
+        var sources = Since(version, IrDocument.SourcesVersion);
         var declares = Since(version, IrDocument.DeclaredVersion);
-        var properties = Node(
-            ("irVersion", Node(("const", version))),
-            ("source", combined ? Having("baseline") : Lacking("baseline")));
+        var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
+        JsonObject Reasons() => Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth.DeepClone()))))));
+
+        // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from.
+        JsonObject Source(bool baseline)
+        {
+            var source = baseline ? Having("baseline") : Lacking("baseline");
+            if (!sources)
+            {
+                source["not"] = AnyHaving([.. baseline ? [] : (string[])["baseline"], "path", "files"]);
+                if (baseline)
+                    source["properties"] = Node(("baseline", Lacking("path", "files")));
+            }
+
+            return source;
+        }
+
+        string[] notInField = [.. combined ? [] : (string[])["sides"], .. sources ? [] : (string[])["from", "sides"]];
+        var field = notInField.Length > 0 ? Lacking([.. notInField.Distinct()]) : Node(("type", "object"));
         if (!combined)
         {
-            var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
-            var reasons = Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth))))));
-            var field = Lacking("sides");
             field["properties"] = declares
-                ? Node(("nullableBecause", reasons))
-                : Node(("nullableBecause", reasons), ("presence", Node(("not", Node(("const", IrWireNames.Of(IrPresence.Optional)))))));
-            properties.Add("types", Node(("type", "object"), ("additionalProperties", Node(("type", "object"), ("properties", Node(("fields", Node(("type", "array"), ("items", field)))))))));
-            var result = Node(("type", "object"), ("properties", Node(("absentBecause", reasons.DeepClone()))));
+                ? Node(("nullableBecause", Reasons()))
+                : Node(("nullableBecause", Reasons()), ("presence", Node(("not", Node(("const", IrWireNames.Of(IrPresence.Optional)))))));
+        }
+
+        var objectType = declares ? Node(("type", "object")) : Lacking("open");
+        objectType["properties"] = Node(("fields", Node(("type", "array"), ("items", field))));
+        var properties = Node(
+            ("irVersion", Node(("const", version))),
+            ("source", Source(combined)),
+            ("types", Node(("type", "object"), ("additionalProperties", objectType))));
+        if (!combined)
+        {
             // Results are null when they can't be listed, so the rule holds of them only where they are an array.
+            var result = Node(("type", "object"), ("properties", Node(("absentBecause", Reasons()))));
             var results = Node(("anyOf", new JsonArray(Node(("type", "null")), Node(("type", "array"), ("items", result)))));
             properties.Add("objects", Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("results", results)))))));
+        }
+
+        if (!declares)
+        {
+            var claim = Node(("type", "object"), ("properties", Node(("setting", Node(("not", Node(("const", IrWireNames.Of(IrOverrideSetting.ColumnJson)))))))));
+            properties.Add("overrides", Node(("type", "array"), ("items", claim)));
         }
 
         var label = Node(("type", "object"), ("properties", properties));
@@ -209,7 +241,7 @@ public static class IrJsonSchema
             ("tableType", Text("For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.")),
             ("hasDefault", Flag("Whether the caller may omit it.")),
             ("output", Flag("Whether it is an output parameter.")))),
-        ("result", Agreeing(
+        ("result", RowsetOfRows(Agreeing(
             Closed(
                 "One result set.",
                 ["encoding", "type", "mayBeAbsent", "cardinality"],
@@ -220,7 +252,16 @@ public static class IrJsonSchema
                 ("absentBecause", Ref("reasons")),
                 ("cardinality", Vocabulary<IrCardinality>(IrWireNames.Of))),
             "mayBeAbsent",
-            "absentBecause")),
+            "absentBecause"))),
+        ("rows", Node(
+            ("description", "What a rowset's type is: one statement's rows, or a union of several statements' when paths differ."),
+            ("anyOf", new JsonArray(Ref("statementRows"), OfKind("union", ("variants", Node(("type", "array"), ("items", Ref("statementRows"))))))))),
+        ("statementRows", Node(
+            ("description", "One statement's rows: an array of a named object type or of an unknown, an unknown, or what the config file declared them to be."),
+            ("anyOf", new JsonArray(OfKind("array", ("items", Node(("anyOf", new JsonArray(Ref("ref"), Ref("unknownType")))))), Ref("unknownType"), Ref("declaredType"))))),
+        ("declaredType", Node(
+            ("description", "A type the config file declared, or arrays of one."),
+            ("anyOf", new JsonArray(Ref("import"), OfKind("array", ("items", Ref("declaredType"))))))),
         ("objectType", Closed(
             "A named object type.",
             ["kind", "fields"],
@@ -525,6 +566,23 @@ public static class IrJsonSchema
         schema.Add("anyOf", new JsonArray(canonical, other));
         return schema;
     }
+
+    /// <summary>A result whose encoding is <c>rowset</c> has a type that is rows (<c>$defs/rows</c>): a driver hands one over as rows keyed by column.</summary>
+    private static JsonObject RowsetOfRows(JsonObject schema)
+    {
+        var rowset = Node(("const", IrWireNames.Of(IrEncoding.Rowset)));
+        schema.Add("not", Node(
+            ("type", "object"),
+            ("properties", Node(("encoding", rowset), ("type", Node(("not", Ref("rows")))))),
+            ("required", Names("encoding", "type"))));
+        return schema;
+    }
+
+    /// <summary>A type node of <paramref name="kind"/> whose <paramref name="property"/> is as given, whatever else it has.</summary>
+    private static JsonObject OfKind(string kind, (string Name, JsonNode Schema) property) => Node(
+        ("type", "object"),
+        ("properties", Node(("kind", Node(("const", kind))), (property.Name, property.Schema))),
+        ("required", Names("kind", property.Name)));
 
     /// <summary>A result that has a <c>name</c>, or one that has none: an object's sets are all of one or all of the other.</summary>
     private static JsonObject ResultNamed(bool named)

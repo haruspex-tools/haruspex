@@ -76,10 +76,9 @@ precision silent, each of which claims less if not read, so they are passed over
 0.18 every `SET NUMERIC_ROUNDABORT` stopped the walk.)
 
 **The IR and an older reader.** 0.17 adds `source.session`, which a file leaves out when nothing is declared. So every 0.16 file
-is a 0.17 file that declares nothing and means what it meant, and the 0.17 reader read it: the one exception to
-[decision 0024](0024-an-ir-reader-refuses-other-versions.md), whose reasons (a mapped file would carry an older engine's claims
-under a newer label) don't hold where nothing is mapped. 0.18 ended the exception: its reader reads neither 0.16 nor 0.17,
-whose claims the precision-loss rule changed (decision 0024, amended again).
+is a 0.17 file that declares nothing and means what it meant, and the 0.17 reader read it: the first older version read by
+[decision 0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)'s test, since nothing is mapped. The 0.18 reader reads neither 0.16
+nor 0.17, whose claims the precision-loss rule changed.
 
 **Alternatives.**
 - *Assume the common drivers' options*: wrong in silence for a caller that sets them otherwise (above).
@@ -105,7 +104,7 @@ soundness fix the known limitation above called for. Not known is still the defa
 that sets it on. Declaring `ansiWarnings` on, as most users already do, removes every reason but a `TRY_CAST`'s, so their
 output changes only there; on both sample corpora and every fixture it is byte for byte what it was. The IR moved to 0.18 for
 the new null rule, and its reader no longer reads 0.16 or 0.17, whose claims the rule changed
-([decision 0024](0024-an-ir-reader-refuses-other-versions.md), amended again).
+([decision 0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)).
 
 **In the code:** `SessionOptions` (the declaration, `SessionOptions.OverflowIsAnError` and `SessionOptions.RoundingMayBeNull`), read by the typer through
 `Summaries.Session`; `IrSource.Session`; the config file's `session` block; `ZodLowering`'s header; the `meters` fixture, which declares the

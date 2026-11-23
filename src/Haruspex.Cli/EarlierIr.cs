@@ -17,7 +17,7 @@ internal abstract record EarlierIr
     /// <summary>No IR: a first run, or a folder nothing was committed to.</summary>
     internal sealed record Absent : EarlierIr;
 
-    /// <summary>An IR of another version, which can't be compared claim by claim (docs/decisions/0024-an-ir-reader-refuses-other-versions.md).</summary>
+    /// <summary>An IR of another version, which can't be compared claim by claim (docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md).</summary>
     /// <param name="Version">Its version.</param>
     internal sealed record OtherVersion(string Version) : EarlierIr;
 

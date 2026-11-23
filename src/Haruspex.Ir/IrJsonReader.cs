@@ -20,9 +20,10 @@ namespace Haruspex.Ir;
 /// </para>
 /// <para>
 /// A version it doesn't read is refused before anything else, rather than read with its differences guessed at: the IR has
-/// no stable version yet (0.x), so a file from another version is regenerated, not migrated. <c>docs/internals/10-the-ir-as-a-contract.md</c>
-/// argues the choice. It would read another version only if every file of it were a file of the current version that means
-/// the same (<see cref="IrDocument.ReadableVersions"/>, which says why none is at present).
+/// no stable version yet (0.x), so a file from another version is regenerated, not migrated. It reads the current version and
+/// each older one every document of which is a document of the current version that means the same
+/// (<see cref="IrDocument.ReadableVersions"/>), and holds each document's label to what it says (<see cref="IrDocument.Version"/>).
+/// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md.
 /// </para>
 /// </remarks>
 public static class IrJsonReader
@@ -54,64 +55,79 @@ public static class IrJsonReader
         using (parsed)
         {
             var document = Document(IrJsonObject.At(parsed.RootElement, "$"));
-            RequireReferencesResolve(parsed.RootElement, "$", document.Types);
-            RequireFoldsResolve(parsed.RootElement, "$", document.Folds);
+            RequireNamedOnce(document);
+            RequireReferencesResolve(document);
+            RequireFoldsResolve(document);
             RequireTableTypesResolve(document);
             return document;
         }
     }
 
     /// <summary>
-    /// Every reference names a type in <c>types</c>: a dangling one would leave a reader with a value of no type at all. JSON
-    /// Schema can't say this (it can't compare a value with a key elsewhere in the document), so the reader does. A
-    /// reference is the one object of the format with a <c>ref</c> property, so the file is searched for them as it is.
+    /// What is looked up by its name is named once: an object by its id, a type's field and an object's parameter by their names.
+    /// Every program that compares, fits or combines documents finds an object by its id and a field by its name, so a document
+    /// that gave two would be read as whichever it found, and haruspex's own would stop with an error of its own rather than the
+    /// file's. JSON Schema can't say this: it can't compare one item's property with another's.
     /// </summary>
-    private static void RequireReferencesResolve(JsonElement element, string path, IReadOnlyDictionary<string, IrObjectType> types)
+    private static void RequireNamedOnce(IrDocument document)
     {
-        switch (element.ValueKind)
+        if (Twice(document.Objects, o => o.Id) is { } obj)
+            throw new IrFormatException($"$.objects[{obj}].id", $"is \"{document.Objects[obj].Id}\", an id an earlier object has: each object's id is its own.");
+        foreach (var (o, i) in document.Objects.Select((o, i) => (o, i)))
         {
-            case JsonValueKind.Object:
-                foreach (var property in element.EnumerateObject())
-                {
-                    var at = path + IrPath.Key(property.Name);
-                    // Never null: GetString is null only for a JSON null, and the value is a string.
-                    if (property.Name == "ref" && property.Value.ValueKind == JsonValueKind.String && !types.ContainsKey(property.Value.GetString()!))
-                        throw new IrFormatException(at, $"is \"{property.Value.GetString()}\", which names no type in $.types.");
-                    RequireReferencesResolve(property.Value, at, types);
-                }
+            if (Twice(o.Parameters, p => p.Name) is { } parameter)
+                throw new IrFormatException($"$.objects[{i}].parameters[{parameter}].name", $"is \"{o.Parameters[parameter].Name}\", the name of an earlier parameter: each parameter's name is its own.");
+        }
 
-                break;
-            case JsonValueKind.Array:
-                var i = 0;
-                foreach (var item in element.EnumerateArray())
-                    RequireReferencesResolve(item, path + "[" + i++.ToString(CultureInfo.InvariantCulture) + "]", types);
-                break;
+        foreach (var (name, type) in document.Types)
+        {
+            if (Twice(type.Fields, f => f.Name) is { } field)
+                throw new IrFormatException($"$.types{IrPath.Key(name)}.fields[{field}].name", $"is \"{type.Fields[field].Name}\", the name of an earlier field: a type's fields are named apart.");
+        }
+
+        // The position of the first item whose key an earlier item has, or null.
+        static int? Twice<T>(IReadOnlyList<T> items, Func<T, string> key)
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var i = 0; i < items.Count; i++)
+            {
+                if (!seen.Add(key(items[i])))
+                    return i;
+            }
+
+            return null;
         }
     }
 
-    /// <summary>Every value set's fold names a fold of the document: a value set is the object with a <c>match</c>.</summary>
-    private static void RequireFoldsResolve(JsonElement element, string path, EquatableMap<string, IrFold> folds)
+    /// <summary>
+    /// Every reference names a type in <c>types</c>: a dangling one would leave a reader with a value of no type at all. JSON
+    /// Schema can't say this (it can't compare a value with a key elsewhere in the document), so the reader does. The references
+    /// are found in the document read, not by searching the file for a key named <c>ref</c>: a map keyed by data, such as a
+    /// declaration's <c>files</c>, may have a key of that name.
+    /// </summary>
+    private static void RequireReferencesResolve(IrDocument document)
     {
-        switch (element.ValueKind)
+        foreach (var (path, reference) in IrDocumentScalars.References(document))
         {
-            case JsonValueKind.Object:
-                if (element.TryGetProperty("match", out _) && element.TryGetProperty("fold", out var fold) && fold.ValueKind == JsonValueKind.String && fold.GetString() is { } name && !folds.ContainsKey(name))
-                    throw new IrFormatException(path + IrPath.Key("fold"), $"is \"{name}\", which names no fold in $.folds.");
-                foreach (var property in element.EnumerateObject())
-                    RequireFoldsResolve(property.Value, path + IrPath.Key(property.Name), folds);
-                break;
-            case JsonValueKind.Array:
-                var i = 0;
-                foreach (var item in element.EnumerateArray())
-                    RequireFoldsResolve(item, path + "[" + i++.ToString(CultureInfo.InvariantCulture) + "]", folds);
-                break;
+            if (!document.Types.ContainsKey(reference.Name))
+                throw new IrFormatException(path + ".ref", $"is \"{reference.Name}\", which names no type in $.types.");
+        }
+    }
+
+    /// <summary>Every value set's fold names a fold of the document, found as the references are, in the document read.</summary>
+    private static void RequireFoldsResolve(IrDocument document)
+    {
+        foreach (var (path, scalar) in IrDocumentScalars.Of(document))
+        {
+            if (scalar.Facets?.Values?.Fold is { } name && !document.Folds.ContainsKey(name))
+                throw new IrFormatException(path + ".values.fold", $"is \"{name}\", which names no fold in $.folds.");
         }
     }
 
     /// <summary>
     /// The version a file says it is (<c>irVersion</c>), read without the rest of it, so that a program can tell a file of another
     /// version from one that is broken before it reads either. Null when the text isn't JSON, its root isn't an object, or it has
-    /// no <c>irVersion</c> that is a string.
+    /// no <c>irVersion</c> that is a string of text.
     /// </summary>
     /// <param name="json">The file's text.</param>
     public static string? VersionOf(string json)
@@ -128,6 +144,11 @@ public static class IrJsonReader
         }
         catch (JsonException)
         {
+            return null;
+        }
+        catch (InvalidOperationException)
+        {
+            // A key or the version that escapes half of a surrogate pair alone: not text, so no version; Read says where.
             return null;
         }
     }
@@ -176,6 +197,8 @@ public static class IrJsonReader
             OneDatabase(document, version);
         if (version is not (IrDocument.CurrentVersion or IrDocument.DeclaredVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
+        if (version == IrDocument.SourcesVersion && !document.SaysSources)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that says where a field's value came from or where its source was read, and this one says neither. One that says neither is labelled {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}, by whether it combines two databases.");
         HoldsBytesAsLabelled(document, version);
         DeclaresAsLabelled(document, version);
         ExplainsAsLabelled(document, version);
@@ -195,7 +218,7 @@ public static class IrJsonReader
         {
             var entry = IrJsonObject.At(item, path);
             var files = entry.Object("files");
-            var column = new IrColumnDeclaration(entry.String("column"), entry.String("schema"), entry.OptionalString("pointer"), files.Names.ToList().ToEquatableMap(name => name, files.String));
+            var column = new IrColumnDeclaration(entry.String("column"), entry.String("schema"), entry.OptionalString("pointer"), files.Names.ToList().ToEquatableMap(name => name, files.Sha256));
             files.End();
             entry.End();
             if (!column.Files.ContainsKey(column.Schema))
@@ -495,17 +518,36 @@ public static class IrJsonReader
 
     private static IrResult Result(IrJsonObject json)
     {
+        var type = json.Object("type");
         var result = new IrResult(
             json.Name<IrEncoding>("encoding", IrWireNames.TryParse, "a result's encoding"),
-            Type(json.Object("type")),
+            Type(type),
             Reasons(json, "mayBeAbsent", "absentBecause"))
         {
             Name = SetName(json),
             Cardinality = json.Name<IrCardinality>("cardinality", IrWireNames.TryParse, "a cardinality"),
         };
         json.End();
+        if (result.Encoding == IrEncoding.Rowset && !IsRows(result.Type, union: true))
+            throw new IrFormatException(type.Path, "is not what a rowset's type is: an array of rows, each a named type or an unknown, a union of such arrays, an unknown, or a type the config file declared.");
         return result;
     }
+
+    /// <summary>
+    /// Whether <paramref name="type"/> is what a rowset's type is: an array of rows, each an object type named in <c>types</c> or an
+    /// unknown; a union of such arrays when statements on different paths return different rows (<paramref name="union"/>); an
+    /// unknown; or what the config file declared it to be, a type the application has (<see cref="IrImport"/>), alone or as the
+    /// items of arrays. A driver hands a rowset to its caller as rows keyed by column, so no other node can describe one.
+    /// </summary>
+    private static bool IsRows(IrType type, bool union) => type switch
+    {
+        IrArray { Items: IrRef or IrUnknownType } or IrUnknownType => true,
+        IrUnion { Variants: var variants } when union => variants.All(v => IsRows(v, union: false)),
+        _ => Declared(type),
+    };
+
+    /// <summary>Whether <paramref name="type"/> is a type the config file declared, or arrays of one.</summary>
+    private static bool Declared(IrType type) => type is IrImport || (type is IrArray { Items: var items } && Declared(items));
 
     /// <summary>
     /// A set's name, a key of its function's object, so an identifier and none of <see cref="IrResult.KeysBesideSets"/>; null when
@@ -542,7 +584,7 @@ public static class IrJsonReader
     {
         var ignored = json.String("ignored");
         var classes = json.Object("classes");
-        var fold = new IrFold(ignored, classes.Names.ToList().ToEquatableMap(name => name, classes.String));
+        var fold = new IrFold(ignored, classes.Names.ToList().ToEquatableMap(name => name, classes.NonEmptyString));
         classes.End();
         json.End();
         return fold;
@@ -809,8 +851,7 @@ public static class IrJsonReader
     private static IrValueSet ValueSet(IrJsonObject json)
     {
         var set = new IrValueSet(
-            // Never null: GetString is null only for a JSON null, and the item is a string.
-            [.. json.Array("items").Select(i => i.Item.ValueKind == JsonValueKind.String ? new IrValue(i.Item.GetString()!, IsString: true) : new IrValue(Number(i.Item, i.Path), IsString: false))],
+            [.. json.Array("items").Select(i => i.Item.ValueKind == JsonValueKind.String ? new IrValue(IrJsonObject.AsString(i.Item, i.Path), IsString: true) : new IrValue(Number(i.Item, i.Path), IsString: false))],
             json.Name<IrValueMatch>("match", IrWireNames.TryParse, "a value set's match"),
             [.. json.Array("from").Select(f => Source(IrJsonObject.At(f.Item, f.Path)))],
             json.OptionalString("fold"));
@@ -829,7 +870,6 @@ public static class IrJsonReader
         return IrJsonWriter.IsPlainDecimal(text) ? text : throw new IrFormatException(path, $"is {text}, which is not a plain decimal number such as -12.5.");
     }
 
-    /// <summary>The package a source was read from, or none when the file leaves <c>package</c> out; its hash comes with it.</summary>
     /// <summary>
     /// The SHA-256 of each script file the locations point into (0.25); none when the file leaves <c>files</c> out. An empty object
     /// is refused: the writer leaves it out, so there is one way to say "none".
@@ -838,16 +878,17 @@ public static class IrJsonReader
     {
         if (json is null)
             return [];
-        var files = json.Names.ToList().ToEquatableMap(name => name, json.String);
+        var files = json.Names.ToList().ToEquatableMap(name => name, json.Sha256);
         json.End();
         return files.Count > 0 ? files : throw new IrFormatException(json.Path, "is empty: a source that points into no script leaves it out.");
     }
 
+    /// <summary>The package a source was read from, or none when the file leaves <c>package</c> out; its hash comes with it.</summary>
     private static IrPackage? Package(IrJsonObject source)
     {
         if (source.Optional("package") is null)
             return source.Optional("sha256") is null ? null : throw new IrFormatException(source.PathOf("package"), "is missing, though sha256, its hash, is given.");
-        return new IrPackage(source.String("package"), source.String("sha256"));
+        return new IrPackage(source.String("package"), source.Sha256("sha256"));
     }
 
     /// <summary>
@@ -867,7 +908,7 @@ public static class IrJsonReader
     {
         var reference = new IrPackageReference(
             json.String("package"),
-            json.OptionalString("sha256"),
+            json.OptionalSha256("sha256"),
             json.OptionalString("database"));
         json.End();
         return reference;

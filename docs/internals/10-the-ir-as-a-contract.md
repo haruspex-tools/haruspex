@@ -88,22 +88,28 @@ If a second implementation of the format appears, in another language, the balan
 both are generated becomes worth its cost.
 
 Four tests hold the three hand-written descriptions together. Every file the writer produces, from every fixture and both
-public corpora, passes the schema. Every way of breaking a file in the tests fails the schema and the reader alike. For
-every property of every object in a document that holds the whole format, removing it is refused by the reader exactly
-when the schema refuses it, at that property's path, and adding a property the format lacks is refused by both
-(`IrReaderSchemaAgreementTests`). And every property of every IR record is either a key the schema lists, or named in a
-table, with the reason, as written another way; a property added to a record fails that test until it is accounted for.
+public corpora, passes the schema. For every property of every object in a document that holds the whole format, removing
+it is refused by the reader exactly when the schema refuses it, at that property's path, and adding a property the format
+lacks is refused by both; and every way of breaking a value or a label in the tests is refused by the reader, and by the
+schema unless the case names a rule only the reader can check (`IrReaderSchemaAgreementTests`). So the two disagree in one
+direction only, and only where the specification says they do. And every property of every IR record is either a key the
+schema lists, or named in a table, with the reason, as written another way; a property added to a record fails that test
+until it is accounted for.
 
 The schema is strict where the format is closed. Every object refuses a property it doesn't list
 (`additionalProperties: false`), every vocabulary is an `enum`, and a flag must agree with its reasons: `nullable: true`
 with at least one entry in `nullableBecause`, and `nullable: false` with none. Every integer is a count, from 0 to the
-largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode, as a consumer who validates with it would; `IrJsonSchemaTests` compiles it so and gives Ajv every file it checks, so that a keyword the tests' own validator read differently from Ajv would fail. Three rules it
-can't state. Two because JSON Schema sees a document after it is parsed: a number's form (a bound written `1e5` passes the
-schema, though the IR writes every number as plain decimal text so that a reader can take it exactly, and the reader
-refuses any other form; the schema's descriptions say so), and a key given twice in one object, which a parser keeps one
-of and the reader refuses. The third because JSON Schema can't compare a value with a key elsewhere in the document: a
-`ref` must name a type in `types`, and the reader refuses one that doesn't. Those are the three ways a file can pass the
-schema and still not read, and the specification lists them.
+largest 32-bit integer. It uses only the core of JSON Schema 2020-12, and Ajv compiles it in strict mode, as a consumer who
+validates with it would: `IrJsonSchemaTests` compiles it so and asks Ajv about every file the tests check, so that a keyword
+the tests' own validator read differently from Ajv would fail.
+
+Some rules no schema can state, because JSON Schema sees a document after it is parsed and one value at a time. It can't see
+a number's text: a count written `99.0` is an integer to it, and a bound written `1e5` a number, though the IR writes every
+number in plain decimal text so that a reader can take it exactly. It can't see a key given twice in one object, which a parser
+keeps one of. It can't compare a value with another elsewhere: that a `ref` names a type in `types`, or that no two objects
+share an `id`. And it can require or refuse a property at a fixed place but not a kind of node at any depth, so it can't say
+that a document labelled 0.27 holds a binary value somewhere. The reader refuses all of these, and the IR README lists them,
+under "Rules only the reader checks", as the only ways a file can pass the schema and still not read.
 
 ## The round trip is a law
 
@@ -150,7 +156,7 @@ is made in RFC 9413 (Thomson and Schinazi, 2023): tolerance lets mistakes spread
 
 ## A version the reader doesn't read
 
-The version is read first, before anything else in the file. A file of any version but the reader's own is refused, with
+The version is read first, before anything else in the file. A file of a version the reader doesn't read is refused, with
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
@@ -158,7 +164,7 @@ $.irVersion is "0.15", and this reader reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
-([decision 0024](../decisions/0024-an-ir-reader-refuses-other-versions.md)), for three reasons.
+([decision 0024](../decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)), for three reasons.
 
 - **An IR file is a build output, not a record.** It is generated from the database project, deterministically. Whoever holds an old file holds, or can get, the source that made it; regenerating gives a file that is right
   for the current version by construction. Migration would spend code, kept forever, to save a command.
@@ -166,97 +172,41 @@ The alternative was to migrate: to read an older file by mapping its differences
   a migration could map. Others change what a claim means or which rules made it: a rule observed wrong and corrected, a
   construct that was unknown and is now typed, a reason that was too wide. A migrated file would present an old engine's
   claims with a new version's label, and a reader would trust them as the new version's.
-- **Each migration is another reader to test.** The format has had twenty versions so far. A chain of migrations is a
-  reader per version, each needing fixtures of its own, for a format that promises no compatibility while it is 0.x.
+- **Each migration is another reader to test.** The format has had a new version for nearly every change to it. A chain of
+  migrations is a reader per version, each needing fixtures of its own, for a format that promises no compatibility while it is
+  0.x.
 
 A newer version than the reader's is refused for the same reason and more plainly: the reader can't know what it would be
 ignoring. One file from every version is kept in [`tests/ir-versions`](../../tests/ir-versions/README.md), and
 `IrVersionTests` checks that each one the reader reads round trips and every older one is refused with that message.
 
-There was one exception for a while, and both its start and its end show what the rule is for. Version 0.17 added one thing:
-`source.session`, the options the callers' sessions are declared to set, which a file leaves out when none is declared. Every
-0.16 file was therefore a 0.17 file that declares nothing, and its claims were made, as 0.17's were without a declaration,
-assuming nothing about the callers. Read as 0.17 it meant exactly what it meant, so the 0.17 reader read it: nothing was mapped
-and nothing guessed, which are the two things the rule exists to prevent
-([decision 0038](../decisions/0038-the-callers-session-is-declared.md)). Version 0.18 ended it. It found that 0.17, with
-nothing declared, claimed never null a decimal that a caller with `NUMERIC_ROUNDABORT` on gets as NULL, and gave such a value
-the reason `precision-loss`. A 0.16 or 0.17 file holds nothing a 0.18 file can't, but its claims are not 0.18's: read as 0.18
-it would present the older engine's claim with the newer label, so the 0.18 reader refuses both. What decides is the meaning of
-the claims, never only whether the properties are ones the reader knows.
+Which older versions it reads follows from what a version is for. The test is whether a document of the older version, read as
+the current one, claims exactly what it claimed when it was written
+([decision 0024](../decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)). When a version
+only adds something a document may lack, every older document is a current one that lacks it, and means the same: 0.19 added
+what a package gives (the package a source was read from, its hash, the packages it refers to), which a document inferred from a
+folder leaves out, so the 0.19 reader read 0.18. When a version changes what the same source gives, an older document carries the
+older claim, and read as the current version it would carry it under a label that promises the newer one: 0.20 made a value set
+`canonical` where 0.19 said `collation` of the same source, a weaker claim, so the 0.20 reader refused 0.19. What decides is the
+meaning of the claims, never only whether the properties are ones the reader knows.
 
-Version 0.19 started the exception again, on the same test. It added what a package gives: the package a source was read
-from and its SHA-256, the packages it refers to, and the reason `encrypted-definition`, which only a package extracted from a
-database can give. A folder's output didn't change, so every 0.18 file is a 0.19 file that names no package and means the
-same, and the 0.19 reader reads it. A file labelled 0.18 that names a package or gives that reason is refused, since 0.18
-could do neither.
+The other half of the rule is on the writer's side: **a document is labelled with the oldest version that says all it says**
+([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). Each version from
+0.24 to 0.29 added only something a document either has or lacks: a baseline, where a value came from, table types, binary
+values, a declaration of a column's JSON, a reason in words. A document that has none of what a version added is written with
+the earlier label, byte for byte as before, so a reader of that version, haruspex's own or another program's, still reads it, and
+only a document that needs the newer reader says so. The reader holds the label to the document: it refuses a label that says
+more than the document does, or less, by the path of what disagrees. Some of what a label promises can be anywhere in a document
+(a binary value inside a union inside a result, for one), so the reader finds every node of a kind in one walk,
+`IrDocumentScalars`, before it says a label is right.
 
-Version 0.20 ended it again. It made a value set of a `char` or `varchar` column, under a collation whose comparison haruspex
-has proven against the server, `canonical`: exact once a value is mapped to the item it equals. A 0.19 file of the same
-source says `collation` there, a weaker claim, and from a folder as from a package; read as 0.20, it would carry the weaker claim
-under the label of a version that makes the stronger one, so the 0.20 reader refuses it
-([decision 0043](../decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)).
-
-Version 0.21 kept it ended, for the opposite reason. It found that every earlier version, from a folder, a package or a project
-alike, typed a literal holding a SQLCMD variable, `'$(Region)'`, by its written text, which a deployment replaces with the
-variable's value, and gave such a literal the reason `sqlcmd-variable`. So a 0.20 file may claim more than SQL Server
-guarantees, and nothing in it says whether it does: it doesn't record which literals its source held. Read as 0.21, any 0.20
-file might carry that claim under a label that promises the bug is fixed, so the 0.21 reader refuses it
-([decision 0046](../decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
-
-Version 0.22 kept it ended. It added what a query file gives (the object kind `query`, the text a query runs, the type owner
-`query`, the reason `undecided-parameter`), which alone a 0.21 file could have been read beside; but it also added `returnsCode`,
-whether a procedure may end with a code other than 0, which decides the shape of its function, and which no 0.21 file says. So
-the 0.22 reader reads 0.22 only.
-
-Version 0.23 kept it ended, in the same way. It added a result set's `name`, which a 0.22 file could only lack; but it also added
-a type's `nameDeclared`, whether the config file gave the type its name, which decides the name a shape several types share is
-declared under, and which no 0.22 file says. So the 0.23 reader reads 0.23 only.
-
-Version 0.24 started the exception again, and took it one step further. It added only what a document combining two databases
-says, the types `generate` writes with a baseline: the baseline's source (`source.baseline`), a key that may be left out
-whatever its value (`optional`), and a result one of the two databases doesn't return (`not-in-both`). Every 0.23 file is a
-0.24 file of one database that means the same, so the 0.24 reader reads it, refusing one labelled 0.23 that says any of the
-three. The step further is on the writer's side: a document of one database is still written as 0.23, since that is what it is.
-So a run without a baseline writes the same bytes as before, every module's header included, and a reader of 0.23, haruspex's own
-or another program's, still reads it; only a combined document, the one such a reader would misread, is labelled 0.24, and that
-reader refuses it ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)).
-
-Version 0.26 kept the rule that 0.25, where each field came from, had made general: a document is labelled with the oldest
-version that says all it says. It added a table type's definition (`tableTypes`), which a table-valued parameter names, and the row
-a client sends in one; only a document whose parameters take a table type has them, and only it is labelled 0.26, so every other
-is written as before, 0.25, 0.24 or 0.23 by what it says, and the 0.26 reader reads all four
-([decision 0077](../decisions/0077-the-ir-carries-a-table-type-s-definition.md)).
-
-Version 0.27 is the same move for a kind of value: a scalar kind for a string of bytes (`bytes`), whose only facet is its length
-in bytes. Labels are ordered, so a document that holds a binary value is labelled 0.27 whether or not it also defines a table
-type, and one that holds none keeps the label the rest of it earns; the 0.27 reader reads all five. A label is a promise about
-the whole document, so the reader must find a binary value wherever one can be (a parameter, a result, a field, a table type's
-column, inside a union or a JSON text's content) before it can say the label is right, which `IrDocumentScalars` does in one place
-([decision 0081](../decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)). The table of folds is filled from
-the same walk (`IrDocumentFolds`), for the same reason: a table type with an identity column has no row type, so a canonical set on
-one of its columns stands nowhere else, and a walk of the parameters, results and named types alone once wrote a file whose set
-named a fold its table left out, which the reader then refused.
-
-Version 0.28 adds what a column declared to hold JSON of a schema brings: the declarations themselves (`columns`, each with the
-hash of every schema file it read), a type node for any JSON value (`any-json`), a fact whose source is a declaration, a claim that
-an object reads a declared column, and a key left out whatever its value in a document of one database. A document that says
-none of these keeps its label, so every document written before is still written byte for byte, and the 0.28 reader reads all
-six. The label is checked as 0.27's is, by finding what only a declaration gives wherever it can be (`IrDocumentDeclared`)
-([decision 0093](../decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md),
-[decision 0094](../decisions/0094-any-json-is-a-type-of-its-own.md)).
-
-Version 0.29 adds a minimum length's unit, code points, which a declaration's `minLength` counts, and `LEN` where it counts a
-surrogate pair as one character (decision 0095 lists the collations and types, as observed), so that they are claimed as they are rather than as half as many; and a reason's `detail`: what, at its place, makes a value null, in words, which `explain` prints. A value read from
-JSON at a path carries the steps that may find nothing or `null` there ("`$.address` may be left out, as the schema doesn't require
-it"), so the person reading the generated code can see which step to change. It is prose, not a claim, and the reader reads no
-meaning from it. A document in which no reason has one keeps its label, and the 0.29 reader reads all seven; the label is checked
-by finding a detail wherever a reason can be, or a minimum in code points wherever a scalar can be (`IrDocumentExplained`)
-([decision 0097](../decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)).
+[`tests/ir-versions`](../../tests/ir-versions/README.md) keeps a file of every version the format has had, says what each added
+and which the reader reads, and `IrVersionTests` holds the reader to it.
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims
 says that not every addition can be. Until then, the rule is the simple one: a reader reads its own version, and an older one
-only where every file of it is already a file of its own that means the same, as 0.16's were for 0.17.
+only where every file of it is already a file of its own that means the same.
 
 ## Names that belong to no dialect
 
