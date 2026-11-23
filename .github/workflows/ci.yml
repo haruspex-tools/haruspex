@@ -4,14 +4,32 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run by hand, from the Actions page or `gh workflow run CI --ref main`: the one run whose binaries and npm tarballs are
+  # handed out (ARTIFACTS below).
+  workflow_dispatch:
 
 # Read-only: this workflow builds and tests, and never writes to the repository.
 permissions:
   contents: read
 
+# A new run cancels the one before it on the same branch or pull request; the event is in the group so that a push to main
+# never cancels a run dispatched by hand there, whose artifacts are the ones handed out.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
+
+# What the native and npm jobs' artifacts are called and how long they are kept. The jobs pass the binaries and the tarballs
+# to each other as artifacts, so every run uploads them; but an artifact of a public repository can be downloaded by anyone
+# signed in to GitHub, and the README tells users to install the tarballs. So only a run dispatched by hand on main uploads
+# them under the names the README gives, kept 30 days. Every other run's have a name of its own, kept a day: a pull
+# request's are built from code no one has reviewed yet (`unreviewed-pr-`), and a push's are main's but not handed out
+# until a maintainer dispatches a run (`ci-`). ARTIFACTS is the prefix, empty for the handed-out run; it is written with
+# the empty case last, since `&&` and `||` treat an empty string as false.
+env:
+  ARTIFACTS: >-
+    ${{ (github.event_name != 'workflow_dispatch' || github.ref != 'refs/heads/main')
+    && (github.event_name == 'pull_request' && 'unreviewed-pr-' || 'ci-') || '' }}
+  ARTIFACT_DAYS: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') && 30 || 1 }}
 
 jobs:
   build-and-test:
@@ -97,7 +115,8 @@ jobs:
     name: Native binary (${{ matrix.rid }})
     # The command line compiled ahead of time for each platform, so that a change which breaks trimming or Native AOT fails
     # here rather than at a release. Each binary then checks the example's committed module, which runs every step from
-    # reading the project to comparing the IR, and is kept as an artifact of the run. Not a release: nothing is published.
+    # reading the project to comparing the IR, and is kept as an artifact of the run with the licences that must go with
+    # it (packaging/licenses/README.md). Not a release: nothing is published to a registry.
     strategy:
       fail-fast: false
       matrix:
@@ -137,10 +156,18 @@ jobs:
       - run: sudo apt-get update -q && sudo apt-get install -y -q clang zlib1g-dev
         if: runner.os == 'Linux'
 
-      # The AOT compiler comes as a package per platform, whose version is the SDK's (global.json pins it). The committed
-      # lock files don't list it, since an ordinary build doesn't need it, so this one restore isn't locked
-      # (src/Haruspex.Cli/Haruspex.Cli.csproj says more). Trim and AOT warnings are errors, as every warning is.
-      # The platform comes in through the environment, so that no expression is expanded into the script.
+      # The locked restore first (locked on CI, as in build-and-test): it checks every package the command is built from
+      # against the committed lock files, content hashes included, and leaves the checked copies in the packages folder,
+      # where the publish's restore finds them.
+      - run: dotnet restore src/Haruspex.Cli
+
+      # The AOT compiler and the runtime pack it links come as packages per platform, whose version is the SDK's: the
+      # newest patch of global.json's feature band that setup-dotnet finds, since global.json rolls forward to the latest
+      # patch, so a later SDK brings a later compiler and runtime. The committed lock files don't list them, since an
+      # ordinary build doesn't need them, and the runtime identifier changes every lock file, so this restore can't be
+      # locked (src/Haruspex.Cli/Haruspex.Cli.csproj says more); everything but those packs was checked above. Trim and AOT
+      # warnings are errors, as every warning is. The publish also puts the licences beside the binary. The platform comes
+      # in through the environment, so that no expression is expanded into the script.
       - run: >-
           dotnet publish src/Haruspex.Cli --configuration Release --runtime "$RID"
           -p:HaruspexNativeAot=true -p:RestoreLockedMode=false --output publish
@@ -150,19 +177,23 @@ jobs:
       - run: ../../publish/haruspex check
         working-directory: examples/greenhouse
 
+      # The binary with its licences; npm-pack refuses one without them. The artifact's root is publish/, the paths'
+      # common folder, so it holds haruspex (or haruspex.exe), LICENSE and licenses/.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: haruspex-${{ matrix.rid }}
+          name: ${{ env.ARTIFACTS }}haruspex-${{ matrix.rid }}
           path: |
             publish/haruspex
             publish/haruspex.exe
+            publish/LICENSE
+            publish/licenses/
           if-no-files-found: error
-          retention-days: 30
+          retention-days: ${{ env.ARTIFACT_DAYS }}
 
   npm-pack:
     name: Pack the npm tarballs
     # The npm packages (packaging/npm/README.md) made from the binaries the native jobs built, kept as one artifact, so a
-    # private application can install haruspex from the files. Not a release: nothing is published.
+    # private application can install haruspex from the files. Not a release: nothing is published to a registry.
     needs: native
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -175,21 +206,28 @@ jobs:
         with:
           node-version: 24
 
-      # Every native artifact (haruspex-<rid>), each into a folder of its own name, as the pack script reads them.
+      # This run's native artifacts, each into a folder of its own name, then renamed haruspex-<rid> without the run's
+      # prefix, as the pack script reads them.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: haruspex-*-*
-          path: binaries
+          pattern: ${{ env.ARTIFACTS }}haruspex-*-*
+          path: downloaded
 
-      # The version comes from the commit checked out, which the script checks each binary was built from.
+      - run: |
+          mkdir binaries
+          for artifact in downloaded/*; do mv "$artifact" "binaries/${artifact#downloaded/"$ARTIFACTS"}"; done
+          ls binaries
+
+      # The version comes from the commit checked out, which the script checks each binary was built from; it also
+      # refuses a binary whose artifact lacks a licence that must go with it.
       - run: node packaging/npm/pack.mjs --binaries binaries --out npm
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: haruspex-npm
+          name: ${{ env.ARTIFACTS }}haruspex-npm
           path: npm/*.tgz
           if-no-files-found: error
-          retention-days: 30
+          retention-days: ${{ env.ARTIFACT_DAYS }}
 
   npm-install:
     name: Install the npm tarballs (${{ matrix.platform }})
@@ -225,9 +263,10 @@ jobs:
         with:
           node-version: 24
 
+      # The name npm-pack uploaded under, from the same ARTIFACTS.
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: haruspex-npm
+          name: ${{ env.ARTIFACTS }}haruspex-npm
           path: ${{ runner.temp }}/npm
 
       # The main package and this platform's, as the README's Install section says. Offline, so npm never asks the

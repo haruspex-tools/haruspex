@@ -31,7 +31,10 @@
     <RepositoryUrl>https://github.com/sharpblue/haruspex</RepositoryUrl>
 
     <!-- Lock files are committed, so a restore cannot silently pick up a different package. CI restores
-         in locked mode, which fails if a lock file is out of date. -->
+         in locked mode, which fails if a lock file is out of date or a package's content hash differs from the one locked.
+         One restore can't be locked: the Native AOT publish (CI's native job), whose runtime identifier changes every
+         lock file and adds the AOT compiler and runtime packs, which follow the SDK's patch and so aren't locked. That job
+         runs the locked restore first, so only those packs come unchecked (src/Haruspex.Cli/Haruspex.Cli.csproj). -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>

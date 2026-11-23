@@ -6,6 +6,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { committed } from "../licenses.mjs";
 import { pack } from "../pack.mjs";
 import { mainManifest, platformManifest } from "../packages.mjs";
 import { previewVersion } from "../version.mjs";
@@ -18,15 +19,46 @@ const version = "0.0.0-preview-250ced9c";
 
 let root;
 
-/** A folder of stand-in binaries laid out as CI's artifacts download: haruspex-<rid>/<binary>. */
-function binaries(name, builtFrom = commit, rids = platforms.map((p) => p.rid)) {
+/** The licence files a native artifact holds beside its binary, as the publish lays them out, for a platform. */
+function licenseFiles(rid) {
+  return ["LICENSE", ...stagedLicenses(rid)];
+}
+
+/** The files under `licenses/` in an artifact for `rid`: the .NET runtime's and compiler's, then the committed ones. */
+function stagedLicenses(rid) {
+  const committedFiles = fs
+    .readdirSync(committed, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .flatMap((e) => fs.readdirSync(path.join(committed, e.name)).map((file) => `licenses/${e.name}/${file}`));
+  return [
+    `licenses/Microsoft.NETCore.App.Runtime.NativeAOT.${rid}.10.0.15/LICENSE.TXT`,
+    `licenses/Microsoft.NETCore.App.Runtime.NativeAOT.${rid}.10.0.15/THIRD-PARTY-NOTICES.TXT`,
+    `licenses/runtime.${rid}.Microsoft.DotNet.ILCompiler.10.0.15/THIRD-PARTY-NOTICES.TXT`,
+    ...committedFiles,
+  ];
+}
+
+/**
+ * A folder of stand-in binaries laid out as CI's artifacts download: haruspex-<rid>/<binary>, with the licences the publish
+ * puts beside it (stand-ins for the .NET ones, the committed ones as they are) unless `licensed` is false.
+ */
+function binaries(name, builtFrom = commit, rids = platforms.map((p) => p.rid), licensed = true) {
   const folder = path.join(root, name);
   for (const p of platforms.filter((q) => rids.includes(q.rid))) {
-    fs.mkdirSync(path.join(folder, `haruspex-${p.rid}`), { recursive: true });
+    const artifact = path.join(folder, `haruspex-${p.rid}`);
+    fs.mkdirSync(artifact, { recursive: true });
     // The binaries' own version string is the packages' version and +<commit> (InformationalVersion); a dependency's names
     // another commit.
     const bytes = `stand-in for ${p.rid}\0 2.0.14+0427b9abbead3fa64c6655eb4290c537397131fa\0 ${previewVersion(builtFrom)}+${builtFrom}\0`;
-    fs.writeFileSync(path.join(folder, `haruspex-${p.rid}`, p.binary), bytes, { mode: 0o644 });
+    fs.writeFileSync(path.join(artifact, p.binary), bytes, { mode: 0o644 });
+    if (!licensed) continue;
+    for (const file of licenseFiles(p.rid)) {
+      const target = path.join(artifact, ...file.split("/"));
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      const source = file.startsWith("licenses/") ? path.join(committed, ...file.split("/").slice(1)) : null;
+      if (source && fs.existsSync(source)) fs.copyFileSync(source, target);
+      else fs.writeFileSync(target, `stand-in for ${file}\n`);
+    }
   }
   return folder;
 }
@@ -88,11 +120,64 @@ test("the main package holds the launcher, the config schema, the licence and a 
   assert.ok(main.files.find((f) => f.path === "haruspex.schema.json").size === Buffer.byteLength(schema));
 });
 
-test("each platform package holds its binary, with the licence and a readme", () => {
+test("each platform package holds its binary, with the licences that came with it and a readme", () => {
   for (const platform of packable) {
     const p = packed.find((q) => q.name === platform.packageName);
-    assert.deepEqual(p.files.map((f) => f.path).sort(), ["LICENSE", "README.md", platform.binary, "package.json"].sort());
+    assert.deepEqual(
+      p.files.map((f) => f.path).sort(),
+      [...licenseFiles(platform.rid), "README.md", platform.binary, "package.json"].sort(),
+    );
   }
+});
+
+test("refuses an artifact that lacks a licence, naming the artifact and the file", () => {
+  // One platform's artifact without ScriptDom's notice, as if the publish had left it out.
+  const folder = binaries("unlicensed");
+  const notice = fs
+    .readdirSync(committed)
+    .filter((name) => name.startsWith("Microsoft.SqlServer.TransactSql.ScriptDom."))
+    .map((name) => `licenses/${name}/NOTICE.txt`)[0];
+  assert.ok(notice, "ScriptDom's licences are committed");
+  fs.rmSync(path.join(folder, "haruspex-linux-arm64", ...notice.split("/")));
+  assert.throws(
+    () => pack({ binaries: folder, out: path.join(root, "out-unlicensed"), commit, host: "linux" }),
+    (error) =>
+      error.message.includes("haruspex-linux-arm64") &&
+      error.message.includes(notice) &&
+      !error.message.includes("haruspex-linux-x64"),
+  );
+  assert.equal(fs.existsSync(path.join(root, "out-unlicensed")), false, "nothing is written when a binary is refused");
+});
+
+test("refuses an artifact without the .NET runtime's licences or haruspex's own", () => {
+  const folder = binaries("no-runtime");
+  fs.rmSync(path.join(folder, "haruspex-osx-arm64", "licenses", "Microsoft.NETCore.App.Runtime.NativeAOT.osx-arm64.10.0.15"), {
+    recursive: true,
+  });
+  fs.rmSync(path.join(folder, "haruspex-win-x64", "LICENSE"));
+  assert.throws(
+    () => pack({ binaries: folder, out: path.join(root, "out-no-runtime"), commit, host: "linux" }),
+    (error) =>
+      /haruspex-osx-arm64: licenses\/Microsoft\.NETCore\.App\.Runtime\.NativeAOT\.osx-arm64\.<version>/.test(error.message) &&
+      /haruspex-win-x64: LICENSE/.test(error.message),
+  );
+});
+
+test("refuses an artifact whose committed licence differs from the repository's", () => {
+  const folder = binaries("altered");
+  const file = stagedLicenses("linux-x64").find((f) => f.startsWith("licenses/System.CommandLine."));
+  fs.writeFileSync(path.join(folder, "haruspex-linux-x64", ...file.split("/")), "Copyright nobody\n");
+  assert.throws(
+    () => pack({ binaries: folder, out: path.join(root, "out-altered"), commit, host: "linux" }),
+    (error) => error.message.includes(file) && error.message.includes("differs"),
+  );
+});
+
+test("refuses artifacts that hold the binaries alone, as CI's did before they carried their licences", () => {
+  assert.throws(
+    () => pack({ binaries: binaries("bare", commit, undefined, false), out: path.join(root, "out-bare"), commit, host: "linux" }),
+    (error) => platforms.every((p) => error.message.includes(`haruspex-${p.rid}:`)),
+  );
 });
 
 test("a binary for Linux or macOS is packed executable", (t) => {

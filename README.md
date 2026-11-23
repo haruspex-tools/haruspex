@@ -422,11 +422,17 @@ dotnet build
 ### A preview from npm tarballs
 
 **This is a preview.** Once published, haruspex will be installed from npm, as `npm install --save-dev haruspex`, with a native binary for
-each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, each CI
-run builds the packages as tarballs and keeps them for 30 days as its artifact `haruspex-npm`: the command,
-`haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, `haruspex.tools-<platform>-0.0.0-preview-<commit>.tgz`, where
-the platform is `linux-x64`, `linux-arm64`, `darwin-arm64`, `darwin-x64` or `win32-x64`. Download them from the run's page, or
-with the `gh` CLI:
+each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, a CI
+run that the maintainer starts by hand on `main` builds the packages as tarballs and keeps them for 30 days as its artifact
+`haruspex-npm`: the command, `haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, with the licences of what
+it contains, `haruspex.tools-<platform>-0.0.0-preview-<commit>.tgz`, where the platform is `linux-x64`, `linux-arm64`,
+`darwin-arm64`, `darwin-x64` or `win32-x64`. Only those runs' tarballs are the project's. Every other run keeps its tarballs a
+day, under a name of its own: `unreviewed-pr-haruspex-npm` for a pull request, built from code no one has reviewed, and
+`ci-haruspex-npm` for a push. Find the latest run started by hand on `main`, then download its tarballs, with the `gh` CLI:
+
+```sh
+gh run list --repo sharpblue/haruspex --workflow CI --branch main --event workflow_dispatch --status success --limit 1
+```
 
 ```sh
 gh run download <run id> --repo sharpblue/haruspex --name haruspex-npm --dir haruspex-preview
