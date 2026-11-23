@@ -212,19 +212,26 @@ public partial class ExpressionTests
     public void A_null_or_nullable_style_makes_convert_and_try_convert_null()
     {
         // A_null_style_makes_convert_and_try_convert_null_whatever_they_convert: a NULL style gives NULL into text, text into
-        // text and int into int alike, so the style's reasons are the result's; the NULL literal always gives NULL.
+        // text and int into int alike, and for JSON built here or converted into json, so the style's reasons are the
+        // result's; the NULL literal always gives NULL.
         var doc = Procedure("""
             DECLARE @style int = (SELECT MAX(n) FROM dbo.t);
             SELECT CONVERT(varchar(30), born, @style) AS a, TRY_CONVERT(varchar(30), born, @style) AS b, CONVERT(varchar(30), label, @style) AS c,
                    CONVERT(int, id, @style) AS d, TRY_CONVERT(int, id, @style) AS e, CONVERT(varchar(30), born, NULL) AS f, TRY_CONVERT(int, id, NULL) AS g,
-                   CONVERT(varchar(30), born, 120) AS h, CONVERT(int, id, 1) AS i, CONVERT(varchar(30), born, n) AS j
+                   CONVERT(varchar(30), born, 120) AS h, CONVERT(int, id, 1) AS i, CONVERT(varchar(30), born, n) AS j,
+                   CONVERT(nvarchar(max), (SELECT 1 AS a FOR JSON PATH), @style) AS k, CONVERT(json, (SELECT 1 AS a FOR JSON PATH, WITHOUT_ARRAY_WRAPPER), @style) AS l
             FROM dbo.t;
             """);
-        foreach (var name in new[] { "a", "b", "c", "d", "e", "j" })
+        foreach (var name in new[] { "a", "b", "c", "d", "e", "j", "k", "l" })
             Assert.True(Field(doc, name).Nullable, name);
         Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "j"));
         Assert.Contains(IrNullRule.NullLiteral, Rules(doc, "f"));
         Assert.Contains(IrNullRule.NullLiteral, Rules(doc, "g"));
+
+        // JSON built here converts by rules of its own, into text or into json; a FOR JSON query without FROM always has a
+        // row, so the style's reasons are the only ones.
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.EmptyAggregate], Rules(doc, "k"));
+        Assert.Equal([IrNullRule.NullableColumn, IrNullRule.EmptyAggregate], Rules(doc, "l"));
 
         // A literal style is never NULL: the result is null only as its operand is.
         Assert.Empty(Rules(doc, "h"));
