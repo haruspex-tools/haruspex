@@ -22,8 +22,18 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <param name="Model">The <c>Model</c> element of <c>model.xml</c>, whose children are the schema's elements.</param>
 /// <param name="References">The database references its header records, in order.</param>
 /// <param name="CompatibilityMode">The compatibility level its header records, or null.</param>
-internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode)
+/// <param name="Deployment">
+/// Its pre- and post-deployment scripts (<c>predeploy.sql</c>, <c>postdeploy.sql</c>), each by its part's name with its text, in
+/// that order: a build writes each with the files it includes by <c>:r</c> already in its text.
+/// </param>
+internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode, IReadOnlyList<(string Part, string Text)> Deployment)
 {
+    /// <summary>The parts of a package that hold its deployment scripts, in the order a deployment runs them.</summary>
+    private static readonly string[] DeploymentParts = ["predeploy.sql", "postdeploy.sql"];
+
+    /// <summary>Its pre- and post-deployment scripts, each by its part's name with its text.</summary>
+    public IReadOnlyList<(string Part, string Text)> Deployment { get; } = Deployment;
+
     /// <summary>
     /// The compatibility level the header records, or else the version of the provider the model names
     /// (<c>Sql160DatabaseSchemaProvider</c> is 160): used when the database's options don't give one, as an extract's don't when
@@ -71,12 +81,25 @@ internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XEl
                 origin?.Root?.Element(ModelXml.Name("Server")) is not null,
                 elements,
                 [.. Header(root)],
-                HeaderCompatibility(root) ?? ProviderLevel(root));
+                HeaderCompatibility(root) ?? ProviderLevel(root),
+                [.. DeploymentScripts(zip)]);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidDataException or XmlException)
         {
             diagnostics.Add(SourceCodes.UnreadablePackage.At(new FileLocation(path), $"{System.IO.Path.GetFileName(path)} can't be read as a DACPAC: {e.Message}"));
             return null;
+        }
+    }
+
+    /// <summary>The deployment scripts the package holds, each as text without its byte order mark.</summary>
+    private static IEnumerable<(string Part, string Text)> DeploymentScripts(ZipArchive zip)
+    {
+        foreach (var part in DeploymentParts)
+        {
+            if (zip.GetEntry(part) is not { } entry)
+                continue;
+            using var reader = new StreamReader(entry.Open(), System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            yield return (part, reader.ReadToEnd());
         }
     }
 

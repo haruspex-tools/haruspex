@@ -168,6 +168,35 @@ public partial class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Dateadd_converts_its_number_to_bigint_which_past_its_range_is_null_under_the_callers_ansi_warnings_off()
+    {
+        // The number is converted to bigint before the date is moved. Past bigint's range that conversion overflows: an error
+        // (8115) with the options on, NULL with them off, even from NOT NULL columns. Within it (bigint's greatest value,
+        // money's and a decimal of 18 integer digits), the date overflows instead, which is an error (517) under any options.
+        const string Off = "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;";
+        const string Table = """
+            DECLARE @t TABLE (d380 decimal(38,0) NOT NULL, d190 decimal(19,0) NOT NULL, d180 decimal(18,0) NOT NULL, f float NOT NULL,
+                              r real NOT NULL, bi bigint NOT NULL, m money NOT NULL, da date NOT NULL);
+            INSERT INTO @t VALUES (99999999999999999999999999999999999999, 9999999999999999999, 999999999999999999, 1.79E+308, 3.40E+38,
+                                   9223372036854775807, 922337203685477.5807, '2000-01-01');
+            """;
+        Assert.Equal(
+            "a,b,c,d,e,f: null,null,null,null,null,null",
+            (await Run([], $"""
+                {Off} {Table}
+                SELECT DATEADD(day, d380, da) AS a, DATEADD(day, d190, da) AS b, DATEADD(day, f, da) AS c, DATEADD(day, r, da) AS d,
+                       DATEADD(second, d380, CAST(da AS datetime2)) AS e, DATEADD(day, 1e19, da) AS f
+                FROM @t;
+                """)).ToString());
+        Assert.Equal(" ! 8115", (await Run([], $"{Table} SELECT DATEADD(day, f, da) AS v FROM @t;")).ToString());
+        Assert.Equal(" ! 8115", (await Run([], $"{Table} SELECT DATEADD(day, d190, da) AS v FROM @t;")).ToString());
+        Assert.Equal(" ! 517", (await Run([], $"{Off} {Table} SELECT DATEADD(day, bi, da) AS v FROM @t;")).ToString());
+        Assert.Equal(" ! 517", (await Run([], $"{Off} {Table} SELECT DATEADD(day, m, da) AS v FROM @t;")).ToString());
+        Assert.Equal(" ! 517", (await Run([], $"{Off} {Table} SELECT DATEADD(day, d180, da) AS v FROM @t;")).ToString());
+        Assert.Equal(" ! 517", (await Run([], $"{Off} {Table} SELECT DATEADD(day, 9223372036854775807, da) AS v FROM @t;")).ToString());
+    }
+
+    [Fact]
     public async Task Dateadd_with_the_null_literal_as_its_number_does_not_compile_and_percentile_cont_takes_a_bit()
     {
         // DATEADD(day, NULL, d) is refused (8116), where a NULL variable is NULL; PERCENTILE_CONT over a bit is

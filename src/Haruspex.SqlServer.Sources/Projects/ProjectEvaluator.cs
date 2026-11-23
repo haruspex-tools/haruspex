@@ -446,8 +446,16 @@ internal sealed class ProjectEvaluator
                 if (!left.Any(x => ItemSpecs.Names(Folder, x, DiskPath.Full(Folder, spec))))
                     added.Add(new ProjectItem(type, spec, DiskPath.IsRootedElsewhere(spec) ? null : DiskPath.Full(Folder, spec), at));
             }
-            else if (Glob.Of(Folder, spec).Files(out var unexpanded) is { } files)
+            else if (Glob.Of(Folder, spec).Files(out var unexpanded, out var unreadable) is { } files)
             {
+                // A folder under the pattern that can't be entered: what it holds isn't read, which is said rather than passed by.
+                foreach (var folder in unreadable)
+                {
+                    var shut = SourceCodes.UnreadableScript.At(at, $"{spec} names the scripts under {Shown(folder)}, which can't be entered, so none of them is read.");
+                    if (!problems.Contains(shut))
+                        problems.Add(shut);
+                }
+
                 added.AddRange(files.Where(f => !left.Any(x => ItemSpecs.Names(Folder, x, f))).Select(f => new ProjectItem(type, Path.GetRelativePath(Folder, f), f, at)));
             }
             else

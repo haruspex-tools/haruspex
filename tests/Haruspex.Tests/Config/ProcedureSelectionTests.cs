@@ -17,8 +17,8 @@ public class ProcedureSelectionTests
         new("sales", "list_orders"),
         new("sales", "list_orders_internal"),
         new("hr", "list_people"),
-        new("RDF.", "GetPropertyList"),
-        new("RDF.", "Get.Dotted"),
+        new("Ledger.", "GetEntryList"),
+        new("Ledger.", "Get.Dotted"),
     ];
 
     private static Outcome<EquatableArray<ObjectName>> Select(string schemas)
@@ -44,7 +44,7 @@ public class ProcedureSelectionTests
 
     [Fact]
     public void A_schema_key_is_its_literal_name_and_a_dot_in_a_pattern_is_literal() =>
-        Assert.Equal(["[RDF.].[Get.Dotted]"], Names(Select("""{ "RDF.": { "include": ["get.*"] } }""")));
+        Assert.Equal(["[Ledger.].[Get.Dotted]"], Names(Select("""{ "Ledger.": { "include": ["get.*"] } }""")));
 
     [Theory]
     [InlineData("get_*", "get_order", true)]
@@ -102,10 +102,10 @@ public class ProcedureSelectionTests
     [Fact]
     public void A_schema_key_that_names_no_schema_of_the_project_is_an_error()
     {
-        var result = Select("""{ "[RDF.]": { "include": ["*"] } }""");
+        var result = Select("""{ "[Ledger.]": { "include": ["*"] } }""");
 
         Assert.Equal(
-            "haruspex.json:1:16: error HAR4001: schemas[\"[RDF.]\"]: the project has no procedure in a schema named \"[RDF.]\". A schema key is the schema's name as it is, without brackets.",
+            "haruspex.json:1:16: error HAR4001: schemas[\"[Ledger.]\"]: the project has no procedure in a schema named \"[Ledger.]\". A schema key is the schema's name as it is, without brackets.",
             Assert.Single(result.Diagnostics).ToString());
     }
 

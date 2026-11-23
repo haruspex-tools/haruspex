@@ -22,8 +22,9 @@ other reason (an `ALTER` whose body names a column that doesn't exist fails with
 foreseen, as a `CREATE` that fails isn't: a deployment that reports errors has not deployed the project.
 
 The earlier definitions are passed over, not modelled and not reported: the object's location is the one that stands, which
-`haruspex explain` shows. Tables are not read this way (an `ALTER TABLE` that could change a column stays a doubt wherever it
-is), nor are triggers, which keep every definition, since any of them may be the one that fires; both only claim less.
+`haruspex explain` shows. Tables are not read this way (an `ALTER TABLE` that could change a column, a `DROP TABLE` and a
+`CREATE TABLE` that isn't the table's definition stay a doubt wherever they are, under `IF`, in a block or in a body included,
+but for a `DROP TABLE` before the same script's own `CREATE TABLE` outside a body, which this rule covers), nor are triggers, which keep every definition, since any of them may be the one that fires; both only claim less.
 
 **Context.** Creating a stub and then altering it, or dropping and recreating, is how a deployment script installs a procedure
 that may already exist. Every such script read as `redefined`: the order that decides it was ignored even where the script
@@ -54,8 +55,12 @@ definition that stands is known exactly; between scripts it isn't, and nothing c
 though, since a model has one definition per object: observed with `Microsoft.Build.Sql` 2.3.0, an `ALTER` or a `DROP` among
 the scripts a build reads fails it (SQL70001, a statement the build doesn't accept there), and so does a second `CREATE` or
 `CREATE OR ALTER` of the name (SQL71508). The idiom lives in a folder of deployment scripts, or in a project's pre- or
-post-deployment script, which neither the build nor haruspex reads. A DACPAC holds only the final model, so nothing changes in
-reading one.
+post-deployment script, which the build packs beside the model rather than into it. A DACPAC's model holds only the final
+definition, so nothing changes in reading one. A deployment runs those scripts every time, though, after the model is deployed
+(post) or before (pre), so what one does to a procedure is what the database holds: the project and the package readers read
+them for what they change (`DeploymentScripts`), and a procedure, function or view one creates, alters or drops is
+`redefined` there, never played in its order, since the model's definition and the script's are two places the deployment
+takes it from.
 
 **In the code:** `ScriptDefinitions`, `ScriptOutcome`, `DefinitionsInEffect`, `SchemaDeclarations.Settle`; observed in
 `ExecObservationTests.Definitions.cs`, tested in `DefinitionsInEffectTests`.

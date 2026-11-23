@@ -103,7 +103,7 @@ fixed point*, *widening*, *strongly connected component*, *dataflow analysis*.
   "never null (observed: `Count_star_over_no_rows_is_zero`)".
 - **No history as narrative.** A comment or document describes the code as it is. When the past explains a
   choice, give a dated decision ("Decided 10 Nov 2026: COUNT is nullable, because…") and link the decision log;
-  never "slice 6g added…" or "this used to…".
+  never <!-- vale haruspex.History = NO -->"slice 6g added…"<!-- vale haruspex.History = YES --> or "this used to…".
 - **Don't restate code.** A comment that says what the next line does is noise; one that says why is signal.
 - **Lists for three or more parallel items, tables for comparisons, a diagram when a picture is clearer than a
   paragraph.**
@@ -141,7 +141,7 @@ fixed point*, *widening*, *strongly connected component*, *dataflow analysis*.
 | *knob* and the other replaced terms in the table above | Vale (`haruspex.Terms`) |
 | No dashes as punctuation; *for example*, not *e.g.*; no exclamation marks | Vale (`haruspex.Punctuation`) |
 | Sentence-case headings | Vale (`haruspex.Headings`) |
-| No slice names, review rounds or citations of the private design document, in headings or prose | Vale (`haruspex.History`), and `tests/prose/check.sh` with the same rule's tokens in SQL |
-| Relative links resolve | the Markdown link test (S1) |
-| Mermaid diagrams parse | the diagram check in CI (S1b) |
-| Lead with the point; say why; don't restate code; claims no stronger than the evidence | review (checklist items 9 and 10) |
+| No slice names, review rounds, citations of the private design document or of the notes the work is planned in, in headings, prose or test names | Vale (`haruspex.History`), and `tests/prose/check.sh` with the same rule's tokens in SQL, scripts, project files and test names |
+| Relative links resolve | `MarkdownLinkTests` |
+| Mermaid diagrams parse | `tests/prose/check.sh diagrams`, which CI's prose job runs |
+| Lead with the point; say why; don't restate code; claims no stronger than the evidence | review, against [CONTRIBUTING.md](../CONTRIBUTING.md) |

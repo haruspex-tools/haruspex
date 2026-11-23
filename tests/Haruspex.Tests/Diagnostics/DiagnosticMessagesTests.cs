@@ -35,7 +35,12 @@ public class DiagnosticMessagesTests
     private const string Plain = "\"source\": \"db\", \"out\": \"out\", \"schemas\": { \"lib\": { \"include\": [\"*\"] } }";
 
     /// <summary>A run of the CLI on a project of <paramref name="sql"/> (one file each), with the arguments, or with the config file and none.</summary>
-    private static string[] Cli(string[] sql, string? config = null, string[]? args = null, Action<TempDirectory>? arrange = null)
+    /// <param name="sql">The scripts, each in a file of its own.</param>
+    /// <param name="config">The config file, if any.</param>
+    /// <param name="args">The arguments, when not the standard ones.</param>
+    /// <param name="arrange">What else the folder holds.</param>
+    /// <param name="held">A file of the folder another process holds open, unshared, while the CLI runs.</param>
+    private static string[] Cli(string[] sql, string? config = null, string[]? args = null, Action<TempDirectory>? arrange = null, string? held = null)
     {
         using var folder = new TempDirectory();
         folder.File("db/tables.sql", Tables);
@@ -44,6 +49,7 @@ public class DiagnosticMessagesTests
         if (config is not null)
             folder.File("haruspex.json", config);
         arrange?.Invoke(folder);
+        using var holder = held is null ? null : new FileStream(Path.Combine(folder.Path, held), FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         using var output = new StringWriter();
         using var error = new StringWriter();
         // --verbose, so that every note is said: the notes are among the messages this test holds.
@@ -138,8 +144,8 @@ public class DiagnosticMessagesTests
     /// A run of the CLI on the project file <c>db/db.sqlproj</c>, a <c>Microsoft.Build.Sql</c> project of the standard tables and
     /// <see cref="GetBook"/> whose properties and items are <paramref name="inside"/>.
     /// </summary>
-    private static string[] Project(string inside, string sdk = "Microsoft.Build.Sql/2.3.0") =>
-        Cli([GetBook], args: ["db/db.sqlproj", "--include", "*.*", "--out", "out"], arrange: f => f.File("db/db.sqlproj", $"""
+    private static string[] Project(string inside, string sdk = "Microsoft.Build.Sql/2.3.0", string[]? sql = null) =>
+        Cli(sql ?? [GetBook], args: ["db/db.sqlproj", "--include", "*.*", "--out", "out"], arrange: f => f.File("db/db.sqlproj", $"""
             <Project Sdk="{sdk}">
               <PropertyGroup>
                 <DSP>Microsoft.Data.Tools.Schema.Sql.Sql170DatabaseSchemaProvider</DSP>
@@ -241,6 +247,8 @@ public class DiagnosticMessagesTests
         (1017, () => Query("SELECT 1 AS one; RETURN 5;")),
         (1018, () => Query("-- @sets books\n-- @sets titles\nSELECT b.title FROM lib.book AS b;\n")),
         (1019, () => Query("-- @module lending desk\nSELECT b.title FROM lib.book AS b;\n")),
+        (1020, () => Cli([GetBook, "CREATE PROCEDURE lib.q AS SELECT b.id FROM lib.book AS b;"], held: "db/p2.sql")),
+        (1021, () => Project("<ItemGroup><PostDeploy Include=\"p2.sql\" /></ItemGroup>", sql: [GetBook, ":on error exit\nUPDATE lib.book SET note = NULL;"])),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

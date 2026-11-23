@@ -12,7 +12,7 @@ Every function returns one shape: `result` for one result set, `result1`, `resul
 `OUTPUT` parameters, and `returnValue`, the return code. It takes anything with `request()` first, and the parameters' object
 second when the procedure has parameters. It checks values through Standard Schema, never through Zod's own methods.
 
-**Context.** Richard, 16 Nov 2026: the module runs on the server (route handlers, server actions, server components in a
+**Context.** The maintainer, 16 Nov 2026: the module runs on the server (route handlers, server actions, server components in a
 Next.js application), so "client" would mislead; it is "the database module". Its types and schemas are useful in the
 browser too, and its functions must never be there: they take a connection, which holds the database's credentials.
 

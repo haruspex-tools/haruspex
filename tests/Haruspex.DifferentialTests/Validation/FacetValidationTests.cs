@@ -1,4 +1,5 @@
 using System.Data.SqlTypes;
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.DifferentialTests.Validation;
@@ -12,23 +13,25 @@ public class FacetValidationTests
     private const string JsonColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
     private static readonly IrFactSource From = new(IrFactSourceKind.Check, "dbo.ck");
 
-    private static ValidationReport Json(IrScalar scalar, string valueJson)
+    private static ValidationReport Json(IrScalar scalar, string valueJson, EquatableMap<string, IrFold>? folds = null)
     {
         var doc = new IrDocument(
             new IrSource("tsql"),
             [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Json, new IrArray(new IrRef("Row")), [])])],
             new Dictionary<string, IrObjectType> { ["Row"] = new([new IrField("v", scalar, IrPresence.Always, [])]) },
-            []);
+            [])
+        { Folds = folds ?? [] };
         return IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet([JsonColumn], [[$$"""[{"v":{{valueJson}}}]"""]])]);
     }
 
-    private static ValidationReport Row(IrScalar scalar, object value)
+    private static ValidationReport Row(IrScalar scalar, object value, EquatableMap<string, IrFold>? folds = null)
     {
         var doc = new IrDocument(
             new IrSource("tsql"),
             [new IrObject("dbo.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("Row")), [])])],
             new Dictionary<string, IrObjectType> { ["Row"] = new([new IrField("v", scalar, IrPresence.Always, [])]) },
-            []);
+            [])
+        { Folds = folds ?? [] };
         return IrValidator.Validate(doc, "dbo.p", [new ObservedResultSet(["v"], [[value]])]);
     }
 
@@ -75,12 +78,36 @@ public class FacetValidationTests
     }
 
     [Fact]
+    public void A_length_in_code_points_counts_a_surrogate_pair_as_one()
+    {
+        // U+1F600 is two UTF-16 code units and one code point, so "😀ab" is three code points and four units.
+        var length = Length(3, false, IrLengthUnit.CodePoints);
+
+        Assert.Empty(Json(Text("nvarchar(3)", length), "\"\uD83D\uDE00ab\"").Violations);
+        Assert.Equal(["length 3"], Edges(Row(Text("nvarchar(3)", length), "\uD83D\uDE00ab")));
+        Assert.Single(Json(Text("nvarchar(3)", length), "\"\uD83D\uDE00abc\"").Violations);
+        Assert.Single(Row(Text("nvarchar(3)", length), "\uD83D\uDE00abc").Violations);
+    }
+
+    [Fact]
     public void A_minimum_length_is_checked_and_its_edge_reported()
     {
         var facets = new IrFacets(MinLength: new IrMinLength(2, From));
 
         Assert.Single(Json(Text("nvarchar(9)", facets), "\"a\"").Violations);
         Assert.Equal(["min length 2"], Edges(Json(Text("nvarchar(9)", facets), "\"ab\"")));
+    }
+
+    [Fact]
+    public void A_minimum_length_in_code_points_counts_a_surrogate_pair_as_one()
+    {
+        // "😀😀" is two code points and four UTF-16 code units, so it is short of a minimum of 3 code points; "😀😀a" is at it.
+        var facets = new IrFacets(MinLength: new IrMinLength(3, From) { Unit = IrLengthUnit.CodePoints });
+
+        Assert.Single(Json(Text("nvarchar(9)", facets), "\"\uD83D\uDE00\uD83D\uDE00\"").Violations);
+        Assert.Single(Row(Text("nvarchar(9)", facets), "\uD83D\uDE00\uD83D\uDE00").Violations);
+        Assert.Equal(["min length 3"], Edges(Json(Text("nvarchar(9)", facets), "\"\uD83D\uDE00\uD83D\uDE00a\"")));
+        Assert.Equal(["min length 3"], Edges(Row(Text("nvarchar(9)", facets), "\uD83D\uDE00\uD83D\uDE00a")));
     }
 
     [Fact]
@@ -119,6 +146,46 @@ public class FacetValidationTests
         Assert.Empty(Row(Text("varchar(6)", facets), "a").Violations);
         Assert.Empty(Row(Text("varchar(6)", facets), "a   ").Violations);
     }
+
+    [Fact]
+    public void A_canonical_set_is_matched_through_its_fold()
+    {
+        // The fold ignores hyphens and holds each letter equal to its capital, so "a-b " is "AB"; "ac" is "AC", outside the set.
+        var folds = Folds();
+        var facets = new IrFacets(Values: new IrValueSet([new IrValue("AB", true)], IrValueMatch.Canonical, [From], "ci"));
+
+        Assert.Equal(["value AB"], Edges(Json(Text("varchar(9)", facets), "\"a-b \"", folds)));
+        Assert.Empty(Row(Text("varchar(9)", facets), "Ab", folds).Violations);
+        Assert.Single(Json(Text("varchar(9)", facets), "\"ac\"", folds).Violations);
+        Assert.Single(Row(Text("varchar(9)", facets), "abc", folds).Violations);
+    }
+
+    private static EquatableMap<string, IrFold> Folds() =>
+        [new("ci", new IrFold("-", [new("A", "Aa"), new("B", "Bb"), new("C", "Cc")]))];
+
+    // ---- binary -------------------------------------------------------------------------------------
+
+    private static IrScalar Binary(string sql, int n, bool isFixed) => new(IrScalarKind.Bytes, null, sql, Length(n, isFixed, IrLengthUnit.Bytes));
+
+    [Theory]
+    [InlineData(true, 4, true)]
+    [InlineData(true, 5, false)]
+    [InlineData(true, 3, false)]
+    [InlineData(false, 4, true)]
+    [InlineData(false, 3, true)]
+    [InlineData(false, 5, false)]
+    public void A_binary_length_counts_bytes_exactly_when_fixed_and_at_most_when_varying(bool isFixed, int bytes, bool keeps)
+    {
+        var scalar = Binary(isFixed ? "binary(4)" : "varbinary(4)", 4, isFixed);
+        var value = new byte[bytes];
+
+        Assert.Equal(keeps, Row(scalar, value).Violations.Count == 0);
+        Assert.Equal(keeps, Json(scalar, $"\"{Convert.ToBase64String(value)}\"").Violations.Count == 0);
+    }
+
+    [Fact]
+    public void A_binary_value_at_its_length_reaches_the_length_edge() =>
+        Assert.Equal(["length 4"], Edges(Row(Binary("varbinary(4)", 4, false), new byte[4])));
 
     // ---- numbers ------------------------------------------------------------------------------------
 

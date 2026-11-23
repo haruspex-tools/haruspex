@@ -54,7 +54,7 @@ public class GenerateBaselineTests
     [Fact]
     public void The_module_is_written_from_the_combined_document_which_names_its_baseline()
     {
-        // The brief's example: channel only in the new database, and a status the new database allows.
+        // The example: channel only in the new database, and a status the new database allows.
         using var folder = Project(GetOrder, Edit(GetOrder, "o.status FROM", "o.status, o.channel FROM"), tablesNow: Edit(Tables, "('open', 'closed')", "('open', 'closed', 'held')"));
 
         var (exitCode, output, error) = Run(folder, "generate", "--baseline", "release/db");

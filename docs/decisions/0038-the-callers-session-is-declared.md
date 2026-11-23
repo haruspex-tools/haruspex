@@ -52,7 +52,7 @@ application's own `SET`s may change them, so check the session (`SELECT SESSIONP
   (`Numeric_roundabort_on_makes_a_loss_of_precision_null_when_ansi_warnings_and_arithabort_are_both_off`), which haruspex did
   not model: a known limitation, older than this decision, under which, with nothing declared, haruspex's output was unsound
   for a caller with `NUMERIC_ROUNDABORT` on and both `ANSI_WARNINGS` and `ARITHABORT` off, and for no other. Closing it changed
-  the output for everyone who declares nothing, so it was a slice of its own, and `numericRoundAbort` came with the rule that
+  the output for everyone who declares nothing, so it was a change of its own, and `numericRoundAbort` came with the rule that
   reads it, not before, so that the config file never accepted a setting nothing read. **The gap is closed** in IR 0.18
   (the amendment below).
 - *`DATEFIRST`, `LANGUAGE`, `DATEFORMAT`* change names, numbering and which strings convert, but no claim haruspex makes:
@@ -64,7 +64,7 @@ application's own `SET`s may change them, so check the session (`SELECT SESSIONP
   (`Dateformat_decides_which_strings_are_dates_and_a_cast_fails_or_overflows_as_for_any_string`,
   `A_string_that_names_no_date_or_a_date_out_of_range_fails_or_overflows_by_the_target_type`). A string converted to a date
   type is typed `arithmetic-overflow` already, unless a declared session makes the overflow an error. A declared language could make
-  `DATENAME`'s names a closed set; that would be a new claim, for a later slice.
+  `DATENAME`'s names a closed set; that would be a new claim, left for later.
 
 A setting no rule reads is not added: it would look as if it changed the output when it doesn't. One written anyway is an
 unknown setting (HAR3004).

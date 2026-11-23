@@ -13,9 +13,9 @@ One small package, `haruspex`, holds the command, and one package per platform h
 | Package | Holds | Installed |
 |---|---|---|
 | `haruspex` | `bin/haruspex.js` (the command), `lib/launcher.js`, the JSON Schema of `haruspex.json`, the licence | always |
-| `@haruspex.tools/linux-x64`, `@haruspex.tools/linux-arm64` | `haruspex`, linked against glibc | on Linux with glibc, on that CPU |
-| `@haruspex.tools/darwin-arm64`, `@haruspex.tools/darwin-x64` | `haruspex` | on macOS, on that CPU |
-| `@haruspex.tools/win32-x64` | `haruspex.exe` | on Windows on x64 |
+| `@haruspex.tools/linux-x64`, `@haruspex.tools/linux-arm64` | `haruspex`, linked against glibc, and its [licences](#licences) | on Linux with glibc, on that CPU |
+| `@haruspex.tools/darwin-arm64`, `@haruspex.tools/darwin-x64` | `haruspex` and its licences | on macOS, on that CPU |
+| `@haruspex.tools/win32-x64` | `haruspex.exe` and its licences | on Windows on x64 |
 
 `haruspex` lists every platform package in `optionalDependencies`, at its own version exactly. Each platform package sets
 `os`, `cpu` and, on Linux, `libc`, so npm installs the one that matches the machine and skips the others; an optional
@@ -65,9 +65,12 @@ version, set in the same two places.
 ## Making the tarballs
 
 CI makes them on every run (the `npm-pack` job in [the workflow](../../.github/workflows/ci.yml)), from the binaries its native
-jobs built, and keeps them as the artifact `haruspex-npm` for 30 days; the `npm-install` jobs install them into an empty
-project on each platform and run `npx haruspex --version` and `npx haruspex generate`. To make them locally, download the
-native artifacts of a CI run into a folder (the `gh` CLI lays them out as the script expects, a folder per platform), then:
+jobs built; the `npm-install` jobs install them into an empty project on each platform and run `npx haruspex --version` and
+`npx haruspex generate`. Only a run started by hand on `main` (`gh workflow run CI --ref main`) keeps them for 30 days as the
+artifact `haruspex-npm`, and its binaries as `haruspex-<rid>`: those are the ones handed out. Every other run's artifacts
+are kept a day, with `unreviewed-pr-` before the name for a pull request and `ci-` for any other run, so that nobody takes
+a pull request's binaries for the project's. To make the tarballs locally, download the native artifacts of a successful
+run started by hand on `main` into a folder (the `gh` CLI lays them out as the script expects, a folder per platform), then:
 
 ```sh
 gh run download <run id> --pattern 'haruspex-*-*' --dir binaries      # the native artifacts, not haruspex-npm
@@ -82,7 +85,13 @@ Windows binary. It needs Node and npm, and nothing else. `node --test 'packaging
 
 ## Names and publishing
 
-The names are [decision 0061](../../docs/decisions/0061-the-npm-packages-are-haruspex-and-a-scope-per-platform.md). Before the
-first publish, the binaries' third-party notices must be added to the platform packages: a Native AOT binary contains the .NET
-runtime and haruspex's libraries (ScriptDom and System.CommandLine, under the MIT licence), and the MIT licence asks that
-their notices go with every copy.
+The names are [decision 0061](../../docs/decisions/0061-the-npm-packages-are-haruspex-and-a-scope-per-platform.md).
+
+## Licences
+
+A Native AOT binary contains the .NET runtime, with the third-party components its notices list, and haruspex's libraries
+(ScriptDom and System.CommandLine, under the MIT licence), whose licences ask that their notices go with every copy. So each
+platform package holds, beside its binary, haruspex's `LICENSE` and a `licenses` folder with the runtime's, the AOT compiler's
+and the two libraries' licences and notices. The publish puts them beside the binary, the native artifact carries them, and
+the pack script refuses a binary whose artifact lacks any of them. [packaging/licenses](../licenses/README.md) says what each
+is and where it came from.

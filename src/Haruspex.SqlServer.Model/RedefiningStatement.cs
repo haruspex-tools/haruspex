@@ -32,4 +32,22 @@ public enum RedefiningStatement
 
     /// <summary><c>DROP VIEW</c>, under a condition that may be false, between two definitions of a view in one script.</summary>
     DropView,
+
+    /// <summary>A <c>CREATE TABLE</c> that isn't the table's definition: nested in another statement, or in a deployment script.</summary>
+    CreateTable,
+
+    /// <summary><c>CREATE PROCEDURE</c> in a deployment script.</summary>
+    CreateProcedure,
+
+    /// <summary><c>CREATE OR ALTER PROCEDURE</c> in a deployment script.</summary>
+    CreateOrAlterProcedure,
+
+    /// <summary><c>CREATE FUNCTION</c> in a deployment script.</summary>
+    CreateFunction,
+
+    /// <summary><c>CREATE OR ALTER FUNCTION</c> in a deployment script.</summary>
+    CreateOrAlterFunction,
+
+    /// <summary>A deployment script that can't be read in full, and names the object: what it does to it isn't known.</summary>
+    UnreadScript,
 }

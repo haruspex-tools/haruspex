@@ -109,20 +109,29 @@ A recursive component is solved by iteration. Start by assuming each function in
 Read every body in the component, with each call into the component giving what is assumed so far. That gives a new
 assumption. Repeat until a step changes nothing.
 
-This is **Kleene iteration** to the **least fixed point**. A fixed point is a summary that, assumed at every call, gives
-itself back when the bodies are read. When each step is monotone, starting from the bottom makes each assumption allow at
-least as much as the one before, and the first one that repeats is the *least* fixed point. That is what makes it sound:
-after k steps, the assumption describes every call that returns after at most k levels of nesting, and any call that
-returns does so after finitely many levels, so the fixed point describes every call that returns.
+This is **Kleene iteration** to a **fixed point**: a summary that, assumed at every call, gives itself back when the
+bodies are read. Giving itself back is what makes it sound, however it was reached. Each rule is sound for a sound
+assumption, so reading a body with the summary assumed describes any call whose own nested calls the summary describes;
+and what that reading gives is the summary itself. A call that returns does so after finitely many levels of nesting, and
+a nested call that never returns ends the path through it and adds nothing, so by induction on the depth of nesting the
+summary describes every call that returns.
+
+The assumptions on the way there are not claims: the first says the function never returns. That is why an iteration that
+reaches the cap (`FixedPoint.MostPasses`) gives unknown, never the last assumption it had.
+
+When each step is **monotone**, two more things follow. Starting from the bottom, each assumption allows at least as much as
+the one before, so the iteration only climbs and can settle before the cap; and the first summary that repeats is the
+*least* fixed point, the most precise. A step that isn't monotone could make the iteration go round until the cap, or
+settle on a fixed point above the least: a loss of precision, or an unknown, but never a wrong claim.
 
 Least does not mean exact. The least fixed point is the most precise of the sound summaries the shapes can express, and it
 is still an over-approximation, as everything in chapter 1 is: in the example below, `id` is any `int32`, and nothing ties a
 child's `id` to its parent's. Starting from the top ("unknown") instead would also reach a fixed point, a sound one, but it
 would say nothing.
 
-The argument needs each step to be monotone. `FunctionSummaries.Solve` replaces each assumption with the next reading
-rather than joining the two, which comes to the same thing only when reading is monotone. The rules are written to be
-(a nullable argument never makes a result non-null), but no test checks that yet. The laws of the joins themselves are
+So monotone steps are a matter of precision and of the number of passes, not of soundness. `FunctionSummaries.Solve`
+replaces each assumption with the next reading rather than joining the two, which climbs only when reading is monotone.
+The rules are written to be (a nullable argument never makes a result non-null), but no test checks that yet. The laws of the joins themselves are
 tested ([chapter 5](05-values-as-a-lattice.md), `LatticeLawTests`).
 
 Here a function builds a tree of categories by calling itself for each child, and a procedure returns the roots:
@@ -242,9 +251,9 @@ none of them is cached.
 The recursive call is not walked again. At first it is assumed to return nothing (the path through the call ends), then to
 return what the last walk returned, until a walk returns what was assumed. One thing is harder than for functions: a
 procedure may write a temporary table before calling itself, so the recursive call may start from wider tables than the
-outer one. The walk starts from the join of both, and starts again whenever a call widens them. With monotone steps each
-walk returns at least what the last did, so this too reaches the least fixed point; the bound, `FixedPoint.MostPasses`
-walks, is again what makes it end. A procedure that returns more result sets at each depth never settles, and is
+outer one. The walk starts from the join of both, and starts again whenever a call widens them. A walk that returns what
+was assumed is a fixed point, sound by the same induction; with monotone steps each walk returns at least what the last
+did, so it is also the least. The bound, `FixedPoint.MostPasses` walks, is again what makes it end. A procedure that returns more result sets at each depth never settles, and is
 unknown.
 
 The rejected alternatives are in [decision 0012](../decisions/0012-recursion-is-solved-as-a-fixed-point.md): reporting

@@ -7,7 +7,7 @@ namespace Haruspex.Tests.Cli;
 
 /// <summary>
 /// <c>haruspex explain</c> (<see cref="Explain"/>): why a field is what it is, read from the committed IR alone, with the line of
-/// SQL each step refers to when that SQL is at hand and the reference alone when it isn't. The example is the brief's,
+/// SQL each step refers to when that SQL is at hand and the reference alone when it isn't. The example is
 /// <c>shop.order_summary</c>: a count, a sum and a <c>MAX</c> over a <c>LEFT JOIN</c> without <c>GROUP BY</c>.
 /// </summary>
 public class ExplainTests

@@ -6,13 +6,13 @@
 scope, named as npm names the platform: `@haruspex.tools/linux-x64`, `@haruspex.tools/linux-arm64`,
 `@haruspex.tools/darwin-arm64`, `@haruspex.tools/darwin-x64` and `@haruspex.tools/win32-x64`, with more added the same way. A
 preview built from a commit is `0.0.0-preview-<the commit's first eight hex digits>` in every package. Nothing is published
-yet; the names become permanent when one is. Richard decided the scope on 17 Nov 2026.
+yet; the names become permanent when one is. The maintainer decided the scope on 17 Nov 2026.
 
 **Context.** Teams install haruspex with npm and run `npx haruspex`, so the command's package needs the tool's own name.
-`haruspex` was free on npm on 7 Nov 2026 and again on 17 Nov 2026 (looked up read-only), and Richard is reserving it. The
+`haruspex` was free on npm on 7 Nov 2026 and again on 17 Nov 2026 (looked up read-only), and the maintainer is reserving it. The
 binaries come one per platform, as esbuild's and Biome's do ([the packaging README](../../packaging/npm/README.md)), and a
 scope is an npm organisation. The organisation `haruspex` is taken: npm's users and organisations share one namespace, and
-the name belongs to an account. So the scope is `haruspex.tools`, the organisation Richard created, which matches the
+the name belongs to an account. So the scope is `haruspex.tools`, the organisation the maintainer created, which matches the
 project's domain, haruspex.tools.
 
 **Alternatives.**

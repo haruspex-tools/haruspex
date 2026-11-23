@@ -379,7 +379,7 @@ internal static class ModuleRun
     /// 1; the command line or the config file, 2.
     /// </summary>
     public static int ExitCode(IEnumerable<Diagnostic> found) =>
-        found.Any(d => d.IsError && (d.At is SourceLocation || d.Code == SourceCodes.UnreadablePackage || d.Code == CliCodes.CannotWrite || CliCodes.CheckFailures.Contains(d.Code)))
+        found.Any(d => d.IsError && (d.At is SourceLocation || d.Code == SourceCodes.UnreadablePackage || d.Code == SourceCodes.UnreadableScript || d.Code == CliCodes.CannotWrite || CliCodes.CheckFailures.Contains(d.Code)))
             ? HaruspexCli.ExitCodes.Failed
             : HaruspexCli.ExitCodes.Usage;
 

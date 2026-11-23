@@ -49,7 +49,7 @@ internal sealed partial class Typer
     }
 
     /// <summary>Whether a table hint was observed to hold the guard's lock on the row until its transaction ends.</summary>
-    private static bool HoldsLock(TableHintKind hint) =>
+    internal static bool HoldsLock(TableHintKind hint) =>
         hint is TableHintKind.UpdLock or TableHintKind.HoldLock or TableHintKind.Serializable or TableHintKind.RepeatableRead or TableHintKind.XLock;
 
     /// <summary>

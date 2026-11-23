@@ -12,7 +12,7 @@ the IR, as each result's `name` (0.23), so the schemas and the functions are mad
 reports a renamed set. The schema module declares named sets as an object of them (`z.object({ order, lines })`, and an object
 with a property for each in JSON Schema), where unnamed sets are a tuple. A query file names its sets with a comment, `-- @sets
 order, lines`, under the same rules, each problem reported at the comment, since a query file's own settings are comments
-already (`-- @param`) and `procedures` takes only a procedure's name. Richard accepted the design on 18 Nov 2026.
+already (`-- @param`) and `procedures` takes only a procedure's name. The maintainer accepted the design on 18 Nov 2026.
 
 **Context.** A trial of the npm preview on a real application found several procedures whose sets came back as `result1`,
 `result2`, which say nothing about what they hold. And under [decision 0060](0060-a-call-returns-its-one-result-itself.md) a

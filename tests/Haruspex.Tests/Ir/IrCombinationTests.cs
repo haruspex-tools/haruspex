@@ -77,7 +77,7 @@ public partial class IrCombinationTests
     [Fact]
     public void A_key_only_the_candidate_returns_may_be_left_out_and_a_value_set_that_grew_is_the_union()
     {
-        // The brief's example: { order_id, status } before, { order_id, status, channel } after, and 'held' a new status.
+        // The example: { order_id, status } before, { order_id, status, channel } after, and 'held' a new status.
         var baseline = Infer(GetOrder);
         var candidate = Infer(Edit(GetOrder, "o.status FROM", "o.status, o.channel FROM"), Edit(Orders, "('open', 'closed')", "('open', 'closed', 'held')"));
 

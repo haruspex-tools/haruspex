@@ -189,7 +189,7 @@ public class FoldingTests
         Assert.IsType<IrArray>(Assert.IsType<IrJsonText>(Field(doc, "b").Type).Content);
         Assert.IsType<IrJsonText>(Field(doc, "d").Type);
 
-        // json_query of a stored column nests as text, but what the column holds is not known here (K1).
+        // json_query of a stored column nests as text, but what the column holds is not known here.
         Assert.True(IsUnknown(doc, "c"));
         Assert.Contains(doc.Unknowns, u => u.Detail.Contains("reads JSON that is not built here", StringComparison.Ordinal));
     }

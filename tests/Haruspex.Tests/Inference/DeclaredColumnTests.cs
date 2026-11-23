@@ -149,7 +149,7 @@ public partial class DeclaredColumnTests
         Assert.StartsWith("varchar(", Assert.IsType<IrScalar>(Field(doc, "more").Type).Sql, StringComparison.Ordinal);
     }
 
-    // ---- paths into it, by the rules for JSON built here (K1c observes and extends them) ------------------------
+    // ---- paths into it, by the rules for JSON built here, which declared columns observe and extend -------------
 
     [Fact]
     public void A_lax_path_to_a_key_not_required_may_find_nothing_so_is_nullable()

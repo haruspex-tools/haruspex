@@ -200,4 +200,6 @@ after it. Data that breaks a claim fails at the boundary, loudly, rather than so
   and run `generate` from that folder, as [the command line](../src/Haruspex.Cli/README.md) says.
 - **A `FOR JSON` procedure:** the README's [examples](../README.md#examples-on-microsofts-sample-databases) show nested objects,
   arrays and a recursive tree, the function for one of them, and a query file.
+- **Whether to trust it:** the README's [guarantees](../README.md#what-it-guarantees-and-what-it-cant-see) say what every
+  claim holds for, what haruspex assumes, and the larger gaps known today.
 - **Everything else:** [the documentation's index](README.md) says what each page is for.

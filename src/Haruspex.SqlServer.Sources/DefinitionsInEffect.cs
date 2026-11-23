@@ -51,4 +51,33 @@ internal static class DefinitionsInEffect
         definitions.Values.Select(each => each is [var only]
             ? only.View
             : each[0].View with { Redefinition = new Redefinition(each[0].View.Name, each[1].Statement, each[1].View.Span.Start) });
+
+    /// <summary>
+    /// What a deployment leaves of each procedure, function or view, by name: the first statement of a deployment script that
+    /// changes it, or, when none does, the first deployment script that names it and can't be read; null when neither.
+    /// </summary>
+    /// <param name="deployed">Each module's first change in a deployment script.</param>
+    /// <param name="unread">The deployment scripts not read in full.</param>
+    public static Func<ObjectName, Redefinition?> Deployed(Dictionary<ObjectName, Redefinition> deployed, List<UnreadDeployment> unread) =>
+        name => deployed.TryGetValue(name, out var why) ? why
+            : unread.FirstOrDefault(u => u.Names(name)) is { } script ? new Redefinition(name, RedefiningStatement.UnreadScript, script.At)
+            : null;
+
+    /// <summary>
+    /// The changes to tables that only the whole model settles, for each table no statement changed outright: a dropped period,
+    /// when the table has a hidden column the drop makes visible; otherwise a deployment script not read in full that names it.
+    /// </summary>
+    public static IEnumerable<Redefinition> TablesChangedAfter(
+        Dictionary<ObjectName, Table> tables, Dictionary<ObjectName, Redefinition> changed, List<Redefinition> periodDrops, List<UnreadDeployment> unread)
+    {
+        foreach (var (name, table) in tables)
+        {
+            if (changed.ContainsKey(name))
+                continue;
+            if (table.Columns.Any(c => c.IsHidden) && periodDrops.FirstOrDefault(d => d.Name == name) is { } drop)
+                yield return drop;
+            else if (unread.FirstOrDefault(u => u.Names(name)) is { } script)
+                yield return new Redefinition(name, RedefiningStatement.UnreadScript, script.At);
+        }
+    }
 }

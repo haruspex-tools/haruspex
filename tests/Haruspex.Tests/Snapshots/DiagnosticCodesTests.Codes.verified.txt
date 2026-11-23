@@ -16,6 +16,8 @@ HAR1016 E A query file uses a variable before declaring it [Haruspex.SqlServer.S
 HAR1017 E A query file returns a value [Haruspex.SqlServer.Sources.SourceCodes.QueryReturnsValue]
 HAR1018 E A query file's sets comment can't be taken [Haruspex.SqlServer.Sources.SourceCodes.BadSetsDeclaration]
 HAR1019 E A query file's module comment can't be taken [Haruspex.SqlServer.Sources.SourceCodes.BadModuleDeclaration]
+HAR1020 E A script or folder can't be read [Haruspex.SqlServer.Sources.SourceCodes.UnreadableScript]
+HAR1021 W A deployment script can't be read in full [Haruspex.SqlServer.Sources.SourceCodes.DeploymentScriptNotRead]
 HAR2001 N A statement that isn't modelled yet [Haruspex.SqlServer.Inference.InferenceCodes.UnsupportedStatement]
 HAR2002 N Results from code outside the project (retired) [Haruspex.SqlServer.Inference.InferenceCodes.ExternalCode]
 HAR2003 N An object whose definition depends on the order of scripts [Haruspex.SqlServer.Inference.InferenceCodes.Redefined]

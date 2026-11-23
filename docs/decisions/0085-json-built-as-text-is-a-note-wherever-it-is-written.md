@@ -13,7 +13,7 @@ literals. An object's own first brace shows nothing: `'{' + name + '}'` is a nam
 around a list held in a variable, typing finds it where it reads the array, and gives the note there too, each place once.
 
 **Context.** The idiom is old, and code that can be changed should be: the constructors escape every value, and haruspex types
-what they build exactly. A real application's own sweep found 23 places beyond those that caused an unknown, because text that no
+what they build exactly. A real application's own sweep found places beyond those that caused an unknown, because text that no
 caller reads with `json_query` is rightly a string and raises nothing. An inventory for modernisation must find the construction,
 not its effect on typing.
 

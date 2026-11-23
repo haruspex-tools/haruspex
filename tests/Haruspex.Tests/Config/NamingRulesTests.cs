@@ -21,7 +21,7 @@ public class NamingRulesTests
     [InlineData("stock$level$history", "StockLevelHistory")]
     [InlineData("person#", "Person")]
     [InlineData("placedAt", "PlacedAt")]
-    [InlineData("GetPropertyList", "GetPropertyList")]
+    [InlineData("GetEntryList", "GetEntryList")]
     [InlineData("2fa_codes", "_2faCodes")]
     public void Pascal_breaks_words_at_every_sigil_and_leaves_the_schema_out(string name, string expected) =>
         Assert.Equal(expected, Name(NamingRules.Default, name));
