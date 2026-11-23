@@ -16,7 +16,7 @@ mapping helper, the same for every module. Every exported name is the one the un
 moving a schema between modules renames nothing. There is no `index.ts` that re-exports the modules. Without `split`, every file
 is byte for byte what it was. The maintainer accepted this design on 19 Nov 2026.
 
-**Context.** Every reader of a generated module imports all of it, which on a real application's trial was a large file. A
+**Context.** Every reader of a generated module imports all of it, and on a real application's trial that was more than a reader wants. A
 reviewer of a generated diff wants the change in the file of the schema that changed. Several config files already
 give several modules, sharing nothing, for parts of an application that are apart; one config split into modules is for one
 application whose output is too big to read as one file.

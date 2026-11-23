@@ -8,7 +8,7 @@ string_agg('"' + string_escape(k, 'json') + '":' + v, ',') + '}'`), is typed as 
 literals makes the object unknown. An object of no keys joins such an object as itself, in the lattice of JSON shapes
 (`JsonShapes.Join`), since it is one with no keys: `'{' + coalesce(string_agg(…), '') + '}'` is `{}` over no rows.
 
-**Context.** Typing objects assembled as text asked whether the IR can say an object of unknown keys whose values are all
+**Context.** The question for objects assembled as text was whether the IR can say an object of unknown keys whose values are all
 known. It can: `IrRecord`, which `json_objectagg` already gives. A key built from data may repeat (two rows of one name, observed:
 `Keys_built_from_data_may_repeat_and_are_kept_as_written`), but every value is one of those joined, so whichever a reader keeps
 is one the type allows.

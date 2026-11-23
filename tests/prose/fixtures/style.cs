@@ -21,5 +21,9 @@ public static class Haruspex
 
     public static void Typed_as_K1c_said() { }
 
+    public static async ValueTask<int> As_the_brief_said_async() => await Task.FromResult(1);
+
+    public static void Read_by_CM5_s_rule<T>() { }
+
     public static void Read_in_brief_by_the_window_w1_with_HAR4001_s_message() { }
 }

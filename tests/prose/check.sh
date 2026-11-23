@@ -88,10 +88,11 @@ history_in_text() {
 # A test's name is an identifier, which Vale skips, and is read as a sentence: each method's name in a C# file, its
 # underscores read as spaces, is checked against the same tokens, and against a slice name standing alone as a word,
 # which a name has no brackets or possessive to show (The_CM5_split_…, Typed_as_K1c_said). A window or an alias in
-# lower case (w1, t2) and a diagnostic's code (HAR4001) are no slice name.
+# lower case (w1, t2) and a diagnostic's code (HAR4001) are no slice name; a name that needs a term of the same shape,
+# such as Unicode's C1 controls, says it in words (the second set of control characters).
 history_in_test_names() {
   perl -ne 'BEGIN { $p = shift }
-    while (/\b(?:void|Task)\s+(\w+)\s*\(/g) {
+    while (/\b(?:void|Task|ValueTask)(?:<[^>]*>)?\s+(\w+)\s*[<(]/g) {
       (my $name = $1) =~ tr/_/ /;
       print "$ARGV:$.:haruspex.History\n" if $name =~ /$p|(?-i:\b[A-Z]{1,2}\d{1,2}[a-z]?\d?\b)|\b\d{1,2}[a-l]\d?\b/i;
     }

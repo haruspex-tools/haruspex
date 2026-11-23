@@ -71,6 +71,10 @@ History: typed (K1c) here.
 
 History: checked by the link test (S1).
 
+History: as (K1c observes) here.
+
+History: renumbered when V1b took it.
+
 History: Row 6r lists the errors.
 
 History: planned in row 6n2.
@@ -92,3 +96,5 @@ Passes: row 3 of the table, read row by row, a row of data and the 2nd row.
 Passes: HAR4001's message, a window `OVER (w1)` named w1 (w1), and in brief, a brief note.
 
 Passes: hand over the connection, and a session at the top level.
+
+Passes: a digest (MD4 and MD5 give 16 bytes), and for MD2 NULL.
