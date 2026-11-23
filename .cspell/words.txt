@@ -126,11 +126,12 @@ uddt
 # The compiler's API names a pattern inside another pattern a subpattern (PropertySubpatterns, in the analysers)
 subpatterns
 
-# Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes, NETSDK1022;
-# msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura, kysely, pgtyped,
-# sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit; mklink: the Windows
-# command that makes a junction; realpath: the POSIX call that reads a path as it is on disk; libc: the C library, as npm's
-# package.json field names it; readelf: the binutils tool that reads an ELF binary's notes)
+# Products, tools and their names (sqldb: SSDT's MSBuild property SQLDBExtensionsRefPath; netsdk: the .NET SDK's error codes,
+# NETSDK1022; msdb: SQL Server's system database msdb, which has a DACPAC package of its own, as master has; graphile, hasura,
+# kysely, pgtyped, sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit; mklink:
+# the Windows command that makes a junction; chcp: the Windows command that sets and shows a console's code page; realpath: the
+# POSIX call that reads a path as it is on disk; libc: the C library, as npm's package.json field names it; readelf: the binutils
+# tool that reads an ELF binary's notes)
 codegen
 dacfx
 dacpac
@@ -162,6 +163,7 @@ optout
 pgtyped
 scriban
 mklink
+chcp
 realpath
 libc
 readelf

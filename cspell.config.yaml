@@ -317,6 +317,9 @@ overrides:
     ignoreWords: [conv, objname]
   - filename: "**/tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs"
     ignoreWords: [alphabeta]
+  - filename: "**/tests/Haruspex.Tests/Cli/RedirectedOutputTests.cs"
+    # причал (Russian for a berth): a table name outside code page 437, to show it reaches a redirected file as UTF-8.
+    ignoreWords: [причал]
   - filename: "**/tests/Haruspex.DifferentialTests/SessionObservationTests.cs"
     # février, févr: what the server writes for February under SET LANGUAGE French, which the test compares.
     ignoreWords: [février, févr]
