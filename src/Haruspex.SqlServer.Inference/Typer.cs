@@ -368,8 +368,17 @@ internal sealed partial class Typer(
         return new ObjectShape([.. fields]);
     }
 
-    internal Value Expression(ScalarExpression expression, ReadScope scope) =>
-        expression is PrimaryExpression { Collation: not null } collated ? Collated(collated, scope) : Uncollated(expression, scope);
+    /// <summary>
+    /// What an expression gives. A node whose type <see cref="AcceptedNodes"/> doesn't list is not modelled, whatever arm below
+    /// might match it, since nothing says how its properties are read (decision 0113).
+    /// </summary>
+    internal Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
+    {
+        _ when !AcceptedNodes.Properties.ContainsKey(expression.GetType()) =>
+            Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
+        PrimaryExpression { Collation: not null } collated => Collated(collated, scope),
+        _ => Uncollated(expression, scope),
+    };
 
     /// <summary>
     /// An expression under <c>COLLATE</c>. A Unicode string keeps its characters under any collation, so its value is the

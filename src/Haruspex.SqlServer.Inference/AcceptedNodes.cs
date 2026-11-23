@@ -7,7 +7,9 @@ namespace Haruspex.SqlServer.Inference;
 /// <summary>
 /// Every ScriptDom node type the typer accepts as an expression (<c>Typer.Expression</c>, and the function table's
 /// <c>TypingOf</c>), with how it reads each of the node's properties: what a rule reads to type it, a clause the function
-/// table's rows read one by one, <c>COLLATE</c>, or one it ignores, with why. Any other node type is not modelled.
+/// table's rows read one by one, <c>COLLATE</c>, or one it ignores, with why; and so too the clauses that are nodes of their
+/// own (<c>OVER</c>, <c>WITHIN GROUP</c>). <c>Typer.Expression</c> refuses any node type not listed before it reads it, so the
+/// table is the gate, not a description of it.
 /// </summary>
 /// <remarks>
 /// A property no rule reads is read as its default, so a node carrying it would be typed as another node: the claim would be
@@ -49,6 +51,30 @@ internal static class AcceptedNodes
     private static readonly Property LargeObject = new(nameof(StringLiteral.IsLargeObject), Use.Ignored, "Says the literal is longer than its type's limit, which its rule reads from its text.");
 
     private static readonly Property Parameters = Read(nameof(FunctionCall.Parameters), "The arguments: their number chooses the row's form, and the rule reads each.");
+
+    /// <summary>The clauses <see cref="CallClauses"/> holds in a property of a node of this type.</summary>
+    private static IEnumerable<Property> Clauses(Type node) =>
+        CallClauses.All.Where(c => c.Node == node.Name).Select(c => new Property(c.Property, Use.Clause, $"{c.Written}: read only by the rows that say so."));
+
+    /// <summary>
+    /// The clauses of a call that are nodes with properties of their own, which a row reading the clause reads, each
+    /// property listed as an expression's are.
+    /// </summary>
+    internal static FrozenDictionary<Type, ImmutableArray<Property>> ClauseProperties { get; } = new Dictionary<Type, ImmutableArray<Property>>
+    {
+        [typeof(OverClause)] =
+        [
+            Read(nameof(OverClause.WindowName), "A window the query's WINDOW clause defines, which NamedWindows follows."),
+            Read(nameof(OverClause.Partitions), "The partition, which NamedWindows resolves with the name's."),
+            Read(nameof(OverClause.OrderByClause), "The order, which NamedWindows resolves with the name's."),
+            Read(nameof(OverClause.WindowFrameClause), "The frame, which may leave a frame empty (Typer.MayBeEmpty)."),
+        ],
+        [typeof(WithinGroupClause)] =
+        [
+            Read(nameof(WithinGroupClause.OrderByClause), "The order: a percentile's value, and STRING_AGG's items' order."),
+            .. Clauses(typeof(WithinGroupClause)),
+        ],
+    }.ToFrozenDictionary();
 
     /// <summary>Each node type accepted, and every property it has beyond <see cref="TSqlFragment"/>'s own.</summary>
     internal static FrozenDictionary<Type, ImmutableArray<Property>> Properties { get; } = new Dictionary<Type, ImmutableArray<Property>>
@@ -98,7 +124,7 @@ internal static class AcceptedNodes
             Read(nameof(FunctionCall.CallTarget), "A schema names a user's function; a built-in has none."),
             Read(nameof(FunctionCall.FunctionName), "The function, by which its row is found."),
             Parameters,
-            .. CallClauses.All.Select(c => new Property(c.Property, Use.Clause, $"{c.Written}: read only by the rows that say so.")),
+            .. Clauses(typeof(FunctionCall)),
             Collate,
         ],
         [typeof(LeftFunctionCall)] = [Parameters, Collate],

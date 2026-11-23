@@ -7,8 +7,10 @@ the node has and how it is read: by the node's rule, as a clause, as `COLLATE`, 
 function call (`DISTINCT`, `OVER`, `WITHIN GROUP`, `IGNORE NULLS` or `RESPECT NULLS`, `TRIM`'s side, a JSON constructor's
 pairs, null option, `ORDER BY` and `RETURNING`, `WITH ARRAY WRAPPER`) is read only by the rows of the function table that
 say so (`FunctionTyping.Reads`), and a call carrying any other is unknown, with a reason naming the clause. A row reads a
-clause only where an observation test it cites shows what the clause does. A test compares the list with ScriptDom's
-properties by reflection, both ways, and fails on a node type ScriptDom derives from a listed one.
+clause only where an observation test it cites shows what the clause does. `OVER` and `WITHIN GROUP`, which are nodes
+of their own, are listed the same way. A test compares the lists with ScriptDom's properties by reflection, both ways, and
+fails on a node type ScriptDom derives from a listed one. `Typer.Expression` refuses a node of any type the list lacks before
+it reads it, so the list is what the typer accepts, not a description of it.
 
 Each clause is decided as follows (observed in `ClauseObservationTests`):
 
@@ -20,12 +22,17 @@ Each clause is decided as follows (observed in `ClauseObservationTests`):
 - **A JSON constructor's** pairs, null option and `RETURNING json` are read; so is `json_arrayagg`'s `ORDER BY`, which changes
   only the order. ScriptDom refuses `json_objectagg`'s `ORDER BY`, as the server does, and `RETURNING` anything but `json`.
 - **`IGNORE NULLS` and `RESPECT NULLS`**, **`JSON_VALUE … RETURNING`** (which this server refuses, so its rule can't be
-  observed) and **`WITH ARRAY WRAPPER`** are read by no row: a call with one is unknown.
+  observed), **`WITH ARRAY WRAPPER`** and **`WITHIN GROUP (GRAPH PATH)`** (refused with a percentile, 10753; not observed with
+  `STRING_AGG`) are read by no row: a call with one is unknown.
 - **A user's function** reads no clause.
 - **`COLLATE`**, on any expression, keeps a Unicode string's value. Any other string keeps its type and its reasons to be NULL,
   and nothing else: converted to the collation's code page, `'é'` becomes `'e'` under `Greek_CI_AS`, and as `varchar(1)` is cut
   to `''` under a UTF-8 collation. `COLLATE` of anything else is refused by the server (447) and not modelled. A literal or
   parenthesis under `COLLATE` is not read as the literal it holds.
+
+**Scope.** The lists cover the expressions the typer types and the clauses of a call. They don't cover a predicate (a
+`BooleanExpression`: a `WHERE`, an `ON`, a `CASE` or `IIF` condition), which is read only to prove a value non-null, and which
+treats a node it doesn't know as proving nothing; nor the nodes below a clause (an `ORDER BY`'s items, a frame's bounds).
 
 **Context.** Audit finding F005: the function table checked a call's number of arguments and nothing else, so a property no
 rule read was read as its default, and the call was typed as the call without it. `json_query(x WITH ARRAY WRAPPER)` was

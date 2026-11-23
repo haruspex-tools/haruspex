@@ -248,7 +248,10 @@ A list of what the rows read is complete only if it covers every property, so th
 `AcceptedNodes`: every node type it accepts as an expression, the call nodes and the others (a column, a literal, `CASE`, an
 operator), with each property and how it is read. Most are read by the node's rule; a call's clauses are read row by row;
 `COLLATE`, which any expression may carry, is read once for all of them; and a property that can't change the result
-(a literal's `LiteralType`, which its node's type already says) is ignored, with the reason. `ClauseTableTests` reads ScriptDom
+(a literal's `LiteralType`, which its node's type already says) is ignored, with the reason. `OVER` and `WITHIN GROUP` are
+nodes too, and their properties are listed beside the expressions' (`WITHIN GROUP (GRAPH PATH)` is a clause of its own).
+`Typer.Expression` refuses a node of a type the table doesn't list before anything reads it, so the table is the gate: a new
+arm for a node can't type it until the node's properties are listed. `ClauseTableTests` reads ScriptDom
 by reflection and fails on a property the table lacks, on one it lists that the node lacks, and on a node type ScriptDom derives
 from a listed one, which would be typed as its base. A new version of ScriptDom that adds a clause therefore fails a test until
 someone decides how it is read, instead of being read as its default

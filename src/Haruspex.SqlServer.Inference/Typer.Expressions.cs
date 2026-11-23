@@ -150,7 +150,9 @@ internal sealed partial class Typer
             e = Strip(unary.Expression);
         }
 
-        // A literal under COLLATE may not hold the characters written (Collated), so it is not read as one.
+        // A literal under COLLATE may not hold the characters written (Collated), so it is not read as one. As for Strip, no
+        // wrong claim reaches this today (a literal that isn't ASCII and isn't N'' is unknown already); it costs only the set
+        // of an N'' literal under COLLATE.
         return e is Literal { Collation: null } literal && !SqlcmdVariableReference.IsIn(literal) ? (literal, negative) : null;
     }
 

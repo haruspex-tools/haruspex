@@ -98,6 +98,15 @@ public class ClauseObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_percentile_within_group_graph_path_is_refused()
+    {
+        // GRAPH PATH takes the place of WITHIN GROUP's order for an aggregate over a MATCH's shortest path; a percentile
+        // over it is refused when the batch is compiled (10753). STRING_AGG's is not observed here, so no row reads it.
+        string[] setup = ["CREATE TABLE dbo.obs_person (id int NOT NULL, name varchar(10) NOT NULL) AS NODE;"];
+        Assert.Equal(10753, (await ObservedCall.Run(server, setup, "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (GRAPH PATH) OVER () AS a FROM dbo.obs_person;")).Error);
+    }
+
+    [Fact]
     public async Task Json_value_returning_is_refused_by_this_server() =>
         Assert.Equal(102, (await ObservedCall.Run(server, [], """SELECT JSON_VALUE(N'{"a":1}', '$.a' RETURNING int) AS a;""")).Error);
 

@@ -37,7 +37,7 @@ public class ClauseTableTests
     [Fact]
     public void Every_property_of_every_node_the_typer_accepts_is_listed_with_how_it_is_read()
     {
-        var problems = AcceptedNodes.Properties.SelectMany(n => Problems(n.Key, n.Value)).ToList();
+        var problems = AcceptedNodes.Properties.Concat(AcceptedNodes.ClauseProperties).SelectMany(n => Problems(n.Key, n.Value)).ToList();
         Assert.True(problems.Count == 0, string.Join("\n", problems));
     }
 
@@ -46,7 +46,7 @@ public class ClauseTableTests
     {
         // A derived node would be typed as its base, its own properties unread.
         var derived = ScriptDom.GetTypes()
-            .Where(t => t.BaseType is { } parent && AcceptedNodes.Properties.ContainsKey(parent))
+            .Where(t => t.BaseType is { } parent && (AcceptedNodes.Properties.ContainsKey(parent) || AcceptedNodes.ClauseProperties.ContainsKey(parent)))
             .Select(t => $"{t.Name} derives from {t.BaseType!.Name}")
             .ToList();
         Assert.Empty(derived);
@@ -57,8 +57,10 @@ public class ClauseTableTests
     {
         Assert.Equal(Enum.GetValues<Clause>().Where(c => c != Clause.None), CallClauses.All.Select(c => c.Clause));
         Assert.Equal(
-            CallClauses.All.Select(c => c.Property),
-            AcceptedNodes.Properties[typeof(FunctionCall)].Where(p => p.Use == AcceptedNodes.Use.Clause).Select(p => p.Name));
+            CallClauses.All.Select(c => $"{c.Node}.{c.Property}").Order(StringComparer.Ordinal),
+            AcceptedNodes.Properties.Concat(AcceptedNodes.ClauseProperties)
+                .SelectMany(n => n.Value.Where(p => p.Use == AcceptedNodes.Use.Clause).Select(p => $"{n.Key.Name}.{p.Name}"))
+                .Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -76,10 +78,16 @@ public class ClauseTableTests
             [Clause.NullOnNull] = "SELECT JSON_ARRAYAGG(a NULL ON NULL) FROM t;",
             [Clause.Returning] = "SELECT JSON_VALUE(a, '$.b' RETURNING int) FROM t;",
             [Clause.ArrayWrapper] = "SELECT JSON_QUERY(a WITH ARRAY WRAPPER) FROM t;",
+            [Clause.GraphPath] = "SELECT STRING_AGG(a, ',') WITHIN GROUP (GRAPH PATH) FROM t;",
         };
         Assert.Equal(CallClauses.All.Select(c => c.Clause), calls.Keys);
         foreach (var (clause, sql) in calls)
-            Assert.Equal(clause | (sql.Contains(" OVER ", StringComparison.Ordinal) ? Clause.Over : Clause.None), CallClauses.Of(OnlyCall(sql)));
+        {
+            var alsoOver = sql.Contains(" OVER ", StringComparison.Ordinal) ? Clause.Over : Clause.None;
+            var alsoWithin = clause == Clause.GraphPath ? Clause.WithinGroup : Clause.None;
+            Assert.Equal(clause | alsoOver | alsoWithin, CallClauses.Of(OnlyCall(sql)));
+        }
+
         Assert.Equal(Clause.None, CallClauses.Of(OnlyCall("SELECT COUNT(ALL a) FROM t;")));
         Assert.Equal(Clause.None, CallClauses.Of(OnlyCall("SELECT UPPER(a) FROM t;")));
     }

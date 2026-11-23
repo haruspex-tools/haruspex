@@ -2196,8 +2196,11 @@ reason naming the clause: read as the call without it, the claim would be about 
 - **A JSON constructor's** pairs, `NULL ON NULL` or `ABSENT ON NULL`, and `RETURNING json`, and `json_arrayagg`'s `ORDER BY`
   (`A_json_constructor_returning_json_is_the_constructor`; "JSON constructors", below).
 - **Unknown:** `IGNORE NULLS` and `RESPECT NULLS`, `JSON_VALUE … RETURNING` (which SQL Server 2025 refuses:
-  `Json_value_returning_is_refused_by_this_server`), `WITH ARRAY WRAPPER`, any clause of a user's function, and any clause in
-  a call whose row doesn't read it (`UPPER(DISTINCT s)`, which ScriptDom parses).
+  `Json_value_returning_is_refused_by_this_server`), `WITH ARRAY WRAPPER`, `WITHIN GROUP (GRAPH PATH)` (refused with a
+  percentile: `A_percentile_within_group_graph_path_is_refused`), any clause of a user's function, and any clause in a call
+  whose row doesn't read it (`UPPER(DISTINCT s)`, which ScriptDom parses).
+- **A node the typer doesn't list** (`AcceptedNodes`) is unknown before any rule reads it, so the list of what each property
+  means is the list of what is typed.
 
 **`COLLATE`**, on any expression (`Typer.Collated`): a Unicode string keeps its value, characters and all. Any other string keeps
 its type and its reasons to be NULL, and nothing else, since its characters are converted to the collation's code page: `'é'`

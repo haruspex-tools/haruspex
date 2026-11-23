@@ -43,4 +43,7 @@ internal enum Clause
 
     /// <summary><c>WITH ARRAY WRAPPER</c>.</summary>
     ArrayWrapper = 1 << 9,
+
+    /// <summary><c>WITHIN GROUP (GRAPH PATH)</c>, in place of an order, over a <c>MATCH</c>'s shortest path.</summary>
+    GraphPath = 1 << 10,
 }

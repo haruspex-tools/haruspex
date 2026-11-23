@@ -60,6 +60,7 @@ public partial class FunctionTableTests
             [Clause.NullOnNull] = @"\b(NULL|ABSENT)\s+ON\s+NULL\b",
             [Clause.Returning] = @"\bRETURNING\b",
             [Clause.ArrayWrapper] = @"\bWITH\s+ARRAY\s+WRAPPER\b",
+            [Clause.GraphPath] = @"\bGRAPH\s+PATH\b",
         };
         Assert.Equal(CallClauses.All.Select(c => c.Clause).Where(c => c != Clause.Over), written.Keys);
         var problems = Table

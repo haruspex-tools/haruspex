@@ -308,7 +308,9 @@ internal sealed partial class Typer
 
     /// <summary>
     /// An expression without its parentheses; not through one with <c>COLLATE</c>, which may change a string's characters
-    /// (<see cref="Collated"/>), so that no rule reads <c>('é') COLLATE Greek_CI_AS</c> as the literal it holds.
+    /// (<see cref="Collated"/>), so that no rule reads <c>('é') COLLATE Greek_CI_AS</c> as the literal it holds. No wrong claim
+    /// reaches this today, since a literal that isn't ASCII and isn't N'' is unknown already and an ASCII one keeps its
+    /// characters in every code page; it stays so that the next rule to read a literal through <c>Strip</c> can't make one.
     /// </summary>
     internal static ScalarExpression Strip(ScalarExpression e)
     {

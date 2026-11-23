@@ -9,6 +9,9 @@ namespace Haruspex.Tests.Inference;
 /// </summary>
 public partial class FunctionTests
 {
+    /// <summary>A field's facets.</summary>
+    private static IrFacets? Facets(IrDocument doc, string name) => Assert.IsType<IrScalar>(Field(doc, name).Type).Facets;
+
     /// <summary>A field's set of values, when it has one.</summary>
     private static IrValueSet? Values(IrDocument doc, string name) => Assert.IsType<IrScalar>(Field(doc, name).Type).Facets?.Values;
 
@@ -62,6 +65,40 @@ public partial class FunctionTests
         Assert.Equal(Typed(doc, "b"), Typed(doc, "a"));
         Assert.Equal("int", Typed(doc, "c"));
         Assert.Contains("WITHIN GROUP", Why(doc, "d"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Within_group_graph_path_is_unknown_and_a_percentile_over_it_does_not_stop_the_run()
+    {
+        // The server refuses a percentile over GRAPH PATH (10753); STRING_AGG's, over a MATCH's shortest path, is not observed.
+        var doc = Procedure("""
+            SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (GRAPH PATH) OVER () AS a, STRING_AGG(s, '->') WITHIN GROUP (GRAPH PATH) AS b
+            FROM dbo.t;
+            """);
+        Assert.Contains("WITHIN GROUP (GRAPH PATH) in a call of PERCENTILE_CONT", Why(doc, "a"), StringComparison.Ordinal);
+        Assert.Contains("WITHIN GROUP (GRAPH PATH) in a call of STRING_AGG", Why(doc, "b"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_node_type_the_typer_does_not_list_is_unknown()
+    {
+        // AcceptedNodes is the gate: @@ROWCOUNT's node is not in it, so no arm may type it.
+        var doc = Procedure("SELECT @@ROWCOUNT AS a, n AS b FROM dbo.t;");
+        Assert.Contains("is not modelled", Why(doc, "a"), StringComparison.Ordinal);
+        Assert.Equal("int", Typed(doc, "b"));
+    }
+
+    [Fact]
+    public void A_users_function_called_with_a_clause_is_unknown()
+    {
+        // ScriptDom parses dbo.f(DISTINCT x), which the server takes for a CLR aggregate.
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("tables.sql", Tables),
+            ("f.sql", "CREATE FUNCTION dbo.f (@x int) RETURNS int AS BEGIN RETURN @x END;\nGO\n"),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT dbo.f(DISTINCT n) AS a, dbo.f(n) AS b FROM dbo.t;"));
+        Assert.Contains("This form of call is not modelled", Why(doc, "a"), StringComparison.Ordinal);
+        Assert.DoesNotContain("unknown", Typed(doc, "b"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -145,5 +182,21 @@ public partial class FunctionTests
         Assert.Null(Values(doc, "d2"));
         Assert.Contains("COLLATE", Why(doc, "e"), StringComparison.Ordinal);
         Assert.Equal("nvarchar(1)", Typed(doc, "f"));
+
+        // Five one-byte characters need ten bytes in UTF-8, so varchar(5) holds two of them: a CHECK's least length doesn't
+        // hold under COLLATE, of a column or an aggregate of it; a Unicode string's does.
+        var checkedLength = InferProcedure.Infer(
+            "dbo.p",
+            ("tables.sql", "CREATE TABLE dbo.w (w varchar(5) NOT NULL CHECK (LEN(w) >= 5), nw nvarchar(5) NOT NULL CHECK (LEN(nw) >= 5));\nGO\n"),
+            ("p.sql", """
+                CREATE PROCEDURE dbo.p AS
+                SELECT w AS a, w COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS b, MAX(w) COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS c,
+                       nw COLLATE Greek_CI_AS AS d
+                FROM dbo.w GROUP BY w, nw;
+                """));
+        Assert.NotNull(Facets(checkedLength, "a")?.MinLength);
+        Assert.Null(Facets(checkedLength, "b")?.MinLength);
+        Assert.Null(Facets(checkedLength, "c")?.MinLength);
+        Assert.NotNull(Facets(checkedLength, "d")?.MinLength);
     }
 }
