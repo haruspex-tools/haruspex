@@ -13,7 +13,9 @@
     <!-- A native binary, compiled ahead of time, when the build asks with -p:HaruspexNativeAot=true (CI's AOT job, one per
          platform). Asked for here rather than with -p:PublishAot=true, which would reach every project, the analysers'
          netstandard2.0 one included, which can't be compiled so. Off otherwise, so an ordinary restore needs no AOT
-         compiler and the committed lock files hold none: the compiler's version is the SDK's, which global.json pins. -->
+         compiler and the committed lock files hold none. The compiler and the runtime pack it links take the SDK's
+         version, and global.json doesn't fix that: its rollForward takes the newest patch of its feature band installed, and
+         CI's setup-dotnet installs the newest there is, so a later patch brings a later compiler and runtime. -->
     <PublishAot Condition="'$(HaruspexNativeAot)' == 'true'">true</PublishAot>
   </PropertyGroup>
   <ItemGroup>
@@ -36,6 +38,30 @@
     <InternalsVisibleTo Include="Haruspex.Tests" />
     <InternalsVisibleTo Include="Haruspex.DifferentialTests" />
   </ItemGroup>
+  <!-- The licences that must go with every copy of the native binary, published beside it in a folder of its own:
+       haruspex's LICENSE, and under licenses/ a folder per package (named <id>.<version>, as NuGet names its folders) for
+       the .NET runtime pack the binary links, the AOT compiler, and the libraries compiled in, whose texts are committed in
+       packaging/licenses because their packages carry none (its README says where each came from). The runtime's come
+       from the packages this publish restored, so they are the linked runtime's. The pack script refuses a binary that
+       arrives without these, so CI can't make an npm package without them. -->
+  <Target Name="HaruspexLicenses" AfterTargets="Publish" Condition="'$(PublishAot)' == 'true'">
+    <Error Condition="'@(ResolvedTargetILCompilerPack)' == '' or '@(ResolvedILCompilerPack)' == ''"
+           Text="The Native AOT runtime pack or compiler package wasn't resolved, so their licences can't be published with the binary." />
+    <ItemGroup>
+      <HaruspexLicense Include="$(MSBuildThisFileDirectory)../../LICENSE" Folder="" />
+      <HaruspexCommittedLicense Include="$(MSBuildThisFileDirectory)../../packaging/licenses/**/*"
+                                Exclude="$(MSBuildThisFileDirectory)../../packaging/licenses/README.md" />
+      <HaruspexLicense Include="@(ResolvedTargetILCompilerPack->'%(PackageDirectory)/LICENSE.TXT');@(ResolvedTargetILCompilerPack->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')"
+                       Folder="licenses/@(ResolvedTargetILCompilerPack->'%(Identity).%(NuGetPackageVersion)')/" />
+      <HaruspexLicense Include="@(ResolvedILCompilerPack->'%(PackageDirectory)/THIRD-PARTY-NOTICES.TXT')"
+                       Folder="licenses/@(ResolvedILCompilerPack->'%(Identity).%(NuGetPackageVersion)')/" />
+    </ItemGroup>
+    <!-- Copy fails the publish if a file is missing, so a binary is never published without one of them. -->
+    <Copy SourceFiles="@(HaruspexLicense)" DestinationFiles="@(HaruspexLicense->'$(PublishDir)%(Folder)%(Filename)%(Extension)')" />
+    <!-- Each committed folder as it is: its name is the package's. -->
+    <Copy SourceFiles="@(HaruspexCommittedLicense)"
+          DestinationFiles="@(HaruspexCommittedLicense->'$(PublishDir)licenses/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
   <!-- The commit in a preview's version, so the binary says the same version as the npm package it ships in. The commit is the
        one the SDK reads from git (SourceRevisionId); it appends the whole of it after a +, which the pack script checks. A
        target, not a property, because the commit is known only once the build has asked git for it. It is here, in the

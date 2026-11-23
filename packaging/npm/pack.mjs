@@ -3,13 +3,15 @@
 //
 //   node packaging/npm/pack.mjs --binaries <folder> [--out artifacts/npm] [--commit <sha>] [--only darwin-arm64,...]
 //
-// <folder> holds a folder per platform named as CI's artifacts are, haruspex-<rid>, with the binary in it.
+// <folder> holds a folder per platform named as CI's artifacts are, haruspex-<rid>, with the binary in it and the licences
+// that go with it (packaging/licenses/README.md).
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { missingLicenses } from "./licenses.mjs";
 import { platforms, stageMain, stagePlatform } from "./packages.mjs";
 import { builtFrom, previewVersion } from "./version.mjs";
 
@@ -72,6 +74,19 @@ export function pack({ binaries, out, commit, only, host = process.platform }) {
     throw new Error(
       `${stale.map((s) => s.binary).join(", ")} ${stale.length === 1 ? "was" : "were"} not built from ${commit}, so ` +
         "the packages' version would not say what they hold. Give the commit the binaries were built from with --commit.",
+    );
+  }
+
+  // A binary is a copy of the .NET runtime and of the libraries compiled into it, whose licences ask that their notices go
+  // with every copy; so a platform's package is never made without them.
+  const unlicensed = found
+    .map((f) => ({ ...f, missing: missingLicenses(path.dirname(f.binary), f.platform.rid) }))
+    .filter((f) => f.missing.length > 0);
+  if (unlicensed.length > 0) {
+    throw new Error(
+      "a binary must travel with the licences of what it contains, and these artifacts lack some:\n" +
+        unlicensed.map((u) => `  ${path.dirname(u.binary)}: ${u.missing.join("; ")}`).join("\n") +
+        "\nThe publish puts them beside the binary (HaruspexLicenses in src/Haruspex.Cli/Haruspex.Cli.csproj).",
     );
   }
 
