@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Haruspex.Ir;
 
 /// <summary>
-/// The JSON Schema of the IR's file, published as <c>schemas/haruspex.ir.schema.json</c> so that a program in any language
+/// The JSON Schema of the IR's file, published as <see cref="PublishedPath"/> so that a program in any language
 /// can check an IR file before it trusts one. Generated here, from the model, rather than kept by hand: every closed
 /// vocabulary is listed from its enum through <see cref="IrWireNames"/>, so a member added to the model reaches the schema
 /// with no one remembering to, and a test fails until the committed file is regenerated.
@@ -36,8 +36,15 @@ namespace Haruspex.Ir;
 /// </remarks>
 public static class IrJsonSchema
 {
-    /// <summary>Where the schema is published, as its <c>$id</c>.</summary>
-    public const string Id = "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json";
+    /// <summary>
+    /// Where the current version's schema is kept in the repository, a file named for the version (<c>schemas/ir/0.29.schema.json</c>):
+    /// one per version, so that a file is checked against what its version's reader reads, not against whatever is newest.
+    /// Why: <c>schemas/ir/README.md</c>.
+    /// </summary>
+    public const string PublishedPath = "schemas/ir/" + IrDocument.CurrentVersion + ".schema.json";
+
+    /// <summary>Where the schema is published, as its <c>$id</c>: the address of <see cref="PublishedPath"/>, which names its version.</summary>
+    public const string Id = "https://github.com/sharpblue/haruspex/raw/main/" + PublishedPath;
 
     /// <summary>The definitions of the type nodes, one per node of <see cref="IrType"/>'s closed set.</summary>
     private static readonly string[] TypeNodes = ["ref", "scalar", "array", "tuple", "record", "union", "jsonText", "anyJson", "import", "unknownType"];

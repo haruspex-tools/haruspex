@@ -286,7 +286,7 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | Path | What it holds |
 |---|---|
 | `src/Haruspex.*` | The layers, one project each. What each knows and may refer to is in [the table in docs/architecture.md](docs/architecture.md#the-table); each project's `README.md` describes it. |
-| `schemas` | The published JSON Schemas: of `haruspex.json`, checked against examples by `ConfigSchemaTests`; and of the IR's file, generated from the model by `IrJsonSchema` and never edited by hand (`IrJsonSchemaTests` fails when it is stale; rewrite it with `HARUSPEX_ACCEPT=1`). |
+| `schemas` | The published JSON Schemas: of `haruspex.json`, checked against examples by `ConfigSchemaTests`; and of the IR's file, one per IR version in `schemas/ir`, the current one generated from the model by `IrJsonSchema` and never edited by hand (`IrJsonSchemaTests` fails when it is stale; rewrite it with `HARUSPEX_ACCEPT=1`), and older ones kept as they were ([its README](schemas/ir/README.md)). |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests, a folder per layer ("Where a construct's tests are", above). |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
 | `tests/Shared` | Test support compiled into both test projects (`Haruspex.TestSupport`): the fixtures, found by listing their folder (`Fixture`); inferring procedures from SQL a test writes (`InferProcedure`) and finding things in the IR (`IrNavigation`); temporary folders, the repository's paths, and running the emit-check npm package. |

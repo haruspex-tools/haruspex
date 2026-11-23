@@ -273,7 +273,7 @@ public class IrReaderSchemaAgreementTests
     {
         var documents = Breakages.Keys.ToDictionary(name => name, Broken, StringComparer.Ordinal);
 
-        var verdicts = AjvVerdicts.Of(Path.Combine(RepositoryPaths.Root, "schemas", "haruspex.ir.schema.json"), documents);
+        var verdicts = AjvVerdicts.Of(Path.Combine(RepositoryPaths.Root, IrJsonSchema.PublishedPath), documents);
 
         Assert.All(documents, d =>
         {

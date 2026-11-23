@@ -6,7 +6,7 @@ namespace Haruspex.Tests.Schemas;
 
 /// <summary>
 /// A validator for the part of JSON Schema 2020-12 that the published schemas use (<c>schemas/haruspex.schema.json</c>, the
-/// config file's, and <c>schemas/haruspex.ir.schema.json</c>, the IR's), so each can be checked against examples without a
+/// config file's, and <c>schemas/ir</c>, the IR's), so each can be checked against examples without a
 /// dependency (CONTRIBUTING.md: none without a written reason). It refuses a
 /// keyword it doesn't implement, so the schema can't start relying on one that nothing here checks.
 /// </summary>

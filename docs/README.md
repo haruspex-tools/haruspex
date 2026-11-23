@@ -84,7 +84,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | [The guide](internals/README.md) | How haruspex works and why a static analyser is built this way, in twelve chapters. |
 | [Architecture](architecture.md) | The layers, one project each, and what each may know; held to the code by a test. |
 | [Decisions](decisions/README.md) | Each design decision, with its context, the alternatives and why they lost. |
-| [The IR's format](../src/Haruspex.Ir/README.md) | `haruspex.ir.json`, the record of what was inferred and why, with its [JSON Schema](../schemas/haruspex.ir.schema.json). |
+| [The IR's format](../src/Haruspex.Ir/README.md) | `haruspex.ir.json`, the record of what was inferred and why, with its [JSON Schema](../schemas/ir/README.md). |
 | [The example application](../examples/greenhouse/README.md) | A TypeScript application calling its procedures through a generated module, compiled in CI. |
 | [Contributing](../CONTRIBUTING.md) | How to build, test and change haruspex, and the rules every change keeps. |
 | [Agent conventions](../AGENTS.md) | The extra rules for coding agents working in the repository. |

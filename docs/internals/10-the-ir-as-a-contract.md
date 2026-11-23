@@ -30,7 +30,7 @@ flowchart LR
     file --> reader["IrJsonReader"]
     reader --> zod["emitter: Zod"]
     reader -.-> other["emitter: JSON Schema, a lint, a CI check"]
-    schema["haruspex.ir.schema.json"] -.->|checks| file
+    schema["schemas/ir/0.29.schema.json"] -.->|checks| file
 ```
 
 Two rules keep the IR honest. **Emitters see only the IR**: if an emitter needs a fact, the IR must carry it, so no emitter
@@ -55,8 +55,11 @@ two versions to agree would be trusting something nobody checked.
 ## The schema is generated
 
 A file meant for other programs needs a description those programs can check it against, in a language they already
-speak. For JSON that is JSON Schema, so the IR's is published as [`schemas/haruspex.ir.schema.json`](../../schemas/haruspex.ir.schema.json).
-A program in TypeScript, Python or Go can validate a file with any JSON Schema library before trusting it.
+speak. For JSON that is JSON Schema, so the IR's is published, a file per version, in [`schemas/ir`](../../schemas/ir/README.md).
+A program in TypeScript, Python or Go can validate a file with any JSON Schema library before trusting it. Each version's schema
+has an address of its own, which its `$id` names, and stays as it was when the version moves on: a schema whose address held
+whatever is newest would check a file written by one release against the rules of another, and fail files that were valid when
+they were written.
 
 The schema is generated, by `IrJsonSchema`, and never edited by hand
 ([decision 0023](../decisions/0023-the-ir-schema-is-generated-from-the-model.md)). A hand-kept schema is a second copy of
