@@ -7,6 +7,7 @@
 arithabort
 charindex
 checkident
+clob
 cume
 databasepropertyex
 datalength
@@ -165,6 +166,10 @@ mklink
 realpath
 libc
 readelf
+
+# The parts of a DACPAC that hold its pre- and post-deployment scripts (predeploy.sql, postdeploy.sql)
+predeploy
+postdeploy
 
 # Words of the subject that the dictionary lacks
 bigints

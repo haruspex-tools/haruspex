@@ -18,7 +18,8 @@ project's build reads:
   `Microsoft.Build.Sql`, the default `Build` item `**/*.sql` less `$(DefaultSqlItemExcludes)` and the output folders, and the
   `Build Remove` of `None`, the deployment scripts and (from 2.3.0) `PrePlan`, as its `Sdk.props` and `Sdk.targets` say in 1.0.0,
   2.0.0 and 2.3.0, and the files a deployment script includes with `:r`, which its build takes out as it runs: a line that starts
-  with `:r`, not one in a comment or a string (observed). Visual Studio's newer template, with its lines for a build by the .NET
+  with `:r`, not one in a comment or a string (observed). The deployment scripts and their includes, taken out of the model, are
+  still read for what they change once deployed (`DeploymentScripts`), as a package's `predeploy.sql` and `postdeploy.sql` are. Visual Studio's newer template, with its lines for a build by the .NET
   SDK (`NetCoreBuild`, and a `PackageReference` to `Microsoft.NETFramework.ReferenceAssemblies`), is recognised too, and so is
   its reference to SSDT's own `master.dacpac` under `$(DacPacRootPath)`, a reference to `master` like any other.
 - **The configuration.** A project is read as `Debug`, as `dotnet build` builds it, and again as `Release`; where the two

@@ -55,16 +55,22 @@ build() {
   fi
 }
 
+# A fixture that fails is named at the end, and the step fails, so a fixture whose package isn't built is caught here and not
+# only by DacpacEquivalenceTests. checks, adventure-works and wide-world-importers fail as that test's list says.
 fixtures() {
-  local names=("$@")
+  local names=("$@") failed=()
   [ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$root/tests/fixtures" | grep -v README)
   for f in "${names[@]}"; do
     local dir="$work/fixtures/$f"
     mkdir -p "$dir"
     cp -R "$root/tests/fixtures/$f/database/." "$dir/"
     project "$f" "$current" Sql170 > "$dir/$f.sqlproj"
-    build "$dir" "$f" "$out/fixtures" || true
+    build "$dir" "$f" "$out/fixtures" || failed+=("$f")
   done
+  if [ ${#failed[@]} -gt 0 ]; then
+    echo "not built: ${failed[*]}"
+    return 1
+  fi
 }
 
 # WideWorldImporters' own project is the old SSDT format, so an SDK-style one is written with the same Build items, collation

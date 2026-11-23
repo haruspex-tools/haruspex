@@ -94,4 +94,16 @@ public static class SourceCodes
     /// is written a second time.
     /// </summary>
     public static DiagnosticCode BadModuleDeclaration { get; } = new(1019, DiagnosticSeverity.Error, "A query file's module comment can't be taken");
+
+    /// <summary>
+    /// A script or a folder of scripts that can't be read: a file not there (a link to nothing), or one or a folder the user may
+    /// not open. Nothing in it is read, so the model may lack what it holds.
+    /// </summary>
+    public static DiagnosticCode UnreadableScript { get; } = new(1020, DiagnosticSeverity.Error, "A script or folder can't be read");
+
+    /// <summary>
+    /// A pre- or post-deployment script that can't be read in full: every table, procedure, function and view whose name it holds
+    /// is doubted, since what it does to each isn't known (<c>UnreadDeployment</c>).
+    /// </summary>
+    public static DiagnosticCode DeploymentScriptNotRead { get; } = new(1021, DiagnosticSeverity.Warning, "A deployment script can't be read in full");
 }

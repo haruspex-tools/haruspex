@@ -84,6 +84,17 @@ internal static class ProjectFiles
     }
 
     /// <summary>
+    /// The project's pre- and post-deployment scripts, in that order, which a deployment runs every time and its build packs
+    /// beside the model: read for what they change (<see cref="DeploymentScripts"/>). Each item's script, not the files it
+    /// includes, which are read with it.
+    /// </summary>
+    public static IReadOnlyList<ProjectItem> DeploymentScripts(EvaluatedProject project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        return [.. Deployment.SelectMany(project.OfType)];
+    }
+
+    /// <summary>
     /// The scripts of <c>Build</c> that a doubted item may take out, or whose settings it may change, each reported: a doubted
     /// <c>Build Remove</c> or <c>Build Update</c>, and for a <c>Microsoft.Build.Sql</c> project a doubted <c>None</c>, deployment
     /// script or <c>PrePlan</c> (where the version takes one out). When what the item names is known (only whether it applies is
@@ -249,7 +260,19 @@ internal static class ProjectFiles
         {
             if (DiskPath.Locate(script, script, out _) is not { } file)
                 continue;
-            foreach (var written in SqlcmdIncludes.Of(File.ReadAllText(file)))
+            // One that can't be read is passed by here: what it would take out isn't known, and reading the deployment scripts reports
+            // it (DeploymentScripts).
+            string text;
+            try
+            {
+                text = File.ReadAllText(file);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var written in SqlcmdIncludes.Of(text))
             {
                 if (written.Contains("$(", StringComparison.Ordinal))
                 {

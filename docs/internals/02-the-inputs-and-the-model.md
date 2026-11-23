@@ -98,13 +98,24 @@ can't see (`exec sp_executesql N'create procedure … as return 0'` under `IF OB
 ([decision 0080](../decisions/0080-the-last-definition-in-a-script-stands.md)).
 
 The same rules cover a function and a view. A table isn't played in order: one changed by `ALTER TABLE` in a way that could
-change a column, or dropped, is a doubt wherever the statement is, its own script included. An `ALTER TABLE` that can only tighten a table (adding a constraint, checking one, rebuilding) is no
-doubt, since ignoring it can only leave a column more nullable than it is (`ScriptReader.OnlyTightens`). The primary keys and
+change a column, dropped, or created a second time by a `CREATE TABLE` under `IF`, in a block or in a body, is a doubt wherever
+the statement is, its own script included. Whether a statement under `IF` or in a body runs isn't knowable, so it may: the
+guarded form of an idempotent migration (`IF COL_LENGTH(…) IS NOT NULL ALTER TABLE …`) loosens the column when it runs. Two
+forms are no doubt, each observed: turning system versioning off, which leaves every column as it was, and dropping a period,
+which changes only a table with a hidden column (it shows it to `SELECT *`); WideWorldImporters' load procedures do both to
+most of its tables. Nor is an install script's drop and create: a `DROP TABLE` before the same script's own `CREATE TABLE`,
+outside a body, runs before it, so the table that stands is the `CREATE`'s, as the last definition of a procedure is. One walk
+finds every statement that weakens a claim, at any depth (`WeakeningStatements`), and it is run on every script haruspex reads:
+a folder's or a project's, each module's text in a DACPAC, and the pre- and post-deployment scripts (below). An `ALTER TABLE` that can only tighten a table (adding a constraint, checking one, rebuilding) is no
+doubt, since ignoring it can only leave a column more nullable than it is (`WeakeningStatements.OnlyTightens`). The primary keys and
 unique constraints it adds are read as the table's own (`AddedKey`), since the server enforces them as it does those the table
 declares; the CHECK constraints it adds are not.
 
 A CHECK constraint and a unique key are only claims while SQL Server trusts them. `ALTER TABLE … NOCHECK CONSTRAINT` and
-`ALTER INDEX … DISABLE` stop the server checking rows, and rows written meanwhile stay after a plain re-enable. So
+`ALTER INDEX … DISABLE` stop the server checking rows, and rows written meanwhile stay after a plain re-enable. A bulk load
+that doesn't ask for `CHECK_CONSTRAINTS` (`BULK INSERT`, `INSERT BULK`, and `INSERT … WITH (IGNORE_CONSTRAINTS)` from
+`OPENROWSET(BULK …)`) checks no row either and leaves every check of its table not trusted, so it counts as `NOCHECK
+CONSTRAINT ALL`. So
 `ConstraintTrust` marks each check or key that such a statement may name, wherever it is (inside a procedure, under `IF`),
 since whether it runs isn't knowable. A key, once marked, stays so: re-enabling an index (a rebuild) isn't followed, which
 only claims less. A check is trusted again only when a `WITH CHECK CHECK CONSTRAINT`, which validates every row, certainly
@@ -220,6 +231,14 @@ line in the object's own text: `sales.dacpac/[sales].[get_order]:3:5`
 ([decision 0039](../decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)). An extract keeps only that
 text, so a line means the same however the package was made. A table has no text, so its parts are numbered by their place
 in its list.
+
+**Deployment scripts.** A package also holds the project's pre- and post-deployment scripts (`predeploy.sql`,
+`postdeploy.sql`, with the files they include by `:r` already in their text), which a deployment runs every time, before and
+after it deploys the model. They define nothing the model takes, but what they change stays changed in every database
+deployed: seeding a table with its checks off leaves them off, and altering a procedure leaves its `ALTER`. So both readers,
+of a package and of a project (each deployment script and its includes, read apart), read them for what they change
+(`DeploymentScripts`): the walk above, and every procedure, function and view one creates, alters or drops is `redefined`. One
+that doesn't parse, or an include that can't be found, is a warning, and every object whose name it holds is doubted.
 
 **The proof.** For every fixture that builds as a project, and for WideWorldImporters, the IR and Zod inferred from the
 package are byte for byte those inferred from the folder, once each of the folder's locations is rewritten as the package's
@@ -354,7 +373,8 @@ lists procedures by name, and when an unqualified name could mean either of two 
 - **No order of scripts.** Nothing in a folder says which script runs first, so no change after a definition is applied.
   That is the price of reading a project as it is kept rather than a deployment as it ran.
 - **No running anything.** A change made by code that would have to run, such as `EXEC sp_rename` or dynamic SQL, isn't
-  seen. A database project defines its objects declaratively; such scripts belong in deployment.
+  seen, in a project's scripts or its deployment scripts. Rows loaded in bulk from outside the project, by `bcp` or an
+  application's bulk copy, aren't seen either.
 - **One database.** `USE` isn't followed, and every object the scripts define is read into one model. A DACPAC's packages of
   the same database, and a project's projects and packages of the same database, are composed into that one model. Another
   database, a package or a project, is read into a model of its own, one level down; a database on another server isn't read.

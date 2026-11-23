@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Collections;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
@@ -372,6 +373,76 @@ public partial class ConstructTests
         var doc = Infer(("tables.sql", Tables), ("change.sql", change), ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.code FROM dbo.t AS t;"));
 
         AssertUnknown(doc, "results[0][].code", IrUnknownReason.UnsupportedSource);
+    }
+
+    /// <summary>
+    /// The places a statement may stand without being a batch's own, each with <c>{0}</c> for the statement: the guarded form an
+    /// idempotent migration takes, a block, <c>TRY</c>, a loop and a procedure's body.
+    /// </summary>
+    private static readonly string[] Places =
+    [
+        "IF COL_LENGTH('dbo.t', 'code') IS NOT NULL {0}",
+        "BEGIN {0} END",
+        "BEGIN TRY {0} END TRY BEGIN CATCH END CATCH",
+        "WHILE 1 = 0 {0}",
+        "CREATE PROCEDURE dbo.migrate AS BEGIN {0} END",
+    ];
+
+    /// <summary>Each statement that changes, drops or creates the table again, in each place it may stand.</summary>
+    public static TheoryData<string, string> NestedChanges { get; } = [.. Places.SelectMany(nesting => ((string[])[
+        "ALTER TABLE dbo.t ALTER COLUMN code int NULL;",
+        "DROP TABLE dbo.t;",
+        "CREATE TABLE dbo.t (id int NULL, code varchar(10) NULL);"]).Select(change => (nesting, change)))];
+
+    [Theory]
+    [MemberData(nameof(NestedChanges))]
+    public void A_table_changed_dropped_or_created_again_at_any_depth_is_unknown(string nesting, string change)
+    {
+        // Whether the statement runs isn't knowable, so it may (observed: A_column_loosened_under_if_holds_null), and a second
+        // CREATE TABLE may run in place of the first, depending on the order the scripts run.
+        var doc = InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("change.sql", string.Format(CultureInfo.InvariantCulture, nesting, change)), ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.code FROM dbo.t AS t;"));
+
+        AssertUnknown(doc, "results[0][].code", IrUnknownReason.UnsupportedSource);
+    }
+
+    [Theory]
+    // An install script's drop and create: the CREATE TABLE after the drop, in the same script, is the table that stands.
+    [InlineData("IF OBJECT_ID(N'dbo.t') IS NOT NULL DROP TABLE dbo.t;\nGO\n", false)]
+    [InlineData("DROP TABLE IF EXISTS dbo.t;\nGO\n", false)]
+    // In a body the drop may run at any time after the create, and once the table is created again elsewhere, or not at all.
+    [InlineData("CREATE PROCEDURE dbo.reset AS DROP TABLE dbo.t;\nGO\n", true)]
+    public void A_table_dropped_before_its_create_in_the_same_script_is_its_create(string before, bool unknown)
+    {
+        var doc = InferProcedure.Infer("dbo.p", ("tables.sql", before + Tables), ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.code FROM dbo.t AS t;"));
+
+        Assert.Equal(unknown, doc.Unknowns.Any(u => u.Reason == IrUnknownReason.UnsupportedSource));
+    }
+
+    [Theory]
+    // Turning versioning off changes no column (observed: Turning_system_versioning_off_changes_no_column), and dropping the
+    // period shows a hidden column, so it changes only a table that has one (Dropping_a_period_shows_its_hidden_columns_and_keeps_their_types).
+    [InlineData("", false)]
+    [InlineData("HIDDEN", true)]
+    public void A_period_dropped_in_a_load_procedure_changes_only_a_table_with_a_hidden_column(string hidden, bool unknown)
+    {
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("rate.sql", $"CREATE TABLE dbo.rate (id int NOT NULL PRIMARY KEY, amount int NOT NULL, valid_from datetime2 GENERATED ALWAYS AS ROW START {hidden} NOT NULL, valid_to datetime2 GENERATED ALWAYS AS ROW END NOT NULL, PERIOD FOR SYSTEM_TIME (valid_from, valid_to)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.rate_history));"),
+            ("load.sql", "CREATE PROCEDURE dbo.load AS BEGIN ALTER TABLE dbo.rate SET (SYSTEM_VERSIONING = OFF); ALTER TABLE dbo.rate DROP PERIOD FOR SYSTEM_TIME; END"),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT r.amount FROM dbo.rate AS r;"));
+
+        Assert.Equal(unknown, doc.Unknowns.Any(u => u.Reason == IrUnknownReason.UnsupportedSource));
+    }
+
+    [Theory]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.t ADD CONSTRAINT ck_t CHECK (code > 0);")]
+    [InlineData("CREATE PROCEDURE dbo.work AS BEGIN CREATE TABLE #t (code int NULL); ALTER TABLE #t ALTER COLUMN code bigint NULL; DROP TABLE #t; END")]
+    public void A_nested_statement_that_only_tightens_or_names_a_temporary_table_leaves_the_table_read(string change)
+    {
+        var doc = InferProcedure.Infer("dbo.p", ("tables.sql", Tables), ("change.sql", change), ("p.sql", "CREATE PROCEDURE dbo.p AS SELECT t.code FROM dbo.t AS t;"));
+
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Assert.Single(RowFields(doc)).Nullable);
     }
 
     [Theory]

@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 
 namespace Haruspex.SqlServer.Sources;
@@ -13,13 +14,14 @@ namespace Haruspex.SqlServer.Sources;
 /// order: a stub created and then altered is its <c>ALTER</c>. A statement in another script that changes either is not
 /// applied, because which state wins depends on the order the scripts run, which a folder does not say. Instead it is
 /// recorded as a <see cref="Redefinition"/>: on a table for <c>ALTER TABLE</c> (other than adding or checking constraints,
-/// which can only tighten it) or <c>DROP TABLE</c>, wherever it is, and on a procedure for <c>ALTER PROCEDURE</c> or
+/// which can only tighten it), <c>DROP TABLE</c> or a <c>CREATE TABLE</c> nested in another statement, wherever it is, under
+/// <c>IF</c> and in a body included (<c>WeakeningStatements</c>), and on a procedure for <c>ALTER PROCEDURE</c> or
 /// <c>DROP PROCEDURE</c> in another script than its definition.
 /// </para>
 /// <para>
 /// Alias and CLR types are read from <c>CREATE TYPE</c>, and CHECK constraints from <c>CREATE TABLE</c>. A check that
-/// <c>ALTER TABLE … NOCHECK CONSTRAINT</c> may name (or <c>ALL</c>), anywhere in a script, procedure body included,
-/// is recorded as possibly disabled, unless <c>WITH CHECK CHECK CONSTRAINT</c> validates it again later in the
+/// <c>ALTER TABLE … NOCHECK CONSTRAINT</c> may name (or <c>ALL</c>), or of a table a bulk load without <c>CHECK_CONSTRAINTS</c>
+/// writes to, anywhere in a script, procedure body included, is recorded as possibly disabled, unless <c>WITH CHECK CHECK CONSTRAINT</c> validates it again later in the
 /// same script (see <c>ConstraintTrust</c>).
 /// </para>
 /// <para>
@@ -40,6 +42,10 @@ public static class SqlScriptFolder
 {
     /// <summary>Reads every <c>*.sql</c> file under <paramref name="directory"/>, including subfolders.</summary>
     /// <remarks>
+    /// The folder is listed as a project's build lists its default items, <c>**/*.sql</c>, by the walk the project reader uses
+    /// (<c>Projects.Glob</c>): the extension matched ignoring case on every platform (<c>Load.SQL</c> is a script on Linux as on
+    /// Windows), hidden folders included, and each folder entered once by where it really is, so a link back up the tree reads each
+    /// script once. A folder that can't be entered, and a script that can't be read, is an error naming it (HAR1020), not a fault.
     /// Files are read in order of their relative path, so the outcome does not depend on the file system. Each is
     /// UTF-8 unless a byte order mark says otherwise, and is parsed with the SQL Server 2025 grammar.
     /// </remarks>
@@ -50,9 +56,20 @@ public static class SqlScriptFolder
         if (!Directory.Exists(directory))
             throw new DirectoryNotFoundException($"Directory not found: {directory}");
 
-        return Read(directory, Directory.EnumerateFiles(directory, "*.sql", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(directory, path)));
+        var root = Projects.DiskPath.Locate(Path.GetFullPath(directory), directory, out _) ?? Path.GetFullPath(directory);
+        var listed = Projects.Glob.Of(root, "**/*.sql").Files(out var unexpanded, out var unreadable);
+        var declarations = new SchemaDeclarations();
+        foreach (var folder in unreadable)
+            declarations.Diagnostics.Add(SourceCodes.UnreadableScript.At(new FileLocation(Shown(root, folder)), $"{Shown(root, folder)} can't be entered, so no script in it is read."));
+        if (listed is null)
+            declarations.Diagnostics.Add(SourceCodes.UnreadableScript.At(new FileLocation(directory), $"The folder can't be listed, so no script in it is read: {unexpanded}."));
+
+        ReadInto(declarations, ScriptFile.InOrder(root, (listed ?? []).Select(path => Path.GetRelativePath(root, path)), listed: true));
+        return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
     }
+
+    /// <summary>A folder under the one read, as a person would name it from there.</summary>
+    private static string Shown(string root, string folder) => Path.GetRelativePath(root, folder).Replace('\\', '/') + "/";
 
     /// <summary>
     /// Reads the <c>.sql</c> files named, relative to <paramref name="directory"/>: a chosen set of a folder's scripts, such as
