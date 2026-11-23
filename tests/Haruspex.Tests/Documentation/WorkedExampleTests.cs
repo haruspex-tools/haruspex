@@ -7,6 +7,7 @@ using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Sources;
+using Haruspex.Tests.Cli;
 using SampleCorpus = Haruspex.Tests.Corpus.Corpus;
 
 namespace Haruspex.Tests.Documentation;
@@ -317,14 +318,19 @@ public class WorkedExampleTests
 
     /// <summary>
     /// The example's project, read and inferred as the CLI does with no config file: every procedure of an example that stands
-    /// alone, or, beside a corpus, the procedures the example defines.
+    /// alone, or, beside a corpus, the procedures the example defines. Its source names the build that wrote it, as every document
+    /// the CLI writes does: a build that never moves (<see cref="FixedBuild"/>), so that the guide doesn't change with each commit.
     /// </summary>
-    private static IrDocument Infer(WorkedExample example) => example switch
+    private static IrDocument Infer(WorkedExample example)
     {
-        { Over: { } over, Query: { } path } => InferQueryOver(over, path, example.Sql),
-        { Over: { } over } => InferOver(over, example.Sql),
-        _ => InferProcedure.Infer("*.*", ("example.sql", example.Sql)),
-    };
+        var document = example switch
+        {
+            { Over: { } over, Query: { } path } => InferQueryOver(over, path, example.Sql),
+            { Over: { } over } => InferOver(over, example.Sql),
+            _ => InferProcedure.Infer("*.*", ("example.sql", example.Sql)),
+        };
+        return document with { Source = document.Source with { WrittenBy = FixedBuild.Terminal.Build } };
+    }
 
     /// <summary>
     /// The example read in one folder with the scripts of the corpus named <paramref name="over"/>, as the corpus figures read

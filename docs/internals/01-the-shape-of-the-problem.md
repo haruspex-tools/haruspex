@@ -182,13 +182,18 @@ DECLARE @sql nvarchar(max) = N'SELECT p.product_id, p.name FROM shop.product AS 
 EXEC sp_executesql @sql;
 ```
 
-The IR says what is known (the parameter's type, and the length a value sent to it keeps) and lists the unknown, with its reason and location:
+The IR says what is known (the parameter's type, and the length a value sent to it keeps) and lists the unknown, with its reason and
+location. It names the build that wrote it too, here the guide's own, whose commit of zeros names none:
 
 ```json haruspex-ir
 {
-  "irVersion": "0.25",
+  "irVersion": "0.30",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "files": {
       "example.sql": "b73a07090a46fd4fff2281e50a518c42a48c11e52ed9011fa02a95e3c1b934e5"
     }
