@@ -40,9 +40,11 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// (never null), a key that is kept as null is <c>.nullable()</c> (never absent), and a key that may be left out whatever its
     /// value, in a document combining two databases, is <c>.optional()</c> and <c>.nullable()</c> as well when it may be null.
     /// </summary>
-    public ZodExpression Field(IrField field, IrEncoding encoding)
+    public ZodExpression Field(IrField field, IrEncoding encoding) => Field(field, Type(field.Type, encoding));
+
+    /// <summary>A field's schema whose value is <paramref name="value"/>, with the field's presence and nullability.</summary>
+    private static ZodExpression Field(IrField field, ZodExpression value)
     {
-        var value = Type(field.Type, encoding);
         return field.Presence switch
         {
             IrPresence.OmittedWhenNull when field.Nullable => value.Then("optional"),
@@ -58,9 +60,12 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// An array, with its items' nullability and its length when the IR knows them (<c>json_array</c> and the aggregates; an
     /// array FOR JSON builds has neither).
     /// </summary>
-    private ZodExpression Array(IrArray array, IrEncoding encoding)
+    private ZodExpression Array(IrArray array, IrEncoding encoding) => Array(array, Type(array.Items, encoding));
+
+    /// <summary>An array whose items are <paramref name="items"/>, with the array's own facts.</summary>
+    private static ZodExpression Array(IrArray array, ZodExpression items)
     {
-        var code = Z("array", Nullable(Type(array.Items, encoding), array.ItemsNullable, array.Items));
+        var code = Z("array", Nullable(items, array.ItemsNullable, array.Items));
         if (array.MinItems is { } min)
             code = code.Then("min", new Number(min.ToString(CultureInfo.InvariantCulture)));
         if (array.MaxItems is { } max)
@@ -69,45 +74,72 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     }
 
     /// <summary>
-    /// A union, without the variants another already accepts (<see cref="Unions"/>). <c>z.union</c> returns the first variant that accepts a value, and a <c>z.object</c> strips the keys it doesn't
-    /// know, so a variant would accept another's object and drop its keys: a key left out when null is <c>.optional()</c>, so
-    /// even a variant with more keys accepts an object of fewer, and no order prevents it. So each object variant (or array
-    /// of one) also rejects every key that only the other variants have, <c>.extend({ k: z.never().optional() })</c>: an
-    /// object takes the variant whose keys it has, and keeps them all. Keys no variant knows are still stripped (or refused,
-    /// for strict objects), as everywhere else.
+    /// A union, without the variants another already accepts (<see cref="Unions"/>). <c>z.union</c> returns the first variant that
+    /// accepts a value, and a <c>z.object</c> strips the keys it doesn't know, so a variant would accept another's object and drop
+    /// its keys: a key left out when null is <c>.optional()</c>, so even a variant with more keys accepts an object of fewer, and
+    /// no order prevents it. So each variant also rejects, at every depth, the keys only the other variants' objects have at the
+    /// same place (<see cref="Apart"/>): two branches with the same top-level keys whose nested <c>FOR JSON</c> lists differ are
+    /// told apart by the nested objects' keys. An object takes the variant whose keys it has, and keeps them all. Keys no variant
+    /// knows are still stripped (or refused, for strict objects), as everywhere else.
     /// </summary>
-    private ZodExpression Union(IrUnion union, IrEncoding encoding)
-    {
-        var keys = union.Variants.Select(ObjectKeys).ToList();
-        return Unions.Of(SupersetsFirst(union.Variants).Select(i => Variant(union.Variants[i], keys[i], keys.Where((_, j) => j != i))));
-
-        ZodExpression Variant(IrType variant, IReadOnlyList<string>? mine, IEnumerable<IReadOnlyList<string>?> others)
-        {
-            var theirs = mine is null
-                ? []
-                : others.OfType<IReadOnlyList<string>>().SelectMany(k => k).Where(k => !mine.Contains(k, StringComparer.Ordinal)).Distinct(StringComparer.Ordinal).ToList();
-            if (theirs.Count == 0)
-                return Type(variant, encoding);
-            var never = new ObjectLiteral([.. theirs.Select(k => new ZodProperty(k, Z("never").Then("optional")))]);
-            return variant switch
-            {
-                IrRef reference => Reference(reference).Then("extend", never),
-                IrArray { Items: IrRef item } => Z("array", Reference(item).Then("extend", never)),
-                _ => throw new InvalidOperationException("Only an object, or an array of one, has keys to tell apart."),
-            };
-        }
-    }
+    private ZodExpression Union(IrUnion union, IrEncoding encoding) =>
+        Unions.Of(SupersetsFirst(union.Variants).Select(i =>
+            Apart(union.Variants[i], [.. union.Variants.Where((_, j) => j != i)], encoding, new HashSet<string>(StringComparer.Ordinal)) ?? Type(union.Variants[i], encoding)));
 
     /// <summary>
-    /// The keys of a variant that is an object, or a plain array of one; null for any other, and for an open object, which may hold
-    /// any key, so that no key can be refused to tell it apart.
+    /// <paramref name="mine"/>'s schema refusing every key that only <paramref name="others"/> have at the same place, or null
+    /// when it needs to refuse none. At an object it refuses the keys only the others' objects have,
+    /// <c>.extend({ k: z.never().optional() })</c>, and goes on into each of its fields with the others' fields of that name; at an
+    /// array, into its items with the others' items; at JSON text, into what it holds. A variant of another kind at the same
+    /// place has no keys to tell apart. An open object refuses no key, since it may hold any, but its fields are still followed.
     /// </summary>
-    private List<string>? ObjectKeys(IrType type) => type switch
+    /// <remarks>
+    /// A refusal is written inline, so a pair of recursive types is followed once round its cycle and no further
+    /// (<paramref name="seen"/>): below that, a nested object of a recursive variant is told apart only by its own top-level keys.
+    /// Writing the whole cycle would need a schema of its own for each refusing copy, which no fixture or corpus has yet needed.
+    /// </remarks>
+    private ZodExpression? Apart(IrType mine, IReadOnlyList<IrType> others, IrEncoding encoding, IReadOnlySet<string> seen)
     {
-        IrRef reference when types.TryGetValue(reference.Name, out var target) && !target.Open => [.. target.Fields.Select(f => f.Name)],
-        IrArray { Items: IrRef reference, MinItems: null, MaxItems: null, ItemsNullable: false } => ObjectKeys(reference),
-        _ => null,
-    };
+        switch (mine)
+        {
+            case IrRef reference when types.TryGetValue(reference.Name, out var target):
+            {
+                var objects = others.OfType<IrRef>().Where(r => r.Name != reference.Name && types.ContainsKey(r.Name)).Select(r => types[r.Name]).ToList();
+                var pair = string.Join("|", [reference.Name, .. others.OfType<IrRef>().Select(r => r.Name).Order(StringComparer.Ordinal)]);
+                if (objects.Count == 0 || seen.Contains(pair))
+                    return null;
+                var within = new HashSet<string>(seen, StringComparer.Ordinal) { pair };
+
+                var properties = new List<ZodProperty>();
+                foreach (var field in target.Fields)
+                {
+                    var theirs = objects.Select(o => o.Fields.FirstOrDefault(f => f.Name == field.Name)?.Type).OfType<IrType>().ToList();
+                    if (theirs.Count > 0 && Apart(field.Type, theirs, encoding, within) is { } refused)
+                        properties.Add(new ZodProperty(field.Name, Field(field, refused)));
+                }
+
+                if (!target.Open)
+                {
+                    properties.AddRange(objects.Where(o => !o.Open).SelectMany(o => o.Fields.Select(f => f.Name))
+                        .Where(k => !target.Fields.Any(f => f.Name == k)).Distinct(StringComparer.Ordinal)
+                        .Select(k => new ZodProperty(k, Z("never").Then("optional"))));
+                }
+
+                return properties.Count == 0 ? null : Reference(reference).Then("extend", new ObjectLiteral([.. properties]));
+            }
+
+            case IrArray array:
+                return Apart(array.Items, [.. others.OfType<IrArray>().Select(a => a.Items)], encoding, seen) is { } items ? Array(array, items) : null;
+
+            case IrJsonText { Content: { } content }:
+                return Apart(content, [.. others.OfType<IrJsonText>().Select(t => t.Content).OfType<IrType>()], IrEncoding.Json, seen) is { } held
+                    ? new Noted(new JsonText(held), new ZodNote("A string holding JSON, checked against the schema inside."))
+                    : null;
+
+            default:
+                return null;
+        }
+    }
 
     /// <summary>
     /// The positions of a union's variants, those of more keys first. <c>z.union</c> returns the first variant that accepts a

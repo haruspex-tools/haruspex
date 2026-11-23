@@ -209,7 +209,11 @@ and the two bounds say it all. A union leaves out a variant that another variant
 for "accepts every value of" is deliberately narrow (equal variants, any number under a bare `z.number()`, and strings or
 enums under a string with only a maximum length), because a variant it can't compare is kept, which is longer but never
 wrong. Object variants are never dropped: a `z.object` strips the keys it doesn't know, so which variant takes a value
-changes what comes out.
+changes what comes out. For the same reason each object variant refuses the keys only the others have,
+`.extend({ k: z.never().optional() })`, and does so at every depth: two branches whose rows have the same keys but whose nested
+`FOR JSON` lists differ would otherwise let the first variant take the second's value and strip its nested keys, whichever
+order the branches came in. The refusal follows fields, array items and JSON text's content into nested objects, written
+inline, so a pair of recursive types is followed once round its cycle.
 
 **An identical shape is declared once, and every exported name is its own.** Two result sets with the same columns, or a
 callee's rows passed through by its caller, make named types whose schemas are the same. The shape is declared once, and each
