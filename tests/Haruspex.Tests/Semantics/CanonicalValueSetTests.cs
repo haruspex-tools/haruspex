@@ -120,7 +120,7 @@ public class CanonicalValueSetTests
             zod,
             StringComparison.Ordinal);
         Assert.Contains("ignored: \"\\u0000\\u00ad\"", zod, StringComparison.Ordinal);
-        Assert.Contains("\"AE\": \"\\u00c6\\u00e6\"", zod, StringComparison.Ordinal);
+        Assert.Contains("[\"AE\", \"\\u00c6\\u00e6\"]", zod, StringComparison.Ordinal);
     }
 
     [Fact]
