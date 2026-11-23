@@ -35,7 +35,7 @@ infers the procedure `--include` names, and writes three files to `out`: `harusp
 haruspex inferred and why; `haruspex.zod.ts`, the schemas and types; and `haruspex.mssql.ts`, the function that calls the
 procedure. It prints one line saying so.
 
-In your own project, add the output folder to `.prettierignore`, or to Biome's `files.ignore`: otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes.
+In your own project, add the output folder to `.prettierignore`, or to Biome's `files.includes` as an exclusion after `"**"` (`"includes": ["**", "!src/db"]`): otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes.
 
 ## Read what it wrote
 

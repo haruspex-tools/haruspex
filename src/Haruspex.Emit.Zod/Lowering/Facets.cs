@@ -255,7 +255,8 @@ internal static partial class Facets
     /// <param name="greatest">The greatest value.</param>
     /// <param name="received">
     /// Whether it is text the mssql driver wrote, a JavaScript <c>bigint</c>'s <c>toString()</c>: no sign but a minus, no leading
-    /// zero, never <c>-0</c> (observed: <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>). Text a
+    /// zero, never <c>-0</c> (observed: <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>, and of an
+    /// <c>OUTPUT</c> parameter, <c>An_output_bigint_arrives_as_the_text_of_its_digits_as_a_rowset_s_does</c>). Text a
     /// caller sends may be any digits, which the driver passes on and the server reads.
     /// </param>
     public static ZodExpression BigIntText(BigInteger least, BigInteger greatest, bool received)

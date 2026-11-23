@@ -71,7 +71,7 @@ internal static class Init
             output.WriteLine("Next, run haruspex generate. Then narrow each schema's \"include\" to the procedures the application calls.");
 
             // A team's format on save or pre-commit hook meets the generated files first, and check compares them as text.
-            output.WriteLine($"Keep {@out} out of your formatter (in .prettierignore, or Biome's files.ignore): haruspex check fails on a file a formatter restyled.");
+            output.WriteLine($"Keep {@out} out of your formatter (in .prettierignore, or as \"!{@out}\" after \"**\" in Biome's files.includes): haruspex check fails on a file a formatter restyled.");
         }
         return HaruspexCli.ExitCodes.Success;
     }

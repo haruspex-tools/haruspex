@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
@@ -6,7 +7,8 @@ using Haruspex.Ir;
 namespace Haruspex.Tests.Emit.Zod;
 
 /// <summary>
-/// What the generated schemas decide, run in Node against the pinned Zod (<c>tests/emit-check/src/verdicts.mjs</c>): each accepts
+/// What the generated schemas decide, run in Node against the pinned Zod, and the JSON Schema document's definitions against Ajv
+/// (<c>tests/emit-check/src/verdicts.mjs</c>): each accepts
 /// what SQL Server and the mssql driver hand over and refuses the forms they never do. A rowset's <c>bigint</c> arrives as the
 /// text of its digits (observed: <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>), and a date
 /// or time in JSON as <c>FOR JSON</c> writes its type; each accepted string below is one <c>ForJsonObservationTests</c> observed the
@@ -40,7 +42,7 @@ public class ZodVerdictTests
 
     private static IrScalar DateTime(IrScalarKind kind, IrFormat? format, string? sql) => new(kind, format, sql);
 
-    private static readonly (string Type, string Value, bool Accepted)[] Cases =
+    private static readonly (string Type, JsonNode? Value, bool Accepted)[] Cases =
     [
         // A bigint in a row: the digits a JavaScript bigint's toString() writes, in its type's range.
         ("BigRow", "0", true),
@@ -56,6 +58,11 @@ public class ZodVerdictTests
         ("BigRow", "1.0", false),
         ("BigRow", "9223372036854775808", false),
         ("BigRow", "-9223372036854775809", false),
+
+        // Never a number, which the driver doesn't hand a bigint over as, even one a double holds exactly.
+        ("BigRow", 5, false),
+        ("BigRow", 0, false),
+        ("BigRow", null, false),
 
         // And in a CHECK's range, inclusive or not, whole or not: > 2.5 is at least 3, < 100 at most 99.
         ("AtLeastZeroRow", "0", true),
@@ -116,28 +123,49 @@ public class ZodVerdictTests
     ];
 
     [Fact]
-    public void Each_schema_accepts_what_the_server_and_the_driver_hand_over_and_refuses_the_forms_they_never_do()
+    public void Each_schema_accepts_what_the_server_and_the_driver_hand_over_and_refuses_the_forms_they_never_do() =>
+        Verdicts(
+            "module.ts",
+            ZodEmitter.Emit(Document()).Expected(),
+            new JsonArray([.. Cases.Select(c => Case("schema", ZodModule.SchemaOf(c.Type), c.Value, c.Accepted))]));
+
+    /// <summary>
+    /// The JSON Schema document holds a date or time in JSON to the same forms, validated by Ajv. A rowset's <c>bigint</c> is
+    /// described there as JSON writes it, an integer, so only the cases of values in JSON are its.
+    /// </summary>
+    [Fact]
+    public void Each_json_schema_definition_accepts_what_the_server_writes_and_refuses_the_forms_it_never_does() =>
+        Verdicts(
+            "document.json",
+            JsonSchemaEmitter.Emit(Document()).Expected(),
+            new JsonArray([.. Cases.Where(c => Types[c.Type].Encoding == IrEncoding.Json).Select(c => Case("definition", c.Type, c.Value, c.Accepted))]));
+
+    /// <summary>A procedure for each type, returning rows of it, so that each type has a schema of its own under its name.</summary>
+    private static IrDocument Document() => new(
+        new IrSource("tsql"),
+        [.. Types.Select(t => new IrObject($"s.{t.Key}", t.Key[..^"Row".Length], IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(t.Value.Encoding, new IrArray(new IrRef(t.Key)), [])]))],
+        Types.ToDictionary(t => t.Key, t => new IrObjectType([new IrField("v", t.Value.Scalar, IrPresence.Always, [])])),
+        []);
+
+    private static JsonObject Case(string kind, string name, JsonNode? value, bool accepted) => new()
+    {
+        [kind] = name,
+        ["value"] = new JsonObject { ["v"] = value?.DeepClone() },
+        ["accepted"] = accepted,
+    };
+
+    /// <summary>Runs <c>verdicts.mjs</c> on <paramref name="cases"/> against <paramref name="text"/>, written as <paramref name="file"/>.</summary>
+    private static void Verdicts(string file, string text, JsonArray cases)
     {
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the schemas' verdicts were not observed");
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
-        var document = new IrDocument(
-            new IrSource("tsql"),
-            [.. Types.Select(t => new IrObject($"s.{t.Key}", t.Key[..^"Row".Length], IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(t.Value.Encoding, new IrArray(new IrRef(t.Key)), [])]))],
-            Types.ToDictionary(t => t.Key, t => new IrObjectType([new IrField("v", t.Value.Scalar, IrPresence.Always, [])])),
-            []);
-        var cases = new JsonArray([.. Cases.Select(c => new JsonObject
-        {
-            ["schema"] = ZodModule.SchemaOf(c.Type),
-            ["value"] = new JsonObject { ["v"] = c.Value },
-            ["accepted"] = c.Accepted,
-        })]);
 
         // Under accept/, which git ignores, so that the module's import of zod resolves to the package's own.
         var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         try
         {
-            File.WriteAllText(Path.Combine(folder, "module.ts"), ZodEmitter.Emit(document).Expected());
+            File.WriteAllText(Path.Combine(folder, file), text);
             File.WriteAllText(Path.Combine(folder, "cases.json"), cases.ToJsonString());
             Assert.True(
                 EmitCheckPackage.TryRun("node", [Path.Combine("src", "verdicts.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),

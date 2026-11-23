@@ -88,6 +88,15 @@ internal static class MssqlDriver
     /// </summary>
     public sealed record Typed(string Type, object? Value, IReadOnlyList<object>? Args = null);
 
+    /// <summary>
+    /// An <c>OUTPUT</c> parameter, bound with <c>request.output</c> as the driver's type <c>sql[Type](...Args)</c> and no value; what
+    /// it holds when the procedure ends is in <see cref="Response.Output"/>. The script reads it as <c>{ "output": … }</c>.
+    /// </summary>
+    public sealed record OutputValue(OutputType Output);
+
+    /// <summary>The driver's type an <see cref="OutputValue"/> is bound as.</summary>
+    public sealed record OutputType(string Type, IReadOnlyList<object>? Args = null);
+
     /// <summary>A table-valued parameter: the table type by its schema and name, its columns in order, and its rows' values.</summary>
     public sealed record Table(string Schema, string Name, IReadOnlyList<TableColumn> Columns, IReadOnlyList<IReadOnlyList<object?>> Rows);
 
@@ -126,6 +135,9 @@ internal static class MssqlDriver
     {
         /// <summary>The call's return value as the driver reports it (<c>returnValue</c>); null for an error, or a batch.</summary>
         public int? ReturnValue { get; init; }
+
+        /// <summary>The <c>OUTPUT</c> parameters' values by name, as the driver hands them over (<c>output</c>); null for an error.</summary>
+        public JsonElement? Output { get; init; }
     }
 
     /// <summary>One result set as the driver hands it over: its columns' names and its rows (an object, or what the driver parsed).</summary>

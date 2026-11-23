@@ -36,8 +36,9 @@ internal static class ParameterLowering
 
     /// <summary>
     /// The declaration of what <paramref name="obj"/>'s <c>OUTPUT</c> parameters hold when it ends, or null when it has none: each
-    /// as the mssql driver hands it over, which is as it hands a column of a row over (a <c>bigint</c> as a string, a date as a
-    /// <c>Date</c>; observed), and NULL whatever the procedure does, since nothing proves it assigns one. One with a default may
+    /// as the mssql driver hands it over, which is as it hands a column of a row over (a <c>bigint</c> as the text of its digits,
+    /// observed: <c>MssqlDriverObservationTests.An_output_bigint_arrives_as_the_text_of_its_digits_as_a_rowset_s_does</c>; a date as
+    /// a <c>Date</c>), and NULL whatever the procedure does, since nothing proves it assigns one. One with a default may
     /// be left unbound by the caller, and then it doesn't come back.
     /// </summary>
     public static ZodDeclaration? OutputDeclaration(IrObject obj, TypeLowering types)

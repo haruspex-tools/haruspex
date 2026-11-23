@@ -536,8 +536,10 @@ haruspex: 3 procedures, 1 unknown. Wrote src/db/haruspex.ir.json and src/db/haru
 
 When nothing changed, that is one line: `haruspex: nothing changed since the last run: 3 procedures, 1 unknown`. In CI,
 `haruspex check` fails when the module in the output folder, the one committed, would change, with annotations in GitHub Actions; [the command
-line](docs/command-line.md) has the rest. Keep the output folder out of your formatter (`.prettierignore`, or Biome's
-`files.ignore`): otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes.
+line](docs/command-line.md) has the rest. Keep the output folder out of your formatter: in `.prettierignore`, or as an
+exclusion in Biome's `files.includes` (`"includes": ["**", "!src/db"]` for `src/db`). Otherwise a formatter (Prettier, Biome,
+an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with
+what haruspex writes.
 
 [Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to the schemas and the function for one of
 the sample's procedures. [The example application](examples/greenhouse/README.md) calls its procedures through the
