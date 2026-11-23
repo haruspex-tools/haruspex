@@ -12,7 +12,8 @@ each stored procedure returns: every column and JSON key, its type, whether it c
 set of values. It does this by *abstract interpretation*: it walks each procedure as SQL Server would run it, but over
 descriptions of values ("an `int` that is never null") rather than values. Where two paths meet it keeps only what holds on
 both, and where a construct is not understood it says *unknown*, with a reason, rather than guess. Every rule it uses about
-SQL Server is checked against a real server by a test. The result is an IR, from which it generates Zod.
+SQL Server is checked against a real server by a test, and what no test can observe is assumed and
+[said so](../../README.md#what-it-guarantees-and-what-it-cant-see). The result is an IR, from which it generates Zod.
 
 ```mermaid
 flowchart LR
