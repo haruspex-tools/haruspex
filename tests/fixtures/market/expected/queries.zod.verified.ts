@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 export const OrderCountRowSchema = z.object({
-  orders: z.string(),
+  orders: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type OrderCountRow = z.infer<typeof OrderCountRowSchema>
 

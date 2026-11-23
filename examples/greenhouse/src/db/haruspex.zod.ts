@@ -9,7 +9,7 @@
 import { z } from 'zod'
 
 export const GetPlantWaterLogItemSchema = z.object({
-  watered_at: z.iso.datetime({ local: true }),
+  watered_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
   litres: z.number().min(0.01).max(999.99).multipleOf(1e-2),
 })
 export type GetPlantWaterLogItem = z.infer<typeof GetPlantWaterLogItemSchema>

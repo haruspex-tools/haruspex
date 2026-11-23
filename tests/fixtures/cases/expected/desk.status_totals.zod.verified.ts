@@ -17,7 +17,7 @@ export const StatusTotalsRowSchema = z.object({
   status: z.string().max(3),
   /** varchar(3) counts bytes and its collation isn't declared, so the length is at most 3. */
   filter: z.string().max(3),
-  line_rows: z.string(),
+  line_rows: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
    * Its type is decimal(38,2), where desk.part_line.price is decimal(9,2): what it is computed with makes it another type.

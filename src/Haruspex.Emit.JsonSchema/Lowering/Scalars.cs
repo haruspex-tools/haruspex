@@ -15,7 +15,8 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// it, so the pattern is the check everywhere, and the format adds what a pattern can't (a real calendar date) where it is asserted,
 /// and names the kind for code generators. A time, and a date and time without an offset, have no format that fits, since RFC
 /// 3339's <c>time</c> and <c>date-time</c> both require one. A fraction of a second has as many digits as the type's scale and
-/// is left out when zero, so it is optional in every pattern.
+/// is left out when zero, so it is optional in every pattern, and where the IR spells the type (<see cref="IrScalar.Sql"/>), it has
+/// exactly that many digits (<see cref="SentScalars.Written"/>).
 /// </remarks>
 internal static class Scalars
 {
@@ -35,11 +36,11 @@ internal static class Scalars
             IrScalarKind.Number => Numbers.Of(scalar),
             IrScalarKind.Boolean => Schema.OfType("boolean"),
             IrScalarKind.Date => Patterned(DatePattern, "date"),
-            IrScalarKind.Time => Patterned(TimePattern),
+            IrScalarKind.Time => Patterned(SentScalars.Written(scalar) ?? TimePattern),
             IrScalarKind.Datetime => scalar.Format switch
             {
-                IrFormat.Local => Patterned(LocalPattern),
-                IrFormat.Offset => Patterned(OffsetPattern, "date-time"),
+                IrFormat.Local => Patterned(SentScalars.Written(scalar) ?? LocalPattern),
+                IrFormat.Offset => Patterned(SentScalars.Written(scalar) ?? OffsetPattern, "date-time"),
 
                 // Without a format whether there is an offset is not known, so no form is claimed.
                 null => Schema.OfType("string"),

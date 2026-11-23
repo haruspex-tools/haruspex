@@ -194,10 +194,11 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// In JSON, SQL Server writes every number as a JSON number, and dates, times and uniqueidentifiers as strings in a fixed
     /// format, so those are validated strings. They are deliberately not converted to <c>Date</c>: a <c>date</c> or an
     /// offset-less <c>datetime2</c> has no time zone, and <c>new Date('2026-11-09')</c> is UTC midnight, which shows as the
-    /// previous day west of Greenwich. Conversion could become an emitter option later. Fractional-second precision is not
-    /// constrained. The differential tests pinned what FOR JSON writes (the IR's README, "Scalars in JSON"): a fraction of
-    /// exactly the type's scale, left out when zero, and a zero offset as <c>Z</c>. These validators accept every such string
-    /// (checked against zod 4.6.7). A uniqueidentifier is <c>z.guid()</c>, not <c>z.uuid()</c>, because its value need not
+    /// previous day west of Greenwich. Conversion could become an emitter option later. Each is held to the form its type is
+    /// written in (<see cref="DateTimes.Written"/>), which the differential tests pinned (the IR's README, "Scalars in JSON"):
+    /// seconds always, a fraction of exactly the type's scale, left out when zero, and a zero offset as <c>Z</c>. Zod's ISO checks
+    /// alone would accept forms the server never writes, a missing second, or an offset on a type that has none. A type the IR
+    /// doesn't spell (a declared result's) keeps the kind's ISO check. A uniqueidentifier is <c>z.guid()</c>, not <c>z.uuid()</c>, because its value need not
     /// be an RFC 9562 UUID.
     /// </para>
     /// <para>
@@ -214,9 +215,10 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
             IrScalarKind.String => Facets.String(scalar),
             IrScalarKind.Boolean => Z("boolean"),
             IrScalarKind.Uuid => Z("guid"),
-            IrScalarKind.Date => json ? Iso("date") : Z("date"),
-            IrScalarKind.Time => json ? Iso("time") : Z("date"),
-            IrScalarKind.Datetime when !json => Z("date"),
+            IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime when !json => Z("date"),
+            IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime when DateTimes.Written(scalar) is { } written => written,
+            IrScalarKind.Date => Iso("date"),
+            IrScalarKind.Time => Iso("time"),
             IrScalarKind.Datetime => scalar.Format switch
             {
                 IrFormat.Local => Iso("datetime", new ObjectLiteral([new ZodProperty("local", new ZodExpression.Boolean(true))])),

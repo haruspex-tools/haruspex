@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 export const PurgeRowSchema = z.object({
-  parts: z.string(),
+  parts: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type PurgeRow = z.infer<typeof PurgeRowSchema>
 

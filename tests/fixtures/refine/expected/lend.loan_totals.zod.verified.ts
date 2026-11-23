@@ -13,7 +13,7 @@ export const LoanTotalsResult1RowSchema = z.object({
    * Why: haruspex explain lend.loan_totals '#1.member_id'
    */
   member_id: z.int32().nullable(),
-  loans: z.string(),
+  loans: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type LoanTotalsResult1Row = z.infer<typeof LoanTotalsResult1RowSchema>
 
@@ -23,7 +23,7 @@ export const LoanTotalsResult2RowSchema = z.object({
    * Why: haruspex explain lend.loan_totals '#2.member_id'
    */
   member_id: z.int32().nullable(),
-  members: z.string(),
+  members: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type LoanTotalsResult2Row = z.infer<typeof LoanTotalsResult2RowSchema>
 

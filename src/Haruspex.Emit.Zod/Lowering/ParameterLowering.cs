@@ -134,8 +134,7 @@ internal static class ParameterLowering
         return Z("union", new ArrayLiteral([
             Z("int"),
             Z("bigint").Then("min", new BigIntLiteral(least)).Then("max", new BigIntLiteral(greatest)),
-            Z("string").Then("regex", new Pattern(@"-?\d{1,19}"))
-                .Then("refine", new IntegerTextRange(least, greatest), Error("Outside the range of bigint")),
+            Facets.BigIntText(long.MinValue, long.MaxValue, received: false),
         ]));
     }
 

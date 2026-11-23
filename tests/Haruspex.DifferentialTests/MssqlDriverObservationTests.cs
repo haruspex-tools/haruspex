@@ -180,6 +180,19 @@ public partial class MssqlDriverObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_rowset_bigint_arrives_as_the_text_of_its_digits()
+    {
+        // As a JavaScript bigint's toString() writes it: a minus and never a plus, no leading zero, 0 and never -0, and every digit
+        // past 2^53. The generated schema checks that form, then the range (Facets.BigIntText).
+        var (on, off) = await Both(
+            "SELECT CAST(0 AS bigint) AS z, CAST(-0 AS bigint) AS nz, CAST(-5 AS bigint) AS n, CAST(7 AS bigint) AS p, CAST(9007199254740993 AS bigint) AS past, " +
+            "CAST(9223372036854775807 AS bigint) AS hi, CAST(-9223372036854775808 AS bigint) AS lo;");
+
+        const string Row = """{"z":"0","nz":"0","n":"-5","p":"7","past":"9007199254740993","hi":"9223372036854775807","lo":"-9223372036854775808"}""";
+        Assert.Equal((Row, Row), (Compact(OnlyRow(on).Row), Compact(OnlyRow(off).Row)));
+    }
+
+    [Fact]
     public async Task A_procedure_called_by_name_hands_over_the_same()
     {
         // execute, as an application calls a procedure, goes through another path of the driver's code than a batch.

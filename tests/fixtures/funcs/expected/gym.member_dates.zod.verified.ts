@@ -13,7 +13,7 @@ export const MemberDatesRowSchema = z.object({
    * Its type is bigint, where gym.member.born is smalldatetime and gym.member.joined is date: what it is computed with makes it another type.
    * Why: haruspex explain gym.member_dates minutes_alive
    */
-  minutes_alive: z.string().nullable(),
+  minutes_alive: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /**
    * Its type is int, where gym.member.joined is date: what it is computed with makes it another type.
    * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).

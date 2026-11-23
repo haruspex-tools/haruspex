@@ -26,7 +26,7 @@ export const SalesFeedResult1RowSchema = z.object({
   kind: z.enum(["auction", "barter", "stall", "web"]),
   sale_id: z.int32(),
   sold_at: z.date(),
-  units: z.string(),
+  units: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * The driver may round decimal(38,10) past its bounds in a row, so they are not checked.
    * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
@@ -50,7 +50,7 @@ export type SalesFeedResult1Row = z.infer<typeof SalesFeedResult1RowSchema>
 export const SalesFeedResult2FeedSchema = z.object({
   kind: z.enum(["auction", "barter", "stall", "web"]),
   sale_id: z.int32(),
-  sold_at: z.iso.datetime({ offset: true }),
+  sold_at: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/),
   /** A bigint, exact only up to 2^53 once parsed. */
   units: z.number(),
   /**

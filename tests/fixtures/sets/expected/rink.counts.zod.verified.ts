@@ -7,8 +7,8 @@
 import { z } from 'zod'
 
 export const CountsResult1RowSchema = z.object({
-  members: z.string(),
-  guests: z.string(),
+  members: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  guests: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type CountsResult1Row = z.infer<typeof CountsResult1RowSchema>
 

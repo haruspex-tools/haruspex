@@ -24,20 +24,27 @@ public partial class ZodEmitterTests
         Assert.Contains("  \"first name\": z.string(),\n", ts, StringComparison.Ordinal);
     }
 
+    /// <summary>A rowset's bigint of the type's own range: the digits the driver writes, then the range, exactly.</summary>
+    private const string BigIntDigits = "z.string().regex(/^(0|-?[1-9]\\d{0,18})$/).refine((value) => /^-?\\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: \"Outside the range of bigint\" })";
+
     [Theory]
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int64, "bigint", "z.number()")]
-    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormat.Int64, "bigint", "z.string()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormat.Int64, "bigint", BigIntDigits)]
     // Without facets an integer format still states its range: the IR's format is a claim about the values.
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int32, "int", "z.int32()")]
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Int16, "smallint", "z.int().min(-32768).max(32767)")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Number, IrFormat.Uint8, "tinyint", "z.int().min(0).max(255)")]
     [InlineData(IrEncoding.Json, IrScalarKind.Number, IrFormat.Decimal, "decimal(19,2)", "z.number()")]
     [InlineData(IrEncoding.Json, IrScalarKind.String, null, "nvarchar(10)", "z.string()")]
-    // In JSON, dates, times and GUIDs are strings in a known format, validated but not converted.
+    // In JSON, dates, times and GUIDs are strings in a known format, validated but not converted: a date or time in the form
+    // FOR JSON writes its type in, and one whose type isn't spelt as decision 0041 spells it in its kind's ISO form.
     [InlineData(IrEncoding.Json, IrScalarKind.Date, null, "date", "z.iso.date()")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Time, null, "time(0)", "z.iso.time()")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "datetime2(0)", "z.iso.datetime({ local: true })")]
-    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "smalldatetime", "z.iso.datetime({ local: true })")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Time, null, "time(0)", "z.iso.time().regex(/^\\d{2}:\\d{2}:\\d{2}$/)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Time, null, "time(3)", "z.iso.time().regex(/^\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?$/)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "datetime2(0)", "z.iso.datetime({ local: true }).regex(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$/)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "datetime", "z.iso.datetime({ local: true }).regex(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{2}[037])?$/)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Local, "smalldatetime", "z.iso.datetime({ local: true }).regex(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00$/)")]
+    [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Offset, "datetimeoffset(7)", "z.iso.datetime({ offset: true }).regex(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{7})?(Z|[+-]\\d{2}:\\d{2})$/)")]
     [InlineData(IrEncoding.Json, IrScalarKind.Datetime, IrFormat.Offset, "datetimeoffset", "z.iso.datetime({ offset: true })")]
     [InlineData(IrEncoding.Json, IrScalarKind.Uuid, null, "uniqueidentifier", "z.guid()")]
     // In a rowset the mssql driver returns them as Date objects.

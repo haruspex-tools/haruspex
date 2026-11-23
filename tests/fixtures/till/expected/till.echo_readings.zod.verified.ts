@@ -25,7 +25,7 @@ export const EchoReadingsRowSchema = z.object({
   amount: z.number().min(-999.99).max(999.99).multipleOf(1e-2).nullable(),
   token: z.guid().nullable(),
   flagged: z.boolean().nullable(),
-  total: z.string().nullable(),
+  total: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /** char(3) pads to 3 bytes and its collation isn't declared, so the length is 1 to 3 code points. */
   code: z.string().min(1).max(3).nullable(),
 })

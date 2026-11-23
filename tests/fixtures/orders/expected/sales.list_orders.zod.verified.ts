@@ -21,7 +21,7 @@ export const ListOrdersRowSchema = z.object({
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain sales.list_orders product_legacy_code
    */
-  product_legacy_code: z.string().nullable(),
+  product_legacy_code: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

@@ -44,8 +44,10 @@ What a module looks like is shown, procedure by procedure, in
 Each fact the IR carries becomes a Zod check: lengths, integer and decimal ranges, decimal steps (`.multipleOf`), exact
 value sets as `z.enum` or `z.literal`, and whether a field may be null or absent. A fact the target can't hold exactly is
 left out, and a note above the property says why, in one sentence; a fact many notes rest on is stated once, in the
-module's header. For example, a `bigint` from a rowset arrives from the driver as a string, so its range can't be checked
-as a number. A value set that is true only under the database's collation is a note, not an enum, because the value that
+module's header. For example, the driver may round a wide `decimal` in a rowset past its bounds, so they are left out. A
+`bigint` from a rowset arrives from the driver as the string of its digits, so it is checked as text: the digits' form, then
+the range, the type's or a CHECK's, compared exactly. A date or time in JSON is held to the form `FOR JSON` writes its type
+in: seconds always, and a fraction of exactly its scale or none. A value set that is true only under the database's collation is a note, not an enum, because the value that
 arrives may differ in case or trailing spaces. When the IR records the options the callers' sessions were declared to set
 (`source.session`: `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`, `numericRoundAbort`), the header says them too, since
 the schemas are true only for callers that set them; with none declared, it says nothing, as nothing was assumed.

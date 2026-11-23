@@ -10,7 +10,7 @@ import { z } from 'zod'
 
 export const ListNestedWhenSchema = z.object({
   day: z.iso.date().optional(),
-  time: z.iso.time().optional(),
+  time: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/).optional(),
 })
 export type ListNestedWhen = z.infer<typeof ListNestedWhenSchema>
 

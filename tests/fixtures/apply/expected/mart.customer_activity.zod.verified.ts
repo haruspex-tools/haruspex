@@ -10,7 +10,7 @@ export const CustomerActivityResult1RowSchema = z.object({
   customer_id: z.int32(),
   /** varchar(100) counts bytes and its collation isn't declared, so the length is at most 100. */
   contact: z.string().max(100).nullable(),
-  purchases: z.string(),
+  purchases: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

@@ -15,7 +15,7 @@ export const GetPurchaseRowSchema = z.object({
    * varchar(4) counts bytes and its collation isn't declared, so the length is at most 4.
    */
   status: z.string().max(4),
-  line_count: z.string(),
+  line_count: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

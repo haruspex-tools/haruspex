@@ -12,7 +12,7 @@ export const SaleCardRowSchema = z.object({
   /** varchar(6) counts bytes and its collation isn't declared, so the length is at most 6. */
   channel: z.string().max(6),
   note: z.string().max(40).nullable(),
-  others_on_channel: z.string(),
+  others_on_channel: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type SaleCardRow = z.infer<typeof SaleCardRowSchema>
 

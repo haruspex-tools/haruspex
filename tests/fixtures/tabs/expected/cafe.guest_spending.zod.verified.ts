@@ -12,7 +12,7 @@ export const GuestSpendingRowSchema = z.object({
    * Its type is bigint, where cafe.tab.tab_id is int: what it is computed with makes it another type.
    * Why: haruspex explain cafe.guest_spending tabs
    */
-  tabs: z.string(),
+  tabs: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * The driver may round decimal(19,2) past its bounds in a row, so they are not checked.
    * Its type is decimal(19,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.

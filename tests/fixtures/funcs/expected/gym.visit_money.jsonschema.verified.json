@@ -121,7 +121,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "born_noon": {
           "description": "SQL type smalldatetime. May be null: nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:18:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money born_noon",
@@ -129,7 +129,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00$"
         },
         "seen_since_born": {
           "description": "SQL type datetime. May be null: nullable-column (gym.member.last_seen), nullable-column (gym.member.born), arithmetic-overflow (procedures/visit_money.sql:19:8). May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain gym.visit_money seen_since_born",
@@ -137,7 +137,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "some_score": {
           "description": "SQL type float. May be null: nullable-column (gym.visit.rating), nullable-column (gym.visit.weight).",
@@ -155,7 +155,7 @@
         "some_time": {
           "description": "SQL type datetime2(3).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?$"
         },
         "some_datetime": {
           "description": "SQL type datetime. May be null: nullable-column (gym.member.born), nullable-column (gym.member.last_seen).",
@@ -163,7 +163,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         }
       },
       "required": [

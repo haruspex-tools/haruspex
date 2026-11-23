@@ -9,7 +9,7 @@
 import { z } from 'zod'
 
 export const CatalogueSummaryResult1RowSchema = z.object({
-  titles: z.string(),
+  titles: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * Its type is int, where lend.title.author is nvarchar(60): what it is computed with makes it another type.
    * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).

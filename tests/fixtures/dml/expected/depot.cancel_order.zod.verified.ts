@@ -24,7 +24,7 @@ export const CancelOrderResult1RowSchema = z.object({
 export type CancelOrderResult1Row = z.infer<typeof CancelOrderResult1RowSchema>
 
 export const CancelOrderResult2RowSchema = z.object({
-  lines_left: z.string(),
+  lines_left: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type CancelOrderResult2Row = z.infer<typeof CancelOrderResult2RowSchema>
 

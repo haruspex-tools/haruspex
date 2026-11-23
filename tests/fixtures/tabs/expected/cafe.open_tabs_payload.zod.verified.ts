@@ -18,7 +18,7 @@ const jsonText = (content: () => z.ZodType): z.ZodString => {
 
 export const OpenTabsPayloadOpenTabsSchema = z.object({
   tab_id: z.int32(),
-  opened_at: z.iso.datetime({ local: true }),
+  opened_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
 })
 export type OpenTabsPayloadOpenTabs = z.infer<typeof OpenTabsPayloadOpenTabsSchema>
 

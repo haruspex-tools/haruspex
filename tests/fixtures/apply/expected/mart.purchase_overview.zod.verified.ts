@@ -10,7 +10,7 @@ export const PurchaseOverviewRowSchema = z.object({
   purchase_id: z.int32(),
   customer_name: z.string().max(50),
   placed_on: z.date(),
-  line_count: z.string(),
+  line_count: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * varchar(20) counts bytes and its collation isn't declared, so the length is at most 20.
    * May be null: it comes from an OUTER APPLY whose query may return no row (unmatched-lateral-row).

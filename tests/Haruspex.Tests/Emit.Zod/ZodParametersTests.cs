@@ -182,7 +182,7 @@ public class ZodParametersTests
             Parameter(new IrScalar(IrScalarKind.Boolean, null, "bit"), name: "@is_open"));
 
         Assert.Contains(
-            "\nexport const POutputSchema = z.object({\n  total: z.string().nullable(),\n  until: z.date().nullable().optional(),\n})\n" +
+            "\nexport const POutputSchema = z.object({\n  total: z.string().regex(/^(0|-?[1-9]\\d{0,18})$/).refine((value) => /^-?\\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: \"Outside the range of bigint\" }).nullable(),\n  until: z.date().nullable().optional(),\n})\n" +
             "export type POutput = z.infer<typeof POutputSchema>\n",
             ts,
             StringComparison.Ordinal);

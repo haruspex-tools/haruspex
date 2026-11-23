@@ -17,7 +17,7 @@ export const SampleRowsRowSchema = z.object({
   tiny: z.int().min(0).max(255).nullable(),
   small: z.int().min(-32768).max(32767).nullable(),
   whole: z.int32().nullable(),
-  big: z.string().nullable(),
+  big: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /** The driver may round decimal(19,2) past its bounds in a row, so they are not checked. */
   dec19_2: z.number().multipleOf(1e-2).nullable(),
   /** The driver may round decimal(38,0) past its bounds in a row, so they are not checked. */

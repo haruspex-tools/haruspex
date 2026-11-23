@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Haruspex.Emit.Zod.Model;
 using Haruspex.Ir;
 using static Haruspex.Emit.Zod.Model.ZodExpression;
@@ -35,7 +36,11 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// its value is the double <c>JSON.parse</c> gives, which the sweep covers. Past 2^53 the ratio to the step is so large that
 /// Zod's tolerance accepts every value. Only a scale above 22 adds a rounding, since 10^s is then not a double, and
 /// <c>multiple-of.mjs</c> divides as the driver does at each such scale. The differential tests hand rowset values to the
-/// schemas as SqlClient reads them, converted to the nearest double, not through the driver's arithmetic. A bigint arrives as a string, so its range can't be checked as a number.</para>
+/// schemas as SqlClient reads them, converted to the nearest double, not through the driver's arithmetic.</para>
+/// <para><b>Bigints in rowsets.</b> A bigint arrives as the string of its digits (observed:
+/// <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>), so it is checked as text: digits in the
+/// form the driver writes them, then its range, the type's or a CHECK's, compared as a JavaScript <c>bigint</c>, which holds every
+/// value exactly (<see cref="BigIntText"/>).</para>
 /// <para><b>Strings.</b> Zod counts a string's length in code points; <c>nvarchar(n)</c> counts UTF-16 code units, of which a
 /// code point is one or two, and <c>varchar(n)</c> bytes, of which it is one in a single-byte collation and up to four in UTF-8 or
 /// two in a double-byte one. So <c>n</c> is always a maximum, and a fixed length (<c>nchar(n)</c>, <c>char(n)</c>) or a minimum is
@@ -46,7 +51,7 @@ namespace Haruspex.Emit.Zod.Lowering;
 /// collation it is exact but for trailing spaces, which <c>.regex(/^(?:a|b)\u0020*$/)</c> says exactly (the type stays
 /// <c>string</c>, since TypeScript can't name "a followed by spaces").</para>
 /// </remarks>
-internal static class Facets
+internal static partial class Facets
 {
     private static readonly BigInteger SafeInteger = BigInteger.Pow(2, 53);
 
@@ -160,10 +165,10 @@ internal static class Facets
             }
 
             case IrFormat.Int64 when !json:
-                // The driver delivers a bigint as a string: its values are strings too, and a range isn't checkable.
+                // The driver delivers a bigint as the string of its digits, so its values are strings too.
                 if (facets?.Values is { Match: IrValueMatch.Exact } strings && strings.Items.All(i => !i.IsString))
                     return strings.Items.Count == 0 ? Z("never") : Z("enum", new ArrayLiteral([.. strings.Items.Select(i => new Text(i.Text))]));
-                return FromChecks(facets) ? new Noted(Z("string"), new ZodNote("A bigint arrives as a string, so its CHECK range is not checked.")) : Z("string");
+                return BigIntText(IntegerBound(facets?.Min, lower: true) ?? long.MinValue, IntegerBound(facets?.Max, lower: false) ?? long.MaxValue, received: true);
 
             case IrFormat.Int64:
             {
@@ -241,8 +246,55 @@ internal static class Facets
         return new ZodNote($"{sql ?? "The decimal"} {range}.", ZodCaveat.Doubles);
     }
 
-    private static bool FromChecks(IrFacets? facets) =>
-        facets?.Min is { From.Kind: IrFactSourceKind.Check } || facets?.Max is { From.Kind: IrFactSourceKind.Check };
+    /// <summary>
+    /// A <c>bigint</c> as the string of its digits, from <paramref name="least"/> to <paramref name="greatest"/>: the form a rowset
+    /// hands one over in, and one of the forms a parameter takes. A pattern first, so that the range's <c>BigInt</c> is given only
+    /// digits, then the range, compared as a JavaScript <c>bigint</c>, which holds every 64-bit value exactly.
+    /// </summary>
+    /// <param name="least">The least value, the type's own or a CHECK's.</param>
+    /// <param name="greatest">The greatest value.</param>
+    /// <param name="received">
+    /// Whether it is text the mssql driver wrote, a JavaScript <c>bigint</c>'s <c>toString()</c>: no sign but a minus, no leading
+    /// zero, never <c>-0</c> (observed: <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>). Text a
+    /// caller sends may be any digits, which the driver passes on and the server reads.
+    /// </param>
+    public static ZodExpression BigIntText(BigInteger least, BigInteger greatest, bool received)
+    {
+        var range = least == long.MinValue && greatest == long.MaxValue
+            ? "Outside the range of bigint"
+            : $"Outside {least.ToString(CultureInfo.InvariantCulture)} to {greatest.ToString(CultureInfo.InvariantCulture)}";
+        return Z("string").Then("regex", new Pattern(received ? @"(0|-?[1-9]\d{0,18})" : @"-?\d{1,19}"))
+            .Then("refine", new IntegerTextRange(least.ToString(CultureInfo.InvariantCulture), greatest.ToString(CultureInfo.InvariantCulture)), new ObjectLiteral([new ZodProperty("error", new Text(range))]));
+    }
+
+    /// <summary>
+    /// The least integer a lower bound allows, or the greatest an upper one does, within a <c>bigint</c>'s range: a bound of the type
+    /// or a CHECK, inclusive or not, whole or not (<c>big &gt; 2.5</c> allows 3). Null when there is none, or its text isn't a plain
+    /// decimal, so that the type's range is checked instead, which is weaker but true.
+    /// </summary>
+    private static BigInteger? IntegerBound(IrBound? bound, bool lower)
+    {
+        if (bound is null || PlainDecimal().Match(bound.Value) is not { Success: true } parts)
+            return null;
+        var negative = parts.Groups["sign"].Value == "-";
+        var whole = BigInteger.Parse(parts.Groups["whole"].Value, NumberStyles.None, CultureInfo.InvariantCulture) * (negative ? -1 : 1);
+        var fractional = parts.Groups["fraction"].Value.Any(d => d != '0');
+
+        // The floor and the ceiling of the bound's value; one step inside it when it is exclusive and whole.
+        var floor = negative && fractional ? whole - 1 : whole;
+        var ceiling = !negative && fractional ? whole + 1 : whole;
+        var allowed = (lower, bound.Inclusive || fractional) switch
+        {
+            (true, true) => ceiling,
+            (true, false) => whole + 1,
+            (false, true) => floor,
+            (false, false) => whole - 1,
+        };
+        return BigInteger.Clamp(allowed, long.MinValue, long.MaxValue);
+    }
+
+    [GeneratedRegex(@"^(?<sign>-?)(?<whole>\d+)(\.(?<fraction>\d*))?$", RegexOptions.CultureInvariant)]
+    private static partial Regex PlainDecimal();
 
     /// <summary><c>z.literal([…])</c> for an exact set of numbers; null when there is none.</summary>
     private static ZodExpression? ExactNumbers(IrFacets? facets) =>

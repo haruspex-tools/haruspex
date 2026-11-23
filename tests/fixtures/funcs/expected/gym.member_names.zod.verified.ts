@@ -61,7 +61,7 @@ export const MemberNamesResult1RowSchema = z.object({
    * Its type is bigint, where gym.member.prefs is nvarchar(max): what it is computed with makes it another type.
    * Why: haruspex explain gym.member_names '#1.prefs_length'
    */
-  prefs_length: z.string().nullable(),
+  prefs_length: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /**
    * Its type is int, where gym.member.nickname is nvarchar(20): what it is computed with makes it another type.
    * Why: haruspex explain gym.member_names '#1.nickname_bytes'

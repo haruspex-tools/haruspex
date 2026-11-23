@@ -94,7 +94,7 @@ export const ImageFactsRowSchema = z.object({
    * Its type is bigint, where gallery.product_image.original is varbinary(max): what it is computed with makes it another type.
    * Why: haruspex explain gallery.image_facts original_bytes
    */
-  original_bytes: z.string().nullable(),
+  original_bytes: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
 })
 export type ImageFactsRow = z.infer<typeof ImageFactsRowSchema>
 

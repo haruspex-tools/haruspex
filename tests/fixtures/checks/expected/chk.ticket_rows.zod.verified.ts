@@ -47,8 +47,7 @@ export const TicketRowsRowSchema = z.object({
   level: z.literal([1, 2, 4]).nullable(),
   discount: z.number().min(0).max(100).multipleOf(1e-2).nullable(),
   rate: z.number().min(0.0001).max(0.9999).multipleOf(1e-4).nullable(),
-  /** A bigint arrives as a string, so its CHECK range is not checked. */
-  big: z.string().nullable(),
+  big: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= 0n && BigInt(value) <= 9223372036854775807n, { error: "Outside 0 to 9223372036854775807" }).nullable(),
   title: z.string().min(1).max(60),
   note: z.string().min(1).max(30).nullable(),
   region: z.preprocess(canonicalOf(folds["Latin1_General_100_CI_AS.codepage"], ["NE", "SW"]), z.enum(["NE", "SW"])).nullable(),
