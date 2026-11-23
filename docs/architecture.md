@@ -62,9 +62,11 @@ Why these lines:
   functions import what a schema module declares, by the names `SchemaModuleNames` gives, which the Zod emitter declares; the
   two meet in the generated TypeScript, where the emit check compiles them together, not in a reference between the layers, so
   a second schema emitter can serve the same functions. The IR keeps each value's SQL type as
-  written (`IrScalar.Sql`), and the Zod emitter reads it in one place: a date and time parameter's fraction and range, which
-  the IR has no fact for (`DateTimes`, [decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). It
-  reads a type's name from a closed list, never a statement.
+  written (`IrScalar.Sql`), and both schema emitters read it in one place: a date and time parameter's fraction and range, which
+  the IR has no fact for (the Zod emitter's `DateTimes`, the JSON Schema emitter's `SentScalars`,
+  [decision 0055](decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)). `IrFit` and `IrCombination` read it for the
+  same facts. Each reads a type's name from a closed list, never a statement, and claims less of a name it doesn't know (the IR
+  README's "The SQL type a scalar keeps").
 - **Config transforms the IR; it never reaches into inference.** Overrides and naming apply to the document inference
   produced, so they work the same however it was produced, and an emitter never needs to know they existed. Inference
   leaves names unsettled (each object's id, each type keyed by its identity); Config settles them. The emitter is

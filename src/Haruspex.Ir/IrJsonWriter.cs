@@ -61,7 +61,7 @@ public static class IrJsonWriter
 
             json.WriteEndObject();
 
-            // Left out when no parameter takes a table type, so that such a document reads as it did in 0.24.
+            // Left out when no parameter takes a table type, so that such a document reads as it did in 0.25.
             if (document.TableTypes.Count > 0)
             {
                 json.WriteStartObject("tableTypes");
@@ -356,7 +356,7 @@ public static class IrJsonWriter
         json.WriteEndObject();
     }
 
-    /// <summary>A field's source columns (0.26), left out when it has none, so that a document without them reads as before.</summary>
+    /// <summary>A field's source columns (0.25), left out when it has none, so that a document without them reads as before.</summary>
     private static void WriteFrom(Utf8JsonWriter json, EquatableArray<IrSourceColumn> from)
     {
         if (from.Count == 0)
@@ -375,7 +375,7 @@ public static class IrJsonWriter
         json.WriteEndArray();
     }
 
-    /// <summary>One database's field in a combined one (0.26), left out where that database doesn't return the key.</summary>
+    /// <summary>One database's field in a combined one (0.25), left out where that database doesn't return the key.</summary>
     private static void WriteSide(Utf8JsonWriter json, string name, IrFieldSide? side)
     {
         if (side is null)

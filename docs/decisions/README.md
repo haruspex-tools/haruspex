@@ -29,7 +29,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0021](0021-fixtures-are-found-never-listed.md) | 11 Nov 2026 | Fixtures are found by listing their folder, never named in a list |
 | [0022](0022-values-compare-by-structure.md) | 12 Nov 2026 | Values compare by structure, never by their rendered text |
 | [0023](0023-the-ir-schema-is-generated-from-the-model.md) | 12 Nov 2026 | The IR's JSON Schema is generated from the model |
-| [0024](0024-an-ir-reader-refuses-other-versions.md) | 12 Nov 2026 | An IR reader refuses a version other than its own |
+| [0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md) | 12 Nov 2026 | An IR reader reads only versions whose documents mean what its own do |
 | [0025](0025-null-reasons-in-neutral-terms.md) | 12 Nov 2026 | Reasons to be null are named for the reason, not the SQL |
 | [0026](0026-the-emitter-plans-lowers-and-prints.md) | 12 Nov 2026 | The emitter plans, lowers and prints, and walks over types go through one graph |
 | [0027](0027-one-lattice-per-fact.md) | 12 Nov 2026 | One lattice per fact, facts dropped to their top by default, and the type rule named apart from the join |

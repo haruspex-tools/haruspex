@@ -84,8 +84,9 @@ against the module committed beside it (`ExampleAppTests`). The same package hol
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
 failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
 `tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
-with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
-meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
+with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema, and the IR's, against the draft 2020-12
+meta-schema and compiles it in Ajv's strict mode, `tests/emit-check/src/verdicts.mjs`, which gives Ajv's verdict on each IR file
+the tests hold the IR's schema and reader to, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
 `tests/emit-check/src/functions.mjs`, through which they call it through the generated functions. CI sets
 `HARUSPEX_REQUIRE_NODE=1`, which turns a missing Node into a failure rather than a skip. A test gives a script the folder it
 wrote its files to, never a list of the files: Windows refuses a command line past a fixed length, so the tests refuse one past
@@ -286,7 +287,7 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | Path | What it holds |
 |---|---|
 | `src/Haruspex.*` | The layers, one project each. What each knows and may refer to is in [the table in docs/architecture.md](docs/architecture.md#the-table); each project's `README.md` describes it. |
-| `schemas` | The published JSON Schemas: of `haruspex.json`, checked against examples by `ConfigSchemaTests`; and of the IR's file, generated from the model by `IrJsonSchema` and never edited by hand (`IrJsonSchemaTests` fails when it is stale; rewrite it with `HARUSPEX_ACCEPT=1`). |
+| `schemas` | The published JSON Schemas: of `haruspex.json`, checked against examples by `ConfigSchemaTests`; and of the IR's file, one per IR version in `schemas/ir`, the current one generated from the model by `IrJsonSchema` and never edited by hand (`IrJsonSchemaTests` fails when it is stale; rewrite it with `HARUSPEX_ACCEPT=1`), and older ones kept as they were ([its README](schemas/ir/README.md)). |
 | `tests/Haruspex.Tests` | Unit, snapshot, end-to-end and architecture tests, a folder per layer ("Where a construct's tests are", above). |
 | `tests/Haruspex.DifferentialTests` | Runs the fixtures in SQL Server and checks the output against the IR and the generated Zod. |
 | `tests/Shared` | Test support compiled into both test projects (`Haruspex.TestSupport`): the fixtures, found by listing their folder (`Fixture`); inferring procedures from SQL a test writes (`InferProcedure`) and finding things in the IR (`IrNavigation`); temporary folders, the repository's paths, and running the emit-check npm package. |

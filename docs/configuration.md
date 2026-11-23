@@ -5,7 +5,8 @@ and then in each folder above it, or use the files `--config` names, or every on
 module of its own. Paths in it are relative to the file. It is JSON with comments and trailing commas, as `tsconfig.json` is.
 Its JSON Schema is published at [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and
 editors complete and check the file as you type. `haruspex init` writes a starter file, naming it
-([the command line](command-line.md#init)).
+([the command line](command-line.md#init)). That address is the schema on `main`, which moves: it may offer a setting newer than
+the haruspex you run, which that haruspex refuses as an unknown key.
 
 **An unknown key is an error**, with its path and line. It is never ignored, because a misspelt setting would
 otherwise silently do nothing.

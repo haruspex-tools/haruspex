@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
 
 namespace Haruspex.Tests.Cli;
@@ -154,6 +155,8 @@ public class OutputTests
     [Theory]
     [InlineData("""{ "irVersion": "0.21" }""", "Nothing to compare with: the earlier haruspex.ir.json is IR 0.21, and this haruspex writes IR ")]
     [InlineData("not JSON", "Nothing to compare with: the earlier haruspex.ir.json can't be read as IR (")]
+    [InlineData("""{ "irVersion": "0.2\ud8009" }""", "Nothing to compare with: the earlier haruspex.ir.json can't be read as IR ($.irVersion is a string that is not text")]
+    [InlineData("""{ "\udc00": 1 }""", "Nothing to compare with: the earlier haruspex.ir.json can't be read as IR ($ has a key that is not text")]
     public void An_earlier_ir_that_can_t_be_compared_says_why_and_gives_the_whole_summary(string earlier, string said)
     {
         using var folder = Kennel(Known);
@@ -164,6 +167,9 @@ public class OutputTests
         Assert.StartsWith("exit code 0\n", printed, StringComparison.Ordinal);
         Assert.Contains("\n" + said, printed, StringComparison.Ordinal);
         Assert.Contains("\nUnknowns by reason (--verbose lists each):\n", printed, StringComparison.Ordinal);
+
+        // And the file is written again, so the next run has one to compare with.
+        IrJsonReader.Read(File.ReadAllText(Path.Combine(folder.Path, "src", "db", "haruspex.ir.json")));
     }
 
     /// <summary>A terminal that shows colour and links, whose clock never moves, so no progress line is drawn.</summary>
@@ -212,6 +218,28 @@ public class OutputTests
 
         Assert.Contains("\e[1;33m" + "warning\e[0m HAR4204", printed, StringComparison.Ordinal);
         Assert.DoesNotContain("\e]8;;", printed, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// An earlier IR that is JSON but gives two objects one id, as a merge that kept both sides of a conflict might, is not one to
+    /// compare with: it is said so, by the path at fault, and written again, as a file that isn't JSON is.
+    /// </summary>
+    [Fact]
+    public void An_earlier_ir_with_two_objects_of_one_id_is_said_by_its_path_and_written_again()
+    {
+        using var folder = Kennel(Known);
+        Printed(folder, null, "generate");
+        var path = Path.Combine(folder.Path, "src", "db", "haruspex.ir.json");
+        var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+        var second = json["objects"]!.AsArray().Count;
+        json["objects"]!.AsArray().Add(json["objects"]![0]!.DeepClone());
+        File.WriteAllText(path, json.ToJsonString());
+
+        var printed = Printed(folder, null, "generate");
+
+        Assert.StartsWith("exit code 0\n", printed, StringComparison.Ordinal);
+        Assert.Contains($"\nNothing to compare with: the earlier haruspex.ir.json can't be read as IR ($.objects[{second}].id is \"", printed, StringComparison.Ordinal);
+        IrJsonReader.Read(File.ReadAllText(path));
     }
 
     [Fact]

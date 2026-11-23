@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json",
+  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/ir/0.29.schema.json",
   "title": "haruspex.ir.json",
   "description": "An IR file of version 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words, and a minimum length in code points. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",
@@ -200,55 +200,92 @@
   "additionalProperties": false,
   "anyOf": [
     {
+      "type": "object",
       "properties": {
         "irVersion": {
-          "enum": [
-            "0.29",
-            "0.28"
-          ]
+          "const": "0.23"
         },
         "source": {
-          "required": [
-            "baseline"
-          ]
-        }
-      }
-    },
-    {
-      "properties": {
-        "irVersion": {
-          "const": "0.29"
-        },
-        "source": {
+          "type": "object",
           "not": {
-            "required": [
-              "baseline"
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              }
             ]
           }
         },
         "types": {
+          "type": "object",
           "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
             "properties": {
               "fields": {
+                "type": "array",
                 "items": {
+                  "type": "object",
                   "not": {
-                    "required": [
-                      "sides"
+                    "type": "object",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      }
                     ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "objects": {
-          "items": {
-            "properties": {
-              "results": {
-                "items": {
+                  },
                   "properties": {
-                    "absentBecause": {
+                    "nullableBecause": {
+                      "type": "array",
                       "items": {
+                        "type": "object",
                         "properties": {
                           "rule": {
                             "not": {
@@ -257,50 +294,892 @@
                           }
                         }
                       }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
                     }
                   }
                 }
               }
             }
           }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
         }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
       }
     },
     {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.24"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": true
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "files": true
+                    },
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ],
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.25"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.25"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "baseline": true
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        },
+        "tableTypes": true
+      },
+      "required": [
+        "tableTypes"
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "baseline": true
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        },
+        "tableTypes": true
+      },
+      "required": [
+        "tableTypes"
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "baseline": true
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
       "properties": {
         "irVersion": {
           "const": "0.28"
         },
         "source": {
+          "type": "object",
           "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
             "required": [
               "baseline"
             ]
           }
         },
         "types": {
+          "type": "object",
           "additionalProperties": {
+            "type": "object",
             "properties": {
               "fields": {
+                "type": "array",
                 "items": {
+                  "type": "object",
                   "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
                     "required": [
                       "sides"
                     ]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "objects": {
-          "items": {
-            "properties": {
-              "results": {
-                "items": {
+                  },
                   "properties": {
-                    "absentBecause": {
+                    "nullableBecause": {
+                      "type": "array",
                       "items": {
+                        "type": "object",
                         "properties": {
                           "rule": {
                             "not": {
@@ -315,282 +1194,200 @@
               }
             }
           }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
         }
       }
     },
     {
-      "not": {
-        "required": [
-          "columns"
-        ]
-      },
-      "anyOf": [
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.23"
-            },
-            "source": {
-              "not": {
-                "required": [
-                  "baseline"
-                ]
-              }
-            }
-          },
-          "not": {
-            "required": [
-              "tableTypes"
-            ]
-          }
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.28"
         },
-        {
+        "source": {
+          "type": "object",
           "properties": {
-            "irVersion": {
-              "const": "0.24"
-            },
-            "source": {
-              "required": [
-                "baseline"
-              ]
-            }
-          },
-          "not": {
-            "required": [
-              "tableTypes"
-            ]
-          }
-        },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.25"
-            },
-            "source": {
-              "required": [
-                "baseline"
-              ]
-            }
-          },
-          "not": {
-            "required": [
-              "tableTypes"
-            ]
-          }
-        },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.25"
-            },
-            "source": {
-              "not": {
-                "required": [
-                  "baseline"
-                ]
-              }
-            },
-            "types": {
-              "additionalProperties": {
-                "properties": {
-                  "fields": {
-                    "items": {
-                      "not": {
-                        "required": [
-                          "sides"
-                        ]
-                      },
-                      "properties": {
-                        "presence": {
-                          "not": {
-                            "const": "optional"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "objects": {
-              "items": {
-                "properties": {
-                  "results": {
-                    "items": {
-                      "properties": {
-                        "absentBecause": {
-                          "items": {
-                            "properties": {
-                              "rule": {
-                                "not": {
-                                  "const": "not-in-both"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "not": {
-            "required": [
-              "tableTypes"
-            ]
-          }
-        },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.26"
-            },
-            "source": {
-              "required": [
-                "baseline"
-              ]
-            }
+            "baseline": true
           },
           "required": [
-            "tableTypes"
+            "baseline"
           ]
         },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.26"
-            },
-            "source": {
-              "not": {
-                "required": [
-                  "baseline"
-                ]
-              }
-            },
-            "types": {
-              "additionalProperties": {
-                "properties": {
-                  "fields": {
-                    "items": {
-                      "not": {
-                        "required": [
-                          "sides"
-                        ]
-                      },
-                      "properties": {
-                        "presence": {
-                          "not": {
-                            "const": "optional"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "objects": {
-              "items": {
-                "properties": {
-                  "results": {
-                    "items": {
-                      "properties": {
-                        "absentBecause": {
-                          "items": {
-                            "properties": {
-                              "rule": {
-                                "not": {
-                                  "const": "not-in-both"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "required": [
-            "tableTypes"
-          ]
-        },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.27"
-            },
-            "source": {
-              "required": [
-                "baseline"
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "irVersion": {
-              "const": "0.27"
-            },
-            "source": {
-              "not": {
-                "required": [
-                  "baseline"
-                ]
-              }
-            },
-            "types": {
-              "additionalProperties": {
-                "properties": {
-                  "fields": {
-                    "items": {
-                      "not": {
-                        "required": [
-                          "sides"
-                        ]
-                      },
-                      "properties": {
-                        "presence": {
-                          "not": {
-                            "const": "optional"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            "objects": {
-              "items": {
-                "properties": {
-                  "results": {
-                    "items": {
-                      "properties": {
-                        "absentBecause": {
-                          "items": {
-                            "properties": {
-                              "rule": {
-                                "not": {
-                                  "const": "not-in-both"
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
                 }
               }
             }
           }
         }
-      ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.29"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
+            "required": [
+              "baseline"
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.29"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "baseline": true
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -850,6 +1647,105 @@
             ]
           }
         }
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "encoding": {
+            "const": "rowset"
+          },
+          "type": {
+            "not": {
+              "$ref": "#/$defs/rows"
+            }
+          }
+        },
+        "required": [
+          "encoding",
+          "type"
+        ]
+      }
+    },
+    "rows": {
+      "description": "What a rowset's type is: one statement's rows, or a union of several statements' when paths differ.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/statementRows"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "union"
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/statementRows"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "variants"
+          ]
+        }
+      ]
+    },
+    "statementRows": {
+      "description": "One statement's rows: an array of a named object type or of an unknown, an unknown, or what the config file declared them to be.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ref"
+                },
+                {
+                  "$ref": "#/$defs/unknownType"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
+        },
+        {
+          "$ref": "#/$defs/unknownType"
+        },
+        {
+          "$ref": "#/$defs/declaredType"
+        }
+      ]
+    },
+    "declaredType": {
+      "description": "A type the config file declared, or arrays of one.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/import"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "$ref": "#/$defs/declaredType"
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
+        }
       ]
     },
     "objectType": {
@@ -1042,6 +1938,10 @@
       "additionalProperties": false,
       "anyOf": [
         {
+          "type": "object",
+          "properties": {
+            "sql": true
+          },
           "required": [
             "sql"
           ]
@@ -1453,7 +2353,9 @@
           }
         },
         {
+          "type": "object",
           "not": {
+            "type": "object",
             "anyOf": [
               {
                 "type": "object",
@@ -1513,6 +2415,7 @@
           },
           "properties": {
             "length": {
+              "type": "object",
               "properties": {
                 "unit": {
                   "const": "bytes"
@@ -1529,6 +2432,7 @@
               }
             },
             "maxLength": {
+              "type": "object",
               "properties": {
                 "unit": {
                   "const": "bytes"

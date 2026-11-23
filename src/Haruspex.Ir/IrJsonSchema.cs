@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Haruspex.Ir;
 
 /// <summary>
-/// The JSON Schema of the IR's file, published as <c>schemas/haruspex.ir.schema.json</c> so that a program in any language
+/// The JSON Schema of the IR's file, published as <see cref="PublishedPath"/> so that a program in any language
 /// can check an IR file before it trusts one. Generated here, from the model, rather than kept by hand: every closed
 /// vocabulary is listed from its enum through <see cref="IrWireNames"/>, so a member added to the model reaches the schema
 /// with no one remembering to, and a test fails until the committed file is regenerated.
@@ -14,27 +14,37 @@ namespace Haruspex.Ir;
 /// <remarks>
 /// <para>
 /// What is written here by hand is the structure: which properties each object has and which are required, the same
-/// structure <see cref="IrJsonWriter"/> writes and <see cref="IrJsonReader"/> reads. Three tests hold the three together:
-/// every fixture's IR passes this schema, every file the writer writes reads back to the same bytes, and every property of
-/// every IR record is accounted for (<c>IrJsonSchemaTests</c>). A structure derived by reflection over the records would
+/// structure <see cref="IrJsonWriter"/> writes and <see cref="IrJsonReader"/> reads. Four tests hold the three together:
+/// every fixture's IR passes this schema, every file the writer writes reads back to the same bytes, every property of every
+/// IR record is accounted for (<c>IrJsonSchemaTests</c>), and the schema and the reader refuse the same files, but for the
+/// rules only the reader checks (<c>IrReaderSchemaAgreementTests</c>). A structure derived by reflection over the records would
 /// have to restate the writer's choices (keys named otherwise than their properties, flags written only when true, the
 /// facets beside the scalar's kind) as attributes on the model, a second copy of the writer that nothing would check.
 /// </para>
 /// <para>
 /// The schema is strict where the format is closed: every object refuses properties it doesn't list, every vocabulary is an
 /// <c>enum</c>, and a flag and its reasons must agree. It uses a small part of JSON Schema 2020-12 (<c>type</c>, <c>enum</c>,
-/// <c>const</c>, <c>properties</c>, <c>required</c>, <c>additionalProperties</c>, <c>items</c>, <c>minItems</c>,
-/// <c>maxProperties</c>, <c>minimum</c>, <c>maximum</c>, <c>anyOf</c>, <c>not</c> and <c>$ref</c>), written so that Ajv's strict
-/// mode compiles it too. Three things JSON Schema can't say: a number's form (a bound or a value set's number must be plain
-/// decimal text, with no exponent) and that no key is given twice, since it sees a document after parsing; and that a
-/// <c>ref</c> names a type in <c>types</c>, since it can't compare a value with a key elsewhere. The reader checks all three;
-/// the schema's descriptions state the first.
+/// <c>const</c>, <c>properties</c>, <c>required</c>, <c>dependentRequired</c>, <c>additionalProperties</c>, <c>items</c>,
+/// <c>minItems</c>, <c>minProperties</c>, <c>maxProperties</c>, <c>minimum</c>, <c>maximum</c>, <c>minLength</c>, <c>pattern</c>,
+/// <c>anyOf</c>, <c>not</c> and <c>$ref</c>), written so that Ajv's strict mode compiles it: every <c>properties</c>,
+/// <c>required</c> and <c>items</c> beside the <c>type</c> it applies to, and every property required named in
+/// <c>properties</c> too. <c>IrJsonSchemaTests</c> compiles it so, with the Ajv <c>tests/emit-check</c> pins.
+/// What JSON Schema can't say (a number's form, a key given
+/// twice, a name that names nothing or is given twice, and what a label says of the whole document) the reader checks alone: the IR
+/// README lists it under "Rules only the reader checks", and <c>IrReaderSchemaAgreementTests</c> holds the two to that list.
 /// </para>
 /// </remarks>
 public static class IrJsonSchema
 {
-    /// <summary>Where the schema is published, as its <c>$id</c>.</summary>
-    public const string Id = "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.ir.schema.json";
+    /// <summary>
+    /// Where the current version's schema is kept in the repository, a file named for the version (<c>schemas/ir/0.29.schema.json</c>):
+    /// one per version, so that a file is checked against what its version's reader reads, not against whatever is newest.
+    /// Why: <c>schemas/ir/README.md</c>.
+    /// </summary>
+    public const string PublishedPath = "schemas/ir/" + IrDocument.CurrentVersion + ".schema.json";
+
+    /// <summary>Where the schema is published, as its <c>$id</c>: the address of <see cref="PublishedPath"/>, which names its version.</summary>
+    public const string Id = "https://github.com/sharpblue/haruspex/raw/main/" + PublishedPath;
 
     /// <summary>The definitions of the type nodes, one per node of <see cref="IrType"/>'s closed set.</summary>
     private static readonly string[] TypeNodes = ["ref", "scalar", "array", "tuple", "record", "union", "jsonText", "anyJson", "import", "unknownType"];
@@ -90,80 +100,94 @@ public static class IrJsonSchema
         ("required", Names("irVersion", "source", "objects", "types", "unknowns", "overrides", "folds")),
         ("additionalProperties", false),
 
-        // A document labelled 0.29 may say anything a 0.28 one may. One labelled 0.28 may say anything a 0.27 one may, and a key left out whatever its value in a document of one
-        // database too, since a column's declared JSON says it. One labelled earlier declares no column, and: one labelled 0.23 never names a baseline, one
-        // labelled 0.24 always does, and one labelled 0.25, 0.26 or 0.27 may; one of those that names none says nothing only a
-        // combined document says. One labelled 0.26 always defines table types, one labelled 0.27 may, and one labelled earlier never does.
-        ("anyOf", new JsonArray(
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion)))),
-                    ("source", Node(("required", Names("baseline"))))))),
-            OneDatabaseOf(IrDocument.CurrentVersion, tableTypes: null, optional: true),
-            OneDatabaseOf(IrDocument.DeclaredVersion, tableTypes: null, optional: true),
-            Node(
-                ("not", Node(("required", Names("columns")))),
-                ("anyOf", new JsonArray(
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.OneDatabaseVersion))),
-                    ("source", Node(("not", Node(("required", Names("baseline")))))))),
-                ("not", Node(("required", Names("tableTypes"))))),
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.CombinedVersion))),
-                    ("source", Node(("required", Names("baseline")))))),
-                ("not", Node(("required", Names("tableTypes"))))),
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.SourcesVersion))),
-                    ("source", Node(("required", Names("baseline")))))),
-                ("not", Node(("required", Names("tableTypes"))))),
-            OneDatabaseOf(IrDocument.SourcesVersion, tableTypes: false),
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.TableTypesVersion))),
-                    ("source", Node(("required", Names("baseline")))))),
-                ("required", Names("tableTypes"))),
-            OneDatabaseOf(IrDocument.TableTypesVersion, tableTypes: true),
-            Node(
-                ("properties", Node(
-                    ("irVersion", Node(("const", IrDocument.BytesVersion))),
-                    ("source", Node(("required", Names("baseline"))))))),
-            OneDatabaseOf(IrDocument.BytesVersion, tableTypes: null)))))),
+        // What each label allows, a branch for each version and, where it may be either, for a document of one database and one
+        // combining two (Labels).
+        ("anyOf", Labels()),
         ("$defs", Definitions()));
 
     /// <summary>
-    /// A document of <paramref name="version"/> (0.25, 0.26 or 0.27) that names no baseline, with table types when <paramref name="tableTypes"/>
-    /// is true, without them when it is false, and either way when it is null: then no field has <c>sides</c> or the presence <c>optional</c>,
-    /// and no result is missing for the rule <c>not-in-both</c>, which only a combined document says.
+    /// What a document's label allows, as the reader checks it where JSON Schema can say it (decision 0072's labelling by content): a
+    /// branch for each version, and for each of 0.25 and later one for a document of one database and one combining two. What the
+    /// reader checks that no branch can say (that a document labelled 0.27 holds a binary value somewhere, for one) is listed in
+    /// the IR README's "Rules only the reader checks".
     /// </summary>
-    /// <param name="version">The version.</param>
-    /// <param name="tableTypes">Whether it defines table types; either way when null.</param>
-    /// <param name="optional">Whether a key may be left out whatever its value, as one a column's declared JSON doesn't require (0.28).</param>
-    private static JsonObject OneDatabaseOf(string version, bool? tableTypes, bool optional = false)
+    private static JsonArray Labels() =>
+    [
+        Label(IrDocument.OneDatabaseVersion, combined: false),
+        Label(IrDocument.CombinedVersion, combined: true),
+        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.CurrentVersion])
+            .SelectMany(version => (JsonNode[])[Label(version, combined: false), Label(version, combined: true)]),
+    ];
+
+    /// <summary>
+    /// A document labelled <paramref name="version"/>, of one database or combining two. One labelled before 0.25 says nothing of
+    /// where a value came from: no field has <c>from</c> or <c>sides</c>, and no source has <c>path</c> or <c>files</c>. One labelled
+    /// before 0.26 defines no table type, and one labelled 0.26 always does. One labelled before 0.28 declares no column, has no open
+    /// object type and makes no <c>column-json</c> claim. One of one database says nothing only a combined document says: no field has
+    /// <c>sides</c>, and no reason is <c>not-in-both</c>; nor, before 0.28, is a field's presence <c>optional</c>, which from 0.28 a
+    /// declared column's JSON says too.
+    /// </summary>
+    private static JsonObject Label(string version, bool combined)
     {
-        var field = optional
-            ? Node(("not", Node(("required", Names("sides")))))
-            : Node(
-                ("not", Node(("required", Names("sides")))),
-                ("properties", Node(("presence", Not(IrWireNames.Of(IrPresence.Optional))))));
-        var reason = Node(("properties", Node(("rule", Not(IrWireNames.Of(IrNullRule.NotInBoth))))));
-        var result = Properties("absentBecause", Node(("items", reason)));
-        var document = Node(("properties", Node(
+        var sources = Since(version, IrDocument.SourcesVersion);
+        var declares = Since(version, IrDocument.DeclaredVersion);
+        var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
+        JsonObject Reasons() => Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth.DeepClone()))))));
+
+        // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from.
+        JsonObject Source(bool baseline)
+        {
+            var source = baseline ? Having("baseline") : Lacking("baseline");
+            if (!sources)
+            {
+                source["not"] = AnyHaving([.. baseline ? [] : (string[])["baseline"], "path", "files"]);
+                if (baseline)
+                    source["properties"] = Node(("baseline", Lacking("path", "files")));
+            }
+
+            return source;
+        }
+
+        string[] notInField = [.. combined ? [] : (string[])["sides"], .. sources ? [] : (string[])["from", "sides"]];
+        var field = notInField.Length > 0 ? Lacking([.. notInField.Distinct()]) : Node(("type", "object"));
+        if (!combined)
+        {
+            field["properties"] = declares
+                ? Node(("nullableBecause", Reasons()))
+                : Node(("nullableBecause", Reasons()), ("presence", Node(("not", Node(("const", IrWireNames.Of(IrPresence.Optional)))))));
+        }
+
+        var objectType = declares ? Node(("type", "object")) : Lacking("open");
+        objectType["properties"] = Node(("fields", Node(("type", "array"), ("items", field))));
+        var properties = Node(
             ("irVersion", Node(("const", version))),
-            ("source", Node(("not", Node(("required", Names("baseline")))))),
-            ("types", Node(("additionalProperties", Properties("fields", Node(("items", field)))))),
-            ("objects", Node(("items", Properties("results", Node(("items", result)))))))));
+            ("source", Source(combined)),
+            ("types", Node(("type", "object"), ("additionalProperties", objectType))));
+        if (!combined)
+        {
+            // Results are null when they can't be listed, so the rule holds of them only where they are an array.
+            var result = Node(("type", "object"), ("properties", Node(("absentBecause", Reasons()))));
+            var results = Node(("anyOf", new JsonArray(Node(("type", "null")), Node(("type", "array"), ("items", result)))));
+            properties.Add("objects", Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("results", results)))))));
+        }
 
-        // A document of 0.26 always defines table types, one of 0.25 never does, and one of 0.27 may.
-        if (tableTypes is { } defines)
-            document.Add(defines ? "required" : "not", defines ? Names("tableTypes") : Node(("required", Names("tableTypes"))));
-        return document;
+        if (!declares)
+        {
+            var claim = Node(("type", "object"), ("properties", Node(("setting", Node(("not", Node(("const", IrWireNames.Of(IrOverrideSetting.ColumnJson)))))))));
+            properties.Add("overrides", Node(("type", "array"), ("items", claim)));
+        }
 
-        static JsonObject Not(string value) => Node(("not", Node(("const", value))));
+        var label = Node(("type", "object"), ("properties", properties));
+        string[] absent = [.. Since(version, IrDocument.TableTypesVersion) ? [] : (string[])["tableTypes"], .. declares ? [] : (string[])["columns"]];
+        if (version == IrDocument.TableTypesVersion)
+        {
+            properties.Add("tableTypes", true);
+            label.Add("required", Names("tableTypes"));
+        }
 
-        static JsonObject Properties(string name, JsonObject schema) => Node(("properties", Node((name, schema))));
+        if (absent.Length > 0)
+            label.Add("not", AnyHaving(absent));
+        return label;
     }
 
     /// <summary>A source, with the properties every source has and those given (a document's own source has its baseline).</summary>
@@ -224,7 +248,7 @@ public static class IrJsonSchema
             ("tableType", Text("For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.")),
             ("hasDefault", Flag("Whether the caller may omit it.")),
             ("output", Flag("Whether it is an output parameter.")))),
-        ("result", Agreeing(
+        ("result", RowsetOfRows(Agreeing(
             Closed(
                 "One result set.",
                 ["encoding", "type", "mayBeAbsent", "cardinality"],
@@ -235,7 +259,16 @@ public static class IrJsonSchema
                 ("absentBecause", Ref("reasons")),
                 ("cardinality", Vocabulary<IrCardinality>(IrWireNames.Of))),
             "mayBeAbsent",
-            "absentBecause")),
+            "absentBecause"))),
+        ("rows", Node(
+            ("description", "What a rowset's type is: one statement's rows, or a union of several statements' when paths differ."),
+            ("anyOf", new JsonArray(Ref("statementRows"), OfKind("union", ("variants", Node(("type", "array"), ("items", Ref("statementRows"))))))))),
+        ("statementRows", Node(
+            ("description", "One statement's rows: an array of a named object type or of an unknown, an unknown, or what the config file declared them to be."),
+            ("anyOf", new JsonArray(OfKind("array", ("items", Node(("anyOf", new JsonArray(Ref("ref"), Ref("unknownType")))))), Ref("unknownType"), Ref("declaredType"))))),
+        ("declaredType", Node(
+            ("description", "A type the config file declared, or arrays of one."),
+            ("anyOf", new JsonArray(Ref("import"), OfKind("array", ("items", Ref("declaredType"))))))),
         ("objectType", Closed(
             "A named object type.",
             ["kind", "fields"],
@@ -477,11 +510,11 @@ public static class IrJsonSchema
         // A binary value (0.27) has no format, and of the facets only a length, counted in bytes with no encoding.
         var bytes = IrWireNames.Of(IrScalarKind.Bytes);
         var unit = Node(("const", IrWireNames.Of(IrLengthUnit.Bytes)));
-        JsonObject InBytes() => Node(("properties", Node(("unit", unit.DeepClone()))), ("not", Having("encoding")));
+        JsonObject InBytes() => Node(("type", "object"), ("properties", Node(("unit", unit.DeepClone()))), ("not", Having("encoding")));
         string[] others = ["format", "minLength", "digits", "min", "max", "values"];
         var notBytes = Node(("properties", Node(("kind", Node(("not", Node(("const", bytes))))))));
-        var othersAbsent = Node(("anyOf", new JsonArray([.. others.Select(f => (JsonNode)Having(f))])));
-        var asBytes = Node(("not", othersAbsent), ("properties", Node(("length", InBytes()), ("maxLength", InBytes()))));
+        var othersAbsent = AnyHaving(others);
+        var asBytes = Node(("type", "object"), ("not", othersAbsent), ("properties", Node(("length", InBytes()), ("maxLength", InBytes()))));
         scalar.Add("anyOf", new JsonArray(notBytes, asBytes));
         return scalar;
     }
@@ -499,7 +532,7 @@ public static class IrJsonSchema
             ("generated", Vocabulary<IrColumnGeneration>(IrWireNames.Of)),
             ("collation", Text("The collation its strings compare under, when known; left out otherwise.")));
         column.Add("anyOf", new JsonArray(
-            Node(("required", Names("sql"))),
+            Having("sql"),
             Node(("properties", Node(("generated", Node(("const", IrWireNames.Of(IrColumnGeneration.Computed)))))), ("required", Names("generated")))));
         return column;
     }
@@ -540,6 +573,23 @@ public static class IrJsonSchema
         schema.Add("anyOf", new JsonArray(canonical, other));
         return schema;
     }
+
+    /// <summary>A result whose encoding is <c>rowset</c> has a type that is rows (<c>$defs/rows</c>): a driver hands one over as rows keyed by column.</summary>
+    private static JsonObject RowsetOfRows(JsonObject schema)
+    {
+        var rowset = Node(("const", IrWireNames.Of(IrEncoding.Rowset)));
+        schema.Add("not", Node(
+            ("type", "object"),
+            ("properties", Node(("encoding", rowset), ("type", Node(("not", Ref("rows")))))),
+            ("required", Names("encoding", "type"))));
+        return schema;
+    }
+
+    /// <summary>A type node of <paramref name="kind"/> whose <paramref name="property"/> is as given, whatever else it has.</summary>
+    private static JsonObject OfKind(string kind, (string Name, JsonNode Schema) property) => Node(
+        ("type", "object"),
+        ("properties", Node(("kind", Node(("const", kind))), (property.Name, property.Schema))),
+        ("required", Names("kind", property.Name)));
 
     /// <summary>A result that has a <c>name</c>, or one that has none: an object's sets are all of one or all of the other.</summary>
     private static JsonObject ResultNamed(bool named)
@@ -590,6 +640,20 @@ public static class IrJsonSchema
         ("type", "object"),
         ("properties", Node([.. names.Select(n => (n, (JsonNode?)true))])),
         ("required", Names(names)));
+
+    /// <summary>Whether <paramref name="version"/> is <paramref name="since"/> or later, by their order in <see cref="IrDocument.ReadableVersions"/>, newest first.</summary>
+    private static bool Since(string version, string since) =>
+        IndexOf(version) <= IndexOf(since);
+
+    private static int IndexOf(string version) =>
+        IrDocument.ReadableVersions.Select((v, i) => (v, i)).Single(p => p.v == version).i;
+
+    /// <summary>An object that has none of the properties <paramref name="names"/>, whatever else it has.</summary>
+    private static JsonObject Lacking(params string[] names) => Node(("type", "object"), ("not", AnyHaving(names)));
+
+    /// <summary>An object that has at least one of the properties <paramref name="names"/>: for <c>not</c>.</summary>
+    private static JsonObject AnyHaving(string[] names) =>
+        names.Length == 1 ? Having(names) : Node(("type", "object"), ("anyOf", new JsonArray([.. names.Select(n => (JsonNode)Having(n))])));
 
     /// <summary>An object that refuses properties it doesn't list.</summary>
     private static JsonObject Closed(string description, string[] required, params (string Name, JsonNode Schema)[] properties)

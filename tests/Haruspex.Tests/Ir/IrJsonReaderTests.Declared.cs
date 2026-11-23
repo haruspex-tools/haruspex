@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Haruspex.Collections;
 using Haruspex.Ir;
 
 namespace Haruspex.Tests.Ir;
@@ -28,6 +29,32 @@ public partial class IrJsonReaderTests
 
         Assert.Contains("\"irVersion\": \"0.28\"", json, StringComparison.Ordinal);
         Assert.Equal(IrSamples.Declared, IrJsonReader.Read(json));
+        Assert.Equal(json, IrJsonWriter.Write(IrJsonReader.Read(json)));
+    }
+
+    /// <summary>
+    /// A map keyed by data may have keys the format uses elsewhere for its own objects: a schema file named <c>ref</c>, beside files named
+    /// <c>match</c> and <c>fold</c>, and a script named <c>ref</c>, are files like any other, so the document reads back.
+    /// </summary>
+    [Fact]
+    public void Files_named_ref_match_and_fold_read_back_as_files()
+    {
+        var hash = new string('c', 64);
+        var document = IrSamples.Declared with
+        {
+            Source = IrSamples.Declared.Source with { Files = new Dictionary<string, string> { ["ref"] = hash }.ToEquatableMap(f => f.Key, f => f.Value) },
+            Columns =
+            [
+                new IrColumnDeclaration(
+                    "sales.orders.settings",
+                    "ref",
+                    null,
+                    new Dictionary<string, string> { ["ref"] = hash, ["match"] = hash, ["fold"] = hash }.ToEquatableMap(f => f.Key, f => f.Value)),
+            ],
+        };
+        var json = IrJsonWriter.Write(document);
+
+        Assert.Equal(document, IrJsonReader.Read(json));
         Assert.Equal(json, IrJsonWriter.Write(IrJsonReader.Read(json)));
     }
 

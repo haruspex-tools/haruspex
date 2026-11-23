@@ -46,7 +46,7 @@ both.
   would read naturally; but one vocabulary with two sets of names is the drift `IrWireNames` was made to stop, and the
   new names read as well in the code, since each says why.
 - *Read 0.15 files with their names mapped*, since the table above makes that mapping mechanical. A reader of 0.16 still
-  refuses 0.15 ([decision 0024](0024-an-ir-reader-refuses-other-versions.md)): this change is only renames, but a reader
+  refuses 0.15 ([decision 0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)): this change is only renames, but a reader
   that mapped 0.15 would have to be kept, tested and trusted for every later version too, for files regenerated in one
   command. And a 0.15 file holds an older engine's claims, which the next version's mapping would label as its own.
 

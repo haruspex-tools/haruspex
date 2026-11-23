@@ -6,7 +6,7 @@ namespace Haruspex.Tests.Schemas;
 
 /// <summary>
 /// A validator for the part of JSON Schema 2020-12 that the published schemas use (<c>schemas/haruspex.schema.json</c>, the
-/// config file's, and <c>schemas/haruspex.ir.schema.json</c>, the IR's), so each can be checked against examples without a
+/// config file's, and <c>schemas/ir</c>, the IR's), so each can be checked against examples without a
 /// dependency (CONTRIBUTING.md: none without a written reason). It refuses a
 /// keyword it doesn't implement, so the schema can't start relying on one that nothing here checks.
 /// </summary>
@@ -177,7 +177,8 @@ internal sealed class SchemaSubset(JsonElement root)
         "string" => value.ValueKind == JsonValueKind.String,
         "boolean" => value.ValueKind is JsonValueKind.True or JsonValueKind.False,
         "number" => value.ValueKind == JsonValueKind.Number,
-        "integer" => value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out _),
+        // JSON Schema 2020-12 counts any number whose fractional part is zero as an integer, 100.0 and 1e2 included, as Ajv does.
+        "integer" => value.ValueKind == JsonValueKind.Number && (value.TryGetDecimal(out var number) ? decimal.Truncate(number) == number : double.IsInteger(value.GetDouble())),
         "null" => value.ValueKind == JsonValueKind.Null,
         _ => throw new NotSupportedException($"Unknown type {type}."),
     };
