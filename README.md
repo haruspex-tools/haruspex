@@ -470,7 +470,9 @@ is added:
 
 and then `yarn add -D ./vendor/haruspex/haruspex-0.0.0-preview-<commit>.tgz`, with either of its linkers.
 
-The application installs [Zod 4](https://zod.dev) and [mssql](https://www.npmjs.com/package/mssql) itself. The tests compile
+The application installs [Zod](https://zod.dev) 4.6.7 or a later 4.x, and [mssql](https://www.npmjs.com/package/mssql),
+itself; the package declares that range of zod as an optional peer dependency. Earlier releases of Zod 4 are not enough: 4.4.3
+counts a string's length in UTF-16 code units, so it refuses values a length declared in code points allows. The tests compile
 every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScript 7.0.2.
 
 ## Quick start

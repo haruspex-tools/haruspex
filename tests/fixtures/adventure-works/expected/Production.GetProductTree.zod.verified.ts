@@ -4,8 +4,9 @@
 // optional rather than nullable.
 //
 // The notes on properties below rest on these facts:
-// - Zod counts a string's length in code points, and SQL Server in UTF-16 code units or bytes, of which a code point
-//   may take more than one, so a fixed or least length holds fewer code points than it counts.
+// - Zod 4.6.7 and later count a string's length in code points (earlier releases may count UTF-16 code units), and SQL
+//   Server in UTF-16 code units or bytes, of which a code point may take more than one, so a fixed or least length
+//   holds fewer code points than it counts.
 // - JavaScript reads every number, in JSON or in this file, as a double, which holds every integer up to 2^53 exactly,
 //   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'

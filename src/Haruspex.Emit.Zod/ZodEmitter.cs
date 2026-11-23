@@ -25,6 +25,14 @@ namespace Haruspex.Emit.Zod;
 /// </remarks>
 public static class ZodEmitter
 {
+    /// <summary>
+    /// The least Zod the module is sound on, and the release every check of what Zod accepts was observed on: the emit check's
+    /// pinned <c>zod</c>. An earlier release isn't: 4.4.3 counts a string's length in UTF-16 code units, so a declared maximum
+    /// in code points refuses values the declaration allows. The npm package's peer range, the README, the quick start and the
+    /// header's note on lengths all state it, and <c>NamedVersionsTests</c> holds them to this one.
+    /// </summary>
+    public const string LeastZod = "4.6.7";
+
     /// <summary>Emits the module with the default options.</summary>
     /// <returns>The module's text; or, when the document can't be written as TypeScript, every refusal (<see cref="ZodCodes"/>).</returns>
     public static Outcome<string> Emit(IrDocument document) => Emit(document, new ZodOptions());

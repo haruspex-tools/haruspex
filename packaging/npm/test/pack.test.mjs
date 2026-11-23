@@ -7,7 +7,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { pack } from "../pack.mjs";
-import { mainManifest, platformManifest } from "../packages.mjs";
+import { leastZod, mainManifest, platformManifest } from "../packages.mjs";
 import { previewVersion } from "../version.mjs";
 
 const require = createRequire(import.meta.url);
@@ -54,6 +54,12 @@ test("the main package lists every platform package as an optional dependency at
     Object.fromEntries(platforms.map((p) => [p.packageName, version])),
   );
   assert.equal(manifest.license, "Apache-2.0");
+});
+
+test("the main package asks for the least zod the module is sound on, and only where the project has zod", () => {
+  const manifest = mainManifest(version);
+  assert.deepEqual(manifest.peerDependencies, { zod: `>=${leastZod} <5` });
+  assert.deepEqual(manifest.peerDependenciesMeta, { zod: { optional: true } });
 });
 
 test("a platform package is installed only where its binary runs", () => {

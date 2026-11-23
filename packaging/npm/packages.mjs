@@ -10,6 +10,9 @@ export const { platforms } = require("./haruspex/lib/launcher.js");
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, "..", "..");
 
+/** The least zod the generated module is sound on: ZodEmitter.LeastZod, to which NamedVersionsTests holds this. */
+export const leastZod = "4.6.7";
+
 const common = {
   license: "Apache-2.0",
   repository: { type: "git", url: "git+https://github.com/sharpblue/haruspex.git" },
@@ -33,6 +36,11 @@ export function mainManifest(version) {
     engines: { node: ">=18" },
     // Exact versions: the launcher refuses a binary of any other version.
     optionalDependencies: Object.fromEntries(platforms.map((p) => [p.packageName, version])),
+    // The generated module imports zod, and is sound only from the release its checks were observed on (ZodEmitter.LeastZod):
+    // 4.4.3 counts a string's length in UTF-16 code units. Optional, since a project may emit only JSON Schema; npm then
+    // installs nothing for it, but warns when the project's own zod is outside the range.
+    peerDependencies: { zod: `>=${leastZod} <5` },
+    peerDependenciesMeta: { zod: { optional: true } },
   };
 }
 
