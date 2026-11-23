@@ -36,6 +36,7 @@ public class InitTests
             """
             haruspex: wrote haruspex.json, which reads database and types every procedure in audit and sales, written to src/db.
             Next, run haruspex generate. Then narrow each schema's "include" to the procedures the application calls.
+            Keep src/db out of your formatter (in .prettierignore, or Biome's files.ignore): haruspex check fails on a file a formatter restyled.
 
             """,
             output.ReplaceLineEndings("\n"));

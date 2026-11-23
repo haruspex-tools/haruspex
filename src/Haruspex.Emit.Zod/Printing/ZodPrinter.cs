@@ -12,8 +12,10 @@ namespace Haruspex.Emit.Zod.Printing;
 /// quoting, escaping and layout. It decides nothing about what the module says.
 /// </summary>
 /// <remarks>
-/// The layout is fixed, two spaces of indent and LF line endings, and needs no formatter, so the output is deterministic and
-/// a formatter run after it (Prettier, Biome) only restyles it.
+/// The layout is fixed, two spaces of indent and LF line endings, and needs no formatter, so the output is deterministic. It
+/// is not the layout a formatter (Prettier, Biome) would write: one would rewrite the file, and <c>haruspex check</c>, which
+/// compares the text, would then report it (HAR6015), so the documentation tells users to keep the output folder out of
+/// their formatter.
 /// </remarks>
 internal static class ZodPrinter
 {
