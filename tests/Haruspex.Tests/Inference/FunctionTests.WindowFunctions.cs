@@ -82,9 +82,9 @@ public partial class FunctionTests
     }
 
     [Fact]
-    public void A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read()
+    public void A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read()
     {
-        // Observed: A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read. The
+        // Observed: A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read. The
         // value argument is read in another row; LAG's offset and default, a percentile and an aggregate over a frame holding the
         // current row are read in this one, and a filter or a variable holds in every row.
         var doc = Procedure("""

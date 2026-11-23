@@ -2375,7 +2375,7 @@ holds the current row. Observed in `FunctionObservationTests`.
   A filter (`WHERE`, `ON`, `HAVING`) holds of every row the query keeps, and a variable has one value throughout, so both still
   hold (`Facts.InAnotherRow`). `LAG`'s offset and default are read in the current row. An aggregate or a percentile skips NULLs
   over a partition, or a frame, holding the current row, so a branch's proof still holds there
-  (`A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read`).
+  (`A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read`).
 - **`LAG(x [, offset [, default]])`**, **`LEAD`**: `x`'s type. Past the partition's edge NULL (`window-edge`), unless a default
   is given (not the `NULL` literal), which is converted to `x`'s type: a long string cut, `1.9` to 1, an overflow an error or
   NULL under the caller's options (`arithmetic-overflow`, unless it fits); with one, only the type's facets hold. A NULL offset

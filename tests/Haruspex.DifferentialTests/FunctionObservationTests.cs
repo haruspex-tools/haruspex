@@ -383,7 +383,7 @@ public partial class FunctionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read()
+    public async Task A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read()
     {
         // q is NULL in rows 1 and 3. A branch that tests the current row's q proves nothing of the q that LAG, LEAD and FIRST_VALUE
         // read from a neighbour, or LAST_VALUE from the last row: a, b, c and d are NULL in rows where q isn't. LAG's default and

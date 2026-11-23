@@ -149,7 +149,7 @@ internal sealed partial class Typer
     /// Without a default it gives x's values only, so x's facts; with one, which may be outside them, only the type's.
     /// x is read in another row, unless the offset is 0, so what a branch proved of the current row doesn't hold of it; the offset
     /// and the default are read in the current row (observed:
-    /// A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read).
+    /// A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read).
     /// </summary>
     private Value Offset(FunctionCall call, ReadScope scope, WindowRule rule)
     {

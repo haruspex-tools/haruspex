@@ -54,7 +54,7 @@ internal sealed class Facts
     /// <c>LAG</c>, <c>LEAD</c>, <c>FIRST_VALUE</c> and <c>LAST_VALUE</c>. A filter holds of every row the query keeps, so of
     /// every row a window reads, and a variable has one value throughout the statement; but a branch tested its columns, rows
     /// and aggregates in the current row only, so those proofs are dropped (observed:
-    /// A_branchs_proof_of_the_current_row_does_not_hold_in_the_rows_lag_lead_first_value_and_last_value_read).
+    /// A_branch_proves_nothing_of_the_other_rows_lag_lead_first_value_and_last_value_read).
     /// </summary>
     public Facts InAnotherRow() => new([.. frames.Select(f => f.Strength == Proof.OfTheValue ? f.OfVariablesOnly() : f)]);
 
