@@ -25,8 +25,8 @@ database, so it needs no credentials and no data. And it follows one rule: **nev
 
 A hand-written type describes the values its author expects. A type haruspex writes is a claim about every value the
 database can produce: for any rows its tables can hold, and any arguments its parameters accept, under the session the
-callers declare. Not today's data, not the usual case, every case. Most of what makes haruspex different follows from that
-one choice:
+callers declare and the few assumptions [listed below](#what-it-guarantees-and-what-it-cant-see), which no source can show.
+Not today's data, not the usual case, every case. Most of what makes haruspex different follows from that one choice:
 
 - **It is looser than intuition where the engine allows more.** `COUNT(*)` is nullable, because SQL Server returns NULL
   past 2,147,483,647 rows under session options the caller controls.
@@ -35,12 +35,13 @@ one choice:
 - **What it can't prove, it doesn't claim.** A construct it doesn't model, or a procedure whose results only appear at run
   time, is unknown, with a reason, never a guess.
 - **The engine decides, not the documentation.** A rule the types rely on is observed on SQL Server by a test, so a claim
-  that SQL Server stops honouring fails in the test suite before it fails in an application.
+  that SQL Server stops honouring fails in the test suite before it fails in an application. What no test can observe,
+  such as the isolation level a caller sets, is assumed, and said so.
 - **It is still checked when it runs.** The generated functions validate every value, so a database that has moved on
   from the one the types were made from fails loudly at the call, not deep inside the application.
 
 A type that holds in every case can be trusted without reading the SQL behind it, which is the point.
-[What it guarantees](#what-it-guarantees-and-what-it-cant-see) has the limits, and [the guide](docs/internals/README.md)
+[What it guarantees](#what-it-guarantees-and-what-it-cant-see) has the limits, what it assumes and the larger gaps known today, and [the guide](docs/internals/README.md)
 how the analysis reaches its claims.
 
 ## What an application gets
@@ -356,8 +357,8 @@ to three.
 
 ## What it guarantees, and what it can't see
 
-Every claim haruspex makes holds for every execution: a field it calls non-null is never null, and a bound is never
-exceeded. That makes its types an over-approximation, sometimes looser than intuition (`COUNT(*)` is nullable, because past
+Every claim haruspex makes holds for every execution, given what it assumes and except in the known gaps listed below
+(both after the run-time checks): a field it calls non-null is never null, and a bound is never exceeded. That makes its types an over-approximation, sometimes looser than intuition (`COUNT(*)` is nullable, because past
 2,147,483,647 rows it returns NULL under session options the caller controls). When it can't prove a shape it says the shape
 is **unknown, with a reason**, and never guesses. It can't see what isn't in the source: dynamic SQL, `EXEC @procedure`, CLR
 and system procedures, and objects outside the project unless their DACPACs are given; a config file can declare their
@@ -384,6 +385,46 @@ query filters on in full means at most one row. Overrides in `haruspex.json` are
 At run time the generated functions check both ends, so a wrong parameter or a result that no longer matches its schema
 fails loudly, with an error saying which, rather than reaching the application's code; database errors stay the driver's.
 [When a call fails](docs/database-module.md#when-a-call-fails) says how to tell them apart.
+
+**What it assumes.** No source can show these, so haruspex assumes them, each where it is decided:
+
+- **The database is the one the project deploys**, changed since only by the project's own code. So a `CHECK` constraint is a
+  claim only while SQL Server trusts it: a bulk load from outside the project (.NET's SqlBulkCopy, or `BULK INSERT` without
+  `CHECK_CONSTRAINTS`) skips the constraint and leaves it untrusted, as `ALTER TABLE … NOCHECK` run by hand does.
+  `SELECT name FROM sys.check_constraints WHERE is_not_trusted = 1` lists any such constraint.
+- **Views and inline functions are refreshed when they are deployed, and columns are deployed in their declared order**, as
+  SqlPackage does ([decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
+- **No caller reads uncommitted data.** A `NOLOCK` hint, or a level the procedure sets itself, is seen and drops the claims it
+  breaks; the level a caller sets is not ([decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
+- **In a folder of scripts, a definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it (a
+  DACPAC records the setting for each definition, and it is read)
+  ([the guide](docs/internals/02-the-inputs-and-the-model.md#a-script-becomes-the-model-in-three-steps)).
+- **SQL Server 2025.** The rules are observed on the version the tests run, and an earlier one may differ
+  ([the guide](docs/internals/08-the-sql-server-type-system-as-data.md#limits)).
+- **No query reads 2^63 rows**, which is why a `SUM` of a decimal of at most 19 digits is claimed never to overflow
+  ([the inference](src/Haruspex.SqlServer.Inference/README.md#sum-avg-and-the-statistical-aggregates)).
+
+**Known gaps.** In these cases a claim can be wrong today. They come from how a database is set up, run or loaded, and
+each needs a decision or a larger change before the code handles it. They aren't every bug: a rule of the analysis found
+wrong is fixed as a bug, in a change of its own, and isn't listed here.
+
+- **A bulk load in the project's own code.** A `BULK INSERT` without `CHECK_CONSTRAINTS`, or an `INSERT … WITH
+  (IGNORE_CONSTRAINTS)` from `OPENROWSET(BULK …)`, leaves its target's `CHECK` constraints untrusted, but haruspex still
+  claims them, as it doesn't after an `ALTER TABLE … NOCHECK` in the project. <!-- Known gap: remove this item when a bulk load in the project's code is read as a NOCHECK of its target's checks. -->
+- **Masked columns.** A caller without the `UNMASK` permission receives a column `MASKED WITH` a function, and any value
+  computed from it, as the mask (with `default()`, `0` for a number and `xxxx` for a
+  string), which can break a range, a value set or a fixed
+  length haruspex claims. Masks aren't read. <!-- Known gap: remove this item when masks are read and a masked column keeps no facet the mask could break. -->
+- **Names that differ only in case.** Names are compared ignoring case. In a database with a case-sensitive collation, two
+  columns of one table whose names differ only in case are taken as one: a reference to either is typed as the one declared
+  first, and a `CHECK` on either is taken as that one's. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->
+- **A disabled key in an extracted DACPAC.** An extract doesn't mark a primary key or unique constraint whose nonclustered
+  index is disabled, so a query on that key is claimed to return at most one row though the table may hold duplicates. A
+  unique index disabled on its own is marked, and read. <!-- Known gap: remove this item when a key in an extract is no longer taken as enforced, or the assumption is decided and moved to the list above. -->
+- **A snapshot read after a locking guard.** A procedure that checks that a row exists with `UPDLOCK, HOLDLOCK` and then
+  reads it without a hint is claimed to find it. Under snapshot isolation, in a transaction that has already read before the
+  check, the read sees the transaction's snapshot, which may not hold the row, whether the procedure or its caller set the
+  level. <!-- Known gap: remove this item when a lock is taken to hold a row only for a read known to see current committed data. -->
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
@@ -422,11 +463,18 @@ dotnet build
 ### A preview from npm tarballs
 
 **This is a preview.** Once published, haruspex will be installed from npm, as `npm install --save-dev haruspex`, with a native binary for
-each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, each CI
-run builds the packages as tarballs and keeps them for 30 days as its artifact `haruspex-npm`: the command,
-`haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, `haruspex.tools-<platform>-0.0.0-preview-<commit>.tgz`, where
-the platform is `linux-x64`, `linux-arm64`, `darwin-arm64`, `darwin-x64` or `win32-x64`. Download them from the run's page, or
+each platform and no .NET runtime needed ([how the packages work](packaging/npm/README.md)). Until it is published, a CI
+run that the maintainer starts by hand on `main` builds the packages as tarballs and keeps them for 30 days as its artifact
+`haruspex-npm`: the command, `haruspex-0.0.0-preview-<commit>.tgz`, and a binary for each platform, with the licences of what
+it contains, `haruspex.tools-<platform>-0.0.0-preview-<commit>.tgz`, where the platform is `linux-x64`, `linux-arm64`,
+`darwin-arm64`, `darwin-x64` or `win32-x64`. Only those runs' tarballs are the project's. Every other run keeps its tarballs a
+day, under a name of its own: `unreviewed-pr-haruspex-npm` for a pull request, built from code no one has reviewed, and
+`ci-haruspex-npm` for any other run. Find the latest successful run started by hand on `main`, then download its tarballs,
 with the `gh` CLI:
+
+```sh
+gh run list --repo sharpblue/haruspex --workflow CI --branch main --event workflow_dispatch --status success --limit 1
+```
 
 ```sh
 gh run download <run id> --repo sharpblue/haruspex --name haruspex-npm --dir haruspex-preview
@@ -503,7 +551,8 @@ database. [The documentation's index](docs/README.md) says what every other page
 
 This project is built by agentic engineering. AI coding agents write each change, in small slices, and a second agent reviews
 each slice adversarially, trying to break its claims. A person decides what is built and merges every change. Each rule
-haruspex relies on about SQL Server is observed on a real server by a test, and the code that relies on it names that test.
+haruspex relies on about SQL Server is observed on a real server by a test, and the code that relies on it names that test;
+what no test can observe is [stated as an assumption](#what-it-guarantees-and-what-it-cant-see).
 [The guide](docs/internals/README.md) explains how it works and why a static analyser is built this way, and
 [the decision log](docs/decisions/README.md) records each decision with the alternatives.
 

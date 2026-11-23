@@ -170,4 +170,4 @@ JOIN`'s right side is), and Inference attaches what each relation holds, a view'
 tables. A permanent table changed by `ALTER TABLE` is reported with the reason `unsupported-source`, because which definition applies
 depends on the order the scripts run. The forms that can't make a column nullable, change its type, or add or remove one
 are the exceptions: adding a constraint, checking or disabling constraints, rebuilding, and switching triggers or change
-tracking (`ScriptReader.OnlyTightens`).
+tracking (`WeakeningStatements.OnlyTightens`).

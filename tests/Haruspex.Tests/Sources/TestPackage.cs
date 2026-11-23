@@ -43,6 +43,18 @@ internal static class TestPackage
     public static string Table(string schema, string name, params string[] columns) =>
         $"""<Element Type="SqlTable" Name="[{schema}].[{name}]"><Relationship Name="Columns">{string.Concat(columns.Select(c => Column(schema, name, c)))}</Relationship></Element>""";
 
+    /// <summary>A table's CHECK constraint's element, declared in the table without a name, as DacFx writes one.</summary>
+    public static string Check(string schema, string table, string expression) =>
+        $"""<Element Type="SqlCheckConstraint"><Property Name="CheckExpressionScript"><Value><![CDATA[{expression}]]></Value></Property><Relationship Name="DefiningTable"><Entry><References Name="[{schema}].[{table}]" /></Entry></Relationship><Annotation Type="SqlInlineConstraintAnnotation" Disambiguator="1" /></Element>""";
+
+    /// <summary>Adds a part to the package at <paramref name="path"/>, such as <c>postdeploy.sql</c>, with a byte order mark as a build writes it.</summary>
+    public static void Part(string path, string name, string text)
+    {
+        using var zip = ZipFile.Open(path, ZipArchiveMode.Update);
+        using var writer = new StreamWriter(zip.CreateEntry(name).Open(), new UTF8Encoding(true));
+        writer.Write(text);
+    }
+
     /// <summary>A procedure's element, its header and body as written.</summary>
     public static string Procedure(string schema, string name, string body) =>
         $"""<Element Type="SqlProcedure" Name="[{schema}].[{name}]"><Property Name="BodyScript"><Value><![CDATA[{"\n"}{body}]]></Value></Property><Property Name="IsAnsiNullsOn" Value="True" /><Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="CREATE PROCEDURE {schema}.{name} AS" /></Annotation></Element>""";

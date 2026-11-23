@@ -26,16 +26,19 @@ public class ProjectEquivalenceTests
     private static string WideWorldImporters =>
         Path.Combine(RepositoryPaths.Root, "tests", "corpus", "sql-server-samples", "samples", "databases", "wide-world-importers", "wwi-ssdt", "wwi-ssdt", "WideWorldImporters.sqlproj");
 
-    /// <summary>The projects of our own and the package each builds, with the packages of its database beside it.</summary>
-    public static TheoryData<string, string> Built { get; } = new()
+    /// <summary>
+    /// The projects of our own and the package each builds, with the packages of its database beside it, and the project's
+    /// deployment scripts with the files they include, which the build writes into the package's own.
+    /// </summary>
+    public static TheoryData<string, string, string[]> Built { get; } = new()
     {
-        { Path.Combine("orchard", "orchard.sqlproj"), Path.Combine("orchard", "orchard.dacpac") },
-        { Path.Combine("mill", "mill.sqlproj"), Path.Combine("mill", "mill.dacpac") },
+        { Path.Combine("orchard", "orchard.sqlproj"), Path.Combine("orchard", "orchard.dacpac"), ["deploy/pre.sql", "deploy/post.sql", "deploy/seed.sql"] },
+        { Path.Combine("mill", "mill.sqlproj"), Path.Combine("mill", "mill.dacpac"), ["Scripts/Script.PostDeployment.sql"] },
     };
 
     [Theory]
     [MemberData(nameof(Built))]
-    public void A_project_gives_its_package_s_objects_settings_ir_and_zod(string project, string package)
+    public void A_project_gives_its_package_s_objects_settings_ir_and_zod(string project, string package, string[] deployment)
     {
         var path = Path.Combine(Projects, project);
         var packagePath = Path.Combine(Packages, package);
@@ -49,6 +52,7 @@ public class ProjectEquivalenceTests
         var fromProject = SqlProject.LoadProject(path, []);
         var fromPackage = SqlProject.LoadPackage(packagePath, []);
         var map = new PackageLocationMap(read.Model, Path.GetDirectoryName(path)!, [packagePath, .. built.References.Select(r => r.Found!.Path)]);
+        map.AddDeployment(Path.GetDirectoryName(path)!, packagePath, deployment);
         foreach (var procedure in fromProject.Procedures)
             AssertSame(fromProject.Infer([procedure]).Expected(), fromPackage.Infer([procedure]).Expected(), map);
         Assert.Empty(map.Unmapped);
@@ -182,7 +186,7 @@ public class ProjectEquivalenceTests
     /// nothing else), read from a copy of its scripts: the default items and settings of a project that sets none.
     /// </summary>
     public static TheoryData<string> Fixtures { get; } =
-        [.. Fixture.All.Where(f => !f.IsProject && File.Exists(Path.Combine(Packages, "fixtures", f.Name + ".dacpac"))).Select(f => f.Name)];
+        [.. Fixture.All.Where(f => !f.IsProject && !DacpacEquivalenceTests.Unbuilt.ContainsKey(f.Name)).Select(f => f.Name)];
 
     [Theory]
     [MemberData(nameof(Fixtures))]

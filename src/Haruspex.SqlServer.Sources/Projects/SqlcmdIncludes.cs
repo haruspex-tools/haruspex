@@ -13,7 +13,22 @@ namespace Haruspex.SqlServer.Sources.Projects;
 internal static class SqlcmdIncludes
 {
     /// <summary>The paths <paramref name="script"/> includes, as written, in order.</summary>
-    public static IEnumerable<string> Of(string script)
+    public static IEnumerable<string> Of(string script) => Commands(script).Select(c => c.Path);
+
+    /// <summary>
+    /// <paramref name="script"/> with each <c>:r</c> line's text taken out and its line break kept, so that it parses as T-SQL and
+    /// a line number in it is the line in the file: what a deployment script holds of its own, its includes read apart.
+    /// </summary>
+    public static string Without(string script)
+    {
+        var text = new System.Text.StringBuilder(script);
+        foreach (var (start, end, _) in Commands(script).Reverse())
+            text.Remove(start, end - start);
+        return text.ToString();
+    }
+
+    /// <summary>Each <c>:r</c> command: where it starts, where its line's text ends (before the line break), and the path.</summary>
+    public static IEnumerable<(int Start, int End, string Path)> Commands(string script)
     {
         ArgumentNullException.ThrowIfNull(script);
         var depth = 0;
@@ -60,8 +75,9 @@ internal static class SqlcmdIncludes
                     continue;
                 case ':' when lineStart && next is 'r' or 'R' && i + 2 < script.Length && script[i + 2] is ' ' or '\t':
                     var end = script.IndexOf('\n', i);
-                    var line = script[(i + 2)..(end < 0 ? script.Length : end)].Trim();
-                    yield return line.Length > 1 && line[0] == '"' && line[^1] == '"' ? line[1..^1] : line;
+                    var stop = end < 0 ? script.Length : end;
+                    var line = script[(i + 2)..stop].Trim();
+                    yield return (i, stop > i && script[stop - 1] == '\r' ? stop - 1 : stop, line.Length > 1 && line[0] == '"' && line[^1] == '"' ? line[1..^1] : line);
                     i = end < 0 ? script.Length : end - 1;
                     continue;
                 case '-' when next == '-':

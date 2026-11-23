@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 
@@ -31,6 +32,118 @@ public class SqlScriptFolderTests
         Assert.Equal(["id"], type.PrimaryKey);
         Assert.Equal([(["id"], true), (["qty", "note"], false)], type.UniqueKeys.Select(k => (k.Columns.ToArray(), k.IgnoresDuplicates)));
         Assert.Equal("qty", Assert.Single(type.Checks).Column);
+    }
+
+    private const string Ingot = "CREATE TABLE dbo.ingot (id int NOT NULL, weight int NOT NULL CONSTRAINT ck_weight CHECK (weight BETWEEN 1 AND 500));";
+
+    [Fact]
+    public void A_script_whose_extension_is_not_in_lower_case_is_read_on_every_platform()
+    {
+        // As a build's **/*.sql matches it, on Linux too (observed): a folder read and a project read of one folder read the same scripts.
+        using var dir = new TempDirectory();
+        dir.File("TABLES.SQL", Ingot);
+        dir.File("Maintenance.Sql", "ALTER TABLE dbo.ingot NOCHECK CONSTRAINT ALL;");
+
+        var read = SqlScriptFolder.Read(dir.Path);
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("Maintenance.Sql", 1, 1), Assert.Single(read.Model.FindTable(new ObjectName("dbo", "ingot"))!.Checks).DisabledAt);
+    }
+
+    [Fact]
+    public void A_link_back_up_the_tree_reads_each_script_once()
+    {
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", Ingot);
+        Directory.CreateDirectory(Path.Combine(dir.Path, "sub"));
+        FolderLink.Make(FolderLinkKind.Symbolic, Path.Combine(dir.Path, "sub", "back"), dir.Path);
+
+        var read = SqlScriptFolder.Read(dir.Path);
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal("tables.sql", Assert.Single(read.Model.Tables).Span.File);
+    }
+
+    [Fact]
+    public void A_script_another_process_holds_is_an_input_error_naming_it_not_a_fault()
+    {
+        // As Windows holds a file another program has open, and as a file the user may not read: the error is the input's.
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", Ingot);
+        var held = dir.File("held.sql", "CREATE PROCEDURE dbo.p AS SELECT 1 AS one;");
+        using var holder = new FileStream(held, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        var read = SqlScriptFolder.Read(dir.Path);
+
+        var error = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.UnreadableScript, error.Code);
+        Assert.Equal<DiagnosticLocation?>(new SourceLocation("held.sql", 1, 1), error.At);
+        Assert.NotNull(read.Model.FindTable(new ObjectName("dbo", "ingot")));
+    }
+
+    [Fact]
+    public void A_link_to_no_file_is_an_input_error_naming_it()
+    {
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", Ingot);
+        try
+        {
+            File.CreateSymbolicLink(Path.Combine(dir.Path, "gone.sql"), Path.Combine(dir.Path, "nowhere.sql"));
+        }
+        catch (IOException e) when (OperatingSystem.IsWindows())
+        {
+            Assert.Skip($"this machine doesn't let this user make a symbolic link: {e.Message}");
+        }
+
+        var error = Assert.Single(SqlScriptFolder.Read(dir.Path).Diagnostics);
+
+        Assert.Equal(SourceCodes.UnreadableScript, error.Code);
+        Assert.Equal<DiagnosticLocation?>(new SourceLocation("gone.sql", 1, 1), error.At);
+    }
+
+    [Fact]
+    public void A_folder_that_can_t_be_entered_is_an_input_error_naming_it()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("a folder's Unix mode is what shuts it here");
+            return;
+        }
+
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", Ingot);
+        dir.File("shut/load.sql", "CREATE PROCEDURE dbo.p AS SELECT 1 AS one;");
+        var shut = Path.Combine(dir.Path, "shut");
+        File.SetUnixFileMode(shut, UnixFileMode.None);
+        try
+        {
+            if (Directory.EnumerateFileSystemEntries(shut).Any())
+                Assert.Skip("this user may enter any folder (root)");
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        try
+        {
+            var error = Assert.Single(SqlScriptFolder.Read(dir.Path).Diagnostics);
+            Assert.Equal(SourceCodes.UnreadableScript, error.Code);
+            Assert.Equal<DiagnosticLocation?>(new FileLocation("shut/"), error.At);
+        }
+        finally
+        {
+            File.SetUnixFileMode(shut, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    [Fact]
+    public void A_temporary_table_a_body_creates_alters_and_drops_is_no_change_to_the_model()
+    {
+        // A temporary table is the session's, not the database's: changing it in a body changes no table of the model.
+        using var dir = new TempDirectory();
+        dir.File("p.sql", "CREATE PROCEDURE dbo.p AS BEGIN CREATE TABLE #t (code int NOT NULL); ALTER TABLE #t ADD note nvarchar(20) NULL; SELECT x.code FROM #t AS x; DROP TABLE #t; END");
+
+        Assert.Empty(SqlScriptFolder.Read(dir.Path).Model.TableRedefinitions);
     }
 
     [Fact]

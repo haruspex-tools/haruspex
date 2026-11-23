@@ -42,7 +42,7 @@ Values flow two ways, and each is combined in its own direction, as
 
 **Context.** An application and its database deploy separately. [Decision 0069](0069-check-with-a-baseline-judges-the-deploy-window.md)
 gave the database's side, which refuses a change the running application would fail on; this is the application's side, a
-release that works against the database before and after its change. Richard settled the design on 18 Nov 2026: merged types by
+release that works against the database before and after its change. The maintainer settled the design on 18 Nov 2026: merged types by
 default, a change that can't be bridged an error naming the procedure, the module still written for the rest.
 
 **Alternatives.**

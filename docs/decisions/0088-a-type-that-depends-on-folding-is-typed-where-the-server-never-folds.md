@@ -32,7 +32,7 @@ So `COALESCE((SELECT … FOR JSON PATH), (SELECT … FOR JSON PATH))`, typed as 
   comments and in a cast the caller writes), so claiming one the server never gives misleads. The IR has no union of a live
   JSON value and its text. Neither was needed for the corpus's forms, which the rules above type exactly.
 - *Model the plan's folding: a derived table's constant columns, a parameter under `OPTION (RECOMPILE)`.* It changes with the
-  plan, and the brief allowed only rules that hold for every plan.
+  plan, and haruspex types only by rules that hold for every plan.
 - *Model `json_object`'s own rule for a `CASE` or `COALESCE` (its last result).* Observed and stable, but a `CASE` nests differently in
   `FOR JSON` and in `json_object`, and a value's shape in the IR is one for every place it nests. Only the forms that are text in
   both are typed.

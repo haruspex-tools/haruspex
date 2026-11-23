@@ -18,6 +18,12 @@ public class RedefinitionsTests
         [RedefiningStatement.AlterView] = "ALTER VIEW",
         [RedefiningStatement.CreateOrAlterView] = "CREATE OR ALTER VIEW",
         [RedefiningStatement.DropView] = "DROP VIEW",
+        [RedefiningStatement.CreateTable] = "CREATE TABLE",
+        [RedefiningStatement.CreateProcedure] = "CREATE PROCEDURE",
+        [RedefiningStatement.CreateOrAlterProcedure] = "CREATE OR ALTER PROCEDURE",
+        [RedefiningStatement.CreateFunction] = "CREATE FUNCTION",
+        [RedefiningStatement.CreateOrAlterFunction] = "CREATE OR ALTER FUNCTION",
+        [RedefiningStatement.UnreadScript] = "a deployment script that can't be read",
     };
 
     public static TheoryData<RedefiningStatement> Statements { get; } = [.. Enum.GetValues<RedefiningStatement>()];

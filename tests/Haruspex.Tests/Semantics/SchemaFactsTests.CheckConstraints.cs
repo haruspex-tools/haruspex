@@ -298,6 +298,30 @@ public partial class SchemaFactsTests
     public void A_nocheck_at_any_depth_disables_the_constraint(string script) =>
         Assert.Equal("-2147483648", Bound(Facts(Checked + script).Min));
 
+    [Theory]
+    // A bulk load that doesn't check constraints writes rows no check has seen, and leaves each check of its table not trusted
+    // (observed: A_bulk_load_without_check_constraints_writes_rows_no_check_has_seen), wherever it is, as NOCHECK ALL does.
+    [InlineData("BULK INSERT [dbo].[t] FROM '/data/t.csv';")]
+    [InlineData("CREATE PROCEDURE dbo.load AS BULK INSERT dbo.t FROM '/data/t.csv';")]
+    [InlineData("IF 1 = 0 BULK INSERT t FROM '/data/t.csv';")]
+    [InlineData("INSERT BULK dbo.t (c int, d int);")]
+    [InlineData("CREATE PROCEDURE dbo.load AS INSERT INTO dbo.t WITH (IGNORE_CONSTRAINTS) (c) SELECT BulkColumn FROM OPENROWSET(BULK '/data/t.txt', SINGLE_CLOB) AS f;")]
+    public void A_bulk_load_without_check_constraints_disables_every_check_of_its_table(string load)
+    {
+        Assert.Equal("-2147483648", Bound(Facts(Checked + load).Min));
+        Assert.Equal("-2147483648", Bound(Facts(Checked + load, "d").Min));
+    }
+
+    [Theory]
+    // With CHECK_CONSTRAINTS each row is checked, and an OPENROWSET(BULK) insert without IGNORE_CONSTRAINTS is checked as any
+    // insert is (observed: error 547 for each); a WITH CHECK CHECK later in the same script validates what a load wrote.
+    [InlineData("BULK INSERT dbo.t FROM '/data/t.csv' WITH (CHECK_CONSTRAINTS);")]
+    [InlineData("CREATE PROCEDURE dbo.load AS INSERT BULK dbo.t (c int, d int) WITH (CHECK_CONSTRAINTS);")]
+    [InlineData("CREATE PROCEDURE dbo.load AS INSERT INTO dbo.t (c) SELECT BulkColumn FROM OPENROWSET(BULK '/data/t.txt', SINGLE_CLOB) AS f;")]
+    [InlineData("BULK INSERT dbo.t FROM '/data/t.csv';\nGO\nALTER TABLE dbo.t WITH CHECK CHECK CONSTRAINT ALL;")]
+    public void A_bulk_load_that_checks_constraints_leaves_them_trusted(string load) =>
+        Assert.Equal("exclusive 0", Bound(Facts(Checked + load).Min));
+
     [Fact]
     public void An_unqualified_nocheck_disables_the_constraint_of_a_table_of_that_name_in_any_schema() =>
         Assert.Equal("-2147483648", Bound(Facts(

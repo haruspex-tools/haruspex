@@ -21,8 +21,8 @@ Each construct of the language gets an **abstract transfer function**: the descr
 descriptions of its inputs. Addition of two never-null `int`s gives an `int` that may be null, since an overflow is `NULL`
 under some session options; `ISNULL` of anything with a never-null second argument gives a never-null result. Where paths
 meet, the descriptions are **joined**: the least description above both ([Values as a lattice](05-values-as-a-lattice.md)
-gives the order and the joins). Where a program describes itself (a loop, recursion), the description is the **least fixed
-point** of its transfer function ([Flow, joins and fixed points](06-flow-joins-and-fixed-points.md)), found by applying the
+gives the order and the joins). Where a program describes itself (a loop, recursion), the description is a **fixed point** of its
+transfer function, the **least** one when every step is monotone and nothing is widened ([Flow, joins and fixed points](06-flow-joins-and-fixed-points.md)), found by applying the
 step until the description stops changing. Some descriptions can climb for ever (an array of arrays of arrays), so the
 iteration must also be made to stop: a **widening** replaces a description that may go on climbing with one above it, where
 the climb stops. The coarsest in haruspex is a cap on the passes (`FixedPoint.MostPasses`): a fixed point not reached by then is
@@ -30,8 +30,11 @@ unknown, the top, which allows every value and so is sound, and the analysis alw
 
 **Soundness** is one property of each transfer function: whatever concrete values its inputs hold, the concrete result is
 among those its output allows. If every transfer function and every join is sound, so is the whole analysis, by induction
-over the program, and through the fixed points, since iterating a sound step from a sound start stays sound (the argument
-is the 1977 paper's). That is why
+over the program, and through the fixed points: a description that a sound step gives back, or one that allows at least
+everything the step gives from it (a *post-fixed point*, which is what a widened loop settles on), describes every run (the
+argument is the 1977 paper's). How the iteration reached it doesn't matter. The descriptions on the way are not claims:
+each describes only the runs of bounded depth (so many passes of a loop, levels of a recursive CTE or nested calls), and the
+first for a recursive call describes none, so a cap gives unknown, never the last of them. That is why
 haruspex can argue for a claim one rule at a time, and why each rule is observed on a real server
 ([decision 0007](../decisions/0007-every-engine-rule-is-observed.md)): a rule observed is a transfer function shown sound
 on its cases.

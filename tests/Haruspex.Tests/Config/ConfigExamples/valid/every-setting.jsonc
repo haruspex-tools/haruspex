@@ -18,7 +18,7 @@
   "schemas": {
     "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
     "audit": { "include": ["*"], "prefix": "Audit" },
-    "RDF.": { "include": ["GetPropertyList"], "naming": { "case": "preserve", "replace": [{ "pattern": "^Get", "with": "" }] } },
+    "Ledger.": { "include": ["GetEntryList"], "naming": { "case": "preserve", "replace": [{ "pattern": "^Get", "with": "" }] } },
     "reference": {},
   },
   "procedures": {
@@ -33,7 +33,7 @@
         "results[0][\"unit price\"]": { "nullable": false, "why": "priced on insert" },
       },
     },
-    "[RDF.].GetPropertyList": { "name": "PropertyList" },
+    "[Ledger.].GetEntryList": { "name": "EntryList" },
     "sales.get_order_with_lines": { "sets": ["order", "lines"] },
     "audit.write_log": { "results": "none", "why": "it only writes to the log" },
     "sales.search_orders": {

@@ -88,7 +88,7 @@ public class ConfigReaderTests
               "naming": { "replace": [{ "pattern": "#$", "with": "Row" }], "case": "camel" },
               "schemas": {
                 "sales": { "include": ["get_*", "list_*",], "exclude": ["*_internal"] },
-                "RDF.": { "include": ["GetPropertyList"], "prefix": "Rdf", "naming": { "case": "preserve", "replace": [{ "pattern": "^Get", "with": "" }] } },
+                "Ledger.": { "include": ["GetEntryList"], "prefix": "Ledger", "naming": { "case": "preserve", "replace": [{ "pattern": "^Get", "with": "" }] } },
                 "reference": {},
               },
               "procedures": {
@@ -110,12 +110,12 @@ public class ConfigReaderTests
         Assert.Equal(CheckUnknowns.Fail, config.CheckUnknowns);
         Assert.Equal(Path.Combine(directory, "db"), config.Source);
         Assert.Equal(Path.GetFullPath(Path.Combine(directory, "..", "generated")), config.Out);
-        Assert.Equal(["sales", "RDF.", "reference"], config.Schemas.Select(s => s.Name));
+        Assert.Equal(["sales", "Ledger.", "reference"], config.Schemas.Select(s => s.Name));
         Assert.Equal(["get_*", "list_*"], config.Schemas[0].Include!.Select(p => p.Pattern.Text));
         Assert.Equal(11, config.Schemas[0].Include![0].At.Line);
         Assert.Equal(["*_internal"], config.Schemas[0].Exclude.Select(p => p.Pattern.Text));
         Assert.Equal("", config.Schemas[0].Prefix);
-        Assert.Equal("Rdf", config.Schemas[1].Prefix);
+        Assert.Equal("Ledger", config.Schemas[1].Prefix);
         Assert.Null(config.Schemas[2].Include);
         Assert.True(config.SelectsAnything);
         Assert.Equal(ObjectsPolicy.Strict, config.Objects);
@@ -124,10 +124,10 @@ public class ConfigReaderTests
         Assert.Equal("Row", Assert.Single(config.Naming.Replace).With);
 
         // A schema's naming merges over the top level's: its case replaces it, its replacements run after.
-        var rdf = config.NamingFor("rdf.");
-        Assert.Equal(NamingCase.Preserve, rdf.Case);
-        Assert.Equal(["Row", ""], rdf.Replace.Select(r => r.With));
-        Assert.Equal("Rdf", rdf.Prefix);
+        var ledger = config.NamingFor("ledger.");
+        Assert.Equal(NamingCase.Preserve, ledger.Case);
+        Assert.Equal(["Row", ""], ledger.Replace.Select(r => r.With));
+        Assert.Equal("Ledger", ledger.Prefix);
         Assert.Equal(config.Naming, config.NamingFor("hr"));
         var procedure = Assert.IsType<InferredResultsOverride>(Assert.Single(config.Procedures));
         Assert.Equal("OrderDetail", procedure.Name);

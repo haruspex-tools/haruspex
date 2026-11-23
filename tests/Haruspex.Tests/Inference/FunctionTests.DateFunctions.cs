@@ -42,6 +42,40 @@ public partial class FunctionTests
     }
 
     [Fact]
+    public void Dateadd_may_be_null_when_its_number_may_be_past_bigints_range()
+    {
+        // The number is converted to bigint, which overflows to NULL under the caller's ANSI_WARNINGS and ARITHABORT off for a
+        // decimal of 19 or more integer digits, a float or a real; an integer, money, a decimal of at most 18 integer digits and
+        // a literal within bigint's range always convert (observed:
+        // Dateadd_converts_its_number_to_bigint_which_past_its_range_is_null_under_the_callers_ansi_warnings_off).
+        var doc = Procedure("""
+            DECLARE @t TABLE (d380 decimal(38,0) NOT NULL, d190 decimal(19,0) NOT NULL, d180 decimal(18,0) NOT NULL, d191 decimal(19,1) NOT NULL,
+                              d3838 decimal(38,38) NOT NULL, f float NOT NULL, r real NOT NULL, m money NOT NULL, sm smallmoney NOT NULL,
+                              bi bigint NOT NULL, da date NOT NULL);
+            SELECT DATEADD(day, t.d380, t.da) AS a, DATEADD(day, t.d190, t.da) AS b, DATEADD(day, t.f, t.da) AS c, DATEADD(day, t.r, t.da) AS d,
+                   DATEADD(day, t.d180, t.da) AS e, DATEADD(day, t.d191, t.da) AS f, DATEADD(day, t.d3838, t.da) AS g, DATEADD(day, t.m, t.da) AS h,
+                   DATEADD(day, t.sm, t.da) AS i, DATEADD(day, t.bi, t.da) AS j, DATEADD(day, 1e0, t.da) AS k, DATEADD(day, 1e19, t.da) AS l,
+                   DATEADD(day, 9223372036854775807, t.da) AS m, DATEADD(day, 9223372036854775808, t.da) AS n, DATEADD(second, t.d380, CAST(t.da AS datetime2)) AS o
+            FROM @t AS t;
+            """);
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "a"));
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "b"));
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "d"));
+        Assert.Equal("date", Typed(doc, "e"));
+        Assert.Equal("date", Typed(doc, "f"));
+        Assert.Equal("date", Typed(doc, "g"));
+        Assert.Equal("date", Typed(doc, "h"));
+        Assert.Equal("date", Typed(doc, "i"));
+        Assert.Equal("date", Typed(doc, "j"));
+        Assert.Equal("date", Typed(doc, "k"));
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "l"));
+        Assert.Equal("date", Typed(doc, "m"));
+        Assert.Equal("date arithmetic-overflow", Typed(doc, "n"));
+        Assert.Equal("datetime2(7) arithmetic-overflow", Typed(doc, "o"));
+    }
+
+    [Fact]
     public void A_date_function_given_an_integer_may_overflow_datetime_unless_every_date_fits_it()
     {
         // A_date_function_given_an_integer_converts_it_and_any_date_beside_it_to_datetime_which_may_overflow.

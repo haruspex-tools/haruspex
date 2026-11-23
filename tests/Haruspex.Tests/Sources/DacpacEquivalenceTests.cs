@@ -19,11 +19,34 @@ public class DacpacEquivalenceTests
 {
     private static string Packages => Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
 
-    /// <summary>Every fixture checked per procedure with a package built from it.</summary>
-    public static TheoryData<string> Fixtures { get; } =
-        [.. Fixture.All.Where(f => !f.IsProject && File.Exists(PackageOf(f))).Select(f => f.Name)];
+    /// <summary>
+    /// The fixtures that don't build as a project, each with the build error that keeps it out, which have no package: every other
+    /// fixture that isn't a project of its own must have one, so a fixture added since the packages were built can't escape the
+    /// proof in silence.
+    /// </summary>
+    internal static readonly IReadOnlyDictionary<string, string> Unbuilt = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        // Its scripts hold several statements in a batch (SQL71006) and a NOCHECK the build can't attach to an element (SQL71001).
+        ["checks"] = "SQL71006",
+        // Microsoft's install script, which declares the database and its files.
+        ["adventure-works"] = "SQL70013",
+        // Tables copied without what they refer to (SQL71501) and a statement a build doesn't take (SQL70001);
+        // corpus/WideWorldImporters.dacpac is built from its own project, and compared below.
+        ["wide-world-importers"] = "SQL71501",
+    };
 
-    private static string PackageOf(Fixture fixture) => Path.Combine(Packages, "fixtures", fixture.Name + ".dacpac");
+    /// <summary>Every fixture that isn't a project of its own, checked per procedure with the package built from it.</summary>
+    public static TheoryData<string> Fixtures { get; } =
+        [.. Fixture.All.Where(f => !f.IsProject && !Unbuilt.ContainsKey(f.Name)).Select(f => f.Name)];
+
+    internal static string PackageOf(Fixture fixture) => Path.Combine(Packages, "fixtures", fixture.Name + ".dacpac");
+
+    [Fact]
+    public void Every_fixture_but_the_ones_that_don_t_build_has_a_package()
+    {
+        Assert.Empty(Fixture.All.Where(f => !f.IsProject && !Unbuilt.ContainsKey(f.Name) && !File.Exists(PackageOf(f))).Select(f => $"{f.Name} has no package: build it with tests/dacpacs/build.sh fixtures {f.Name}"));
+        Assert.Empty(Unbuilt.Keys.Where(name => File.Exists(Path.Combine(Packages, "fixtures", name + ".dacpac"))).Select(name => $"{name} has a package now: take it off the list"));
+    }
 
     [Theory]
     [MemberData(nameof(Fixtures))]

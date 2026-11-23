@@ -27,6 +27,9 @@ public abstract class DatabaseSession : IAsyncDisposable
     public SqlCommand Command(string sql) => new(sql, connection, Transaction);
 #pragma warning restore CA2100
 
+    /// <summary>A bulk copy on this session's connection, inside its transaction if it has one, as an application loads rows.</summary>
+    public SqlBulkCopy BulkCopy(SqlBulkCopyOptions options) => new(connection, options, Transaction);
+
     public async ValueTask DisposeAsync()
     {
         try

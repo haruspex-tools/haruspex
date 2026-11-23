@@ -34,19 +34,25 @@ internal static class ModuleTextReader
     /// <param name="element">The module's element.</param>
     /// <param name="file">Its location's file (<see cref="PackageLocation"/>).</param>
     /// <param name="diagnostics">Where problems are added.</param>
-    public static Module? Read(XElement element, string file, ICollection<Diagnostic> diagnostics)
+    /// <param name="parsed">
+    /// The module's text as parsed, whose statements at any depth may weaken a claim about a table
+    /// (<see cref="WeakeningStatements"/>); null when it has none, or it doesn't parse.
+    /// </param>
+    public static Module? Read(XElement element, string file, ICollection<Diagnostic> diagnostics, out TSqlScript? parsed)
     {
+        parsed = null;
         var type = ModelXml.TypeOf(element);
         if (Text(element) is not { } text)
             return WithoutText(element, type, file, diagnostics);
 
         var quoted = ModelXml.Property(element, ModelXml.IsQuotedIdentifierOn) != "False";
         using var reader = new StringReader(text);
-        var parsed = new TSql170Parser(quoted).Parse(reader, out var errors);
+        var fragment = new TSql170Parser(quoted).Parse(reader, out var errors);
         foreach (var error in errors)
             diagnostics.Add(new Diagnostic(SourceCodes.ParseError, error.Message, new SourceLocation(file, error.Line, error.Column)));
-        if (errors.Count > 0 || parsed is not TSqlScript script || script.Batches.SelectMany(b => b.Statements).FirstOrDefault() is not { } statement)
+        if (errors.Count > 0 || fragment is not TSqlScript script || script.Batches.SelectMany(b => b.Statements).FirstOrDefault() is not { } statement)
             return null;
+        parsed = script;
 
         var ansiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn);
         return statement switch

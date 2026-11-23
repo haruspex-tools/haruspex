@@ -12,7 +12,7 @@ tests/prose/check.sh spelling        # or any one of them
 |---|---|---|---|
 | Spelling, in British English | cspell | Markdown, C# (comments, strings and identifiers), workflows | `cspell.config.yaml`, `.cspell/words.txt` |
 | The house style, and British spelling in prose | Vale | Markdown, C# comments | `.vale.ini`, `.vale/styles/haruspex/` |
-| No private history (slice names, review rounds) in SQL, which Vale doesn't read | Perl, with `haruspex.History`'s own tokens | `.sql` files | `.vale/styles/haruspex/History.yml` |
+| No private history (slice names, review rounds, the plan's notes) in the files Vale doesn't read, and in test names | Perl, with `haruspex.History`'s own tokens | SQL, scripts, workflows and project files; the names of C# methods, their underscores read as spaces | `.vale/styles/haruspex/History.yml` |
 | Mermaid diagrams parse | Mermaid, in Node | Markdown | `diagrams.mjs` |
 
 Each check runs first on the files in `fixtures`, which break its rules on purpose, and compares what it reports

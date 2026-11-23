@@ -66,12 +66,20 @@ internal sealed class Glob
     /// anywhere under <c>**/*.sql</c> gave <c>SQL72001: File "…\**\*.sql" does not exist</c> (observed on Windows, 7w). Linux lists a
     /// symbolic link to nothing as no folder at all, so there the walk passes it by, as .NET's listing, which MSBuild uses, does.
     /// </remarks>
-    public IReadOnlyList<string>? Files(out string? unexpanded)
+    /// <param name="unexpanded">Why a build can't expand it, when it can't.</param>
+    /// <param name="unreadable">
+    /// Every folder under the pattern's that is there but can't be entered (one the user may not open), whose files are not among
+    /// those returned: a reader reports each, since what it holds isn't read.
+    /// </param>
+    public IReadOnlyList<string>? Files(out string? unexpanded, out IReadOnlyList<string> unreadable)
     {
         unexpanded = null;
+        unreadable = [];
         if (DiskPath.Locate(start, start, out _) is not { } folder || !Directory.Exists(folder))
             return [];
-        if (Walk(folder, out unexpanded) is not { } files)
+        var shut = new List<string>();
+        unreadable = shut;
+        if (Walk(folder, shut, out unexpanded) is not { } files)
             return null;
         return [.. files
             .Where(file => rest.IsMatch(Path.GetRelativePath(folder, file).Replace('\\', '/')))
@@ -83,12 +91,13 @@ internal sealed class Glob
     /// (<see cref="DiskPath.Real"/>): a link to a folder elsewhere is followed, as a build follows it, and a link back to a folder
     /// already walked (a loop) isn't, where enumerating through it would find each file again and again (a build reads the file
     /// once, observed). A folder's real path is its parent's joined to its listed name, unless it is itself a link, so the path
-    /// above the top is read once. Null, with why, at a folder that can't be entered.
+    /// above the top is read once. Null, with why, at a folder that can't be entered. A folder that is there but may not be opened
+    /// is added to <paramref name="unreadable"/> and passed by.
     /// </summary>
-    private static List<string>? Walk(string top, out string? unexpanded)
+    private static List<string>? Walk(string top, List<string> unreadable, out string? unexpanded)
     {
         unexpanded = null;
-        var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = true };
+        var options = new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false };
         var files = new List<string>();
         var walked = new HashSet<string>(StringComparer.Ordinal);
         var pending = new Stack<(string Path, string? Real)>([(top, DiskPath.Real(top))]);
@@ -105,8 +114,20 @@ internal sealed class Glob
 
             if (!walked.Add(folder.Real))
                 continue;
-            files.AddRange(Directory.EnumerateFiles(folder.Path, "*", options));
-            foreach (var inner in Directory.EnumerateDirectories(folder.Path, "*", options))
+            List<string> here, inside;
+            try
+            {
+                here = [.. Directory.EnumerateFiles(folder.Path, "*", options)];
+                inside = [.. Directory.EnumerateDirectories(folder.Path, "*", options)];
+            }
+            catch (Exception e) when (e is UnauthorizedAccessException or IOException)
+            {
+                unreadable.Add(folder.Path);
+                continue;
+            }
+
+            files.AddRange(here);
+            foreach (var inner in inside)
                 pending.Push((inner, DiskPath.RealEntry(folder.Real, Path.GetFileName(inner))));
         }
 

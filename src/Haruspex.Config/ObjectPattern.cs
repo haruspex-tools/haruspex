@@ -8,7 +8,7 @@ namespace Haruspex.Config;
 /// <summary>
 /// Selects objects by two-part name: <c>sales.get_order</c>, <c>sales.*</c>, <c>*.list_?</c>. <c>*</c> and
 /// <c>?</c> match within one part. Brackets quote a part as in T-SQL, because schema names with dots in them
-/// exist (<c>[RDF.].GetPropertyList</c>); inside brackets <c>*</c> and <c>?</c> are literal. Matching is
+/// exist (<c>[Ledger.].GetEntryList</c>); inside brackets <c>*</c> and <c>?</c> are literal. Matching is
 /// case-insensitive, like the names themselves.
 /// </summary>
 /// <remarks>

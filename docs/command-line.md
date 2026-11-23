@@ -399,7 +399,8 @@ default there, a workflow's `haruspex check --all` annotates the pull request wi
 ## Colour, links and progress
 
 Only on a terminal, and only where the terminal is known to show them; output to a file, a pipe or a CI log is plain text,
-the same bytes on every machine.
+the same bytes on every machine. It is UTF-8, without a byte order mark, whatever the console's code page on Windows, and
+haruspex leaves the console's code page as it was.
 
 - **Colour.** `--color always` or `never` decides. Otherwise `FORCE_COLOR`, set to anything but `0` or `false`, colours, and
   set to one of those doesn't; `NO_COLOR`, set to anything, doesn't, as [its convention](https://no-color.org) asks; `TERM=dumb`

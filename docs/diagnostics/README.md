@@ -31,6 +31,8 @@ reason.
 | [HAR1017](HAR1017.md) | error | A query file returns a value |
 | [HAR1018](HAR1018.md) | error | A query file's sets comment can't be taken |
 | [HAR1019](HAR1019.md) | error | A query file's module comment can't be taken |
+| [HAR1020](HAR1020.md) | error | A script or folder can't be read |
+| [HAR1021](HAR1021.md) | warning | A deployment script can't be read in full |
 
 ## Inference
 

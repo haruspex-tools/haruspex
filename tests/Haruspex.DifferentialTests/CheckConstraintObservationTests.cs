@@ -327,6 +327,76 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
         Assert.Equal(true, await Query(late, "SELECT is_not_trusted FROM sys.check_constraints WHERE name = 'ck_obs';"));
     }
 
+    // ---- bulk loads ---------------------------------------------------------------------------------
+
+    /// <summary>A table whose one check refuses any word but two, which a file the server can read (its host name) breaks.</summary>
+    private const string Words = "CREATE TABLE dbo.obs (word varchar(200) NULL CONSTRAINT ck_obs CHECK (word IN ('A', 'B')));";
+
+    [Theory]
+    // BULK INSERT and an INSERT from OPENROWSET(BULK) WITH (IGNORE_CONSTRAINTS) check no row, store one that breaks the check, and
+    // leave it not trusted, as NOCHECK does; so does INSERT BULK, the statement a bulk copy sends (below). So WeakeningStatements
+    // reads each as NOCHECK CONSTRAINT ALL on its table.
+    [InlineData("BULK INSERT dbo.obs FROM '/etc/hostname';")]
+    [InlineData("INSERT INTO dbo.obs WITH (IGNORE_CONSTRAINTS) (word) SELECT BulkColumn FROM OPENROWSET(BULK '/etc/hostname', SINGLE_CLOB) AS f;")]
+    public async Task A_bulk_load_without_check_constraints_writes_rows_no_check_has_seen(string load)
+    {
+        Assert.Equal(1, await Query(Words + load, "SELECT COUNT(*) FROM dbo.obs WHERE word NOT IN ('A', 'B');"));
+        Assert.Equal(true, await Query(Words + load, "SELECT is_not_trusted FROM sys.check_constraints WHERE name = 'ck_obs';"));
+    }
+
+    [Theory]
+    // With CHECK_CONSTRAINTS, or from OPENROWSET(BULK) without the hint, each row is checked as any insert's is, and refused.
+    [InlineData("BULK INSERT dbo.obs FROM '/etc/hostname' WITH (CHECK_CONSTRAINTS)")]
+    [InlineData("INSERT INTO dbo.obs (word) SELECT BulkColumn FROM OPENROWSET(BULK '/etc/hostname', SINGLE_CLOB) AS f")]
+    public async Task A_bulk_load_that_checks_constraints_refuses_a_row_that_breaks_one(string load) =>
+        Assert.False(await Succeeds(Words, load));
+
+    [Theory]
+    [InlineData(SqlBulkCopyOptions.Default, true)]
+    [InlineData(SqlBulkCopyOptions.CheckConstraints, false)]
+    public async Task A_bulk_copy_checks_no_row_unless_asked_and_leaves_the_check_not_trusted(SqlBulkCopyOptions options, bool stored)
+    {
+        server.Require();
+        await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
+        await using (var create = session.Command(Words))
+            await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        using var rows = new System.Data.DataTable();
+        rows.Columns.Add("word", typeof(string));
+        rows.Rows.Add("Z");
+        using var copy = session.BulkCopy(options);
+        copy.DestinationTableName = "dbo.obs";
+        var copied = true;
+        try
+        {
+            await copy.WriteToServerAsync(rows, TestContext.Current.CancellationToken);
+        }
+        catch (SqlException)
+        {
+            copied = false;
+        }
+
+        Assert.Equal(stored, copied);
+        if (stored)
+        {
+            await using var trusted = session.Command("SELECT is_not_trusted FROM sys.check_constraints WHERE name = 'ck_obs';");
+            Assert.Equal(true, await trusted.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        }
+    }
+
+    // ---- statements at any depth --------------------------------------------------------------------
+
+    [Fact]
+    public async Task A_column_loosened_under_if_holds_null()
+    {
+        // The guarded migration: whether the IF holds isn't known from the source, and when it does the column holds NULL, which
+        // a claim from its CREATE TABLE would refuse. So WeakeningStatements reads an ALTER TABLE at any depth as a change.
+        const string setup = "CREATE TABLE dbo.obs (id int NOT NULL, cut varchar(10) NOT NULL);"
+            + " IF COL_LENGTH('dbo.obs', 'cut') IS NOT NULL ALTER TABLE dbo.obs ALTER COLUMN cut varchar(10) NULL;"
+            + " INSERT INTO dbo.obs VALUES (1, NULL);";
+
+        Assert.Equal(1, await Query(setup, "SELECT COUNT(*) FROM dbo.obs WHERE cut IS NULL;"));
+    }
+
     // ---- null ---------------------------------------------------------------------------------------
 
     [Fact]

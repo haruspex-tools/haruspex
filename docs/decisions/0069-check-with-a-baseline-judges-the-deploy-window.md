@@ -28,13 +28,14 @@ being checked fits within the baseline, as the application already running, buil
 
 **Context.** The settled design (18 Nov 2026) asked for a baseline setting taking any source, with the command line winning,
 haruspex never fetching, and `check` failing on what the running application's schemas would refuse and warning on what they
-ignore. Richard added the database's side: the same check in the database's pipeline, against each application's committed IR,
-refusing a deploy that would break an application already running.
+ignore. The maintainer added the database's side: the same check in the database's pipeline, against each application's
+committed IR, refusing a deploy that would break an application already running.
 
 **Alternatives.**
 - *The baseline in place of the output folder.* One question per run, but a `"baseline"` in the config file would then stop the
-  application's CI checking that the committed module is current, and V1b's `generate`, which makes types covering both, needs
-  the comparison with what it wrote.
+  application's CI checking that the committed module is current, and `generate --baseline`, which makes types covering both
+  ([decision 0073](0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)), needs the comparison with
+  what it wrote.
 - *Make the fit alone when the baseline is the output folder's own IR*, with no option. In a database's pipeline the
   application's IR is usually copied or fetched somewhere else, so the paths wouldn't match, the exact comparison would run,
   and every additive change would fail; a link or another spelling of the path fails the same way. A behaviour that changes
