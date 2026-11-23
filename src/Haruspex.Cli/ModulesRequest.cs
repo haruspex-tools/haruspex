@@ -1,4 +1,5 @@
 using Haruspex.Collections;
+using Haruspex.Ir;
 
 namespace Haruspex.Cli;
 
@@ -19,6 +20,9 @@ internal sealed record ModulesRequest(
 {
     /// <summary>The baseline <c>--baseline</c> names, as given, or null to take the config file's <c>baseline</c>, if any; for one module only.</summary>
     public string? Baseline { get; init; }
+
+    /// <summary>The build of haruspex that runs, which each module's request carries (<see cref="RunRequest.Build"/>).</summary>
+    public required IrBuild Build { get; init; }
 
     /// <summary>Whether <c>--fit-only</c> asks <c>check</c> for the fit with the baseline alone, without the output folder.</summary>
     public bool FitOnly { get; init; }

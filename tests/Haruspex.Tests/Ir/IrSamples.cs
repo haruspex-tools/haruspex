@@ -298,6 +298,22 @@ internal static class IrSamples
         Overrides = [.. Binary.Overrides, new IrOverride("sales.get_order", "results", IrOverrideSetting.ColumnJson, null) { Via = "sales.orders.settings" }],
     };
 
+    /// <summary>An invented build of haruspex: a preview's version and the whole commit it was built from.</summary>
+    public static IrBuild Build { get; } = new("0.0.0-preview-0123abcd") { Commit = "0123abcd" + new string('e', 32) };
+
+    /// <summary>
+    /// <see cref="Declared"/> with the build that wrote it named (0.30), its own source's and its baseline's: so that it holds every
+    /// property the format has. The baseline names another build, as one read from an older file of the same version would.
+    /// </summary>
+    public static IrDocument Stamped { get; } = Declared with
+    {
+        Source = Declared.Source with
+        {
+            WrittenBy = Build,
+            Baseline = Declared.Source.Baseline with { WrittenBy = new IrBuild("0.0.0-preview-4567cdef") { Commit = "4567cdef" + new string('f', 32) } },
+        },
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

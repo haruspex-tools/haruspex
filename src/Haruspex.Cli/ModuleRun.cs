@@ -40,7 +40,7 @@ internal static class ModuleRun
     /// </summary>
     public static Outcome<IrDocument> InferredAsBaseline(RunRequest request, Progress progress) =>
         Settle(request)
-            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Source, plan.Out, plan.Include))
+            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Source, plan.Out, plan.Include, plan.Build))
             .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
@@ -65,10 +65,10 @@ internal static class ModuleRun
     private sealed record Settings(HaruspexConfig Config, string? Path);
 
     /// <summary>
-    /// What the run is asked: the settings, the folders to read and write, and the command line's patterns. Like each value
-    /// handed from one step to the next, a class: nothing compares two.
+    /// What the run is asked: the settings, the folders to read and write, the command line's patterns, and the build that runs.
+    /// Like each value handed from one step to the next, a class: nothing compares two.
     /// </summary>
-    private sealed class Plan(Settings settings, string source, string @out, EquatableArray<ObjectPattern> include)
+    private sealed class Plan(Settings settings, string source, string @out, EquatableArray<ObjectPattern> include, IrBuild build)
     {
         public Settings Settings { get; } = settings;
 
@@ -77,6 +77,9 @@ internal static class ModuleRun
         public string Out { get; } = @out;
 
         public EquatableArray<ObjectPattern> Include { get; } = include;
+
+        /// <summary>The build that runs, whose claims the documents it infers hold (<see cref="IrSource.WrittenBy"/>).</summary>
+        public IrBuild Build { get; } = build;
 
         public HaruspexConfig Config => Settings.Config;
 
@@ -136,7 +139,7 @@ internal static class ModuleRun
         return read.Then(settings => Outcome.Combine(
                 Folders(request, settings),
                 include.Then(patterns => Selects(settings, patterns).Select(_ => patterns)))
-            .Select(settled => new Plan(settings, settled.First.Source, settled.First.Out, settled.Second)));
+            .Select(settled => new Plan(settings, settled.First.Source, settled.First.Out, settled.Second, request.Build)));
     }
 
     /// <summary>The folders to read and write, which don't depend on each other, so a problem with each is reported.</summary>
@@ -255,10 +258,11 @@ internal static class ModuleRun
     {
         var plan = selection.Loaded.Plan;
         var project = selection.Loaded.Project;
-        // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine.
+        // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine;
+        // and the build that runs, whose claims these are (decision 0117).
         var path = Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
         var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out)
-            .Select(document => document with { Source = document.Source with { Path = path } });
+            .Select(document => document with { Source = document.Source with { Path = path, WrittenBy = plan.Build } });
         return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
     }
 

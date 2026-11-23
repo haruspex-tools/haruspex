@@ -176,3 +176,4 @@ HAR6039 W The list of files written can't be read [Haruspex.Cli.CliCodes.ListUnr
 HAR6040 W A listed path generate doesn't remove [Haruspex.Cli.CliCodes.ListedOutside]
 HAR6041 W A file no longer written can't be removed [Haruspex.Cli.CliCodes.CannotRemove]
 HAR6042 E A file generate would remove [Haruspex.Cli.CliCodes.NoLongerWritten]
+HAR6043 W A baseline whose claims are another build's [Haruspex.Cli.CliCodes.BaselineOtherBuild]

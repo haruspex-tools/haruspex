@@ -175,7 +175,7 @@ public static class IrJsonReader
         if (baseline is null && version == IrDocument.CombinedVersion)
             throw new IrFormatException(source.PathOf("baseline"), $"is missing: a document of IR {version} combines two databases and names the other's source. A document of one database is IR {IrDocument.OneDatabaseVersion}, {IrDocument.SourcesVersion} or later.");
         var tableTypes = json.OptionalObject("tableTypes");
-        if (tableTypes is not null && version is not (IrDocument.CurrentVersion or IrDocument.DeclaredVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion))
+        if (tableTypes is not null && !IrDocument.IsSince(version, IrDocument.TableTypesVersion))
             throw new IrFormatException(tableTypes.Path, $"is given in a document of IR {version}: a document that defines a table type is IR {IrDocument.TableTypesVersion}, {IrDocument.BytesVersion} when it holds a binary value, or {IrDocument.DeclaredVersion} or later when it declares a column's JSON.");
         if (tableTypes is null && version == IrDocument.TableTypesVersion)
             throw new IrFormatException(json.PathOf("tableTypes"), $"is missing: a document of IR {version} defines the table types its parameters take. One that defines none is labelled {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}.");
@@ -195,13 +195,14 @@ public static class IrJsonReader
         json.End();
         if (baseline is null)
             OneDatabase(document, version);
-        if (version is not (IrDocument.CurrentVersion or IrDocument.DeclaredVersion or IrDocument.BytesVersion or IrDocument.TableTypesVersion or IrDocument.SourcesVersion))
+        if (!IrDocument.IsSince(version, IrDocument.SourcesVersion))
             SaysNothingOfSources(document, version);
         if (version == IrDocument.SourcesVersion && !document.SaysSources)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that says where a field's value came from or where its source was read, and this one says neither. One that says neither is labelled {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}, by whether it combines two databases.");
         HoldsBytesAsLabelled(document, version);
         DeclaresAsLabelled(document, version);
         ExplainsAsLabelled(document, version);
+        NamesItsWriterAsLabelled(document, version);
         return document;
     }
 
@@ -246,7 +247,7 @@ public static class IrJsonReader
 
         if (version == IrDocument.DeclaredVersion && !document.Declares)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a column's JSON, and this one declares none. One that declares none is labelled {IrDocument.BytesVersion} or earlier, by what else it says.");
-        if (version is IrDocument.DeclaredVersion or IrDocument.CurrentVersion)
+        if (IrDocument.IsSince(version, IrDocument.DeclaredVersion))
             return;
         if (document.Columns.Count > 0)
             throw new IrFormatException("$.columns", $"is given in a document of IR {version}: a document that declares a column's JSON is IR {IrDocument.DeclaredVersion} or later.");
@@ -261,10 +262,10 @@ public static class IrJsonReader
     private static void ExplainsAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentExplained.First(document);
-        if (version == IrDocument.CurrentVersion && first is null)
+        if (version == IrDocument.ExplainedVersion && first is null)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document in which a reason says what makes it so or a minimum length is in code points, and this one has neither. One that has neither is labelled {IrDocument.DeclaredVersion} or earlier, by what else it says.");
-        if (version != IrDocument.CurrentVersion && first is { } path)
-            throw new IrFormatException(path, $"is given in a document of IR {version}: a reason's detail and a minimum length's unit are IR {IrDocument.CurrentVersion}.");
+        if (!IrDocument.IsSince(version, IrDocument.ExplainedVersion) && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a reason's detail and a minimum length's unit are IR {IrDocument.ExplainedVersion} or later.");
     }
 
     /// <summary>
@@ -368,6 +369,7 @@ public static class IrJsonReader
     {
         var source = new IrSource(json.String("dialect"))
         {
+            WrittenBy = json.OptionalObject("writtenBy") is { } build ? Build(build) : null,
             Path = json.OptionalString("path"),
             Session = Session(json.OptionalObject("session")),
             Files = Files(json.OptionalObject("files")),
@@ -375,6 +377,30 @@ public static class IrJsonReader
             References = References(json),
         };
         return source;
+    }
+
+    /// <summary>The build that wrote a source's claims (0.30): its version, never empty, and its commit when it knew it.</summary>
+    private static IrBuild Build(IrJsonObject json)
+    {
+        var build = new IrBuild(json.NonEmptyString("version")) { Commit = json.OptionalCommit("commit") };
+        json.End();
+        return build;
+    }
+
+    /// <summary>
+    /// Refuses a document labelled 0.30 that doesn't name the build that wrote it, and the build named in a document labelled earlier,
+    /// its own or its baseline's, by its path: a document of 0.30 always names its writer, and one labelled earlier names none.
+    /// </summary>
+    private static void NamesItsWriterAsLabelled(IrDocument document, string version)
+    {
+        if (version == IrDocument.CurrentVersion && document.Source.WrittenBy is null)
+            throw new IrFormatException("$.source.writtenBy", $"is missing: a document of IR {version} names the build that wrote it. One labelled earlier names none, and is labelled by what else it says.");
+        if (version == IrDocument.CurrentVersion)
+            return;
+        if (document.Source.WrittenBy is not null)
+            throw new IrFormatException("$.source.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.CurrentVersion}.");
+        if (document.Source.Baseline?.WrittenBy is not null)
+            throw new IrFormatException("$.source.baseline.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>The source of the other database a combined document describes, which has nothing more.</summary>
@@ -392,7 +418,7 @@ public static class IrJsonReader
     private static void HoldsBytesAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentScalars.Of(document).FirstOrDefault(s => s.Scalar.Kind == IrScalarKind.Bytes);
-        if (first.Scalar is not null && version is not (IrDocument.BytesVersion or IrDocument.DeclaredVersion or IrDocument.CurrentVersion))
+        if (first.Scalar is not null && !IrDocument.IsSince(version, IrDocument.BytesVersion))
             throw new IrFormatException(first.Path, $"is a binary value (kind \"bytes\"), given in a document of IR {version}: a document that holds one is IR {IrDocument.BytesVersion}, or {IrDocument.DeclaredVersion} or later when it declares a column's JSON.");
         if (first.Scalar is null && version == IrDocument.BytesVersion)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a binary value, and this one holds none. One that holds none is labelled {IrDocument.TableTypesVersion} or earlier, by what else it says.");
@@ -440,7 +466,7 @@ public static class IrJsonReader
             foreach (var (field, i) in type.Fields.Select((f, i) => (f, i)))
             {
                 var at = $"$.types{IrPath.Key(name)}.fields[{i}]";
-                if (field.Presence == IrPresence.Optional && version is not (IrDocument.DeclaredVersion or IrDocument.CurrentVersion))
+                if (field.Presence == IrPresence.Optional && !IrDocument.IsSince(version, IrDocument.DeclaredVersion))
                     throw new IrFormatException(at + ".presence", $"is \"{IrWireNames.Of(field.Presence)}\", which only a document combining two databases (IR 0.24 or later), or one declaring a column's JSON (IR {IrDocument.DeclaredVersion} or later), says.");
                 if (field.Sides is not null)
                     throw new IrFormatException(at + ".sides", $"is given, {Why}.");

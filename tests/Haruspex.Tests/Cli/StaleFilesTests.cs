@@ -54,7 +54,7 @@ public class StaleFilesTests
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
+        var exitCode = HaruspexCli.Run(args, output, error, folder.Path, FixedBuild.Terminal);
         return (exitCode, CliOutput.Shown(output.ToString() + error, folder.Path));
     }
 

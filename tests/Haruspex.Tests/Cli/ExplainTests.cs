@@ -52,7 +52,7 @@ public class ExplainTests
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
+        var exitCode = HaruspexCli.Run(args, output, error, folder.Path, FixedBuild.Terminal);
         return (exitCode, CliOutput.Shown(output.ToString(), folder.Path), CliOutput.Shown(error.ToString(), folder.Path));
     }
 
@@ -255,7 +255,7 @@ public class ExplainTests
         var old = IrJsonReader.Read(File.ReadAllText(ir));
         var stripped = old with
         {
-            Source = old.Source with { Files = [], Path = null },
+            Source = old.Source with { Files = [], Path = null, WrittenBy = null },
             Types = old.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
         };
         folder.File("release/haruspex.ir.json", IrJsonWriter.Write(stripped));
@@ -335,13 +335,13 @@ public class ExplainTests
         var document = IrJsonReader.Read(File.ReadAllText(ir));
         File.WriteAllText(ir, IrJsonWriter.Write(document with
         {
-            Source = document.Source with { Files = [], Path = null },
+            Source = document.Source with { Files = [], Path = null, WrittenBy = null },
             Types = document.Types.ToDictionary(t => t.Key, t => t.Value with { Fields = [.. t.Value.Fields.Select(f => f with { From = [] })] }),
         }));
 
         var output = Run(folder, "explain", "shop.order_summary", "last_shipped").Output;
 
-        Assert.Contains("  this IR is 0.23, which doesn't say where a field came from: run haruspex generate to write it as 0.25\n", output, StringComparison.Ordinal);
+        Assert.Contains("  this IR is 0.23, which doesn't say where a field came from: run haruspex generate to write it as 0.30\n", output, StringComparison.Ordinal);
         Assert.DoesNotContain("|", output, StringComparison.Ordinal);
     }
 

@@ -39,9 +39,32 @@ internal sealed class Baseline(string path, IrDocument document, bool isIr)
         var isIr = File.Exists(path) && string.Equals(System.IO.Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
         progress.Step($"reading the baseline {shown}");
         // An IR file is the baseline's source as the config file names it, which the combined IR labels the baseline's side with.
-        return (isIr ? ReadIr(path, shown).Select(d => d with { Source = d.Source with { Path = System.IO.Path.GetRelativePath(config.Directory, path).Replace('\\', '/') } }) : Inferred(request, path, progress))
+        return (isIr ? ReadIr(path, shown).Then(d => WhoseClaims(request.Build, d, shown)).Select(d => d with { Source = d.Source with { Path = System.IO.Path.GetRelativePath(config.Directory, path).Replace('\\', '/') } }) : Inferred(request, path, progress))
             .Select(document => new Baseline(path, document, isIr));
     }
+
+    /// <summary>
+    /// An IR file as the baseline, with a warning when its claims may not be those the build that runs would make: when it names
+    /// another build as its writer, or none, as a file of a version before 0.30 doesn't. A fix to a rule may withdraw a claim without
+    /// changing the IR's version, so a file of a version this build reads may still hold a claim it knows to be false. The source the
+    /// file was inferred from is inferred again by this build, with its rules, so the warning steers to it. A file this build wrote
+    /// (the same version from the same known commit) holds its own claims, and is taken without a word.
+    /// Why: docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md.
+    /// </summary>
+    private static Outcome<IrDocument> WhoseClaims(IrBuild running, IrDocument document, string shown)
+    {
+        if (running.IsKnownToBe(document.Source.WrittenBy))
+            return new Succeeded<IrDocument>(document);
+        var writer = document.Source.WrittenBy is { } build
+            ? $"holds the claims of the haruspex that wrote it, {Named(build)}, and this is {Named(running)}"
+            : $"is IR {document.Version}, which doesn't name the haruspex that wrote it, so its claims are those of a build not known; this is {Named(running)}";
+        return new Succeeded<IrDocument>(document, [CliCodes.BaselineOtherBuild.At(null,
+            $"the baseline {shown} {writer}. A fix made between the two may have withdrawn a claim the file holds, and the types would still rest on it. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this haruspex infers again with its own rules.")]);
+    }
+
+    /// <summary>A build as a message names it: its version, and its commit's first twelve digits or that the commit isn't known.</summary>
+    private static string Named(IrBuild build) =>
+        build.Commit is { } commit ? $"{build.Version} (commit {commit[..12]})" : $"{build.Version} (commit not known)";
 
     /// <summary>An IR file as the baseline: of a version this haruspex reads, or refused, since a claim's meaning may differ between versions.</summary>
     private static Outcome<IrDocument> ReadIr(string path, string shown) => EarlierOutput.ReadIr(path) switch

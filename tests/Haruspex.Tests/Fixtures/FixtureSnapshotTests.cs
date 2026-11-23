@@ -2,6 +2,7 @@ using Haruspex.Cli;
 using Haruspex.Emit.JsonSchema;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
+using Haruspex.Tests.Cli;
 using Haruspex.Tests.Snapshotting;
 
 namespace Haruspex.Tests.Fixtures;
@@ -68,7 +69,8 @@ public class FixtureSnapshotTests
         using var output = new StringWriter();
         using var error = new StringWriter();
 
-        var exitCode = HaruspexCli.Run(["generate", "--out", outDir.Path], output, error, project.Folder);
+        // A build that never moves, so that the IR's snapshot doesn't change with every commit (FixedBuild).
+        var exitCode = HaruspexCli.Run(["generate", "--out", outDir.Path], output, error, project.Folder, FixedBuild.Terminal);
 
         Assert.True(exitCode == 0, error.ToString());
         var written = ProjectOutputs(outDir.Path).ToList();

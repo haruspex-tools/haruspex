@@ -22,6 +22,16 @@ public sealed record IrSource(string Dialect)
     public IrPackage? Package { get; init; }
 
     /// <summary>
+    /// The build of the tool that wrote the claims read from this source (0.30): for a document's own source, the build that wrote
+    /// the document; for its baseline, the build that wrote the baseline's claims, which is another when the baseline was read from
+    /// an IR file. Null when it isn't known: in a document of a version before 0.30, which names none, and for a baseline read from
+    /// one. Every document of 0.30 names its own. Where the claims came from, not a claim, so comparing two documents' claims
+    /// (<see cref="IrComparison"/>) leaves it out.
+    /// Why: docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md.
+    /// </summary>
+    public IrBuild? WrittenBy { get; init; }
+
+    /// <summary>
     /// The packages <see cref="Package"/> refers to, or a project file and the projects read with it refer to, whether found or
     /// not (0.19), held in the file's order (by name, then database, the same database first) whatever order they are given in, so
     /// that two sources that say the same are equal.

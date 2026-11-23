@@ -1,6 +1,6 @@
 # An IR reader reads only versions whose documents mean what its own do
 
-**Date:** 12 Nov 2026; restated 23 Nov 2026 as the rule stands at IR 0.29.
+**Date:** 12 Nov 2026; restated 23 Nov 2026 as the rule stands at IR 0.30.
 
 **Decision.** `IrJsonReader` reads a file's `irVersion` before anything else. It reads the current version, and an older one only
 when every document of that version is a document of the current version that means the same (`IrDocument.ReadableVersions`).
@@ -11,7 +11,9 @@ Anything else the format doesn't allow is refused by its path too, and nothing i
 
 **Context.** The IR is at 0.x, and most changes to the format have come with a new version. Some only added something a document
 may lack; others changed what a claim means, or which rules made it, so that the same source gives another claim. A reader has to
-do something with a file of another version, and the file doesn't say which rules made its claims.
+do something with a file of another version. Before 0.30 the file doesn't say which rules made its claims; from 0.30 it names the
+build that wrote it ([decision 0117](0117-an-ir-document-names-the-build-that-made-its-claims.md)), and a version says only which
+properties a document uses.
 
 **The test.** An older version is read only if a document of it, read as the current version, claims exactly what it claimed when
 it was written. Two cases show the two answers:
@@ -23,8 +25,9 @@ it was written. Two cases show the two answers:
   `collation` of the same source, a weaker claim. Read as 0.20, a 0.19 document would carry the weaker claim under a label that
   promises the stronger one.
 
-Every version from 0.24 to 0.29 added only what a document either has or lacks (a baseline, where a value came from, table types,
-binary values, declarations of a column's JSON, a reason in words), so the 0.29 reader reads each of them and 0.23. No 0.22
+Every version from 0.24 to 0.30 added only what a document either has or lacks (a baseline, where a value came from, table types,
+binary values, declarations of a column's JSON, a reason in words, the build that wrote it), so the 0.30 reader reads each of them
+and 0.23. No 0.22
 document says whether the config file named a type, which 0.23 added and which decides the name a shared shape is given, so 0.22
 is refused. [`tests/ir-versions`](../../tests/ir-versions/README.md) keeps a file of every version and says which are read.
 

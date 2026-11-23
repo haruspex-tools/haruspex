@@ -30,7 +30,7 @@ flowchart LR
     file --> reader["IrJsonReader"]
     reader --> zod["emitter: Zod"]
     reader -.-> other["emitter: JSON Schema, a lint, a CI check"]
-    schema["schemas/ir/0.29.schema.json"] -.->|checks| file
+    schema["schemas/ir/0.30.schema.json"] -.->|checks| file
 ```
 
 Two rules keep the IR honest. **Emitters see only the IR**: if an emitter needs a fact, the IR must carry it, so no emitter
@@ -163,7 +163,7 @@ The version is read first, before anything else in the file. A file of a version
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -195,8 +195,8 @@ meaning of the claims, never only whether the properties are ones the reader kno
 
 The other half of the rule is on the writer's side: **a document is labelled with the oldest version that says all it says**
 ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). Each version from
-0.24 to 0.29 added only something a document either has or lacks: a baseline, where a value came from, table types, binary
-values, a declaration of a column's JSON, a reason in words. A document that has none of what a version added is written with
+0.24 to 0.30 added only something a document either has or lacks: a baseline, where a value came from, table types, binary
+values, a declaration of a column's JSON, a reason in words, the build that wrote it. A document that has none of what a version added is written with
 the earlier label, byte for byte as before, so a reader of that version, haruspex's own or another program's, still reads it, and
 only a document that needs the newer reader says so. The reader holds the label to the document: it refuses a label that says
 more than the document does, or less, by the path of what disagrees. Some of what a label promises can be anywhere in a document
@@ -205,6 +205,13 @@ more than the document does, or less, by the path of what disagrees. Some of wha
 
 [`tests/ir-versions`](../../tests/ir-versions/README.md) keeps a file of every version the format has had, says what each added
 and which the reader reads, and `IrVersionTests` holds the reader to it.
+
+A version says which properties a document uses, and not whose rules made its claims: a rule found wrong is corrected without
+changing the format, so two files of one version may say different things of the same source. From 0.30 each document names the
+build that wrote it (`source.writtenBy`), the tool's version and commit, and a reader that holds a later build can tell that a
+file's claims may be ones a fix has since withdrawn. `haruspex generate` and `check` warn of such a file given as a baseline, and
+steer to its source, which they infer again ([decision 0117](../decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md)).
+A file labelled before 0.30 names no build, so its label says only which properties it uses.
 
 Whether this holds after 1.0 is a later decision. A stable format usually promises that a reader of version 1.n reads
 every 1.m with m ≤ n, which needs additions to be optional and safe to ignore; the argument above about weakening claims

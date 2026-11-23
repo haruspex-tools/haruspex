@@ -170,7 +170,8 @@ internal static class HaruspexCli
             parsed.GetValue(json),
             streams.Output,
             streams.Error,
-            streams.WorkingDirectory));
+            streams.WorkingDirectory,
+            streams.Terminal.Build));
         return explain;
     }
 
@@ -353,6 +354,7 @@ internal static class HaruspexCli
                 workingDirectory)
             {
                 Baseline = parsed.GetValue(baseline),
+                Build = streams.Terminal.Build,
                 FitOnly = command == CommandName.Check && parsed.GetValue(fitOnly),
             };
             var detail = parsed.GetValue(quiet) ? OutputDetail.Quiet : parsed.GetValue(verbose) ? OutputDetail.Verbose : OutputDetail.Normal;

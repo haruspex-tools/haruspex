@@ -28,6 +28,11 @@ public static class IrJsonWriter
     public static string Write(IrDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
+        if (document.Source.WrittenBy is null && document.Source.Baseline?.WrittenBy is not null)
+        {
+            // Labelled 0.30 for its baseline's writer, it would be refused for lacking its own: a reader can't tell whose claims it holds.
+            throw new ArgumentException("The document names the build that wrote its baseline and not its own, so it can't be written: name both, or neither.", nameof(document));
+        }
 
         using var buffer = new MemoryStream();
         using (var json = new Utf8JsonWriter(buffer, Options))
@@ -194,10 +199,23 @@ public static class IrJsonWriter
         json.WriteEndObject();
     }
 
-    /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
+    /// <summary>
+    /// A source's own properties: its dialect, the build that wrote its claims, where it was read from, its package and references,
+    /// the callers' session and its files.
+    /// </summary>
     private static void WriteSource(Utf8JsonWriter json, IrSource source)
     {
         json.WriteString("dialect", source.Dialect);
+        if (source.WrittenBy is { } build)
+        {
+            // Left out when not known, so that a document that names none reads as it did before 0.30.
+            json.WriteStartObject("writtenBy");
+            json.WriteString("version", build.Version);
+            if (build.Commit is { } commit)
+                json.WriteString("commit", commit);
+            json.WriteEndObject();
+        }
+
         if (source.Path is { } read)
             json.WriteString("path", read);
         WritePackage(json, source);

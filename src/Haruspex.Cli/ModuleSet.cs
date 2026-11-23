@@ -60,7 +60,7 @@ internal static class ModuleSet
             : new Succeeded<EquatableArray<string?>>(request.Configs.Count > 0 ? [.. request.Configs] : [null]);
         return configs
             .Select(found => (EquatableArray<RunRequest>)[.. found.Select(config =>
-                new RunRequest(request.Directory, config, request.Include, request.Out, request.WorkingDirectory) { Baseline = request.Baseline, FitOnly = request.FitOnly })])
+                new RunRequest(request.Directory, config, request.Include, request.Out, request.WorkingDirectory) { Baseline = request.Baseline, FitOnly = request.FitOnly, Build = request.Build })])
             .Then(Apart);
     }
 

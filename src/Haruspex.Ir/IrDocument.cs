@@ -19,13 +19,21 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that explains a null reason, or counts a minimum length in code points, is
-    /// written in (0.29): one in which a reason says, in words, what makes it so (<see cref="IrNullReason.Detail"/>), as a value
-    /// read from JSON at a path does, or a minimum's unit is code points (<see cref="IrMinLength.Unit"/>). The IR is
-    /// versioned separately from the tool, because it is a file that other programs read: a change that would break a reader
-    /// changes this. Why: docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md.
+    /// The newest IR format version, the one every document that names the build that wrote it is written in (0.30,
+    /// <see cref="IrSource.WrittenBy"/>), which is every document haruspex writes. The IR is versioned separately from the tool,
+    /// because it is a file that other programs read: a change that would break a reader changes this. A version says which
+    /// properties a document uses; the build it names says whose rules made its claims, since a fix to a rule may change a claim
+    /// without changing the format. Why: docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md.
     /// </summary>
-    public const string CurrentVersion = "0.29";
+    public const string CurrentVersion = "0.30";
+
+    /// <summary>
+    /// The version a document that names no build but explains a null reason, or counts a minimum length in code points, is
+    /// written in (0.29): one in which a reason says, in words, what makes it so (<see cref="IrNullReason.Detail"/>), as a value
+    /// read from JSON at a path does, or a minimum's unit is code points (<see cref="IrMinLength.Unit"/>).
+    /// Why: docs/decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md.
+    /// </summary>
+    public const string ExplainedVersion = "0.29";
 
     /// <summary>
     /// The version a document that explains no reason but declares a column's JSON is written in (0.28): one that lists a
@@ -71,14 +79,24 @@ public sealed record IrDocument(
 
     /// <summary>
     /// The versions a reader reads, newest first: the current one, and each older one every document of which is a current document
-    /// that means the same (0.28 back to 0.23, each a document that says nothing a later version added). Any other is refused.
+    /// that means the same (0.29 back to 0.23, each a document that says nothing a later version added). Any other is refused.
     /// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md, which says why 0.22 is not one.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+
+    /// <summary>
+    /// Whether <paramref name="version"/> is <paramref name="since"/> or later, both of <see cref="ReadableVersions"/>: by their order
+    /// there, newest first, since a version's text doesn't sort (0.3 is before 0.23).
+    /// </summary>
+    internal static bool IsSince(string version, string since) => IndexOf(version) <= IndexOf(since);
+
+    private static int IndexOf(string version) =>
+        ReadableVersions.Select((v, i) => (v, i)).Single(p => string.Equals(p.v, version, StringComparison.Ordinal)).i;
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it explains a reason (<see cref="Explains"/>); else <see cref="DeclaredVersion"/> when it
+    /// <see cref="CurrentVersion"/> when it names the build that wrote it (<see cref="NamesItsWriter"/>); else
+    /// <see cref="ExplainedVersion"/> when it explains a reason (<see cref="Explains"/>); else <see cref="DeclaredVersion"/> when it
     /// declares a column's JSON (<see cref="Declares"/>); else <see cref="BytesVersion"/> when it
     /// holds a binary value (<see cref="HoldsBytes"/>); else <see cref="TableTypesVersion"/>
     /// when it defines a table type; else <see cref="SourcesVersion"/> when a field says where its
@@ -88,7 +106,8 @@ public sealed record IrDocument(
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        Explains ? CurrentVersion
+        NamesItsWriter ? CurrentVersion
+        : Explains ? ExplainedVersion
         : Declares ? DeclaredVersion
         : HoldsBytes ? BytesVersion
         : TableTypes.Count > 0 ? TableTypesVersion
@@ -110,6 +129,12 @@ public sealed record IrDocument(
     internal bool SaysSources =>
         Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
         || Source.Path is not null || Source.Baseline?.Path is not null;
+
+    /// <summary>
+    /// Whether it names the build that wrote it, or its baseline's (0.30, <see cref="IrSource.WrittenBy"/>). A document that names
+    /// its baseline's writer names its own too, which the writer holds it to.
+    /// </summary>
+    internal bool NamesItsWriter => Source.WrittenBy is not null || Source.Baseline?.WrittenBy is not null;
 
     /// <summary>Whether it says what only 0.29 says: a <see cref="IrNullReason.Detail"/>, or a minimum length in code points, anywhere.</summary>
     internal bool Explains => IrDocumentExplained.First(this) is not null;

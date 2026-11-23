@@ -41,7 +41,7 @@ internal abstract class SinceLastRun
 
         /// <summary>
         /// Whether the IR's text differs from the last run's though no claim does: what it records of where its claims came from
-        /// (a location, a source's path, a file's hash) changed, or another version wrote it.
+        /// (a location, a source's path, a file's hash, the build that wrote it) changed, or another version wrote it.
         /// </summary>
         public bool IrRewritten { get; init; }
 

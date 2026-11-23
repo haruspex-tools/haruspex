@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.30",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "path": "database",
     "files": {
       "procedures/get_order.sql": "774608d210ea4784b5a4368df7b2e750ccc4c9b1dfa8b04b2fc10aea3baa4190",

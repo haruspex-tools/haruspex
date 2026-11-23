@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using Haruspex.Ir;
 
 namespace Haruspex.Cli;
 
@@ -37,6 +38,28 @@ internal sealed class Terminal
 
     /// <summary>The tool's version, as <c>--version</c> prints it and SARIF records it.</summary>
     public string Version { get; init; } = ToolVersion;
+
+    /// <summary>
+    /// The build an IR file written in this terminal names as its writer (<see cref="IrSource.WrittenBy"/>): <see cref="Version"/>,
+    /// split into the version and the commit (<see cref="BuildOf"/>).
+    /// </summary>
+    public IrBuild Build => BuildOf(Version);
+
+    /// <summary>
+    /// The build a version as the tool says it names: the text before a <c>+</c> as its version, and after it the commit, when that is
+    /// a whole one (40 or 64 lower-case hexadecimal digits), as the SDK appends it (<c>0.0.0-preview-0123abcd+0123abcd…</c>). With
+    /// no <c>+</c>, or a <c>+</c> followed by anything else, the commit isn't known: a build made outside a git checkout, from a
+    /// <c>git archive</c> copy or a source tarball, is <c>0.0.0-preview</c> and names none, which is true of it.
+    /// </summary>
+    public static IrBuild BuildOf(string version)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        var plus = version.IndexOf('+', StringComparison.Ordinal);
+        var commit = plus < 0 ? "" : version[(plus + 1)..];
+        return commit.Length is 40 or 64 && commit.All(c => char.IsAsciiDigit(c) || c is >= 'a' and <= 'f')
+            ? new IrBuild(version[..plus]) { Commit = commit }
+            : new IrBuild(version);
+    }
 
     /// <summary>The version this build of haruspex carries: the assembly's informational version, which the build stamps with the commit.</summary>
     /// <remarks>Declared before <see cref="Plain"/>, whose version it is: static properties are set in the order they are written.</remarks>

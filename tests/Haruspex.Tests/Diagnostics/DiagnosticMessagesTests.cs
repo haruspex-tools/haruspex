@@ -53,7 +53,7 @@ public class DiagnosticMessagesTests
         using var output = new StringWriter();
         using var error = new StringWriter();
         // --verbose, so that every note is said: the notes are among the messages this test holds.
-        HaruspexCli.Run(["generate", "--verbose", .. args ?? (config is null ? ["db", "--include", "*.*", "--out", "out"] : [])], output, error, folder.Path);
+        HaruspexCli.Run(["generate", "--verbose", .. args ?? (config is null ? ["db", "--include", "*.*", "--out", "out"] : [])], output, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -67,12 +67,12 @@ public class DiagnosticMessagesTests
         folder.File("db/tables.sql", Tables);
         folder.File("db/p1.sql", GetBook);
         folder.File("haruspex.json", $"{{ {Plain} }}");
-        HaruspexCli.Run(["generate"], TextWriter.Null, TextWriter.Null, folder.Path);
+        HaruspexCli.Run(["generate"], TextWriter.Null, TextWriter.Null, folder.Path, FixedBuild.Terminal);
         change(folder);
         using var error = new StringWriter();
         try
         {
-            HaruspexCli.Run(["generate", "--verbose"], TextWriter.Null, error, folder.Path);
+            HaruspexCli.Run(["generate", "--verbose"], TextWriter.Null, error, folder.Path, FixedBuild.Terminal);
         }
         finally
         {
@@ -95,9 +95,9 @@ public class DiagnosticMessagesTests
         using var folder = new TempDirectory();
         folder.File("db/tables.sql", Tables);
         folder.File("db/p1.sql", GetBook);
-        HaruspexCli.Run(["generate", "db", "--include", "*.*", "--out", "out"], TextWriter.Null, TextWriter.Null, folder.Path);
+        HaruspexCli.Run(["generate", "db", "--include", "*.*", "--out", "out"], TextWriter.Null, TextWriter.Null, folder.Path, FixedBuild.Terminal);
         using var error = new StringWriter();
-        HaruspexCli.Run(["explain", .. args], TextWriter.Null, error, folder.Path);
+        HaruspexCli.Run(["explain", .. args], TextWriter.Null, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -108,7 +108,7 @@ public class DiagnosticMessagesTests
         arrange(folder);
         using var output = new StringWriter();
         using var error = new StringWriter();
-        HaruspexCli.Run(["init"], output, error, folder.Path);
+        HaruspexCli.Run(["init"], output, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -126,10 +126,10 @@ public class DiagnosticMessagesTests
         folder.File("haruspex.json", $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
         using var output = new StringWriter();
         using var error = new StringWriter();
-        HaruspexCli.Run(["generate"], output, error, folder.Path);
+        HaruspexCli.Run(["generate"], output, error, folder.Path, FixedBuild.Terminal);
         change(folder);
         error.GetStringBuilder().Clear();
-        HaruspexCli.Run(["check", "--verbose", .. args ?? []], output, error, folder.Path);
+        HaruspexCli.Run(["check", "--verbose", .. args ?? []], output, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -171,9 +171,9 @@ public class DiagnosticMessagesTests
         using var error = new StringWriter();
 
         // Generated with the same baseline, as the application's module is, so the check's comparison with it passes.
-        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path);
+        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path, FixedBuild.Terminal);
         error.GetStringBuilder().Clear();
-        HaruspexCli.Run(["check", "--baseline", baseline], output, error, folder.Path);
+        HaruspexCli.Run(["check", "--baseline", baseline], output, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -192,7 +192,7 @@ public class DiagnosticMessagesTests
         arrange?.Invoke(folder);
         using var output = new StringWriter();
         using var error = new StringWriter();
-        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path);
+        HaruspexCli.Run(["generate", "--baseline", baseline], output, error, folder.Path, FixedBuild.Terminal);
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
@@ -421,6 +421,12 @@ public class DiagnosticMessagesTests
         (6028, () => AgainstBaseline(GetBook, GetBook + "\nSELECT count(*) AS books FROM lib.book;", "\"emit\": [\"zod\", \"mssql\"]")),
         (6029, () => AgainstBaseline(GetBook, GetBook, baseline: "release/Library.dacpac")),
         (6030, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f => f.File("release.ir.json", "{ \"irVersion\": \"0.9\" }"))),
+        (6043, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f =>
+        {
+            // The release's IR, written by an earlier build from another commit.
+            HaruspexCli.Run(["generate", "release", "--include", "*.*", "--out", "earlier"], TextWriter.Null, TextWriter.Null, f.Path, new Terminal { Version = "0.0.0-test+1111111111111111111111111111111111111111" });
+            f.File("release.ir.json", File.ReadAllText(Path.Combine(f.Path, "earlier", HaruspexCli.IrFileName)));
+        })),
         (6031, () => AgainstBaseline(GetBook, GetBook, "\"queries\": \"sql\"", arrange: f => f.File("sql/titles.sql", "SELECT b.title FROM lib.book AS b;"))),
         (6032, () => Checked([GetBook], _ => { }, args: ["--fit-only"])),
         (6033, () => Combined(GetBook, GetBook.Replace("lib.get_book AS", "lib.get_book @shelf int AS", StringComparison.Ordinal))),
@@ -429,7 +435,7 @@ public class DiagnosticMessagesTests
         (6036, () => Combined(GetBook, GetBook, baseline: "release.ir.json", arrange: f =>
         {
             // A combined IR, as generate with a baseline writes one.
-            HaruspexCli.Run(["generate", "--baseline", "release"], TextWriter.Null, TextWriter.Null, f.Path);
+            HaruspexCli.Run(["generate", "--baseline", "release"], TextWriter.Null, TextWriter.Null, f.Path, FixedBuild.Terminal);
             f.File("release.ir.json", File.ReadAllText(Path.Combine(f.Path, "out", HaruspexCli.IrFileName)));
         })),
         (6037, () => Explained("lib.get_book")),

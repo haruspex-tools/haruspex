@@ -37,7 +37,7 @@ namespace Haruspex.Ir;
 public static class IrJsonSchema
 {
     /// <summary>
-    /// Where the current version's schema is kept in the repository, a file named for the version (<c>schemas/ir/0.29.schema.json</c>):
+    /// Where the current version's schema is kept in the repository, a file named for the version (<c>schemas/ir/0.30.schema.json</c>):
     /// one per version, so that a file is checked against what its version's reader reads, not against whatever is newest.
     /// Why: <c>schemas/ir/README.md</c>.
     /// </summary>
@@ -69,10 +69,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, and (0.29) what makes a reason so, in words, and a minimum length in code points. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, and (0.30) the build that wrote it. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -115,7 +115,7 @@ public static class IrJsonSchema
     [
         Label(IrDocument.OneDatabaseVersion, combined: false),
         Label(IrDocument.CombinedVersion, combined: true),
-        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.CurrentVersion])
+        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.CurrentVersion])
             .SelectMany(version => (JsonNode[])[Label(version, combined: false), Label(version, combined: true)]),
     ];
 
@@ -129,20 +129,29 @@ public static class IrJsonSchema
     /// </summary>
     private static JsonObject Label(string version, bool combined)
     {
-        var sources = Since(version, IrDocument.SourcesVersion);
-        var declares = Since(version, IrDocument.DeclaredVersion);
+        var sources = IrDocument.IsSince(version, IrDocument.SourcesVersion);
+        var declares = IrDocument.IsSince(version, IrDocument.DeclaredVersion);
+        var writer = version == IrDocument.CurrentVersion;
         var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
         JsonObject Reasons() => Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth.DeepClone()))))));
 
-        // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from.
+        // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from; before 0.30,
+        // without the build that wrote it, which from 0.30 the document's own source always names.
         JsonObject Source(bool baseline)
         {
             var source = baseline ? Having("baseline") : Lacking("baseline");
-            if (!sources)
+            string[] lacking = [.. sources ? [] : (string[])["path", "files"], .. writer ? [] : (string[])["writtenBy"]];
+            if (lacking.Length > 0)
             {
-                source["not"] = AnyHaving([.. baseline ? [] : (string[])["baseline"], "path", "files"]);
+                source["not"] = AnyHaving([.. baseline ? [] : (string[])["baseline"], .. lacking]);
                 if (baseline)
-                    source["properties"] = Node(("baseline", Lacking("path", "files")));
+                    source["properties"] = Node(("baseline", Lacking(lacking)));
+            }
+
+            if (writer)
+            {
+                source["properties"] = baseline ? Node(("baseline", true), ("writtenBy", true)) : Node(("writtenBy", true));
+                source["required"] = baseline ? Names("baseline", "writtenBy") : Names("writtenBy");
             }
 
             return source;
@@ -178,7 +187,7 @@ public static class IrJsonSchema
         }
 
         var label = Node(("type", "object"), ("properties", properties));
-        string[] absent = [.. Since(version, IrDocument.TableTypesVersion) ? [] : (string[])["tableTypes"], .. declares ? [] : (string[])["columns"]];
+        string[] absent = [.. IrDocument.IsSince(version, IrDocument.TableTypesVersion) ? [] : (string[])["tableTypes"], .. declares ? [] : (string[])["columns"]];
         if (version == IrDocument.TableTypesVersion)
         {
             properties.Add("tableTypes", true);
@@ -196,6 +205,7 @@ public static class IrJsonSchema
         ["dialect"],
         [
             ("dialect", Text("The SQL dialect, such as tsql.")),
+            ("writtenBy", Ref("build")),
             ("path", Text("Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known.")),
             ("package", Text("The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.")),
             ("sha256", Sha256("The SHA-256 of the package's bytes. Given exactly when package is.")),
@@ -218,6 +228,11 @@ public static class IrJsonSchema
         ]));
 
     private static JsonObject Definitions() => Node(
+        ("build", Closed(
+            "The build of the tool that wrote the source's claims (0.30). Always given for a document's own source when irVersion is 0.30, never before it; a baseline's is left out when not known.",
+            ["version"],
+            ("version", Node(("description", "The tool's version, as it says it, without the commit."), ("type", "string"), ("minLength", 1))),
+            ("commit", Node(("description", "The whole commit the build was made from; left out when the build didn't know it."), ("type", "string"), ("pattern", "^[0-9a-f]{40}([0-9a-f]{24})?$"))))),
         ("packageReference", Closed(
             "A package the source's package refers to.",
             ["package"],
@@ -640,13 +655,6 @@ public static class IrJsonSchema
         ("type", "object"),
         ("properties", Node([.. names.Select(n => (n, (JsonNode?)true))])),
         ("required", Names(names)));
-
-    /// <summary>Whether <paramref name="version"/> is <paramref name="since"/> or later, by their order in <see cref="IrDocument.ReadableVersions"/>, newest first.</summary>
-    private static bool Since(string version, string since) =>
-        IndexOf(version) <= IndexOf(since);
-
-    private static int IndexOf(string version) =>
-        IrDocument.ReadableVersions.Select((v, i) => (v, i)).Single(p => p.v == version).i;
 
     /// <summary>An object that has none of the properties <paramref name="names"/>, whatever else it has.</summary>
     private static JsonObject Lacking(params string[] names) => Node(("type", "object"), ("not", AnyHaving(names)));

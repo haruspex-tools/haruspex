@@ -151,6 +151,19 @@ internal sealed class IrJsonObject
         }
     }
 
+    /// <summary>
+    /// The optional property <paramref name="name"/> as a whole commit: 40 lower-case hexadecimal digits, or 64 in a repository that
+    /// names commits by SHA-256; null when absent.
+    /// </summary>
+    public string? OptionalCommit(string name)
+    {
+        if (OptionalString(name) is not { } text)
+            return null;
+        return text.Length is 40 or 64 && text.All(c => char.IsAsciiDigit(c) || c is >= 'a' and <= 'f')
+            ? text
+            : throw new IrFormatException(PathOf(name), $"is \"{text}\", which is not a whole commit as the IR writes one: 40 or 64 lower-case hexadecimal digits.");
+    }
+
     private static string AsSha256(JsonElement element, string path)
     {
         var text = AsString(element, path);

@@ -178,7 +178,7 @@ internal sealed class TextReport(OutputDetail detail, TextStyle outputStyle, Tex
         else if (compared.Recorded.Count == 0)
         {
             yield return compared.IrRewritten
-                ? "No claim changed since the last run, but the IR's record of where they came from did: a location, or the output of another version."
+                ? "No claim changed since the last run, but the IR's record of where they came from did: a location, the build of haruspex that wrote it, or the output of another version."
                 : "No claim changed since the last run.";
         }
 

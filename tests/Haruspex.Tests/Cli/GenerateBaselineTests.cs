@@ -39,7 +39,7 @@ public class GenerateBaselineTests
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
+        var exitCode = HaruspexCli.Run(args, output, error, folder.Path, FixedBuild.Terminal);
         return (exitCode, CliOutput.Shown(output.ToString(), folder.Path), CliOutput.Shown(error.ToString(), folder.Path));
     }
 
@@ -63,10 +63,12 @@ public class GenerateBaselineTests
         Assert.Equal("", error);
         Assert.StartsWith("haruspex: 1 procedure, no unknowns. Wrote generated/haruspex.ir.json, generated/haruspex.zod.ts and generated/haruspex.mssql.ts. Its types work against the baseline release/db too.\n", output, StringComparison.Ordinal);
         var document = IrJsonReader.Read(Written(folder, HaruspexCli.IrFileName));
-        Assert.Equal(new IrSource("tsql") { Path = "release/db", Files = document.Source.Baseline!.Files }, document.Source.Baseline);
+        // The baseline, inferred again from its source by the build that runs, holds that build's claims, as the document's own does.
+        Assert.Equal(new IrSource("tsql") { Path = "release/db", Files = document.Source.Baseline!.Files, WrittenBy = FixedBuild.Terminal.Build }, document.Source.Baseline);
         Assert.Equal("db", document.Source.Path);
+        Assert.Equal(FixedBuild.Terminal.Build, document.Source.WrittenBy);
         Assert.Equal(["procedures.sql", "tables.sql"], document.Source.Baseline.Files.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(IrDocument.SourcesVersion, document.Version);
+        Assert.Equal(IrDocument.CurrentVersion, document.Version);
         var zod = Written(folder, HaruspexCli.ZodFileName);
         Assert.Contains("channel: z.string().max(10).nullable().optional()", zod, StringComparison.Ordinal);
         Assert.Contains("One of \"open\", \"closed\", \"held\", as the database compares strings.", zod, StringComparison.Ordinal);
@@ -80,7 +82,7 @@ public class GenerateBaselineTests
 
         Assert.Equal(0, Run(folder, "generate").ExitCode);
 
-        Assert.StartsWith($"{{\n  \"irVersion\": \"{IrDocument.SourcesVersion}\",\n", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
+        Assert.StartsWith($"{{\n  \"irVersion\": \"{IrDocument.CurrentVersion}\",\n", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
         Assert.DoesNotContain("baseline", Written(folder, HaruspexCli.IrFileName), StringComparison.Ordinal);
         Assert.DoesNotContain("Combined", Written(folder, HaruspexCli.ZodFileName), StringComparison.Ordinal);
     }

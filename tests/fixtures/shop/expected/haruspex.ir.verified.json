@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.30",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "path": "database",
     "files": {
       "procedures/basket_line#.sql": "a050bad73d894f8f72b77871bc25f9dbff43164f746c25c4a94e161325c063be",

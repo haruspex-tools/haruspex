@@ -216,3 +216,4 @@ reason.
 | [HAR6040](HAR6040.md) | warning | A listed path generate doesn't remove |
 | [HAR6041](HAR6041.md) | warning | A file no longer written can't be removed |
 | [HAR6042](HAR6042.md) | error | A file generate would remove |
+| [HAR6043](HAR6043.md) | warning | A baseline whose claims are another build's |

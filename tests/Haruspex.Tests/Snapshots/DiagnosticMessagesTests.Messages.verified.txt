@@ -410,7 +410,7 @@ HAR6011
 haruspex: error HAR6011: nothing to compare with: out/haruspex.ir.json, out/haruspex.zod.ts and out/haruspex.files.json aren't there. Run haruspex generate, read what it writes, and commit it.
 
 HAR6012
-out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.25, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
+out/haruspex.ir.json: error HAR6012: this file is IR 0.9, and this haruspex writes IR 0.30, so the two can't be compared claim by claim. Run haruspex generate with this version, read the change to out/haruspex.zod.ts before committing it, and commit both.
 
 HAR6013
 out/haruspex.ir.json: error HAR6013: this file can't be read as IR: $.source is missing. Run haruspex generate to write it again.
@@ -464,7 +464,7 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.
@@ -501,4 +501,7 @@ out/held/old.zod.ts: warning HAR6041: the last run wrote this file and this one 
 
 HAR6042
 out/old.zod.ts: error HAR6042: generate wrote this file last and doesn't write it now, so the next run removes it. Run haruspex generate, and commit the removal with the rest.
+
+HAR6043
+haruspex: warning HAR6043: the baseline release.ir.json holds the claims of the haruspex that wrote it, 0.0.0-test (commit 111111111111), and this is 0.0.0-test (commit 000000000000). A fix made between the two may have withdrawn a claim the file holds, and the types would still rest on it. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this haruspex infers again with its own rules.
 

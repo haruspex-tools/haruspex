@@ -47,7 +47,7 @@ public class BaselineCheckTests
     {
         using var output = new StringWriter();
         using var error = new StringWriter();
-        var exitCode = HaruspexCli.Run(args, output, error, folder.Path);
+        var exitCode = HaruspexCli.Run(args, output, error, folder.Path, FixedBuild.Terminal);
         return (exitCode, CliOutput.Shown(output.ToString(), folder.Path), CliOutput.Shown(error.ToString(), folder.Path));
     }
 
@@ -185,12 +185,12 @@ public class BaselineCheckTests
     {
         using var folder = Released(ListOrders, ListOrders);
         var ir = Path.Combine(folder.Path, "release", "haruspex.ir.json");
-        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.SourcesVersion}\"", $"\"irVersion\": \"{version}\""));
+        File.WriteAllText(ir, Edit(File.ReadAllText(ir), $"\"irVersion\": \"{Haruspex.Ir.IrDocument.CurrentVersion}\"", $"\"irVersion\": \"{version}\""));
 
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23", error, StringComparison.Ordinal);
         Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
     }
 

@@ -20,10 +20,11 @@ internal static class Explain
     /// <param name="ir">The IR file given, or null to take the config file's output folder's.</param>
     /// <param name="config">The config file given, or null to find it as <c>generate</c> does.</param>
     /// <param name="json">Whether to write JSON for tools rather than text.</param>
+    /// <param name="build">The build that runs, which finding the config file and its output folder doesn't use.</param>
     /// <returns>The exit code: 0; 1 when the IR can't be read; 2 when what is named isn't in it.</returns>
-    public static int Run(string target, string? field, string? ir, string? config, bool json, TextWriter output, TextWriter error, string workingDirectory)
+    public static int Run(string target, string? field, string? ir, string? config, bool json, TextWriter output, TextWriter error, string workingDirectory, IrBuild build)
     {
-        var request = new RunRequest(null, config, [], null, workingDirectory);
+        var request = new RunRequest(null, config, [], null, workingDirectory) { Build = build };
         var path = ir is not null
             ? Path.GetFullPath(Path.Combine(workingDirectory, ir))
             : ModuleRun.OutOf(request) is { } folder ? Path.Join(folder, HaruspexCli.IrFileName) : null;

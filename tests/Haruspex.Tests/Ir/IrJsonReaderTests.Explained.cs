@@ -44,14 +44,14 @@ public partial class IrJsonReaderTests
         var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
 
         Assert.EndsWith(".detail", e.Path, StringComparison.Ordinal);
-        Assert.Contains("a reason's detail and a minimum length's unit are IR 0.29", e.Message, StringComparison.Ordinal);
+        Assert.Contains("a reason's detail and a minimum length's unit are IR 0.29 or later", e.Message, StringComparison.Ordinal);
     }
 
     [Fact]
     public void A_document_labelled_0_29_in_which_no_reason_says_more_is_refused()
     {
         var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Declared))!.AsObject();
-        json["irVersion"] = IrDocument.CurrentVersion;
+        json["irVersion"] = IrDocument.ExplainedVersion;
 
         var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
 

@@ -63,6 +63,9 @@ public class IrJsonSchemaTests
         (typeof(IrPackage), nameof(IrPackage.Sha256), "document.source", "sha256"),
         (typeof(IrSource), nameof(IrSource.References), "document.source", "references"),
         (typeof(IrSource), nameof(IrSource.Baseline), "document.source", "baseline"),
+        (typeof(IrSource), nameof(IrSource.WrittenBy), "document.source", "writtenBy"),
+        (typeof(IrBuild), nameof(IrBuild.Version), "build", "version"),
+        (typeof(IrBuild), nameof(IrBuild.Commit), "build", "commit"),
         (typeof(IrDocument), nameof(IrDocument.Version), "", "irVersion"),
         (typeof(IrPackageReference), nameof(IrPackageReference.Name), "packageReference", "package"),
         (typeof(IrPackageReference), nameof(IrPackageReference.Sha256), "packageReference", "sha256"),
@@ -217,7 +220,7 @@ public class IrJsonSchemaTests
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
         Assert.Equal(IrJsonSchema.Id, schema.RootElement.GetProperty("$id").GetString());
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
+        Assert.Equal(IrDocument.ReadableVersions, schema.RootElement.GetProperty("properties").GetProperty("irVersion").GetProperty("enum").EnumerateArray().Select(v => v.GetString()));
     }
 
     /// <summary>
@@ -290,11 +293,11 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Declared));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Stamped));
 
     [Fact]
     public void The_samples_of_each_version_the_reader_reads_pass_the_schema() =>
-        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared], d => AssertValid(IrJsonWriter.Write(d)));
+        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped], d => AssertValid(IrJsonWriter.Write(d)));
 
     /// <summary>
     /// Every file haruspex writes passes the schema in Ajv too, a validator a consumer would use, compiled strictly: what the tests
@@ -311,7 +314,7 @@ public class IrJsonSchemaTests
             documents[$"{fixture.Name}, inferred"] = IrJsonWriter.Write(fixture.Ir);
         foreach (var run in Corpus.Corpus.Runs)
             documents[$"{run.Corpus.Name}, inferred"] = IrJsonWriter.Write(run.Document);
-        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared]).Select((d, i) => (d, i)))
+        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped]).Select((d, i) => (d, i)))
             documents[$"sample {i}"] = IrJsonWriter.Write(sample);
 
         var verdicts = AjvVerdicts.Of(SchemaPath, documents);

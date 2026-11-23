@@ -1,4 +1,5 @@
 using Haruspex.Cli;
+using Haruspex.Ir;
 
 namespace Haruspex.Tests.Examples;
 
@@ -6,6 +7,11 @@ namespace Haruspex.Tests.Examples;
 /// The example application in <c>examples/greenhouse</c>: its committed module is what haruspex generates for its database,
 /// and its code compiles against that module, with the TypeScript and zod pinned in its own lockfile. CI runs both.
 /// </summary>
+/// <remarks>
+/// The committed IR names the build that wrote it, which is not the one the tests run unless nothing was committed since, so it is
+/// compared as <c>haruspex check</c> compares it: by what it says but for that, the document read back with the build left out.
+/// Every other file is compared as text. Why: docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md.
+/// </remarks>
 public class ExampleAppTests
 {
     private static readonly string Folder = Path.Combine(RepositoryPaths.Root, "examples", "greenhouse");
@@ -26,10 +32,23 @@ public class ExampleAppTests
         Assert.Equal(written, Directory.GetFiles(Path.Combine(Folder, "src", "db")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (var file in written)
         {
+            var committed = File.ReadAllText(Path.Combine(Folder, "src", "db", file));
+            var generated = File.ReadAllText(Path.Combine(temp.Path, file));
             Assert.True(
-                File.ReadAllText(Path.Combine(Folder, "src", "db", file)) == File.ReadAllText(Path.Combine(temp.Path, file)),
+                file == HaruspexCli.IrFileName ? Claims(committed) == Claims(generated) : committed == generated,
                 $"examples/greenhouse/src/db/{file} is not what haruspex generates; run haruspex generate in examples/greenhouse.");
         }
+    }
+
+    [Fact]
+    public void The_committed_ir_names_the_build_that_wrote_it() =>
+        Assert.NotNull(IrJsonReader.Read(File.ReadAllText(Path.Combine(Folder, "src", "db", HaruspexCli.IrFileName))).Source.WrittenBy);
+
+    /// <summary>An IR file's document, but for the build that wrote it.</summary>
+    private static IrDocument Claims(string ir)
+    {
+        var document = IrJsonReader.Read(ir);
+        return document with { Source = document.Source with { WrittenBy = null } };
     }
 
     [Fact]

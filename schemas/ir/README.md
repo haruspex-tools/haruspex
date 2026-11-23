@@ -1,7 +1,7 @@
 # The IR's JSON Schema, one file per version
 
 Each file here is the JSON Schema of an IR file, `haruspex.ir.json`, named for the IR version whose reader it describes
-(`0.29.schema.json`). Its `$id` is its own address, `https://github.com/sharpblue/haruspex/raw/main/schemas/ir/<version>.schema.json`,
+(`0.30.schema.json`). Its `$id` is its own address, `https://github.com/sharpblue/haruspex/raw/main/schemas/ir/<version>.schema.json`,
 so a file checked against it is checked against what that version's reader reads, whatever `main` holds later. A schema lists
 in `irVersion` every version its reader reads: the current one, and the older ones whose documents mean the same
 ([decision 0024](../../docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)).

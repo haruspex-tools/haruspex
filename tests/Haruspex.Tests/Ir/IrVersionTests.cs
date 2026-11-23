@@ -49,7 +49,7 @@ public class IrVersionTests
 
     [Fact]
     public void The_reader_reads_the_current_version_and_those_a_document_saying_less_is_written_in() =>
-        Assert.Equal([IrDocument.CurrentVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], IrDocument.ReadableVersions);
+        Assert.Equal([IrDocument.CurrentVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion], IrDocument.ReadableVersions);
 
     [Fact]
     public void A_document_is_labelled_0_27_exactly_when_it_holds_a_binary_value_however_deep()
@@ -78,7 +78,7 @@ public class IrVersionTests
 
         Assert.Equal("$.irVersion", e.Path);
         Assert.Equal(
-            $"$.irVersion is \"{version}\", and this reader reads IR 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.",
+            $"$.irVersion is \"{version}\", and this reader reads IR 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.",
             e.Message);
     }
 

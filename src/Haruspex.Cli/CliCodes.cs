@@ -157,6 +157,12 @@ internal static class CliCodes
     public static DiagnosticCode NoLongerWritten { get; } = new(6042, DiagnosticSeverity.Error, "A file generate would remove");
 
     /// <summary>
+    /// The baseline is an IR file whose claims are those of another build of haruspex than the one that runs, or of a build it
+    /// doesn't name: a fix made since may have withdrawn a claim it holds.
+    /// </summary>
+    public static DiagnosticCode BaselineOtherBuild { get; } = new(6043, DiagnosticSeverity.Warning, "A baseline whose claims are another build's");
+
+    /// <summary>
     /// The codes with which a run fails though the command line and the config file may be right, so the exit code is 1, not 2:
     /// what <c>check</c> found differs from the files in the output folder, or can't be compared with it, or is incomplete; the
     /// application already running would fail on it; a change can't be bridged; or the baseline can't be read or is combined.

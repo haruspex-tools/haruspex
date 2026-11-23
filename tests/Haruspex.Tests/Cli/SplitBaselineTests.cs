@@ -60,7 +60,7 @@ public class SplitBaselineTests
         using var output = new StringWriter();
         using var error = new StringWriter();
 
-        var exitCode = HaruspexCli.Run(["generate", "--baseline", "release/db"], output, error, folder.Path);
+        var exitCode = HaruspexCli.Run(["generate", "--baseline", "release/db"], output, error, folder.Path, FixedBuild.Terminal);
 
         Assert.Equal("", error.ToString());
         Assert.Equal(0, exitCode);
@@ -96,7 +96,7 @@ public class SplitBaselineTests
         // running refuses "held", once for each of the three procedures.
         using var checkOutput = new StringWriter();
         using var checkError = new StringWriter();
-        Assert.Equal(1, HaruspexCli.Run(["check", "--baseline", "release/db"], checkOutput, checkError, folder.Path));
+        Assert.Equal(1, HaruspexCli.Run(["check", "--baseline", "release/db"], checkOutput, checkError, folder.Path, FixedBuild.Terminal));
         var errors = checkError.ToString().ReplaceLineEndings("\n").Split('\n').Where(l => l.Contains(": error ", StringComparison.Ordinal)).ToList();
         Assert.Equal(3, errors.Count);
         Assert.All(errors, e => Assert.Contains("error HAR6026: ", e, StringComparison.Ordinal));
