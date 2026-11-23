@@ -22,6 +22,6 @@ internal static class ItemSpecs
     /// can't expand (<see cref="Glob.Files"/>), which it takes as a file's name.
     /// </summary>
     public static IEnumerable<string> Files(string folder, string specs) =>
-        Of(specs).SelectMany(spec => Glob.IsPattern(spec) && Glob.Of(folder, spec).Files(out _) is { } files ? files
+        Of(specs).SelectMany(spec => Glob.IsPattern(spec) && Glob.Of(folder, spec).Files(out _, out _) is { } files ? files
             : DiskPath.IsRootedElsewhere(spec) ? [] : [DiskPath.Full(folder, spec)]);
 }

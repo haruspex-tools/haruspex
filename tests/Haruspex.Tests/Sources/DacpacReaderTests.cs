@@ -35,6 +35,113 @@ public class DacpacReaderTests
 
     private static Table Kiln(DacpacReadResult read) => read.Model.FindTable(Studio("kiln"))!;
 
+    private static readonly ObjectName Ingot = new("dbo", "ingot");
+
+    private static readonly ObjectName Mould = new("dbo", "mould");
+
+    /// <summary>A package of two tables, <c>dbo.ingot</c> with a check on <c>grade</c>, and <c>dbo.mould</c>, with the elements given.</summary>
+    private static DacpacReadResult Smelter(TempDirectory folder, string elements = "", string? predeploy = null, string? postdeploy = null)
+    {
+        var path = Path.Combine(folder.Path, "smelter.dacpac");
+        // A check written in its table carries the table's Disambiguator, which a build writes on the table too.
+        TestPackage.Write(path, TestPackage.Table("dbo", "ingot", "id int", "grade int")[..^"</Element>".Length] + "<AttachedAnnotation Disambiguator=\"1\" /></Element>" + TestPackage.Check("dbo", "ingot", "grade > 0")
+            + TestPackage.Table("dbo", "mould", "id int", "code int") + TestPackage.Procedure("dbo", "list_ingots", "SELECT i.grade FROM dbo.ingot AS i;") + elements);
+        if (predeploy is not null)
+            TestPackage.Part(path, "predeploy.sql", predeploy);
+        if (postdeploy is not null)
+            TestPackage.Part(path, "postdeploy.sql", postdeploy);
+        return DacpacReader.Read(path);
+    }
+
+    [Fact]
+    public void A_module_body_s_statements_that_weaken_a_table_are_read_as_a_folder_s_are()
+    {
+        // A load procedure that turns the checks off, and a guarded migration in another: a project's folder reads both, and so
+        // must its package, which holds them as module text.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, TestPackage.Procedure("dbo", "load", "BEGIN ALTER TABLE dbo.ingot NOCHECK CONSTRAINT ALL; INSERT dbo.ingot VALUES (1, 0); ALTER TABLE dbo.ingot CHECK CONSTRAINT ALL; END")
+            + TestPackage.Procedure("dbo", "migrate", "IF COL_LENGTH('dbo.mould', 'code') IS NOT NULL ALTER TABLE dbo.mould ALTER COLUMN code int NULL;"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("smelter.dacpac/[dbo].[load]", 2, 7), Assert.Single(read.Model.FindTable(Ingot)!.Checks).DisabledAt);
+        Assert.Equal(RedefiningStatement.AlterTable, read.Model.FindTableRedefinition(Mould)?.Statement);
+    }
+
+    [Fact]
+    public void A_package_s_deployment_scripts_weaken_what_they_disable_drop_or_alter()
+    {
+        // A deployment runs them every time: the post-deployment script's NOCHECK and ALTER PROCEDURE stand in every database
+        // deployed, so the package's model of either is no longer what the database holds.
+        using var folder = new TempDirectory();
+        var read = Smelter(
+            folder,
+            predeploy: "DROP TABLE IF EXISTS dbo.mould;\r\nGO\r\n",
+            postdeploy: "ALTER TABLE dbo.ingot NOCHECK CONSTRAINT ALL;\r\nGO\r\nALTER PROCEDURE dbo.list_ingots AS SELECT CAST(NULL AS int) AS grade;\r\nGO\r\n");
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("smelter.dacpac/postdeploy.sql", 1, 1), Assert.Single(read.Model.FindTable(Ingot)!.Checks).DisabledAt);
+        Assert.Equal(
+            new Redefinition(new ObjectName("dbo", "list_ingots"), RedefiningStatement.AlterProcedure, new SourceLocation("smelter.dacpac/postdeploy.sql", 3, 1)),
+            read.Model.FindProcedure(new ObjectName("dbo", "list_ingots"))!.Redefinition);
+        Assert.Equal(new Redefinition(Mould, RedefiningStatement.DropTable, new SourceLocation("smelter.dacpac/predeploy.sql", 1, 1)), read.Model.FindTableRedefinition(Mould));
+    }
+
+    [Fact]
+    public void A_built_package_s_load_procedure_and_post_deployment_script_weaken_what_they_turn_off_or_alter()
+    {
+        // orchard as DacFx builds it: a procedure that turns grove.crate's check and its tag's key off, and a post-deployment
+        // script, with a file it includes by :r in its text, that turns grove.tree's check off and alters grove.count_trees.
+        var read = DacpacReader.Read(Path.Combine(Packages, "orchard", "orchard.dacpac"));
+        var crate = read.Model.FindTable(new ObjectName("grove", "crate"))!;
+        var tree = read.Model.FindTable(new ObjectName("grove", "tree"))!;
+
+        Assert.DoesNotContain(read.Diagnostics, d => d.IsError);
+        Assert.Equal("orchard.dacpac/[grove].[load_crates]", Assert.Single(crate.Checks).DisabledAt?.File);
+        Assert.Equal("orchard.dacpac/[grove].[load_crates]", Assert.Single(crate.UniqueKeys, k => k.Name == "ux_crate_tag").DisabledAt?.File);
+        Assert.Equal(new SourceLocation("orchard.dacpac/postdeploy.sql", 5, 1), Assert.Single(tree.Checks).DisabledAt);
+        Assert.Equal(
+            new Redefinition(new ObjectName("grove", "count_trees"), RedefiningStatement.AlterProcedure, new SourceLocation("orchard.dacpac/postdeploy.sql", 11, 1)),
+            read.Model.FindProcedure(new ObjectName("grove", "count_trees"))!.Redefinition);
+    }
+
+    [Fact]
+    public void A_deployment_script_that_does_not_parse_is_a_warning_and_doubts_every_object_it_names()
+    {
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, postdeploy: ":on error exit\nALTER TABLE [dbo].[ingot] ALTER COLUMN grade int NULL;\n");
+
+        var warning = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DeploymentScriptNotRead, warning.Code);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(Ingot)?.Statement);
+        Assert.Null(read.Model.FindTableRedefinition(Mould));
+        Assert.Null(read.Model.FindProcedure(new ObjectName("dbo", "list_ingots"))!.Redefinition);
+    }
+
+    [Fact]
+    public void A_deployment_script_that_names_a_table_through_a_variable_it_does_not_set_doubts_every_object()
+    {
+        // A build keeps $(Target) as written: its value is the deployment's, whatever the project's default.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, postdeploy: "ALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n");
+
+        var warning = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DeploymentScriptNotRead, warning.Code);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(Ingot)?.Statement);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(Mould)?.Statement);
+    }
+
+    [Fact]
+    public void A_deployment_script_reads_a_variable_it_sets()
+    {
+        // As a build writes an include inlined after the :setvar before it.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, postdeploy: ":setvar Target ingot\nALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n");
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("smelter.dacpac/postdeploy.sql", 2, 1), Assert.Single(read.Model.FindTable(Ingot)!.Checks).DisabledAt);
+        Assert.Null(read.Model.FindTableRedefinition(Mould));
+    }
+
     [Fact]
     public void A_package_records_its_name_and_the_sha256_of_its_bytes()
     {

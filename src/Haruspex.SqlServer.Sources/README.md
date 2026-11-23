@@ -133,7 +133,13 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   it in its file, since SQL Server keeps the setting it was created with.
 - **Problems have a place.** Parse errors and objects defined twice are reported as diagnostics, with their file, line and
   column.
-- **A DACPAC reads as its project's folder does.** For every fixture that builds as a project, and for WideWorldImporters, the
+- **Every statement that weakens a claim is read, wherever it is.** A `NOCHECK`, a bulk load without `CHECK_CONSTRAINTS`, a key
+  disabled or dropped, and a table altered, dropped or created again, under `IF`, in a block or in a body, in a folder's
+  script, in a package's module text, and in a project's or a package's pre- and post-deployment scripts
+  (`WeakeningStatements`, `DeploymentScripts`). A procedure, function or view a deployment script creates, alters or drops is
+  `redefined`.
+- **A DACPAC reads as its project's folder does.** For every fixture that builds as a project (all but the three
+  `DacpacEquivalenceTests` lists, each with the build error that keeps it out), and for WideWorldImporters, the
   output from the package is byte for byte the folder's once locations are rewritten (`DacpacEquivalenceTests`). Every element
   of `model.xml` is read, passed over for a stated reason, or counted in one note (HAR1004). A module created with
   `ANSI_NULLS` or `QUOTED_IDENTIFIER` off is parsed and read as it runs. A CLR module, and an encrypted one an extracted
@@ -157,8 +163,9 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
   ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
-- **No other sqlcmd commands.** `:r`, which includes another file, is not followed, so a script that uses it fails to parse
-  rather than being read as a different script from the one that runs. Variables defined outside a script (sqlcmd's `-v`,
+- **No other sqlcmd commands.** `:r`, which includes another file, is not followed in a folder's script, so a script that uses
+  it fails to parse rather than being read as a different script from the one that runs. A project's deployment script is
+  read with each file it includes by `:r`, apart; one that holds another command is a warning (HAR1021). Variables defined outside a script (sqlcmd's `-v`,
   the environment, a project's own variables, a publish's values) are not known, so what they hold stays unknown.
 - **One database.** `USE` is not followed: every object the scripts define is read into one model, whichever database a
   script has switched to by then.
@@ -167,7 +174,7 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   is the one the project names, and a range or a floating version isn't resolved. Given a folder, it reads every script in it.
 - **No running scripts.** A folder of scripts doesn't say the order they run in, so a statement that changes an object after
   its definition in another script (`ALTER PROCEDURE`, `DROP PROCEDURE`), or that changes a table anywhere (`ALTER TABLE …
-  ALTER COLUMN`, `DROP TABLE`), is recorded as a `Redefinition`, not applied. Only a script's own procedures, functions and
+  ALTER COLUMN`, `DROP TABLE`, a nested `CREATE TABLE`), is recorded as a `Redefinition`, not applied. Only a script's own procedures, functions and
   views are played in its order; an `ALTER PROCEDURE` or `ALTER VIEW` that no other script names stands
   ([decision 0080](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0080-the-last-definition-in-a-script-stands.md)). Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
   SQL, are not seen.

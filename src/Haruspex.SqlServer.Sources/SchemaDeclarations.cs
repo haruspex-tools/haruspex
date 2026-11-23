@@ -24,6 +24,12 @@ internal sealed class SchemaDeclarations
     /// <summary>The first statement that changes a table in a way the model does not apply, by table.</summary>
     public Dictionary<ObjectName, Redefinition> TableChanges { get; } = [];
 
+    /// <summary>
+    /// Every <c>ALTER TABLE … DROP PERIOD FOR SYSTEM_TIME</c>, in the order read: a change only to a table with a hidden column,
+    /// which it makes visible (<c>WeakeningStatements</c>).
+    /// </summary>
+    public List<Redefinition> PeriodDrops { get; } = [];
+
     /// <summary>The primary keys and unique constraints <c>ALTER TABLE … ADD CONSTRAINT</c> adds, in the order read.</summary>
     public List<AddedKey> AddedKeys { get; } = [];
 
@@ -59,6 +65,15 @@ internal sealed class SchemaDeclarations
 
     /// <summary>Every <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, wherever it is.</summary>
     public List<KeyDisable> KeyDisables { get; } = [];
+
+    /// <summary>
+    /// The first statement of a pre- or post-deployment script that creates, alters or drops each procedure, function or view: a
+    /// deployment runs it after the model is deployed, so the definition the model holds is not the one the database is left with.
+    /// </summary>
+    public Dictionary<ObjectName, Redefinition> Deployed { get; } = [];
+
+    /// <summary>The deployment scripts that couldn't be read in full, each with the names in it that are doubted.</summary>
+    public List<UnreadDeployment> UnreadDeployments { get; } = [];
 
     /// <summary>Adds a definition, or reports a second one of the same name, keeping the first.</summary>
     public void Define<T>(Dictionary<ObjectName, T> into, ObjectName name, T definition, SourceLocation at)
@@ -123,20 +138,26 @@ internal sealed class SchemaDeclarations
     /// <param name="settings">The database's settings, when the source records them (<see cref="DatabaseModel.Settings"/>).</param>
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
     /// <param name="databases">The other databases the source holds the schema of (<see cref="DatabaseModel.Databases"/>).</param>
-    public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null) => new(
-        [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, KeyDisables))],
-        UserTypes.Values,
-        DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }, alterAloneStands: true),
-        DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }, alterAloneStands: false),
-        DefinitionsInEffect.Views(Views),
-        Synonyms.Values,
-        Triggers,
-        CascadingKeys,
-        TableChanges.Values)
+    public DatabaseModel ToModel(DatabaseSettings? settings = null, IEnumerable<UnreadPart>? unread = null, IReadOnlyDictionary<string, DatabaseModel>? databases = null)
     {
-        Settings = settings,
-        DefaultCollation = settings?.Collation,
-        Unread = [.. unread ?? []],
-        Databases = databases ?? new Dictionary<string, DatabaseModel>(),
-    };
+        var deployed = DefinitionsInEffect.Deployed(Deployed, UnreadDeployments);
+        return new(
+            [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, KeyDisables))],
+            UserTypes.Values,
+            DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }, alterAloneStands: true)
+                .Select(p => p.Redefinition is null && deployed(p.Name) is { } why ? p with { Redefinition = why } : p),
+            DefinitionsInEffect.Modules(Functions, FunctionChanges, (function, why) => function with { Redefinition = why }, alterAloneStands: false)
+                .Select(f => f.Redefinition is null && deployed(f.Name) is { } why ? f with { Redefinition = why } : f),
+            DefinitionsInEffect.Views(Views).Select(v => v.Redefinition is null && deployed(v.Name) is { } why ? v with { Redefinition = why } : v),
+            Synonyms.Values,
+            Triggers,
+            CascadingKeys,
+            [.. TableChanges.Values, .. DefinitionsInEffect.TablesChangedAfter(Tables, TableChanges, PeriodDrops, UnreadDeployments)])
+        {
+            Settings = settings,
+            DefaultCollation = settings?.Collation,
+            Unread = [.. unread ?? []],
+            Databases = databases ?? new Dictionary<string, DatabaseModel>(),
+        };
+    }
 }

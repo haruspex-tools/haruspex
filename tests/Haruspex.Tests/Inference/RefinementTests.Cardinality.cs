@@ -159,10 +159,12 @@ public partial class RefinementTests
     [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
     [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT IF EXISTS uq_k_code;", IrCardinality.Many)]
     [InlineData("CREATE PROCEDURE dbo.fix AS ALTER TABLE dbo.k DROP uq_k_code;", IrCardinality.Many)]
-    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP uq_k_other;", IrCardinality.AtMostOne)]
-    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP COLUMN other;", IrCardinality.AtMostOne)]
+    // Dropping anything else of the table changes it, at any depth as at the top (WeakeningStatements), so it is unknown and its
+    // rows are counted as many: a dropped CHECK is no longer one, and a dropped column is gone.
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP uq_k_other;", IrCardinality.Many)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP COLUMN other;", IrCardinality.Many)]
     [InlineData("IF 1 = 1 ALTER TABLE k DROP CONSTRAINT uq_k_code;", IrCardinality.Many)]
-    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT uq_k_other;", IrCardinality.AtMostOne)]
+    [InlineData("IF 1 = 1 ALTER TABLE dbo.k DROP CONSTRAINT uq_k_other;", IrCardinality.Many)]
     [InlineData("IF 1 = 1 ALTER TABLE dbo.other DROP CONSTRAINT uq_k_code;", IrCardinality.AtMostOne)]
     [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX uq_k_code ON dbo.k;", IrCardinality.Many)]
     [InlineData("CREATE PROCEDURE dbo.fix AS DROP INDEX dbo.k.uq_k_code;", IrCardinality.Many)]

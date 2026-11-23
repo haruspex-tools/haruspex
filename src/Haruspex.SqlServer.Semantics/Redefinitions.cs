@@ -10,7 +10,9 @@ public static class Redefinitions
     public static string Why(Redefinition redefinition)
     {
         ArgumentNullException.ThrowIfNull(redefinition);
-        return $"{redefinition.Name} is changed by {Statement(redefinition.Statement)} at {redefinition.At}, and which definition applies depends on the order the scripts run.";
+        return redefinition.Statement == RedefiningStatement.UnreadScript
+            ? $"{redefinition.Name} is named in a deployment script at {redefinition.At} that haruspex can't read, so what it does to it isn't known."
+            : $"{redefinition.Name} is changed by {Statement(redefinition.Statement)} at {redefinition.At}, and which definition applies depends on the order the scripts run.";
     }
 
     /// <summary>The statement as T-SQL writes it, in capitals: <c>ALTER TABLE</c>, <c>DROP PROCEDURE</c>.</summary>
@@ -26,5 +28,11 @@ public static class Redefinitions
         RedefiningStatement.AlterView => "ALTER VIEW",
         RedefiningStatement.CreateOrAlterView => "CREATE OR ALTER VIEW",
         RedefiningStatement.DropView => "DROP VIEW",
+        RedefiningStatement.CreateTable => "CREATE TABLE",
+        RedefiningStatement.CreateProcedure => "CREATE PROCEDURE",
+        RedefiningStatement.CreateOrAlterProcedure => "CREATE OR ALTER PROCEDURE",
+        RedefiningStatement.CreateFunction => "CREATE FUNCTION",
+        RedefiningStatement.CreateOrAlterFunction => "CREATE OR ALTER FUNCTION",
+        RedefiningStatement.UnreadScript => "a deployment script that can't be read",
     };
 }

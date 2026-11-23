@@ -122,6 +122,114 @@ public partial class SqlProjectReaderTests
         Assert.Equal(["kept"], Procedures(read));
     }
 
+    private const string Ingot = "CREATE TABLE dbo.ingot (id int NOT NULL, grade int NOT NULL CONSTRAINT ck_grade CHECK (grade > 0));";
+
+    [Fact]
+    public void A_deployment_script_and_what_it_includes_weaken_what_they_disable_or_alter()
+    {
+        // Seeding with the checks off, and a procedure altered after the model is deployed: both stand in every database deployed.
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/list.sql", Proc("list", "SELECT i.grade FROM dbo.ingot AS i;")),
+            ("p/deploy/post.sql", "ALTER TABLE dbo.ingot NOCHECK CONSTRAINT ALL;\nGO\n:r .\\seed.sql\n"),
+            ("p/deploy/seed.sql", "PRINT 'seeding';\nGO\nALTER PROCEDURE dbo.list AS SELECT CAST(NULL AS int) AS grade;\n"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("deploy/post.sql", 1, 1), Assert.Single(read.Model.FindTable(new ObjectName("dbo", "ingot"))!.Checks).DisabledAt);
+        Assert.Equal(
+            new Redefinition(new ObjectName("dbo", "list"), RedefiningStatement.AlterProcedure, new SourceLocation("deploy/seed.sql", 3, 1)),
+            read.Model.FindProcedure(new ObjectName("dbo", "list"))!.Redefinition);
+    }
+
+    [Theory]
+    // Another sqlcmd command: every object the script names is doubted.
+    [InlineData(":on error exit\nALTER TABLE dbo.ingot ALTER COLUMN grade int NULL;\n", "deploy/post.sql:1:1", false)]
+    // An include through a variable, whose value is the deployment's: what it holds isn't known, so every object is doubted.
+    [InlineData("PRINT 1;\nGO\n:r $(Seeds)\\seed.sql\n", "deploy/post.sql:3:1", true)]
+    // An include that isn't there: the same.
+    [InlineData(":r .\\missing.sql\n", "deploy/post.sql:1:1", true)]
+    public void A_deployment_script_that_can_t_be_read_is_a_warning_and_doubts_what_it_may_name(string post, string at, bool everything)
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/mould.sql", "CREATE TABLE dbo.mould (id int NOT NULL);"),
+            ("p/deploy/post.sql", post));
+
+        var warning = Assert.Single(read.Diagnostics, d => d.Code == SourceCodes.DeploymentScriptNotRead);
+        Assert.Equal(at, warning.At?.ToString());
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(new ObjectName("dbo", "ingot"))?.Statement);
+        Assert.Equal(everything, read.Model.FindTableRedefinition(new ObjectName("dbo", "mould")) is not null);
+    }
+
+    [Theory]
+    // A name or a constraint through a variable that no :setvar before it defines is the deployment's to give (a project's
+    // SqlCmdVariable default is only a default), and may be any object's, so every object is doubted.
+    [InlineData("ALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n")]
+    [InlineData("ALTER TABLE [dbo].[$(Target)] ALTER COLUMN grade int NULL;\n")]
+    [InlineData("ALTER TABLE dbo.ingot NOCHECK CONSTRAINT $(Check);\n")]
+    [InlineData("ALTER PROCEDURE dbo.$(Lister) AS SELECT 1 AS one;\n")]
+    public void A_deployment_script_that_names_an_object_through_a_variable_doubts_every_object(string post)
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/mould.sql", "CREATE TABLE dbo.mould (id int NOT NULL);"),
+            ("p/list.sql", Proc("list", "SELECT i.grade FROM dbo.ingot AS i;")),
+            ("p/deploy/post.sql", post));
+
+        var warning = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DeploymentScriptNotRead, warning.Code);
+        Assert.Equal("deploy/post.sql:1:1", warning.At?.ToString());
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(new ObjectName("dbo", "ingot"))?.Statement);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(new ObjectName("dbo", "mould"))?.Statement);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindProcedure(new ObjectName("dbo", "list"))!.Redefinition?.Statement);
+    }
+
+    [Fact]
+    public void A_variable_a_deployment_script_uses_only_in_a_string_or_a_statement_that_changes_nothing_doubts_nothing()
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/deploy/post.sql", "PRINT 'Deploying $(DatabaseName)';\nGO\nUSE [$(DatabaseName)];\n"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Null(read.Model.FindTableRedefinition(new ObjectName("dbo", "ingot")));
+    }
+
+    [Theory]
+    // sqlcmd keeps one set of variables for a script and what it includes: an include sees what was set before its :r, a
+    // variable may name the include, and what the include sets stands after it.
+    [InlineData(":setvar Target ingot\n:r .\\inner.sql\n", "ALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n", "deploy/inner.sql:1:1")]
+    [InlineData(":setvar Here .\n:r $(Here)\\inner.sql\n", "ALTER TABLE dbo.ingot NOCHECK CONSTRAINT ALL;\n", "deploy/inner.sql:1:1")]
+    [InlineData(":r .\\inner.sql\nGO\nALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n", ":setvar Target ingot\n", "deploy/post.sql:3:1")]
+    public void An_include_reads_with_the_variables_its_script_has_set(string post, string inner, string disabledAt)
+    {
+        using var folder = new TempDirectory();
+        var read = Read(
+            folder,
+            Sdk("<ItemGroup><PostDeploy Include=\"deploy\\post.sql\" /></ItemGroup>"),
+            ("p/ingot.sql", Ingot),
+            ("p/mould.sql", "CREATE TABLE dbo.mould (id int NOT NULL);"),
+            ("p/deploy/post.sql", post),
+            ("p/deploy/inner.sql", inner));
+
+        // An include through a variable is still HAR1008, whether the build takes that file out of Build not being known.
+        Assert.DoesNotContain(read.Diagnostics, d => d.Code == SourceCodes.DeploymentScriptNotRead);
+        Assert.Equal(disabledAt, Assert.Single(read.Model.FindTable(new ObjectName("dbo", "ingot"))!.Checks).DisabledAt?.ToString());
+        Assert.Null(read.Model.FindTableRedefinition(new ObjectName("dbo", "mould")));
+    }
+
     [Fact]
     public void A_content_item_neither_adds_to_build_nor_takes_out_of_it()
     {

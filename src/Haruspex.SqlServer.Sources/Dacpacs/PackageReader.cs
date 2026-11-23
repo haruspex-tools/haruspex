@@ -84,6 +84,10 @@ internal static class PackageReader
         }
 
         ReadModules(modules, package.Name, into, notModelled);
+
+        // Its deployment scripts, which a deployment runs every time, for what they change (DeploymentScripts).
+        foreach (var (part, text) in package.Deployment)
+            DeploymentScripts.Read(text, package.Name + "/" + part, into);
         if (notModelled.Count > 0 && !quiet)
         {
             var counts = string.Join(", ", notModelled.Select(n => $"{n.Value.ToString(CultureInfo.InvariantCulture)} {n.Key}"));
@@ -120,7 +124,9 @@ internal static class PackageReader
 
     /// <summary>
     /// The modules, parsed in parallel (parsing is most of a large package's reading time) and added in the package's order,
-    /// so the outcome doesn't depend on which finishes first.
+    /// so the outcome doesn't depend on which finishes first. Each body is searched, as a folder's script is, for every statement
+    /// in it that weakens a claim about a table (<see cref="WeakeningStatements"/>): a load procedure that turns checks or a key
+    /// off is in the package as it is in the project.
     /// </summary>
     /// <param name="modules">The modules' elements, in the package's order.</param>
     /// <param name="package">The package's file name, for locations.</param>
@@ -135,12 +141,15 @@ internal static class PackageReader
             {
                 var diagnostics = new List<Diagnostic>();
                 var file = PackageLocation.File(package, ElementName.Object(ModelXml.Named(element)));
-                return (Element: element, Module: ModuleTextReader.Read(element, file, diagnostics), Diagnostics: diagnostics);
+                var module = ModuleTextReader.Read(element, file, diagnostics, out var parsed);
+                return (Element: element, File: file, Module: module, Parsed: parsed, Diagnostics: diagnostics);
             })
             .ToList();
-        foreach (var (element, module, diagnostics) in read)
+        foreach (var (element, file, module, parsed, diagnostics) in read)
         {
             into.Diagnostics.AddRange(diagnostics);
+            if (parsed is not null)
+                WeakeningStatements.Read(parsed, file, into, deployment: false);
             if (module is null && diagnostics.Count == 0)
             {
                 var kind = $"{ModelXml.TypeOf(element)} without its text";
