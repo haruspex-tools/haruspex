@@ -1783,6 +1783,9 @@ Every rule is observed in `JsonTracingObservationTests`.
 | literal | its exact shape, when it is valid JSON of an object or array |
 | `COALESCE`, `ISNULL`, `CASE`, `IIF`, `CHOOSE` | the join of its arguments' or results' JSON |
 
+- **`json_query … WITH ARRAY WRAPPER`** gives an array of one element: the object or array `json_query` finds, or, at a path, a
+  scalar too, which without the clause is NULL (`Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too`).
+  It is not modelled, so such a call is unknown (`Typer.JsonQueryCall`), never read as the call without it.
 - **Places.** A variable, and a declared column of a table variable, temporary table or multi-statement function's return
   table, of type `nvarchar(max)`, holds JSON as text, escaped where it nests, JSON again under `json_query`
   (`Json_built_here_keeps_its_content_through_variables_and_tables_until_json_query`). A shorter type cuts it short without

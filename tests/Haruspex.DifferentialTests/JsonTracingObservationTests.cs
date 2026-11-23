@@ -65,6 +65,21 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too()
+    {
+        // WITH ARRAY WRAPPER gives an array of one element, the object or array json_query would give: an object built here,
+        // a literal, an array; and at a path a scalar too, which without the clause is NULL under lax.
+        Assert.Equal(
+            """j: {"a":[{"a":1}],"b":[{"a":1}],"c":[{"b":1}],"d":[[1,2]],"e":[1]}""",
+            await Select("""
+                SELECT (SELECT json_query(json_object('a': 1) WITH ARRAY WRAPPER) AS a, json_query(N'{"a":1}' WITH ARRAY WRAPPER) AS b,
+                               json_query(N'{"a":{"b":1}}', '$.a' WITH ARRAY WRAPPER) AS c, json_query(N'[1,2]' WITH ARRAY WRAPPER) AS d,
+                               json_query(N'{"a":1}', '$.a' WITH ARRAY WRAPPER) AS e
+                        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS j;
+                """));
+    }
+
+    [Fact]
     public async Task Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken()
     {
         Assert.Equal(

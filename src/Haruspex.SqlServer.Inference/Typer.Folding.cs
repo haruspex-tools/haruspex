@@ -138,7 +138,8 @@ internal sealed partial class Typer
         ConvertCall { Style: null } convert => IsMaxString(convert.DataType) && BuiltFromRows(convert.Parameter, scope),
         FunctionCall { CallTarget: null, OverClause: null } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Aggregate) is { } aggregate
             && (aggregate == AggregateFunctions.JsonArrayAgg || aggregate == AggregateFunctions.JsonObjectAgg) => true,
-        FunctionCall { CallTarget: null, Parameters: [var inner] } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery =>
+        // json_query WITH ARRAY WRAPPER is unknown (JsonQueryCall), so none of these rules reads it as json_query of its argument.
+        FunctionCall { CallTarget: null, Parameters: [var inner], WithArrayWrapper: false } call when BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery =>
             BuiltFromRows(inner, scope),
         FunctionCall { CallTarget: null } call when IsTextConstructor(call) =>
             call.JsonParameters.Select(p => p.JsonValue).Concat(call.Parameters).Any(v => BuiltFromRows(v, scope) || StoredColumn(v, scope)),
@@ -159,7 +160,7 @@ internal sealed partial class Typer
     /// JSON where it is never folded: JSON built from rows, <c>json_object</c> or <c>json_array</c>, or <c>json_query</c> of one.
     /// </summary>
     private bool MaxJson(ScalarExpression expression, ReadScope scope) => NeverFoldedAsJson(expression, scope)
-        || (Strip(expression) is FunctionCall { CallTarget: null, Parameters: [var inner] } call
+        || (Strip(expression) is FunctionCall { CallTarget: null, Parameters: [var inner], WithArrayWrapper: false } call
             && BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery && MaxJson(inner, scope));
 
     /// <summary>Whether <paramref name="expression"/> reads a stored column of a table, never a constant, nor computed from one.</summary>
@@ -214,7 +215,7 @@ internal sealed partial class Typer
     private static bool LastResultConstant(ScalarExpression? last) => last is null || Strip(last) switch
     {
         NullLiteral or StringLiteral => true,
-        FunctionCall { CallTarget: null, Parameters: [var inner] } call =>
+        FunctionCall { CallTarget: null, Parameters: [var inner], WithArrayWrapper: false } call =>
             BuiltInFunctions.Named(call.FunctionName.Value, FunctionForm.Scalar) == ScalarFunctions.JsonQuery && LiteralOf(inner) is ({ } and StringLiteral, false),
         _ => false,
     };

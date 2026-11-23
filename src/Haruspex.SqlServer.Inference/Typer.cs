@@ -566,6 +566,17 @@ internal sealed partial class Typer(
         ? new IrNullReason(IrNullRule.ReadTwice, guard.ToString())
         : new IrNullReason(IrNullRule.EmptySubquery, at.ToString());
 
+    /// <summary>
+    /// <c>json_query</c>, with a path (<see cref="JsonQueryAt"/>) or without (<see cref="JsonQuery"/>). <c>WITH ARRAY WRAPPER</c>
+    /// gives an array of one element instead, the object or array found, or at a path a scalar too, which without it is NULL
+    /// (observed: Json_query_with_array_wrapper_wraps_what_it_finds_in_an_array_a_scalar_at_a_path_too); it is not modelled,
+    /// so such a call is unknown rather than read as the call without it.
+    /// </summary>
+    private Value JsonQueryCall(FunctionCall call, ReadScope scope) =>
+        call.WithArrayWrapper ? NotModelled(call, "json_query WITH ARRAY WRAPPER, which gives an array of what it finds, is not modelled yet.")
+        : call.Parameters.Count == 2 ? JsonQueryAt(call, scope)
+        : JsonQuery(call, scope);
+
     private Value JsonQuery(FunctionCall call, ReadScope scope)
     {
         // A literal, or CASE, IIF, CHOOSE or COALESCE over JSON, is read for what it holds (Typer.Json.cs and Walker.Json.cs).
