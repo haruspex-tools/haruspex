@@ -58,7 +58,8 @@ public partial class RefinementTests
         Assert.Equal(4, Results(doc).Count);
         for (var result = 0; result < 3; result++)
             Assert.True(Results(doc)[result].Type is IrUnknownType || Fields(doc, result).All(f => f.Type is IrUnknownType), $"result {result}");
-        Assert.All(doc.Unknowns, u => Assert.Contains("GROUP BY ALL", u.Detail, StringComparison.Ordinal));
+        Assert.Equal(3, doc.Unknowns.Count);
+        Assert.All(doc.Unknowns, u => Assert.Equal((IrUnknownReason.UnsupportedQuery, true), (u.Reason, u.Detail.Contains("GROUP BY ALL is not modelled yet", StringComparison.Ordinal))));
 
         // A variable keeps its declared type; what it was assigned is unknown, so it may be NULL for that.
         Assert.Contains(IrNullRule.Unknown, Rules(Field(doc, "top_id", 3)));

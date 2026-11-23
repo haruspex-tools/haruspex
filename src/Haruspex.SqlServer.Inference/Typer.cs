@@ -525,6 +525,10 @@ internal sealed partial class Typer(
         {
             var plain = subquery.QueryExpression;
             var row = Nested(plain, scope);
+
+            // A row unknown as a whole (GROUP BY ALL) gives its own reason, as it does for a derived table (Holds).
+            if (row is { Unlisted: { } whole, Columns: [] })
+                return Value.Unknown(whole);
             if (row is not { Unlisted: null, Columns: [var only] })
                 return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A subquery of other than one listed column is not modelled: {Text(subquery)}", at));
             if (only.Value.Shape is UnknownShape)
