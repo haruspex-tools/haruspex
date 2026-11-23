@@ -80,8 +80,10 @@ What a value looks like depends on how it arrives, and the module follows what a
   every helper states its return type.
 
 **A procedure's results** are one schema under its name (`GetOrderSchema`, and its type `GetOrder`): its one result set's
-schema, a `z.tuple` of several, or, when the config file names its sets, a `z.object` with a property for each set, even for
-one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+schema, a `z.tuple` of several, or, when the config file names its sets, a `z.strictObject` with a property for each set, even
+for one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+That object is strict whatever the `objects` setting, because the generated function builds it from exactly its sets, and the
+JSON Schema of it has no other keys.
 The types inside are named after the sets: `GetOrderLinesRow` for a set named `lines`.
 
 **A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
@@ -110,7 +112,9 @@ parameter is
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them
 ([decision 0008](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md)).
-`ZodObjects.Strict` makes them `z.strictObject`. The output is deterministic, with stable ordering and LF line endings, so
+`ZodObjects.Strict` makes them `z.strictObject`. The setting governs the objects of results and named types only: the
+parameters, a table-valued parameter's rows and a procedure's named result sets are always strict, the object of what its
+`OUTPUT` parameters hold is never strict (`z.object`), and an open type's object accepts any key (`z.looseObject`). The output is deterministic, with stable ordering and LF line endings, so
 a CI check can compare it byte for byte.
 
 ## Why a field is what it is
