@@ -198,5 +198,5 @@ after it. Data that breaks a claim fails at the boundary, loudly, rather than so
 - **A `FOR JSON` procedure:** the README's [examples](../README.md#examples-on-microsofts-sample-databases) show nested objects,
   arrays and a recursive tree, the function for one of them, and a query file.
 - **Whether to trust it:** the README's [guarantees](../README.md#what-it-guarantees-and-what-it-cant-see) say what every
-  claim holds for, what haruspex assumes, and the gaps known today.
+  claim holds for, what haruspex assumes, and the larger gaps known today.
 - **Everything else:** [the documentation's index](README.md) says what each page is for.

@@ -27,7 +27,7 @@ is, what it does today and what it can't see; read it first whichever path you t
 ### To decide whether to trust it
 
 1. The README's [guarantees and limits](../README.md#what-it-guarantees-and-what-it-cant-see): the one rule, what the
-   source can't show, what haruspex assumes, and the gaps known today.
+   source can't show, what haruspex assumes, and the larger gaps known today.
 2. The guide's [first chapter](internals/01-the-shape-of-the-problem.md), for why haruspex infers from the source rather
    than asking the server, and why it says unknown rather than guess.
 3. [Observing the engine](internals/09-observing-the-engine.md): how every rule haruspex relies on is checked against a

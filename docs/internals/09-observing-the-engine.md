@@ -140,7 +140,7 @@ instead. A rule about concurrency, such as a read-uncommitted scan returning a r
 Where the source shows that such a rule applies (a `NOLOCK` hint, or a level the procedure sets), haruspex relies on it only
 to claim less. The level a caller sets is in no source, and there haruspex assumes the caller doesn't read uncommitted
 data, which claims more ([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)). The README lists
-that assumption with the others, and the gaps known today
+that assumption with the others, and the larger gaps known today
 ([what it guarantees](../../README.md#what-it-guarantees-and-what-it-cant-see)).
 
 And a differential test shows only that the claims held for the data it ran. It is evidence, not proof: the soundness

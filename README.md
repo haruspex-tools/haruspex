@@ -41,7 +41,7 @@ Not today's data, not the usual case, every case. Most of what makes haruspex di
   from the one the types were made from fails loudly at the call, not deep inside the application.
 
 A type that holds in every case can be trusted without reading the SQL behind it, which is the point.
-[What it guarantees](#what-it-guarantees-and-what-it-cant-see) has the limits, what it assumes and the gaps known today, and [the guide](docs/internals/README.md)
+[What it guarantees](#what-it-guarantees-and-what-it-cant-see) has the limits, what it assumes and the larger gaps known today, and [the guide](docs/internals/README.md)
 how the analysis reaches its claims.
 
 ## What an application gets
@@ -357,8 +357,8 @@ to three.
 
 ## What it guarantees, and what it can't see
 
-Every claim haruspex makes holds for every execution, given what it assumes and apart from the gaps known today (both
-listed below): a field it calls non-null is never null, and a bound is never exceeded. That makes its types an over-approximation, sometimes looser than intuition (`COUNT(*)` is nullable, because past
+Every claim haruspex makes holds for every execution, given what it assumes and except in the known gaps listed below
+(both after the run-time checks): a field it calls non-null is never null, and a bound is never exceeded. That makes its types an over-approximation, sometimes looser than intuition (`COUNT(*)` is nullable, because past
 2,147,483,647 rows it returns NULL under session options the caller controls). When it can't prove a shape it says the shape
 is **unknown, with a reason**, and never guesses. It can't see what isn't in the source: dynamic SQL, `EXEC @procedure`, CLR
 and system procedures, and objects outside the project unless their DACPACs are given; a config file can declare their
@@ -396,24 +396,28 @@ fails loudly, with an error saying which, rather than reaching the application's
   SqlPackage does ([decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 - **No caller reads uncommitted data.** A `NOLOCK` hint, or a level the procedure sets itself, is seen and drops the claims it
   breaks; the level a caller sets is not ([decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
-- **A definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it
+- **In a folder of scripts, a definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it (a
+  DACPAC records the setting for each definition, and it is read)
   ([the guide](docs/internals/02-the-inputs-and-the-model.md#a-script-becomes-the-model-in-three-steps)).
 - **SQL Server 2025.** The rules are observed on the version the tests run, and an earlier one may differ
   ([the guide](docs/internals/08-the-sql-server-type-system-as-data.md#limits)).
 - **No query reads 2^63 rows**, which is why a `SUM` of a decimal of at most 19 digits is claimed never to overflow
   ([the inference](src/Haruspex.SqlServer.Inference/README.md#sum-avg-and-the-statistical-aggregates)).
 
-**Known gaps.** In these cases a claim can be wrong today, and the code doesn't handle them yet:
+**Known gaps.** In these cases a claim can be wrong today. They come from how a database is set up, run or loaded, and
+each needs a decision or a larger change before the code handles it. They aren't every bug: a rule of the analysis found
+wrong is fixed as a bug, in a change of its own, and isn't listed here.
 
 - **A bulk load in the project's own code.** A `BULK INSERT` without `CHECK_CONSTRAINTS`, or an `INSERT … WITH
   (IGNORE_CONSTRAINTS)` from `OPENROWSET(BULK …)`, leaves its target's `CHECK` constraints untrusted, but haruspex still
   claims them, as it doesn't after an `ALTER TABLE … NOCHECK` in the project. <!-- Known gap: remove this item when a bulk load in the project's code is read as a NOCHECK of its target's checks. -->
 - **Masked columns.** A caller without the `UNMASK` permission receives a column `MASKED WITH` a function, and any value
-  computed from it, as the mask (`0` for a number, `xxxx` for a string), which can break a range, a value set or a fixed
+  computed from it, as the mask (with `default()`, `0` for a number and `xxxx` for a
+  string), which can break a range, a value set or a fixed
   length haruspex claims. Masks aren't read. <!-- Known gap: remove this item when masks are read and a masked column keeps no facet the mask could break. -->
 - **Names that differ only in case.** Names are compared ignoring case. In a database with a case-sensitive collation, two
   columns of one table whose names differ only in case are taken as one: a reference to either is typed as the one declared
-  first, its `CHECK` included. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->
+  first, and a `CHECK` on either is taken as that one's. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->
 - **A disabled key in an extracted DACPAC.** An extract doesn't mark a primary key or unique constraint whose nonclustered
   index is disabled, so a query on that key is claimed to return at most one row though the table may hold duplicates. A
   unique index disabled on its own is marked, and read. <!-- Known gap: remove this item when a key in an extract is no longer taken as enforced, or the assumption is decided and moved to the list above. -->
