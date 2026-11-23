@@ -1,6 +1,6 @@
 // Runs values through a generated module's schemas, or a generated JSON Schema document's definitions, and compares what each
 // decides with what a test expects: the evidence that a schema refuses the forms SQL Server and the mssql driver never hand
-// over, as well as accepting the ones they do. Called by ZodVerdictTests as `node src/verdicts.mjs <folder>`, the folder
+// over, as well as accepting the ones they do. Called by ZodVerdictTests as `node src/schema-verdicts.mjs <folder>`, the folder
 // holding cases.json, [{ "schema" or "definition", "value", "accepted" }], and what the cases name: module.ts, a generated Zod
 // module, for a "schema" (an export of it); document.json, a generated JSON Schema document, for a "definition" (one of its
 // $defs), validated by Ajv as accept-json-schema.mjs validates one (strict, draft 2020-12, formats asserted). Each value is as a

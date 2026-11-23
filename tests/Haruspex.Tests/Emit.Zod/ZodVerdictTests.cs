@@ -8,7 +8,7 @@ namespace Haruspex.Tests.Emit.Zod;
 
 /// <summary>
 /// What the generated schemas decide, run in Node against the pinned Zod, and the JSON Schema document's definitions against Ajv
-/// (<c>tests/emit-check/src/verdicts.mjs</c>): each accepts
+/// (<c>tests/emit-check/src/schema-verdicts.mjs</c>): each accepts
 /// what SQL Server and the mssql driver hand over and refuses the forms they never do. A rowset's <c>bigint</c> arrives as the
 /// text of its digits (observed: <c>MssqlDriverObservationTests.A_rowset_bigint_arrives_as_the_text_of_its_digits</c>), and a date
 /// or time in JSON as <c>FOR JSON</c> writes its type; each accepted string below is one <c>ForJsonObservationTests</c> observed the
@@ -154,7 +154,7 @@ public class ZodVerdictTests
         ["accepted"] = accepted,
     };
 
-    /// <summary>Runs <c>verdicts.mjs</c> on <paramref name="cases"/> against <paramref name="text"/>, written as <paramref name="file"/>.</summary>
+    /// <summary>Runs <c>schema-verdicts.mjs</c> on <paramref name="cases"/> against <paramref name="text"/>, written as <paramref name="file"/>.</summary>
     private static void Verdicts(string file, string text, JsonArray cases)
     {
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the schemas' verdicts were not observed");
@@ -168,7 +168,7 @@ public class ZodVerdictTests
             File.WriteAllText(Path.Combine(folder, file), text);
             File.WriteAllText(Path.Combine(folder, "cases.json"), cases.ToJsonString());
             Assert.True(
-                EmitCheckPackage.TryRun("node", [Path.Combine("src", "verdicts.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
+                EmitCheckPackage.TryRun("node", [Path.Combine("src", "schema-verdicts.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
                 $"A schema decided other than the server and the driver require ({why}):\n{output}");
         }
         finally
