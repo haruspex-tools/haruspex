@@ -22,17 +22,27 @@ internal static class ZodPrinter
     /// <c>string</c>, since that is what arrives (the consumer parses it); the check only rejects text that does not hold
     /// what the IR claims. The content is a function so that it may name a schema written later, such as a recursive one.
     /// </summary>
+    /// <remarks>
+    /// The content's schema is built on the first value checked, by which time the module has finished loading, and kept: a
+    /// content of more than a name (<c>z.array(RowSchema).min(1)</c>, a union of objects that <c>.extend</c> each other) costs
+    /// a hundred times or more to build than to check a value against, so a list of rows would pay it once a row. Observed:
+    /// <c>EmitCheckTests.The_json_text_helper_builds_its_content_s_schema_once_however_many_values_it_checks</c>.
+    /// </remarks>
     private const string JsonTextHelper = $$"""
 
-        // JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-        const {{ZodModule.JsonTextHelperName}} = (content: () => {{ZodModule.ZodName}}.ZodType): {{ZodModule.ZodName}}.ZodString =>
-          {{ZodModule.ZodName}}.string().refine((text) => {
+        // JSON text: a string that must parse to a value of its content's schema. Its type stays string. The content's schema is
+        // built once, when the first value is checked, so it may name a schema declared later in the module.
+        const {{ZodModule.JsonTextHelperName}} = (content: () => {{ZodModule.ZodName}}.ZodType): {{ZodModule.ZodName}}.ZodString => {
+          let schema: {{ZodModule.ZodName}}.ZodType | undefined
+          return {{ZodModule.ZodName}}.string().refine((text) => {
             try {
-              return content().safeParse(JSON.parse(text)).success
+              schema ??= content()
+              return schema.safeParse(JSON.parse(text)).success
             } catch {
               return false
             }
           }, { error: 'Expected JSON text holding a value of its content type' })
+        }
 
         """;
 

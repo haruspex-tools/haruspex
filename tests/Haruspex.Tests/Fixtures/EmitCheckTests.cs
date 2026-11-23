@@ -138,6 +138,39 @@ public class EmitCheckTests
     }
 
     /// <summary>
+    /// The JSON text helper, as a generated module writes it, builds its content's schema once, on the first value it checks,
+    /// however many it checks, and still checks each: <c>src/json-text-once.mjs</c> counts the calls.
+    /// </summary>
+    [Fact]
+    public void The_json_text_helper_builds_its_content_s_schema_once_however_many_values_it_checks()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the JSON text helper was not run");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("PRow")), [])])],
+            new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField("v", new IrJsonText(new IrAnyJson()), IrPresence.Always, [])]) },
+            []);
+        var module = ZodEmitter.Emit(document).Expected();
+        Assert.Contains("const jsonText = ", module, StringComparison.Ordinal);
+
+        // Under accept/, which git ignores, so that the module's import of zod resolves to the package's own.
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "module.ts"), module + "export { jsonText }\n");
+            Assert.True(
+                EmitCheckPackage.TryRun("node", [Path.Combine("src", "json-text-once.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
+                $"The JSON text helper built its content other than once ({why}):\n{output}");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    /// <summary>
     /// The evidence for emitting <c>decimal(p, s)</c> as <c>.multipleOf(1e-s)</c>: Zod 4.6.7 must accept every
     /// decimal of each scale, as <c>JSON.parse</c> reads it, without a floating-point false failure, and must still
     /// reject a value with too many decimal places. <c>src/multiple-of.mjs</c> says how it sweeps.

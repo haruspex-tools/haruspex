@@ -82,7 +82,8 @@ package of its own because typescript-eslint reads TypeScript through the compil
 the emit check compiles with no longer has. The example application, `examples/greenhouse`, is compiled the same way
 against the module committed beside it (`ExampleAppTests`). The same package holds
 `tests/emit-check/src/multiple-of.mjs`, the evidence that Zod checks a decimal's step without floating-point false
-failures, `tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
+failures, `tests/emit-check/src/json-text-once.mjs`, the evidence that the JSON text helper builds its content's schema once,
+`tests/emit-check/src/accept.mjs`, through which the differential tests run real output into the generated schemas,
 `tests/emit-check/src/accept-json-schema.mjs`, through which they validate the same output against the generated JSON Schema
 with Ajv, `tests/emit-check/src/meta-schema.mjs`, which checks every generated JSON Schema against the draft 2020-12
 meta-schema, and `tests/emit-check/src/driver.mjs`, through which they call the database with the pinned mssql driver, and
