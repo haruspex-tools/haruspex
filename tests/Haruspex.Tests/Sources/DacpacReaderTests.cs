@@ -118,6 +118,31 @@ public class DacpacReaderTests
     }
 
     [Fact]
+    public void A_deployment_script_that_names_a_table_through_a_variable_it_does_not_set_doubts_every_object()
+    {
+        // A build keeps $(Target) as written: its value is the deployment's, whatever the project's default.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, postdeploy: "ALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n");
+
+        var warning = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DeploymentScriptNotRead, warning.Code);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(Ingot)?.Statement);
+        Assert.Equal(RedefiningStatement.UnreadScript, read.Model.FindTableRedefinition(Mould)?.Statement);
+    }
+
+    [Fact]
+    public void A_deployment_script_reads_a_variable_it_sets()
+    {
+        // As a build writes an include inlined after the :setvar before it.
+        using var folder = new TempDirectory();
+        var read = Smelter(folder, postdeploy: ":setvar Target ingot\nALTER TABLE dbo.$(Target) NOCHECK CONSTRAINT ALL;\n");
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new SourceLocation("smelter.dacpac/postdeploy.sql", 2, 1), Assert.Single(read.Model.FindTable(Ingot)!.Checks).DisabledAt);
+        Assert.Null(read.Model.FindTableRedefinition(Mould));
+    }
+
+    [Fact]
     public void A_package_records_its_name_and_the_sha256_of_its_bytes()
     {
         var path = Path.Combine(Packages, "atelier", "atelier.dacpac");

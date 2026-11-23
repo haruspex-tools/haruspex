@@ -137,6 +137,16 @@ public class SqlScriptFolderTests
     }
 
     [Fact]
+    public void A_temporary_table_a_body_creates_alters_and_drops_is_no_change_to_the_model()
+    {
+        // A temporary table is the session's, not the database's: changing it in a body changes no table of the model.
+        using var dir = new TempDirectory();
+        dir.File("p.sql", "CREATE PROCEDURE dbo.p AS BEGIN CREATE TABLE #t (code int NOT NULL); ALTER TABLE #t ADD note nvarchar(20) NULL; SELECT x.code FROM #t AS x; DROP TABLE #t; END");
+
+        Assert.Empty(SqlScriptFolder.Read(dir.Path).Model.TableRedefinitions);
+    }
+
+    [Fact]
     public void Reads_only_the_files_it_is_given()
     {
         using var dir = new TempDirectory();

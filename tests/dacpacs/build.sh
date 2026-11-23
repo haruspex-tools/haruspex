@@ -56,10 +56,11 @@ build() {
 }
 
 # A fixture that fails is named at the end, and the step fails, so a fixture whose package isn't built is caught here and not
-# only by DacpacEquivalenceTests. checks, adventure-works and wide-world-importers fail as that test's list says.
+# only by DacpacEquivalenceTests. checks, adventure-works and wide-world-importers never build, as that test's Unbuilt list
+# says with each one's error, so with no names given they are left out; named, they are tried.
 fixtures() {
   local names=("$@") failed=()
-  [ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$root/tests/fixtures" | grep -v README)
+  [ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$root/tests/fixtures" | grep -vxE 'README.md|checks|adventure-works|wide-world-importers')
   for f in "${names[@]}"; do
     local dir="$work/fixtures/$f"
     mkdir -p "$dir"

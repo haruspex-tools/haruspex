@@ -70,6 +70,39 @@ public class ExitCodeTests
     }
 
     [Fact]
+    public void A_folder_that_can_t_be_entered_is_1()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("a folder's Unix mode is what shuts it here");
+            return;
+        }
+
+        // The error is placed at the folder, not at a line of SQL, and is still the input's.
+        using var folder = Project(Plain);
+        folder.File("db/shut/load.sql", Plain);
+        var shut = Path.Combine(folder.Path, "db", "shut");
+        File.SetUnixFileMode(shut, UnixFileMode.None);
+        try
+        {
+            if (Directory.EnumerateFileSystemEntries(shut).Any())
+                Assert.Skip("this user may enter any folder (root)");
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        try
+        {
+            Fails(1, "HAR1020", folder, "db", "--include", "*.*", "--out", "out");
+        }
+        finally
+        {
+            File.SetUnixFileMode(shut, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    [Fact]
     public void Output_that_cannot_be_written_is_1()
     {
         using var folder = Project(Plain);

@@ -238,7 +238,11 @@ after it deploys the model. They define nothing the model takes, but what they c
 deployed: seeding a table with its checks off leaves them off, and altering a procedure leaves its `ALTER`. So both readers,
 of a package and of a project (each deployment script and its includes, read apart), read them for what they change
 (`DeploymentScripts`): the walk above, and every procedure, function and view one creates, alters or drops is `redefined`. One
-that doesn't parse, or an include that can't be found, is a warning, and every object whose name it holds is doubted.
+that doesn't parse, or an include that can't be found, is a warning, and every object whose name it holds is doubted. A
+project's include is read with the variables its script has set before the `:r`, as sqlcmd keeps one set for both, and a package
+reads them where the build inlined it. A statement that names what it changes through a variable no `:setvar` sets (`ALTER TABLE
+dbo.$(Target) NOCHECK CONSTRAINT ALL`) may change any object, since the deployment gives the value and a project's default is only
+a default, so it too is a warning and every object is doubted.
 
 **The proof.** For every fixture that builds as a project, and for WideWorldImporters, the IR and Zod inferred from the
 package are byte for byte those inferred from the folder, once each of the folder's locations is rewritten as the package's
