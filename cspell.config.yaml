@@ -371,3 +371,13 @@ overrides:
     ignoreWords: [nmae, customr]
   - filename: "**/tests/Haruspex.Tests/Cli/ConfigCliTests*.cs"
     ignoreWords: [baskte, shopp]
+  - filename: "**/src/Haruspex.SqlServer.Model/CollationCatalogue.cs"
+    # SQL Server's collation designators, spelt as sys.fn_helpcollations() spells them.
+    ignoreWords: [bopomofo, bushu, dari, divehi, fyrom, kakusu, mapudungan, tamazight, uighur]
+  # Collation names misspelt on purpose (Japanes_XJIS_140_CI_AS), to test that a name SQL Server lacks is unknown or refused.
+  - filename: "**/tests/Haruspex.Tests/Model/CollationCatalogueTests.cs"
+    ignoreWords: [japanes]
+  - filename: "**/tests/Haruspex.Tests/Config/ConfigReaderTests.cs"
+    ignoreWords: [japanes]
+  - filename: "**/tests/Haruspex.Tests/Semantics/SchemaFactsTests.Types.cs"
+    ignoreWords: [japanes]

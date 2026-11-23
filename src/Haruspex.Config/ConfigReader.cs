@@ -116,8 +116,12 @@ public static class ConfigReader
                     case "collation":
                         if (NonEmpty(member.Value, path) is { } collation)
                         {
-                            if (collation.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+                            // A name off the list is refused rather than read as some collation's: misspelt, it would have
+                            // been read as single-byte, and a char(n) typed as exactly n characters.
+                            if (CollationCatalogue.IsKnown(collation))
                                 config = config with { Collation = collation };
+                            else if (collation.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+                                Report(ConfigCodes.WrongKind, member.Value, path, $"is \"{collation}\", which SQL Server has no collation of: check its spelling against sys.fn_helpcollations(), such as Latin1_General_100_CI_AS.");
                             else
                                 Report(ConfigCodes.WrongKind, member.Value, path, $"is \"{collation}\", which is no collation's name: a name such as Latin1_General_100_CI_AS has only letters, digits and underscores.");
                         }

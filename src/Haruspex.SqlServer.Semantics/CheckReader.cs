@@ -91,7 +91,11 @@ public static class CheckReader
         var proved = reader.Condition(check.Expression);
         // A COLLATE on the column or a literal it is compared with decides the comparison, by SQL Server's precedence, so the
         // column's collation says nothing of it (observed: A_collate_in_a_check_decides_how_it_compares): such a set is a note.
-        return proved?.ToFacts(type, reader.Source, reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings), !reader.Collated && CountsCodePoints(type, collation));
+        return proved?.ToFacts(
+            type,
+            reader.Source,
+            reader.Collated ? (ValueComparison.Collation, null) : StringComparisonOf(type, collation, proved.Strings, reader.National, reader.Converted),
+            !reader.Collated && CountsCodePoints(type, collation));
     }
 
     /// <summary>
@@ -105,7 +109,7 @@ public static class CheckReader
     /// </summary>
     private static bool CountsCodePoints(ResolvedType type, string? collation)
     {
-        if (collation is null || type.Scalar is not { IsString: true } scalar)
+        if (collation is null || !CollationCatalogue.IsKnown(collation) || type.Scalar is not { IsString: true } scalar)
             return false;
         var parts = collation.Split('_');
         bool Has(string part) => parts.Any(t => t.Equals(part, StringComparison.OrdinalIgnoreCase));
@@ -121,23 +125,41 @@ public static class CheckReader
     /// for a code-page column of a collation whose fold is proven, canonically (<see cref="CanonicalBy"/>).
     /// </summary>
     /// <remarks>
-    /// For <c>char</c> and <c>varchar</c> in a code page, a literal is converted to the code page before comparing,
-    /// and a character the code page lacks becomes another (often <c>?</c>), so a stored value could differ from the
-    /// literal. Only printable ASCII is the same in every code page SQL Server uses, and even there <c>\</c> and
-    /// <c>~</c> are left out (code page 932 has the yen sign at 0x5C). A set with anything else stays a collation
-    /// set. UTF-8 and Unicode columns hold every character, so they need no such care.
+    /// <para>
+    /// A character may be converted before it is compared, and a character the target lacks becomes another (often <c>?</c>), so
+    /// a stored value could differ from the literal. A literal without <c>N</c> is <c>varchar</c> in the database's code page,
+    /// whatever the column (observed: A_literal_without_n_is_converted_to_the_databases_code_page_before_it_is_compared), and
+    /// for <c>char</c> and <c>varchar</c> in a code page every literal is converted to the column's. Only printable ASCII is the
+    /// same in every code page SQL Server uses (<see cref="IsPrintableAscii"/>). A set with anything else, in a literal without
+    /// <c>N</c> or under a code-page column, stays a collation set; an <c>N'…'</c> literal compared with a Unicode or UTF-8
+    /// column is compared as written.
+    /// </para>
+    /// <para>
+    /// An <c>N'…'</c> literal outranks <c>varchar</c>, so a code-page column compared with one is converted to Unicode and
+    /// compared by the collation's Unicode rules, which are not the code-page rules a fold records: under
+    /// <c>SQL_Latin1_General_CP1_CI_AS</c>, <c>'v²'</c> equals <c>N'v2'</c> and <c>'paß'</c> equals <c>N'pass'</c>
+    /// (observed: A_national_literal_compares_a_code_page_column_by_unicode_rules). Such a set gets no fold. Under a binary
+    /// collation, code points are compared, and printable ASCII is the same code point in either, so it stays exact.
+    /// </para>
     /// </remarks>
-    private static (ValueComparison Comparison, CollationFold? Fold) StringComparisonOf(ResolvedType type, string? collation, IReadOnlyList<string>? strings)
+    private static (ValueComparison Comparison, CollationFold? Fold) StringComparisonOf(ResolvedType type, string? collation, IReadOnlyList<string>? strings, bool national, bool converted)
     {
-        if (collation is null)
+        // A name no collation has says nothing of how it compares, not even whether it is binary.
+        if (collation is null || converted || !CollationCatalogue.IsKnown(collation))
             return (ValueComparison.Collation, null);
         var codePage = type.Scalar is { IsString: true, IsNational: false } && SchemaRules.EncodingOf(collation) != TextEncoding.Utf8;
         if (!collation.Split('_').Any(t => t.Equals("BIN", StringComparison.OrdinalIgnoreCase) || t.Equals("BIN2", StringComparison.OrdinalIgnoreCase)))
-            return codePage && strings is not null && CanonicalBy(collation, strings) is { } fold ? (ValueComparison.Canonical, fold) : (ValueComparison.Collation, null);
-        return codePage && strings is not null && strings.Any(s => s.Any(c => c is < ' ' or > '}' or '\\'))
+            return codePage && !national && strings is not null && CanonicalBy(collation, strings) is { } fold ? (ValueComparison.Canonical, fold) : (ValueComparison.Collation, null);
+        return codePage && strings is not null && !strings.All(IsPrintableAscii)
             ? (ValueComparison.Collation, null)
             : (ValueComparison.Padded, null);
     }
+
+    /// <summary>
+    /// Whether a string is the same in every code page SQL Server uses: printable ASCII, without <c>\</c> and <c>~</c> (code page
+    /// 932 has the yen sign at 0x5C).
+    /// </summary>
+    private static bool IsPrintableAscii(string value) => !value.Any(c => c is < ' ' or > '}' or '\\');
 
     /// <summary>
     /// The fold a set of a code-page column compares by, when the collation's is proven, every string is plain, and no two fold
@@ -331,6 +353,15 @@ public static class CheckReader
         /// <summary>Whether a column or literal the condition compares carries a <c>COLLATE</c> of its own.</summary>
         public bool Collated { get; private set; }
 
+        /// <summary>Whether a string the condition compares is an <c>N'…'</c> literal (see <see cref="StringComparisonOf"/>).</summary>
+        public bool National { get; private set; }
+
+        /// <summary>
+        /// Whether a string the condition compares is a literal without <c>N</c> holding a character outside printable ASCII,
+        /// which is converted to the database's code page, which the model doesn't know, before it is compared.
+        /// </summary>
+        public bool Converted { get; private set; }
+
         private bool IsColumn(ScalarExpression expression)
         {
             var isColumn = Unwrap(expression) is ColumnReferenceExpression { ColumnType: ColumnType.Regular, MultiPartIdentifier.Identifiers: [var name] }
@@ -379,6 +410,8 @@ public static class CheckReader
             if (!family.IsString || Literal(expression) is not StringLiteral literal)
                 return null;
             Collated |= HasCollation(expression);
+            National |= literal.IsNational;
+            Converted |= !literal.IsNational && !IsPrintableAscii(literal.Value);
             return literal.Value;
         }
 

@@ -70,9 +70,11 @@ public sealed partial class Binder
                 // A table variable is the body's own; without a declaration of it in hand it is not modelled.
                 adding.Sources.Add(new BoundSource(
                     variable.Alias?.Value ?? variable.Variable.Name,
-                    adding.Names.Find(variable.Variable.Name) is { } relation
-                        ? new RelationTarget(relation)
-                        : new UnresolvedTarget(Problem(BindingProblemKind.UnsupportedSource, $"The table variable {variable.Variable.Name} is not modelled here.", At(reference))),
+                    adding.Names.Declarations.Variable(new LocalName(variable.Variable.Name)) is CaseVariantVariable variants
+                        ? new UnresolvedTarget(Problem(BindingProblemKind.UnsupportedSource, variants.Why, At(reference)))
+                        : adding.Names.Find(variable.Variable.Name) is { } relation
+                            ? new RelationTarget(relation)
+                            : new UnresolvedTarget(Problem(BindingProblemKind.UnsupportedSource, $"The table variable {variable.Variable.Name} is not modelled here.", At(reference))),
                     optional,
                     variable));
                 break;
@@ -235,6 +237,8 @@ public sealed partial class Binder
     /// </summary>
     private ExposedName? ExposedNameOf(SchemaObjectName name, NameEnvironment names)
     {
+        if (Temporary(name) is { } temporary)
+            return new ExposedName(null, temporary.Text);
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return null;
         var one = name.BaseIdentifier.Value;
@@ -257,8 +261,11 @@ public sealed partial class Binder
         var at = At(named);
         UnresolvedTarget Unresolved(BindingProblemKind kind, string detail) => new(Problem(kind, detail, at));
 
-        // A CTE hides a table of the same name, but only a one-part name can mean it; a temporary table is only ever a
-        // one-part name. Either is the body's own.
+        // A temporary table, however its name is qualified (see Temporary), is the body's own.
+        if (Temporary(name) is { } temporary && names.Find(temporary.Text) is { } own)
+            return new RelationTarget(own);
+
+        // A CTE hides a table of the same name, but only a one-part name can mean it.
         if (IsOnePart(name) && names.Find(name.BaseIdentifier.Value) is { } relation)
             return new RelationTarget(relation);
 

@@ -121,6 +121,8 @@ public sealed partial class Binder
     private static Resolution FromSource(BoundSource source, string name, SourceLocation at) => source.Target switch
     {
         RelationTarget { Relation: { Columns: null } relation } => new UnlistedColumn(source, relation),
+        RelationTarget { Relation: { Columns: { } columns } relation } when CaseVariants(columns, name) is { } variants => InCase(relation.Name, variants, at),
+        TableTarget { Table: var table } when CaseVariants(table.Columns.Select(c => c.Name), name) is { } variants => InCase(table.Name.ToString(), variants, at),
         RelationTarget { Relation: var relation } => relation.IndexOf(name) is >= 0 and var ordinal
             ? new RelationColumn(source, relation, ordinal)
             : new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, $"{relation.Name} has no column {name}.", at)),
@@ -131,6 +133,25 @@ public sealed partial class Binder
             ? new TableColumn(source, table, column)
             : new MissingColumn(Problem(BindingProblemKind.UnresolvedColumn, $"The table {table.Name} has no column {name}.", at)),
     };
+
+    /// <summary>
+    /// The columns whose names are <paramref name="name"/> but for case, when there are two or more; null otherwise. Names are
+    /// matched ignoring case, as a database of a case-insensitive collation matches them, but two columns whose names differ
+    /// only in case can be made only where names are compared by case. Their presence proves that, and haruspex doesn't model
+    /// it: matched ignoring case, one would be read for the other, with its type, nullability and CHECK constraints (decision
+    /// 0107).
+    /// </summary>
+    private static List<string>? CaseVariants(IEnumerable<string> columns, string name)
+    {
+        var variants = columns.Where(c => c.Equals(name, StringComparison.OrdinalIgnoreCase)).ToList();
+        return variants.Count > 1 ? variants : null;
+    }
+
+    /// <summary>Why a column of <paramref name="relation"/> with a name that differs from another's only in case is unknown.</summary>
+    private static AmbiguousColumn InCase(string relation, List<string> variants, SourceLocation at) => new(Problem(
+        BindingProblemKind.UnresolvedColumn,
+        $"{relation} has the columns {string.Join(" and ", variants)}, whose names differ only in case: names are compared by case there, which haruspex doesn't model, so which one is read is not known.",
+        at));
 
     /// <summary>
     /// What a variable reference means where <paramref name="names"/> are in force: a parameter of the body, a variable it

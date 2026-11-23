@@ -178,18 +178,18 @@ public static class SchemaRules
     }
 
     /// <summary>
-    /// The encoding of <c>char</c> and <c>varchar</c> data under a collation. Non-Unicode data uses the collation's
-    /// code page; of those SQL Server supports, only 932 (Japanese), 936 and 950 (Chinese) and 949 (Korean) are
-    /// double-byte, and a <c>_UTF8</c> collation stores UTF-8. Every other code page (1250 to 1258, 874) is
-    /// single-byte. Unicode-only collations cannot be used for <c>char</c> or <c>varchar</c> at all.
+    /// The encoding of <c>char</c> and <c>varchar</c> data under a collation, from the code page SQL Server gives it
+    /// (<see cref="CollationCatalogue.CodePage"/>): of those it supports, only 932 (Japanese), 936 and 950 (Chinese) and 949 (Korean) are
+    /// double-byte, and a <c>_UTF8</c> collation stores UTF-8; every other code page (1250 to 1258, 874, 850, 437) is
+    /// single-byte. Unknown for a Unicode-only collation, which <c>char</c> and <c>varchar</c> can't use, and for a name no
+    /// collation has, which is never read as some other collation's: a misspelt <c>_UTF8</c> name read as single-byte would type
+    /// a <c>char(n)</c> as exactly n characters.
     /// </summary>
-    public static TextEncoding EncodingOf(string? collation) => collation switch
+    public static TextEncoding EncodingOf(string? collation) => (collation is null ? null : CollationCatalogue.CodePage(collation)) switch
     {
-        null => TextEncoding.Unknown,
-        _ when collation.EndsWith("_UTF8", StringComparison.OrdinalIgnoreCase) => TextEncoding.Utf8,
-        _ when collation.StartsWith("Japanese", StringComparison.OrdinalIgnoreCase)
-            || collation.StartsWith("Chinese", StringComparison.OrdinalIgnoreCase)
-            || collation.StartsWith("Korean", StringComparison.OrdinalIgnoreCase) => TextEncoding.DoubleByte,
+        null or CollationCatalogue.UnicodeOnly => TextEncoding.Unknown,
+        CollationCatalogue.Utf8 => TextEncoding.Utf8,
+        932 or 936 or 949 or 950 => TextEncoding.DoubleByte,
         _ => TextEncoding.SingleByte,
     };
 

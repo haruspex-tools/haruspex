@@ -45,6 +45,12 @@ public sealed record DmlTarget(EquatableArray<SchemaObjectName> Objects, Equatab
                 case VariableTableReference variable:
                     direct ??= new LocalName(variable.Variable.Name);
                     break;
+
+                // A temporary table named with a schema, a database or a server: no alias or CTE has such a name.
+                case NamedTableReference { SchemaObject: { SchemaIdentifier: not null } or { DatabaseIdentifier: not null } or { ServerIdentifier: not null } } qualified
+                    when Binder.Temporary(qualified.SchemaObject) is { } qualifiedTemporary:
+                    direct ??= qualifiedTemporary;
+                    break;
                 case NamedTableReference { SchemaObject: { SchemaIdentifier: null, DatabaseIdentifier: null, ServerIdentifier: null } name } named:
                     var one = name.BaseIdentifier.Value;
 

@@ -1,4 +1,5 @@
 using Haruspex.DifferentialTests.Server;
+using Haruspex.SqlServer.Model;
 using Microsoft.Data.SqlClient;
 
 namespace Haruspex.DifferentialTests;
@@ -63,6 +64,51 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     [InlineData("Latin1_General_100_CI_AS", "s IN ('open' COLLATE Latin1_General_100_CS_AS, 'shut')", "OPEN", false)]
     public async Task A_collate_in_a_check_decides_how_it_compares(string column, string condition, string value, bool stored) =>
         Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s varchar(10) COLLATE {column} NULL CHECK ({condition}));", $"INSERT INTO dbo.obs VALUES ('{value}')"));
+
+    [Fact]
+    public async Task The_collations_haruspex_lists_are_exactly_the_servers_with_their_code_pages()
+    {
+        // Collations is a closed list, so that a name off it is unknown and never read as single-byte: every name the server has
+        // must be on it with the server's code page, and nothing else.
+        server.Require();
+        await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
+        await using var command = session.Command("SELECT name, CAST(COLLATIONPROPERTY(name, 'CodePage') AS int) FROM sys.fn_helpcollations();");
+        await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        var observed = new Dictionary<string, int>(StringComparer.Ordinal);
+        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
+            observed.Add(reader.GetString(0), reader.GetInt32(1));
+
+        Assert.Equal(
+            observed.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => $"{c.Key} {c.Value}"),
+            CollationCatalogue.Names.Order(StringComparer.Ordinal).Select(n => $"{n} {CollationCatalogue.CodePage(n)}"));
+    }
+
+    [Theory]
+    // An N'…' literal outranks varchar, so a code-page column is converted to Unicode and compared by the collation's Unicode
+    // rules, which are not its code-page rules: under SQL_Latin1_General_CP1_CI_AS 'v²' equals N'v2', a NUL is ignored, and 'ß'
+    // equals N'ss'. The same strings without N refuse each. So CheckReader gives such a set no canonical fold. Under a binary
+    // collation the code points are compared, and 'v²' is refused either way.
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "N'v1', N'v2'", "'v' + CHAR(178)", true)]
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "N'v1', N'v2'", "'v' + CHAR(0) + '1'", true)]
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "N'pass', N'fail'", "'pa' + CHAR(223)", true)]
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "'v1', 'v2'", "'v' + CHAR(178)", false)]
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "'v1', 'v2'", "'v' + CHAR(0) + '1'", false)]
+    [InlineData("SQL_Latin1_General_CP1_CI_AS", "'pass', 'fail'", "'pa' + CHAR(223)", false)]
+    [InlineData("Latin1_General_100_BIN2", "N'v1', N'v2'", "'v' + CHAR(178)", false)]
+    public async Task A_national_literal_compares_a_code_page_column_by_unicode_rules(string collation, string items, string value, bool stored) =>
+        Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s varchar(10) COLLATE {collation} NULL CHECK (s IN ({items})));", $"INSERT INTO dbo.obs VALUES ({value})"));
+
+    [Theory]
+    // A literal without N is varchar in the database's code page (1252 here) before it is compared, whatever the column: 'Ω' and
+    // 'Ā' become 'O' and 'A', so a Unicode or UTF-8 column under a binary collation refuses the character as written and stores
+    // the one it became (sys.check_constraints keeps [s]='O'). With N it is compared as written.
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2", "'Ω'", "N'Ω'", false)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2", "'Ω'", "N'O'", true)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_BIN2_UTF8", "'Ā'", "N'Ā'", false)]
+    [InlineData("varchar(20) COLLATE Latin1_General_100_BIN2_UTF8", "'Ā'", "'A'", true)]
+    [InlineData("nvarchar(10) COLLATE Latin1_General_100_BIN2", "N'Ω'", "N'Ω'", true)]
+    public async Task A_literal_without_n_is_converted_to_the_databases_code_page_before_it_is_compared(string column, string item, string value, bool stored) =>
+        Assert.Equal(stored, await Succeeds($"CREATE TABLE dbo.obs (s {column} NULL CHECK (s IN ({item}, 'ok')));", $"INSERT INTO dbo.obs VALUES ({value})"));
 
     [Theory]
     // LEN counts a surrogate pair as one character of nvarchar under _SC or a version 140 collation that isn't binary, and of

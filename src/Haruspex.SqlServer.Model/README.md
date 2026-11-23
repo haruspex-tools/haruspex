@@ -60,6 +60,9 @@ foreach (var table in model.Tables)
 - **Names are two-part** (`schema.name`, `ObjectName`) and compared case-insensitively, as SQL Server compares them in
   almost every database.
 - **Declarations are kept as written**, so a tool reading the model sees what the source says, not an interpretation.
+- **Collations are a closed list** (`CollationCatalogue`): every collation SQL Server 2025 has, with the code page its `char`
+  and `varchar` data is stored in, checked against `sys.fn_helpcollations()` by a test. A name off the list is no collation's,
+  so it is never read as some other collation's.
 - **What the source records of the database itself is kept, and only that.** A source that records the database's settings
   (a DACPAC does) gives its collation, compatibility level and `SET` defaults (`DatabaseSettings`); a folder of scripts
   doesn't, and `DatabaseModel.Settings` is null. They are recorded, not applied: a column's collation is the one it declares,

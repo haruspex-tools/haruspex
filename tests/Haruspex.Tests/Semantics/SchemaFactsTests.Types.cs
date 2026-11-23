@@ -65,6 +65,17 @@ public partial class SchemaFactsTests
     [InlineData("varchar(5) COLLATE Japanese_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.DoubleByte)]
     [InlineData("varchar(5) COLLATE Chinese_PRC_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.DoubleByte)]
     [InlineData("varchar(5) COLLATE Korean_Wansung_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.DoubleByte)]
+    [InlineData("varchar(5) COLLATE korean_90_bin2 NULL", 5, false, TextUnit.Bytes, TextEncoding.DoubleByte)]
+    [InlineData("varchar(5) COLLATE Chinese_Simplified_Pinyin_160_CI_AS_SC_UTF8 NULL", 5, false, TextUnit.Bytes, TextEncoding.Utf8)]
+    [InlineData("varchar(5) COLLATE Latin1_General_100_BIN2_UTF8 NULL", 5, false, TextUnit.Bytes, TextEncoding.Utf8)]
+    [InlineData("varchar(5) COLLATE SQL_Latin1_General_CP850_CI_AS NULL", 5, false, TextUnit.Bytes, TextEncoding.SingleByte)]
+    // A name no collation has is not read as some collation's: a misspelt UTF-8 or double-byte one, or a designator SQL Server
+    // lacks, is unknown, so a char(n) is never claimed to hold exactly n characters.
+    [InlineData("char(6) COLLATE Latin1_General_100_CI_AS_SC_UFT8 NOT NULL", 6, true, TextUnit.Bytes, TextEncoding.Unknown)]
+    [InlineData("char(6) COLLATE Japanes_XJIS_140_CI_AS NOT NULL", 6, true, TextUnit.Bytes, TextEncoding.Unknown)]
+    [InlineData("char(6) COLLATE Latin1_General_CI_AZ NOT NULL", 6, true, TextUnit.Bytes, TextEncoding.Unknown)]
+    // A Unicode-only collation stores no char data at all.
+    [InlineData("char(6) COLLATE Indic_General_100_CI_AS NOT NULL", 6, true, TextUnit.Bytes, TextEncoding.Unknown)]
     // A Unicode type counts UTF-16 code units whatever its collation.
     [InlineData("nvarchar(5) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NULL", 5, false, TextUnit.Utf16, TextEncoding.Unknown)]
     public void A_string_type_has_its_length_and_what_it_counts(string definition, int length, bool isFixed, TextUnit unit, TextEncoding encoding)
