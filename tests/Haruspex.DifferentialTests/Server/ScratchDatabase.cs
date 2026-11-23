@@ -84,5 +84,35 @@ public sealed class ScratchDatabase : IAsyncDisposable
         throw new TimeoutException($"Session {session} wasn't seen in a WAITFOR within 30 seconds.");
     }
 
+    /// <summary>
+    /// Waits until <paramref name="session"/> is blocked by <paramref name="blocker"/>, watched from <paramref name="watcher"/>,
+    /// so that its statement has begun and waits on a lock the blocker holds. Like <see cref="InItsWaitforAsync"/>, it watches the
+    /// server rather than a clock.
+    /// </summary>
+    /// <param name="watcher">Another session, not busy.</param>
+    /// <param name="session">The session watched (<see cref="SessionOfAsync"/>).</param>
+    /// <param name="blocker">The session whose lock it should wait on.</param>
+    /// <param name="call">The watched session's call: if it ends first, it never waited, and that is an error.</param>
+    /// <param name="token">Cancels the wait.</param>
+    /// <exception cref="InvalidOperationException">The call ended before it was seen blocked.</exception>
+    /// <exception cref="TimeoutException">It wasn't seen blocked within 30 seconds.</exception>
+    public static async Task BlockedByAsync(SqlConnection watcher, short session, short blocker, Task call, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(call);
+        await using var request = new SqlCommand("SELECT blocking_session_id FROM sys.dm_exec_requests WHERE session_id = @session;", watcher);
+        request.Parameters.Add(new SqlParameter("@session", System.Data.SqlDbType.SmallInt) { Value = session });
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (clock.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            if (call.IsCompleted)
+                throw new InvalidOperationException($"Session {session}'s call ended before it was seen blocked by session {blocker}.");
+            if (await request.ExecuteScalarAsync(token).ConfigureAwait(false) is short blocking && blocking == blocker)
+                return;
+            await Task.Delay(TimeSpan.FromMilliseconds(10), token).ConfigureAwait(false);
+        }
+
+        throw new TimeoutException($"Session {session} wasn't seen blocked by session {blocker} within 30 seconds.");
+    }
+
     public async ValueTask DisposeAsync() => await drop().ConfigureAwait(false);
 }

@@ -23,8 +23,9 @@ namespace Haruspex.SqlServer.Inference;
 /// ends), then the result sets its last walk returned, until a walk returns what was assumed. The walk starts from the join
 /// of the temporary tables it was called with and those every recursive call of it starts from (the procedure may have
 /// written them first), widened and walked again until no call adds to them, so the assumption holds for each call's tables.
-/// With monotone steps result sets only grow from one walk to the next, so this reaches the least fixed point, which
-/// describes every call that returns, by induction on its depth. At most <see cref="FixedPoint.MostPasses"/> walks are taken (<see cref="FixedPoint.Iterate"/>), which is
+/// A walk that returns what was assumed is a fixed point, which describes every call that returns, by induction on its
+/// depth, however it was reached; with monotone steps result sets only grow from one walk to the next, so it is also the
+/// least. At most <see cref="FixedPoint.MostPasses"/> walks are taken (<see cref="FixedPoint.Iterate"/>), which is
 /// what makes it end; a procedure that returns more result sets at each depth never settles,
 /// and is unknown (<c>unresolved-recursion</c>). What the recursive call does to temporary tables is not iterated: every
 /// table that the procedures it can reach write is unknown after it. SQL Server stops at 32 nested calls (error 217,

@@ -62,3 +62,39 @@ History: it was unknown before 6j.
 History: typed (6g) here.
 
 Passes: 2e+076 / 2e+076 is a float, and in 2026 a slice of bread.
+
+History: CM5's rule.
+
+History: placed by the CM5 split.
+
+History: typed (K1c) here.
+
+History: checked by the link test (S1).
+
+History: as (K1c observes) here.
+
+History: renumbered when V1b took it.
+
+History: Row 6r lists the errors.
+
+History: planned in row 6n2.
+
+History: as the brief said.
+
+History: the brief's example.
+
+History: left for the hand-over.
+
+History: the top-level session recommended it.
+
+History: decided without a questions round.
+
+History: see checklist items 9 and 10.
+
+Passes: row 3 of the table, read row by row, a row of data and the 2nd row.
+
+Passes: HAR4001's message, a window `OVER (w1)` named w1 (w1), and in brief, a brief note.
+
+Passes: hand over the connection, and a session at the top level.
+
+Passes: a digest (MD4 and MD5 give 16 bytes), and for MD2 NULL.

@@ -75,10 +75,10 @@ public class ModuleAssignmentTests
         Assert.Equal([$"sql/q.sql:1:1: error HAR4008: {why}"], assigned.Diagnostics.Select(d => d.ToString()));
     }
 
-    // A dot would make a file name such as RDF..zod.ts, and one name could read as another module's file.
+    // A dot would make a file name such as Ledger..zod.ts, and one name could read as another module's file.
     [Theory]
     [InlineData("sales team")]
-    [InlineData("RDF.")]
+    [InlineData("Ledger.")]
     [InlineData("sales.v2")]
     public void By_schema_a_schema_that_can_t_name_a_module_is_refused(string schema)
     {

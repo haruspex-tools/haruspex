@@ -476,7 +476,7 @@ internal sealed class NameSettler(
     private IrType Rename(IrType type) =>
         IrTypeTree.RenameReferences(type, key => named.TryGetValue(key, out var name) ? name : key);
 
-    /// <summary>Splits an id written by the front end (<c>sales.get_order</c>, <c>[RDF.].GetPropertyList</c>).</summary>
+    /// <summary>Splits an id written by the front end (<c>sales.get_order</c>, <c>[Ledger.].GetEntryList</c>).</summary>
     private static bool TrySplit(string id, out string schema, out string name)
     {
         var parts = new List<string>();

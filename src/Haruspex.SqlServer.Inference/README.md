@@ -47,7 +47,9 @@ it, claim by claim.
 
 ## What it guarantees
 
-- **Every claim holds for every execution**, under the rules below, each observed on SQL Server and named by its test.
+- **Every claim holds for every execution**, under the rules below, each observed on SQL Server and named by its test, and
+  given the assumptions and except in the known gaps that
+  [the project's README](../../README.md#what-it-guarantees-and-what-it-cant-see) lists.
   What isn't proved is unknown, with a reason from `IrUnknownReason`, never guessed
   ([decision 0002](../../docs/decisions/0002-unknown-with-a-reason-never-a-guess.md)).
 - **Unknowns stay local.** An unmodelled expression makes its column unknown, not its row; only what can't be placed (a
@@ -366,8 +368,14 @@ still finds it depends on what holds it, all observed with a second session dele
 | Between the guard and the read | The read |
 |---|---|
 | nothing: read committed, read committed snapshot, a locking hint or `SERIALIZABLE` without a transaction, a transaction without a hint, snapshot isolation without a transaction | may find nothing: another session's delete lands in between (`A_row_an_existence_guard_saw_may_be_gone_when_a_later_statement_reads_it`) |
-| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` with no hint but those and `READPAST`; a hint that lowers the level (`NOLOCK`, `READCOMMITTED`) gives up the lock (`A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read`) | finds the row: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
+| a transaction the body began, still open, and the guard read with `UPDLOCK`, `HOLDLOCK`, `SERIALIZABLE`, `REPEATABLEREAD` or `XLOCK`, or at `SERIALIZABLE` or `REPEATABLE READ` with no hint but those and `READPAST`; a hint that lowers the level (`NOLOCK`, `READCOMMITTED`) gives up the lock (`A_hint_on_the_guard_that_lowers_the_level_holds_no_lock_for_the_read`) | finds the row, read at a level that isn't `SNAPSHOT`: the guard's lock lasts until the outermost transaction ends, so the delete waits (`A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read`) |
+| the same lock, and the read at `SNAPSHOT` with no hint, in a snapshot transaction the body began, or its caller began, even one that read nothing before the call | may find nothing: the guard's lock finds the row as committed now, and the read reads the snapshot, which may predate it (`A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now`, `A_callers_snapshot_transaction_that_has_read_nothing_still_misses_the_row_the_guard_waited_for`); a read with `READCOMMITTEDLOCK`, `HOLDLOCK`, `SERIALIZABLE` or `REPEATABLEREAD`, or after the level is set to read committed, finds it, one with `UPDLOCK` or `XLOCK` fails the call (3960), and one with any other hint (`ROWLOCK`, `TABLOCK`, `PAGLOCK`, `NOWAIT`) still reads the snapshot (`A_read_at_snapshot_isolation_reads_what_is_committed_now_only_with_a_hint_that_takes_a_lock`) |
 | a transaction the body began at `SNAPSHOT`, still open, the guard and the read at `SNAPSHOT` with no table hint; a guard read with `READCOMMITTEDLOCK` can see a row committed after the snapshot began, which the read then doesn't (`A_guard_that_reads_past_the_snapshot_can_see_a_row_the_snapshot_read_does_not`) | finds the row: both read the transaction's one snapshot (`Snapshot_isolation_in_an_open_transaction_reads_the_row_the_guard_saw`); with `READCOMMITTEDLOCK`, or the level set back first, it may not |
+
+A lock is trusted only for a read of what is committed now: one at a level the body set that isn't `SNAPSHOT`, or one with a
+hint of its own that reads past the snapshot (`READCOMMITTEDLOCK`, or one that takes a lock; not `ROWLOCK` or `TABLOCK`, which
+read the snapshot). Where the body sets no level the
+caller's may be `SNAPSHOT`, which isn't seen, so a read with no hint there is not held (decision 0053, provisional).
 
 So the walk keeps each row a guard found (`FoundRow`, in `FlowState.Found`), with whether it is held, and the body's own
 transactions and isolation level beside it (`FlowState.Transactions`, `FlowState.Isolation`). A read of the guard's table
@@ -384,8 +392,7 @@ raced; an inner `COMMIT` of nested transactions keeps it. A `CATCH` starts with 
 body's known to be open: whether every error that reaches one leaves the transaction open with its locks is not observed
 (a deadlock victim's was seen to), so it claims less (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
-assignment to a variable the guard compared with. A transaction the caller began, or an isolation level the caller set, is
-not seen, which only claims less.
+assignment to a variable the guard compared with.
 
 ## Result sets are positional
 
@@ -548,8 +555,9 @@ it never returns, then the result sets its last walk returned, until a walk retu
 `FixedPoint.MostPasses`, the one cap every solver has). The assumption must hold for the temporary tables the recursive call starts from, which the
 procedure may have written before calling itself; so the walk starts from the join of the tables it was called with and
 those of every recursive call met, and when a call widens them, it starts over from the wider tables. A recursive call both
-under `INSERT … EXEC` and outside it is `unresolved-recursion`. With monotone steps result sets only grow between walks, so this reaches the least fixed
-point, which describes every call that returns, by induction on its depth; the bound on walks is what makes it end
+under `INSERT … EXEC` and outside it is `unresolved-recursion`. A walk that returns what was assumed is a fixed
+point, which describes every call that returns, by induction on its depth, however it was reached; with monotone steps
+result sets only grow between walks, so it is also the least. The bound on walks is what makes it end
 ([the guide, chapter 7](../../docs/internals/07-summaries-and-recursion.md)). A procedure that returns more result sets at each depth never settles and is
 `unresolved-recursion`. Every temporary table that the procedures the recursive call can reach write is unknown after it:
 that part is not iterated. Calls nest at most 32 deep (error 217, `Calls_nest_at_most_32_deep`), which fails the call, so it
@@ -1067,7 +1075,7 @@ third (a NULL third argument rounds); each reads only its arguments, so a `COALE
   two integer digits.
 - **Outside the domain** (`A_math_function_outside_its_domain_is_an_error_by_default_and_null_under_the_callers_options`):
   `SQRT` of a negative, `LOG` of 0 or less or to a base of 0 or 1, `LOG10` of 0 or less, `POWER` as above, are error 3623 by
-  default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off. The brief expected an error under any options;
+  default and NULL under the caller's `ANSI_WARNINGS` and `ARITHABORT` off. An error under any options was expected;
   the server says otherwise, so these are nullable for **`domain-error`** (IR 0.15), a rule of its own because the cause is
   not an overflow. `SQRT` of a `tinyint` or a `bit` cannot be. No bound proves an argument positive yet (a `CHECK (x > 0)`
   would), which is left for a corpus that needs it.
@@ -1258,7 +1266,7 @@ the condition can take when that column is NULL and everything else is anything:
 | anything else: the column inside `ISNULL`, `COALESCE`, `CASE` or any expression, `IS [NOT] DISTINCT FROM`, `EXISTS` | anything (`A_null_inside_isnull_coalesce_or_case_can_make_the_predicate_true`, `Is_distinct_from_is_never_unknown`) |
 
 `AND`, `OR` and `NOT` combine the sets by three-valued logic, treating their operands as independent, which can only add
-values. The column is proved non-null when TRUE is not in the set. This gives every rule the brief listed and nothing more:
+values. The column is proved non-null when TRUE is not in the set. This gives the rules below and nothing more:
 
 - conjuncts at the top refine, each on its own (`UNKNOWN AND x` is never TRUE);
 - under `OR`, only what every disjunct proves (`Or_keeps_a_null_when_any_disjunct_can_be_true`);
@@ -1756,7 +1764,7 @@ outer join's ON proves its columns as it proves an aliased one's
   too, so such a column is also `precision-loss` ("Precision lost" above, `Typer.OpenJsonColumn`).
   So it has its type's facets, and is nullable with `json-null-or-absent`: NULL where the JSON holds `null` or, under a lax path,
   where nothing is there or an object or array stands where a scalar is declared.
-- **`strict` does not make a column non-null** (a deviation from the brief, which expected it to): it turns a missing
+- **`strict` does not make a column non-null**, as it might seem to: it turns a missing
   property into an error (13608), but a JSON `null` under a strict path is still NULL
   (`Openjson_with_columns_are_of_their_declared_types_and_null_for_a_missing_path_or_a_json_null`,
   `Openjson_with_a_strict_path_that_is_missing_is_an_error_not_a_null`). Whether the document holds `null` is the data's.
@@ -2181,9 +2189,14 @@ not listed is not modelled.
 - **`DATEFROMPARTS`**, `DATETIMEFROMPARTS`, `SMALLDATETIMEFROMPARTS` and, with a precision that must be a literal,
   `DATETIME2FROMPARTS`, `TIMEFROMPARTS`, `DATETIMEOFFSETFROMPARTS`: of their type, NULL when any part is. Only parts of an
   integer type narrower than `bigint` are read, so no conversion can overflow.
-- **An overflow is an error, not NULL**, under any session options: `DATEADD` (517), `DATEDIFF` (535), `EOMONTH` (517), a
-  part out of range (289) (`A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`). So none
-  has `arithmetic-overflow`, unlike `+` on a `datetime`.
+- **A date past its range is an error, not NULL**, under any session options: `DATEADD` (517), `DATEDIFF` (535), `EOMONTH`
+  (517), a part out of range (289) (`A_date_overflow_is_an_error_even_under_the_callers_ansi_warnings_and_arithabort_off`).
+  So none has `arithmetic-overflow` for that, unlike `+` on a `datetime`.
+- **`DATEADD` converts its number to `bigint` first**, and that conversion is arithmetic: past `bigint`'s range it is 8115,
+  or NULL under a caller's `ANSI_WARNINGS` and `ARITHABORT` off. So `DATEADD` has `arithmetic-overflow` unless the number
+  always converts: an integer, `money` or `smallmoney`, a `decimal` or `numeric` of at most 18 integer digits, or a literal
+  within `bigint`'s range. A `decimal(19,0)`, a `float` and a `real` may not
+  (`Dateadd_converts_its_number_to_bigint_which_past_its_range_is_null_under_the_callers_ansi_warnings_off`).
 - **`SYSDATETIME`**, `SYSUTCDATETIME` (`datetime2(7)`), **`GETDATE`**, `GETUTCDATE`, `CURRENT_TIMESTAMP` (`datetime`) and
   `SYSDATETIMEOFFSET` (`datetimeoffset(7)`) are never null (`The_current_date_and_time_functions_are_never_null`).
 - **`DATETRUNC(part, d)`** and **`DATE_BUCKET(part, width, d [, origin])`** of a date or time type: `d`'s type; NULL when `d` or
@@ -2359,8 +2372,7 @@ holds the current row. Observed in `FunctionObservationTests`.
 - **`ROW_NUMBER`**, **`RANK`**, **`DENSE_RANK`**, **`NTILE`**: `bigint`, never null (`NTILE` of NULL or 0 is an error, 4116)
   (`Ranking_is_never_null_and_percentiles_are_null_only_over_all_null_input`).
 - **`COUNT`** (`int`) and **`COUNT_BIG`** (`bigint`): 0 over an empty frame, never NULL; but `COUNT` keeps `count-overflow`, as
-  without a window: it is the same `int`, and a partition of more than 2,147,483,647 rows cannot be read to observe otherwise
-  (a deliberate departure from the brief, which said never null).
+  without a window: it is the same `int`, and a partition of more than 2,147,483,647 rows cannot be read to observe otherwise.
 - **`SUM`**, **`MIN`**, **`MAX`**: typed as the aggregates (`SUM`'s overflow rule included); NULL when every value in the frame
   is, so with the argument's reasons, and when the frame may be empty (`empty-frame`), over a column never null too. `MIN` and
   `MAX` keep the argument's facets. `AVG` and the rest are not modelled, with a window or without.

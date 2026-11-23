@@ -36,7 +36,7 @@ does; nothing is wrapped in a result type.
 - *Return a result type (`{ ok, error }`).* It would impose a style on every caller, and still have to throw for the driver's
   own failures.
 
-**Room for what comes next.** Row 6r (the errors a procedure raises: the numbers of its literal `THROW` and `RAISERROR`) can
+**Room for what comes next.** A planned rule for the errors a procedure raises (the numbers of its literal `THROW` and `RAISERROR`) can
 list them in each function's documentation comment, and type a guard that narrows a `RequestError` by number, without
 changing any of the above: the driver's error is already the one a caller catches.
 

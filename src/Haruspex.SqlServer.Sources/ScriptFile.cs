@@ -22,8 +22,12 @@ internal sealed record ScriptFile(string Path, string Relative, ScriptSettings S
     /// </summary>
     /// <param name="directory">The folder the paths are relative to.</param>
     /// <param name="files">The scripts, relative to <paramref name="directory"/>, with either kind of slash.</param>
-    /// <exception cref="FileNotFoundException">A file named does not exist.</exception>
-    public static IReadOnlyList<ScriptFile> InOrder(string directory, IEnumerable<string> files)
+    /// <param name="listed">
+    /// Whether the files are the folder's own listing, which holds only what is there: one that can't be read then is reported when
+    /// it is parsed, as a link to nothing is, rather than refused here.
+    /// </param>
+    /// <exception cref="FileNotFoundException">A file named does not exist, and the files are not the folder's listing.</exception>
+    public static IReadOnlyList<ScriptFile> InOrder(string directory, IEnumerable<string> files, bool listed = false)
     {
         var scripts = files
             .Select(file => file.Replace('\\', '/'))
@@ -31,21 +35,41 @@ internal sealed record ScriptFile(string Path, string Relative, ScriptSettings S
             .Order(StringComparer.Ordinal)
             .Select(relative => new ScriptFile(System.IO.Path.Combine(directory, relative), relative))
             .ToList();
-        if (scripts.FirstOrDefault(f => !File.Exists(f.Path)) is { } missing)
+        if (!listed && scripts.FirstOrDefault(f => !File.Exists(f.Path)) is { } missing)
             throw new FileNotFoundException($"File not found: {missing.Relative}", missing.Path);
         return scripts;
     }
 
     /// <summary>
+    /// Why a file can't be read, in words that are the same on every platform (the exception's own message names the full path,
+    /// and in the platform's words).
+    /// </summary>
+    public static string Why(Exception e) => e switch
+    {
+        FileNotFoundException or DirectoryNotFoundException => "it isn't there, as a link to nothing isn't",
+        UnauthorizedAccessException => "the user running haruspex may not open it",
+        _ => "it can't be opened, as when another program holds it",
+    };
+
+    /// <summary>
     /// The script as ScriptDom parses it with the SQL Server 2025 grammar, from its text as the server would receive it from
-    /// sqlcmd; null when it doesn't parse, with each error added to <paramref name="diagnostics"/>.
+    /// sqlcmd; null when it doesn't parse, with each error added to <paramref name="diagnostics"/>, or can't be read (a link to
+    /// nothing, a file the user may not open, one another process holds), which is an error of the input, not of haruspex.
     /// </summary>
     public TSqlScript? Parse(ICollection<Diagnostic> diagnostics)
     {
         // UTF-8 unless a byte order mark says otherwise, which covers the UTF-16 files SSMS writes.
         string text;
-        using (var file = new StreamReader(Path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+        try
+        {
+            using var file = new StreamReader(Path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
             text = file.ReadToEnd();
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            diagnostics.Add(SourceCodes.UnreadableScript.At(new SourceLocation(Relative, 1, 1), $"{Relative} can't be read, so nothing in it is: {Why(e)}."));
+            return null;
+        }
 
         // What the server would receive from sqlcmd, which an install script written for it needs.
         using var reader = new StringReader(SqlcmdVariables.Substitute(text));

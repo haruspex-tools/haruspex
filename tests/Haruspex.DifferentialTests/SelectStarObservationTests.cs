@@ -55,6 +55,39 @@ public class SelectStarObservationTests(SqlServerFixture server)
         Assert.Equal(3, outcome.Sets.Count);
     }
 
+    /// <summary>A system-versioned table with a hidden period column and one not hidden, a row in it, and what sys.columns says of each column.</summary>
+    private const string Versioned = """
+        CREATE TABLE dbo.obs_rate (id int NOT NULL PRIMARY KEY, amount int NULL,
+            valid_from datetime2 GENERATED ALWAYS AS ROW START HIDDEN NOT NULL, valid_to datetime2 GENERATED ALWAYS AS ROW END NOT NULL,
+            PERIOD FOR SYSTEM_TIME (valid_from, valid_to)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.obs_rate_history));
+        INSERT INTO dbo.obs_rate (id, amount) VALUES (1, 5);
+        """;
+
+    private const string Columns =
+        "SELECT STRING_AGG(CONCAT(name, ' ', TYPE_NAME(user_type_id), ' ', is_nullable, ' ', is_hidden), ', ') WITHIN GROUP (ORDER BY column_id) AS columns FROM sys.columns WHERE object_id = OBJECT_ID('dbo.obs_rate');";
+
+    [Fact]
+    public async Task Turning_system_versioning_off_changes_no_column()
+    {
+        // Every column keeps its type, its nullability and whether it is hidden, so a star gives what it gave: WeakeningStatements
+        // reads it as no change to the table, wherever it is (WideWorldImporters' load procedures turn it off and on again).
+        var outcome = await Run([Versioned, "ALTER TABLE dbo.obs_rate SET (SYSTEM_VERSIONING = OFF);"], Columns + "\nSELECT * FROM dbo.obs_rate;");
+
+        Assert.Equal("columns: id int 0 0, amount int 1 0, valid_from datetime2 0 1, valid_to datetime2 0 0", outcome.Sets[0]);
+        Assert.StartsWith("id,amount,valid_to: 1,5,", outcome.Sets[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Dropping_a_period_shows_its_hidden_columns_and_keeps_their_types()
+    {
+        // Each column keeps its type and nullability, and a hidden one is hidden no longer, so a star gives it: a change to a table
+        // with a hidden column, and none to a table without one (WeakeningStatements.DropsPeriodOnly).
+        var outcome = await Run([Versioned, "ALTER TABLE dbo.obs_rate SET (SYSTEM_VERSIONING = OFF); ALTER TABLE dbo.obs_rate DROP PERIOD FOR SYSTEM_TIME;"], Columns + "\nSELECT * FROM dbo.obs_rate;");
+
+        Assert.Equal("columns: id int 0 0, amount int 1 0, valid_from datetime2 0 0, valid_to datetime2 0 0", outcome.Sets[0]);
+        Assert.StartsWith("id,amount,valid_from,valid_to: 1,5,", outcome.Sets[1], StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_column_set_stands_for_its_sparse_columns_in_star()
     {

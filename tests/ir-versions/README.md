@@ -38,7 +38,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.23 | `5bfdbcbd` |
 | 0.24 | `c4093e7d`; a document of one database is still written as 0.23, so this file is `sales.get_order` combined with a baseline in which it didn't return `isPriority` |
 | 0.25 | the commit that adds `IrSourceColumn`, on `feature/explain`: each field says the columns it is read from (`from`) |
-| 0.26 | the commit that merges `main` into H3 (table types, first set at `645af81a` as 0.25, renumbered when 7b took 0.25); a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
+| 0.26 | the commit that merges `main` into the branch that added table types (first set at `645af81a` as 0.25, renumbered when `IrSourceColumn` took 0.25); a document that defines none is still written as before, so this file is `till.add_lines` from the `till` fixture, whose `@lines` is a table-valued parameter |
 | 0.27 | the commit that types binary values; a document that holds none is still written as before, so this file is `gallery.get_image` from the `gallery` fixture, whose columns are `varbinary`, `binary`, `rowversion` and `varbinary(max)` |
 | 0.28 | the commit that reads a column's declared JSON; a document that declares none is still written as before, so this file is `parcels.get_parcel` from the `parcels` fixture, whose three columns are declared |
 | 0.29 | the commit that reads paths into JSON of known shape; a document in which no reason says what makes it so is still written as before, so this file is `parcels.parcel_paths` from the `parcels` fixture, whose paths into the declared columns may find nothing |

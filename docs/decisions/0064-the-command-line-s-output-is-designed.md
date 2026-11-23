@@ -28,9 +28,9 @@
 
 **Context.** The command is run many times a day, by a developer after each change to the database and by CI on each push.
 It used to print every diagnostic, one note for each unknown, then one line. A database with many unknowns printed them all
-on every run, the same each time, so a new warning or a field that became nullable was hard to see among them. Richard asked,
+on every run, the same each time, so a new warning or a field that became nullable was hard to see among them. The maintainer asked,
 on 16 Nov 2026, for a command line designed for that use: quiet when nothing changed, and saying what did. The quality bar
-asks for GitHub annotations and SARIF for CI. The repository is private now and will be public.
+asks for GitHub annotations and SARIF for CI.
 
 **Alternatives.**
 - *Every note by default, as compilers do.* tsc and the C# compiler print every diagnostic, but their warnings ask to be
@@ -51,9 +51,8 @@ asks for GitHub annotations and SARIF for CI. The repository is private now and 
 - *Link targets.* A page pinned to the version's commit would match the binary exactly, but needs the commit at run time and
   gives a different URL to each version. A site of the project's own (`haruspex.tools`) doesn't exist yet. A path into the
   installed package works only where docs are shipped, and a binary has none. A code's meaning never changes (decision 0036),
-  so the page on `main` holds for every version, and it is the address the documentation's own links already use. While the
-  repository is private the links open for its collaborators only; when it is public they open for everyone, with nothing to
-  change. A move to a site of its own is one constant.
+  so the page on `main` holds for every version, and it is the address the documentation's own links already use. The
+  repository is public, so the links open for everyone. A move to a site of its own is one constant.
 - *A URL on each line of the reasons' table.* Long lines, each the same but for the code; one line pointing to the index,
   where each code links its page, says the same.
 - *GitHub annotations only on request.* Then most workflows would never see them. As the default where `GITHUB_ACTIONS` is

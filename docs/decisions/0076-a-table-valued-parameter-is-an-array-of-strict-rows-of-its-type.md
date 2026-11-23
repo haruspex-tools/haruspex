@@ -12,7 +12,7 @@ generated function sends the rows as the mssql driver's `sql.Table`, named by th
 declared in the type's order as a scalar parameter of its type is sent (a date or time as text). Inside the body, the parameter
 and a variable declared with a table type are table variables of the type's columns, keys and CHECK constraints.
 
-**Context.** Table-valued parameters are common in older corporate code (C1's harvest found 143), and a procedure that took one
+**Context.** Table-valued parameters are common in older corporate code (the harvest of the public corpora found 143), and a procedure that took one
 was unknown in its parameter and in every column a query read from it. What the server does with a row was observed through the
 mssql driver, case by case (`ParameterObservationTests`):
 

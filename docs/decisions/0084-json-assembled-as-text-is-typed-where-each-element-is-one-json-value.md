@@ -11,9 +11,9 @@ the brackets makes the JSON unknown, naming it. What a string's text is made of 
 the rules that build strings and dropped by every other, and read where the text is read as JSON (`JsonAssembly`). Read without
 `json_query`, the text stays a string.
 
-**Context.** On a real application's corpus, about 30 of 83 unknowns were this idiom, from before `json_arrayagg` and `json_array`.
-The first plan said a value in quotes without `string_escape` was "still a string", since a value that broke the JSON would make
-the read fail. Observation said otherwise (`An_unescaped_value_in_quotes_can_make_more_elements_a_number_or_cut_the_array_short`):
+**Context.** A trial on a real application found this idiom, from before `json_arrayagg` and `json_array`, behind many of its
+unknowns. The first plan said a value in quotes without `string_escape` was "still a string", since a value that broke the
+JSON would make the read fail. Observation said otherwise (`An_unescaped_value_in_quotes_can_make_more_elements_a_number_or_cut_the_array_short`):
 `json_query` reads only as far as the first value, so `a"]x` ends the array early and the read succeeds, and `a","b` and
 `a",1,"b` make arrays of another shape that are valid JSON. Each of the other rules was observed too
 (`JsonAssembledObservationTests`): a NULL aggregate in `+`, in `concat` and in quotes; `money` rounded or given commas by a

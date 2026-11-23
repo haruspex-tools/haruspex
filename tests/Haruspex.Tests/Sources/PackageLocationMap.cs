@@ -35,11 +35,14 @@ internal sealed partial class PackageLocationMap
         "SqlCheckConstraint", "SqlPrimaryKeyConstraint", "SqlUniqueConstraint", "SqlIndex", "SqlForeignKeyConstraint",
     };
 
+    /// <summary>The parts of a package that hold its deployment scripts.</summary>
+    private static readonly string[] DeploymentParts = ["predeploy.sql", "postdeploy.sql"];
+
     private readonly List<(string File, Position Start, Position End, string Target, Position Origin)> regions = [];
     private readonly Dictionary<SourceLocation, SourceLocation> points = [];
 
     /// <summary>The folder's files that hold something placed, longest first, so that a path inside another isn't matched first.</summary>
-    private readonly List<string> files;
+    private List<string> Files => [.. regions.Select(r => r.File).Concat(points.Keys.Select(p => p.File)).Distinct(StringComparer.Ordinal).OrderByDescending(f => f.Length)];
 
     /// <summary>The locations a <see cref="Map"/> could not place, each once.</summary>
     public SortedSet<string> Unmapped { get; } = new(StringComparer.Ordinal);
@@ -60,13 +63,55 @@ internal sealed partial class PackageLocationMap
             foreach (var type in folder.UserTypes.OfType<TableType>())
                 AddTableType(type, elements, package);
         }
-
-        files = [.. regions.Select(r => r.File).Concat(points.Keys.Select(p => p.File)).Distinct(StringComparer.Ordinal).OrderByDescending(f => f.Length)];
     }
+
+    /// <summary>
+    /// A project's deployment scripts, each <paramref name="files"/> relative to <paramref name="folderRoot"/>, placed in the
+    /// package's <c>predeploy.sql</c> or <c>postdeploy.sql</c>, where its build wrote them with each <c>:r</c> include in its
+    /// place: each run of a file's lines between its <c>:r</c> lines is found, as text, in the part that holds it, the first time
+    /// after the file's run before it, and keeps its lines and columns relative to where it is found there.
+    /// </summary>
+    public void AddDeployment(string folderRoot, string packagePath, params string[] files)
+    {
+        var package = Path.GetFileName(packagePath);
+        using var zip = ZipFile.OpenRead(packagePath);
+        var parts = DeploymentParts
+            .Where(p => zip.GetEntry(p) is not null)
+            .Select(p => (Name: p, Text: Normalised(new StreamReader(zip.GetEntry(p)!.Open(), Encoding.UTF8, detectEncodingFromByteOrderMarks: true).ReadToEnd())))
+            .ToList();
+        foreach (var file in files)
+        {
+            var lines = Normalised(File.ReadAllText(Path.Combine(folderRoot, file), Encoding.UTF8)).Split('\n');
+            var after = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var first = 0; first < lines.Length;)
+            {
+                var last = first;
+                while (last < lines.Length && !IsInclude(lines[last]))
+                    last++;
+                var run = string.Join('\n', lines[first..last]);
+                if (run.Trim().Length > 0)
+                {
+                    foreach (var (name, text) in parts)
+                    {
+                        var index = text.IndexOf(run, after.GetValueOrDefault(name), StringComparison.Ordinal);
+                        if (index < 0)
+                            continue;
+                        after[name] = index + run.Length;
+                        regions.Add((file, new Position(first + 1, 1), new Position(last, lines[last - 1].Length + 1), $"{package}/{name}", PositionOf(text, index)));
+                        break;
+                    }
+                }
+
+                first = last + 1;
+            }
+        }
+    }
+
+    private static bool IsInclude(string line) => line.TrimStart().StartsWith(":r ", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Every <c>file:line:column</c> of a file the folder's model holds something of, wherever it is in the text.</summary>
     private Regex Locations() =>
-        new($"(?<file>{string.Join('|', files.Select(Regex.Escape))}):(?<line>[0-9]+):(?<column>[0-9]+)", RegexOptions.CultureInvariant);
+        new($"(?<file>{string.Join('|', Files.Select(Regex.Escape))}):(?<line>[0-9]+):(?<column>[0-9]+)", RegexOptions.CultureInvariant);
 
     /// <summary>The text with each <c>path:line:column</c> of a folder rewritten as the package's.</summary>
     public string Map(string text) => Locations().Replace(text, match =>

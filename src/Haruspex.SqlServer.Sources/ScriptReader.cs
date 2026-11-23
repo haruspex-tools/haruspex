@@ -45,12 +45,14 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     {
     }
 
-    /// <summary>Reads the script's statements, in order, and every statement at any depth that may disable a constraint.</summary>
+    /// <summary>
+    /// Reads the script's statements, in order, and every statement at any depth that weakens a claim
+    /// (<see cref="WeakeningStatements"/>).
+    /// </summary>
     public void Read(TSqlScript script)
     {
         ArgumentNullException.ThrowIfNull(script);
-        ReadEnforcement(script);
-        ReadKeyDisables(script);
+        WeakeningStatements.Read(script, file, into, deployment: false);
         foreach (var statement in script.Batches.SelectMany(b => b.Statements))
             Read(statement);
 
@@ -78,9 +80,6 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             case CreateIndexStatement { Unique: true, FilterPredicate: null } index when NamesThisDatabasesTable(index.OnName):
                 // As a key ALTER TABLE adds (AddedKey), and passed over in the same places.
                 into.AddedKeys.Add(new AddedKey(SyntaxReader.Name(index.OnName), SyntaxReader.Key(index, SyntaxReader.Span(file, index))));
-                break;
-            case DropTableStatement drop:
-                ReadDrops(drop.Objects, RedefiningStatement.DropTable, drop, into.TableChanges.TryAdd);
                 break;
             case CreateTypeUddtStatement alias when SyntaxReader.Type(alias.DataType) is { } baseType:
                 ReadAliasType(alias, baseType);
@@ -171,7 +170,7 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// The drops of procedures, functions and views an <c>IF</c> with no <c>ELSE</c> makes, alone or in a block. Under
     /// <c>IF OBJECT_ID(N'name') IS NOT NULL</c> naming the object it drops, the drop runs whenever the object exists, as an
     /// unconditional one does (observed: A_procedure_dropped_and_created_again_runs_its_last_create); under any other condition
-    /// it may not run. Nothing else under an <c>IF</c> is read, as anywhere.
+    /// it may not run. What else under an <c>IF</c> weakens a claim is <see cref="WeakeningStatements"/>'s.
     /// </summary>
     private void ReadGuardedDrops(IfStatement guarded)
     {
@@ -207,13 +206,6 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         return errors.Count == 0 && parsed is { DatabaseIdentifier: null, ServerIdentifier: null }
             ? (SyntaxReader.Name(parsed), parsed.SchemaIdentifier?.Value, type)
             : null;
-    }
-
-    /// <summary>A <c>DROP</c> of one or more objects: each dropped object's first change, if it has none yet.</summary>
-    private void ReadDrops(IEnumerable<SchemaObjectName> dropped, RedefiningStatement statement, TSqlFragment at, Func<ObjectName, Redefinition, bool> record)
-    {
-        foreach (var name in dropped.Select(SyntaxReader.Name))
-            record(name, Changed(name, statement, at));
     }
 
     /// <summary>
@@ -279,15 +271,13 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     }
 
     /// <summary>
-    /// An <c>ALTER TABLE</c>: one that only tightens the table adds the foreign keys it declares, if any, and the primary key and
-    /// unique constraints, when it names the table with its schema (<see cref="AddedKey"/>); any other changes the table in a way
-    /// the model doesn't apply, and is recorded, with the foreign keys a column it adds declares.
+    /// An <c>ALTER TABLE</c> of a batch: one that only tightens the table adds the foreign keys it declares, if any, and the primary
+    /// key and unique constraints, when it names the table with its schema (<see cref="AddedKey"/>); a column it adds may declare
+    /// foreign keys too. Any that does more than tighten is recorded as a change by <see cref="WeakeningStatements"/>, wherever it is.
     /// </summary>
     private void ReadAlterTable(AlterTableStatement statement)
     {
         var name = SyntaxReader.Name(statement.SchemaObjectName);
-        if (!OnlyTightens(statement))
-            into.TableChanges.TryAdd(name, Changed(name, RedefiningStatement.AlterTable, statement));
         if (statement is not AlterTableAddTableElementStatement add)
             return;
         ReadCascadingKeys(name, add.Definition);
@@ -307,22 +297,6 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
     /// </summary>
     private static bool NamesThisDatabasesTable(SchemaObjectName name) =>
         name is { SchemaIdentifier: not null, DatabaseIdentifier: null, ServerIdentifier: null } && !name.BaseIdentifier.Value.StartsWith('#');
-
-    /// <summary>
-    /// ALTER TABLE forms that cannot make a column nullable, change its type, or add or remove one: adding a
-    /// constraint (a primary key can only add NOT NULL), checking or disabling constraints, rebuilding, and
-    /// switching triggers or change tracking. Ignoring them can only leave a column more nullable than it is.
-    /// Disabling a CHECK constraint does matter to what values a column holds; that is recorded on the constraint
-    /// (<see cref="ConstraintTrust"/>), not as a redefinition of the table. A primary key or unique constraint added this way
-    /// is read (<see cref="AddedKey"/>); a CHECK is not, which only claims less.
-    /// </summary>
-    private static bool OnlyTightens(AlterTableStatement statement) => statement switch
-    {
-        AlterTableAddTableElementStatement add => add.Definition.ColumnDefinitions.Count == 0,
-        AlterTableConstraintModificationStatement or AlterTableRebuildStatement or AlterTableTriggerModificationStatement
-            or AlterTableChangeTrackingModificationStatement => true,
-        _ => false,
-    };
 
     /// <summary>
     /// The foreign keys of a table definition (of <c>CREATE TABLE</c> or <c>ALTER TABLE … ADD</c>) that have an <c>ON DELETE</c>
@@ -346,85 +320,8 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
         }
     }
 
-    /// <summary>
-    /// Every NOCHECK CONSTRAINT and WITH CHECK CHECK CONSTRAINT in the script, at any depth: a batch's statements, and those
-    /// under IF, in blocks, TRY/CATCH and loops, and in procedure, trigger and function bodies. A plain CHECK CONSTRAINT enables
-    /// without validating, leaving the rows written meanwhile (the constraint stays not trusted), so it restores nothing and
-    /// isn't recorded. NOCHECK in dynamic SQL (EXEC of a string) is not seen.
-    /// </summary>
-    private void ReadEnforcement(TSqlScript script)
-    {
-        var topLevel = script.Batches.SelectMany(b => b.Statements).ToHashSet(ReferenceEqualityComparer.Instance);
-        foreach (var change in Everywhere<AlterTableConstraintModificationStatement>(script))
-        {
-            var validates = change.ConstraintEnforcement == ConstraintEnforcement.Check && change.ExistingRowsCheckEnforcement == ConstraintEnforcement.Check;
-            if (change.ConstraintEnforcement != ConstraintEnforcement.NoCheck && !validates)
-                continue;
-            into.Enforcement.Add(new Enforcement(
-                SyntaxReader.Name(change.SchemaObjectName),
-                change.SchemaObjectName.SchemaIdentifier is not null,
-                validates,
-                change.All ? null : [.. change.ConstraintNames.Select(n => n.Value)],
-                At(change),
-                into.Enforcement.Count,
-                topLevel.Contains(change)));
-        }
-    }
-
-    /// <summary>
-    /// Every statement in the script that may stop a key being enforced (<see cref="KeyDisable"/>), at any depth, as for
-    /// NOCHECK: <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c>, <c>DROP INDEX</c> and <c>CREATE INDEX … WITH
-    /// (DROP_EXISTING = ON)</c>, since whether a
-    /// statement in a body or under IF runs is not knowable. A disabled key enforces nothing and a dropped one is gone, so rows
-    /// written meanwhile may share a key. A top-level <c>DROP CONSTRAINT</c> also changes the table (<see cref="OnlyTightens"/>).
-    /// </summary>
-    private void ReadKeyDisables(TSqlScript script)
-    {
-        foreach (var alter in Everywhere<AlterIndexStatement>(script).Where(a => a.AlterIndexType == AlterIndexType.Disable))
-            into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(alter.OnName), alter.OnName.SchemaIdentifier is not null, alter.All ? null : alter.Name?.Value, At(alter)));
-        foreach (var drop in Everywhere<AlterTableDropTableElementStatement>(script))
-        {
-            // DROP name, without CONSTRAINT, drops a constraint too (the keyword is optional; observed), and ScriptDom gives it no
-            // type. A column, index or period is named as one.
-            foreach (var element in drop.AlterTableDropTableElements.Where(e => e.TableElementType is TableElementType.Constraint or TableElementType.NotSpecified))
-                into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(drop.SchemaObjectName), drop.SchemaObjectName.SchemaIdentifier is not null, element.Name.Value, At(drop)));
-        }
-
-        // An index created WITH (DROP_EXISTING = ON) replaces the one of its name, unique or not, so the key that was is gone.
-        foreach (var replace in Everywhere<CreateIndexStatement>(script).Where(SyntaxReader.DropsExisting))
-            into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(replace.OnName), replace.OnName.SchemaIdentifier is not null, replace.Name.Value, At(replace)));
-
-        foreach (var drop in Everywhere<DropIndexStatement>(script))
-        {
-            foreach (var (table, index) in SyntaxReader.DroppedIndexes(drop))
-                into.KeyDisables.Add(new KeyDisable(SyntaxReader.Name(table), table.SchemaIdentifier is not null, index, At(drop)));
-        }
-    }
-
-    /// <summary>Every fragment of a kind in the script, at any depth, in the order they are written.</summary>
-    private static List<T> Everywhere<T>(TSqlScript script)
-        where T : TSqlFragment
-    {
-        var found = new Found<T>();
-        script.Accept(found);
-        return found.Fragments;
-    }
-
     private Redefinition Changed(ObjectName name, RedefiningStatement statement, TSqlFragment at) => new(name, statement, At(at));
 
     /// <summary>Where a fragment of this script starts.</summary>
     private SourceLocation At(TSqlFragment fragment) => SyntaxReader.Span(file, fragment).Start;
-
-    /// <summary>Collects the fragments of one kind a walk of the tree meets.</summary>
-    private sealed class Found<T> : TSqlFragmentVisitor
-        where T : TSqlFragment
-    {
-        public List<T> Fragments { get; } = [];
-
-        public override void Visit(TSqlFragment fragment)
-        {
-            if (fragment is T wanted)
-                Fragments.Add(wanted);
-        }
-    }
 }

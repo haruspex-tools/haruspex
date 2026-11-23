@@ -14,15 +14,16 @@ refuses a label that disagrees with what the document says. `check --baseline` j
 definitions (decision 0068), and `generate --baseline` narrows a table type's columns as it narrows any parameter (decision 0073).
 
 **Context.** Without the definition, a table-valued parameter could only be an unknown, and `check --baseline` refused it on every
-run, even unchanged, since a type may change under its name (V1a's follow-up). The server matches a row's columns by place, so
-what fits is decided by the columns' order and types, the keys and the conditions, all of which only the definition says.
+run, even unchanged, since a type may change under its name. The server matches a row's columns by place, so what fits is
+decided by the columns' order and types, the keys and the conditions, all of which only the definition says.
 
 **Alternatives.**
 - *Put the definition in the row type alone.* The row is what a client sends, and a type with an identity column has no row a
   client can send, yet its definition still decides whether an unchanged parameter fits. A key or a condition the IR has no facet
   for (a CHECK over two columns) is no fact of a field either.
 - *A table type as a new type node.* Every emitter would need a case for it, where an array of a named object type is a node each
-  already writes, and the CM5 split already places by references.
+  already writes, and the split into modules already places by references
+  ([decision 0075](0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
 - *Label every document 0.26.* Every module's header and every committed IR would change in a run that meets no table type, and a
   0.24 reader would refuse files it reads correctly; decision 0072 labels by content for the same reason.
 - *Compare a CHECK by its facts only.* A condition the IR can't express as a fact would be lost, and a change to it would pass. The

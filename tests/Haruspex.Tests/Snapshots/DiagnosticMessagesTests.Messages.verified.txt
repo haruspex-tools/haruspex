@@ -49,6 +49,12 @@ sql/q.sql:2:1: error HAR1018: -- @sets titles: the sets are named already, at li
 HAR1019
 sql/q.sql:1:1: error HAR1019: -- @module lending desk: the module is named by one word, such as -- @module reports.
 
+HAR1020
+db/p2.sql:1:1: error HAR1020: p2.sql can't be read, so nothing in it is: it can't be opened, as when another program holds it.
+
+HAR1021
+db/p2.sql:1:1: warning HAR1021: A deployment script can't be read: p2.sql doesn't parse (Incorrect syntax near ':'.). What it does isn't known, so every table, procedure, function and view it names is doubted.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 

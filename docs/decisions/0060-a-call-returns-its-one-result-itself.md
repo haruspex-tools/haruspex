@@ -7,7 +7,7 @@ worth handing back returns that result itself: `const order = await getOrder(poo
 object of named fields, as before: `result`, or `result1`, `result2` and so on for several result sets; `output` for the `OUTPUT`
 parameters; and `returnValue` only when a call may end with a code other than 0. One with nothing to hand back returns nothing
 (`Promise<void>`). A call may end with a code other than 0 when its body has a `RETURN` whose value isn't the constant 0 or NULL,
-at any depth, or can't be read; the IR records it as `returnsCode` (0.22). Richard, 16 Nov 2026, asked for the first form.
+at any depth, or can't be read; the IR records it as `returnsCode` (0.22). The maintainer, 16 Nov 2026, asked for the first form.
 
 **Context.** Most procedures return one result set and nothing else, and every call of their functions destructured a
 `result` out of an object whose `returnValue` was always 0. Observed through the mssql driver: no `RETURN`, a bare `RETURN`,

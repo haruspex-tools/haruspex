@@ -42,7 +42,7 @@ otherwise silently do nothing.
   "schemas": {                              // keyed by the schema's name as it is
     "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
     "audit": { "include": ["*"], "prefix": "Audit" },                          // AuditGetOrder
-    "RDF.": { "include": ["GetPropertyList"], "naming": { "case": "preserve" } }
+    "Ledger.": { "include": ["GetEntryList"], "naming": { "case": "preserve" } }
   },
 
   "procedures": {
@@ -80,7 +80,8 @@ isn't read ([HAR1012](diagnostics/HAR1012.md)). The IR records the package and e
 for it (`source.package`, `source.references`).
 
 A referenced package is looked for beside the package that refers to it, where a build leaves it; then in each folder
-`references` lists, in order, relative to this file; and last at the path the package recorded when it was built. One found
+`references` lists, in order, relative to this file; and last at the path the package recorded when it was built, unless that
+path names a share or a device (`\\server\share\…`), which is never looked in. One found
 nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) that lists every place looked, and the run goes on: whatever would
 have come from it is unknown, and each such unknown says the package it may be in.
 
@@ -95,6 +96,13 @@ project are read. A `Microsoft.Build.Sql` project's build reads every `.sql` fil
 what `Build Remove`, `None`, the pre- and post-deployment scripts and the files they include with `:r` take out, plus any
 `Build` item outside the folder; a `Content` item neither adds a script nor takes one out. A legacy SSDT project's build reads
 the `Build` items it lists. A script starts with its item's `AnsiNulls` and `QuotedIdentifier`, or else the project's.
+
+The pre- and post-deployment scripts define nothing, but a deployment runs them every time, so they are read for what they
+change, with each file they include by `:r`, as a DACPAC's `predeploy.sql` and `postdeploy.sql` are: a check one turns off is
+claimed no longer, a table one alters, drops or creates is unknown ([HAR2006](diagnostics/HAR2006.md)), and a procedure,
+function or view one creates, alters or drops is `redefined` ([HAR2003](diagnostics/HAR2003.md)). One that can't be read in
+full, such as a script with another sqlcmd command or an include through a variable, is a warning
+([HAR1021](diagnostics/HAR1021.md)), and every object whose name it holds is unknown.
 
 The database's settings are the project's properties (`DefaultCollation`, `CompatibilityMode` or the `DSP`'s version,
 `AnsiNulls`, `QuotedIdentifier` and the other options), with the values a build gives one the project doesn't set: the
@@ -147,7 +155,7 @@ override can still declare it exact (`"values": "exact"`).
 ## Which procedures are typed: `schemas`
 
 Settings are per schema. Each key of `schemas` is a schema's name exactly as in the database: no brackets, dots
-allowed (`"RDF."`). Its block holds:
+allowed (`"Ledger."`). Its block holds:
 
 - `include` and `exclude`: patterns matching the schema's procedures by their **own names**, ignoring case. `*` matches
   any characters, `?` one; brackets make what they hold literal (`[a*b]`). `exclude` wins over `include`.

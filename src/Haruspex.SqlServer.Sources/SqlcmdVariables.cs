@@ -33,13 +33,29 @@ namespace Haruspex.SqlServer.Sources;
 internal static partial class SqlcmdVariables
 {
     /// <summary>The script as the server would receive it: commands removed and defined variables replaced.</summary>
-    public static string Substitute(string script)
+    public static string Substitute(string script) => Substitute(script, Values(), null, null);
+
+    /// <summary>A set of variables, matched without regard to case, as sqlcmd matches them.</summary>
+    public static Dictionary<string, string> Values() => new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The script as the server would receive it, starting from the variables in <paramref name="values"/>, which it changes as
+    /// each <c>:setvar</c> does: sqlcmd keeps one set for a script and every script it includes, so what is set before a
+    /// <c>:r</c> is set in the included script, and what that sets stands after it.
+    /// </summary>
+    /// <param name="script">The script.</param>
+    /// <param name="values">The variables set when the script starts; on return, those set when it ends.</param>
+    /// <param name="atLine">Called with the offset of each line's start, before the line is read, with the values then set.</param>
+    /// <param name="undefined">What a reference to a variable not set is replaced by; null leaves it as written.</param>
+    public static string Substitute(string script, Dictionary<string, string> values, Action<int>? atLine, string? undefined)
     {
-        // Without a :setvar there is nothing to replace, and the script is returned as it is.
-        if (!script.Contains(":setvar", StringComparison.OrdinalIgnoreCase))
+        ArgumentNullException.ThrowIfNull(script);
+        ArgumentNullException.ThrowIfNull(values);
+
+        // Without a :setvar, a value or anything else to do there is nothing to replace, and the script is returned as it is.
+        if (values.Count == 0 && atLine is null && undefined is null && !script.Contains(":setvar", StringComparison.OrdinalIgnoreCase))
             return script;
 
-        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var output = new StringBuilder(script.Length);
         var state = Lexical.Code;
         var closing = '\0';
@@ -47,6 +63,8 @@ internal static partial class SqlcmdVariables
         while (i < script.Length)
         {
             var atLineStart = i == 0 || script[i - 1] == '\n';
+            if (atLineStart)
+                atLine?.Invoke(i);
             if (atLineStart && state == Lexical.Code && Setvar(script, i) is { } command)
             {
                 if (command.Value is { } value)
@@ -89,7 +107,7 @@ internal static partial class SqlcmdVariables
                     i += 2;
                     state = Lexical.Code;
                     continue;
-                case Lexical.Code or Lexical.Quoted when c == '$' && next == '(' && Reference(script, i, values) is { } reference:
+                case Lexical.Code or Lexical.Quoted when c == '$' && next == '(' && Reference(script, i, values, undefined) is { } reference:
                     output.Append(reference.Value);
                     i = reference.End;
                     continue;
@@ -119,13 +137,42 @@ internal static partial class SqlcmdVariables
         return (match.Groups["name"].Value, value, end);
     }
 
-    /// <summary>The value of the <c>$(name)</c> at <paramref name="start"/>, and where it ends, when the variable is defined.</summary>
-    private static (string Value, int End)? Reference(string script, int start, Dictionary<string, string> values)
+    /// <summary>
+    /// The value of the <c>$(name)</c> at <paramref name="start"/>, and where it ends, when the variable is defined, or
+    /// <paramref name="undefined"/> when it isn't and that is given.
+    /// </summary>
+    private static (string Value, int End)? Reference(string script, int start, Dictionary<string, string> values, string? undefined)
     {
         var match = SqlcmdVariableReference.At(script, start);
-        return match.Success && values.TryGetValue(match.Groups["name"].Value, out var value)
-            ? (value, start + match.Length)
+        if (!match.Success)
+            return null;
+        return values.TryGetValue(match.Groups["name"].Value, out var value) ? (value, start + match.Length)
+            : undefined is not null ? (undefined, start + match.Length)
             : null;
+    }
+
+    /// <summary><paramref name="text"/> with each reference to a variable in <paramref name="values"/> replaced, as in a <c>:r</c> path.</summary>
+    public static string Replaced(string text, IReadOnlyDictionary<string, string> values)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(values);
+        var output = new StringBuilder(text.Length);
+        var i = 0;
+        while (i < text.Length)
+        {
+            var match = text[i] == '$' ? SqlcmdVariableReference.At(text, i) : null;
+            if (match is { Success: true } && values.TryGetValue(match.Groups["name"].Value, out var value))
+            {
+                output.Append(value);
+                i += match.Length;
+                continue;
+            }
+
+            output.Append(text[i]);
+            i++;
+        }
+
+        return output.ToString();
     }
 
     // A name has no space, quotation mark or parenthesis. A quoted value has no quotation mark inside it.

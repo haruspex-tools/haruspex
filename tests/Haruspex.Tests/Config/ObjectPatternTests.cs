@@ -13,7 +13,7 @@ public class ObjectPatternTests
     [InlineData("*.list_*", "hr", "get_list", false)]
     [InlineData("sales.get_?", "sales", "get_x", true)]
     [InlineData("sales.get_?", "sales", "get_xy", false)]
-    [InlineData("[RDF.].GetPropertyList", "RDF.", "GetPropertyList", true)]
+    [InlineData("[Ledger.].GetEntryList", "Ledger.", "GetEntryList", true)]
     [InlineData("[a]]b].c", "a]b", "c", true)]
     [InlineData("[sales*].x", "salesman", "x", false)]
     [InlineData("[sales*].x", "sales*", "x", true)]

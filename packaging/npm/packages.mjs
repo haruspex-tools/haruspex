@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { copyLicenses } from "./licenses.mjs";
 
 const require = createRequire(import.meta.url);
 export const { platforms } = require("./haruspex/lib/launcher.js");
@@ -36,7 +37,7 @@ export function mainManifest(version) {
   };
 }
 
-/** A platform's package: its binary alone, installed only where `os`, `cpu` and (on Linux) `libc` match. */
+/** A platform's package: its binary and its licences, installed only where `os`, `cpu` and (on Linux) `libc` match. */
 export function platformManifest(platform, version) {
   return {
     name: platform.packageName,
@@ -67,17 +68,22 @@ export function stageMain(folder, version) {
   writeJson(path.join(folder, "package.json"), mainManifest(version));
 }
 
-/** Lays out a platform's package in an empty folder, with its binary made executable. */
+/**
+ * Lays out a platform's package in an empty folder: its binary, made executable, and the licences that came with it in
+ * its artifact (haruspex's `LICENSE` and the `licenses` folder), which pack.mjs has checked are all there.
+ */
 export function stagePlatform(folder, platform, version, binary) {
   const target = path.join(folder, platform.binary);
   fs.copyFileSync(binary, target);
   // A CI artifact loses the executable bit, and npm packs the mode a file has (except on Windows, where pack.mjs refuses).
   fs.chmodSync(target, 0o755);
-  fs.copyFileSync(path.join(repository, "LICENSE"), path.join(folder, "LICENSE"));
+  copyLicenses(path.dirname(binary), folder);
   fs.writeFileSync(
     path.join(folder, "README.md"),
     `# ${platform.packageName}\n\nThe [haruspex](https://github.com/sharpblue/haruspex) binary for ${platform.label}. ` +
-      "Install `haruspex`, which installs this package where it runs; it is not for use on its own.\n",
+      "Install `haruspex`, which installs this package where it runs; it is not for use on its own.\n\n" +
+      "The binary contains the .NET runtime and the libraries haruspex uses; their licences and notices are in `licenses`, " +
+      "and haruspex's own is `LICENSE`.\n",
   );
   writeJson(path.join(folder, "package.json"), platformManifest(platform, version));
 }

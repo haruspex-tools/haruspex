@@ -136,9 +136,12 @@ Server; always skipping would let CI pass while checking nothing, which a green 
 
 Some claims can't be broken by any seed a test can afford: no fixture has 2,147,483,648 rows to overflow `COUNT`, and
 under default session options an overflow is an error, not a NULL. Those rules are observed directly, in their own tests,
-instead. A rule about concurrency, such as a read-uncommitted scan returning a row twice, can't be observed reliably at all;
-where haruspex relies on such a rule it says so, and relies on it only to claim less
-([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
+instead. A rule about concurrency, such as a read-uncommitted scan returning a row twice, can't be observed reliably at all.
+Where the source shows that such a rule applies (a `NOLOCK` hint, or a level the procedure sets), haruspex relies on it only
+to claim less. The level a caller sets is in no source, and there haruspex assumes the caller doesn't read uncommitted
+data, which claims more ([decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md)). The README lists
+that assumption with the others, and the larger gaps known today
+([what it guarantees](../../README.md#what-it-guarantees-and-what-it-cant-see)).
 
 And a differential test shows only that the claims held for the data it ran. It is evidence, not proof: the soundness
 argument is in the inference's rules, and the harness is what keeps those rules tied to the engine they describe.

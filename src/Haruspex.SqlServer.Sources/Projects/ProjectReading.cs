@@ -70,6 +70,7 @@ internal sealed class ProjectReading
     {
         var queue = new List<(string Path, string? Referrer, DatabaseReference? Reference)> { (root, rootReferrer, rootReference) };
         var scripts = new List<ScriptFile>();
+        var deployment = new List<ProjectItem>();
         var roots = new List<DacPackage>();
         var unread = new List<UnreadPart>();
         var read = new List<string>();
@@ -103,6 +104,7 @@ internal sealed class ProjectReading
             }
 
             scripts.AddRange(project.Scripts.Select(s => new ScriptFile(s.Path, Path.GetRelativePath(folder, s.Path).Replace('\\', '/'), s.Settings)));
+            deployment.AddRange(project.Deployment);
             var name = Path.GetFileName(located);
             foreach (var each in project.References)
             {
@@ -125,6 +127,10 @@ internal sealed class ProjectReading
         unread.AddRange(packages.ReadInto(declarations, [.. roots.Distinct()], ofOthers, built: built));
         foreach (var (database, package) in ofOthers ?? [])
             others?.TryAdd(database, new Other(null, null, null, package));
+
+        // Each project's deployment scripts, for what they change once the model is deployed, as a package's are.
+        foreach (var script in deployment)
+            DeploymentScripts.ReadFile(script, folder, declarations);
         diagnostics.AddRange(declarations.Diagnostics);
 
         // What the database lacks, once however many refer to it, naming each.
@@ -277,7 +283,7 @@ internal sealed class ProjectReading
         var settings = ProjectSettings.Read(project, into, out var collation);
         var scripts = ProjectFiles.Read(project, into);
         var references = ProjectReferences.Read(project, cache, into, noted);
-        return new ProjectRead([.. scripts], settings, collation, references, project.Targets);
+        return new ProjectRead([.. scripts], settings, collation, references, project.Targets, ProjectFiles.DeploymentScripts(project));
     }
 
     /// <summary>What differs between two reads of one project, in words; null when nothing does.</summary>
@@ -329,8 +335,12 @@ internal sealed class ProjectReading
     }
 
     /// <summary>What one project gives the read: its scripts, its settings (the database's, if it is the root), and what it refers to.</summary>
-    private sealed class ProjectRead(EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<DatabaseReference> references, IReadOnlyList<ProjectTarget> targets)
+    private sealed class ProjectRead(
+        EquatableArray<ProjectScript> scripts, DatabaseSettings? settings, string? collation, IReadOnlyList<DatabaseReference> references, IReadOnlyList<ProjectTarget> targets, IReadOnlyList<ProjectItem> deployment)
     {
+        /// <summary>Its pre- and post-deployment scripts' items.</summary>
+        public IReadOnlyList<ProjectItem> Deployment { get; } = deployment;
+
         public EquatableArray<ProjectScript> Scripts { get; } = scripts;
 
         public DatabaseSettings? Settings { get; } = settings;

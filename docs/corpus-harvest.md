@@ -22,7 +22,7 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | `dynamic-sql` | 5 | 0 | 91 | 0 | 96 | 6 |
 | `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
 | `unsupported-sql-type` | 20 | 0 | 0 | 39 | 59 | 5 |
-| `unsupported-statement` | 16 | 0 | 30 | 0 | 46 | 8 |
+| `unsupported-statement` | 14 | 0 | 30 | 0 | 44 | 7 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |
 | `procedure-variable` | 0 | 0 | 11 | 0 | 11 | 2 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
@@ -137,7 +137,7 @@ Nothing is unknown.
 
 ### JSON demos
 
-**Typed 0 of 2 fields in JSON demos; the results of 1 of its 7 procedures can't be described, so they have no fields to count.** 0 of the 2 procedures that return fields are fully typed.
+**Typed 2 of 2 fields in JSON demos; the results of 1 of its 7 procedures can't be described, so they have no fields to count.** 2 of the 2 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/microsoft/sql-server-samples) at commit `8fe3fd0c9a825fef3ae6d601e97537b612d7b214`, under `MIT` (`license.txt`, fetched with it). The setup scripts of seven of Microsoft's JSON demonstration apps, each a small database of its own, read on its own and summed: procedures that build `FOR JSON` and read `OPENJSON`. Where an app comes in several copies, one for each web framework, one copy is taken.
 
@@ -153,9 +153,9 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 | Procedures whose result sets can't be listed | 0 |
 | Procedures that return no result set | 4 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 0 |
+| Procedures that return fields, fully typed | 2 |
 | Fields | 2 |
-| Fields typed | 0 |
+| Fields typed | 2 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 3 |
 | Results of unknown shape | 1 |
@@ -165,7 +165,6 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `unnamed-column` | 0 | 1 | 0 | 0 |
-| `unsupported-statement` | 2 | 0 | 0 | 0 |
 
 ### ProfilesRNS
 

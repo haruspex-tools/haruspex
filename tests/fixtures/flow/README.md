@@ -17,6 +17,6 @@ through temporary tables, table variables, control flow and CTEs. No part of it 
 | `flow.caught_report` | `TRY … CATCH` whose `CATCH` returns a result after an error at any of three points: unions at each position, and later results that may not run |
 | `flow.bill_of_materials` | a bill of materials by a recursive CTE with a column list, read by a second CTE; the quantity's check carried through both |
 | `flow.sale_card` | guards: a `THROW` when the parameter is NULL, and `@@ROWCOUNT = 0` straight after a `SELECT` that may assign nothing, which proves every variable it assigns; a `COUNT_BIG` assigned from an aggregate without `GROUP BY`, even over no rows |
-| `flow.sale_receipt` | an existence guard read with `UPDLOCK, HOLDLOCK` in a transaction the procedure began: the reads before its `COMMIT` find the sale, and one after it may not (`read-twice` at the guard) |
+| `flow.sale_receipt` | an existence guard read with `UPDLOCK, HOLDLOCK` in a transaction the procedure began at `READ COMMITTED`: the reads before its `COMMIT` find the sale, and one after it may not (`read-twice` at the guard) |
 | `flow.sale_line` | a key added by `ALTER TABLE … ADD PRIMARY KEY` to a table `SELECT … INTO` made: a `FOR JSON … WITHOUT_ARRAY_WRAPPER` subquery and a query that fix it read at most one row |
 | `flow.region_card` | a table variable keyed by its declaration, left joined to a temporary table keyed by its `CREATE TABLE`: at most one row |
