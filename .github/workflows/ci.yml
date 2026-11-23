@@ -22,8 +22,8 @@ concurrency:
 # to each other as artifacts, so every run uploads them; but an artifact of a public repository can be downloaded by anyone
 # signed in to GitHub, and the README tells users to install the tarballs. So only a run dispatched by hand on main uploads
 # them under the names the README gives, kept 30 days. Every other run's have a name of its own, kept a day: a pull
-# request's are built from code no one has reviewed yet (`unreviewed-pr-`), and a push's are main's but not handed out
-# until a maintainer dispatches a run (`ci-`). ARTIFACTS is the prefix, empty for the handed-out run; it is written with
+# request's are built from code no one has reviewed yet (`unreviewed-pr-`), and any other run's (a push to main, or a
+# dispatch on another branch) aren't handed out (`ci-`). ARTIFACTS is the prefix, empty for the handed-out run; it is written with
 # the empty case last, since `&&` and `||` treat an empty string as false.
 env:
   ARTIFACTS: >-
@@ -176,6 +176,16 @@ jobs:
 
       - run: ../../publish/haruspex check
         working-directory: examples/greenhouse
+
+      # Before the upload, so that a binary is never handed out without its licences: the same check npm-pack runs again.
+      # Node is the version the other jobs pin; the platform comes in through the environment.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - run: node packaging/npm/licenses.mjs publish "$RID"
+        env:
+          RID: ${{ matrix.rid }}
 
       # The binary with its licences; npm-pack refuses one without them. The artifact's root is publish/, the paths'
       # common folder, so it holds haruspex (or haruspex.exe), LICENSE and licenses/.

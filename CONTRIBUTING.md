@@ -61,8 +61,8 @@ CI builds and runs the unit tests on Windows, macOS and Linux, since haruspex mu
 differential tests run on Linux alone, where SQL Server's container does. It also compiles the command line ahead of time for
 each platform (Native AOT, `-p:HaruspexNativeAot=true`), so a change that breaks trimming or AOT fails there, runs each
 binary once on the example application, and keeps it, with the licences that go with it, as an artifact of the run. From
-those binaries it packs the npm tarballs
-([packaging/npm](packaging/npm/README.md)), installs them into an empty project on each platform, and runs the command there.
+those binaries it packs the npm tarballs ([packaging/npm](packaging/npm/README.md)), installs them into an empty project on
+each platform, and runs the command there.
 It runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint` and `zizmor`.
 Every relative link in the repository's Markdown, anchors included, must resolve; `MarkdownLinkTests` checks
 them.

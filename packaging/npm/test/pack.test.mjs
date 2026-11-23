@@ -1,11 +1,13 @@
 // The pack script over stand-in binaries: what each package declares, what each tarball holds, and what it refuses.
 // npm pack runs for real, so the tarballs are the ones npm would install; nothing is installed or published.
 import { test, before, after } from "node:test";
+import { spawnSync } from "node:child_process";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { committed } from "../licenses.mjs";
 import { pack } from "../pack.mjs";
 import { mainManifest, platformManifest } from "../packages.mjs";
@@ -222,4 +224,17 @@ test("refuses a platform name it doesn't know", () => {
     () => pack({ binaries: binaries("all"), out: path.join(root, "out-x"), commit, only: ["darwin-arm"] }),
     /darwin-arm\b.*darwin-arm64/s,
   );
+});
+
+test("the licence check the native job runs before its upload passes a full folder and fails one missing a file", () => {
+  // As CI runs it on publish/ before the binary is uploaded, so an artifact without its licences is never handed out.
+  const script = fileURLToPath(new URL("../licenses.mjs", import.meta.url));
+  const folder = path.join(binaries("checked", commit, ["linux-x64"]), "haruspex-linux-x64");
+  const full = spawnSync(process.execPath, [script, folder, "linux-x64"], { encoding: "utf8" });
+  assert.equal(full.status, 0, full.stderr);
+
+  fs.rmSync(path.join(folder, "LICENSE"));
+  const partial = spawnSync(process.execPath, [script, folder, "linux-x64"], { encoding: "utf8" });
+  assert.equal(partial.status, 1);
+  assert.match(partial.stderr, /LICENSE, haruspex's own/);
 });

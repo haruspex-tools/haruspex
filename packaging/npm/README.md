@@ -68,9 +68,9 @@ CI makes them on every run (the `npm-pack` job in [the workflow](../../.github/w
 jobs built; the `npm-install` jobs install them into an empty project on each platform and run `npx haruspex --version` and
 `npx haruspex generate`. Only a run started by hand on `main` (`gh workflow run CI --ref main`) keeps them for 30 days as the
 artifact `haruspex-npm`, and its binaries as `haruspex-<rid>`: those are the ones handed out. Every other run's artifacts
-are kept a day, with `unreviewed-pr-` before the name for a pull request and `ci-` for a push, so that nobody takes a
-pull request's binaries for the project's. To make the tarballs locally, download the native artifacts of a run started by
-hand into a folder (the `gh` CLI lays them out as the script expects, a folder per platform), then:
+are kept a day, with `unreviewed-pr-` before the name for a pull request and `ci-` for any other run, so that nobody takes
+a pull request's binaries for the project's. To make the tarballs locally, download the native artifacts of a successful
+run started by hand on `main` into a folder (the `gh` CLI lays them out as the script expects, a folder per platform), then:
 
 ```sh
 gh run download <run id> --pattern 'haruspex-*-*' --dir binaries      # the native artifacts, not haruspex-npm

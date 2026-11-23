@@ -1,9 +1,13 @@
 // The licences that must go with every copy of a binary (packaging/licenses/README.md), and the check that a native
 // artifact holds them. The publish puts them beside the binary (HaruspexLicenses in src/Haruspex.Cli/Haruspex.Cli.csproj);
-// the pack script checks each artifact here before it packs anything, and copies them into the platform's package.
+// CI's native job runs this file on the publish folder before it uploads the binary, and the pack script checks each
+// artifact here again before it packs anything, then copies them into the platform's package.
+//
+//   node packaging/npm/licenses.mjs <folder holding the binary> <rid>
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, "..", "..");
@@ -82,4 +86,25 @@ export function missingLicenses(artifact, rid) {
 export function copyLicenses(artifact, folder) {
   fs.copyFileSync(path.join(artifact, "LICENSE"), path.join(folder, "LICENSE"));
   fs.cpSync(path.join(artifact, "licenses"), path.join(folder, "licenses"), { recursive: true });
+}
+
+/** Checks one folder, as the native job does before its upload: exit code 1, naming each missing file, if any is. */
+function main() {
+  const { positionals } = parseArgs({ allowPositionals: true });
+  if (positionals.length !== 2) throw new Error("give the folder holding the binary and its runtime identifier");
+  const [folder, rid] = positionals;
+  const missing = missingLicenses(folder, rid);
+  if (missing.length > 0) {
+    throw new Error(`${folder} lacks licences that must go with the binary: ${missing.join("; ")}`);
+  }
+  console.log(`${folder} holds every licence that must go with the binary.`);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`licenses: ${error.message}`);
+    process.exitCode = 1;
+  }
 }
