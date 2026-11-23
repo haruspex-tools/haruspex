@@ -90,7 +90,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
         {
             if (!visited.Add(new SynonymVisit(name)))
                 return null;
-            var objects = binder.ResolveWritten(synonym.For);
+            var objects = binder.ResolveWritten(synonym);
             if (objects.Count == 0)
                 Warn($"{name} (a synonym for {synonym.For})", Subject(name), at);
             foreach (var target in objects)
@@ -161,7 +161,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
     /// <summary>Why a trigger may return result sets, as words; null when every statement in it is known to return none.</summary>
     private string? Returns(Trigger trigger, HashSet<Visit> visited) => trigger.Body switch
     {
-        SqlBody body => Statements(body.Statements, new Binder(model, trigger.Span), trigger.Span, visited),
+        SqlBody body => Statements(body.Statements, new Binder(model, trigger.Span, SchemaSearch.Within(trigger)), trigger.Span, visited),
         EncryptedBody => "is encrypted, and the source holds a placeholder, not its text",
         ClrBody or NoBody => "is a CLR trigger, whose code is not in the project",
     };
@@ -238,7 +238,7 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
                     return null;
                 return callee.Body switch
                 {
-                    SqlBody body => Statements(body.Statements, new Binder(model, callee.Span), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null,
+                    SqlBody body => Statements(body.Statements, new Binder(model, callee.Span, SchemaSearch.Within(callee)), callee.Span, visited) is { } why ? $"calls {callee.Name} at {at}, which {why}" : null,
                     EncryptedBody => $"calls {callee.Name} at {at}, which is encrypted, and the source holds a placeholder, not its text",
                     ClrBody or NoBody => $"calls {callee.Name} at {at}, a CLR procedure",
                 };

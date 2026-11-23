@@ -13,8 +13,8 @@ public static class SyntaxReader
 {
     /// <summary>
     /// The name a definition creates. An unqualified name is taken as <c>dbo</c>, the default schema a database project
-    /// deploys with. A reference in a body is resolved differently, because there the caller's default schema decides (see
-    /// <c>Binder</c> in Haruspex.SqlServer.Semantics).
+    /// deploys with. A reference in a body is resolved differently: in a module's schema and then <c>dbo</c>, or by the caller's
+    /// default schema in a query file or an <c>EXEC</c> (see <c>SchemaSearch</c> in Haruspex.SqlServer.Semantics).
     /// </summary>
     /// <param name="name">The name as ScriptDom parsed it. Server and database parts are ignored.</param>
     public static ObjectName Name(SchemaObjectName name)
@@ -24,7 +24,12 @@ public static class SyntaxReader
     }
 
     /// <summary>The type a data type reference declares, or null when there is none or it has no name.</summary>
-    public static SqlType? Type(DataTypeReference? type)
+    /// <param name="type">The reference as ScriptDom parsed it.</param>
+    /// <param name="moduleSchema">
+    /// The schema of the module whose definition it is written in, where SQL Server looks for a type named without a schema
+    /// before <c>dbo</c> (<see cref="SqlType.ModuleSchema"/>); null where it is not in a module's definition.
+    /// </param>
+    public static SqlType? Type(DataTypeReference? type, string? moduleSchema = null)
     {
         switch (type)
         {
@@ -38,7 +43,9 @@ public static class SyntaxReader
                 return null;
             case { Name.BaseIdentifier.Value: { } name }:
                 var arguments = (type as ParameterizedDataTypeReference)?.Parameters.Select(p => p.Value) ?? [];
-                return new SqlType(SqlTypeKind.Named, name, [.. arguments], type.Name.SchemaIdentifier?.Value);
+                return type.Name.SchemaIdentifier?.Value is { } schema
+                    ? new SqlType(SqlTypeKind.Named, name, [.. arguments], schema)
+                    : new SqlType(SqlTypeKind.Named, name, [.. arguments], ModuleSchema: moduleSchema);
             default:
                 return null;
         }
@@ -106,7 +113,11 @@ public static class SyntaxReader
     /// <param name="definition">Its columns and constraints.</param>
     /// <param name="span">Where the statement that defines it is; its columns and constraints are positions in its file.</param>
     /// <param name="isGraph">Whether it is declared <c>AS NODE</c> or <c>AS EDGE</c> (see <see cref="Table.IsGraph"/>).</param>
-    public static Table Table(ObjectName name, TableDefinition definition, SourceSpan span, bool isGraph = false)
+    /// <param name="moduleSchema">
+    /// For a table variable or a function's return table, the schema of the module it is declared in, where its columns' types
+    /// are looked for (<see cref="Type"/>); null for any other table.
+    /// </param>
+    public static Table Table(ObjectName name, TableDefinition definition, SourceSpan span, bool isGraph = false, string? moduleSchema = null)
     {
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(span);
@@ -129,15 +140,16 @@ public static class SyntaxReader
         {
             var nullable = column.Constraints.OfType<NullableConstraintDefinition>().ToList();
 
-            // A column that says both NULL and NOT NULL is recorded as NOT NULL: inference read it so before the model
-            // was split out of it, and the split was to change no behaviour.
+            // SQL Server refuses a column that says both NULL and NOT NULL, in either order, wherever a table is declared
+            // (observed: A_column_declared_both_null_and_not_null_is_refused, Msg 8150), so how one is read only matters for a
+            // script that would not deploy, and no value is ever read from such a column. It is recorded as NOT NULL.
             var nullability = nullable.Any(n => !n.Nullable) ? DeclaredNullability.NotNull
                 : nullable.Count > 0 ? DeclaredNullability.Null
                 : DeclaredNullability.NotDeclared;
 
             columns.Add(new Column(
                 column.ColumnIdentifier.Value,
-                Type(column.DataType),
+                Type(column.DataType, moduleSchema),
                 nullability,
                 IsIdentity: column.IdentityOptions is not null,
                 column.ComputedColumnExpression,
@@ -258,7 +270,7 @@ public static class SyntaxReader
         options.OfType<IgnoreDupKeyIndexOption>().Any(o => o.OptionState == OptionState.On);
 
     /// <summary>
-    /// Reads a table type's definition (<c>CREATE TYPE … AS TABLE</c>) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool)"/>
+    /// Reads a table type's definition (<c>CREATE TYPE … AS TABLE</c>) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool, string)"/>
     /// reads a table's: its columns, keys and CHECK constraints are declared in the same grammar.
     /// </summary>
     /// <param name="name">The type's name.</param>
@@ -276,15 +288,19 @@ public static class SyntaxReader
 
     /// <summary>
     /// Reads the table a body declares for itself (<c>CREATE TABLE #t</c>, <c>DECLARE @t TABLE</c>, <c>ALTER TABLE #t ADD</c>, a
-    /// function's return table) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool)"/> reads the schema's.
+    /// function's return table) as <see cref="Table(ObjectName, TableDefinition, SourceSpan, bool, string)"/> reads the schema's.
     /// </summary>
     /// <param name="name">The name the body gives it, with its sigil.</param>
     /// <param name="definition">Its columns and constraints.</param>
     /// <param name="span">Where the statement that declares it is.</param>
-    public static DeclaredTable Declared(string name, TableDefinition definition, SourceSpan span)
+    /// <param name="moduleSchema">
+    /// For a table variable or a function's return table, the schema of the module it is declared in (see <see cref="Type"/>);
+    /// null for a temporary table, whose columns' types SQL Server looks for in tempdb.
+    /// </param>
+    public static DeclaredTable Declared(string name, TableDefinition definition, SourceSpan span, string? moduleSchema = null)
     {
         ArgumentNullException.ThrowIfNull(name);
-        var table = Table(new ObjectName("", name), definition, span);
+        var table = Table(new ObjectName("", name), definition, span, moduleSchema: moduleSchema);
         return new DeclaredTable(name, table.Span, table.Columns, table.PrimaryKey, table.Checks, table.UniqueKeys);
     }
 

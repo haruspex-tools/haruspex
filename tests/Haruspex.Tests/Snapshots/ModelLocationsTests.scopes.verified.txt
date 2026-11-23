@@ -1,12 +1,16 @@
 column [lib.annex].[reading.room].note nvarchar(40) at tables/reading_room.sql:8:5
 column [lib.annex].[reading.room].room_id int at tables/reading_room.sql:6:5
 column [lib.annex].[reading.room].seats tinyint at tables/reading_room.sql:7:5
+column dbo.lending_counter.counter_id int at tables/lending_counter.sql:12:5
+column dbo.lending_counter.label varchar(3) at tables/lending_counter.sql:13:5
 column dbo.shelf.label varchar(10) at tables/shelf.sql:5:5
 column dbo.shelf.shelf_id int at tables/shelf.sql:4:5
 column lib.book.book_id int at tables/book.sql:3:5
 column lib.book.donor_id int at tables/book.sql:6:5
 column lib.book.pages smallint at tables/book.sql:5:5
 column lib.book.title nvarchar(80) at tables/book.sql:4:5
+column lib.lending_counter.counter_id int at tables/lending_counter.sql:5:5
+column lib.lending_counter.label varchar(20) at tables/lending_counter.sql:6:5
 column lib.loan.book_id int at tables/loan.sql:5:5
 column lib.loan.loan_id int at tables/loan.sql:3:5
 column lib.loan.loaned_on date at tables/loan.sql:6:5
@@ -16,11 +20,16 @@ column lib.member.email varchar(80) at tables/member.sql:6:5
 column lib.member.member_id int at tables/member.sql:4:5
 column lib.member.name nvarchar(40) at tables/member.sql:5:5
 column lib.member.referred_by int at tables/member.sql:7:5
+function lib.counter_code_of at functions/counter_code_of.sql:2:1
 key [lib.annex].[reading.room] unnamed (room_id) at tables/reading_room.sql:6:35
+key dbo.lending_counter unnamed (counter_id) at tables/lending_counter.sql:12:36
 key dbo.shelf unnamed (shelf_id) at tables/shelf.sql:4:35
 key lib.book unnamed (book_id) at tables/book.sql:3:36
+key lib.lending_counter unnamed (counter_id) at tables/lending_counter.sql:5:37
 key lib.loan unnamed (loan_id) at tables/loan.sql:3:40
 key lib.member unnamed (member_id) at tables/member.sql:4:39
+named function lib.counter_code_of
+parameter lib.counter_code_of @label at functions/counter_code_of.sql:2:38
 parameter lib.delete_returns @member_id at procedures/delete_returns.sql:2:37
 parameter lib.full_name_return @loan_id at procedures/full_name_return.sql:2:39
 parameter lib.full_name_return @returned_on at procedures/full_name_return.sql:2:53
@@ -35,6 +44,7 @@ procedure lib.alias_reused_inside at procedures/alias_reused_inside.sql:3:1
 procedure lib.apply_reads_its_left_side at procedures/apply_reads_its_left_side.sql:2:1
 procedure lib.apply_values at procedures/apply_values.sql:2:1
 procedure lib.correlated_two_levels at procedures/correlated_two_levels.sql:2:1
+procedure lib.counters_of_its_own_schema at procedures/counters_of_its_own_schema.sql:2:1
 procedure lib.cte_column_list at procedures/cte_column_list.sql:2:1
 procedure lib.cte_ends_with_its_statement at procedures/cte_ends_with_its_statement.sql:2:1
 procedure lib.cte_hides_a_table at procedures/cte_hides_a_table.sql:3:1
@@ -64,8 +74,12 @@ procedure lib.update_returns at procedures/update_returns.sql:2:1
 procedure lib.update_through_a_cte at procedures/update_through_a_cte.sql:2:1
 procedure lib.variable_and_temp_of_one_name at procedures/variable_and_temp_of_one_name.sql:3:1
 table [lib.annex].[reading.room] at tables/reading_room.sql:4:1
+table dbo.lending_counter at tables/lending_counter.sql:10:1
 table dbo.shelf at tables/shelf.sql:2:1
 table lib.book at tables/book.sql:1:1
+table lib.lending_counter at tables/lending_counter.sql:3:1
 table lib.loan at tables/loan.sql:1:1
 table lib.member at tables/member.sql:2:1
+type dbo.counter_code varchar(2) at types/counter_code.sql:5:1
+type lib.counter_code varchar(6) at types/counter_code.sql:2:1
 view lib.member_loans at views/member_loans.sql:2:1

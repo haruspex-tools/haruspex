@@ -6,7 +6,10 @@ namespace Haruspex.SqlServer.Model;
 /// </summary>
 /// <param name="Server">The linked server, or null when the name has none.</param>
 /// <param name="Database">The database, or null when the name has none.</param>
-/// <param name="Schema">The schema, or null when the name has none, so that the caller's default schema decides.</param>
+/// <param name="Schema">
+/// The schema, or null when the name has none, so that SQL Server looks in the synonym's schema and then in <c>dbo</c>, whoever
+/// reads it (see <c>SchemaSearch</c> in Haruspex.SqlServer.Semantics).
+/// </param>
 /// <param name="Name">The object's name.</param>
 /// <param name="Text">The whole name as written, for messages.</param>
 public sealed record SynonymTarget(string? Server, string? Database, string? Schema, string Name, string Text)

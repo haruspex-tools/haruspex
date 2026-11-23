@@ -24,6 +24,7 @@ namespace Haruspex.SqlServer.Inference;
 /// </remarks>
 /// <param name="model">The model the body's references resolve in.</param>
 /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
+/// <param name="search">Where a name the body writes without a schema is looked for: the module's schema, or a query file's caller's.</param>
 /// <param name="summaries">What each function the body calls returns and what each view it reads holds.</param>
 /// <param name="parameters">Inside a function, its parameters' values.</param>
 /// <param name="ansiNullsOff">Whether the body was created with ANSI_NULLS off.</param>
@@ -38,6 +39,7 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed partial class Typer(
     DatabaseModel model,
     SourceSpan source,
+    SchemaSearch search,
     Summaries summaries,
     EquatableMap<LocalName, Value>? parameters = null,
     bool ansiNullsOff = false,
@@ -55,10 +57,13 @@ internal sealed partial class Typer(
     private readonly ParameterUses? uses = uses;
 
     private readonly DatabaseModel model = model;
-    private readonly Binder binder = summaries.Bindings.For(source);
+
+    /// <summary>Where a name the body writes without a schema is looked for (<see cref="SchemaSearch"/>).</summary>
+    private readonly SchemaSearch search = search;
+    private readonly Binder binder = summaries.Bindings.For(source, search);
 
     /// <summary>How many rows a query returns (<see cref="Cardinality"/>), asked with the scope it is read in.</summary>
-    private readonly Cardinality cardinality = new(model, summaries.Bindings.For(source));
+    private readonly Cardinality cardinality = new(model, summaries.Bindings.For(source, search));
     private readonly SourceSpan source = source;
 
     /// <summary>What each scalar function returns, and what each view and table-valued function holds (<c>Typer.Views.cs</c>).</summary>
@@ -174,7 +179,7 @@ internal sealed partial class Typer(
             {
                 case SelectScalarExpression scalar:
                     var value = Expression(scalar.Expression, row);
-                    columns.Add(new RowColumn(Binder.ColumnName(scalar), value, At(scalar), Origin(scalar.Expression, scope), scalar.Expression)
+                    columns.Add(new RowColumn(Binder.ColumnName(scalar, row.Bound), value, At(scalar), Origin(scalar.Expression, scope), scalar.Expression)
                     {
                         From = Reads(scalar.Expression, row),
                         JsonNeverFolded = value.IsLiveJson && NeverFoldedAsJson(scalar.Expression, row),
@@ -208,12 +213,23 @@ internal sealed partial class Typer(
     /// <summary>The name SQL Server gives the one column of top-level FOR XML output.</summary>
     private const string XmlOutputColumn = "XML_F52E2B61-18A1-11d1-B105-00805F49916B";
 
+    /// <summary>
+    /// Why a column has no name haruspex knows: none at all, or, for <c>$IDENTITY</c> and <c>$ROWGUID</c>, the name of a column
+    /// of the table, which only the table gives (<see cref="Binder.ColumnName(SelectScalarExpression, QueryScope)"/>).
+    /// </summary>
+    private static string Unnamed(RowColumn column) => column.Expression switch
+    {
+        ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnRowGuid } => $"The column {Text(column.At)} is named after its table's ROWGUIDCOL column, which the model of the project doesn't record.",
+        ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnIdentity } => $"The column {Text(column.At)} is named after the identity column of what it reads, which is known only for a table it names for certain.",
+        _ => $"The column {Text(column.At)} has no name.",
+    };
+
     internal static Shape Rowset(Row row)
     {
         if (row.Unlisted is { } unlisted)
             return unlisted;
         if (row.Columns.FirstOrDefault(c => string.IsNullOrEmpty(c.Name)) is { } unnamed)
-            return Unsupported(IrUnknownReason.UnnamedColumn, $"The column {Text(unnamed.At)} has no name.", unnamed.At);
+            return Unsupported(IrUnknownReason.UnnamedColumn, Unnamed(unnamed), unnamed.At);
         if (row.Columns.Select(ReplacedKey).FirstOrDefault(r => r is not null) is { } replaced)
             return replaced;
 
@@ -481,7 +497,8 @@ internal sealed partial class Typer(
             return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column, which another computed column can't read (1759).", column.At));
 
         var row = QueryScope.OfRow(source with { Optional = null }, scope.Bound.Names);
-        var value = new Typer(model, table.Span, summaries, ansiNullsOff: table is Table { AnsiNullsOff: true }, inComputedColumn: true).Expression(expression, scope.In(row));
+        // A computed column's expression names no table or type, and a function in it has its schema, so no search is needed.
+        var value = new Typer(model, table.Span, SchemaSearch.Caller, summaries, ansiNullsOff: table is Table { AnsiNullsOff: true }, inComputedColumn: true).Expression(expression, scope.In(row));
         return value.IsLiveJson
             ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"{table.Name}.{column.Name} is a computed column holding JSON, which is not modelled for a column.", column.At))
             : value;

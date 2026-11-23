@@ -26,18 +26,23 @@ public sealed partial class Binder
     private readonly Bindings bindings;
     private readonly SourceSpan source;
 
+    /// <summary>Where SQL Server looks for a name the body writes without a schema: in a module's own schema, or the caller's.</summary>
+    private readonly SchemaSearch search;
+
     /// <summary>A binder of one body, keeping what it binds for itself alone.</summary>
     /// <param name="model">The schema the body runs against.</param>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
-    public Binder(DatabaseModel model, SourceSpan source)
-        : this(new Bindings(model), source)
+    /// <param name="search">Where a name the body writes without a schema is looked for: the module's schema, or a query file's caller's.</param>
+    public Binder(DatabaseModel model, SourceSpan source, SchemaSearch search)
+        : this(new Bindings(model), source, search)
     {
     }
 
-    internal Binder(Bindings bindings, SourceSpan source)
+    internal Binder(Bindings bindings, SourceSpan source, SchemaSearch search)
     {
         this.bindings = bindings;
         this.source = source ?? throw new ArgumentNullException(nameof(source));
+        this.search = search ?? throw new ArgumentNullException(nameof(search));
     }
 
     private DatabaseModel Model => bindings.Model;
@@ -47,7 +52,7 @@ public sealed partial class Binder
     /// <param name="body">Its statements; null for a body of one expression or query.</param>
     /// <param name="returnTable">A multi-statement function's return table, or null.</param>
     public BodyDeclarations Declarations(IReadOnlyList<Parameter> parameters, StatementList? body = null, DeclaredTable? returnTable = null) =>
-        bindings.Declarations(parameters, body, returnTable, source);
+        bindings.Declarations(parameters, body, returnTable, source, search);
 
     // ---- queries ------------------------------------------------------------------------------------------------------
 
@@ -132,7 +137,31 @@ public sealed partial class Binder
 
     /// <summary>
     /// The name SQL Server gives a select-list column: its alias, <c>$action</c> for MERGE's action (observed:
-    /// Merge_action_is_an_nvarchar_10), or a column reference's last part; null for any other expression without an alias.
+    /// Merge_action_is_an_nvarchar_10), a column reference's last part, or for <c>$IDENTITY</c> the name of the identity column
+    /// of the table it reads; null for any other expression without an alias.
+    /// </summary>
+    /// <remarks>
+    /// <c>$IDENTITY</c> and <c>$ROWGUID</c> are named after the column they stand for, which the table gives, never after their
+    /// qualifier (observed: Identity_is_named_after_the_tables_identity_column, Rowguid_is_named_after_the_tables_rowguidcol).
+    /// The model records a table's identity column, so <c>$IDENTITY</c> of a table is named; of anything else (a view, a
+    /// derived table, an outer query's table bare), and <c>$ROWGUID</c>, whose column the model doesn't record, are left
+    /// unnamed, which claims nothing of the result.
+    /// </remarks>
+    /// <param name="column">The column.</param>
+    /// <param name="scope">The scope of the query whose select list it is in.</param>
+    public static string? ColumnName(SelectScalarExpression column, QueryScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(column);
+        ArgumentNullException.ThrowIfNull(scope);
+        if (column.ColumnName is null && column.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnIdentity } identity)
+            return IdentityOf(identity, scope)?.Name;
+        return ColumnName(column);
+    }
+
+    /// <summary>
+    /// The name a select-list column has whatever its query reads (<see cref="ColumnName(SelectScalarExpression, QueryScope)"/>):
+    /// its alias, <c>$action</c>, or a regular column reference's last part; null for any other expression without an alias,
+    /// <c>$IDENTITY</c> and <c>$ROWGUID</c> included.
     /// </summary>
     /// <param name="column">The column.</param>
     public static string? ColumnName(SelectScalarExpression column)
@@ -140,11 +169,39 @@ public sealed partial class Binder
         ArgumentNullException.ThrowIfNull(column);
         return column.ColumnName?.Value
             ?? (column.Expression is ColumnReferenceExpression { ColumnType: ColumnType.PseudoColumnAction } ? "$action" : null)
-            ?? (column.Expression as ColumnReferenceExpression)?.MultiPartIdentifier?.Identifiers[^1].Value;
+            ?? (column.Expression is ColumnReferenceExpression { ColumnType: ColumnType.Regular } regular ? regular.MultiPartIdentifier?.Identifiers[^1].Value : null);
     }
 
     /// <summary>
-    /// A query's columns' names (<see cref="ColumnName"/>), a star's being its columns'; null when a star can't be expanded.
+    /// The identity column <c>$IDENTITY</c> reads: of the table its qualifier names, in the innermost scope that has a source of
+    /// that name, as a column's qualifier binds; bare, of the one table of its own query's sources that has one, when every
+    /// source is a table. Null when it reads anything else, or nothing for certain: SQL Server refuses a bare one that two
+    /// sources could mean (209), and one of a table without an identity column (207) (observed:
+    /// Identity_of_two_tables_or_of_none_is_refused).
+    /// </summary>
+    private static Column? IdentityOf(ColumnReferenceExpression identity, QueryScope scope)
+    {
+        static Column? Of(BoundSource source) =>
+            source.Target is TableTarget { Table: var table } && table.Columns.Where(c => c.IsIdentity).ToList() is [var only] ? only : null;
+
+        if (identity.MultiPartIdentifier is { Identifiers: { Count: > 0 and <= 3 } qualifier })
+        {
+            for (var s = scope; s is not null; s = s.Parent)
+            {
+                var named = SourcesNamedBy([.. qualifier], s.Sources);
+                if (named.Count > 0)
+                    return named is [var one] ? Of(one) : null;
+            }
+
+            return null;
+        }
+
+        return scope.Sources.All(s => s.Target is TableTarget) && scope.Sources.Select(Of).OfType<Column>().ToList() is [var single] ? single : null;
+    }
+
+    /// <summary>
+    /// A query's columns' names (<see cref="ColumnName(SelectScalarExpression, QueryScope)"/>), a star's being its columns'; null
+    /// when a star can't be expanded.
     /// </summary>
     private EquatableArray<string?>? Names(QuerySpecification query, QueryScope scope)
     {
@@ -154,7 +211,7 @@ public sealed partial class Binder
             switch (element)
             {
                 case SelectScalarExpression scalar:
-                    names.Add(ColumnName(scalar));
+                    names.Add(ColumnName(scalar, scope));
                     break;
                 case SelectStarExpression star when Star(star, scope) is ExpandedStar { Columns: var columns }:
                     names.AddRange(columns.Select(c => c.Name));

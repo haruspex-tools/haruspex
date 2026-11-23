@@ -185,7 +185,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new Walker(model, procedure.Span, summaries, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Parameters, statements);
+                    walked = new Walker(model, procedure.Span, SchemaSearch.Within(procedure), summaries, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Parameters, statements);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 
@@ -254,7 +254,8 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
         var finder = new WriteFinder();
         body.Accept(finder);
         var all = finder.Tables.ToImmutableHashSet();
-        var binder = new Binder(model, span);
+        // Only its EXECs are bound, which follow the caller's rule wherever they are written.
+        var binder = new Binder(model, span, SchemaSearch.Caller);
         foreach (var call in finder.Calls)
         {
             if (binder.BindCall(call) is ProcedureCall { Procedure: var callee })

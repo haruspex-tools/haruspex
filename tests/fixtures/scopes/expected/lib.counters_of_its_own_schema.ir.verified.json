@@ -1,0 +1,130 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/counters_of_its_own_schema.sql": "debe13b6bb5996aabb518fb1856754b2a154feca1009eb89413e8af436e60340",
+      "tables/lending_counter.sql": "499b73df035664e348af1514478e75e550dc6efdccca63b6c6f10de3f691ee6e"
+    }
+  },
+  "objects": [
+    {
+      "id": "lib.counters_of_its_own_schema",
+      "name": "CountersOfItsOwnSchema",
+      "kind": "procedure",
+      "at": "procedures/counters_of_its_own_schema.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountersOfItsOwnSchemaRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CountersOfItsOwnSchemaRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lib.counters_of_its_own_schema",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "counter_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.lending_counter.counter_id",
+              "sql": "int",
+              "at": "tables/lending_counter.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "lib.lending_counter.label",
+              "sql": "varchar(20)",
+              "at": "tables/lending_counter.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "lib.counter_code"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "function-result",
+              "at": "procedures/counters_of_its_own_schema.sql:4:31"
+            }
+          ],
+          "from": [
+            {
+              "column": "lib.lending_counter.label",
+              "sql": "varchar(20)",
+              "at": "tables/lending_counter.sql:6:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

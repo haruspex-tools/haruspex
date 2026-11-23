@@ -34,6 +34,7 @@ internal sealed partial class Walker
 
     /// <param name="model">The model the body's references resolve in.</param>
     /// <param name="source">Where the object whose body it is was read; positions in the body are in its file.</param>
+    /// <param name="search">Where a name the body writes without a schema is looked for: the module's schema, or a query file's caller's.</param>
     /// <param name="summaries">What each object the body calls or reads does or holds.</param>
     /// <param name="parameters">Inside a function, its parameters' values.</param>
     /// <param name="context">
@@ -51,6 +52,7 @@ internal sealed partial class Walker
     public Walker(
         DatabaseModel model,
         SourceSpan source,
+        SchemaSearch search,
         Summaries summaries,
         EquatableMap<LocalName, Value>? parameters = null,
         CallContext? context = null,
@@ -58,10 +60,10 @@ internal sealed partial class Walker
         bool uncommittedReads = false,
         ParameterUses? uses = null)
     {
-        binder = summaries.Bindings.For(source);
+        binder = summaries.Bindings.For(source, search);
         this.source = source;
         this.uses = uses;
-        typer = new Typer(model, source, summaries, parameters, ansiNullsOff, uncommittedReads, uses);
+        typer = new Typer(model, source, search, summaries, parameters, ansiNullsOff, uncommittedReads, uses);
         this.summaries = summaries;
         followsCalls = context is not null;
         this.context = context ?? CallContext.Top;

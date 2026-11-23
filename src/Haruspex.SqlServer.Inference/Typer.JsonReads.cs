@@ -296,7 +296,7 @@ internal sealed partial class Typer
             return new Value(opened, given ? [] : [Because()], IsLiveJson: true);
         }
 
-        return ScalarColumn(SyntaxReader.Type(column.DataType), found, path, where, Because);
+        return ScalarColumn(SyntaxReader.Type(column.DataType, search.Own), found, path, where, Because);
     }
 
     /// <summary>

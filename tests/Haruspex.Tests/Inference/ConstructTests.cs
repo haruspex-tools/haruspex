@@ -260,29 +260,31 @@ public partial class ConstructTests
     }
 
     [Fact]
-    public void An_unqualified_table_in_more_than_one_schema_is_unresolved()
+    public void An_unqualified_table_in_more_than_one_schema_is_the_procedures_schemas()
     {
-        // Which table SQL Server reads depends on the caller's default schema, which the source cannot tell.
+        // In a procedure SQL Server looks in its own schema first, whoever calls (ConstructTests.SchemaNames.cs has the rest).
         var doc = Infer(
             ("tables.sql", "CREATE TABLE dbo.customer (name nvarchar(10) NOT NULL);\nGO\nCREATE TABLE sales.customer (name nvarchar(10) NULL);"),
             ("p.sql", "CREATE PROCEDURE sales.p AS SELECT c.name FROM customer AS c;"));
 
-        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnresolvedTable);
+        Assert.Empty(doc.Unknowns);
+        Assert.True(Assert.Single(RowFields(doc)).Nullable);
     }
 
     [Theory]
     [InlineData("CREATE TABLE dbo.customer_base (name nvarchar(10) NULL);\nGO\nCREATE VIEW dbo.customer AS SELECT b.name FROM dbo.customer_base AS b;")]
     [InlineData("CREATE TABLE dbo.other (name nvarchar(10) NULL);\nGO\nCREATE SYNONYM dbo.customer FOR dbo.other;")]
     [InlineData("CREATE FUNCTION dbo.customer() RETURNS TABLE AS RETURN SELECT CAST(NULL AS nvarchar(10)) AS name;")]
-    public void An_unqualified_table_with_a_rival_view_synonym_or_function_is_unresolved(string rival)
+    public void An_unqualified_table_of_the_procedures_schema_passes_over_a_rival_in_dbo(string rival)
     {
-        // A caller whose default schema is dbo reads the rival, which is not modelled, so nothing is claimed.
+        // dbo is looked in only when the procedure's own schema has no object of the name, whoever calls.
         var doc = Infer(
             ("tables.sql", "CREATE TABLE sales.customer (name nvarchar(10) NOT NULL);"),
             ("rival.sql", rival),
             ("p.sql", "CREATE PROCEDURE sales.p AS SELECT c.name FROM customer AS c;"));
 
-        AssertUnknown(doc, "results[0][].name", IrUnknownReason.UnresolvedTable);
+        Assert.Empty(doc.Unknowns);
+        Assert.False(Assert.Single(RowFields(doc)).Nullable);
     }
 
     [Theory]

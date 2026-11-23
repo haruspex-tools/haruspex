@@ -38,7 +38,8 @@ flowchart LR
   guide's [binding chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/03-binding.md#a-full-name) says; a variable reference
   resolves to a parameter, a variable the body declares or neither (`VariableResolution`), from what the whole body declares
   (`BodyDeclarations`). A name written without a schema means what `SchemaNames.Resolve` decides (one object, several or none), for every kind of
-  name. A window an `OVER` clause names is resolved through its query's `WINDOW` clause, and through the windows each is
+  name, by where it is written (`SchemaSearch`): in a module's definition, its own schema and then `dbo`; elsewhere, and in an
+  `EXEC`, the caller's default schema and then `dbo`. A window an `OVER` clause names is resolved through its query's `WINDOW` clause, and through the windows each is
   defined on, by `NamedWindows`, into the partition, order and frame it is computed over (`ResolvedWindow`).
 - **Schema rules.** `SchemaRules` and `CheckReader` turn declarations into facts about values: whether a column is never
   null (declared `NOT NULL`, in the primary key, or `IDENTITY`), which keys every row satisfies, what an alias type stands

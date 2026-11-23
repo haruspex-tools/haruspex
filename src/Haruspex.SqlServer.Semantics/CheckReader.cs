@@ -26,18 +26,22 @@ namespace Haruspex.SqlServer.Semantics;
 /// its only in case, as a database of a case-sensitive collation allows: a constraint's names are matched ignoring case, so it
 /// would be read for both (decision 0107).</para>
 /// <para><b>What is read.</b> A constraint that refers to this column and no other, trusted as above, whose condition is built from these by AND (each conjunct on its own) and OR (only of
-/// value sets):</para>
+/// value sets, or of anything read with <c>col IS NULL</c>):</para>
 /// <list type="bullet">
 /// <item><c>col IN (literal, …)</c> and <c>col = literal</c>: a value set;</item>
 /// <item><c>col BETWEEN a AND b</c> and <c>col &lt; literal</c> (and <c>&lt;=</c>, <c>&gt;</c>, <c>&gt;=</c>, either way round): bounds, for numbers;</item>
-/// <item><c>len(col) &gt; n</c>, <c>len(col) &gt;= n</c>, <c>len(col) &lt;&gt; 0</c> and <c>col &lt;&gt; ''</c>: a minimum length, for strings.</item>
+/// <item><c>len(col) &gt; n</c>, <c>len(col) &gt;= n</c>, <c>len(col) &lt;&gt; 0</c> and <c>col &lt;&gt; ''</c>: a minimum length, for strings;</item>
+/// <item><c>col IS NULL</c>: nothing of its own, but FALSE for every non-null value.</item>
 /// </list>
 /// <para><b>Why each is sound.</b> A CHECK rejects a row only when its condition is FALSE; TRUE and UNKNOWN pass. For
 /// a non-null value, each form above is TRUE or FALSE, never UNKNOWN (a NULL among the literals would make
 /// <c>IN</c> UNKNOWN, so such a list is not read). So for a non-null value: <c>A AND B</c> passing means neither is
 /// FALSE, so each is TRUE, and a conjunct that is not understood can be skipped; <c>A OR B</c> passing means one is
-/// TRUE, so it is read only when every side is a value set, and gives their union. Null is never ruled out: it makes
-/// every form UNKNOWN, which passes.</para>
+/// TRUE, so it is read only when every side is a value set, and gives their union. <c>col IS NULL</c> is FALSE for a non-null
+/// value, so it is never the TRUE side: <c>A OR col IS NULL</c> passes a non-null value when A does and only then, and proves what A
+/// proves, a bound or a minimum length as much as a set (observed: An_in_list_or_is_null_check_refuses_a_value_outside_the_set);
+/// and <c>A AND col IS NULL</c> passes none, which proves nothing read here. Null is never ruled out: it makes every other form
+/// UNKNOWN, which passes, and <c>col IS NULL</c> TRUE.</para>
 /// <para><b>Comparisons are exact.</b> A literal is compared with an exact numeric column only when it has no more
 /// decimal places than the column's scale and no more integer digits than its precision leaves. Then both convert
 /// to a common decimal type without rounding. Otherwise the result type of mixing precisions and scales (capped at
@@ -96,7 +100,8 @@ public static class CheckReader
             return null;
 
         var reader = new Reader(column.Name, family, new CheckSource(table, check));
-        var proved = reader.Condition(check.Expression);
+        // A condition no non-null value passes would make the column always null, which is not claimed: it proves nothing here.
+        var proved = reader.Condition(check.Expression) is { PassesNoValue: false } read ? read : null;
         // A COLLATE on the column or a literal it is compared with decides the comparison, by SQL Server's precedence, so the
         // column's collation says nothing of it (observed: A_collate_in_a_check_decides_how_it_compares): such a set is a note.
         return proved?.ToFacts(
@@ -195,13 +200,25 @@ public static class CheckReader
     private sealed record Family(bool IsString, int Precision, int Scale);
 
     /// <summary>What a condition proves; every part optional.</summary>
+    /// <param name="Numbers">A set of numbers the value is one of.</param>
+    /// <param name="Strings">A set of strings the value compares equal to one of.</param>
+    /// <param name="Min">A lower bound.</param>
+    /// <param name="Max">An upper bound.</param>
+    /// <param name="MinLength">A minimum length, in characters as <c>LEN</c> counts them.</param>
+    /// <param name="PassesNoValue">
+    /// Whether the condition is FALSE for every non-null value, as <c>col IS NULL</c> is; then nothing else is set.
+    /// </param>
     private sealed record Proved(
         EquatableArray<ExactDecimal>? Numbers = null,
         EquatableArray<string>? Strings = null,
         Bound? Min = null,
         Bound? Max = null,
-        int? MinLength = null)
+        int? MinLength = null,
+        bool PassesNoValue = false)
     {
+        /// <summary>A condition FALSE for every non-null value (<c>col IS NULL</c>).</summary>
+        public static Proved NoNonNullValue { get; } = new(PassesNoValue: true);
+
         public bool IsValueSet => (Numbers is not null || Strings is not null) && Min is null && Max is null && MinLength is null;
 
         public ColumnFacts ToFacts(ResolvedType type, FactSource from, (ValueComparison Comparison, CollationFold? Fold) strings, bool codePoints) => new(
@@ -235,12 +252,16 @@ public static class CheckReader
                     when !family.IsString && IsColumn(between.FirstExpression)
                     && Number(between.SecondExpression) is { } low && Number(between.ThirdExpression) is { } high => new Proved(Min: new Bound(low, true), Max: new Bound(high, true)),
                 BooleanComparisonExpression comparison => Comparison(comparison),
+                BooleanIsNullExpression { IsNot: false } isNull when IsColumn(isNull.Expression) => Proved.NoNonNullValue,
                 _ => null,
             };
         }
 
         private static Proved? And(Proved? a, Proved? b)
         {
+            // FALSE AND anything is FALSE: no non-null value passes either way.
+            if (a is { PassesNoValue: true } || b is { PassesNoValue: true })
+                return Proved.NoNonNullValue;
             if (a is null || b is null)
                 return a ?? b;
             return new Proved(
@@ -251,9 +272,16 @@ public static class CheckReader
                 MinLength: a.MinLength is null || b.MinLength is null ? a.MinLength ?? b.MinLength : Math.Max(a.MinLength.Value, b.MinLength.Value));
         }
 
-        /// <summary>Only a union of value sets is read: anything else on one side could be the TRUE one.</summary>
+        /// <summary>
+        /// A side FALSE for every non-null value (<c>col IS NULL</c>) is never the TRUE one, so the other side alone decides, whatever
+        /// it proves. Otherwise only a union of value sets is read: anything else on one side could be the TRUE one.
+        /// </summary>
         private static Proved? Or(Proved? a, Proved? b)
         {
+            if (a is { PassesNoValue: true })
+                return b;
+            if (b is { PassesNoValue: true })
+                return a;
             if (a is not { IsValueSet: true } || b is not { IsValueSet: true })
                 return null;
             return a.Numbers is not null && b.Numbers is not null ? new Proved(Numbers: [.. a.Numbers.Union(b.Numbers)])

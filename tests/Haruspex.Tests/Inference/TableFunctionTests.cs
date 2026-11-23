@@ -210,12 +210,11 @@ public class TableFunctionTests
     [Fact]
     public void A_function_of_a_name_two_schemas_have_names_both_in_name_order_whatever_order_they_are_defined_in()
     {
-        // b.f is defined first in source order and a.f second; the caller's default schema decides which is read.
-        var json = IrJsonWriter.Write(InferProcedure.Infer(
-            "dbo.caller",
-            ("a.sql", "CREATE FUNCTION b.f() RETURNS TABLE AS RETURN SELECT 1 AS x;"),
-            ("z.sql", "CREATE FUNCTION a.f() RETURNS TABLE AS RETURN SELECT 2 AS x;"),
-            ("caller.sql", "CREATE PROCEDURE dbo.caller AS SELECT r.x FROM f() AS r;")));
+        // b.f is defined first in source order and a.f second; in a query file the caller's default schema decides which is
+        // read (in a procedure, its own schema's or dbo's would be).
+        var json = IrJsonWriter.Write(InferQuery.Infer(
+            "CREATE FUNCTION b.f() RETURNS TABLE AS RETURN SELECT 1 AS x;\nGO\nCREATE FUNCTION a.f() RETURNS TABLE AS RETURN SELECT 2 AS x;",
+            "SELECT r.x FROM f() AS r;"));
 
         Assert.Contains("f is not schema-qualified, and a.f and b.f have that name.", json, StringComparison.Ordinal);
     }

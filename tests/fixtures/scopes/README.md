@@ -8,6 +8,7 @@ check each claim against real rows. No part of it comes from a real system.
 | Procedure | Covers |
 |---|---|
 | `lib.cte_hides_a_table` | a CTE hiding `dbo.shelf`, a table of its one-part name |
+| `lib.counters_of_its_own_schema` | a table and, through a function's return, an alias type that `lib` and `dbo` both have, named without a schema in a procedure and a function of `lib`: `lib`'s, whoever calls; and the function's value cut to its return type's length |
 | `lib.cte_ends_with_its_statement` | the same, then the next statement's `shelf`, which is the table again |
 | `lib.nested_ctes` | CTEs reading earlier ones, one read again from a scalar subquery and inside a derived table |
 | `lib.cte_column_list` | a CTE's column list naming a column its query leaves unnamed |

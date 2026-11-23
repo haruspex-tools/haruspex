@@ -277,10 +277,16 @@ internal sealed class FunctionSummaries
         var returnsJson = resolvedType?.Type == BuiltInType.Json;
         var nullOnNull = function.ReturnsNullOnNullInput;
 
-        // The declared type: a json return is live JSON whose shape is in the data; anything else as a variable is typed.
+        // The declared type: a json return is live JSON whose shape is in the data. A T-SQL body's value, encrypted or not, is
+        // converted to the declared type, as a variable's is: cut short, rounded or padded, and an overflow an error or NULL,
+        // which the function-result reason allows (observed: A_scalar_functions_value_is_converted_to_its_declared_return_type,
+        // A_scalar_functions_value_its_return_type_cannot_hold_is_an_error_or_null). So the type's facts hold. Nothing has
+        // observed what SQL Server does with a CLR method's value, so its type gives no facts.
         var declared = returnsJson
             ? new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{function.Name} returns json that is not built in a form read here.", at)
-            : SqlTypes.ToShape(model, returnType, at);
+            : function.Body is SqlBody or EncryptedBody
+                ? SqlTypes.ToConvertedShape(model, returnType, at)
+                : SqlTypes.ToShape(model, returnType, at);
         var declaredOnly = new FunctionReturn(declared, returnsJson, null, [new IrNullReason(IrNullRule.FunctionResult, at.ToString())], nullOnNull);
 
         // A function of nvarchar may return JSON assembled as text, which a shorter type cuts short, and a cut array is never
@@ -288,13 +294,13 @@ internal sealed class FunctionSummaries
         var assembles = resolved is not null && ScalarType.Of(resolved) is { IsString: true, IsNational: true };
         if (function.Body is not SqlBody { Statements: var statements } || !(HoldsAnyJson(resolved) || assembles))
             return declaredOnly;
-        if (Returned(statements, function.Parameters) is not { } expression)
+        if (Returned(statements, function.Parameters, function.Name.Schema) is not { } expression)
             return declaredOnly;
         if (header)
             return HoldsAnyJson(resolved) ? declaredOnly with { Content = new NeverShape(at) } : declaredOnly;
 
         var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
-        var value = new Typer(model, function.Span, summaries, parameters, function.AnsiNullsOff, uncommitted).Return(expression, function.Parameters);
+        var value = new Typer(model, function.Span, SchemaSearch.Within(function), summaries, parameters, function.AnsiNullsOff, uncommitted).Return(expression, function.Parameters);
 
         var content = !HoldsAnyJson(resolved) ? null : value switch
         {
@@ -331,7 +337,10 @@ internal sealed class FunctionSummaries
     /// The expression the body returns, when the body is <c>RETURN expression</c> or a straight run of declarations and
     /// assignments ending in <c>RETURN @v</c>; null for any other body.
     /// </summary>
-    private ScalarExpression? Returned(StatementList body, IReadOnlyList<Parameter> declared)
+    /// <param name="body">The function's body.</param>
+    /// <param name="declared">Its parameters.</param>
+    /// <param name="schema">Its schema, where a type its body names without a schema is looked for before dbo.</param>
+    private ScalarExpression? Returned(StatementList body, IReadOnlyList<Parameter> declared, string schema)
     {
         var statements = body.Statements.ToList();
         while (statements is [BeginEndBlockStatement block])
@@ -361,7 +370,7 @@ internal sealed class FunctionSummaries
                         // A table variable or a cursor is not a value; a variable declared twice fails to compile.
                         if (variable.DataType is null || variables.ContainsKey(new LocalName(variable.VariableName.Value)))
                             return null;
-                        variables[new LocalName(variable.VariableName.Value)] = (HoldsAnyJson(SchemaRules.ResolveType(model, SyntaxReader.Type(variable.DataType))?.BuiltIn), variable.Value);
+                        variables[new LocalName(variable.VariableName.Value)] = (HoldsAnyJson(SchemaRules.ResolveType(model, SyntaxReader.Type(variable.DataType, schema))?.BuiltIn), variable.Value);
                     }
 
                     break;
