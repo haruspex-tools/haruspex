@@ -208,6 +208,13 @@ public partial class StatementFlowTests
     }
 
     /// <summary>
+    /// A transaction the body begins at a level it sets that is not <c>SNAPSHOT</c>, so that a lock the guard holds keeps the
+    /// row for a read with no hint: where the body sets none, the caller's may be <c>SNAPSHOT</c>, and nothing is claimed
+    /// (<see cref="A_lock_the_guard_holds_where_the_body_sets_no_level_keeps_the_row_only_for_a_read_with_a_hint_of_its_own"/>).
+    /// </summary>
+    private const string Begun = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED; BEGIN TRAN;";
+
+    /// <summary>
     /// A procedure whose existence guard on <c>dbo.t</c> runs after <paramref name="before"/> with <paramref name="hint"/>, then
     /// <paramref name="between"/>, then two keyed reads of the row: a scalar subquery of a NOT NULL column, and a FOR JSON one.
     /// </summary>
@@ -247,19 +254,19 @@ public partial class StatementFlowTests
     }
 
     [Theory]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "")]
-    [InlineData("BEGIN TRAN;", "WITH (HOLDLOCK)", "")]
-    [InlineData("BEGIN TRAN;", "WITH (SERIALIZABLE)", "")]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK)", "")]
-    [InlineData("BEGIN TRAN;", "WITH (REPEATABLEREAD)", "")]
-    [InlineData("BEGIN TRAN;", "WITH (XLOCK)", "")]
+    [InlineData(Begun, "WITH (UPDLOCK, HOLDLOCK)", "")]
+    [InlineData(Begun, "WITH (HOLDLOCK)", "")]
+    [InlineData(Begun, "WITH (SERIALIZABLE)", "")]
+    [InlineData(Begun, "WITH (UPDLOCK)", "")]
+    [InlineData(Begun, "WITH (REPEATABLEREAD)", "")]
+    [InlineData(Begun, "WITH (XLOCK)", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ; BEGIN TRAN;", "WITH (READPAST)", "")]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE; BEGIN TRAN;", "WITH (UPDLOCK)", "")]
-    [InlineData("BEGIN TRAN; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;")]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "INSERT INTO #seen (id) VALUES (@id);")]
+    [InlineData(Begun + " BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;")]
+    [InlineData(Begun, "WITH (UPDLOCK, HOLDLOCK)", "INSERT INTO #seen (id) VALUES (@id);")]
     public void A_keyed_read_of_a_row_an_open_transaction_holds_for_it_finds_it(string before, string hint, string between)
     {
         // A_lock_the_guard_holds_to_the_end_of_an_open_transaction_keeps_the_row_for_the_read,
@@ -272,11 +279,11 @@ public partial class StatementFlowTests
     }
 
     [Theory]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;", "", IrNullRule.ReadTwice)]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "IF @other = 1 COMMIT;", "", IrNullRule.ReadTwice)]
+    [InlineData(Begun, "WITH (UPDLOCK, HOLDLOCK)", "COMMIT;", "", IrNullRule.ReadTwice)]
+    [InlineData(Begun, "WITH (UPDLOCK, HOLDLOCK)", "IF @other = 1 COMMIT;", "", IrNullRule.ReadTwice)]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "", "WITH (READCOMMITTEDLOCK)", IrNullRule.ReadTwice)]
     [InlineData("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "", "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", "", IrNullRule.ReadTwice)]
-    [InlineData("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", "ROLLBACK;", "", IrNullRule.EmptySubquery)]
+    [InlineData(Begun, "WITH (UPDLOCK, HOLDLOCK)", "ROLLBACK;", "", IrNullRule.EmptySubquery)]
     public void A_hold_ends_with_its_transaction_or_at_a_read_the_snapshot_does_not_cover(string before, string hint, string between, string read, IrNullRule rule)
     {
         // Committed (on some path) before the read, or a snapshot read at another level or with a hint: the race is back. A
@@ -286,6 +293,56 @@ public partial class StatementFlowTests
         Assert.Equal([rule], Rules(doc, "code"));
     }
 
+    [Theory]
+    [InlineData("WITH (UPDLOCK, HOLDLOCK)")]
+    [InlineData("WITH (UPDLOCK)")]
+    [InlineData("WITH (XLOCK)")]
+    public void A_lock_the_guard_holds_at_snapshot_isolation_leaves_a_read_of_the_snapshot_raced(string hint)
+    {
+        // A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now: the guard's lock finds the row as
+        // committed now, and a read at snapshot isolation with no hint reads the transaction's snapshot, which may be older.
+        var doc = Guarded("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", hint);
+
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "code"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "card"));
+    }
+
+    [Theory]
+    [InlineData("", "WITH (READCOMMITTEDLOCK)")]
+    [InlineData("", "WITH (HOLDLOCK)")]
+    [InlineData("", "WITH (SERIALIZABLE)")]
+    [InlineData("", "WITH (REPEATABLEREAD)")]
+    [InlineData("", "WITH (UPDLOCK)")]
+    [InlineData("", "WITH (XLOCK)")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", "")]
+    [InlineData("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;", "")]
+    public void A_lock_the_guard_holds_at_snapshot_isolation_keeps_the_row_for_a_read_of_what_is_committed_now(string between, string read)
+    {
+        // A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now: a read with READCOMMITTEDLOCK, or after
+        // the body sets another level, reads what is committed now, where the guard's lock keeps the row.
+        // A_read_at_snapshot_isolation_that_takes_a_lock_reads_what_is_committed_now: so does one with a hint that takes a
+        // lock, or it fails the call (3960), which returns nothing at all.
+        var doc = Guarded("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", between, read);
+
+        Assert.Equal([], Rules(doc, "code"));
+        Assert.Equal([], Rules(doc, "card"));
+    }
+
+    [Theory]
+    [InlineData("", IrNullRule.ReadTwice)]
+    [InlineData("WITH (READCOMMITTEDLOCK)", null)]
+    [InlineData("WITH (UPDLOCK)", null)]
+    public void A_lock_the_guard_holds_where_the_body_sets_no_level_keeps_the_row_only_for_a_read_with_a_hint_of_its_own(string read, IrNullRule? rule)
+    {
+        // A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now: a caller in a snapshot transaction
+        // that has already read makes a read with no hint in the body read its snapshot, and the caller's level is not seen.
+        // Claiming nothing there is provisional: the alternative is to assume the caller isn't in one (decision 0016).
+        var doc = Guarded("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", read: read);
+
+        Assert.Equal(rule is { } r ? [r] : [], Rules(doc, "code"));
+        Assert.Equal(rule is { } c ? [c] : [], Rules(doc, "card"));
+    }
+
     [Fact]
     public void A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced()
     {
@@ -293,6 +350,7 @@ public partial class StatementFlowTests
         // read in CATCH is raced; one after the TRY is joined with it.
         var doc = Procedure("""
             DECLARE @code int = 0;
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             BEGIN TRAN;
             IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
             BEGIN TRY
@@ -321,6 +379,7 @@ public partial class StatementFlowTests
             ("p2.sql", "CREATE PROCEDURE dbo.p2 AS SET NOCOUNT ON;"),
             ("p.sql", $"""
                 CREATE PROCEDURE dbo.p @id int, @other int AS
+                SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
                 BEGIN TRAN;
                 IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
                 {between}
@@ -340,7 +399,7 @@ public partial class StatementFlowTests
     public void A_guard_that_proves_no_row_of_the_read_proves_nothing_of_it(string guard)
     {
         // Another key, another table, an aggregate (its one row is there whatever matches), the wrong arm, and an OR.
-        var doc = Guarded("BEGIN TRAN;", "", guard: guard);
+        var doc = Guarded(Begun, "", guard: guard);
 
         Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "code"));
     }
@@ -349,11 +408,12 @@ public partial class StatementFlowTests
     public void A_guard_with_more_filters_than_the_read_proves_its_row_and_a_read_with_more_proves_nothing()
     {
         // The guard's row passes every one of the read's conditions only when each is one of the guard's.
-        var stricter = Guarded("BEGIN TRAN;", "", guard: "IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK) WHERE t.id = @id AND t.status = 'open') RETURN;");
+        var stricter = Guarded(Begun, "", guard: "IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK) WHERE t.id = @id AND t.status = 'open') RETURN;");
 
         Assert.Equal([], Rules(stricter, "code"));
 
         var filtered = Procedure("""
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             BEGIN TRAN;
             IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK) WHERE t.id = @id) RETURN;
             SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id AND t.status = 'open') AS code;
@@ -368,6 +428,7 @@ public partial class StatementFlowTests
         // The same claim reaches every keyed read: a result set of exactly one row, and an assignment that always happens.
         var doc = Procedure("""
             DECLARE @code int;
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             BEGIN TRAN;
             IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
             SELECT @code = t.code FROM dbo.t AS t WHERE t.id = @id;
@@ -419,6 +480,7 @@ public partial class StatementFlowTests
         // The guard runs only when @f = 1; on the other path nothing tested the row, so the read may find none for a reason
         // that is no race.
         var doc = Procedure("""
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             BEGIN TRAN;
             IF @f = 1
             BEGIN
@@ -436,6 +498,7 @@ public partial class StatementFlowTests
     {
         // Without the transaction the guard's lock ends with its statement, so where paths meet the shallower depth counts.
         var doc = Procedure("""
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             IF @f = 1 BEGIN TRAN;
             IF NOT EXISTS (SELECT 1 FROM dbo.t AS t WITH (UPDLOCK, HOLDLOCK) WHERE t.id = @id) RETURN;
             SELECT (SELECT t.code FROM dbo.t AS t WHERE t.id = @id) AS code;

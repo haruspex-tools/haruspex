@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/sale_receipt.sql": "ef8f3c0c0b0ee910bf70a6dec7b050012fc5cda66e6f6c5c5fb68408ee174c30",
+      "procedures/sale_receipt.sql": "ddcffd70022e81c1f01ef437d0430e64d80bbb3fd1970cd9a24414938367a856",
       "tables/sale.sql": "5c69103893aea0ad11a260ee56728fa1ea0d177912fc9634867b4b086e4c9818"
     }
   },
@@ -12,7 +12,7 @@
       "id": "flow.sale_receipt",
       "name": "SaleReceipt",
       "kind": "procedure",
-      "at": "procedures/sale_receipt.sql:4:1",
+      "at": "procedures/sale_receipt.sql:5:1",
       "returnsCode": false,
       "parameters": [
         {
@@ -53,7 +53,7 @@
           "absentBecause": [
             {
               "rule": "not-run",
-              "at": "procedures/sale_receipt.sql:16:1"
+              "at": "procedures/sale_receipt.sql:18:1"
             }
           ],
           "cardinality": "one"
@@ -70,7 +70,7 @@
           "absentBecause": [
             {
               "rule": "not-run",
-              "at": "procedures/sale_receipt.sql:20:1"
+              "at": "procedures/sale_receipt.sql:22:1"
             }
           ],
           "cardinality": "one"
@@ -275,7 +275,7 @@
           "nullableBecause": [
             {
               "rule": "read-twice",
-              "at": "procedures/sale_receipt.sql:10:15"
+              "at": "procedures/sale_receipt.sql:12:15"
             }
           ]
         }
