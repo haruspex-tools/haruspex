@@ -237,10 +237,14 @@ public class IrJsonSchemaTests
         Assert.Contains("1 document(s), 0 failed", output, StringComparison.Ordinal);
     }
 
+    /// <summary>The first version whose schema was published in <c>schemas/ir</c>; nothing was published for an earlier one.</summary>
+    private const string FirstPublishedSchema = "0.29";
+
     /// <summary>
     /// Each file in <c>schemas/ir</c> is the schema of a version the format has had, named for it, at the address its <c>$id</c>
-    /// names; the current version's is there; and each still validates that version's file in <c>tests/ir-versions</c>, in the tests'
-    /// own validator and in Ajv. An older version's file is kept as it was, since the generator writes only the current one.
+    /// names; every version from the first published, 0.29, to the current one has its file, as each has its file in
+    /// <c>tests/ir-versions</c>; and each still validates that version's file there, in the tests' own validator and in Ajv. An older
+    /// version's file is kept as it was, since the generator writes only the current one.
     /// </summary>
     [Fact]
     public void Each_version_s_schema_is_named_for_it_and_still_validates_its_file()
@@ -249,7 +253,11 @@ public class IrJsonSchemaTests
         var schemas = Directory.GetFiles(folder, "*.schema.json").Order(StringComparer.Ordinal).ToList();
         var versions = schemas.Select(f => Path.GetFileName(f)[..^".schema.json".Length]).ToList();
 
+        var published = Directory.GetFiles(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions"), "*.ir.json")
+            .Select(f => Path.GetFileName(f)[..^".ir.json".Length])
+            .Where(v => Version.Parse(v) >= Version.Parse(FirstPublishedSchema));
         Assert.Contains(IrDocument.CurrentVersion, versions);
+        Assert.All(published, v => Assert.True(versions.Contains(v), $"Version {v} has a file in tests/ir-versions but no schema in schemas/ir: a version's schema stays when the version moves on."));
         foreach (var (schema, version) in schemas.Zip(versions))
         {
             var fixture = Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json");

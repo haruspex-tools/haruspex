@@ -27,14 +27,13 @@ public class IrReaderSchemaAgreementTests
     private static readonly string File = IrJsonWriter.Write(IrSamples.Declared);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
-    public static TheoryData<string, string> Properties { get; } = [.. Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)))];
+    public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
 
     /// <summary>
     /// Every object in the sample's file, as its JSON Pointer, but a fold's <c>classes</c> and a source's <c>files</c>: their keys are
     /// names and paths, any string, so no key is one the format lacks.
     /// </summary>
-    public static TheoryData<string> AllObjects { get; } =
-        [.. Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal) && !l.EndsWith("/files", StringComparison.Ordinal))];
+    public static TheoryData<string> AllObjects { get; } = [.. ObjectLocations()];
 
     [Theory]
     [MemberData(nameof(Properties))]
@@ -183,6 +182,8 @@ public class IrReaderSchemaAgreementTests
         ["a rowset of strings"] = (Everything, json => Rowset(json)["type"]!["items"] = new JsonObject { ["kind"] = "string" }, null),
         ["a package's hash that is not one"] = (Everything, json => json["source"]!["sha256"] = "not-a-hash", null),
         ["a reference's hash that is not one"] = (Everything, json => json["source"]!["references"]![1]!["sha256"] = "zzz", null),
+        ["a source file's hash that is not one"] = (Derived, json => FirstFile(json["source"]!["files"]!).ReplaceWith("zzz"), null),
+        ["a declared column's file hash in capitals"] = (Declared, json => FirstFile(json["columns"]![0]!["files"]!).ReplaceWith(new string('E', 64)), null),
         ["a fold's class of no characters"] = (Everything, json => json["folds"]!.AsObject().Single().Value!["classes"]!["A"] = "", null),
 
         // What a document of 0.23, which says nothing of where values came from and combines nothing, can't say.
@@ -280,9 +281,47 @@ public class IrReaderSchemaAgreementTests
             var subset = SchemaErrors(d.Value);
             Assert.True(subset.Count == 0 == (verdicts[d.Key].Count == 0), $"{d.Key}: Ajv says {Verdict(verdicts[d.Key])}, the schema subset {Verdict(subset)}.");
         });
-
-        static string Verdict(List<string> errors) => errors.Count == 0 ? "valid" : string.Join("; ", errors);
     }
+
+    /// <summary>
+    /// Ajv gives every file of the two tests above, a property removed or one the format lacks added, the verdict the tests' own
+    /// validator gives: those are the files that exercise <c>required</c>, <c>additionalProperties</c> and <c>dependentRequired</c> in
+    /// each version's branch of the schema.
+    /// </summary>
+    [Fact]
+    public void Ajv_gives_every_file_with_a_property_removed_or_added_the_verdict_the_schema_subset_gives()
+    {
+        var documents = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (location, key) in PropertyLocations())
+        {
+            var json = JsonNode.Parse(File)!;
+            At(json, location).AsObject().Remove(key);
+            documents[$"{location}/{Escape(key)} removed"] = json.ToJsonString();
+        }
+
+        foreach (var location in ObjectLocations())
+        {
+            var json = JsonNode.Parse(File)!;
+            At(json, location).AsObject().Add(Stranger, "x");
+            documents[$"{location}/{Stranger} added"] = json.ToJsonString();
+        }
+
+        var verdicts = AjvVerdicts.Of(Path.Combine(RepositoryPaths.Root, IrJsonSchema.PublishedPath), documents);
+
+        Assert.All(documents, d =>
+        {
+            var subset = SchemaErrors(d.Value);
+            Assert.True(subset.Count == 0 == (verdicts[d.Key].Count == 0), $"{d.Key}: Ajv says {Verdict(verdicts[d.Key])}, the schema subset {Verdict(subset)}.");
+        });
+    }
+
+    private static IEnumerable<(string Location, string Key)> PropertyLocations() =>
+        Objects(JsonNode.Parse(File)!, "").SelectMany(o => o.Node.AsObject().Select(p => (o.Location, p.Key)));
+
+    private static IEnumerable<string> ObjectLocations() =>
+        Objects(JsonNode.Parse(File)!, "").Select(o => o.Location).Where(l => !l.EndsWith("/classes", StringComparison.Ordinal) && !l.EndsWith("/files", StringComparison.Ordinal));
+
+    private static string Verdict(List<string> errors) => errors.Count == 0 ? "valid" : string.Join("; ", errors);
 
     private static string Broken(string breakage)
     {
@@ -305,6 +344,8 @@ public class IrReaderSchemaAgreementTests
     private static string VersionFile(string version) => System.IO.File.ReadAllText(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json"));
 
     private static readonly string Hash = new('e', 64);
+
+    private static JsonNode FirstFile(JsonNode files) => files.AsObject().First().Value!;
 
     private static JsonArray SourceColumns() => [new JsonObject { ["column"] = "sales.orders.id", ["at"] = "tables/orders.sql:2:5" }];
 
