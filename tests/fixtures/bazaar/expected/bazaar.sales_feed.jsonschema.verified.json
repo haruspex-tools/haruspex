@@ -48,7 +48,7 @@
           "description": "SQL type datetimeoffset(3).",
           "type": "string",
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "units": {
           "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles.",
@@ -114,7 +114,7 @@
           "description": "SQL type datetimeoffset(3).",
           "type": "string",
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "units": {
           "description": "SQL type bigint. A bigint, exact only up to 2^53 in a validator that reads numbers as doubles.",

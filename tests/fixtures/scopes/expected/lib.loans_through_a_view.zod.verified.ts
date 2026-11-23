@@ -9,7 +9,7 @@ export const LoansThroughAViewRowSchema = z.object({
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lib.loans_through_a_view loans
    */
-  loans: z.string().nullable(),
+  loans: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
 })
 export type LoansThroughAViewRow = z.infer<typeof LoansThroughAViewRowSchema>
 

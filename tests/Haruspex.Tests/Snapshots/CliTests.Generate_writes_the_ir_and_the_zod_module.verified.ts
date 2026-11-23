@@ -80,9 +80,9 @@ export type GetOrderLine = z.infer<typeof GetOrderLineSchema>
 export const GetOrderRowSchema = z.object({
   id: z.int32(),
   reference: z.guid(),
-  placedAt: z.iso.datetime({ local: true }),
-  shippedAt: z.iso.datetime({ offset: true }).optional(),
-  deliveryTime: z.iso.time().optional(),
+  placedAt: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  shippedAt: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/).optional(),
+  deliveryTime: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/).optional(),
   /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
   status: z.string().max(20),
   /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
@@ -123,8 +123,8 @@ export type ListCustomerOrdersAddress = z.infer<typeof ListCustomerOrdersAddress
 
 export const ListCustomerOrdersOrderSchema = z.object({
   id: z.int32(),
-  placedAt: z.iso.datetime({ local: true }),
-  shippedAt: z.iso.datetime({ offset: true }).optional(),
+  placedAt: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  shippedAt: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/).optional(),
   /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   total: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2),
 })
@@ -175,7 +175,7 @@ export const ListOrdersRowSchema = z.object({
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain sales.list_orders product_legacy_code
    */
-  product_legacy_code: z.string().nullable(),
+  product_legacy_code: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

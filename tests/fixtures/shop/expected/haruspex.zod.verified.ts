@@ -182,7 +182,7 @@ export const AdminStockProductsRowSchema = PriceListItemSchema
 export type AdminStockProductsRow = z.infer<typeof AdminStockProductsRowSchema>
 
 export const AdminStockCountRowSchema = z.strictObject({
-  products: z.string(),
+  products: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type AdminStockCountRow = z.infer<typeof AdminStockCountRowSchema>
 

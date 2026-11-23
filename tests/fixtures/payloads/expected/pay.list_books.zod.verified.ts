@@ -8,19 +8,23 @@
 //   elsewhere n bounds the length from above.
 import { z } from 'zod'
 
-// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType): z.ZodString =>
-  z.string().refine((text) => {
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string. The content's schema is
+// built once, when the first value is checked, so it may name a schema declared later in the module.
+const jsonText = (content: () => z.ZodType): z.ZodString => {
+  let schema: z.ZodType | undefined
+  return z.string().refine((text) => {
     try {
-      return content().safeParse(JSON.parse(text)).success
+      schema ??= content()
+      return schema.safeParse(JSON.parse(text)).success
     } catch {
       return false
     }
   }, { error: 'Expected JSON text holding a value of its content type' })
+}
 
 export const ListBooksReviewsLatestSchema = z.object({
   stars: z.int().min(1).max(5),
-  posted: z.iso.datetime({ offset: true }),
+  posted: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/),
 })
 export type ListBooksReviewsLatest = z.infer<typeof ListBooksReviewsLatestSchema>
 

@@ -23,7 +23,7 @@
         "opened_at": {
           "description": "SQL type datetime2(0).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
         },
         "closed_at": {
           "description": "SQL type datetime2(0). May be null: nullable-column (cafe.tab.closed_at).",
@@ -31,7 +31,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
         },
         "state": {
           "description": "SQL type varchar(10). varchar(10) counts bytes and its collation isn't declared, so the length is at most 10 code points. Its type is varchar(10), where cafe.tab.closed_at is datetime2(0): what it is computed with makes it another type. Why: haruspex explain cafe.guest_tab_list state",

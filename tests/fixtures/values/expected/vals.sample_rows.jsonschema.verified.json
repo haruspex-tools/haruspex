@@ -151,7 +151,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
         },
         "t3": {
           "description": "SQL type time(3). May be null: nullable-column (vals.sample.t3).",
@@ -159,7 +159,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?$"
         },
         "t7": {
           "description": "SQL type time(7). May be null: nullable-column (vals.sample.t7).",
@@ -167,7 +167,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?$"
         },
         "dt2_0": {
           "description": "SQL type datetime2(0). May be null: nullable-column (vals.sample.dt2_0).",
@@ -175,7 +175,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
         },
         "dt2_3": {
           "description": "SQL type datetime2(3). May be null: nullable-column (vals.sample.dt2_3).",
@@ -183,7 +183,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?$"
         },
         "dt2_7": {
           "description": "SQL type datetime2(7). May be null: nullable-column (vals.sample.dt2_7).",
@@ -191,7 +191,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?$"
         },
         "dto0": {
           "description": "SQL type datetimeoffset(0). May be null: nullable-column (vals.sample.dto_0).",
@@ -200,7 +200,7 @@
             "null"
           ],
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "dto3": {
           "description": "SQL type datetimeoffset(3). May be null: nullable-column (vals.sample.dto_3).",
@@ -209,7 +209,7 @@
             "null"
           ],
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "dto7": {
           "description": "SQL type datetimeoffset(7). May be null: nullable-column (vals.sample.dto_7).",
@@ -218,7 +218,7 @@
             "null"
           ],
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "smallDt": {
           "description": "SQL type smalldatetime. May be null: nullable-column (vals.sample.small_dt).",
@@ -226,7 +226,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00$"
         },
         "legacyDt": {
           "description": "SQL type datetime. May be null: nullable-column (vals.sample.legacy_dt).",
@@ -234,7 +234,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "guid": {
           "description": "SQL type uniqueidentifier. May be null: nullable-column (vals.sample.guid).",

@@ -180,6 +180,46 @@ public partial class MssqlDriverObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_rowset_bigint_arrives_as_the_text_of_its_digits()
+    {
+        // As a JavaScript bigint's toString() writes it: a minus and never a plus, no leading zero, 0 and never -0, and every digit
+        // past 2^53. The generated schema checks that form, then the range (Facets.BigIntText).
+        var (on, off) = await Both(
+            "SELECT CAST(0 AS bigint) AS z, CAST(-0 AS bigint) AS nz, CAST(-5 AS bigint) AS n, CAST(7 AS bigint) AS p, CAST(9007199254740993 AS bigint) AS past, " +
+            "CAST(9223372036854775807 AS bigint) AS hi, CAST(-9223372036854775808 AS bigint) AS lo;");
+
+        const string Row = """{"z":"0","nz":"0","n":"-5","p":"7","past":"9007199254740993","hi":"9223372036854775807","lo":"-9223372036854775808"}""";
+        Assert.Equal((Row, Row), (Compact(OnlyRow(on).Row), Compact(OnlyRow(off).Row)));
+    }
+
+    [Fact]
+    public async Task An_output_bigint_arrives_as_the_text_of_its_digits_as_a_rowset_s_does()
+    {
+        // What an OUTPUT parameter holds comes back as a column of a row does: -0 as "0", every digit past 2^53, both ends of the
+        // range, and null. The generated schema of what the OUTPUT parameters hold checks it as a row's bigint (Facets.BigIntText).
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            [
+                "CREATE PROCEDURE dbo.obs_driver_output_bigint @which int, @v bigint OUTPUT AS SET @v = CASE @which " +
+                "WHEN 0 THEN CAST(-0 AS bigint) WHEN 1 THEN CAST(9007199254740993 AS bigint) WHEN 2 THEN CAST(9223372036854775807 AS bigint) " +
+                "WHEN 3 THEN CAST(-9223372036854775808 AS bigint) END;",
+            ],
+            [
+                .. Enumerable.Range(0, 5).Select(which => new MssqlDriver.Call(
+                    $"which {which}",
+                    ParseJson: false,
+                    Procedure: "dbo.obs_driver_output_bigint",
+                    Parameters: new Dictionary<string, object?> { ["which"] = which, ["v"] = new MssqlDriver.OutputValue(new("BigInt")) })),
+            ],
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            ["""{"v":"0"}""", """{"v":"9007199254740993"}""", """{"v":"9223372036854775807"}""", """{"v":"-9223372036854775808"}""", """{"v":null}"""],
+            calls.Select(c => c.Error is null && c.Output is { } output ? Compact(output) : c.Error?.Message ?? "no output"));
+    }
+
+    [Fact]
     public async Task A_procedure_called_by_name_hands_over_the_same()
     {
         // execute, as an application calls a procedure, goes through another path of the driver's code than a batch.

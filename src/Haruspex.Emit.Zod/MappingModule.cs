@@ -10,8 +10,10 @@ namespace Haruspex.Emit.Zod;
 /// install and no version to keep in step. It is asked for by name (<c>"mapping"</c> in <c>"emit"</c>), and why, with the
 /// shape of its one type, is in <c>docs/decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md</c>. It lives
 /// with the Zod emitter because what it accounts for is the types that module declares: a <c>Date</c>, which a rowset's
-/// date arrives as, is a value rather than an object with keys. The emit check compiles cases that must and must not
-/// type-check against it (<c>tests/emit-check/src/mapping-usage.ts</c>), and the lint holds it to decision 0062.
+/// date arrives as, and a <c>Buffer</c>, which a rowset's binary value arrives as (decision 0082), are values rather than
+/// objects with keys. A <c>Buffer</c> is matched as the <c>Uint8Array</c> it extends, which TypeScript's own library declares,
+/// so the helper needs no Node types. The emit check compiles cases that must and must not type-check against it
+/// (<c>tests/emit-check/src/mapping-usage.ts</c>), and the lint holds it to decision 0062.
 /// </remarks>
 public static class MappingModule
 {
@@ -29,12 +31,12 @@ public static class MappingModule
         type Decision = 'used' | `ignored: ${string}`
 
         /**
-         * The variants of V whose keys a mapper accounts for: its objects, inside any lists and as a record's values, except a Date,
-         * which is a value.
+         * The variants of V whose keys a mapper accounts for: its objects, inside any lists and as a record's values, except a Date
+         * and a binary value's Buffer (a Uint8Array), which are values.
          */
         type Objects<V> = V extends readonly (infer Item)[]
           ? Objects<Item>
-          : V extends Date
+          : V extends Date | Uint8Array
             ? never
             : V extends object
               ? string extends keyof V
@@ -87,7 +89,7 @@ public static class MappingModule
           ? Narrowed<Item, A>[]
           : V extends readonly (infer Item)[]
             ? readonly Narrowed<Item, A>[]
-            : V extends Date
+            : V extends Date | Uint8Array
               ? V
               : V extends object
                 ? string extends keyof V

@@ -54,7 +54,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "ticket": {
           "description": "SQL type int. May be null: arithmetic-overflow (procedures/lenient.sql:14:50). Its type is int, where bazaar.stall_sale.ticket is varchar(12): what it is computed with makes it another type. May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow). To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's \"session\", or wrap it in COALESCE or ISNULL. Why: haruspex explain bazaar.lenient '#1.ticket'",
@@ -82,7 +82,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00$"
         }
       },
       "required": [

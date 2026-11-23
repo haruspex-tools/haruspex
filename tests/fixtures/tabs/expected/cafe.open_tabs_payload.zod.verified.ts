@@ -2,19 +2,23 @@
 // Rowset results follow the default type mapping of the mssql (tedious) driver.
 import { z } from 'zod'
 
-// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType): z.ZodString =>
-  z.string().refine((text) => {
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string. The content's schema is
+// built once, when the first value is checked, so it may name a schema declared later in the module.
+const jsonText = (content: () => z.ZodType): z.ZodString => {
+  let schema: z.ZodType | undefined
+  return z.string().refine((text) => {
     try {
-      return content().safeParse(JSON.parse(text)).success
+      schema ??= content()
+      return schema.safeParse(JSON.parse(text)).success
     } catch {
       return false
     }
   }, { error: 'Expected JSON text holding a value of its content type' })
+}
 
 export const OpenTabsPayloadOpenTabsSchema = z.object({
   tab_id: z.int32(),
-  opened_at: z.iso.datetime({ local: true }),
+  opened_at: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
 })
 export type OpenTabsPayloadOpenTabs = z.infer<typeof OpenTabsPayloadOpenTabsSchema>
 

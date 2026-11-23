@@ -55,7 +55,7 @@ JOIN sale ON sale.product_id = p.product_id;
 ```ts haruspex-zod
 export const BestSellersRowSchema = z.object({
   name: z.string().max(40),
-  sold: z.string(),
+  sold: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * Not known (caller-temp-table); the IR's unknowns say why.
    * To change it: declare the results in the config file's "results".
@@ -74,7 +74,7 @@ Three names are bound here, and each binding decides a field:
 
 - `sale` in the outer FROM is the CTE, not the table `shop.sale`: a one-part name means a CTE of the statement before it
   means anything in the schema. Its columns are its column list's, so `sale.sold` is the `COUNT_BIG(*)` its query leaves
-  unnamed, a `bigint`, which the driver delivers as a string.
+  unnamed, a `bigint`, which the driver delivers as the string of its digits.
 - `p.product_id` in the subquery is the outer query's: the subquery's own scope has no source called `p`, so the lookup goes
   outward.
 - `note` in the subquery has no qualifier. The outer `shop.product` has a `note`, but the subquery's own source, the caller's

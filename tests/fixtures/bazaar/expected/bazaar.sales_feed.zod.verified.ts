@@ -8,21 +8,25 @@
 //   and keeps the digits of any decimal of up to 15 significant digits.
 import { z } from 'zod'
 
-// JSON text: a string that must parse to a value of its content's schema. Its type stays string.
-const jsonText = (content: () => z.ZodType): z.ZodString =>
-  z.string().refine((text) => {
+// JSON text: a string that must parse to a value of its content's schema. Its type stays string. The content's schema is
+// built once, when the first value is checked, so it may name a schema declared later in the module.
+const jsonText = (content: () => z.ZodType): z.ZodString => {
+  let schema: z.ZodType | undefined
+  return z.string().refine((text) => {
     try {
-      return content().safeParse(JSON.parse(text)).success
+      schema ??= content()
+      return schema.safeParse(JSON.parse(text)).success
     } catch {
       return false
     }
   }, { error: 'Expected JSON text holding a value of its content type' })
+}
 
 export const SalesFeedResult1RowSchema = z.object({
   kind: z.enum(["auction", "barter", "stall", "web"]),
   sale_id: z.int32(),
   sold_at: z.date(),
-  units: z.string(),
+  units: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * The driver may round decimal(38,10) past its bounds in a row, so they are not checked.
    * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
@@ -46,7 +50,7 @@ export type SalesFeedResult1Row = z.infer<typeof SalesFeedResult1RowSchema>
 export const SalesFeedResult2FeedSchema = z.object({
   kind: z.enum(["auction", "barter", "stall", "web"]),
   sale_id: z.int32(),
-  sold_at: z.iso.datetime({ offset: true }),
+  sold_at: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/),
   /** A bigint, exact only up to 2^53 once parsed. */
   units: z.number(),
   /**

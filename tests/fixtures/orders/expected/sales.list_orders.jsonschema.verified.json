@@ -23,7 +23,7 @@
         "placed_at": {
           "description": "SQL type datetime2(0).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$"
         },
         "status": {
           "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points.",

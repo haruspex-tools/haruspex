@@ -29,8 +29,8 @@ export const OverlapsResult3RowSchema = z.object({
 export type OverlapsResult3Row = z.infer<typeof OverlapsResult3RowSchema>
 
 export const OverlapsResult4RowSchema = z.object({
-  members: z.string(),
-  guests: z.string(),
+  members: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  guests: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type OverlapsResult4Row = z.infer<typeof OverlapsResult4RowSchema>
 

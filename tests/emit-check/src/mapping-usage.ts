@@ -6,6 +6,7 @@ import type { ListCustomersRow } from '../generated/orders.zod'
 import type { AuthorStatsRow } from '../generated/payloads.zod'
 import type { ComponentsNode, GetAssemblyRow } from '../generated/trees.zod'
 import type { GetKitRow } from '../generated/kits.zod'
+import type { GetImageRow } from '../generated/gallery.zod'
 
 // A rowset's row: every key used or ignored with a reason. A Date is a value, not an object with keys of its own.
 type Customer = Exhaustive<ListCustomersRow, {
@@ -34,6 +35,22 @@ export type NoReason = Exhaustive<ListCustomersRow, { id: 'used'; name: 'used'; 
 
 // @ts-expect-error Each key is "used" or "ignored: " with a reason, and nothing else.
 export type Misspelt = Exhaustive<ListCustomersRow, { id: 'usde'; name: 'used'; email: 'used'; region: 'used'; createdAt: 'used' }>
+
+// A row of binary columns: a Buffer, as the driver hands a binary value over, is a value as a Date is, so 'used' accounts
+// for it and the mapper reads it as a Buffer.
+type Image = Exhaustive<GetImageRow, {
+  image_id: 'used'
+  thumbnail: 'used'
+  checksum: 'used'
+  row_version: 'used'
+  original: 'ignored: the full image is fetched on its own'
+}>
+
+export const image = (row: GetImageRow): Image => row
+export const version = ({ row_version }: Image): bigint => row_version.readBigUInt64BE()
+
+// @ts-expect-error A binary column the account leaves out is a missing key like any other.
+export type MissingBinaryKey = Exhaustive<GetImageRow, { image_id: 'used'; thumbnail: 'used'; checksum: 'used'; original: 'used' }>
 
 // A tree: an object's keys are accounted for inside it, and a list's through its items, to any depth. The account of a
 // recursive type is recursive too.

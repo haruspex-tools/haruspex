@@ -10,8 +10,8 @@ export const BranchStatsRowSchema = z.object({
   branch_id: z.int32(),
   name: z.string().max(40),
   city: z.string().max(40),
-  loans: z.string(),
-  borrowers: z.string(),
+  loans: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  borrowers: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.

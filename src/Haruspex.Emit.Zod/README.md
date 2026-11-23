@@ -44,8 +44,10 @@ What a module looks like is shown, procedure by procedure, in
 Each fact the IR carries becomes a Zod check: lengths, integer and decimal ranges, decimal steps (`.multipleOf`), exact
 value sets as `z.enum` or `z.literal`, and whether a field may be null or absent. A fact the target can't hold exactly is
 left out, and a note above the property says why, in one sentence; a fact many notes rest on is stated once, in the
-module's header. For example, a `bigint` from a rowset arrives from the driver as a string, so its range can't be checked
-as a number. A value set that is true only under the database's collation is a note, not an enum, because the value that
+module's header. For example, the driver may round a wide `decimal` in a rowset past its bounds, so they are left out. A
+`bigint` from a rowset arrives from the driver as the string of its digits, so it is checked as text: the digits' form, then
+the range, the type's or a CHECK's, compared exactly. A date or time in JSON is held to the form `FOR JSON` writes its type
+in: seconds always, and a fraction of exactly its scale or none. A value set that is true only under the database's collation is a note, not an enum, because the value that
 arrives may differ in case or trailing spaces. When the IR records the options the callers' sessions were declared to set
 (`source.session`: `ansiWarnings`, `arithAbort`, `concatNullYieldsNull`, `numericRoundAbort`), the header says them too, since
 the schemas are true only for callers that set them; with none declared, it says nothing, as nothing was assumed.
@@ -80,8 +82,10 @@ What a value looks like depends on how it arrives, and the module follows what a
   every helper states its return type.
 
 **A procedure's results** are one schema under its name (`GetOrderSchema`, and its type `GetOrder`): its one result set's
-schema, a `z.tuple` of several, or, when the config file names its sets, a `z.object` with a property for each set, even for
-one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+schema, a `z.tuple` of several, or, when the config file names its sets, a `z.strictObject` with a property for each set, even
+for one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+That object is strict whatever the `objects` setting, because the generated function builds it from exactly its sets, and the
+JSON Schema of it has no other keys.
 The types inside are named after the sets: `GetOrderLinesRow` for a set named `lines`.
 
 **A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
@@ -110,7 +114,9 @@ parameter is
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them
 ([decision 0008](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md)).
-`ZodObjects.Strict` makes them `z.strictObject`. The output is deterministic, with stable ordering and LF line endings, so
+`ZodObjects.Strict` makes them `z.strictObject`. The setting governs the objects of results and named types only: the
+parameters, a table-valued parameter's rows and a procedure's named result sets are always strict, the object of what its
+`OUTPUT` parameters hold is never strict (`z.object`), and an open type's object accepts any key (`z.looseObject`). The output is deterministic, with stable ordering and LF line endings, so
 a CI check can compare it byte for byte.
 
 ## Why a field is what it is

@@ -41,11 +41,42 @@ internal static partial class SentScalars
         _ => Scalars.Of(scalar),
     };
 
-    private static Schema DateTime(IrScalar scalar)
+    /// <summary>
+    /// The pattern of a time or a date and time as <c>FOR JSON</c> writes a value of <paramref name="scalar"/>'s type, anchored:
+    /// seconds always, a fraction of exactly the type's scale or none, three digits ending in 0, 3 or 7 for <c>datetime</c>, none for
+    /// <c>smalldatetime</c>, and an offset only for <c>datetimeoffset</c> (observed: <c>ForJsonObservationTests</c>). Null for a
+    /// date, whose one form the result's pattern already is, and for a type not in the list.
+    /// </summary>
+    public static string? Written(IrScalar scalar)
+    {
+        var (name, scale) = Type(scalar);
+        var pattern = (name, scale) switch
+        {
+            ("time", { } n) => Clock + Exactly(n),
+            ("datetime2", { } n) => Day + "T" + Clock + Exactly(n),
+            ("datetimeoffset", { } n) => Day + "T" + Clock + Exactly(n) + "(?:Z|[+-]\\d{2}:\\d{2})",
+            ("datetime", null) => Day + "T" + Clock + @"(?:\.\d{2}[037])?",
+            ("smalldatetime", null) => Day + @"T\d{2}:\d{2}:00",
+            _ => null,
+        };
+        return pattern is null ? null : "^" + pattern + "$";
+    }
+
+    /// <summary>A date and time type's name and scale, as decision 0041 spells it; a null name when it isn't one.</summary>
+    private static (string? Name, int? Scale) Type(IrScalar scalar)
     {
         var type = scalar.Sql is { } sql ? Spelling().Match(sql) : Match.Empty;
         var name = type.Success ? type.Groups["name"].Value : null;
         var scale = type.Groups["scale"].Success ? int.Parse(type.Groups["scale"].Value, CultureInfo.InvariantCulture) : (int?)null;
+        return (name, scale);
+    }
+
+    /// <summary>Exactly <paramref name="scale"/> digits of a second, or none, as <c>FOR JSON</c> writes them.</summary>
+    private static string Exactly(int scale) => scale == 0 ? "" : $@"(?:\.\d{{{scale.ToString(CultureInfo.InvariantCulture)}}})?";
+
+    private static Schema DateTime(IrScalar scalar)
+    {
+        var (name, scale) = Type(scalar);
         var pattern = (name, scale) switch
         {
             ("date", null) => Day,

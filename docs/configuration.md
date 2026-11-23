@@ -70,6 +70,9 @@ The command line overrides the file for one run: the source argument (a folder, 
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
 procedures the run leaves out are skipped). Without a file, the source argument, `--include` and `--out` are required.
 
+Keep `out` out of every formatter: add it to `.prettierignore`, or to Biome's `files.includes` as an exclusion after `**` (`!src/db`, for an `out` of `src/db`). Otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes
+([HAR6015](diagnostics/HAR6015.md)).
+
 ## Reading a DACPAC: `source` and `references`
 
 `source` may name a `.dacpac` instead of a folder. The package's `model.xml` is then read, without DacFx, with every package

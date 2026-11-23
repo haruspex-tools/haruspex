@@ -10,7 +10,7 @@ import { z } from 'zod'
 
 export const ListNestedWithNullsWhenSchema = z.object({
   day: z.iso.date().nullable(),
-  time: z.iso.time().nullable(),
+  time: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/).nullable(),
 })
 export type ListNestedWithNullsWhen = z.infer<typeof ListNestedWithNullsWhenSchema>
 

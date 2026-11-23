@@ -14,7 +14,7 @@ export const TabSummaryRowSchema = z.object({
   display_name: z.string().max(40),
   /** varchar(15) counts bytes and its collation isn't declared, so the length is at most 15. */
   phone: z.string().max(15),
-  items: z.string(),
+  items: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * The driver may round decimal(38,2) past its bounds in a row, so they are not checked.
    * Its type is decimal(38,2), where cafe.tab_item.qty is smallint and cafe.menu_item.price is decimal(9,2): what it is computed with makes it another type.

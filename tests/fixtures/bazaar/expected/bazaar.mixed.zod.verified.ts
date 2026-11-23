@@ -36,13 +36,12 @@ export const MixedResult1RowSchema = z.object({
    * May be null: it is, or may be, the NULL literal (null-literal).
    * Why: haruspex explain bazaar.mixed '#1.count_of'
    */
-  count_of: z.string().nullable(),
+  count_of: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
 })
 export type MixedResult1Row = z.infer<typeof MixedResult1RowSchema>
 
 export const MixedResult2RowSchema = z.object({
-  /** A bigint arrives as a string, so its CHECK range is not checked. */
-  units: z.string(),
+  units: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= 1n && BigInt(value) <= 100n, { error: "Outside 1 to 100" }),
 })
 export type MixedResult2Row = z.infer<typeof MixedResult2RowSchema>
 

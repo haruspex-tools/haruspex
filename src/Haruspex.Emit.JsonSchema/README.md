@@ -187,6 +187,7 @@ Each fact becomes the most precise keyword JSON Schema has:
 | bounds | `minimum` and `maximum`, as exact decimal text; an exclusive one as the inclusive one a step inside |
 | a date, a date and time with an offset, a GUID | `format` `date`, `date-time`, `uuid`, each with a `pattern` |
 | a time, a date and time without an offset | a `pattern`, since no RFC 3339 format fits |
+| the SQL type of a time or a date and time (`sql`) | in the `pattern`, a fraction of a second of exactly as many digits as the type's scale, or none, as `FOR JSON` writes it (three ending in 0, 3 or 7 for `datetime`, none for `smalldatetime`) |
 | a binary value, in a rowset or in JSON | the base64 text `FOR JSON` writes: `contentEncoding` `base64`, the `pattern` of padded base64, and its length in characters, four for every three bytes or part of three ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)) |
 | an array, its items' nullability and length | `items`, `minItems`, `maxItems` |
 | a tuple (`json_array`) | `prefixItems`, `"items": false` and `minItems` |

@@ -22,7 +22,9 @@ have, marks a key that holds objects `'used'` whole, ignores a key with no reaso
 decisions (`'used' | 'ignored: maybe'`), which would let either rule be dodged. A record, whose keys are data, is accounted for
 by its values: `'used'` when they are values, their own account when they are objects. An object type that holds itself has an
 account that does too (`interface NodeAccount { …; children: NodeAccount }`), and a union of objects has an entry for every
-key of every variant. A `Date` is a value, not an object with keys. The file is types only, the same for every module, and needs
+key of every variant. A `Date` is a value, not an object with keys, and so is a binary value's `Buffer`, matched as the
+`Uint8Array` it extends (added 23 Nov 2026: decision 0082 made a rowset's binary value a `Buffer` two days after this one, and
+the helper had taken it for an object whose every member needed an account). The file is types only, the same for every module, and needs
 `"zod"` beside it.
 
 **Context.** An application's own types differ from the generated rows by decisions the database can't make: an absent list

@@ -3,7 +3,7 @@
 import { z } from 'zod'
 
 export const RingUpRowSchema = z.object({
-  basket_id: z.string().nullable(),
+  basket_id: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   discount: z.int().min(0).max(255).nullable(),
   gift: z.boolean().nullable(),
   token: z.guid().nullable(),

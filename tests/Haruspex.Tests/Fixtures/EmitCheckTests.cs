@@ -94,6 +94,9 @@ public class EmitCheckTests
             Path.Combine(generated, "combined.mssql.ts"),
             MssqlEmitter.Emit(Combined(), new MssqlOptions { SchemaModule = "./combined.zod.js", IsReserved = TypeScriptNames.IsReserved }).Expected());
 
+        // Procedures named as the module's own helpers and the global types it writes, which must still compile.
+        File.WriteAllText(Path.Combine(generated, "names.zod.ts"), ZodEmitter.Emit(HelperNames()).Expected());
+
         // The mapping helper, which is the same for every module, once: src/mapping-usage.ts checks it against the fixtures' types,
         // and the lint holds it to the rules every generated file meets.
         File.WriteAllText(Path.Combine(generated, HaruspexCli.MappingFileName), MappingModule.Text);
@@ -107,6 +110,30 @@ public class EmitCheckTests
             var exitCode = HaruspexCli.Run(["generate", "--out", Path.Combine(generated, fixture.Name)], output, error, fixture.Folder);
             Assert.True(exitCode == 0, error.ToString());
         }
+    }
+
+    /// <summary>
+    /// Procedures each declaring a type named as a binding the module itself makes or a global type a helper could write: a module
+    /// with JSON text and a canonical value set, so that both helpers are in it, whose procedures are named <c>Fold</c>,
+    /// <c>Record</c>, <c>Map</c> and the other generic types of TypeScript's library, and, as a naming rule that keeps case would
+    /// name them, <c>z</c>, <c>jsonText</c>, <c>canonicalOf</c>, <c>canonicalForm</c> and <c>folds</c>. A declaration's name is a
+    /// type (and its schema a <c>…Schema</c> constant), so it clashes only with a type the module names: before the canonical helper
+    /// named none, a procedure named <c>Fold</c> made the module fail to compile (TS2300) while haruspex reported success.
+    /// </summary>
+    private static IrDocument HelperNames()
+    {
+        const string Tables = "CREATE TABLE names.item (id int NOT NULL PRIMARY KEY, state varchar(10) COLLATE Latin1_General_100_CI_AS NOT NULL CHECK (state IN ('open', 'shut')));";
+        string[] pascal = ["fold", "record", "map", "set", "array", "readonly_array", "partial", "promise", "object", "string", "date", "buffer", "json"];
+        string[] camel = ["z", "json_text", "canonical_of", "canonical_form", "folds"];
+        var procedures = string.Join(
+            "\nGO\n",
+            pascal.Concat(camel).Select(name =>
+                $"CREATE PROCEDURE names.[{name}] AS SELECT i.id, i.state, (SELECT j.state FROM names.item AS j WHERE j.id = i.id FOR JSON PATH) AS card FROM names.item AS i;"));
+        var document = InferProcedure.Infer("names.*", ("schema.sql", "CREATE SCHEMA names;"), ("tables.sql", Tables), ("procedures.sql", procedures));
+
+        // Under "case": "camel", or "preserve" with these names in the SQL, the first letter is lower case.
+        var lower = camel.Select(n => string.Concat(n.Split('_').Select(w => char.ToUpperInvariant(w[0]) + w[1..]))).ToHashSet(StringComparer.Ordinal);
+        return document with { Objects = [.. document.Objects.Select(o => lower.Contains(o.Name) ? o with { Name = char.ToLowerInvariant(o.Name[0]) + o.Name[1..] } : o)] };
     }
 
     /// <summary>
@@ -135,6 +162,39 @@ public class EmitCheckTests
         var combined = IrCombination.Of(baseline, candidate, new IrFitOptions());
         Assert.DoesNotContain(combined.Findings, f => f.Kind == IrCombinationKind.Unbridgeable);
         return combined.Document;
+    }
+
+    /// <summary>
+    /// The JSON text helper, as a generated module writes it, builds its content's schema once, on the first value it checks,
+    /// however many it checks, and still checks each: <c>src/json-text-once.mjs</c> counts the calls.
+    /// </summary>
+    [Fact]
+    public void The_json_text_helper_builds_its_content_s_schema_once_however_many_values_it_checks()
+    {
+        EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the JSON text helper was not run");
+        EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
+        var document = new IrDocument(
+            new IrSource("tsql"),
+            [new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrRef("PRow")), [])])],
+            new Dictionary<string, IrObjectType> { ["PRow"] = new([new IrField("v", new IrJsonText(new IrAnyJson()), IrPresence.Always, [])]) },
+            []);
+        var module = ZodEmitter.Emit(document).Expected();
+        Assert.Contains("const jsonText = ", module, StringComparison.Ordinal);
+
+        // Under accept/, which git ignores, so that the module's import of zod resolves to the package's own.
+        var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "module.ts"), module + "export { jsonText }\n");
+            Assert.True(
+                EmitCheckPackage.TryRun("node", [Path.Combine("src", "json-text-once.mjs"), folder], RepositoryPaths.EmitCheck, out var output, out var why),
+                $"The JSON text helper built its content other than once ({why}):\n{output}");
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     /// <summary>

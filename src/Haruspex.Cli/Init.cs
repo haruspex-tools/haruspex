@@ -67,7 +67,12 @@ internal static class Init
             ? $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown}, where no procedure was found, so it selects none yet. Add a schema's \"include\", or \"queries\" for the application's query files, then run haruspex generate."
             : $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown} and types every procedure in {EnglishList.Of(shownSchemas)}, written to {@out}.");
         if (schemas.Count > 0)
+        {
             output.WriteLine("Next, run haruspex generate. Then narrow each schema's \"include\" to the procedures the application calls.");
+
+            // A team's format on save or pre-commit hook meets the generated files first, and check compares them as text.
+            output.WriteLine($"Keep {@out} out of your formatter (in .prettierignore, or as \"!{@out}\" after \"**\" in Biome's files.includes): haruspex check fails on a file a formatter restyled.");
+        }
         return HaruspexCli.ExitCodes.Success;
     }
 

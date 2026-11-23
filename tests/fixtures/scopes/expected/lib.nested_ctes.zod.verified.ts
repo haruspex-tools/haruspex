@@ -9,14 +9,14 @@ export const NestedCtesRowSchema = z.object({
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lib.nested_ctes taken
    */
-  taken: z.string().nullable(),
+  taken: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   /**
    * May be null: it comes from the optional side of an outer join, which has no row when nothing matches (unmatched-row).
    * May be null: it is an aggregate without GROUP BY, which is null over no rows (empty-aggregate).
    * To change it: if the data rules it out, declare it in the config file with "nullable": false and why.
    * Why: haruspex explain lib.nested_ctes most
    */
-  most: z.string().nullable(),
+  most: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }).nullable(),
   name: z.string().max(40),
 })
 export type NestedCtesRow = z.infer<typeof NestedCtesRowSchema>

@@ -18,8 +18,8 @@ export type ListCustomerOrdersAddress = z.infer<typeof ListCustomerOrdersAddress
 
 export const ListCustomerOrdersOrderSchema = z.object({
   id: z.int32(),
-  placedAt: z.iso.datetime({ local: true }),
-  shippedAt: z.iso.datetime({ offset: true }).optional(),
+  placedAt: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  shippedAt: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/).optional(),
   /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */
   total: z.number().min(-100000000000000000).max(100000000000000000).multipleOf(1e-2),
 })

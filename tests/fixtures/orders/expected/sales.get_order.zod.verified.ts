@@ -63,9 +63,9 @@ export type GetOrderLine = z.infer<typeof GetOrderLineSchema>
 export const GetOrderRowSchema = z.object({
   id: z.int32(),
   reference: z.guid(),
-  placedAt: z.iso.datetime({ local: true }),
-  shippedAt: z.iso.datetime({ offset: true }).optional(),
-  deliveryTime: z.iso.time().optional(),
+  placedAt: z.iso.datetime({ local: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  shippedAt: z.iso.datetime({ offset: true }).regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/).optional(),
+  deliveryTime: z.iso.time().regex(/^\d{2}:\d{2}:\d{2}$/).optional(),
   /** varchar(20) counts bytes and its collation isn't declared, so the length is at most 20. */
   status: z.string().max(20),
   /** decimal(19,2) runs from -99999999999999999.99 to 99999999999999999.99, which JavaScript reads as the nearest doubles. */

@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 export const FullNameGroupsResult1RowSchema = z.object({
   member_id: z.int32(),
-  loans: z.string(),
+  loans: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
 })
 export type FullNameGroupsResult1Row = z.infer<typeof FullNameGroupsResult1RowSchema>
 

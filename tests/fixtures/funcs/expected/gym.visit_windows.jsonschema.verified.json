@@ -98,7 +98,7 @@
         "first_started": {
           "description": "SQL type datetime2(3).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?$"
         },
         "best_tip": {
           "description": "SQL type smallmoney. At most 4 decimal places, which multipleOf would check inexactly. May be null: nullable-column (gym.visit.tip).",
@@ -124,7 +124,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?$"
         },
         "next_minutes": {
           "description": "SQL type int. May be null: nullable-column (gym.visit.minutes), window-edge (procedures/visit_windows.sql:18:8). May be null: LAG or LEAD without a default is null past the partition's edge (window-edge). To change it: give LAG or LEAD a default. Why: haruspex explain gym.visit_windows next_minutes",

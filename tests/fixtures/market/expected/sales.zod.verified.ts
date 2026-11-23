@@ -4,32 +4,30 @@ import { z } from 'zod'
 import { OrderTotalSchema } from './shared.zod.js'
 
 // A value set's canonical form, by a fold the IR gives for a column's collation: drop the characters it ignores, put each
-// class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the item whose canonical form
-// it has; any other value is left as it is, for the enum to refuse.
-interface Fold { ignored: string; classes: Record<string, string> }
-const canonicalForm = (fold: Fold, value: string): string => {
-  let form = ''
-  for (let i = 0; i < value.length; i++) {
-    const unit = value.charAt(i)
-    if (fold.ignored.includes(unit)) continue
-    form += Object.entries(fold.classes).find(([, units]) => units.includes(unit))?.[0] ?? unit
+// class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the first item whose canonical
+// form it has; any other value is left as it is, for the enum to refuse.
+const canonicalOf = (
+  fold: { readonly ignored: string; readonly classes: readonly (readonly [string, string])[] },
+  items: readonly string[],
+): ((value: unknown) => unknown) => {
+  const formOf = (value: string): string => {
+    let form = ''
+    for (let i = 0; i < value.length; i++) {
+      const unit = value.charAt(i)
+      if (fold.ignored.includes(unit)) continue
+      form += fold.classes.find(([, units]) => units.includes(unit))?.[0] ?? unit
+    }
+    return form.replace(/ +$/, '')
   }
-  return form.replace(/ +$/, '')
-}
-const canonicalOf = (fold: Fold, items: readonly string[]): ((value: unknown) => unknown) => {
-  const byForm = new Map<string, string>()
-  for (const item of items) {
-    const form = canonicalForm(fold, item)
-    if (!byForm.has(form)) byForm.set(form, item)
-  }
-  return (value: unknown) => (typeof value === 'string' ? (byForm.get(canonicalForm(fold, value)) ?? value) : value)
+  const forms = items.map(formOf)
+  return (value: unknown) => (typeof value === 'string' ? (items[forms.indexOf(formOf(value))] ?? value) : value)
 }
 const folds = {
   "Latin1_General_100_CI_AS.codepage": {
     ignored: "\u0000\u00ad",
-    classes: { " ": " ", "-": "-", ".": ".", "0": "0", "1": "1\u00b9", "2": "2\u00b2", "3": "3\u00b3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "A": "Aa", "AE": "\u00c6\u00e6", "B": "Bb", "C": "Cc", "D": "Dd", "E": "Ee", "F": "Ff", "G": "Gg", "H": "Hh", "I": "Ii", "J": "Jj", "K": "Kk", "L": "Ll", "M": "Mm", "N": "Nn", "O": "Oo", "OE": "\u0152\u0153", "P": "Pp", "Q": "Qq", "R": "Rr", "S": "Ss", "SS": "\u00df", "T": "Tt", "TH": "\u00de\u00fe", "U": "Uu", "V": "Vv", "W": "Ww", "X": "Xx", "Y": "Yy", "Z": "Zz", "_": "_" },
+    classes: [[" ", " "], ["-", "-"], [".", "."], ["0", "0"], ["1", "1\u00b9"], ["2", "2\u00b2"], ["3", "3\u00b3"], ["4", "4"], ["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"], ["A", "Aa"], ["AE", "\u00c6\u00e6"], ["B", "Bb"], ["C", "Cc"], ["D", "Dd"], ["E", "Ee"], ["F", "Ff"], ["G", "Gg"], ["H", "Hh"], ["I", "Ii"], ["J", "Jj"], ["K", "Kk"], ["L", "Ll"], ["M", "Mm"], ["N", "Nn"], ["O", "Oo"], ["OE", "\u0152\u0153"], ["P", "Pp"], ["Q", "Qq"], ["R", "Rr"], ["S", "Ss"], ["SS", "\u00df"], ["T", "Tt"], ["TH", "\u00de\u00fe"], ["U", "Uu"], ["V", "Vv"], ["W", "Ww"], ["X", "Xx"], ["Y", "Yy"], ["Z", "Zz"], ["_", "_"]],
   },
-} satisfies Record<string, Fold>
+} as const
 
 /** sales.get_order: its parameters, checked before anything is sent. */
 export const GetOrderParamsSchema = z.strictObject({

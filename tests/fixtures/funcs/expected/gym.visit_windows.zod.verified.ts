@@ -8,10 +8,10 @@ import { z } from 'zod'
 
 export const VisitWindowsRowSchema = z.object({
   visit_id: z.int32(),
-  nth_visit: z.string(),
-  room_rank: z.string(),
-  room_dense_rank: z.string(),
-  third: z.string(),
+  nth_visit: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  room_rank: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  room_dense_rank: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
+  third: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * May be null: COUNT is an int, null past 2,147,483,647 rows when the caller's session has ANSI_WARNINGS and ARITHABORT off (count-overflow).
    * To change it: use COUNT_BIG, or declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session".
@@ -22,7 +22,7 @@ export const VisitWindowsRowSchema = z.object({
    * Its type is bigint, where gym.visit.minutes is int: what it is computed with makes it another type.
    * Why: haruspex explain gym.visit_windows timed_visits
    */
-  timed_visits: z.string(),
+  timed_visits: z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= -9223372036854775808n && BigInt(value) <= 9223372036854775807n, { error: "Outside the range of bigint" }),
   /**
    * May be null: arithmetic that overflows or divides by zero is null when the caller's session has ANSI_WARNINGS and ARITHABORT off (arithmetic-overflow).
    * To change it: declare the callers' ANSI_WARNINGS or ARITHABORT on in the config file's "session", or wrap it in COALESCE or ISNULL.

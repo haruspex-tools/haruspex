@@ -169,11 +169,19 @@ public class ZodFacetsTests
     }
 
     [Fact]
-    public void A_bigint_in_a_row_is_a_string_whose_set_is_strings()
+    public void A_bigint_in_a_row_is_the_text_of_its_digits_in_its_range_and_its_set_is_strings()
     {
-        Assert.Equal("z.string()", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807")))));
+        Assert.Equal(Digits("-9223372036854775808", "9223372036854775807", "Outside the range of bigint"), Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("-9223372036854775808"), Max: Inclusive("9223372036854775807")))));
         Assert.Equal("z.enum([\"1\", \"20\"])", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Values: Numbers("1", "20")))));
-        Assert.Equal("z.string() // A bigint arrives as a string, so its CHECK range is not checked.", Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("0", Check)))));
+
+        // A CHECK's range is the integers it allows: > 2.5 is at least 3, < 100 at most 99, and a bound past the type's is the type's.
+        Assert.Equal(Digits("0", "9223372036854775807", "Outside 0 to 9223372036854775807"), Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("0", Check)))));
+        Assert.Equal(Digits("3", "99", "Outside 3 to 99"), Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: new IrBound("2.5", false, Check), Max: Exclusive("100")))));
+        Assert.Equal(Digits("-3", "-1", "Outside -3 to -1"), Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("-3.5", Check), Max: Exclusive("0")))));
+        Assert.Equal(Digits("-9223372036854775808", "5", "Outside -9223372036854775808 to 5"), Rows(Number(IrFormat.Int64, "bigint", new IrFacets(Min: Inclusive("-99999999999999999999", Check), Max: Inclusive("5.9", Check)))));
+
+        static string Digits(string least, string greatest, string error) =>
+            $$"""z.string().regex(/^(0|-?[1-9]\d{0,18})$/).refine((value) => /^-?\d+$/.test(value) && BigInt(value) >= {{least}}n && BigInt(value) <= {{greatest}}n, { error: "{{error}}" })""";
     }
 
     // ---- decimals -----------------------------------------------------------------------------------

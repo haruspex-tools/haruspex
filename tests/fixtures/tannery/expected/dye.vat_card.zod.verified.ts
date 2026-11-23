@@ -5,40 +5,38 @@
 import { z } from 'zod'
 
 // A value set's canonical form, by a fold the IR gives for a column's collation: drop the characters it ignores, put each
-// class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the item whose canonical form
-// it has; any other value is left as it is, for the enum to refuse.
-interface Fold { ignored: string; classes: Record<string, string> }
-const canonicalForm = (fold: Fold, value: string): string => {
-  let form = ''
-  for (let i = 0; i < value.length; i++) {
-    const unit = value.charAt(i)
-    if (fold.ignored.includes(unit)) continue
-    form += Object.entries(fold.classes).find(([, units]) => units.includes(unit))?.[0] ?? unit
+// class's name for its characters, keep the rest, then drop trailing spaces. A value maps to the first item whose canonical
+// form it has; any other value is left as it is, for the enum to refuse.
+const canonicalOf = (
+  fold: { readonly ignored: string; readonly classes: readonly (readonly [string, string])[] },
+  items: readonly string[],
+): ((value: unknown) => unknown) => {
+  const formOf = (value: string): string => {
+    let form = ''
+    for (let i = 0; i < value.length; i++) {
+      const unit = value.charAt(i)
+      if (fold.ignored.includes(unit)) continue
+      form += fold.classes.find(([, units]) => units.includes(unit))?.[0] ?? unit
+    }
+    return form.replace(/ +$/, '')
   }
-  return form.replace(/ +$/, '')
-}
-const canonicalOf = (fold: Fold, items: readonly string[]): ((value: unknown) => unknown) => {
-  const byForm = new Map<string, string>()
-  for (const item of items) {
-    const form = canonicalForm(fold, item)
-    if (!byForm.has(form)) byForm.set(form, item)
-  }
-  return (value: unknown) => (typeof value === 'string' ? (byForm.get(canonicalForm(fold, value)) ?? value) : value)
+  const forms = items.map(formOf)
+  return (value: unknown) => (typeof value === 'string' ? (items[forms.indexOf(formOf(value))] ?? value) : value)
 }
 const folds = {
   "Latin1_General_100_CI_AI.codepage": {
     ignored: "\u0000\u00ad",
-    classes: { " ": " ", "-": "-", ".": ".", "0": "0", "1": "1\u00b9", "2": "2\u00b2", "3": "3\u00b3\u00be", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "A": "Aa\u00aa\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5", "AE": "\u00c6\u00e6", "B": "Bb", "C": "Cc\u00c7\u00e7", "D": "Dd\u00d0\u00f0", "E": "Ee\u00c8\u00c9\u00ca\u00cb\u00e8\u00e9\u00ea\u00eb", "F": "Ff\u0192", "G": "Gg", "H": "Hh", "I": "Ii\u00cc\u00cd\u00ce\u00cf\u00ec\u00ed\u00ee\u00ef", "J": "Jj", "K": "Kk", "L": "Ll", "M": "Mm", "N": "Nn\u00d1\u00f1", "O": "Oo\u00ba\u00d2\u00d3\u00d4\u00d5\u00d6\u00d8\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8", "OE": "\u0152\u0153", "P": "Pp", "Q": "Qq", "R": "Rr", "S": "Ss\u0160\u0161", "SS": "\u00df", "T": "Tt", "TH": "\u00de\u00fe", "U": "Uu\u00d9\u00da\u00db\u00dc\u00f9\u00fa\u00fb\u00fc", "V": "Vv", "W": "Ww", "X": "Xx", "Y": "Yy\u00dd\u00fd\u00ff\u0178", "Z": "Zz\u017d\u017e", "_": "_" },
+    classes: [[" ", " "], ["-", "-"], [".", "."], ["0", "0"], ["1", "1\u00b9"], ["2", "2\u00b2"], ["3", "3\u00b3\u00be"], ["4", "4"], ["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"], ["A", "Aa\u00aa\u00c0\u00c1\u00c2\u00c3\u00c4\u00c5\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5"], ["AE", "\u00c6\u00e6"], ["B", "Bb"], ["C", "Cc\u00c7\u00e7"], ["D", "Dd\u00d0\u00f0"], ["E", "Ee\u00c8\u00c9\u00ca\u00cb\u00e8\u00e9\u00ea\u00eb"], ["F", "Ff\u0192"], ["G", "Gg"], ["H", "Hh"], ["I", "Ii\u00cc\u00cd\u00ce\u00cf\u00ec\u00ed\u00ee\u00ef"], ["J", "Jj"], ["K", "Kk"], ["L", "Ll"], ["M", "Mm"], ["N", "Nn\u00d1\u00f1"], ["O", "Oo\u00ba\u00d2\u00d3\u00d4\u00d5\u00d6\u00d8\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8"], ["OE", "\u0152\u0153"], ["P", "Pp"], ["Q", "Qq"], ["R", "Rr"], ["S", "Ss\u0160\u0161"], ["SS", "\u00df"], ["T", "Tt"], ["TH", "\u00de\u00fe"], ["U", "Uu\u00d9\u00da\u00db\u00dc\u00f9\u00fa\u00fb\u00fc"], ["V", "Vv"], ["W", "Ww"], ["X", "Xx"], ["Y", "Yy\u00dd\u00fd\u00ff\u0178"], ["Z", "Zz\u017d\u017e"], ["_", "_"]],
   },
   "Latin1_General_100_CS_AS.codepage": {
     ignored: "\u0000\u00ad",
-    classes: { " ": " ", "-": "-", ".": ".", "0": "0", "1": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "A": "A", "AE": "\u00c6", "B": "B", "C": "C", "D": "D", "E": "E", "F": "F", "G": "G", "H": "H", "I": "I", "J": "J", "K": "K", "L": "L", "M": "M", "N": "N", "O": "O", "OE": "\u0152", "P": "P", "Q": "Q", "R": "R", "S": "S", "T": "T", "TH": "\u00de", "U": "U", "V": "V", "W": "W", "X": "X", "Y": "Y", "Z": "Z", "_": "_", "a": "a", "ae": "\u00e6", "b": "b", "c": "c", "d": "d", "e": "e", "f": "f", "g": "g", "h": "h", "i": "i", "j": "j", "k": "k", "l": "l", "m": "m", "n": "n", "o": "o", "oe": "\u0153", "p": "p", "q": "q", "r": "r", "s": "s", "ss": "\u00df", "t": "t", "th": "\u00fe", "u": "u", "v": "v", "w": "w", "x": "x", "y": "y", "z": "z" },
+    classes: [[" ", " "], ["-", "-"], [".", "."], ["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"], ["A", "A"], ["AE", "\u00c6"], ["B", "B"], ["C", "C"], ["D", "D"], ["E", "E"], ["F", "F"], ["G", "G"], ["H", "H"], ["I", "I"], ["J", "J"], ["K", "K"], ["L", "L"], ["M", "M"], ["N", "N"], ["O", "O"], ["OE", "\u0152"], ["P", "P"], ["Q", "Q"], ["R", "R"], ["S", "S"], ["T", "T"], ["TH", "\u00de"], ["U", "U"], ["V", "V"], ["W", "W"], ["X", "X"], ["Y", "Y"], ["Z", "Z"], ["_", "_"], ["a", "a"], ["ae", "\u00e6"], ["b", "b"], ["c", "c"], ["d", "d"], ["e", "e"], ["f", "f"], ["g", "g"], ["h", "h"], ["i", "i"], ["j", "j"], ["k", "k"], ["l", "l"], ["m", "m"], ["n", "n"], ["o", "o"], ["oe", "\u0153"], ["p", "p"], ["q", "q"], ["r", "r"], ["s", "s"], ["ss", "\u00df"], ["t", "t"], ["th", "\u00fe"], ["u", "u"], ["v", "v"], ["w", "w"], ["x", "x"], ["y", "y"], ["z", "z"]],
   },
   "SQL_Latin1_General_CP1_CI_AS.codepage": {
     ignored: "",
-    classes: { " ": " ", "-": "-", ".": ".", "0": "0", "1": "1", "2": "2", "3": "3", "4": "4", "5": "5", "6": "6", "7": "7", "8": "8", "9": "9", "A": "Aa", "B": "Bb", "C": "Cc", "D": "Dd", "E": "Ee", "F": "Ff", "G": "Gg", "H": "Hh", "I": "Ii", "J": "Jj", "K": "Kk", "L": "Ll", "M": "Mm", "N": "Nn", "O": "Oo", "P": "Pp", "Q": "Qq", "R": "Rr", "S": "Ss", "T": "Tt", "U": "Uu", "V": "Vv", "W": "Ww", "X": "Xx", "Y": "Yy", "Z": "Zz", "_": "_" },
+    classes: [[" ", " "], ["-", "-"], [".", "."], ["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["6", "6"], ["7", "7"], ["8", "8"], ["9", "9"], ["A", "Aa"], ["B", "Bb"], ["C", "Cc"], ["D", "Dd"], ["E", "Ee"], ["F", "Ff"], ["G", "Gg"], ["H", "Hh"], ["I", "Ii"], ["J", "Jj"], ["K", "Kk"], ["L", "Ll"], ["M", "Mm"], ["N", "Nn"], ["O", "Oo"], ["P", "Pp"], ["Q", "Qq"], ["R", "Rr"], ["S", "Ss"], ["T", "Tt"], ["U", "Uu"], ["V", "Vv"], ["W", "Ww"], ["X", "Xx"], ["Y", "Yy"], ["Z", "Zz"], ["_", "_"]],
   },
-} satisfies Record<string, Fold>
+} as const
 
 export const VatCardRowSchema = z.object({
   id: z.int32(),

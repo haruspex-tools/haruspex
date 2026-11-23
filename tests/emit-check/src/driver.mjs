@@ -12,7 +12,8 @@
 // with one of the driver's types, sql[type](...args) with "MAX" for sql.MAX, as a generated function does; a value JSON can't hold is written
 // { "js": "NaN" }, a bigint { "bigInt": "<digits>" }, a Buffer { "bytes": "<base64>" }, and a plain Uint8Array, which a
 // Buffer is, { "uint8Array": "<base64>" }. A table-valued parameter is given as { "table": { "schema", "name",
-// "columns": [{ "name", "type", "args" }], "rows": [[…], …] } }, sent as an sql.Table of those columns, in that order. A call with a "timeZone" runs with the process's TZ set to it, which
+// "columns": [{ "name", "type", "args" }], "rows": [[…], …] } }, sent as an sql.Table of those columns, in that order. An OUTPUT
+// parameter is given as { "output": { "type", "args" } }, bound with request.output and no value. A call with a "timeZone" runs with the process's TZ set to it, which
 // is where the driver turns a Date into the server's date and time. A call with "accepts": "<schema>" also parses its
 // parameters' values, as an object by name, with that schema of the module, and writes whether it accepted them.
 //
@@ -24,7 +25,8 @@
 // (an object holding that result set as its `recordset`), which the test takes from the project's README, so that what is
 // proved is the code a reader pastes.
 //
-// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "returnValue", "error", "check", "accepted" }] },
+// It writes observed.json beside: { "calls": [{ "name", "recordsets": [{ "columns", "rows" }], "returnValue", "output", "error", "check", "accepted" }] },
+// "output" the OUTPUT parameters' values by name as the driver hands them over,
 // an error as { "code", "number", "message", "preceding" }, "preceding" the numbers of the server's errors the driver's carries.
 // The connection is given in HARUSPEX_DRIVER_CONFIG, the mssql config as JSON, never on the command line.
 import { readFile, writeFile } from 'node:fs/promises'
@@ -77,7 +79,9 @@ try {
     try {
       if (call.procedure) {
         for (const [name, value] of Object.entries(call.parameters ?? {})) {
-          if (value !== null && typeof value === 'object' && 'table' in value) {
+          if (value !== null && typeof value === 'object' && 'output' in value) {
+            request.output(name, driverType(value.output))
+          } else if (value !== null && typeof value === 'object' && 'table' in value) {
             const table = new sql.Table()
             table.schema = value.table.schema
             table.name = value.table.name
@@ -105,6 +109,7 @@ try {
 
     if (result) {
       entry.returnValue = result.returnValue ?? null
+      entry.output = result.output ?? {}
       entry.recordsets = result.recordsets.map((recordset) => ({ columns: Object.keys(recordset.columns), rows: [...recordset] }))
       if (call.check) {
         const { schema, results, readJson } = call.check

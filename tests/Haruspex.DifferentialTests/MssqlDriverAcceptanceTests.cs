@@ -27,6 +27,18 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
         );
         """;
 
+    /// <summary>
+    /// A level for each item: a <c>bigint</c> under a CHECK, from its least value, -5, to past 2^53, which a rowset hands over as
+    /// the text of its digits.
+    /// </summary>
+    private const string StockLevel = """
+        CREATE TABLE shop.stock_level
+        (
+            item_id int    NOT NULL PRIMARY KEY,
+            qty     bigint NOT NULL CHECK (qty >= -5 AND qty < 9223372036854775807)
+        );
+        """;
+
     /// <summary>The procedures, each one form a procedure's JSON can take, by name.</summary>
     private static readonly Dictionary<string, string> Procedures = new(StringComparer.Ordinal)
     {
@@ -69,6 +81,30 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
             IF @all = 1
                 SELECT p.item_id AS id FROM shop.stock_item AS p FOR JSON PATH;
             """,
+        ["stock_levels"] = """
+            CREATE PROCEDURE shop.stock_levels
+            AS
+            SELECT l.item_id AS id, l.qty, -l.qty AS negated FROM shop.stock_level AS l;
+            """,
+        // Every date and time type, its fraction a different number of digits on each row and none on some (a FOR JSON date
+        // leaves a zero fraction out), and every kind of offset: the schemas hold each to the form its type is written in.
+        ["stock_dates"] = """
+            CREATE PROCEDURE shop.stock_dates
+            AS
+            SELECT p.item_id AS id,
+                   CAST(DATEADD(millisecond, p.item_id * 7, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS datetime2(3)) AS d3,
+                   DATEADD(microsecond, p.item_id * 100, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS d7,
+                   CAST(DATEADD(millisecond, p.item_id * 7, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS datetime2(0)) AS d0,
+                   DATEADD(millisecond, p.item_id * 7, CAST('2026-03-04T05:06:07' AS datetime)) AS dt,
+                   DATEADD(second, p.item_id * 7, CAST('2026-03-04T05:06:00' AS smalldatetime)) AS sdt,
+                   CAST(DATEADD(millisecond, p.item_id * 100, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS time(1)) AS t1,
+                   CAST(DATEADD(millisecond, p.item_id * 7, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS time(0)) AS t0,
+                   TODATETIMEOFFSET(CAST(DATEADD(millisecond, p.item_id * 10, CAST('2026-03-04T05:06:07' AS datetime2(7))) AS datetime2(2)), (p.item_id % 3 - 1) * 330) AS o2,
+                   CAST(DATEADD(day, p.item_id, CAST('2026-03-04' AS date)) AS date) AS d
+            FROM shop.stock_item AS p
+            ORDER BY p.item_id
+            FOR JSON PATH;
+            """,
         ["stock_docs"] = """
             CREATE PROCEDURE shop.stock_docs @id int
             AS
@@ -100,6 +136,8 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
         ("runs", "maybe_stock", new() { ["all"] = 1 }),
         ("does not run", "maybe_stock", new() { ["all"] = 0 }),
         ("one", "stock_docs", new() { ["id"] = 2 }),
+        ("many", "stock_levels", []),
+        ("many", "stock_dates", []),
     ];
 
     private static readonly bool[] ParseJsonModes = [true, false];
@@ -134,7 +172,7 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
     {
         var document = InferProcedure.Infer(
             "shop.*",
-            [("schema.sql", Schema), ("stock_item.sql", StockItem), .. Procedures.Select(p => ($"{p.Key}.sql", p.Value))]);
+            [("schema.sql", Schema), ("stock_item.sql", StockItem), ("stock_level.sql", StockLevel), .. Procedures.Select(p => ($"{p.Key}.sql", p.Value))]);
         var module = ZodEmitter.Emit(document).Expected();
         var (readParsed, readText) = PageReads();
 
@@ -143,9 +181,13 @@ public partial class MssqlDriverAcceptanceTests(SqlServerFixture server)
         [
             "IF SCHEMA_ID(N'shop') IS NULL EXEC (N'CREATE SCHEMA shop');",
             StockItem,
+            StockLevel,
             .. Procedures.Values,
             "INSERT INTO shop.stock_item (item_id, name, colour) SELECT TOP (3000) n, CONCAT(N'item ', n), IIF(n % 2 = 0, NULL, N'green') " +
             "FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n FROM sys.all_columns AS a CROSS JOIN sys.all_columns AS b) AS v;",
+
+            // From the CHECK's least value, -5, through 0 to past 2^53, a level for every item.
+            "INSERT INTO shop.stock_level (item_id, qty) SELECT p.item_id, IIF(p.item_id <= 10, p.item_id - 6, (CAST(p.item_id AS bigint) - 1) * 3074457345618258) FROM shop.stock_item AS p;",
         ];
         var calls = Cases.SelectMany(c => ParseJsonModes.Select(parseJson =>
         {

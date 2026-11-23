@@ -59,7 +59,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "adult_on": {
           "description": "SQL type smalldatetime. May be null: nullable-column (gym.member.born).",
@@ -67,7 +67,7 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:00$"
         },
         "shifted": {
           "description": "SQL type date. May be null: parameter (@offset).",
@@ -81,7 +81,7 @@
         "from_text": {
           "description": "SQL type datetime.",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "joined_quarter": {
           "description": "SQL type int. Its type is int, where gym.member.joined is date: what it is computed with makes it another type. Why: haruspex explain gym.member_dates joined_quarter",
@@ -166,7 +166,7 @@
         "opening": {
           "description": "SQL type datetime2(2).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2})?$"
         },
         "born_hour": {
           "description": "SQL type time(0). May be null: nullable-column (gym.member.born). Its type is time(0), where gym.member.born is smalldatetime: what it is computed with makes it another type. Why: haruspex explain gym.member_dates born_hour",
@@ -174,38 +174,38 @@
             "string",
             "null"
           ],
-          "pattern": "^\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{2}:\\d{2}:\\d{2}$"
         },
         "now_local": {
           "description": "SQL type datetime2(7).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?$"
         },
         "now_old": {
           "description": "SQL type datetime.",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "now_utc_old": {
           "description": "SQL type datetime.",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         },
         "now_utc": {
           "description": "SQL type datetime2(7).",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?$"
         },
         "now_offset": {
           "description": "SQL type datetimeoffset(7).",
           "type": "string",
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "now_standard": {
           "description": "SQL type datetime.",
           "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{2}[037])?$"
         }
       },
       "required": [

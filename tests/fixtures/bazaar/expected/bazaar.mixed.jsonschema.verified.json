@@ -73,7 +73,7 @@
             "null"
           ],
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?(?:Z|[+-]\\d{2}:\\d{2})$"
         },
         "ref": {
           "description": "SQL type uniqueidentifier. May be null: null-literal (procedures/mixed.sql:8:66), null-literal (procedures/mixed.sql:11:25), null-literal (procedures/mixed.sql:14:24), nullable-column (bazaar.web_order.voucher). May be null: it is, or may be, the NULL literal (null-literal). Why: haruspex explain bazaar.mixed '#1.ref'",
@@ -132,7 +132,7 @@
           "description": "SQL type datetimeoffset(3).",
           "type": "string",
           "format": "date-time",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?(?:Z|[+-]\\d{2}:\\d{2})$"
         }
       },
       "required": [
