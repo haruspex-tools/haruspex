@@ -1341,6 +1341,11 @@ themselves: what a query proved is what its row holds.
   never null, while `SUM` over no rows assigns NULL, for its own reason (`empty-aggregate`), not for one that the
   assignment may not happen. Any other query may assign once per row or not at all, and the variable is joined with what it
   held. A select list of assignments is an aggregate query as one of columns is.
+- `GROUP BY ALL` (deprecated, but still run) returns a group for each value of the grouped columns in every row read, whatever
+  `WHERE` keeps: `WHERE` only chooses the rows the aggregates read. So a group `WHERE` rejected has `MAX` NULL and `COUNT` 0,
+  `WHERE` proves nothing of a grouped column, and a filter fixing a key still gives a row per group
+  (`Group_by_all_returns_a_group_for_every_value_where_rejects_with_null_aggregates`). It is not modelled: a query grouped
+  by it is unknown (`unsupported-query`, `Typer.GroupedByAll`), as a result, a subquery, a derived table or an assignment.
 
 ### How many rows (`Cardinality.cs`)
 

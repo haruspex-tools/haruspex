@@ -250,6 +250,18 @@ public partial class RefinementObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task Group_by_all_returns_a_group_for_every_value_where_rejects_with_null_aggregates()
+    {
+        // GROUP BY ALL (deprecated, still run) returns a group for each value of the grouped columns in every row read, WHERE
+        // or not; WHERE only chooses the rows the aggregates read. So a group WHERE rejected has MAX NULL and COUNT_BIG 0, WHERE
+        // proves nothing of a grouped column, and a filter fixing a key, or one never TRUE, still gives a row per group.
+        Assert.Equal("c,high,n: null,null,0;1,abc,1;2,null,0", (await Run([Rows], "SELECT c, MAX(s) AS high, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY ALL c ORDER BY c;")).ToString());
+        Assert.Equal("c,n: null,0;1,1;2,1", (await Run([Rows], "SELECT c, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE c IS NOT NULL GROUP BY ALL c ORDER BY c;")).ToString());
+        Assert.Equal("id,n: 1,1;2,0;3,0", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE id = 1 GROUP BY ALL id ORDER BY id;")).ToString());
+        Assert.Equal("id,n: 1,0;2,0;3,0", (await Run([Rows], "SELECT id, COUNT_BIG(*) AS n FROM dbo.obs_val WHERE 1 = 0 GROUP BY ALL id ORDER BY id;")).ToString());
+    }
+
+    [Fact]
     public async Task An_aggregate_subquery_returns_its_row_even_when_its_where_rejects_the_outer_column()
     {
         // The outer row's c is null, so t.c = o.c keeps no row; but an aggregate without GROUP BY still returns one, in which

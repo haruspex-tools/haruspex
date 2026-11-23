@@ -48,7 +48,7 @@ internal sealed partial class Typer
 
     /// <summary>
     /// Why a relation over a query (a CTE, a derived table, a view, an inline function) has no columns binding could list: its
-    /// query's star can't be expanded, or else a column has no name or two share one, which SQL Server refuses (observed:
+    /// query's star can't be expanded, or its query is unknown as a whole (<see cref="GroupedByAll"/>), or else a column has no name or two share one, which SQL Server refuses (observed:
     /// A_derived_table_or_cte_refuses_two_columns_of_one_name), as it refuses a view's column list of another length.
     /// </summary>
     /// <param name="relation">The relation's name, as messages give it.</param>

@@ -513,7 +513,13 @@ internal sealed partial class Walker
             return SelectInto(select, state);
 
         if (select.QueryExpression is QuerySpecification { SelectElements: var elements } query && elements.All(e => e is SelectSetVariable))
-            return typer.WithCtes(select.WithCtesAndXmlNamespaces, Reading(state), scope => SetVariables(query, state, scope), _ => SetVariables(query, state, Reading(state), unknown: true));
+        {
+            return typer.WithCtes(
+                select.WithCtesAndXmlNamespaces,
+                Reading(state),
+                scope => SetVariables(query, state, scope, typer.GroupedByAll(query)?.Detail),
+                _ => SetVariables(query, state, Reading(state), "WITH XMLNAMESPACES is not modelled yet."));
+        }
 
         var result = typer.Result(select, Reading(state))!; // Never null: a SELECT that returns none (INTO, assignments) is read above.
         appended++;
@@ -531,21 +537,21 @@ internal sealed partial class Walker
     /// <param name="query">The SELECT's query.</param>
     /// <param name="state">The state the assignments change.</param>
     /// <param name="at">The statement's scope, its WITH's CTEs included.</param>
-    /// <param name="unknown">Whether its WITH is not modelled, so every value is unknown.</param>
-    private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, bool unknown = false)
+    /// <param name="unknown">Why every value is unknown (its WITH, or its grouping, is not modelled); null when they are read.</param>
+    private FlowState SetVariables(QuerySpecification query, FlowState state, ReadScope at, string? unknown = null)
     {
         var entered = typer.Enter(query, at);
-        var once = !unknown && typer.Rows(query, entered) == IrCardinality.One;
+        var once = unknown is null && typer.Rows(query, entered) == IrCardinality.One;
         var scope = entered.Assigning(query);
         var before = state;
         var read = new List<KeyValuePair<LocalName, Value>>();
         foreach (var assignment in query.SelectElements.Cast<SelectSetVariable>())
         {
-            var value = unknown
-                ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "WITH XMLNAMESPACES is not modelled yet.", At(assignment)))
+            var value = unknown is not null
+                ? Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, unknown, At(assignment)))
                 : typer.AssignedValue(assignment.AssignmentKind, assignment.Expression, scope, assignment);
             var name = Resolved(assignment.Variable).Name;
-            var expression = unknown ? null : assignment.Expression;
+            var expression = unknown is not null ? null : assignment.Expression;
 
             // What the variable holds if the SELECT reads a row, kept for a guard that proves it did.
             if (!once && Assign(state, name, value, definitely: true, At(assignment), expression).Variables.TryGetValue(name, out var assigned))

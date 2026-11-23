@@ -753,7 +753,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `WITH XMLNAMESPACES` | `XmlNamespaces` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled. |
 | `FROM` | `FromClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#result-sets-are-positional) | Its sources, joined. |
 | `WHERE` | `WhereClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#refinement) | Filters rows, and what it proves about a column (such as IS NOT NULL) holds after it. |
-| `GROUP BY` | `GroupByClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) | One row per group. |
+| `GROUP BY` | `GroupByClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#aggregates-and-scalar-subqueries) in part; otherwise unknown, [`unsupported-query`](diagnostics/HAR2004.md) | One row per group; GROUP BY ALL, whose groups include rows WHERE rejects with NULL aggregates, isn't modelled. |
 | `HAVING` | `HavingClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#refinement) | Filters groups. |
 | `FOR SYSTEM_TIME` | `TemporalClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#how-many-rows-cardinalitycs) | The table's columns, its hidden period columns left out of *; read at other than AS OF, its rows may repeat a key, so key claims are dropped. |
 | `x ASC, x DESC` | `ExpressionWithSortOrder` | part of `OrderByClause` |  |

@@ -398,7 +398,7 @@ CommonTableExpression | name AS ( query ) | modelled | CTEs | A named query, rea
 XmlNamespaces | WITH XMLNAMESPACES | unknown unsupported-query | | Not modelled. | WITH XMLNAMESPACES ('urn:toy' AS t) SELECT id FROM dbo.toy;
 FromClause | FROM | modelled | Result sets are positional | Its sources, joined. | SELECT t.id FROM dbo.toy AS t;
 WhereClause | WHERE | modelled | Refinement | Filters rows, and what it proves about a column (such as IS NOT NULL) holds after it. | SELECT price FROM dbo.toy WHERE price IS NOT NULL;
-GroupByClause | GROUP BY | modelled | Aggregates and scalar subqueries | One row per group. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY toy_id;
+GroupByClause | GROUP BY | partly unsupported-query | Aggregates and scalar subqueries | One row per group; GROUP BY ALL, whose groups include rows WHERE rejects with NULL aggregates, isn't modelled. | SELECT toy_id, SUM(qty) AS n FROM dbo.box GROUP BY toy_id; && SELECT toy_id, SUM(qty) AS n FROM dbo.box WHERE qty > 0 GROUP BY ALL toy_id;
 HavingClause | HAVING | modelled | Refinement | Filters groups. | SELECT toy_id FROM dbo.box GROUP BY toy_id HAVING SUM(qty) > 1;
 TemporalClause | FOR SYSTEM_TIME | modelled | How many rows (`Cardinality.cs`) | The table's columns, its hidden period columns left out of *; read at other than AS OF, its rows may repeat a key, so key claims are dropped. | SELECT id, amount FROM dbo.rate FOR SYSTEM_TIME ALL WHERE id = 1;
 ExpressionWithSortOrder | x ASC, x DESC | within OrderByClause | | |

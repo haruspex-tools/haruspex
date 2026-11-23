@@ -230,10 +230,13 @@ internal sealed partial class Typer
     /// </summary>
     private static LocalRelationValues? Holds(RelationSymbol relation, Row row) => Holds(relation.Columns, row);
 
-    /// <summary>What a relation over a query holds, under the names binding listed for it; null when it listed none.</summary>
+    /// <summary>
+    /// What a relation over a query holds, under the names binding listed for it; null when it listed none, or when the query's
+    /// row is unknown as a whole (<see cref="GroupedByAll"/>), which the caller reads as <see cref="Unlisted"/>.
+    /// </summary>
     private static LocalRelationValues? Holds(EquatableArray<string>? names, Row row)
     {
-        if (names is null)
+        if (names is null || (row.Unlisted is not null && row.Columns.Count == 0))
             return null;
         if (row.Unlisted is not null || row.Columns.Count != names.Count)
             throw new InvalidOperationException($"Binding listed {names.Count} columns where the query reads {row.Columns.Count}.");

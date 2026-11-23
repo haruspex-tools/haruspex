@@ -110,6 +110,18 @@ internal sealed partial class Typer
     }
 
     /// <summary>
+    /// Why a query grouped by <c>GROUP BY ALL</c> is unknown, or null for any other. ALL returns a group for each value of the
+    /// grouped columns in every row read, whatever WHERE keeps: WHERE only chooses the rows the aggregates read. So its
+    /// aggregates may be NULL (or 0) over a column never null, WHERE proves nothing of its grouped columns, and a filter fixing a
+    /// key bounds nothing (observed: Group_by_all_returns_a_group_for_every_value_where_rejects_with_null_aggregates). The
+    /// keyword is deprecated, so until it is modelled, every form that reads such a query is unknown rather than read as
+    /// <c>GROUP BY</c>.
+    /// </summary>
+    internal UnknownShape? GroupedByAll(QuerySpecification query) => query.GroupByClause is { All: true } group
+        ? Unsupported(IrUnknownReason.UnsupportedQuery, "GROUP BY ALL is not modelled yet: its groups include rows WHERE rejects, with NULL aggregates.", At(group))
+        : null;
+
+    /// <summary>
     /// Whether the query groups by ROLLUP, CUBE or GROUPING SETS (or WITH ROLLUP, WITH CUBE): anything but a list of
     /// expressions, or GROUP BY () alone. A composite grouping is counted too, which only claims less.
     /// </summary>

@@ -152,6 +152,8 @@ internal sealed partial class Typer(
     private Row Query(BoundSpecification bound, ReadScope enclosing)
     {
         var query = bound.Query;
+        if (GroupedByAll(query) is { } byAll)
+            return new Row([], byAll);
         var scope = Attach(enclosing.In(bound.Scope));
         uses?.Specification(query, scope, this);
 
