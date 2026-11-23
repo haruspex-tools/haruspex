@@ -82,9 +82,15 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// told apart by the nested objects' keys. An object takes the variant whose keys it has, and keeps them all. Keys no variant
     /// knows are still stripped (or refused, for strict objects), as everywhere else.
     /// </summary>
-    private ZodExpression Union(IrUnion union, IrEncoding encoding) =>
+    private ZodExpression Union(IrUnion union, IrEncoding encoding) => Variants(union, [], encoding, new HashSet<string>(StringComparer.Ordinal));
+
+    /// <summary>
+    /// <paramref name="union"/>'s variants in their order, each refusing the keys only its siblings and <paramref name="outer"/>
+    /// have: a union nested in a variant is told apart from the other variants' types at its place as well as from its own.
+    /// </summary>
+    private ZodExpression Variants(IrUnion union, IReadOnlyList<IrType> outer, IrEncoding encoding, IReadOnlySet<string> seen) =>
         Unions.Of(SupersetsFirst(union.Variants).Select(i =>
-            Apart(union.Variants[i], [.. union.Variants.Where((_, j) => j != i)], encoding, new HashSet<string>(StringComparer.Ordinal)) ?? Type(union.Variants[i], encoding)));
+            Apart(union.Variants[i], [.. union.Variants.Where((_, j) => j != i), .. outer], encoding, seen) ?? Type(union.Variants[i], encoding)));
 
     /// <summary>
     /// <paramref name="mine"/>'s schema refusing every key that only <paramref name="others"/> have at the same place, or null
@@ -94,14 +100,30 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// place has no keys to tell apart. An open object refuses no key, since it may hold any, but its fields are still followed.
     /// </summary>
     /// <remarks>
+    /// <para>
+    /// A union among the others stands for each of its variants, and a union of <paramref name="mine"/> refuses, in each of its
+    /// variants, what its siblings and the others have (<see cref="Variants"/>): <c>JSON_QUERY</c> over a <c>CASE</c> of two
+    /// subqueries, or a <c>JSON_ARRAY</c> of differing objects, puts a union below a variant's top level.
+    /// </para>
+    /// <para>
     /// A refusal is written inline, so a pair of recursive types is followed once round its cycle and no further
-    /// (<paramref name="seen"/>): below that, a nested object of a recursive variant is told apart only by its own top-level keys.
-    /// Writing the whole cycle would need a schema of its own for each refusing copy, which no fixture or corpus has yet needed.
+    /// (<paramref name="seen"/>). Below that, a nested object of a recursive variant is told apart only by the keys of its own
+    /// type, so it can still lose keys: with <c>{ kids: A[], a? }</c> and <c>{ kids: B[], b? }</c>, a <c>B</c> value whose own
+    /// <c>b</c> is absent is taken by the first, and each child's <c>b</c> is stripped. Writing the whole cycle would need a
+    /// schema of its own for each refusing copy, which no fixture or corpus has yet needed.
+    /// </para>
     /// </remarks>
     private ZodExpression? Apart(IrType mine, IReadOnlyList<IrType> others, IrEncoding encoding, IReadOnlySet<string> seen)
     {
+        others = [.. others.SelectMany(Flat)];
         switch (mine)
         {
+            case IrUnion union:
+            {
+                var told = Variants(union, others, encoding, seen);
+                return told == Type(union, encoding) ? null : told;
+            }
+
             case IrRef reference when types.TryGetValue(reference.Name, out var target):
             {
                 var objects = others.OfType<IrRef>().Where(r => r.Name != reference.Name && types.ContainsKey(r.Name)).Select(r => types[r.Name]).ToList();
@@ -139,6 +161,8 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
             default:
                 return null;
         }
+
+        static IEnumerable<IrType> Flat(IrType type) => type is IrUnion union ? union.Variants.SelectMany(Flat) : [type];
     }
 
     /// <summary>

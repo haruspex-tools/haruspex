@@ -81,6 +81,32 @@ public class ZodUnionDepthTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The same keys at the top, and a nested object that is itself a union in one variant (<c>JSON_QUERY</c> over a <c>CASE</c>
+    /// of two subqueries): <c>{ p }</c> or <c>{ p, r }</c>, against <c>{ p, q }</c> in the other.
+    /// </summary>
+    private static Dictionary<string, IrObjectType> EitherAndOne() => new()
+    {
+        ["Either"] = Object(Key("id", Int), Key("x", new IrUnion([new IrRef("P"), new IrRef("Pr")]))),
+        ["One"] = Object(Key("id", Int), Key("x", new IrRef("Q"))),
+        ["P"] = Object(Key("p", Int)),
+        ["Pr"] = Object(Key("p", Int), Key("r", Int)),
+        ["Q"] = Object(Key("p", Int), Key("q", Int)),
+    };
+
+    [Theory]
+    [InlineData("Either", "One")]
+    [InlineData("One", "Either")]
+    public void A_nested_union_s_variants_refuse_the_other_variant_s_keys_and_it_refuses_theirs(string first, string second)
+    {
+        var ts = Emit(new IrUnion([new IrRef(first), new IrRef(second)]), EitherAndOne());
+
+        // Each of the nested union's variants refuses its sibling's keys and q; the other variant's object refuses r.
+        const string Either = "EitherSchema.extend({ x: z.union([PrSchema.extend({ q: z.never().optional() }), PSchema.extend({ r: z.never().optional(), q: z.never().optional() })]) })";
+        const string One = "OneSchema.extend({ x: QSchema.extend({ r: z.never().optional() }) })";
+        Assert.Contains(first == "Either" ? $"v: z.union([{Either}, {One}])," : $"v: z.union([{One}, {Either}]),", ts, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Variants_whose_nested_objects_are_one_type_are_left_as_they_are()
     {
