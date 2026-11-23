@@ -139,8 +139,9 @@ subpatterns
 # kysely, pgtyped, sqlc, codegen (of kysely-codegen): the other tools the README names for the cases haruspex doesn't fit;
 # mklink: the Windows command that makes a junction; chcp: the Windows command that sets and shows a console's code page;
 # realpath: the POSIX call that reads a path as it is on disk; libc: the C library, as npm's package.json field names it;
-# readelf: the binutils tool that reads an ELF binary's notes; globalroot: Windows's object-manager name for the root of its
-# namespace, as in \??\GLOBALROOT\Device\Mup, a device path that names a share)
+# readelf: the binutils tool that reads an ELF binary's notes; msbuild: the .NET SDK's build engine, as dotnet msbuild runs it;
+# globalroot: Windows's object-manager name for the root of its namespace, as in \??\GLOBALROOT\Device\Mup, a device path that
+# names a share)
 codegen
 dacfx
 dacpac
@@ -177,6 +178,7 @@ globalroot
 realpath
 libc
 readelf
+msbuild
 
 # The parts of a DACPAC that hold its pre- and post-deployment scripts (predeploy.sql, postdeploy.sql)
 predeploy

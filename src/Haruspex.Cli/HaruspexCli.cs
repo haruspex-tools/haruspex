@@ -187,7 +187,7 @@ internal static class HaruspexCli
         {
             source,
         };
-        init.SetAction(parsed => Init.Run(parsed.GetValue(source), streams.Output, streams.Error, streams.WorkingDirectory));
+        init.SetAction(parsed => Init.Run(parsed.GetValue(source), streams.Output, streams.Error, streams.WorkingDirectory, streams.Terminal));
         return init;
     }
 
@@ -200,7 +200,7 @@ internal static class HaruspexCli
         switch (format)
         {
             case OutputFormat.Json:
-                new JsonReport(streams.WorkingDirectory).Write(report, streams.Output);
+                new JsonReport(streams.WorkingDirectory, SchemaAddress.Of(SchemaAddress.Report, streams.Terminal)).Write(report, streams.Output);
                 break;
             case OutputFormat.Sarif:
                 new SarifReport(root, streams.Terminal.Version).Write(report, streams.Output);

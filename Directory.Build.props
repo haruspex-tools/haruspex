@@ -22,9 +22,11 @@
     <!-- Pre-release: nothing is stable yet. The IR has its own version (IrDocument.CurrentVersion). A preview's version is
          0.0.0-preview-<the commit's first eight hex digits>, as its npm packages' is (packaging/npm/version.mjs): the command's
          project adds the commit (its target HaruspexPreviewVersion), and the SDK then appends the whole commit after a +, so the
-         binary's version names the package it ships in. Built outside a git checkout, it is 0.0.0-preview. -->
+         binary's version names the package it ships in. Built outside a git checkout, it is 0.0.0-preview.
+         A release is built with -p:HaruspexRelease=true -p:VersionPrefix=<its version>, from the commit tagged v<its version>
+         (packaging/npm/README.md, "A release"): it has no suffix, and the command names the schemas at that tag's address. -->
     <VersionPrefix>0.0.0</VersionPrefix>
-    <VersionSuffix>preview</VersionSuffix>
+    <VersionSuffix Condition="'$(HaruspexRelease)' != 'true'">preview</VersionSuffix>
     <Authors>Richard Baker</Authors>
     <Copyright>Copyright 2026 Richard Baker</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

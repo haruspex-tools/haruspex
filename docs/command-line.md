@@ -369,7 +369,8 @@ It prints what it chose and the next command. It never writes over a config file
 | `github` | GitHub Actions | The text, then each error and warning as a workflow command, which GitHub shows as an annotation at its line. The default when `GITHUB_ACTIONS` is `true`. |
 
 **JSON.** The document is specified by [`schemas/haruspex.output.schema.json`](../schemas/haruspex.output.schema.json), which
-it names in `$schema`. Its `version` is 1: a field may be added without a new version, but one is removed, renamed or given
+it names in `$schema`: a release at its own tag (`raw/v<its version>/schemas/...`), any other build on `main`, as
+[the configuration](configuration.md) says of the config file's schema. Its `version` is 1: a field may be added without a new version, but one is removed, renamed or given
 another meaning only with a new one, so a tool checks it. At the top are the `command`, the run's `exitCode`, `refused` (why
 no module ran, when none did) and `modules`, one for each module in the order they ran. Each module has:
 

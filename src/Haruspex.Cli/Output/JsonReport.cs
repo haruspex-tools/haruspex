@@ -15,11 +15,9 @@ namespace Haruspex.Cli.Output;
 /// needs no reflection, so Native AOT compiles it as it is.
 /// </summary>
 /// <param name="workingDirectory">The folder paths are shown from.</param>
-internal sealed class JsonReport(string workingDirectory)
+/// <param name="schema">The address of the schema each document names, the build's (<see cref="SchemaAddress"/>).</param>
+internal sealed class JsonReport(string workingDirectory, string schema)
 {
-    /// <summary>The schema each document names.</summary>
-    public const string Schema = "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json";
-
     /// <summary>The format's version, which a tool checks.</summary>
     public const int Version = 1;
 
@@ -30,7 +28,7 @@ internal sealed class JsonReport(string workingDirectory)
         using (var json = new Utf8JsonWriter(buffer, Options))
         {
             json.WriteStartObject();
-            json.WriteString("$schema", Schema);
+            json.WriteString("$schema", schema);
             json.WriteNumber("version", Version);
             json.WriteString("command", Name(run.Command));
             json.WriteNumber("exitCode", run.ExitCode);

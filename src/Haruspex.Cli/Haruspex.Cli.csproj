@@ -21,6 +21,16 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
+  <!-- Whether this is a release build, which the binary carries so that it names the schemas of its config file and its JSON
+       report at its own tag's address rather than main's (Terminal.IsRelease). Built with -p:HaruspexRelease=true; a release
+       names its version, so a release of 0.0.0, the preview's, is refused. -->
+  <ItemGroup>
+    <AssemblyMetadata Include="HaruspexRelease" Value="$(HaruspexRelease)" Condition="'$(HaruspexRelease)' == 'true'" />
+  </ItemGroup>
+  <Target Name="HaruspexReleaseVersion" BeforeTargets="CoreCompile" Condition="'$(HaruspexRelease)' == 'true'">
+    <Error Condition="'$(VersionPrefix)' == '0.0.0' or '$(VersionSuffix)' != ''"
+           Text="A release build names its own version, with no suffix (-p:HaruspexRelease=true -p:VersionPrefix=&lt;its version&gt;), and this one's is $(Version)." />
+  </Target>
   <ItemGroup>
     <ProjectReference Include="..\Haruspex.Ir\Haruspex.Ir.csproj" />
     <ProjectReference Include="..\Haruspex.Diagnostics\Haruspex.Diagnostics.csproj" />

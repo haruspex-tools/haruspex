@@ -5,8 +5,12 @@ and then in each folder above it, or use the files `--config` names, or every on
 module of its own. Paths in it are relative to the file. It is JSON with comments and trailing commas, as `tsconfig.json` is.
 Its JSON Schema is published at [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and
 editors complete and check the file as you type. `haruspex init` writes a starter file, naming it
-([the command line](command-line.md#init)). That address is the schema on `main`, which moves: it may offer a setting newer than
-the haruspex you run, which that haruspex refuses as an unknown key.
+([the command line](command-line.md#init)) at the address the build you run names. A release names the schema at its own tag,
+`https://github.com/sharpblue/haruspex/raw/v<its version>/schemas/haruspex.schema.json`, which holds exactly the settings that
+release reads. Every other build, a preview's included, names it on `main`,
+`https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json`, which moves: it may offer a setting newer than the
+haruspex you run, which that haruspex refuses as an unknown key. Whichever you name, haruspex reads `$schema` only as text; the
+schema file's own `$id` is its address on `main`.
 
 **An unknown key is an error**, with its path and line. It is never ignored, because a misspelt setting would
 otherwise silently do nothing.

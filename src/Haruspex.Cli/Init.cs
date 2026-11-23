@@ -24,9 +24,12 @@ internal static class Init
     /// </summary>
     private static readonly HashSet<string> SystemPackages = new(StringComparer.OrdinalIgnoreCase) { "master.dacpac", "msdb.dacpac", "model.dacpac", "tempdb.dacpac" };
 
-    /// <summary>Runs the command: <paramref name="source"/>, if given, rather than what it finds.</summary>
+    /// <summary>
+    /// Runs the command: <paramref name="source"/>, if given, rather than what it finds. The file names the config file's schema at
+    /// the address the build in <paramref name="terminal"/> names it (<see cref="SchemaAddress"/>).
+    /// </summary>
     /// <returns>The exit code: 0; 2 when it finds a config file, no database or more than one; 1 when it can't write.</returns>
-    public static int Run(string? source, TextWriter output, TextWriter error, string workingDirectory)
+    public static int Run(string? source, TextWriter output, TextWriter error, string workingDirectory, Terminal terminal)
     {
         var config = Path.Join(workingDirectory, HaruspexConfig.FileName);
         if (File.Exists(config))
@@ -47,7 +50,7 @@ internal static class Init
             // CreateNew, so a file that appeared since the check above is left as it is.
             using var file = new FileStream(config, FileMode.CreateNew, FileAccess.Write);
             using var writer = new StreamWriter(file, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            writer.Write(Text(shown, @out, schemas));
+            writer.Write(Text(shown, @out, schemas, SchemaAddress.Of(SchemaAddress.ConfigFile, terminal)));
         }
         catch (IOException e) when (File.Exists(config))
         {
@@ -171,13 +174,13 @@ internal static class Init
     }
 
     /// <summary>The starter config file, with a comment on each setting saying what to change.</summary>
-    private static string Text(string source, string @out, List<string> schemas)
+    private static string Text(string source, string @out, List<string> schemas, string configSchema)
     {
         var text = new StringBuilder();
         text.Append("// haruspex's settings, written by haruspex init. Each is described in\n");
         text.Append("// https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md\n");
         text.Append("{\n");
-        text.Append($"  \"$schema\": {Quoted(ConfigSchema)},\n");
+        text.Append($"  \"$schema\": {Quoted(configSchema)},\n");
         text.Append($"  \"source\": {Quoted(source)},\n");
         text.Append($"  \"out\": {Quoted(@out)},\n");
         text.Append("  // Which procedures to type, by schema: every one, to start. Narrow each \"include\" to those the application calls.\n");
@@ -197,9 +200,6 @@ internal static class Init
         text.Append("}\n");
         return text.ToString();
     }
-
-    /// <summary>The config file's published schema, which editors use to complete and check it.</summary>
-    public const string ConfigSchema = "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json";
 
     /// <summary>A string as JSON writes it, with a name's own characters kept rather than escaped.</summary>
     private static string Quoted(string value) => $"\"{JsonEncodedText.Encode(value, JavaScriptEncoder.UnsafeRelaxedJsonEscaping)}\"";

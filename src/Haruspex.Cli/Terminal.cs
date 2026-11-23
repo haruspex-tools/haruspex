@@ -40,6 +40,19 @@ internal sealed class Terminal
     public string Version { get; init; } = ToolVersion;
 
     /// <summary>
+    /// Whether the build is a release's, which names the schemas of its config file and its JSON report at its own tag
+    /// (<see cref="SchemaAddress"/>): the binary's own mark (<see cref="ToolIsRelease"/>) unless a test says otherwise.
+    /// </summary>
+    public bool IsRelease { get; init; } = ToolIsRelease;
+
+    /// <summary>
+    /// Whether this build of haruspex was built as a release (<c>-p:HaruspexRelease=true</c>), which the build records as the
+    /// assembly's metadata <c>HaruspexRelease</c>. Every other build, a preview's and a developer's, is not one.
+    /// </summary>
+    public static bool ToolIsRelease { get; } =
+        typeof(Terminal).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Any(a => a is { Key: "HaruspexRelease", Value: "true" });
+
+    /// <summary>
     /// The build an IR file written in this terminal names as its writer (<see cref="IrSource.WrittenBy"/>): <see cref="Version"/>,
     /// split into the version and the commit (<see cref="BuildOf"/>).
     /// </summary>
