@@ -52,6 +52,7 @@ nocount
 noexec
 noexpand
 nonclustered
+nowait
 ntext
 ntile
 nvarchar
@@ -61,6 +62,7 @@ opendatasource
 openquery
 openrowset
 openxml
+paglock
 parsename
 parseonly
 patindex
@@ -98,6 +100,7 @@ sysdatetime
 sysdatetimeoffset
 sysname
 sysutcdatetime
+tablock
 tempdb
 timefromparts
 tinyint

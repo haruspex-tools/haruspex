@@ -308,6 +308,21 @@ public partial class StatementFlowTests
     }
 
     [Theory]
+    [InlineData("WITH (ROWLOCK)")]
+    [InlineData("WITH (TABLOCK)")]
+    [InlineData("WITH (PAGLOCK)")]
+    [InlineData("WITH (NOWAIT)")]
+    public void A_read_at_snapshot_isolation_with_a_hint_that_takes_no_lock_is_raced(string read)
+    {
+        // A_read_at_snapshot_isolation_reads_what_is_committed_now_only_with_a_hint_that_takes_a_lock: a hint that only says how
+        // to lock, or not to wait, leaves the read reading the snapshot, so having a hint is not enough.
+        var doc = Guarded("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", read: read);
+
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "code"));
+        Assert.Equal([IrNullRule.ReadTwice], Rules(doc, "card"));
+    }
+
+    [Theory]
     [InlineData("", "WITH (READCOMMITTEDLOCK)")]
     [InlineData("", "WITH (HOLDLOCK)")]
     [InlineData("", "WITH (SERIALIZABLE)")]
@@ -320,7 +335,7 @@ public partial class StatementFlowTests
     {
         // A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now: a read with READCOMMITTEDLOCK, or after
         // the body sets another level, reads what is committed now, where the guard's lock keeps the row.
-        // A_read_at_snapshot_isolation_that_takes_a_lock_reads_what_is_committed_now: so does one with a hint that takes a
+        // A_read_at_snapshot_isolation_reads_what_is_committed_now_only_with_a_hint_that_takes_a_lock: so does one with a hint that takes a
         // lock, or it fails the call (3960), which returns nothing at all.
         var doc = Guarded("SET TRANSACTION ISOLATION LEVEL SNAPSHOT; BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", between, read);
 
@@ -334,8 +349,9 @@ public partial class StatementFlowTests
     [InlineData("WITH (UPDLOCK)", null)]
     public void A_lock_the_guard_holds_where_the_body_sets_no_level_keeps_the_row_only_for_a_read_with_a_hint_of_its_own(string read, IrNullRule? rule)
     {
-        // A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now: a caller in a snapshot transaction
-        // that has already read makes a read with no hint in the body read its snapshot, and the caller's level is not seen.
+        // A_callers_snapshot_transaction_that_has_read_nothing_still_misses_the_row_the_guard_waited_for: a caller's open
+        // snapshot transaction, even one that has read nothing, makes a read with no hint in the body read its snapshot, and
+        // the caller's level is not seen.
         // Claiming nothing there is provisional: the alternative is to assume the caller isn't in one (decision 0016).
         var doc = Guarded("BEGIN TRAN;", "WITH (UPDLOCK, HOLDLOCK)", read: read);
 

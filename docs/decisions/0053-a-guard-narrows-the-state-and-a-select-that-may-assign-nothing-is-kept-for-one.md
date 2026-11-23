@@ -46,16 +46,17 @@ guard inside a loop holds on its pass only; any statement between a `SELECT` and
 own test included, leaves the count other than the `SELECT`'s; a variable that held a value before the `SELECT` proves nothing
 by holding one after it.
 
-For the existence guard, observed with a second session deleting the row between guard and read, each in a database of
-its own (`StatementFlowObservationTests.ExistenceGuards.cs`): read committed, read committed snapshot, locking hints without a
+For the existence guard, observed with a second session deleting the row between guard and read, each in a database of its own
+(`StatementFlowObservationTests.ExistenceGuards.cs`): read committed, read committed snapshot, locking hints without a
 transaction, a transaction without them, and snapshot isolation without a transaction all let the delete land, and the read
-finds nothing; each locking hint and level above, inside a transaction, makes the delete wait and the read find the row, and
-an inner `COMMIT` of nested transactions keeps the lock; `SNAPSHOT` in a transaction lets the delete go ahead and still reads
-the row, unless the read uses `READCOMMITTEDLOCK` or the level is set back first. A guard with `UPDLOCK, HOLDLOCK` in a
-snapshot transaction that read before it, while another session inserted and committed the row, found the row, and a read with
-no hint then found nothing, whether the body or its caller began the snapshot transaction; the read with `READCOMMITTEDLOCK`,
-`HOLDLOCK`, `SERIALIZABLE` or `REPEATABLEREAD`, or after `SET TRANSACTION ISOLATION LEVEL READ COMMITTED`, found it, and with
-`UPDLOCK` or `XLOCK` failed the call (3960).
+finds nothing; each locking hint and level above, inside a transaction, makes the delete wait and the read find the row, and an
+inner `COMMIT` of nested transactions keeps the lock; `SNAPSHOT` in a transaction lets the delete go ahead and still reads the
+row, unless the read uses `READCOMMITTEDLOCK` or the level is set back first. A guard with `UPDLOCK, HOLDLOCK` in a snapshot
+transaction that read before it, while another session inserted and committed the row, found the row, and a read with no hint
+then found nothing, whether the body or its caller began the snapshot transaction, and a caller's open snapshot transaction
+that had read nothing before the call did the same while the guard waited on another session's insert; the read with
+`READCOMMITTEDLOCK`, `HOLDLOCK`, `SERIALIZABLE` or `REPEATABLEREAD`, or after `SET TRANSACTION ISOLATION LEVEL READ COMMITTED`,
+found it, with `UPDLOCK` or `XLOCK` failed the call (3960), and with `ROWLOCK`, `TABLOCK`, `PAGLOCK` or `NOWAIT` found nothing.
 
 **Alternatives.**
 - *Facts beside the state, as `Facts` holds a query's filters*, pushed at the guard and dropped at the next assignment. Every
@@ -73,7 +74,7 @@ no hint then found nothing, whether the body or its caller began the snapshot tr
   transaction), and `read-twice` already says it for `COALESCE`.
 - *Reading `@@ROWCOUNT` anywhere it is still the `SELECT`'s.* Which statements leave it alone is a list to observe statement
   by statement; straight after the `SELECT` is what bodies write, and anything else only claims less.
-- *Assuming the caller is not in a snapshot transaction that has already read*, as decision 0016 assumes it does not read
+- *Assuming the caller is not in an open snapshot transaction*, as decision 0016 assumes it does not read
   uncommitted, and trusting a lock for a read with no hint in a body that sets no level. It would keep the claims of the
   commonest form of the guard, but the assumption fails silently where it fails. Decision 0016 makes its assumption because
   strictness would remove every key-based claim; here it removes only the claims of a guarded read in a body that sets no

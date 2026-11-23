@@ -86,9 +86,11 @@ internal sealed partial class Cardinality
     /// it as it is committed now, so only for a read of what is committed now: one with a hint of its own that reads past the
     /// snapshot, or one at a level the body set that is not <c>SNAPSHOT</c>. A read at snapshot isolation reads the
     /// transaction's snapshot, which may have begun before the row was committed, whether the body began the snapshot
-    /// transaction or its caller did (observed: A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now).
+    /// transaction or its caller did, and a caller's even when it read nothing before the call (observed:
+    /// A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now,
+    /// A_callers_snapshot_transaction_that_has_read_nothing_still_misses_the_row_the_guard_waited_for).
     /// The caller's level is not seen, so where the body set none, a read with no hint is raced (decision 0053; provisional, the
-    /// alternative being to assume the caller is not in a snapshot transaction, as decision 0016 assumes it doesn't read
+    /// alternative being to assume the caller is not in an open snapshot transaction, as decision 0016 assumes it doesn't read
     /// uncommitted).
     /// </summary>
     private static bool Holds(FoundRow found, BoundSource source, ReadScope scope)
@@ -105,8 +107,10 @@ internal sealed partial class Cardinality
     /// <summary>
     /// Whether a table hint makes a read at snapshot isolation read what is committed now rather than the snapshot:
     /// <c>READCOMMITTEDLOCK</c>, or one that takes a lock (observed in
-    /// A_read_at_snapshot_isolation_that_takes_a_lock_reads_what_is_committed_now: <c>UPDLOCK</c> and <c>XLOCK</c> fail the
-    /// call with 3960 on a row changed since the snapshot began, which returns nothing rather than a wrong row).
+    /// A_read_at_snapshot_isolation_reads_what_is_committed_now_only_with_a_hint_that_takes_a_lock: <c>UPDLOCK</c> and <c>XLOCK</c> fail the
+    /// call with 3960 on a row changed since the snapshot began, which returns nothing rather than a wrong row). Any other hint,
+    /// such as <c>ROWLOCK</c>, <c>TABLOCK</c>, <c>PAGLOCK</c> or <c>NOWAIT</c>, takes no lock at snapshot isolation, and the
+    /// read still reads the snapshot (observed in the same test), so having a hint is not enough.
     /// </summary>
     private static bool ReadsWhatIsCommitted(TableHintKind hint) =>
         hint == TableHintKind.ReadCommittedLock || Typer.HoldsLock(hint);

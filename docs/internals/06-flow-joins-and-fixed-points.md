@@ -262,8 +262,8 @@ export type OrderCard = z.infer<typeof OrderCardSchema>
 The guard holds its lock on the order until the `COMMIT`, and the read sees what is committed now, so `card` is never NULL.
 Without `UPDLOCK, HOLDLOCK`, or without the transaction, it would be nullable, `read-twice` at the guard.
 
-The level matters because a read at `SNAPSHOT` doesn't read what is committed now. It reads the transaction's snapshot, taken
-at the transaction's first read, and an order committed after that isn't in it, though the guard's lock found it:
+The level matters because a read at `SNAPSHOT` doesn't read what is committed now. It reads the transaction's snapshot, and an
+order committed after the snapshot began isn't in it, though the guard's lock found it:
 
 ```sql haruspex-example
 CREATE TABLE shop.orders
@@ -328,15 +328,22 @@ export const OrderCardSchema = z.array(OrderCardRowSchema).max(1, { error: "Expe
 export type OrderCard = z.infer<typeof OrderCardSchema>
 ```
 
-Here `card` is nullable, `read-twice` at the guard: observed with a read of another table before the guard, the order
-inserted and committed by another session after it, and `card` NULL (`A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now`).
-A hint on the read that reads past the snapshot (`READCOMMITTEDLOCK`, or one that takes a lock, which fails the call with 3960
-rather than miss the row), or `SET TRANSACTION ISOLATION LEVEL READ COMMITTED` before it, brings the claim back. A caller's
-snapshot transaction does the same to a body that sets no level, and the caller's level isn't seen, so there a read with no hint
-claims nothing: that is why the first example sets its level. Assuming instead that no caller is in a snapshot transaction, as
-[decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md) assumes no caller reads uncommitted, is the
-alternative [decision 0053](../decisions/0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md)
-records; the choice is provisional until the maintainer makes it.
+Here `card` is nullable, `read-twice` at the guard. Called on its own, with the guard as its transaction's first read, the read
+was seen to find the order: the guard's locking read didn't start the snapshot before it waited. But with a read of another
+table before the guard, or called inside a caller's open snapshot transaction, even one that had read nothing, the snapshot
+began before the order was committed, and `card` came back NULL
+(`A_lock_the_guard_holds_keeps_the_row_only_for_a_read_of_what_is_committed_now`,
+`A_callers_snapshot_transaction_that_has_read_nothing_still_misses_the_row_the_guard_waited_for`). When a snapshot begins is
+not something the rule relies on. A hint on the read that reads past the snapshot brings the claim back: `READCOMMITTEDLOCK`,
+or one that takes a lock, which may fail the call with 3960 rather than miss the row, but not `ROWLOCK` or `TABLOCK`, which
+read the snapshot. So does `SET TRANSACTION ISOLATION LEVEL READ COMMITTED` before the read.
+
+A caller's snapshot transaction does the same to a body that sets no level, and the caller's level isn't seen, so there a
+read with no hint claims nothing: that is why the first example sets its level. Assuming instead that no caller is in an open
+snapshot transaction, as [decision 0016](../decisions/0016-visible-read-uncommitted-drops-key-claims.md) assumes no caller
+reads uncommitted, is the alternative
+[decision 0053](../decisions/0053-a-guard-narrows-the-state-and-a-select-that-may-assign-nothing-is-kept-for-one.md) records;
+the choice is provisional until the maintainer makes it.
 
 ## Fixed points
 
