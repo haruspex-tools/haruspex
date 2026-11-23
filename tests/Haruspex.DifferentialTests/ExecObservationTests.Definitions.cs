@@ -124,4 +124,99 @@ public partial class ExecObservationTests
 
         Assert.Equal("total,order_id: 1.50,2", (await Run(Script(script), "SELECT dbo.obs_total() AS total, v.order_id FROM dbo.obs_open AS v;")).ToString());
     }
+
+    // ---- QUOTED_IDENTIFIER: where a SET takes effect (ScriptParser) -----------------------------------------------------
+
+    private const string Pot = "CREATE TABLE dbo.obs_pot (id int NOT NULL PRIMARY KEY, glaze int NULL); INSERT dbo.obs_pot VALUES (1, 7);";
+
+    /// <summary>Every option <c>SET ANSI_DEFAULTS OFF</c> turns off, on again as a connection has them, outside a transaction's start.</summary>
+    private const string Defaults = "SET ANSI_DEFAULTS ON; SET IMPLICIT_TRANSACTIONS OFF; SET CURSOR_CLOSE_ON_COMMIT OFF;";
+
+    [Theory]
+    [InlineData("SET QUOTED_IDENTIFIER OFF;")]
+    [InlineData("SET ANSI_NULLS, QUOTED_IDENTIFIER OFF;")]
+    [InlineData("IF 1 = 0 SET QUOTED_IDENTIFIER OFF;")]
+    [InlineData("SET ANSI_DEFAULTS OFF;")]
+    public async Task A_quoted_identifier_set_outside_a_body_takes_effect_where_it_is_parsed(string set)
+    {
+        // It takes effect when the batch is parsed, not when it runs, so under an IF that is false too, and in every batch after:
+        // the procedure keeps it, its "glaze" is a string, and the server describes it as one. SET ANSI_DEFAULTS OFF turns it off
+        // with the others.
+        string[] setup = [Pot, set, "CREATE PROCEDURE dbo.obs_qo AS SELECT \"glaze\" AS g, [glaze] AS g2 FROM dbo.obs_pot;", Defaults];
+
+        Assert.Equal("g,g2: glaze,7", (await Run(setup, "EXEC dbo.obs_qo;")).ToString());
+        Assert.Equal(
+            "name,system_type_name: g,varchar(5);g2,int",
+            (await Run(setup, "SELECT name, system_type_name FROM sys.dm_exec_describe_first_result_set(N'dbo.obs_qo', NULL, 0) ORDER BY column_ordinal;")).ToString());
+    }
+
+    [Fact]
+    public async Task A_quoted_identifier_set_takes_effect_in_its_own_batch_after_it()
+    {
+        string[] setup = ["CREATE TABLE dbo.obs_named (id int NOT NULL, glaze AS \"id\"); SET QUOTED_IDENTIFIER OFF; CREATE TABLE dbo.obs_label (id int NOT NULL, glaze AS \"id\"); SET QUOTED_IDENTIFIER ON;"];
+
+        Assert.Equal(
+            "named,label: 1,id",
+            (await Run([.. setup, "INSERT dbo.obs_named (id) VALUES (1); INSERT dbo.obs_label (id) VALUES (1);"], "SELECT n.glaze AS named, l.glaze AS label FROM dbo.obs_named AS n CROSS JOIN dbo.obs_label AS l;")).ToString());
+    }
+
+    [Fact]
+    public async Task A_quoted_identifier_set_in_a_body_changes_neither_the_body_nor_the_session()
+    {
+        // The body is parsed with the setting in force where it is created, and the SET in it, which runs, is undone when it returns.
+        string[] setup = [Pot, "CREATE PROCEDURE dbo.obs_body AS SET QUOTED_IDENTIFIER OFF; SELECT \"glaze\" AS g FROM dbo.obs_pot;"];
+
+        Assert.Equal("g: 7 | qi: 1", (await Run(setup, "EXEC dbo.obs_body; SELECT SESSIONPROPERTY('QUOTED_IDENTIFIER') AS qi;")).ToString());
+    }
+
+    // ---- synonyms (ScriptReader) ----------------------------------------------------------------------------------------
+
+    [Theory]
+    [InlineData("DROP SYNONYM dbo.obs_bin;")]
+    [InlineData("DROP SYNONYM IF EXISTS dbo.obs_bin;")]
+    [InlineData("IF OBJECT_ID(N'dbo.obs_bin') IS NOT NULL DROP SYNONYM dbo.obs_bin;")]
+    [InlineData("IF OBJECT_ID('dbo.obs_bin', 'SN') IS NOT NULL BEGIN DROP SYNONYM dbo.obs_bin; END")]
+    public async Task A_synonym_dropped_and_created_again_stands_for_its_last_target(string drop)
+    {
+        // A procedure that reads through it reads the last target, whose column is a nullable varchar, not the first's tinyint.
+        string[] setup = [
+            "CREATE TABLE dbo.obs_bin_small (weight tinyint NOT NULL); INSERT dbo.obs_bin_small VALUES (3);",
+            "CREATE TABLE dbo.obs_bin_large (weight varchar(20) NULL); INSERT dbo.obs_bin_large VALUES (NULL);",
+            "CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_small;",
+            "CREATE PROCEDURE dbo.obs_bins AS SELECT weight FROM dbo.obs_bin;",
+            drop,
+            "CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_large;",
+        ];
+
+        Assert.Equal("weight: null", (await Run(setup, "EXEC dbo.obs_bins;")).ToString());
+        Assert.Equal(
+            "system_type_name,is_nullable: varchar(20),True",
+            (await Run(setup, "SELECT system_type_name, is_nullable FROM sys.dm_exec_describe_first_result_set(N'dbo.obs_bins', NULL, 0);")).ToString());
+    }
+
+    [Fact]
+    public async Task A_synonym_created_in_a_body_stands_for_the_body_s_target()
+    {
+        // A procedure may drop and create a synonym, and when it runs the synonym moves, as it does under an IF.
+        Assert.Equal(
+            "target: [dbo].[obs_bin_large] | target: [dbo].[obs_bin_large]",
+            (await Run(
+                [
+                    "CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_small;",
+                    "CREATE PROCEDURE dbo.obs_move AS DROP SYNONYM dbo.obs_bin; CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_large;",
+                ],
+                "EXEC dbo.obs_move; SELECT base_object_name AS target FROM sys.synonyms WHERE name = N'obs_bin'; "
+                + "IF 1 = 1 BEGIN DROP SYNONYM dbo.obs_bin; CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_large; END; SELECT base_object_name AS target FROM sys.synonyms WHERE name = N'obs_bin';")).ToString());
+    }
+
+    [Fact]
+    public async Task A_synonym_created_again_without_a_drop_is_refused()
+    {
+        // So the first target stands (2714), as a second CREATE of a procedure is refused.
+        Assert.Equal(
+            ["refused: 2714", "target: [dbo].[obs_bin_small]"],
+            (await Run(
+                ["CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_small;"],
+                "BEGIN TRY EXEC sp_executesql N'CREATE SYNONYM dbo.obs_bin FOR dbo.obs_bin_large;'; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS refused; END CATCH; SELECT base_object_name AS target FROM sys.synonyms WHERE name = N'obs_bin';")).Sets);
+    }
 }

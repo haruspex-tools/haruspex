@@ -26,12 +26,13 @@ namespace Haruspex.SqlServer.Sources;
 /// </para>
 /// <para>
 /// Functions and views are read with the same rule as procedures (a view that two scripts define records a
-/// <see cref="Redefinition"/>), synonyms from <c>CREATE SYNONYM</c>, and DML triggers from every definition of each. Every
+/// <see cref="Redefinition"/>), synonyms from <c>CREATE SYNONYM</c> and <c>DROP SYNONYM</c> in the same order (a synonym two
+/// scripts create is reported), and DML triggers from every definition of each. Every
 /// other statement is passed over (<c>ScriptReader</c> says why).
 /// </para>
 /// <para>
 /// A read is three steps, each in a type of its own: which scripts there are and in which order, each parsed
-/// (<c>ScriptFile</c>); what each script declares, applying only its own order (<c>ScriptReader</c>, into
+/// (<c>ScriptFile</c>, each batch with the <c>QUOTED_IDENTIFIER</c> in force there, <c>ScriptParser</c>); what each script declares, applying only its own order (<c>ScriptReader</c>, into
 /// <c>SchemaDeclarations</c>);
 /// and the passes that settle what is in effect once every script is read (<c>DefinitionsInEffect</c>,
 /// <c>ConstraintTrust</c>). The guide's chapter <i>The inputs and the model</i> explains them

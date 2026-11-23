@@ -97,7 +97,10 @@ before it, it replaces, and nothing the project holds runs after it, so it stand
 can't see (`exec sp_executesql N'create procedure … as return 0'` under `IF OBJECT_ID(…) IS NULL`), followed by its `ALTER`
 ([decision 0080](../decisions/0080-the-last-definition-in-a-script-stands.md)).
 
-The same rules cover a function and a view. A table isn't played in order: one changed by `ALTER TABLE` in a way that could
+The same rules cover a function, a view and a synonym, which has no `ALTER`: one dropped and created again stands for its last
+target, and one created in two scripts, or again after a drop that may not run, is HAR1002, since a synonym has no record of a
+doubt. A `CREATE SYNONYM` that may run (under `IF`, in a block or a body, or in a deployment script) and names another target
+leaves the synonym out of the model, so a read through it is unresolved. A table isn't played in order: one changed by `ALTER TABLE` in a way that could
 change a column, dropped, or created a second time by a `CREATE TABLE` under `IF`, in a block or in a body, is a doubt wherever
 the statement is, its own script included. Whether a statement under `IF` or in a body runs isn't knowable, so it may: the
 guarded form of an idempotent migration (`IF COL_LENGTH(…) IS NOT NULL ALTER TABLE …`) loosens the column when it runs. Two
@@ -123,10 +126,15 @@ runs after the `NOCHECK` on it: both are statements of batches (not inside a bod
 the re-enable comes later, names the table with its schema, and names the check, or `ALL`. The model records where a check or
 key may be disabled (`CheckConstraint.DisabledAt`, `UniqueKey.DisabledAt`), and the schema's rules claim nothing from it.
 
-One setting is read in order within a file: `ANSI_NULLS`. SQL Server keeps the setting in force when a procedure, function,
+Two settings are read in order within a file. SQL Server keeps the `ANSI_NULLS` in force when a procedure, function,
 view or table is created, and it changes what `= NULL` means in its body or its computed columns, so a `SET ANSI_NULLS OFF`
-before a definition in the same script is kept with it (`Procedure.AnsiNullsOff`, `Table.AnsiNullsOff`). Another file's `SET` may run before it too, in an order the folder
-doesn't say; that isn't followed, and the default every client library uses, on, is assumed.
+before a definition in the same script is kept with it (`Procedure.AnsiNullsOff`, `Table.AnsiNullsOff`). `QUOTED_IDENTIFIER`
+decides whether `"x"` is a name or a string, and a `SET` of it takes effect where the server parses it: from there on in its
+batch and every batch after, under an `IF` that is false too, but not in a procedure's or trigger's body. ScriptDom starts
+each batch again with the setting it was given, so `ScriptParser` parses each batch with the setting the server has where it
+starts ([decision 0112](../decisions/0112-a-script-is-parsed-as-the-server-parses-each-batch.md)). Another file's `SET` may run
+before a script too, in an order the folder doesn't say; that isn't followed, and the default every client library uses, on,
+is assumed for both.
 
 ## Why the model hides ScriptDom
 

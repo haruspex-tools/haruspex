@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 
@@ -233,5 +234,111 @@ public class DefinitionsInEffectTests
         Assert.Null(Assert.Single(one.Model.Views).Redefinition);
         Assert.Equal(3, Assert.Single(one.Model.Views).Span.Start.Line);
         Assert.Equal(RedefiningStatement.AlterView, Assert.Single(two.Model.Views).Redefinition?.Statement);
+    }
+
+    // ---- synonyms ---------------------------------------------------------------------------------------------------------
+
+    private const string SmallBins = "create synonym shop.bin for shop.bin_small;";
+
+    private const string LargeBins = "create synonym shop.bin for shop.bin_large;";
+
+    private static string Target(SchemaReadResult read) => Assert.Single(read.Model.Synonyms).For.Text;
+
+    [Theory]
+    [InlineData("drop synonym shop.bin;")]
+    [InlineData("drop synonym if exists shop.bin;")]
+    [InlineData("if object_id(N'shop.bin') is not null drop synonym shop.bin;")]
+    [InlineData("if object_id('shop.bin', 'SN') is not null begin drop synonym shop.bin; end")]
+    public void A_synonym_dropped_and_created_again_in_one_script_stands_for_its_last_target(string drop)
+    {
+        // Observed: A_synonym_dropped_and_created_again_stands_for_its_last_target.
+        var read = Read(("bin.sql", $"{SmallBins}\nGO\n{drop}\nGO\n{LargeBins}"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal("shop.bin_large", Target(read));
+        Assert.Equal(5, Assert.Single(read.Model.Synonyms).Span.Start.Line);
+    }
+
+    [Theory]
+    [InlineData("if @@servername = N'x' drop synonym shop.bin;", 3)]
+    [InlineData("if object_id(N'shop.bin', N'U') is not null drop synonym shop.bin;", 3)]
+    [InlineData("", 5)]
+    public void A_synonym_created_again_after_a_drop_that_may_not_run_is_defined_twice(string drop, int line)
+    {
+        // If the drop doesn't run, the second CREATE is refused (2714) and the first target stands; if it does, the second. A
+        // synonym has no record of a doubt, so the read stops with the definition twice rather than pick one: reported at the drop
+        // that may not run, or with none at the second CREATE.
+        var read = Read(("bin.sql", $"{SmallBins}\nGO\n{drop}\nGO\n{LargeBins}"));
+
+        var twice = Assert.Single(read.Diagnostics);
+        Assert.Equal(SourceCodes.DefinedTwice, twice.Code);
+        Assert.Equal(line, Assert.IsType<SourceLocation>(twice.At).Line);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("drop synonym shop.bin;\nGO\n")]
+    public void A_synonym_created_in_two_scripts_is_defined_twice(string drop)
+    {
+        // Which runs last a folder doesn't say, so which target stands isn't known, with a drop before the second or without.
+        var read = Read(("a.sql", SmallBins), ("b.sql", drop + LargeBins));
+
+        Assert.Equal(SourceCodes.DefinedTwice, Assert.Single(read.Diagnostics).Code);
+    }
+
+    [Fact]
+    public void A_synonym_dropped_in_another_script_keeps_its_target()
+    {
+        // Whichever runs first, a reference through it reads its one target or fails because there is none: it never reads another.
+        var read = Read(("a.sql", SmallBins), ("b.sql", "drop synonym shop.bin;"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal("shop.bin_small", Target(read));
+    }
+
+    [Fact]
+    public void A_synonym_created_and_then_dropped_in_one_script_is_not_in_the_model()
+    {
+        var read = Read(("bin.sql", $"{SmallBins}\nGO\ndrop synonym shop.bin;"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Empty(read.Model.Synonyms);
+    }
+
+    [Theory]
+    [InlineData("if @@servername = N'x' begin drop synonym shop.bin; create synonym shop.bin for shop.bin_large; end")]
+    [InlineData("create procedure shop.move_bins as drop synonym shop.bin; create synonym shop.bin for shop.bin_large;")]
+    [InlineData("begin try create synonym shop.bin for shop.bin_large; end try begin catch select 1 as failed; end catch")]
+    public void A_synonym_a_statement_that_may_run_creates_for_another_target_is_left_out(string move)
+    {
+        // Observed: A_synonym_created_in_a_body_stands_for_the_body_s_target. Which target stands isn't known, and a synonym has no
+        // record of a doubt, so a name read through it is unresolved.
+        var read = Read(("bin.sql", $"{SmallBins}\nGO\n{move}"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Empty(read.Model.Synonyms);
+    }
+
+    [Theory]
+    [InlineData("if @@servername = N'x' begin drop synonym shop.bin; create synonym shop.bin for shop.BIN_SMALL; end")]
+    [InlineData("if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_small;")]
+    public void A_synonym_a_statement_that_may_run_creates_for_the_same_target_keeps_it(string again)
+    {
+        var read = Read(("bin.sql", $"{SmallBins}\nGO\n{again}"));
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal("shop.bin_small", Target(read));
+        Assert.Equal(1, Assert.Single(read.Model.Synonyms).Span.Start.Line);
+    }
+
+    [Fact]
+    public void A_synonym_only_a_statement_that_may_run_creates_stands_for_its_target()
+    {
+        // If it doesn't run there is no synonym, and a read through the name fails rather than reads another object.
+        var read = Read(("bin.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_small;"));
+        var two = Read(("a.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_small;"), ("b.sql", "if object_id(N'shop.bin') is null create synonym shop.bin for shop.bin_large;"));
+
+        Assert.Equal("shop.bin_small", Target(read));
+        Assert.Empty(two.Model.Synonyms);
     }
 }

@@ -27,6 +27,11 @@ namespace Haruspex.SqlServer.Sources;
 /// only tightens, so leaving it out claims less.
 /// </para>
 /// <para>
+/// <b>A synonym created again.</b> A <c>CREATE SYNONYM</c> under <c>IF</c>, in a block or in a body, or in a deployment script,
+/// moves the synonym when it runs (observed: A_synonym_created_in_a_body_stands_for_the_body_s_target), which the model's
+/// definition doesn't follow (<see cref="SchemaDeclarations.ConditionalSynonyms"/>).
+/// </para>
+/// <para>
 /// <b>What disables a check.</b> <c>ALTER TABLE … NOCHECK CONSTRAINT</c>, and a bulk load that doesn't check them: <c>BULK
 /// INSERT</c> and <c>INSERT BULK</c> without <c>CHECK_CONSTRAINTS</c>, and <c>INSERT … WITH (IGNORE_CONSTRAINTS)</c>, which only
 /// an <c>OPENROWSET(BULK …)</c> source allows. Each writes rows no check has seen and leaves every check of the table not trusted
@@ -73,6 +78,10 @@ internal static class WeakeningStatements
                     Unchecked(target.SchemaObject, At(insert), topLevel.Contains(insert), into);
                     break;
             }
+
+            // A synonym created where it may run, though not as a batch's own statement, may stand for another target.
+            if (statement is CreateSynonymStatement synonym && (deployment || !topLevel.Contains(synonym)))
+                into.ConditionalSynonyms.Add(ModuleReader.Synonym(synonym, file));
 
             ReadKeyDisables(statement, At(statement), into);
             if (!DroppedBeforeItsCreate(statement, defined, bodies))

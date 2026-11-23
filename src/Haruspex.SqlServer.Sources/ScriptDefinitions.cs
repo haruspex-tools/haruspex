@@ -4,7 +4,7 @@ using Haruspex.SqlServer.Model;
 namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
-/// What one script's statements leave of each procedure, function or view it defines, alters or drops, played in batch order as
+/// What one script's statements leave of each procedure, function, view or synonym it defines, alters or drops, played in batch order as
 /// sqlcmd runs it. Within a script the order is known, so the definition that stands is the last one that runs: a stub created
 /// and then altered is its <c>ALTER</c>, one dropped and created again its last <c>CREATE</c>
 /// (<c>docs/decisions/0080-the-last-definition-in-a-script-stands.md</c>).
@@ -19,7 +19,7 @@ namespace Haruspex.SqlServer.Sources;
 /// about what stands before the script, which only the folder's other scripts can say; <see cref="DefinitionsInEffect"/> settles
 /// that once every script is read.
 /// </remarks>
-/// <typeparam name="T">A procedure, a function, or a view's definition.</typeparam>
+/// <typeparam name="T">A procedure, a function, a view's definition, or a synonym.</typeparam>
 /// <param name="diagnostics">Where a second <c>CREATE</c> in the script is reported.</param>
 /// <param name="sameKind">
 /// Whether a definition may replace another in place. A function's kind (scalar, inline or multi-statement) can't change by

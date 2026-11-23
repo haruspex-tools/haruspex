@@ -34,5 +34,6 @@ public static class Redefinitions
         RedefiningStatement.CreateFunction => "CREATE FUNCTION",
         RedefiningStatement.CreateOrAlterFunction => "CREATE OR ALTER FUNCTION",
         RedefiningStatement.UnreadScript => "a deployment script that can't be read",
+        RedefiningStatement.DropSynonym => "DROP SYNONYM",
     };
 }

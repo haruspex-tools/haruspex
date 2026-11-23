@@ -6,8 +6,9 @@ namespace Haruspex.SqlServer.Sources;
 /// and so how the script parses.
 /// </summary>
 /// <remarks>
-/// A folder of scripts doesn't say them, so a folder's start with both on, as a connection that sets nothing does (a <c>SET</c>
-/// in a script still changes them from there on). A project says them: its <c>AnsiNulls</c> and <c>QuotedIdentifier</c>
+/// A folder of scripts doesn't say them, so a folder's start with both on, as a connection that sets nothing does. A <c>SET</c>
+/// in a script still changes them from there on: <c>ANSI_NULLS</c> as each definition is read (<see cref="ScriptReader"/>), and
+/// <c>QUOTED_IDENTIFIER</c> as each batch is parsed (<see cref="ScriptParser"/>). A project says them: its <c>AnsiNulls</c> and <c>QuotedIdentifier</c>
 /// properties, and each script's item metadata of the same names (<c>Projects.ProjectFiles</c>).
 /// </remarks>
 /// <param name="AnsiNulls">Whether <c>ANSI_NULLS</c> is on.</param>
