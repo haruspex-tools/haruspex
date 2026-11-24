@@ -48,6 +48,7 @@
           "Microsoft.SqlServer.TransactSql.ScriptDom": "[180.140.0, )"
         }
       }
-    }
+    },
+    "net10.0/linux-x64": {}
   }
 }

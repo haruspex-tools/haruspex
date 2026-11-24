@@ -29,6 +29,17 @@ public partial class ConstructTests
     }
 
     [Fact]
+    public void A_column_added_beside_one_that_differs_from_it_only_in_case_is_unknown()
+    {
+        // ALTER TABLE … ADD isn't applied to the model, so the table it changes is unknown, and its pair is never matched.
+        var doc = Infer(
+            ("tables.sql", "CREATE TABLE dbo.item (id int NOT NULL, Code varchar(10) NOT NULL);\nGO\nALTER TABLE dbo.item ADD code int NULL;"),
+            ("p.sql", "CREATE PROCEDURE dbo.p AS\nSELECT code FROM dbo.item;"));
+
+        Assert.IsType<IrUnknownType>(Assert.Single(Fields(doc)).Type);
+    }
+
+    [Fact]
     public void A_view_whose_columns_differ_only_in_case_is_unknown()
     {
         // A view's columns are listed by name, and two that differ only in case can't be, so every column read from it is unknown.

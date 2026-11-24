@@ -114,6 +114,8 @@ public class CaseVariantsTests
     // Each body is its own namespace, and so is each table's list of columns.
     [InlineData("CREATE PROCEDURE dbo.p @n int AS SELECT 1 AS one;\nGO\nCREATE PROCEDURE dbo.q @N int AS SELECT 1 AS one;")]
     [InlineData("CREATE TABLE dbo.a (code int);\nGO\nCREATE TABLE dbo.b (Code int);")]
+    // A type is in a namespace of its own, apart from the schema's tables and views, so a type and a table may share a name.
+    [InlineData("CREATE TYPE dbo.Item AS TABLE (a int);\nGO\nCREATE TABLE dbo.item (a int);")]
     public void Names_that_differ_only_in_case_in_different_namespaces_or_in_their_uses_are_no_error(string sql) =>
         Assert.Empty(Read(("a.sql", sql)));
 

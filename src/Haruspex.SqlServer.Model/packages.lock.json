@@ -17,6 +17,7 @@
           "Haruspex.Collections": "[0.0.0-preview, )"
         }
       }
-    }
+    },
+    "net10.0/linux-x64": {}
   }
 }
