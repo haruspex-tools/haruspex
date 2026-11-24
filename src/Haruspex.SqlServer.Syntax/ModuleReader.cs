@@ -24,7 +24,10 @@ public static class ModuleReader
             name,
             span,
             Parameters(definition.Parameters, span, name.Schema),
-            Body(definition.StatementList, definition.MethodSpecifier));
+            Body(definition.StatementList, definition.MethodSpecifier))
+        {
+            RunsAsAnother = RunsAsAnother(definition.Options),
+        };
     }
 
     /// <summary>
@@ -39,7 +42,7 @@ public static class ModuleReader
         var span = SyntaxReader.Span(file, definition);
         var name = SyntaxReader.Name(definition.Name);
         var parameters = Parameters(definition.Parameters, span, name.Schema);
-        return definition.ReturnType switch
+        Function function = definition.ReturnType switch
         {
             ScalarFunctionReturnType scalar => new ScalarFunction(name, span, parameters, SyntaxReader.Type(scalar.DataType, name.Schema), Body(definition.StatementList, definition.MethodSpecifier))
             {
@@ -51,6 +54,7 @@ public static class ModuleReader
             // ScriptDom's three kinds of return are all T-SQL has.
             _ => throw new ArgumentException($"{name} returns {definition.ReturnType?.GetType().Name ?? "nothing"}, which is not a kind of function.", nameof(definition)),
         };
+        return function with { RunsAsAnother = RunsAsAnother(definition.Options) };
     }
 
     /// <summary>A view, from its <c>CREATE</c>, <c>CREATE OR ALTER</c> or <c>ALTER VIEW</c>.</summary>
@@ -93,8 +97,24 @@ public static class ModuleReader
 
         // A trigger is in its table's schema, whatever its own name says.
         var name = new ObjectName(parent.Schema, definition.Name.BaseIdentifier.Value);
-        return new Trigger(name, SyntaxReader.Span(file, definition), parent, definition.TriggerType == TriggerType.InsteadOf, events, Body(definition.StatementList, definition.MethodSpecifier));
+        return new Trigger(name, SyntaxReader.Span(file, definition), parent, definition.TriggerType == TriggerType.InsteadOf, events, Body(definition.StatementList, definition.MethodSpecifier))
+        {
+            RunsAsAnother = RunsAsAnother(definition.Options),
+        };
     }
+
+    /// <summary>
+    /// Whether a module's options include <c>EXECUTE AS</c> anyone but the caller (<see cref="Module.RunsAsAnother"/>). A package
+    /// keeps the clause in the module's header, which is read here too.
+    /// </summary>
+    private static bool RunsAsAnother(IEnumerable<TSqlFragment>? options) =>
+        options?.Any(o => o switch
+        {
+            ExecuteAsProcedureOption procedure => procedure.ExecuteAs.ExecuteAsOption != ExecuteAsOption.Caller,
+            ExecuteAsFunctionOption function => function.ExecuteAs.ExecuteAsOption != ExecuteAsOption.Caller,
+            ExecuteAsTriggerOption trigger => trigger.ExecuteAsClause.ExecuteAsOption != ExecuteAsOption.Caller,
+            _ => false,
+        }) == true;
 
     /// <summary>A synonym, from its <c>CREATE SYNONYM</c>.</summary>
     /// <param name="definition">The definition.</param>

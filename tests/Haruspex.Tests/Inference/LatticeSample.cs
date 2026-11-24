@@ -129,8 +129,14 @@ internal sealed class LatticeSample(int seed)
         };
     }
 
-    /// <summary>A value: a scalar, JSON text with or without its content, live JSON, or an unknown.</summary>
+    /// <summary>A value: a scalar, JSON text with or without its content, live JSON, or an unknown; one in six masked.</summary>
     public Value Value()
+    {
+        var value = Unmasked();
+        return random.Next(6) == 0 ? value.Masked("t.masked", new SourceLocation("t.sql", 1, 1)) : value;
+    }
+
+    private Value Unmasked()
     {
         var digits = Digits();
         switch (random.Next(6))

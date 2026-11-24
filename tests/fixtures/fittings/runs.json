@@ -1,0 +1,18 @@
+// The runs of the fittings fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means. Every run reads, so it runs as the tests' reader, which doesn't hold UNMASK: each masked value is its mask.
+{
+  // Not held to every edge: a caller without UNMASK reads the masks, which reach no edge of a CHECK the seed does.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "customer_card, at the lower edges", "procedure": "tailor.customer_card", "parameters": { "@customer_id": 1 } },
+    { "name": "customer_card, at the upper edges", "procedure": "tailor.customer_card", "parameters": { "@customer_id": 2 } },
+    { "name": "customer_card, nulls and empty strings", "procedure": "tailor.customer_card", "parameters": { "@customer_id": 3 } },
+    { "name": "customer_summary", "procedure": "tailor.customer_summary" },
+    { "name": "bands", "procedure": "tailor.bands" },
+    { "name": "contacts", "procedure": "tailor.contacts" },
+    { "name": "customer_json", "procedure": "tailor.customer_json", "parameters": { "@customer_id": 2 } },
+    { "name": "customer_json, no such customer", "procedure": "tailor.customer_json", "parameters": { "@customer_id": 99 } },
+    { "name": "customer_sizes", "procedure": "tailor.customer_sizes" }
+  ]
+}

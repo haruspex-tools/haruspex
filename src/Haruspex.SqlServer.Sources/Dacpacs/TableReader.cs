@@ -161,7 +161,8 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
     /// A column, of a table or of the table a function returns. Its nullability is what DacFx resolved and deploys:
     /// <c>IsNullable</c> false is NOT NULL, and its absence NULL, whether the script said NULL or nothing (an alias type's NOT NULL
     /// included). A computed column takes its nullability from its expression, as in a folder, unless it is declared
-    /// <c>PERSISTED NOT NULL</c> (<c>IsPersistedNullable</c> false) or <c>PERSISTED NULL</c> (true).
+    /// <c>PERSISTED NOT NULL</c> (<c>IsPersistedNullable</c> false) or <c>PERSISTED NULL</c> (true). A masked column carries its function
+    /// as written, in <c>MaskingFunction</c> (<c>default()</c>).
     /// </summary>
     /// <param name="column">The column's element.</param>
     /// <param name="name">Its name.</param>
@@ -188,6 +189,7 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
             IsHidden = ModelXml.IsTrue(column, ModelXml.IsHidden),
             IsSparse = ModelXml.IsTrue(column, ModelXml.IsSparse),
             IsColumnSet = ModelXml.TypeOf(column) == ModelXml.SqlColumnSet,
+            Mask = ModelXml.Property(column, ModelXml.MaskingFunction),
         };
     }
 

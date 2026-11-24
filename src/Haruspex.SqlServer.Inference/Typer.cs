@@ -141,7 +141,7 @@ internal sealed partial class Typer(
                 var row = Outermost(query, scope);
                 return ForOf(query) switch
                 {
-                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, subquery: false), NoRows(row), row.Rows),
+                    JsonForClause json => new ResultShape(IrEncoding.Json, ForJson(row, json, subquery: false), NoRows(row), row.Rows) { ResultsUnknown = MaskedJson(row, at) },
                     null => new ResultShape(IrEncoding.Rowset, Rowset(row), [], row.Rows),
                     var other => new ResultShape(IrEncoding.Rowset, Unsupported(IrUnknownReason.UnsupportedQuery, $"{Text(other)} is not modelled yet.", at), []),
                 };
@@ -253,8 +253,10 @@ internal sealed partial class Typer(
         var fields = row.Columns.Select(c => new FieldShape(
             // Never null: a column without a name was reported above.
             c.Name!,
-            // A rowset column delivers JSON as text: the driver sees an nvarchar. Its content is what it parses to.
-            c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
+            // A rowset column delivers JSON as text: the driver sees an nvarchar. Its content is what it parses to. JSON computed from
+            // a masked column is its mask, which is no JSON (Value.Masked), so it is the unknown it is, and claims no text of JSON.
+            c.Value is { IsLiveJson: true, IsMasked: true, Shape: UnknownShape masked } ? masked
+                : c.Value.IsLiveJson ? new JsonTextShape(c.Value.Shape) : c.Value.Shape,
             IrPresence.Always,
             c.Value.NullableBecause)
         { From = c.From });
@@ -388,13 +390,21 @@ internal sealed partial class Typer(
     /// What an expression gives. A node whose type <see cref="AcceptedNodes"/> doesn't list is not modelled, whatever arm below
     /// might match it, since nothing says how its properties are read (decision 0113).
     /// </summary>
-    internal Value Expression(ScalarExpression expression, ReadScope scope) => expression switch
+    /// <remarks>
+    /// An expression computed from a masked value is masked as a whole, whatever rule typed it (<see cref="MaskedIfFrom"/>).
+    /// </remarks>
+    internal Value Expression(ScalarExpression expression, ReadScope scope)
     {
-        _ when !AcceptedNodes.Properties.ContainsKey(expression.GetType()) =>
-            Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
-        PrimaryExpression { Collation: not null } collated => Collated(collated, scope),
-        _ => Uncollated(expression, scope),
-    };
+        var before = masked.Count;
+        var value = expression switch
+        {
+            _ when !AcceptedNodes.Properties.ContainsKey(expression.GetType()) =>
+                Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"The expression {Text(expression)} is not modelled yet.", At(expression))),
+            PrimaryExpression { Collation: not null } collated => Collated(collated, scope),
+            _ => Uncollated(expression, scope),
+        };
+        return MaskedIfFrom(value, before, expression);
+    }
 
     /// <summary>
     /// An expression under <c>COLLATE</c>. A Unicode string keeps its characters under any collation, so its value is the
@@ -459,7 +469,11 @@ internal sealed partial class Typer(
     /// unchanged: a column reference, through aliases, joins and FOR JSON nesting. Any expression makes the value
     /// something else, and none is modelled yet, so it becomes unknown and the facts go with it.
     /// </remarks>
-    internal Value FromColumn(TableColumn bound, ReadScope scope)
+    internal Value FromColumn(TableColumn bound, ReadScope scope) =>
+        MaskOf(bound) is { } by ? Unmasked(bound, scope).Masked(by, bound.Column.At) : Unmasked(bound, scope);
+
+    /// <summary>A column's value as a caller with <c>UNMASK</c> reads it; a computed column's masked as its expression is.</summary>
+    private Value Unmasked(TableColumn bound, ReadScope scope)
     {
         var (source, table, column) = bound;
         var computed = column.ComputedExpression is { } expression ? ComputedColumn(bound, expression, scope) : null;
@@ -507,7 +521,7 @@ internal sealed partial class Typer(
                 IsLiveJson: true);
         }
 
-        return Value.Computed(computed?.Shape ?? ColumnShape(table, table.Name.ToString(), column), [.. because]);
+        return Value.Computed(computed?.Shape ?? ColumnShape(table, table.Name.ToString(), column), [.. because]) with { MaskedBy = computed?.MaskedBy, Digits = IntDigits.OfType };
     }
 
     /// <summary>
@@ -695,7 +709,7 @@ internal sealed partial class Typer(
         if (result.NullOnNullInput && MayBeNullInput(call, callee, scope))
             because.Add(new IrNullReason(IrNullRule.NullInput, at.ToString()));
 
-        return result switch
+        var value = result switch
         {
             { AsText: true, Content: { } assembled } => new Value(result.Declared, [.. because]) { Digits = IntDigits.OfType, Pieces = [new JsonPiece(assembled)] },
             { Content: null, ReturnsJson: true } => new Value(result.Declared, [.. because], IsLiveJson: true),
@@ -703,6 +717,7 @@ internal sealed partial class Typer(
             { ReturnsJson: true } => result.Content is UnknownShape unknown ? Value.Unknown(unknown) : new Value(result.Content, [.. because], IsLiveJson: true),
             _ => new Value(new JsonTextShape(result.Content), [.. because]),
         };
+        return model.FindFunction(callee) is { } function ? MaskedCall(value, function, call) : value;
     }
 
     /// <summary>

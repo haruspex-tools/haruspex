@@ -63,6 +63,8 @@ internal static class ModelXml
     public const string IsHidden = nameof(IsHidden);
     public const string IsSparse = nameof(IsSparse);
     public const string IsPersistedNullable = nameof(IsPersistedNullable);
+    public const string MaskingFunction = nameof(MaskingFunction);
+    public const string IsCaller = nameof(IsCaller);
     public const string ReturnTableVariable = nameof(ReturnTableVariable);
     public const string DoReturnNullForNullInput = nameof(DoReturnNullForNullInput);
     public const string ClassName = nameof(ClassName);

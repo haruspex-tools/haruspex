@@ -21,4 +21,11 @@ public abstract record Module : SchemaObject
         : base(name, span)
     {
     }
+
+    /// <summary>
+    /// Whether it is declared <c>WITH EXECUTE AS</c> anyone but its caller (<c>OWNER</c>, <c>SELF</c> or a user): its body, and
+    /// whatever it calls, then runs with that user's permissions, not the callers'. Only <c>UNMASK</c> among them changes a
+    /// claim (<see cref="SessionOptions.Unmask"/>), so this is all that is kept of the clause. False for a view, which has none.
+    /// </summary>
+    public bool RunsAsAnother { get; init; }
 }

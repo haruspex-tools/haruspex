@@ -44,6 +44,18 @@ public sealed record Column(string Name, SqlType? Type, DeclaredNullability Null
     /// </summary>
     public bool IsColumnSet { get; init; }
 
+    /// <summary>
+    /// The masking function of a column declared <c>MASKED WITH (FUNCTION = '…')</c>, as written (<c>default()</c>,
+    /// <c>partial(1,"XX",0)</c>), from its definition, an <c>ALTER COLUMN … ADD MASKED</c> that may run, or a package's column; null
+    /// when it is not masked. A caller without <c>UNMASK</c> reads the function's output in place of the value, and the result of
+    /// any expression over it in place of that result: which of a value's facts survive that is inference's to say
+    /// (docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md).
+    /// </summary>
+    public string? Mask { get; init; }
+
+    /// <summary>Whether it is masked (<see cref="Mask"/>).</summary>
+    public bool IsMasked => Mask is not null;
+
     /// <summary>The column's name.</summary>
     public override string ToString() => Name;
 }

@@ -132,6 +132,35 @@ internal static class ScalarFacets
         return kept.IsEmpty ? null : kept;
     }
 
+    /// <summary>
+    /// The facets that hold of a masked value: what its type proves (<see cref="TypeOnly"/>), less a fixed length and any minimum
+    /// length. A caller without <c>UNMASK</c> reads the mask in place of a masked column's value, and in place of any value computed
+    /// from one: <c>0</c>, <c>'xxxx'</c>, <c>1900-01-01</c>, a value <c>random()</c> draws or what <c>email()</c> and <c>partial()</c>
+    /// write, never longer than the type and never outside its range (a <c>random()</c> range outside it is refused, 16005), but
+    /// not padded to a <c>char</c>'s or <c>binary</c>'s length, and as short as the mask, however long the value
+    /// (observed: <c>MaskingObservationTests</c>; docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md).
+    /// </summary>
+    /// <param name="facets">The value's facets.</param>
+    /// <param name="type">
+    /// What its type alone proves, for a fact a narrower one replaced: a CHECK's range takes the place of the type's, and the mask
+    /// keeps the type's in its place. A fact the value doesn't have is not added, which would claim more than it did.
+    /// </param>
+    public static IrFacets? Masked(IrFacets? facets, IrFacets? type)
+    {
+        if (facets is null)
+            return null;
+        var own = TypeOnly(facets) ?? new IrFacets();
+        var typed = TypeOnly(type) ?? new IrFacets();
+        var length = own.Length ?? (facets.Length is null ? null : typed.Length);
+        var kept = new IrFacets(
+            length is null ? null : length with { IsFixed = false },
+            null,
+            own.Digits ?? (facets.Digits is null ? null : typed.Digits),
+            own.Min ?? (facets.Min is null ? null : typed.Min),
+            own.Max ?? (facets.Max is null ? null : typed.Max));
+        return kept.IsEmpty ? null : kept;
+    }
+
     /// <summary>An IR bound as the bound lattice orders it, or null when its value isn't a plain decimal.</summary>
     private static Bound? BoundOf(IrBound bound) => ExactDecimal.TryParse(bound.Value, out var value) ? new Bound(value, bound.Inclusive) : null;
 

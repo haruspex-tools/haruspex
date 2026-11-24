@@ -26,8 +26,13 @@ What a script defines is read: `CREATE TABLE` with its columns, keys and CHECK c
 functions, views and DML triggers with their parameters and bodies; synonyms; and foreign keys with an `ON DELETE` or
 `ON UPDATE` action, since those fire the referencing table's triggers. So is anything that changes a definition later (an
 `ALTER` or a `DROP`), and anything that may disable a constraint (`ALTER TABLE … NOCHECK CONSTRAINT`,
-`ALTER INDEX … DISABLE`). Everything else, data and permissions and the rest of what indexes do, is passed over: it can't
-change what a table's columns are or what a procedure returns.
+`ALTER INDEX … DISABLE`). One kind of permission does change what a procedure returns: a column declared `MASKED WITH (FUNCTION =
+…)` gives a caller without `UNMASK` its mask in place of each value. So a column's mask is read, and so is an `ALTER TABLE … ALTER
+COLUMN … ADD MASKED` or `DROP MASKED` that changes it later (`MaskChange`), and whether a module runs `WITH EXECUTE AS` another
+user, whose permissions it then reads with (`Module.RunsAsAnother`); what a mask leaves of a claim is inference's "Masked
+columns" ([decision 0118](../decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md)). Everything
+else, data, grants and the rest of what indexes do, is passed over: none of it changes what a table's columns are or what a
+procedure returns. Who the callers are, and so whether they hold `UNMASK`, is no script's to say: the config file declares it.
 
 An application's own query files are the other input. They aren't part of the database, so they aren't read into the model:
 each is a `QueryFile` (`QueryFileReader`), one batch read as the application sends it, with no SQLCMD variable replaced, and

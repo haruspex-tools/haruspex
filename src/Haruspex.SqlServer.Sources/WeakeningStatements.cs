@@ -27,6 +27,10 @@ namespace Haruspex.SqlServer.Sources;
 /// only tightens, so leaving it out claims less.
 /// </para>
 /// <para>
+/// <b>What masks a column.</b> <c>ALTER TABLE … ALTER COLUMN … ADD MASKED</c> and <c>… DROP MASKED</c> change only a column's mask,
+/// so they are no change of the table; each is recorded as a <see cref="MaskChange"/>, which says which the model follows.
+/// </para>
+/// <para>
 /// <b>A synonym created again.</b> A <c>CREATE SYNONYM</c> under <c>IF</c>, in a block or in a body, or in a deployment script,
 /// moves the synonym when it runs (observed: A_synonym_created_in_a_body_stands_for_the_body_s_target), which the model's
 /// definition doesn't follow (<see cref="SchemaDeclarations.ConditionalSynonyms"/>).
@@ -82,6 +86,17 @@ internal static class WeakeningStatements
             // A synonym created where it may run, though not as a batch's own statement, may stand for another target.
             if (statement is CreateSynonymStatement synonym && (deployment || !topLevel.Contains(synonym)))
                 into.ConditionalSynonyms.Add(ModuleReader.Synonym(synonym, file));
+
+            if (statement is AlterTableAlterColumnStatement masking && ChangesOnlyMask(masking) && !IsTemporary(masking.SchemaObjectName))
+            {
+                into.MaskChanges.Add(new MaskChange(
+                    SyntaxReader.Name(masking.SchemaObjectName),
+                    masking.SchemaObjectName.SchemaIdentifier is not null,
+                    masking.ColumnIdentifier.Value,
+                    masking.AlterTableAlterColumnOption == AlterTableAlterColumnOption.AddMaskingFunction ? masking.MaskingFunction?.Value ?? "" : null,
+                    At(masking),
+                    !deployment && topLevel.Contains(masking)));
+            }
 
             ReadKeyDisables(statement, At(statement), into);
             if (!DroppedBeforeItsCreate(statement, defined, bodies))
@@ -165,6 +180,14 @@ internal static class WeakeningStatements
     };
 
     /// <summary>
+    /// <c>ALTER TABLE … ALTER COLUMN … ADD MASKED WITH (…)</c> or <c>… DROP MASKED</c>, which change only the column's mask, not its
+    /// type or whether it may be null (observed: A_mask_added_or_dropped_later_changes_the_column_s_mask_alone): recorded as a
+    /// <see cref="MaskChange"/>, which the pass after reading applies, not as a change of the table.
+    /// </summary>
+    private static bool ChangesOnlyMask(AlterTableStatement statement) =>
+        statement is AlterTableAlterColumnStatement { DataType: null, AlterTableAlterColumnOption: AlterTableAlterColumnOption.AddMaskingFunction or AlterTableAlterColumnOption.DropMaskingFunction };
+
+    /// <summary>
     /// <c>ALTER TABLE … DROP PERIOD FOR SYSTEM_TIME</c>, and nothing else: it keeps each column's type and nullability, and makes a
     /// hidden period column visible (observed: Dropping_a_period_shows_its_hidden_columns_and_keeps_their_types), so it changes
     /// what <c>SELECT *</c> gives only of a table with a hidden column, which the pass after reading decides
@@ -238,7 +261,7 @@ internal static class WeakeningStatements
                 var period = SyntaxReader.Name(alter.SchemaObjectName);
                 into.PeriodDrops.Add(new Redefinition(period, RedefiningStatement.AlterTable, at));
                 break;
-            case AlterTableStatement alter when !OnlyTightens(alter) && !IsTemporary(alter.SchemaObjectName):
+            case AlterTableStatement alter when !OnlyTightens(alter) && !ChangesOnlyMask(alter) && !IsTemporary(alter.SchemaObjectName):
                 Change(alter.SchemaObjectName, RedefiningStatement.AlterTable);
                 break;
             case DropTableStatement drop:

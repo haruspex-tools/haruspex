@@ -1,0 +1,30 @@
+check tailor.customer unnamed at tables/customer.sql:11:67
+check tailor.customer unnamed at tables/customer.sql:12:69
+check tailor.customer unnamed at tables/customer.sql:13:74
+check tailor.customer unnamed at tables/customer.sql:17:64
+column tailor.customer.band tinyint at tables/customer.sql:11:5
+column tailor.customer.born date at tables/customer.sql:14:5
+column tailor.customer.chest_cm decimal(5,1) at tables/customer.sql:13:5
+column tailor.customer.customer_id int at tables/customer.sql:7:5
+column tailor.customer.email varchar(60) at tables/customer.sql:9:5
+column tailor.customer.is_trade bit at tables/customer.sql:17:5
+column tailor.customer.joined datetime2(0) at tables/customer.sql:15:5
+column tailor.customer.name nvarchar(40) at tables/customer.sql:8:5
+column tailor.customer.note nvarchar(max) at tables/customer.sql:18:5
+column tailor.customer.phone varchar(20) at tables/customer.sql:10:5
+column tailor.customer.size_code char(3) at tables/customer.sql:12:5
+column tailor.customer.swatch binary(4) at tables/customer.sql:16:5
+function tailor.size_of at functions/size_of.sql:2:1
+key tailor.customer unnamed (customer_id) at tables/customer.sql:7:30
+named function tailor.size_of
+parameter tailor.customer_card @customer_id at procedures/customer_card.sql:2:5
+parameter tailor.customer_json @customer_id at procedures/customer_json.sql:2:5
+parameter tailor.size_of @customer_id at functions/size_of.sql:2:33
+procedure tailor.bands at procedures/bands.sql:1:1
+procedure tailor.contacts at procedures/contacts.sql:1:1
+procedure tailor.customer_card at procedures/customer_card.sql:1:1
+procedure tailor.customer_json at procedures/customer_json.sql:1:1
+procedure tailor.customer_sizes at procedures/customer_sizes.sql:2:1
+procedure tailor.customer_summary at procedures/customer_summary.sql:1:1
+table tailor.customer at tables/customer.sql:5:1
+view tailor.contact at views/contact.sql:2:1

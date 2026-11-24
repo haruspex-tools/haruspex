@@ -148,7 +148,7 @@
       }
     },
     "session": {
-      "description": "The SET options the callers' connections set: the driver's at login, or what the application sets after. Each is true for ON or false for OFF; leave out one that isn't known, which claims only what holds whatever it is. A database's defaults apply only to a connection that sets nothing, and current drivers set these at login, so declare the driver's, not the database's.",
+      "description": "The SET options the callers' connections set: the driver's at login, or what the application sets after; and whether the callers hold UNMASK. Each is true for ON or false for OFF; leave out one that isn't known, which claims only what holds whatever it is. A database's defaults apply only to a connection that sets nothing, and current drivers set these at login, so declare the driver's, not the database's.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -166,6 +166,10 @@
         },
         "numericRoundAbort": {
           "description": "NUMERIC_ROUNDABORT. Off, a decimal rounded to fewer places is rounded silently, so precision-loss no longer makes a value nullable; on, the rounding is an error, NULL only when ansiWarnings and arithAbort are both off, and NULL under TRY_CAST.",
+          "type": "boolean"
+        },
+        "unmask": {
+          "description": "Whether the callers hold the UNMASK permission. True, a masked column gives them its values, so its CHECK constraints, fixed length and everything computed from it are claimed again; false or left out, they read its mask, so only its type, whether it may be null and its greatest length are.",
           "type": "boolean"
         }
       }

@@ -53,7 +53,8 @@ dropping the database to you.
 
 `build.sh` needs the dev container. When it isn't to hand, a package can be built the same way on the host with the .NET 10
 SDK and `DOTNET_ROLL_FORWARD=Major` (Microsoft.Build.Sql's tasks target .NET 8): `orchard/*.dacpac` and the fixtures `beads`,
-`folds`, `gallery` and `parcels` were built so on macOS on 23 Nov 2026, from the project `build.sh` writes.
+`folds`, `gallery` and `parcels` were built so on macOS on 23 Nov 2026, and `fittings` on 24 Nov 2026, from the project `build.sh`
+writes.
 
 A package's `Origin.xml` records when it was built, so a rebuild changes every file even when nothing else has. Rebuild
 only the packages a change needs, and say in the commit which and why: the IR records each package's SHA-256, so a

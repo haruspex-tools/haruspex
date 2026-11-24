@@ -380,7 +380,11 @@ and temporary tables: read plainly, the column is a string the generated code pa
 ([the configuration](docs/configuration.md#json-stored-in-a-column-columns)).
 
 The more the database declares, the more the types say: a `CHECK` constraint becomes a value set or a range, and a key a
-query filters on in full means at most one row. Overrides in `haruspex.json` are for what a database doesn't declare.
+query filters on in full means at most one row. A masked column is the exception: a caller without `UNMASK` reads its mask,
+which a `CHECK` doesn't bind, so of it, and of what is computed from it, only the type, nullability and greatest length are
+claimed, unless the config file declares that the callers hold `UNMASK`
+([the configuration](docs/configuration.md#the-callers-session-session)). Overrides in `haruspex.json` are for what a database
+doesn't declare.
 
 At run time the generated functions check both ends, so a wrong parameter or a result that no longer matches its schema
 fails loudly, with an error saying which, rather than reaching the application's code; database errors stay the driver's.
@@ -408,10 +412,6 @@ fails loudly, with an error saying which, rather than reaching the application's
 each needs a decision or a larger change before the code handles it. They aren't every bug: a rule of the analysis found
 wrong is fixed as a bug, in a change of its own, and isn't listed here.
 
-- **Masked columns.** A caller without the `UNMASK` permission receives a column `MASKED WITH` a function, and any value
-  computed from it, as the mask (with `default()`, `0` for a number and `xxxx` for a
-  string), which can break a range, a value set or a fixed
-  length haruspex claims. Masks aren't read. <!-- Known gap: remove this item when masks are read and a masked column keeps no facet the mask could break. -->
 - **Names that differ only in case.** Names are compared ignoring case. In a database with a case-sensitive collation, two
   columns of one table whose names differ only in case are taken as one: a reference to either is typed as the one declared
   first, and a `CHECK` on either is taken as that one's. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->

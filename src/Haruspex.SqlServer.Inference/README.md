@@ -204,6 +204,42 @@ option not declared is not known, and each rule then claims what holds whatever 
   for `NUMERIC_ROUNDABORT`, are passed over, since each can only make a value NULL less often; anything else stops the walk
   with an unknown (`Walker.IsHarmless`), so a declaration never holds past it.
 
+## Masked columns
+
+A column declared `MASKED WITH (FUNCTION = '…')` (`Column.Mask`) gives a caller without the `UNMASK` permission its mask in
+place of each value, and the mask of any expression whose value comes from it in place of the result. Every mask is a value of
+the type no longer than it, but not padded to a `char(n)`'s or `binary(n)`'s length and as short as the mask whatever the value,
+and NULL exactly when the value is: `default()` gives `0`, `'xxxx'` cut to the type, `0x30`, `1900-01-01` and `false`, and the
+other functions what they write (`Each_mask_is_a_value_of_its_column_s_type_no_longer_than_it_and_null_only_for_null`). So of a
+masked value inference claims only its type, its reasons to be null and its greatest length (`Value.Masked`,
+`ScalarFacets.Masked`): the type's own range and digits stay, and a CHECK's range or set, a fixed length and a minimum length
+go. A `random()` range the type can't hold is refused when the column is declared
+(`A_random_mask_draws_from_its_range_which_must_lie_in_the_column_s_type`), so the type's range holds. The masks apply unless
+the config file declares that the callers hold `UNMASK` (`SessionOptions.MasksAreLifted`) and no module runs `WITH EXECUTE AS`
+another user (`Summaries.MasksApply`, [HAR2103](../../docs/diagnostics/HAR2103.md)). The tests' reader holds no `UNMASK`, so
+the differential tests hold every fixture's IR to the masks (`tests/fixtures/fittings`).
+
+- **A column read** (`Typer.FromColumn`) is masked when its table's column is. A body's own temporary table is never masked to the
+  session that made it (`A_masked_column_of_a_temporary_table_is_not_masked_to_the_session_that_made_it`).
+- **Every expression** counts the masked values its operands gave (`MaskTally`) and is masked as a whole when any did
+  (`Typer.MaskedIfFrom`), whatever rule typed it: `rating + 1`, `CAST(code AS char(6))`, `COUNT(rating)`, and a `CASE` that may
+  give a masked value, in every branch (`An_expression_computed_from_a_masked_column_is_masked_as_a_whole`). A condition is read
+  as a proof, not typed as a value, so what it chooses is not masked
+  (`A_condition_on_a_masked_column_leaves_the_value_it_chooses_unmasked`).
+- **A set operation's column** is masked in every row when one query's is (`A_set_operation_s_column_is_masked_when_one_query_s_is`).
+- **A view, a derived table, a CTE and a procedure's caller** pass a mask on, since the value carries it
+  (`A_view_a_procedure_and_their_callers_pass_the_mask_on`).
+- **A scalar function's call** is masked when its body may read a masked column, found by name (`MaskedReaders`), since the server
+  masks its result whatever the body does with the value
+  (`A_scalar_function_that_reads_a_masked_column_returns_its_mask`).
+- **JSON computed from a masked column** is its mask, which is not JSON, so it is unknown, and a rowset's column of it claims no
+  text of JSON. A top-level `FOR JSON` that nests it is written with the mask in place, unquoted, so its text is not JSON and the
+  procedure's results can't be listed (`ResultShape.ResultsUnknown`;
+  `Json_computed_from_a_masked_column_is_its_mask_and_not_json`). A masked column's own value inside `FOR JSON` is masked as a
+  value, and the JSON keeps its shape.
+- **A value kept** in a variable or a body's table stays masked. The server computes on a kept mask as on any value
+  (`A_value_kept_in_a_variable_or_temporary_table_is_computed_on_as_any_value`), so this claims less than it could.
+
 ## The state
 
 `FlowState` is immutable, so a branch starts from the state before it and both ends can be joined. It holds:

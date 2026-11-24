@@ -51,6 +51,14 @@ public static class IrInference
         columns ??= [];
         var warnings = new List<Diagnostic>();
         var summaries = new Summaries(model, declarations, warnings, session, columns);
+
+        // UNMASK declared, but a module runs as another user, whose permissions decide what it reads: every mask is kept.
+        if (session.MasksAreLifted && summaries.RunsAsAnother is { } another)
+        {
+            warnings.Add(InferenceCodes.UnmaskNotApplied.At(
+                another.Span.Start,
+                $"The session declares that the callers hold UNMASK, but {another.Name} runs WITH EXECUTE AS another user, whose permissions decide what it and whatever it calls read, so masked columns are still read as masked everywhere."));
+        }
         var analysed = procedures
             .Distinct()
             .Select(name => model.FindProcedure(name)

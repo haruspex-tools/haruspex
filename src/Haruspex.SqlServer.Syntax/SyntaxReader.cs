@@ -159,6 +159,7 @@ public static class SyntaxReader
                 IsHidden = column.IsHidden,
                 IsSparse = column.StorageOptions?.SparseOption == SparseColumnOption.Sparse,
                 IsColumnSet = column.StorageOptions?.SparseOption == SparseColumnOption.ColumnSetForAllSparseColumns,
+                Mask = column.MaskingFunction?.Value,
             });
         }
 

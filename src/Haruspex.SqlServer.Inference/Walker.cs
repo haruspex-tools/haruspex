@@ -524,6 +524,7 @@ internal sealed partial class Walker
         }
 
         var result = typer.Result(select, Reading(state))!; // Never null: a SELECT that returns none (INTO, assignments) is read above.
+        blocker ??= result.ResultsUnknown;
         appended++;
         return state.WithResults(state.Results.Append(result, At(select)));
     }

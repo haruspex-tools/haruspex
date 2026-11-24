@@ -169,6 +169,20 @@ public class DacpacReaderTests
     }
 
     [Fact]
+    public void A_column_s_mask_and_a_module_run_as_its_owner_are_read_from_their_elements()
+    {
+        var model = WideWorldImporters.Value.Model;
+        var suppliers = model.FindTable(new ObjectName("Purchasing", "Suppliers"))!;
+
+        Assert.Equal("default()", suppliers.Column("BankAccountName")!.Mask);
+        Assert.Null(suppliers.Column("SupplierName")!.Mask);
+
+        // WideWorldImporters' own procedures run WITH EXECUTE AS OWNER, which its header keeps; a function without it runs as its caller.
+        Assert.True(model.FindProcedure(new ObjectName("Application", "Configuration_ApplyPartitioning"))!.RunsAsAnother);
+        Assert.Contains(model.Procedures, p => !p.RunsAsAnother);
+    }
+
+    [Fact]
     public void A_column_of_an_alias_type_names_it_with_its_schema_and_takes_its_not_null()
     {
         var label = Kiln(Atelier.Value).Column("label")!;

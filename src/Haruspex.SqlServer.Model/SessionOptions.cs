@@ -1,7 +1,8 @@
 namespace Haruspex.SqlServer.Model;
 
 /// <summary>
-/// The <c>SET</c> options the callers' connections are declared to set, each null when it is not known. They are the
+/// The <c>SET</c> options the callers' connections are declared to set, and whether the callers hold <c>UNMASK</c>, each null when
+/// it is not known. They are the
 /// callers', not the database's: a database's defaults apply only to a connection that sets nothing, and current drivers set
 /// these at login (<c>docs/decisions/0038-the-callers-session-is-declared.md</c>). Options fixed for a module when it is created
 /// (<c>ANSI_NULLS</c>, <c>QUOTED_IDENTIFIER</c>) are not here: they are read from its source.
@@ -15,7 +16,12 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="ArithAbort">Whether <c>ARITHABORT</c> is on.</param>
 /// <param name="ConcatNullYieldsNull">Whether <c>CONCAT_NULL_YIELDS_NULL</c> is on.</param>
 /// <param name="NumericRoundAbort">Whether <c>NUMERIC_ROUNDABORT</c> is on.</param>
-public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort = null, bool? ConcatNullYieldsNull = null, bool? NumericRoundAbort = null)
+/// <param name="Unmask">
+/// Whether the callers hold the <c>UNMASK</c> permission, so that a masked column gives them its values rather than its mask
+/// (docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md). Not an option a session sets but
+/// a permission of the user it runs as, declared beside them because, like them, it is the callers' and out of sight.
+/// </param>
+public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort = null, bool? ConcatNullYieldsNull = null, bool? NumericRoundAbort = null, bool? Unmask = null)
 {
     /// <summary>Nothing known about the callers' sessions: every rule assumes the option that claims least.</summary>
     public static SessionOptions NotKnown { get; } = new();
@@ -33,10 +39,11 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
         (ArithAbortName, ArithAbort),
         (ConcatNullYieldsNullName, ConcatNullYieldsNull),
         (NumericRoundAbortName, NumericRoundAbort),
+        (UnmaskName, Unmask),
     ];
 
     /// <summary>The names of the options, in order.</summary>
-    public static IReadOnlyList<string> Names { get; } = [AnsiWarningsName, ArithAbortName, ConcatNullYieldsNullName, NumericRoundAbortName];
+    public static IReadOnlyList<string> Names { get; } = [AnsiWarningsName, ArithAbortName, ConcatNullYieldsNullName, NumericRoundAbortName, UnmaskName];
 
     /// <summary>These options with the one named <paramref name="name"/> (one of <see cref="Names"/>) declared.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The name is not one of <see cref="Names"/>.</exception>
@@ -46,6 +53,7 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
         ArithAbortName => this with { ArithAbort = on },
         ConcatNullYieldsNullName => this with { ConcatNullYieldsNull = on },
         NumericRoundAbortName => this with { NumericRoundAbort = on },
+        UnmaskName => this with { Unmask = on },
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, "Not the name of a session option."),
     };
 
@@ -53,6 +61,7 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
     private const string ArithAbortName = "arithAbort";
     private const string ConcatNullYieldsNullName = "concatNullYieldsNull";
     private const string NumericRoundAbortName = "numericRoundAbort";
+    private const string UnmaskName = "unmask";
 
     /// <summary>
     /// Whether an overflow, a division by zero or an invalid floating point operation is an error, which fails the call,
@@ -77,4 +86,11 @@ public sealed record SessionOptions(bool? AnsiWarnings = null, bool? ArithAbort 
     /// <c>Under_try_cast_a_loss_of_precision_is_null_whenever_numeric_roundabort_is_on</c>).
     /// </summary>
     public bool RoundingMayBeNull(bool attempt) => NumericRoundAbort != false && (attempt || !OverflowIsAnError);
+
+    /// <summary>
+    /// Whether a masked column's values reach the callers, rather than its mask: only when they are declared to hold
+    /// <c>UNMASK</c>. Not known claims the mask, which a caller without the permission reads (observed in
+    /// <c>MaskingObservationTests</c>).
+    /// </summary>
+    public bool MasksAreLifted => Unmask == true;
 }

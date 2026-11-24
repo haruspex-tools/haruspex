@@ -14,10 +14,13 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 internal static class PackageReader
 {
     /// <summary>
-    /// Elements with no bearing on any shape haruspex claims, passed over without a word: security (users, roles, logins,
+    /// Elements passed over without a word, since none says anything haruspex can claim from: security (users, roles, logins,
     /// permissions, row-level security, which filters rows but never changes a column), storage (filegroups, partitions,
     /// compression), documentation (extended properties), schemas, statistics and indexes' storage, and defaults (a
-    /// column's <c>DEFAULT</c> decides what an insert writes when given nothing, not what a column can hold).
+    /// column's <c>DEFAULT</c> decides what an insert writes when given nothing, not what a column can hold). A permission can
+    /// change what a procedure returns: a caller without <c>UNMASK</c> reads a masked column's mask. But a grant of it says nothing
+    /// of the callers, whom no package names, so it is passed over too; the config file declares whether they hold it, and the
+    /// mask itself is read with its column (<see cref="TableReader.Column"/>).
     /// </summary>
     private static readonly HashSet<string> Irrelevant = new(StringComparer.Ordinal)
     {

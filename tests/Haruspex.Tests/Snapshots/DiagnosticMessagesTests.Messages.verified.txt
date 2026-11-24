@@ -118,6 +118,9 @@ db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined 
 HAR2102
 db/p1.sql:1:34: warning HAR2102: json_value(N'{"shelf": 3}', '$.room') reads `$.room`, which the JSON there never has (`$.room` is never there: the object has no key `room`), so it is always NULL under a lax path and an error under a strict one. Check the path against the JSON's shape or schema.
 
+HAR2103
+db/p1.sql:1:1: warning HAR2103: The session declares that the callers hold UNMASK, but lib.p runs WITH EXECUTE AS another user, whose permissions decide what it and whatever it calls read, so masked columns are still read as masked everywhere.
+
 HAR3001
 haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: …
 

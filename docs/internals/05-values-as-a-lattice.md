@@ -234,6 +234,7 @@ join of two values joins them fact by fact.
 | JSON built here | shapes, unions of shapes | none | unknown | key by key, item by item, or a union | `JsonShapes` |
 | How many rows | one, at most one, any | one | any | the higher in that chain | `Cardinalities` |
 | What a string's text is made of | sequences of pieces of text | none: each sequence is minimal | none known | the same pieces, or none known | `Value.Pieces` |
+| Whether it may be a masked column's mask | not masked, masked | not masked | masked | masked when either side is, each side masked first | `Value.MaskedBy` |
 | The value | all of the above, with whether it is live JSON | | | fact by fact | `Value.Join` |
 
 Building the value's join from its facts' joins is what keeps it right as facts are added. A new fact comes with its own
@@ -241,6 +242,11 @@ small lattice and laws, tested on their own, and the product needs no new argume
 semilattice. The alternative, one join that knows every fact, is how a forgotten fact gets merged by hand in one place and
 not in another. The order of `IrCardinality` is written in `Cardinalities` by rank for the same reason: an order read from
 an enum's values holds only as long as nobody reorders its members.
+
+A masked value keeps only the facets a caller without `UNMASK` can rely on (`Value.Masked`; the inference reference's "Masked
+columns"), and which those are depends on each facet's source, which is a witness (below). So `Value.Join` masks each side
+before it joins them, not the join after: of two equal bounds the join keeps the left one's source, and masking afterwards
+would keep the bound in one order and drop it in the other.
 
 Two facts can't be joined apart, and are one fact here: a shape and whether it is live JSON. The same object shape means a
 JSON object when it is live and a string holding one when it is not, so `Value.Join` joins the pair. A shape that can't be
@@ -286,6 +292,7 @@ Some of what a description holds is not knowledge but a **witness** to it: somet
   source. Either justifies the fact for both sides, since both sides' values meet the same bound.
 - **The order of a value set's items and of a union's variants**, the left side's first.
 - **Why a string's JSON is not known** (`Value.JsonWhy`), which only names the reason a later `json_query` reports.
+- **Which masked column a mask comes from** (`Value.MaskedBy`), which only names it in a reason.
 
 Witnesses make the join commutative only *up to* them: `a ⊔ b` and `b ⊔ a` list the same reasons in another order, or
 name another unknown. So each fact defines, beside its join, when two of its elements **say the same** (`NullReasons.Same`,

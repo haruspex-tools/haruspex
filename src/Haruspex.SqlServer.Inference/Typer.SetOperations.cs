@@ -177,7 +177,18 @@ internal sealed partial class Typer
     /// or of a VALUES list, from that column of every row, as a UNION ALL of its rows (<see cref="UnionAll"/>).
     /// </summary>
     /// <param name="column">How a reason it gives names the column.</param>
+    /// <remarks>
+    /// A column one query masks is masked in every row, whichever query gave it: <c>SELECT rating … UNION ALL SELECT 42</c> gives
+    /// <c>0</c> for the 42 too (observed: <c>A_set_operation_s_column_is_masked_when_one_query_s_is</c>).
+    /// </remarks>
     private Value SetColumn(List<RowColumn> columns, SetNode node, SourceLocation at, string column = "This set operation's column")
+    {
+        var value = SetColumnUnmasked(columns, node, at, column);
+        return columns.Select(c => c.Value.MaskedBy).FirstOrDefault(by => by is not null) is { } masked ? value.Masked(masked, at) : value;
+    }
+
+    /// <summary>One column of a set operation, as <see cref="SetColumn"/> gives it before any mask.</summary>
+    private Value SetColumnUnmasked(List<RowColumn> columns, SetNode node, SourceLocation at, string column)
     {
         static bool IsNull(RowColumn c) => c.Expression is { } e && Strip(e) is NullLiteral;
         var given = columns.Where(c => !IsNull(c)).ToList();

@@ -72,6 +72,9 @@ internal sealed class SchemaDeclarations
     /// <summary>Every <c>ALTER TABLE … NOCHECK CONSTRAINT</c> and <c>… WITH CHECK CHECK CONSTRAINT</c>, wherever it is, in the order read.</summary>
     public List<Enforcement> Enforcement { get; } = [];
 
+    /// <summary>Every <c>ALTER TABLE … ALTER COLUMN … ADD MASKED</c> and <c>… DROP MASKED</c>, wherever it is, in the order read.</summary>
+    public List<MaskChange> MaskChanges { get; } = [];
+
     /// <summary>Every <c>ALTER INDEX … DISABLE</c>, <c>ALTER TABLE … DROP CONSTRAINT</c> and <c>DROP INDEX</c>, wherever it is.</summary>
     public List<KeyDisable> KeyDisables { get; } = [];
 
@@ -212,7 +215,7 @@ internal sealed class SchemaDeclarations
     {
         var deployed = DefinitionsInEffect.Deployed(Deployed, UnreadDeployments);
         return new(
-            [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(t, AddedKeys), Enforcement, KeyDisables))],
+            [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(MaskChange.Applied(t, MaskChanges), AddedKeys), Enforcement, KeyDisables))],
             UserTypes.Values,
             DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }, alterAloneStands: true)
                 .Select(p => p.Redefinition is null && deployed(p.Name) is { } why ? p with { Redefinition = why } : p),

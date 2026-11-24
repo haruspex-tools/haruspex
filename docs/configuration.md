@@ -704,15 +704,17 @@ Whether some values can be null depends on `SET` options of the session that cal
 with `ANSI_WARNINGS` and `ARITHABORT` both off, an overflow, a division by zero or a `COUNT` past `int` is NULL; with either
 on, it is an error that fails the call. With `NUMERIC_ROUNDABORT` on, a decimal rounded to fewer places is NULL in the same
 session, and an error in any other. The caller is out of sight, so by default haruspex assumes nothing, and each such value
-is nullable (`arithmetic-overflow`, `count-overflow`, `domain-error`, `precision-loss` in the IR). Declare what your callers
-set and those reasons go:
+is nullable (`arithmetic-overflow`, `count-overflow`, `domain-error`, `precision-loss` in the IR). Whether a masked column
+gives its values or its mask depends on the session too, on whether its user holds `UNMASK`. Declare what your callers set and
+hold, and haruspex claims what they allow:
 
 ```jsonc
 "session": {
   "ansiWarnings": true,             // ANSI_WARNINGS
   "arithAbort": false,              // ARITHABORT
   "concatNullYieldsNull": true,     // CONCAT_NULL_YIELDS_NULL
-  "numericRoundAbort": false        // NUMERIC_ROUNDABORT
+  "numericRoundAbort": false,       // NUMERIC_ROUNDABORT
+  "unmask": true                    // the callers hold the UNMASK permission
 }
 ```
 
@@ -724,11 +726,23 @@ set and those reasons go:
   nullable. `true` changes nothing: that is what haruspex assumes when it isn't known.
 - **`concatNullYieldsNull`** `false`: string `+` with one side NULL gives the other side, so it is null only when both sides
   may be. `true` changes nothing: that is what haruspex assumes when it isn't known.
+- **`unmask`** `true`: the callers hold the `UNMASK` permission, so a masked column (`MASKED WITH (FUNCTION = …)`) gives them
+  its values. By default haruspex assumes they don't: a caller without it reads the column's mask (`0`, `'xxxx'`, `1900-01-01`,
+  what `email()`, `partial()`, `random()` or `datetime()` writes) in place of each value, and the mask of anything computed from
+  one in place of the result. So of a masked column, and of every value computed from one, haruspex claims only the type,
+  whether it may be null and the greatest length: not a CHECK's range or set of values, not a `char`'s, `nchar`'s or `binary`'s
+  fixed length, and not a minimum length. JSON computed from a masked column is its mask, which is not JSON, so its shape is
+  unknown, and a `FOR JSON` that nests it leaves the procedure's results unknown. With `unmask` `true` every claim comes back,
+  unless a procedure, function or trigger of the project runs `WITH EXECUTE AS` another user, whose permissions then decide what
+  it reads: haruspex keeps every mask and says so ([HAR2103](diagnostics/HAR2103.md)). `false` changes nothing. A user holds
+  `UNMASK` when it is granted to them or a role of theirs, and `db_owner` does; it can also be granted on a schema, a table or a
+  column alone, which this setting can't say yet, so declare it only when the callers hold it on every masked column they read
+  ([decision 0118](decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md)).
 - **An option left out is not known**, and haruspex claims only what holds whatever it is. With no `session` block every
   value a caller's options could make NULL is nullable, a loss of precision included since IR 0.18, which made such values
   nullable that earlier versions claimed never null.
 
-Declare what the **callers' connections** set, not the database's defaults: those apply only to a connection that sets
+Declare what the **callers' connections** set, and what their users hold, not the database's defaults: those apply only to a connection that sets
 nothing, and current drivers set these options at login. tedious (the `mssql` package's driver) sets the first three on and
 `NUMERIC_ROUNDABORT` off; Microsoft.Data.SqlClient sets `ANSI_WARNINGS` and `CONCAT_NULL_YIELDS_NULL` on and `ARITHABORT` and
 `NUMERIC_ROUNDABORT` off; the ODBC and OLE DB drivers set `ANSI_WARNINGS` on. [Decision 0038](decisions/0038-the-callers-session-is-declared.md) lists the sources, and

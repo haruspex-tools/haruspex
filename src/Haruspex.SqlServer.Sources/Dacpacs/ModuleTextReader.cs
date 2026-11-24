@@ -106,17 +106,21 @@ internal static class ModuleTextReader
             return null;
 
         Collections.EquatableArray<Parameter> parameters = [.. ModelXml.Elements(element, ModelXml.Parameters).Select(p => Parameter(p, span, diagnostics))];
+
+        // EXECUTE AS anyone but the caller: IsCaller false, as a package writes it for OWNER (observed in WideWorldImporters).
+        var another = ModelXml.Property(element, ModelXml.IsCaller) == "False";
         return type switch
         {
-            ModelXml.SqlProcedure => new Procedure(name, span, parameters, body) { AnsiNullsOff = ansiNullsOff },
+            ModelXml.SqlProcedure => new Procedure(name, span, parameters, body) { AnsiNullsOff = ansiNullsOff, RunsAsAnother = another },
             ModelXml.SqlScalarFunction => new ScalarFunction(name, span, parameters, TypeSpecifier.Of(element, ModelXml.Type), body)
             {
                 AnsiNullsOff = ansiNullsOff,
                 ReturnsNullOnNullInput = ModelXml.IsTrue(element, ModelXml.DoReturnNullForNullInput),
+                RunsAsAnother = another,
             },
             ModelXml.SqlInlineTableValuedFunction or ModelXml.SqlMultiStatementTableValuedFunction =>
-                new TableFunction(name, span, parameters, ReturnTable(element, name, span, inline: type == ModelXml.SqlInlineTableValuedFunction, diagnostics), body) { AnsiNullsOff = ansiNullsOff },
-            ModelXml.SqlDmlTrigger => Trigger(element, name, span, body),
+                new TableFunction(name, span, parameters, ReturnTable(element, name, span, inline: type == ModelXml.SqlInlineTableValuedFunction, diagnostics), body) { AnsiNullsOff = ansiNullsOff, RunsAsAnother = another },
+            ModelXml.SqlDmlTrigger => Trigger(element, name, span, body) is { } trigger ? trigger with { RunsAsAnother = another } : null,
             _ => null,
         };
     }

@@ -20,6 +20,12 @@ public static class InferenceCodes
     /// </summary>
     public static DiagnosticCode PathFindsNothing { get; } = new(2102, DiagnosticSeverity.Warning, "A JSON path that never finds a value");
 
+    /// <summary>
+    /// The callers are declared to hold <c>UNMASK</c>, but a module runs as another user (<c>EXECUTE AS</c>), whose permissions decide
+    /// what it reads, so masked columns are still read as masked.
+    /// </summary>
+    public static DiagnosticCode UnmaskNotApplied { get; } = new(2103, DiagnosticSeverity.Warning, "The callers' UNMASK isn't applied");
+
     /// <summary>An unknown for <see cref="IrUnknownReason.UnsupportedStatement"/>.</summary>
     public static DiagnosticCode UnsupportedStatement { get; } = Unknown(2001, "A statement that isn't modelled yet");
 

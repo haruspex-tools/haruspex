@@ -1,0 +1,78 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/bands.sql": "da9d29749ebd1dd43822315299a3b682159d228105ddae59ee8d720a5d26d805",
+      "tables/customer.sql": "cc7deb1bfe59c531538a0edca02120f57051cdedf1eb8a9ad2c1eda71486a2f3"
+    }
+  },
+  "objects": [
+    {
+      "id": "tailor.bands",
+      "name": "Bands",
+      "kind": "procedure",
+      "at": "procedures/bands.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "BandsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "BandsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "tailor.bands",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "band",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.band",
+              "sql": "tinyint",
+              "at": "tables/customer.sql:11:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

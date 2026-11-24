@@ -1,0 +1,376 @@
+{
+  "irVersion": "0.27",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/customer_card.sql": "1c5e7fcf369b50468ad6a781730cce914e274ccdfa0f923f9a9df65e0ae3f1e2",
+      "tables/customer.sql": "cc7deb1bfe59c531538a0edca02120f57051cdedf1eb8a9ad2c1eda71486a2f3"
+    }
+  },
+  "objects": [
+    {
+      "id": "tailor.customer_card",
+      "name": "CustomerCard",
+      "kind": "procedure",
+      "at": "procedures/customer_card.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerCardRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CustomerCardRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "tailor.customer_card",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/customer.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.email",
+              "sql": "varchar(60)",
+              "at": "tables/customer.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "phone",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "tailor.customer.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "tailor.customer.phone",
+              "sql": "varchar(20)",
+              "at": "tables/customer.sql:10:5"
+            }
+          ]
+        },
+        {
+          "name": "band",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.band",
+              "sql": "tinyint",
+              "at": "tables/customer.sql:11:5"
+            }
+          ]
+        },
+        {
+          "name": "size_code",
+          "type": {
+            "kind": "string",
+            "sql": "char(3)",
+            "maxLength": {
+              "value": 3,
+              "unit": "bytes",
+              "from": {
+                "type": "char(3)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.size_code",
+              "sql": "char(3)",
+              "at": "tables/customer.sql:12:5"
+            }
+          ]
+        },
+        {
+          "name": "chest_cm",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,1)",
+            "digits": {
+              "precision": 5,
+              "scale": 1,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            },
+            "min": {
+              "value": -9999.9,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            },
+            "max": {
+              "value": 9999.9,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.chest_cm",
+              "sql": "decimal(5,1)",
+              "at": "tables/customer.sql:13:5"
+            }
+          ]
+        },
+        {
+          "name": "born",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "tailor.customer.born"
+            }
+          ],
+          "from": [
+            {
+              "column": "tailor.customer.born",
+              "sql": "date",
+              "at": "tables/customer.sql:14:5"
+            }
+          ]
+        },
+        {
+          "name": "joined",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.joined",
+              "sql": "datetime2(0)",
+              "at": "tables/customer.sql:15:5"
+            }
+          ]
+        },
+        {
+          "name": "swatch",
+          "type": {
+            "kind": "bytes",
+            "sql": "binary(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "bytes",
+              "from": {
+                "type": "binary(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "tailor.customer.swatch"
+            }
+          ],
+          "from": [
+            {
+              "column": "tailor.customer.swatch",
+              "sql": "binary(4)",
+              "at": "tables/customer.sql:16:5"
+            }
+          ]
+        },
+        {
+          "name": "is_trade",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.is_trade",
+              "sql": "bit",
+              "at": "tables/customer.sql:17:5"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "tailor.customer.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "tailor.customer.note",
+              "sql": "nvarchar(max)",
+              "at": "tables/customer.sql:18:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

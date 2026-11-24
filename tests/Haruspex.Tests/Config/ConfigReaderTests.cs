@@ -282,7 +282,7 @@ public class ConfigReaderTests
         { """{ "session": [] }""", "haruspex.json:1:14: error HAR3005: session: must be an object." },
         { """{ "session": { "ansiWarnings": "on" } }""", "haruspex.json:1:32: error HAR3005: session.ansiWarnings: must be true or false; leave the option out when it is not known." },
         { """{ "session": { "arithAbort": null } }""", "haruspex.json:1:30: error HAR3005: session.arithAbort: must be true or false; leave the option out when it is not known." },
-        { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull, numericRoundAbort." },
+        { """{ "session": { "language": "us_english" } }""", "haruspex.json:1:16: error HAR3004: session.language: unknown setting \"language\". The settings here are ansiWarnings, arithAbort, concatNullYieldsNull, numericRoundAbort, unmask." },
 
         // The split into modules.
         { """{ "split": "table" }""", "haruspex.json:1:12: error HAR3005: split: must be \"schema\", for a module per schema, or an object naming each module and the schemas it holds, such as { \"sales\": [\"sales\", \"shop\"] }." },

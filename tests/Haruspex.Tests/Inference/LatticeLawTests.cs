@@ -191,7 +191,7 @@ public class LatticeLawTests
             var changed = value with { NullableBecause = reasons };
 
             Assert.Equal(IntDigits.Unknown, changed.Digits);
-            Assert.Equal(new Value(value.Shape, reasons, value.IsLiveJson, value.JsonWhy) { Digits = IntDigits.Unknown }, changed);
+            Assert.Equal(new Value(value.Shape, reasons, value.IsLiveJson, value.JsonWhy) { Digits = IntDigits.Unknown, MaskedBy = value.MaskedBy }, changed);
             Assert.Equal(value.Digits, (value with { Digits = value.Digits }).Digits);
             Assert.Equal(value.Digits, value.WithNullableBecause(reasons).Digits);
             Assert.Equal(IntDigits.Unknown, new Value(value.Shape, value.NullableBecause).Digits);
@@ -426,7 +426,7 @@ public class LatticeLawTests
     private static string Show(object? element) => element switch
     {
         null => "none",
-        Value v => $"{(v.IsLiveJson ? "live " : "")}{Show(v.Shape)} null[{Show(v.NullableBecause)}] digits {v.Digits.Least}-{v.Digits.Most}{(v.JsonWhy is null ? "" : " why " + v.JsonWhy.Detail)}",
+        Value v => $"{(v.IsLiveJson ? "live " : "")}{Show(v.Shape)} null[{Show(v.NullableBecause)}] digits {v.Digits.Least}-{v.Digits.Most}{(v.JsonWhy is null ? "" : " why " + v.JsonWhy.Detail)}{(v.IsMasked ? " masked" : "")}",
         EquatableArray<IrNullReason> reasons => string.Join(",", reasons.Select(r => $"{r.Rule}@{r.At}")),
         ScalarShape s => $"{s.Type.Sql}{(s.Type.Facets is null ? "" : "{" + Show(new Box<IrFacets>(s.Type.Facets)) + "}")}",
         Box<IrFacets> { Of: var f } => f is null ? "no facets"

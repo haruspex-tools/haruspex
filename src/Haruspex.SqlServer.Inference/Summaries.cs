@@ -31,6 +31,28 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// </summary>
     public SessionOptions Session { get; } = session;
 
+    /// <summary>
+    /// A module that runs as another user than its caller (<see cref="Module.RunsAsAnother"/>), of this database or another the
+    /// source holds; null when none does. Its body, and whatever it calls, reads with that user's permissions, so the callers'
+    /// <c>UNMASK</c> doesn't decide what it reads.
+    /// </summary>
+    public Module? RunsAsAnother { get; } = model.Procedures.Cast<Module>().Concat(model.Functions).Concat(model.Triggers)
+        .Concat(model.Databases.Values.SelectMany(d => d.Procedures.Cast<Module>().Concat(d.Functions).Concat(d.Triggers)))
+        .FirstOrDefault(m => m.RunsAsAnother);
+
+    /// <summary>
+    /// Whether a masked column gives a caller its mask (<see cref="Value.Masked"/>): unless the callers are declared to hold
+    /// <c>UNMASK</c> (<see cref="SessionOptions.MasksAreLifted"/>) and no module runs as another user, whose permissions would
+    /// decide instead (<see cref="RunsAsAnother"/>). Which module a walk reaches is not followed, so one anywhere keeps every mask,
+    /// which only claims less (docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md).
+    /// </summary>
+    public bool MasksApply => !Session.MasksAreLifted || RunsAsAnother is not null;
+
+    private readonly MaskedReaders maskedReaders = new(model);
+
+    /// <summary>A masked column the scalar function <paramref name="function"/> may read (<see cref="MaskedReaders"/>); null when none.</summary>
+    public string? ReadsMasked(Function function) => maskedReaders.Of(function);
+
     private readonly FunctionSummaries functions = new(model, uncommitted: false);
     private readonly FunctionSummaries uncommittedFunctions = new(model, uncommitted: true);
     private readonly ViewSummaries views = new(model);

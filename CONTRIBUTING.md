@@ -243,6 +243,7 @@ split into parts along the constructs it covers. The families today:
 | JSON declared for a column | `DeclaredColumnTests` | `DeclaredColumnObservationTests` | `tests/fixtures/parcels` | "JSON declared for a column", [decision 0093](docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
+| Masked columns | `MaskingTests` | `MaskingObservationTests` | `tests/fixtures/fittings` | "Masked columns", [decision 0118](docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md) |
 | Precision lost | `PrecisionLossTests` | `PrecisionLossObservationTests`, `PrecisionLossGridTests` | `tests/fixtures/assays` | "Precision lost" |
 | Binary values | `BinaryTests` | `BinaryObservationTests` | `tests/fixtures/gallery` | "Binary values", [decision 0081](docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md) |
 | Canonical value sets | `CanonicalValueSetTests` | `CanonicalValueSetObservationTests`, `CollationFoldGridTests` | `tests/fixtures/tannery` | [decision 0043](docs/decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md) |

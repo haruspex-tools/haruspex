@@ -1,0 +1,130 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/contacts.sql": "44e2d4732b219e44fecdc54d81880a4b9c3cb746d7bf4af1dd5b75f913dd8336",
+      "tables/customer.sql": "cc7deb1bfe59c531538a0edca02120f57051cdedf1eb8a9ad2c1eda71486a2f3"
+    }
+  },
+  "objects": [
+    {
+      "id": "tailor.contacts",
+      "name": "Contacts",
+      "kind": "procedure",
+      "at": "procedures/contacts.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ContactsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ContactsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "tailor.contacts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.customer_id",
+              "sql": "int",
+              "at": "tables/customer.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "tailor.customer.email",
+              "sql": "varchar(60)",
+              "at": "tables/customer.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "phone",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "tailor.customer.phone"
+            }
+          ],
+          "from": [
+            {
+              "column": "tailor.customer.phone",
+              "sql": "varchar(20)",
+              "at": "tables/customer.sql:10:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

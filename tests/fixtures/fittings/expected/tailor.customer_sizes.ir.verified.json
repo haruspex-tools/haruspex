@@ -1,0 +1,32 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/customer_sizes.sql": "81ae4db7a5d15e36665f2a5ce170f3001228e5353a745ddd56df76bf3c9b6dca"
+    }
+  },
+  "objects": [
+    {
+      "id": "tailor.customer_sizes",
+      "name": "CustomerSizes",
+      "kind": "procedure",
+      "at": "procedures/customer_sizes.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": null
+    }
+  ],
+  "types": {},
+  "unknowns": [
+    {
+      "object": "tailor.customer_sizes",
+      "path": "results",
+      "reason": "json-shape-unknown",
+      "detail": "This FOR JSON nests JSON computed from the masked column tailor.customer.size_code, which SQL Server writes as its mask without quotes for a caller without UNMASK, so its text is not JSON and the procedure's result sets cannot be listed. Declare \"unmask\": true in the config file's session if the callers hold UNMASK.",
+      "at": "procedures/customer_sizes.sql:4:1"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

@@ -28,6 +28,7 @@ public class TyperAndWalkerTests
         [typeof(Summaries)] = "Memo tables of summaries, each answer a function of the object and the way it is read; recursion is settled inside a question, never across two.",
         [typeof(DatabaseModel)] = "The schema, built before inference and only read during it.",
         [typeof(ParameterUses)] = "Where a query file's first walk keeps what its parameters' uses say: the typer only adds to it and never reads it, so no read depends on what it holds.",
+        [typeof(MaskTally)] = "Counts the masked values expressions give; an expression compares the count before its operands are typed with the count after, and reads the last column only when its own operands moved it, so no read depends on an earlier one.",
         [typeof(FunctionTyping)] = "A row of the static function table, whose rule is a delegate; each is made once, by a factory that returns it, from a lambda that captures only values that can't change (The_function_tables_rules_capture_only_values_that_cannot_change), and is handed the typer and the scope.",
     };
 

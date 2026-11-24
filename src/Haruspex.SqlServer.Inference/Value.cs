@@ -3,6 +3,7 @@ using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Inference.Typing;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -37,7 +38,7 @@ namespace Haruspex.SqlServer.Inference;
 /// new has them too unless its rule states them. A rule that forgets claims less, never something false. <see cref="Pieces"/>
 /// are dropped the same way, since an operation that changes a string's text must not keep them. The other facts
 /// are kept by <c>with</c>: the shape, the reasons and whether it is live JSON are what <c>with</c> is used to change, and
-/// the JSON's why is a witness.
+/// the JSON's why is a witness. So is <see cref="MaskedBy"/>, which no rule may drop.
 /// </para>
 /// </remarks>
 internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableBecause, bool IsLiveJson = false, UnknownShape? JsonWhy = null)
@@ -49,6 +50,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         NullableBecause = original.NullableBecause;
         IsLiveJson = original.IsLiveJson;
         JsonWhy = original.JsonWhy;
+        MaskedBy = original.MaskedBy;
         Digits = IntDigits.Unknown;
         Pieces = null;
     }
@@ -71,6 +73,54 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// states them passes them on.
     /// </summary>
     public EquatableArray<TextPiece>? Pieces { get; init; }
+
+    /// <summary>
+    /// For a value read from a masked column, or computed from one, the column (<c>sales.customer.email</c>): a caller without
+    /// <c>UNMASK</c> receives the mask in its place, so it claims no more than <see cref="Masked"/> leaves. Null for any other
+    /// value. A fact of its own, joined as either side's: a value of either a masked or an unmasked column may be the mask. Kept by
+    /// <c>with</c>, so that a rule that forgets it can't drop it; <see cref="Typer.Expression"/> also masks whatever an expression
+    /// computes from a masked value, whatever rule computed it.
+    /// </summary>
+    public string? MaskedBy { get; init; }
+
+    /// <summary>Whether it is masked (<see cref="MaskedBy"/>).</summary>
+    public bool IsMasked => MaskedBy is not null;
+
+    /// <summary>
+    /// This value as a caller without <c>UNMASK</c> receives it, when it is read from the masked column <paramref name="by"/> or
+    /// computed from one: of the same type, null exactly when the value is (a mask keeps NULL and never makes one), and with only
+    /// the facets a mask keeps (<see cref="ScalarFacets.Masked"/>). A string holding JSON becomes a string of its type, since the
+    /// mask is no JSON; so does live JSON, unknown, since the server writes the mask in its place without quotes, which is not JSON
+    /// (observed: <c>Json_computed_from_a_masked_column_is_its_mask_and_not_json</c>); unknown JSON stays the unknown it is. Masking
+    /// a masked value changes nothing.
+    /// </summary>
+    /// <param name="by">The masked column.</param>
+    /// <param name="at">Where the value is read, for an unknown's location.</param>
+    public Value Masked(string by, SourceLocation at)
+    {
+        if (IsLiveJson)
+        {
+            return Shape is UnknownShape
+                ? this with { MaskedBy = MaskedBy ?? by, Digits = Digits }
+                : new Value(
+                    new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"This JSON is computed from the masked column {by}, so a caller without UNMASK receives its mask in its place, which is not JSON.", at),
+                    NullableBecause,
+                    IsLiveJson: true)
+                {
+                    MaskedBy = by,
+                    Digits = Digits,
+                };
+        }
+
+        var shape = Shape switch
+        {
+            ScalarShape scalar => scalar.WithFacets(MaskedFacets(scalar, at)),
+            JsonTextShape { Text: { } text } => text.WithFacets(MaskedFacets(text, at)),
+            JsonTextShape => SqlTypes.ToConvertedShape(new ScalarType(BuiltInType.NVarChar, -1), at),
+            _ => Shape,
+        };
+        return this with { Shape = shape, JsonWhy = null, MaskedBy = MaskedBy ?? by, Digits = Digits };
+    }
 
     /// <summary>
     /// The same value with other reasons it may be null: a filter proving it non-null, an outer join or a rollup adding a reason.
@@ -110,6 +160,21 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// <param name="at">Where the two meet, for an unknown.</param>
     /// <param name="what">What holds the two, for an unknown's detail.</param>
     public static Value Join(Value a, Value b, SourceLocation at, string what)
+    {
+        // Each side is masked before the join, not the join after it: the join keeps the left side's source for a fact both have,
+        // and what a mask keeps depends on the source, so masking after it would depend on the order of the sides.
+        if ((a.MaskedBy ?? b.MaskedBy) is not { } by)
+            return JoinUnmasked(a, b, at, what);
+        var joined = JoinUnmasked(a.Masked(by, at), b.Masked(by, at), at, what);
+        return joined with { MaskedBy = by, Digits = joined.Digits, Pieces = joined.Pieces };
+    }
+
+    /// <summary>The facets a mask of <paramref name="scalar"/> keeps: its type's (<see cref="ScalarFacets.Masked"/>).</summary>
+    private static IrFacets? MaskedFacets(ScalarShape scalar, SourceLocation at) =>
+        ScalarFacets.Masked(scalar.Type.Facets, scalar.BuiltIn is { } type && SqlTypes.ToConvertedShape(type, at) is ScalarShape own ? own.Type.Facets : null);
+
+    /// <summary>The join of every fact but <see cref="MaskedBy"/>, which <see cref="Join"/> applies to it.</summary>
+    private static Value JoinUnmasked(Value a, Value b, SourceLocation at, string what)
     {
         var because = NullReasons.Join(a.NullableBecause, b.NullableBecause);
         var (shape, live, notJson) = JoinShapes(a, b, at, what);
@@ -203,6 +268,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
         NullReasons.Same(Explained(a), Explained(b))
         && a.Digits == b.Digits
         && a.IsLiveJson == b.IsLiveJson
+        && a.IsMasked == b.IsMasked
         && (a.JsonWhy is null) == (b.JsonWhy is null)
         && a.Pieces == b.Pieces
         && JsonShapes.Same(a.Shape, b.Shape);
@@ -218,8 +284,12 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     /// </summary>
     public static bool Below(Value a, Value b)
     {
-        if (!NullReasons.Below(Explained(a), Explained(b)) || !IntDigits.Below(a.Digits, b.Digits) || (b.Pieces is not null && a.Pieces != b.Pieces))
+        if (!NullReasons.Below(Explained(a), Explained(b)) || !IntDigits.Below(a.Digits, b.Digits) || (b.Pieces is not null && a.Pieces != b.Pieces)
+            || (a.IsMasked && !b.IsMasked))
+        {
             return false;
+        }
+
         if (b.Shape is UnknownShape)
             return true;
         if (a.IsLiveJson != b.IsLiveJson)
