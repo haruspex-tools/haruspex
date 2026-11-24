@@ -30,7 +30,7 @@
     <Authors>Richard Baker</Authors>
     <Copyright>Copyright 2026 Richard Baker</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/sharpblue/haruspex</RepositoryUrl>
+    <RepositoryUrl>https://github.com/haruspex-tools/haruspex</RepositoryUrl>
 
     <!-- Lock files are committed, so a restore cannot silently pick up a different package. CI restores
          in locked mode, which fails if a lock file is out of date or a package's content hash differs from the one locked.

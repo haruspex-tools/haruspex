@@ -22,4 +22,4 @@ The JSON Schema of `haruspex.json` is in this package, so an editor can check th
 ```
 
 It is pre-release: its commands, options and output will change. The documentation is in
-[the repository](https://github.com/sharpblue/haruspex#readme).
+[the repository](https://github.com/haruspex-tools/haruspex#readme).

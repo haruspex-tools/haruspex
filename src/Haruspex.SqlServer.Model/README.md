@@ -2,7 +2,7 @@
 
 A SQL Server database's schema as plain .NET data, for tools that need to read a schema without a database and without
 DacFx: linters, diff tools, documentation generators, code generators.
-[Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
+[Haruspex.SqlServer.Sources](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
 fills it from a folder of `.sql` scripts or from a DACPAC.
 
 It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys and
@@ -32,7 +32,7 @@ flowchart LR
     model -.->|changed after its definition| redefinition["Redefinition"]
 ```
 
-[Haruspex.SqlServer.Syntax](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Syntax/README.md)
+[Haruspex.SqlServer.Syntax](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Syntax/README.md)
 reads a table definition as written (`SyntaxReader.Table`), and a body's own tables (`CREATE TABLE #t`,
 `DECLARE @t TABLE`, a function's return table) the same way (`SyntaxReader.Declared`), and a table type's definition too
 (`SyntaxReader.TableType`); a table-valued parameter or a variable of a table type is the type's columns under the body's name
@@ -52,7 +52,7 @@ foreach (var table in model.Tables)
 - **One of several is a closed set of kinds.** A function is a `ScalarFunction`, an `InlineFunction` or a `TableFunction`, a
   body a `SqlBody`, a `ClrBody`, a `NoBody` or an `EncryptedBody` (text the source doesn't hold), a user type an `AliasType`, a `ClrType` or a `TableType`: a reader matches on the kind and gets
   exactly its fields, and no other assembly can add one
-  ([decision 0031](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md)).
+  ([decision 0031](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0031-the-model-is-closed-hierarchies-of-records.md)).
 - **ScriptDom only in code.** ScriptDom's types appear only as bodies and expressions; names, types, parameters and options
   are the model's own values.
 - **One order.** Every collection of schema objects is in source order: by file, in ordinal order of the relative paths,
@@ -82,8 +82,8 @@ foreach (var table in model.Tables)
 - **No interpretation.** Whether a column can be null follows from its declaration, its key, its identity and its alias
   type together; what a CHECK constraint says about values (a set, a range) is a reading of its expression; what a
   reference in a body points to depends on scopes and the caller's default schema. Those are
-  [Haruspex.SqlServer.Semantics](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Semantics/README.md)'s
+  [Haruspex.SqlServer.Semantics](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Semantics/README.md)'s
   questions, not the model's.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
-[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

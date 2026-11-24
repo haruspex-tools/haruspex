@@ -756,7 +756,7 @@ is ever null. A
 
 A string literal holding a SQLCMD variable, `'$(Region)'`, is unknown with the reason `sqlcmd-variable`: a deployment puts the
 variable's value in its place as text before the server parses it, so the value may be empty, of any length, or not a string at all
-([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
+([decision 0046](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
 `Typer.LiteralOf`, through which every rule that reads a literal's text finds it (a value set from a CASE, a UNION or VALUES, a JSON
 document, a conversion that fits, a number's digits), doesn't return one, and the few that read a literal directly check for one:
 `json_object`'s keys, `JSON_VALUE`'s refusal of a document that isn't JSON, a VALUES column of literals, and a key compared with a

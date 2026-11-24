@@ -448,7 +448,7 @@ It is a command-line tool, not yet published as a package. Build it from source,
 [.NET 10 SDK](https://dotnet.microsoft.com/download):
 
 ```sh
-git clone https://github.com/sharpblue/haruspex.git
+git clone https://github.com/haruspex-tools/haruspex.git
 cd haruspex
 dotnet build
 ```
@@ -466,11 +466,11 @@ day, under a name of its own: `unreviewed-pr-haruspex-npm` for a pull request, b
 with the `gh` CLI:
 
 ```sh
-gh run list --repo sharpblue/haruspex --workflow CI --branch main --event workflow_dispatch --status success --limit 1
+gh run list --repo haruspex-tools/haruspex --workflow CI --branch main --event workflow_dispatch --status success --limit 1
 ```
 
 ```sh
-gh run download <run id> --repo sharpblue/haruspex --name haruspex-npm --dir haruspex-preview
+gh run download <run id> --repo haruspex-tools/haruspex --name haruspex-npm --dir haruspex-preview
 ```
 
 To try it on one machine, install the command and the binary for that machine:

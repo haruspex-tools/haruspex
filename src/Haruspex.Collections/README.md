@@ -3,11 +3,11 @@
 Immutable collections that compare by value: `EquatableArray<T>`, a sequence equal to another with equal items in the same
 order, and `EquatableMap<TKey, TValue>`, a map equal to another with the same keys holding equal values, in any order. A record's generated equality compares each field with that field's own equality, and for .NET's collections that is
 the reference, so a record holding a list is equal only to itself. Holding these instead, a record compares by value, as
-[decision 0022](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0022-values-compare-by-structure.md) requires of
-every record of haruspex; the guide's chapter [Values as a lattice](https://github.com/sharpblue/haruspex/blob/main/docs/internals/05-values-as-a-lattice.md)
+[decision 0022](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0022-values-compare-by-structure.md) requires of
+every record of haruspex; the guide's chapter [Values as a lattice](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/05-values-as-a-lattice.md)
 says why comparing them any other way was a trap. They are a package of their own because every layer holds them, the reusable
-[Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md) among them
-([decision 0034](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0034-collections-that-compare-by-value-are-a-layer-of-their-own.md)).
+[Haruspex.SqlServer.Model](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md) among them
+([decision 0034](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0034-collections-that-compare-by-value-are-a-layer-of-their-own.md)).
 
 ## How data flows through it
 

@@ -140,7 +140,7 @@ public partial class CodeReferenceTests
     public void A_link_into_this_repository_on_github_is_checked_on_disk() =>
         Assert.Equal(
             [(1, "src/Haruspex.Ir/README.md"), (2, "docs")],
-            RepositoryLinks("[IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md#paths)\n[docs](https://github.com/sharpblue/haruspex/tree/main/docs)\n"));
+            RepositoryLinks("[IR](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Ir/README.md#paths)\n[docs](https://github.com/haruspex-tools/haruspex/tree/main/docs)\n"));
 
     /// <summary>
     /// Links into this repository on GitHub, as the packable projects' READMEs write them (a package's readme is read on
@@ -156,7 +156,7 @@ public partial class CodeReferenceTests
         }
     }
 
-    [GeneratedRegex(@"https://github\.com/sharpblue/haruspex/(?:blob|tree)/main/(?<path>[^)\s#?]+)")]
+    [GeneratedRegex(@"https://github\.com/haruspex-tools/haruspex/(?:blob|tree)/main/(?<path>[^)\s#?]+)")]
     private static partial Regex GitHubLink();
 
     [GeneratedRegex(@"\bdocs/[A-Za-z0-9_./-]+\.md\b")]

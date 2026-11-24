@@ -1,6 +1,6 @@
 # Haruspex.Emit.Mssql
 
-Writes the database module's functions from a [haruspex IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md)
+Writes the database module's functions from a [haruspex IR](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Ir/README.md)
 document: one TypeScript function for each procedure and query file, which runs it through the
 [mssql](https://www.npmjs.com/package/mssql) driver, the driver most Node applications reach SQL Server with. A function checks its parameters with the procedure's
 parameters schema, binds each with the driver's type, executes, and checks each result set and the `OUTPUT` parameters with
@@ -42,7 +42,7 @@ if (MssqlEmitter.Emit(document, new MssqlOptions { SchemaModule = "./haruspex.zo
 `MssqlEmitter.Emit(document, options, modules, schemaModule)` writes a functions file per module of an `IrModules`: the file this
 emitter writes for the module's procedures and query files alone, importing the schemas of its own module's schema file, whose
 specifier `schemaModule` gives (`./sales.zod.js`). Each file is self-contained, with its own error classes and helpers, as the
-files of several config files are ([decision 0074](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0074-a-config-may-split-its-output-into-modules.md)).
+files of several config files are ([decision 0074](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0074-a-config-may-split-its-output-into-modules.md)).
 
 ## What it guarantees
 
@@ -54,29 +54,29 @@ files of several config files are ([decision 0074](https://github.com/sharpblue/
   refuses a call that leaves it out.
 - **Each value is sent with the driver's type for the declared one** (`DriverTypes`): `nvarchar(40)` as `sql.NVarChar(40)`, a
   decimal with its precision and scale, a date or time as text, which SQL Server converts exactly in any session
-  ([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)),
+  ([decision 0055](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)),
   and a binary value as a `Buffer` of `sql.VarBinary(n)`, which the server pads to a fixed length, or `sql.VarBinary(sql.MAX)` with
   none (the driver's types declare `sql.Binary` with no length): the parameters' schema has refused a longer one, which
   `sql.VarBinary(n)` would fail with error 8016
-  ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
+  ([decision 0082](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
 - **A table-valued parameter is sent as an `sql.Table` of its type** (`TableValue`, built by the module's `table` helper): the
   type named by its schema and name apart, so that no name needs quoting, and every column declared in the type's order, each
   with the driver's type of a scalar parameter of its type, since the server matches the columns by place. A `bigint` is sent as
   the string of its digits, which the server converts exactly. Left out, it is not bound, and the procedure reads no rows. A
   column whose type gives no driver type is refused (HAR5204)
-  ([decision 0076](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
+  ([decision 0076](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
 - **The database's error is the driver's own**, a `RequestError` with its number, state, class, procedure and line, passed
   through unchanged. **A result that breaks its schema** is a `ResultError` naming the procedure, the part (the results, or the
   `OUTPUT` parameters) and each issue's path, as JavaScript reads it (`[0].label`); of several result sets, the set comes
   first, counted from 1 (`result set 2, [0].label`), or named by its name when the config file names the sets (`lines[0].label`). Each error has a stable `name` and `kind`, so code that handles errors from several
   modules tells them apart without importing any
-  ([decision 0056](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)).
+  ([decision 0056](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0056-a-function-throws-three-kinds-of-failure.md)).
 - **The shape follows what the procedure hands back**
-  ([decision 0060](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0060-a-call-returns-its-one-result-itself.md)):
+  ([decision 0060](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0060-a-call-returns-its-one-result-itself.md)):
   its one result set itself, when it has no `OUTPUT` parameter and no return code worth handing back (the IR's `returnsCode`);
   otherwise an object of `result`, or `result1`, `result2` and so on for several, or each set under its name when the config
   file names them (always an object then, even for one set:
-  [decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)),
+  [decision 0070](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)),
   `output` for the `OUTPUT` parameters, and `returnValue` when the code may be other than 0; and nothing, when there is nothing
   to hand back. A `FOR JSON` result is read as
   decision 0048 fixes, whether the pool parses JSON or not.
@@ -84,7 +84,7 @@ files of several config files are ([decision 0074](https://github.com/sharpblue/
   application with a trailing set more doesn't break it; `MssqlOptions.RefusesExtraResultSets`, which `"objects": "strict"`
   sets, refuses them. A set every call returns that doesn't arrive is a `ResultError` either way, since read as `[]` it would
   pass
-  ([decision 0063](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)).
+  ([decision 0063](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0063-a-function-ignores-result-sets-after-those-it-knows.md)).
 - **A query file's function runs its text through `sp_executesql`**: the text as the IR holds it, and each parameter declared
   by its name and its type's `sql`, so the query runs with the types it was inferred with, and each value is bound beside them
   by name, converted by the server to its declared type. A parameter with no type to declare, or named `@stmt` or `@params`
@@ -106,7 +106,7 @@ nothing), and `MssqlReturnShape.KeepsCallersOf` whether code written against one
 A function's comment says why a result set may be missing, or why its procedure's result sets can't be listed, with the codes
 and the `haruspex explain` command; under `MssqlOptions.Comments` of `IrComments.All`, how many rows each returns too. The fields' reasons are
 the Zod module's comments
-([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## Testing with a double
 
@@ -120,7 +120,7 @@ const result = { recordsets: [[{ order_id: 42 }]], output: {}, returnValue: 0 }
 const db = { request: () => ({ input() {}, output() {}, execute: async () => result }) } as unknown as Queryable
 ```
 
-[The database module's page](https://github.com/sharpblue/haruspex/blob/main/docs/database-module.md#testing-with-a-double)
+[The database module's page](https://github.com/haruspex-tools/haruspex/blob/main/docs/database-module.md#testing-with-a-double)
 has a whole example, typed as the driver's `IProcedureResult` so that the compiler asks for each field, which a test runs
 against a generated function.
 
@@ -133,6 +133,6 @@ against a generated function.
   them.
 - **No SQL.** It binds from what the IR says of each type, its kind, format and facets, never from its spelling.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API and its output will change. Its chapter
-of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
-[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API and its output will change. Its chapter
+of [the guide](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/README.md) is
+[Emitting code](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/11-emitting-code.md).

@@ -1,11 +1,11 @@
 # Haruspex.SqlServer.Syntax
 
 Reads what [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's T-SQL parser,
-parsed into a [Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md):
+parsed into a [Haruspex.SqlServer.Model](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md):
 a name, a type, a table definition, a procedure, a function, a view, a trigger, a synonym, and where each is
 (`SourceSpan`). It is the one place a declaration is read, wherever it is written. A script's
 `CREATE TABLE` is read with it by
-[Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md),
+[Haruspex.SqlServer.Sources](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md),
 and a body's own `CREATE TABLE #t` or `DECLARE @t TABLE` by the layers that bind and infer, so the same declaration means
 the same thing in both.
 
@@ -37,7 +37,7 @@ var procedure = ModuleReader.Procedure(definition, "procedures/get_order.sql");
 - **Declarations as written.** It reads what the syntax says and nothing it implies.
 - **One form of a SQLCMD variable.** `SqlcmdVariableReference` is the one definition of `$(name)`: Sources replaces a script's
   own `:setvar` variables by it, and Semantics and Inference find by it the literals and names whose text a deployment replaces
-  ([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
+  ([decision 0046](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)).
 - **Only code stays ScriptDom's.** What it reads into the model keeps ScriptDom's types only for bodies and expressions; a
   name, a type, a parameter, a function's kind and its options become the model's own values.
 
@@ -47,5 +47,5 @@ var procedure = ModuleReader.Procedure(definition, "procedures/get_order.sql");
 - **No name resolution.** A name is read as the definition writes it (an unqualified one in `dbo`); what a reference in a
   body means is Semantics' question.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
-[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

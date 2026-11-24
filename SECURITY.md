@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 Report a vulnerability privately, through GitHub's private vulnerability reporting: on the repository's **Security** tab,
-choose **Report a vulnerability**, or go straight to <https://github.com/sharpblue/haruspex/security/advisories/new>. Please
+choose **Report a vulnerability**, or go straight to <https://github.com/haruspex-tools/haruspex/security/advisories/new>. Please
 don't open a public issue or pull request for it. Say what an attacker could do, which commit you found it at, and how to
 reproduce it, with an invented example where you can rather than a real database's code.
 

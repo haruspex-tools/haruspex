@@ -1,7 +1,7 @@
 # Haruspex.SqlServer.Semantics
 
 What a SQL Server schema and the references in a body *mean*, over a
-[Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md). The model
+[Haruspex.SqlServer.Model](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md). The model
 holds declarations as written; this layer holds the rules SQL Server applies to them, so that every tool that reads a schema
 (lint, diff, inference) reads it the same way. It needs neither DacFx nor a database.
 
@@ -35,7 +35,7 @@ flowchart LR
   defines (`NameEnvironment`) are an argument, and each query is bound once for each set of them (`Bindings`).
   `Binder.Resolve` is the one rule a column reference is resolved by, and gives a `Resolution`; a column or star qualified by
   its table's schema and name (`shop.orders.order_id`) names the source exposed under that name (`ExposedName`), as the
-  guide's [binding chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/03-binding.md#a-full-name) says; a variable reference
+  guide's [binding chapter](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/03-binding.md#a-full-name) says; a variable reference
   resolves to a parameter, a variable the body declares or neither (`VariableResolution`), from what the whole body declares
   (`BodyDeclarations`). A name written without a schema means what `SchemaNames.Resolve` decides (one object, several or none), for every kind of
   name, by where it is written (`SchemaSearch`): in a module's definition, its own schema and then `dbo`; elsewhere, and in an
@@ -51,7 +51,7 @@ flowchart LR
 - **SQL Server's type system, as data.** `BuiltInType` is the catalogue of every built-in type, with its family, its place
   in data type precedence, its digits, range and defaults; `ScalarType` is a type with its arguments (`decimal(19,2)`); and
   `ConversionChart` says which conversions the server allows, implicitly or only explicitly. Each row is observed against a
-  real server; [the guide's chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/08-the-sql-server-type-system-as-data.md)
+  real server; [the guide's chapter](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/08-the-sql-server-type-system-as-data.md)
   says why it is data and how. Bounds on numbers are one lattice, `Bounds`, which the schema rules and inference both use. The built-in functions haruspex reads are a catalogue
   too, `BuiltInFunctions`, each with a stable code (`window.count`).
 
@@ -101,7 +101,7 @@ foreach (var column in orders.Columns)
 ## What it deliberately doesn't do
 
 - **No result shapes.** What a query returns, its nullability and its JSON structure are
-  [Haruspex.SqlServer.Inference](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md)'s
+  [Haruspex.SqlServer.Inference](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md)'s
   work. This layer says what a reference points to and what the schema guarantees, and stops there.
 - **No values.** What a CTE's or temporary table's columns hold is inference's concern; binding needs only their names.
 - **No IR.** It never sees the intermediate representation, so other tools can use it without taking haruspex's output
@@ -109,7 +109,7 @@ foreach (var column in orders.Columns)
 - **No files.** It reads a model already built; Sources builds one from a folder of scripts.
 
 The layers and what each may know are in
-[docs/architecture.md](https://github.com/sharpblue/haruspex/blob/main/docs/architecture.md). It is part of
-[haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of
-[the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
-[*Binding*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/03-binding.md).
+[docs/architecture.md](https://github.com/haruspex-tools/haruspex/blob/main/docs/architecture.md). It is part of
+[haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API will change. Its chapter of
+[the guide](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/README.md) is
+[*Binding*](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/03-binding.md).
