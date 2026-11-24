@@ -30,12 +30,24 @@ internal static class CaseVariants
         return [.. Of(model), .. model.Databases.Values.SelectMany(Of)];
     }
 
-    /// <summary>Every pair in a query file: its parameters and the names its batch declares.</summary>
+    /// <summary>
+    /// Every pair in a query file: its declared parameters and the names its batch declares, as a body's, and the parameters it
+    /// only uses, every spelling of them (<c>@Id</c> and <c>@id</c>), which reading would otherwise take for one.
+    /// </summary>
     /// <param name="file">The query file's path, which names it and every location in it.</param>
     /// <param name="parameters">Its declared parameters.</param>
     /// <param name="statements">Its batch.</param>
-    public static IEnumerable<Diagnostic> InQuery(string file, IReadOnlyList<Parameter> parameters, StatementList statements) =>
-        Body(file, new SourceSpan(file, 1, 1, 1, 1), parameters, statements, null);
+    public static IEnumerable<Diagnostic> InQuery(string file, IReadOnlyList<Parameter> parameters, StatementList statements)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(statements);
+        var source = new SourceSpan(file, 1, 1, 1, 1);
+        var found = new Collector();
+        statements.Accept(found);
+        var declared = parameters.Select(p => p.Name).Concat(found.Variables.Select(v => v.Value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var used = found.Uses.Where(u => !declared.Contains(u.Name)).Select(u => (u.Name, source.At(u)));
+        return [.. Body(file, source, parameters, statements, null), .. Pairs(used, names => $"{file} uses the parameters {names}")];
+    }
 
     private static IEnumerable<Diagnostic> Of(DatabaseModel model)
     {
@@ -154,7 +166,12 @@ internal static class CaseVariants
         /// <summary>Each table it declares with its columns: a table variable or a temporary table.</summary>
         public List<(string Name, TableDefinition Definition)> Tables { get; } = [];
 
+        /// <summary>Each variable a statement reads or sets, as written there.</summary>
+        public List<VariableReference> Uses { get; } = [];
+
         public override void Visit(DeclareVariableElement node) => Variables.Add(node.VariableName);
+
+        public override void Visit(VariableReference node) => Uses.Add(node);
 
         public override void Visit(DeclareTableVariableBody node)
         {

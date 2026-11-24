@@ -5,7 +5,8 @@
 **Superseded in part** by [decision 0119](0119-names-that-differ-only-in-case-are-an-error.md) (24 Nov 2026): a pair in a table, a
 table type, a schema's objects, or a body's variables, temporary tables and declared tables is now an error found where each is
 read. What this record decides still holds for a pair reading doesn't see (the columns of a derived table, a CTE, a view or a
-temporary table `SELECT … INTO` makes) and for a model built otherwise.
+temporary table `SELECT … INTO` makes, and a column `ALTER TABLE #t ADD` adds beside its case variant) and for a model built
+otherwise. A callee's temporary table whose name differs only in case from its caller's makes the call unknown (decision 0119).
 
 **Decision.** Names are matched ignoring case: a column, a variable and a temporary table are found by their name in any
 case. Where two columns of one table, or two variables or table variables of one body, have names that differ only in case

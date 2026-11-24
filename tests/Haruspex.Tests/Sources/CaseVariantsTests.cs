@@ -132,6 +132,20 @@ public class CaseVariantsTests
     }
 
     [Fact]
+    public void Another_database_s_columns_that_differ_only_in_case_are_an_error()
+    {
+        // A body reads another database's tables by a three-part name, matched as this database's are, so its pairs are found too.
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "ledger.dacpac"), TestPackage.Table("dbo", "entry", "Code varchar(10)", "code int?"), "Latin1_General_100_CS_AS");
+        var path = Path.Combine(dir.Path, "store.dacpac");
+        TestPackage.Write(path, TestPackage.Procedure("dbo", "p", "SELECT 1 AS one"), references: new TestPackage.Reference("ledger.dacpac", "$(Ledger)"));
+
+        var read = DacpacReader.Read(path);
+
+        Assert.Contains(read.Diagnostics, d => d.Code == SourceCodes.CaseVariants && d.Message.StartsWith("dbo.entry declares the columns Code (ledger.dacpac/", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void A_project_s_columns_that_differ_only_in_case_are_an_error()
     {
         using var dir = new TempDirectory();
@@ -152,10 +166,19 @@ public class CaseVariantsTests
     [Theory]
     [InlineData("DECLARE @n int = 1; DECLARE @N int = 2; SELECT @n AS a;", "@n (q.sql:1:9) and @N (q.sql:1:29)")]
     [InlineData("CREATE TABLE #t (a int); CREATE TABLE #T (a int); SELECT a FROM #t;", "#t (q.sql:1:14) and #T (q.sql:1:39)")]
+    // Parameters it only uses are its batch's variables too: on a case-sensitive server @id would be undeclared (Msg 137).
+    [InlineData("SELECT 1 AS one WHERE @Id = 1 AND @id = 2;", "q.sql uses the parameters @Id (q.sql:1:23) and @id (q.sql:1:35)")]
     public void A_query_file_s_names_that_differ_only_in_case_are_an_error(string text, string named)
     {
         var read = Assert.IsType<Failed<SqlServer.Model.QueryFile>>(QueryFileReader.Parse(text, "q.sql"));
 
         Assert.Contains(read.Diagnostics, d => d.Code == SourceCodes.CaseVariants && d.Message.Contains(named, StringComparison.Ordinal));
     }
+
+    [Theory]
+    // A use in another case than a declaration is one name, and one parameter used twice is one parameter.
+    [InlineData("DECLARE @n int = 1; SELECT @N AS a;")]
+    [InlineData("SELECT 1 AS one WHERE @id = 1 OR @id = 2;")]
+    public void A_query_file_s_name_used_in_another_case_than_declared_is_no_error(string text) =>
+        Assert.IsType<Succeeded<SqlServer.Model.QueryFile>>(QueryFileReader.Parse(text, "q.sql"));
 }

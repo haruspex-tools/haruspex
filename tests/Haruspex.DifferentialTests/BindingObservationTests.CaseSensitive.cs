@@ -10,7 +10,7 @@ public partial class BindingObservationTests
 {
     private const string CaseSensitive = "Latin1_General_100_CS_AS";
 
-    /// <summary>The rows <paramref name="query"/> returns, run after <paramref name="setup"/>'s batches, in a new database of <see cref="CaseSensitive"/>.</summary>
+    /// <summary>The rows of every result set <paramref name="query"/> returns, run after <paramref name="setup"/>'s batches, in a new database of <see cref="CaseSensitive"/>.</summary>
     private async Task<List<string>> OnCaseSensitive(string query, params string[] setup)
     {
         var token = TestContext.Current.CancellationToken;
@@ -23,8 +23,12 @@ public partial class BindingObservationTests
 #pragma warning restore CA2100
         await using var reader = await command.ExecuteReaderAsync(token);
         var rows = new List<string>();
-        while (await reader.ReadAsync(token))
-            rows.Add(string.Join(",", Enumerable.Range(0, reader.FieldCount).Select(i => reader.IsDBNull(i) ? "NULL" : Convert.ToString(reader.GetValue(i), System.Globalization.CultureInfo.InvariantCulture))));
+        do
+        {
+            while (await reader.ReadAsync(token))
+                rows.Add(string.Join(",", Enumerable.Range(0, reader.FieldCount).Select(i => reader.IsDBNull(i) ? "NULL" : Convert.ToString(reader.GetValue(i), System.Globalization.CultureInfo.InvariantCulture))));
+        }
+        while (await reader.NextResultAsync(token));
         return rows;
     }
 
@@ -83,4 +87,18 @@ public partial class BindingObservationTests
     [InlineData("SELECT 1 AS a, 2 AS A INTO #s;", 2705)]
     public async Task On_a_case_sensitive_database_a_body_s_names_follow_the_server_s_collation(string batch, int error) =>
         Assert.Equal(error, await ErrorOnCaseSensitive(batch));
+
+    [Fact]
+    public async Task A_callee_s_temporary_table_hides_its_caller_s_of_a_name_that_differs_only_in_case()
+    {
+        // Under this server's collation the callee's #t is its own #T, and the caller's #t is untouched. On a case-sensitive server
+        // the callee's #t would be the caller's, so haruspex follows such a call neither way (decision 0119); two bodies' names are
+        // no pair, so it is no error.
+        Assert.Equal(
+            ["in", "1"],
+            await OnCaseSensitive(
+                "EXEC dbo.outer_p;",
+                "CREATE PROCEDURE dbo.inner_p AS BEGIN CREATE TABLE #T (y varchar(5) NULL); INSERT #T VALUES ('in'); SELECT * FROM #t; END;",
+                "CREATE PROCEDURE dbo.outer_p AS BEGIN CREATE TABLE #t (x int NOT NULL); INSERT #t VALUES (1); EXEC dbo.inner_p; SELECT x FROM #t; END;"));
+    }
 }

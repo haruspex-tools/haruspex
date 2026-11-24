@@ -27,9 +27,16 @@ compared by case. With one, a reference to either was read as the first: `[code]
 
 **Reason.** One check where each namespace is read guards every comparison after it, and a project that holds such a pair is
 rare and fixed by a rename. The check runs once the model is read (`CaseVariants`), for a folder of scripts, a project and a
-DACPAC alike, and when a query file is read. Decision 0107's unknowns stay, for the pairs reading doesn't see: the columns of a
-derived table, a CTE, a view or a temporary table `SELECT … INTO` makes, which a database that compares names by case takes, and
-a model built by other code.
+DACPAC alike, and when a query file is read, whose parameters are every spelling it uses. Decision 0107's unknowns stay, for the
+pairs reading doesn't see: the columns of a derived table, a CTE, a view or a temporary table `SELECT … INTO` makes, and a
+column `ALTER TABLE #t ADD` adds beside one that differs from it only in case, which a database that compares names by case
+takes, and a model built by other code.
 
-**In the code:** `CaseVariants`, `SchemaDeclarations.Twice`; tests in `CaseVariantsTests`, `SqlProjectTests` and
-`BindingObservationTests`.
+Two bodies' names are no pair, so a caller's `#t` and a callee's `#T` are no error: a case-insensitive server takes them, and
+the callee's `#t` is then its own `#T` (observed). On a case-sensitive server it is the caller's, so a call whose callee creates a
+temporary table whose name differs only in case from one the caller holds is not followed, and its results and what follows
+it are unknown, naming both (`Walker.CaseVariantTemps`). A callee that only reads `#T` is followed: on a case-sensitive server
+the read fails, so no type it is given is wrong.
+
+**In the code:** `CaseVariants`, `SchemaDeclarations.Twice`, `Walker.CaseVariantTemps`; tests in `CaseVariantsTests`,
+`SqlProjectTests`, `ConstructTests.CaseVariants.cs` and `BindingObservationTests`.

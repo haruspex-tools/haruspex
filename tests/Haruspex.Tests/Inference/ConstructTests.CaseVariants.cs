@@ -47,4 +47,23 @@ public partial class ConstructTests
 
         Assert.All(Fields(doc), f => Assert.IsType<IrUnknownType>(f.Type));
     }
+
+    [Theory]
+    // A callee that creates #T and reads #t reads its own #T on a case-insensitive server and its caller's #t on a case-sensitive
+    // one, so the call is followed neither way (decision 0119). A callee that only reads #T, or creates #t, is followed as before.
+    [InlineData("CREATE TABLE #T (y varchar(5) NULL); INSERT #T VALUES ('in'); SELECT * FROM #t;", true)]
+    [InlineData("SELECT 1 AS one INTO #T; SELECT * FROM #t;", true)]
+    [InlineData("CREATE TABLE #t (y varchar(5) NULL); INSERT #t VALUES ('in'); SELECT * FROM #t;", false)]
+    [InlineData("SELECT * FROM #T;", false)]
+    public void A_callee_that_creates_a_temporary_table_whose_name_differs_only_in_case_from_its_caller_s_is_not_followed(string inner, bool unknown)
+    {
+        var doc = InferProcedure.Infer(
+            "dbo.outer_p",
+            ("inner.sql", $"CREATE PROCEDURE dbo.inner_p AS\n{inner}"),
+            ("outer.sql", "CREATE PROCEDURE dbo.outer_p AS\nCREATE TABLE #t (x int NOT NULL); INSERT #t VALUES (1); EXEC dbo.inner_p;"));
+
+        Assert.Equal(unknown, doc.Unknowns.Any(u => u.Detail.Contains("differs only in case from the caller's #t", StringComparison.Ordinal)));
+        if (!unknown)
+            Assert.NotEmpty(Fields(doc));
+    }
 }

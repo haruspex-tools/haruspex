@@ -105,7 +105,8 @@ it gives a `Resolution`:
   case (`[Code]` and `[code]`) can exist only where names are compared by case, which haruspex doesn't model. Reading refuses
   such a pair in a table, a table type, or a body's variables and temporary tables
   ([decision 0119](../decisions/0119-names-that-differ-only-in-case-are-an-error.md)), so the binder meets one only in the
-  columns of a derived table, a CTE or a temporary table `SELECT … INTO` makes, or in a model built otherwise. There a reference
+  columns of a derived table, a CTE or a temporary table `SELECT … INTO` makes, in a column `ALTER TABLE #t ADD` adds beside its
+  case variant, or in a model built otherwise. There a reference
   to either, and a star's column for either, is an `AmbiguousColumn` naming both, rather than the first
   ([decision 0107](../decisions/0107-names-that-differ-only-in-case-are-unknown.md)). Two variables are a `CaseVariantVariable`
   in the same way.
