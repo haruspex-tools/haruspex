@@ -102,8 +102,11 @@ it gives a `Resolution`:
   (a source that can't itself be bound, its problem moved to where the column is read). Every unresolved case becomes an
   unknown with its reason in the IR, never a guess.
 - **Names that differ only in case.** Names are matched ignoring case. Two columns of one source whose names differ only in
-  case (`[Code]` and `[code]`) can exist only where names are compared by case, which haruspex doesn't model, so a reference to
-  either, and a star's column for either, is an `AmbiguousColumn` naming both, rather than the first
+  case (`[Code]` and `[code]`) can exist only where names are compared by case, which haruspex doesn't model. Reading refuses
+  such a pair in a table, a table type, or a body's variables and temporary tables
+  ([decision 0119](../decisions/0119-names-that-differ-only-in-case-are-an-error.md)), so the binder meets one only in the
+  columns of a derived table, a CTE or a temporary table `SELECT … INTO` makes, or in a model built otherwise. There a reference
+  to either, and a star's column for either, is an `AmbiguousColumn` naming both, rather than the first
   ([decision 0107](../decisions/0107-names-that-differ-only-in-case-are-unknown.md)). Two variables are a `CaseVariantVariable`
   in the same way.
 

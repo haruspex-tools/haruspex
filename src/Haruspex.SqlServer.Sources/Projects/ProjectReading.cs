@@ -57,7 +57,9 @@ internal sealed class ProjectReading
         }
 
         Report();
-        return new SqlProjectReadResult(own.ToModel(databases), [.. projects], [.. packages.References], [.. diagnostics.Distinct()]);
+        var read = own.ToModel(databases);
+        diagnostics.AddRange(CaseVariants.In(read));
+        return new SqlProjectReadResult(read, [.. projects], [.. packages.References], [.. diagnostics.Distinct()]);
     }
 
     /// <summary>

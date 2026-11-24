@@ -137,6 +137,12 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   QUOTED_IDENTIFIER OFF` is a string.
 - **Problems have a place.** Parse errors and objects defined twice are reported as diagnostics, with their file, line and
   column.
+- **Two names in one namespace never differ only in case.** Every layer above matches names ignoring case, which agrees with
+  SQL Server for every project that deploys unless one namespace has two such names (`[Code]` and `[code]`), possible only under a
+  case-sensitive collation. Once a model is read, `CaseVariants` looks for them in a table's and a table type's columns, a
+  schema's objects, and each body's variables, temporary tables and declared tables' columns, a query file's included; each
+  pair is an error naming both and where each is (HAR1022, or HAR1002 for two objects of one kind)
+  ([decision 0119](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 - **Every statement that weakens a claim is read, wherever it is.** A `NOCHECK`, a bulk load without `CHECK_CONSTRAINTS`, a key
   disabled or dropped, and a table altered, dropped or created again, under `IF`, in a block or in a body, in a folder's
   script, in a package's module text, and in a project's or a package's pre- and post-deployment scripts

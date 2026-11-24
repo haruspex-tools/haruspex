@@ -103,6 +103,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0112](0112-a-script-is-parsed-as-the-server-parses-each-batch.md) | 23 Nov 2026 | A script is parsed as the server parses each batch, and its synonyms are played in order |
 | [0113](0113-a-clause-no-rule-reads-makes-the-call-unknown.md) | 23 Nov 2026 | A clause no rule reads makes the call unknown |
 | [0117](0117-an-ir-document-names-the-build-that-made-its-claims.md) | 23 Nov 2026 | An IR document names the build that made its claims |
+| [0119](0119-names-that-differ-only-in-case-are-an-error.md) | 24 Nov 2026 | Names that differ only in case are an error |
 
 ## Writing a record
 

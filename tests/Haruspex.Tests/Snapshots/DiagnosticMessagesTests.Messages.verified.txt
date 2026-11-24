@@ -55,6 +55,9 @@ db/p2.sql:1:1: error HAR1020: p2.sql can't be read, so nothing in it is: it can'
 HAR1021
 db/p2.sql:1:1: warning HAR1021: A deployment script can't be read: p2.sql doesn't parse (Incorrect syntax near ':'.). What it does isn't known, so every table, procedure, function and view it names is doubted.
 
+HAR1022
+db/p1.sql:1:46: error HAR1022: lib.p declares the variables @Total (p1.sql:1:24) and @total (p1.sql:1:46), whose names differ only in case: haruspex matches names without case, so it can't tell them apart.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 

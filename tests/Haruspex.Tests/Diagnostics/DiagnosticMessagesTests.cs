@@ -249,6 +249,7 @@ public class DiagnosticMessagesTests
         (1019, () => Query("-- @module lending desk\nSELECT b.title FROM lib.book AS b;\n")),
         (1020, () => Cli([GetBook, "CREATE PROCEDURE lib.q AS SELECT b.id FROM lib.book AS b;"], held: "db/p2.sql")),
         (1021, () => Project("<ItemGroup><PostDeploy Include=\"p2.sql\" /></ItemGroup>", sql: [GetBook, ":on error exit\nUPDATE lib.book SET note = NULL;"])),
+        (1022, () => Cli(["CREATE PROCEDURE lib.p @Total int AS DECLARE @total varchar(10) = 'x'; SELECT b.id FROM lib.book AS b WHERE b.copies = @Total;"])),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

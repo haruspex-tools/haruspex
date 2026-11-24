@@ -79,9 +79,9 @@ public partial class BindingObservationTests(SqlServerFixture server)
 
     [Theory]
     // Two names that differ only in case are refused where names are compared without case: two columns in a table of this
-    // database or of tempdb (2705), two variables in a batch under this server's collation (134). On a database of
-    // Latin1_General_100_CS_AS the table is made, and its columns code and Code are two (observed by hand, 22 Nov 2026). So a pair
-    // proves names are compared by case, and haruspex reads a reference to either as unknown (decision 0107).
+    // database or of tempdb (2705), two variables in a batch under this server's collation (134). So a pair proves names are
+    // compared by case, and reading refuses it (HAR1022, decision 0119); on a case-sensitive database, see
+    // BindingObservationTests.CaseSensitive.cs.
     [InlineData("CREATE TABLE dbo.obs_case (Code varchar(10) NULL, code int NULL);", 2705)]
     [InlineData("CREATE TABLE #obs_case (Code varchar(10) NULL, code int NULL);", 2705)]
     [InlineData("DECLARE @Total int; DECLARE @total varchar(10);", 134)]
