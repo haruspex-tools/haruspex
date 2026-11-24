@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: read # to check out the repository
     steps:
       # main, whatever pushed: a tag's run deploys main's site with the tag's schemas in it, not the tag's site alone. The
       # whole history, for the tags.
@@ -59,8 +59,8 @@ jobs:
     timeout-minutes: 10
     # What deploy-pages needs, and only here: to publish to Pages, and an OIDC token that proves the run to it.
     permissions:
-      pages: write
-      id-token: write
+      pages: write # to deploy to Pages
+      id-token: write # for the OIDC token deploy-pages proves the run with
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
