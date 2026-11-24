@@ -18,8 +18,10 @@
   only in a terminal that names itself as one that shows links (or with `FORCE_HYPERLINK`); otherwise one line under a list
   of codes points to the index of the pages. A progress line is drawn on standard error after half a second, only on a terminal and
   never in CI, and cleared before the report.
-- **Link target.** A code's page is linked where it is on GitHub, on the repository's default branch: for HAR2013,
-  [`docs/diagnostics/HAR2013.md`](../diagnostics/HAR2013.md) on `main`. The address is in one constant (`DiagnosticPages`).
+- **Link target.** A code's page is the one on the repository's default branch: for HAR2013,
+  [`docs/diagnostics/HAR2013.md`](../diagnostics/HAR2013.md) on `main`. The address is in one constant (`DiagnosticPages`):
+  since [decision 0121](0121-every-address-haruspex-writes-is-served-from-haruspex-tools.md), `https://haruspex.tools/diagnostics/HAR2013`,
+  which leads to that page.
 - **Machine formats.** `--format json` writes one document for the run, specified by `schemas/haruspex.output.schema.json`
   and versioned by a `version` field. `--format sarif` writes a SARIF 2.1.0 log. `--format github` writes the text, then
   each error and warning as a GitHub Actions annotation (each note too with `--verbose`), and is the default when

@@ -33,9 +33,9 @@ shop.order_summary last_shipped: datetime (local), datetime2(0), nullable
   null empty-aggregate at procedures/order_summary.sql:11:8: it is an aggregate without GROUP BY, which is null over no rows
     | max(l.shipped_at) AS last_shipped
   to change it: if the data rules it out, declare it in the config file with "nullable": false and why
-  page nullable-column: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/nullable-column.md
-  page unmatched-row: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/unmatched-row.md
-  page empty-aggregate: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/empty-aggregate.md
+  page nullable-column: https://haruspex.tools/reasons/nullable-column
+  page unmatched-row: https://haruspex.tools/reasons/unmatched-row
+  page empty-aggregate: https://haruspex.tools/reasons/empty-aggregate
 ```
 
 ## Null rules

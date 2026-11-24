@@ -77,9 +77,9 @@ public class ExplainTests
               null empty-aggregate at procedures.sql:4:8: it is an aggregate without GROUP BY, which is null over no rows
                 | max(l.shipped_at) AS last_shipped,
               to change it: if the data rules it out, declare it in the config file with "nullable": false and why
-              page nullable-column: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/nullable-column.md
-              page unmatched-row: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/unmatched-row.md
-              page empty-aggregate: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/empty-aggregate.md
+              page nullable-column: https://haruspex.tools/reasons/nullable-column
+              page unmatched-row: https://haruspex.tools/reasons/unmatched-row
+              page empty-aggregate: https://haruspex.tools/reasons/empty-aggregate
 
             """,
             output);
@@ -226,7 +226,7 @@ public class ExplainTests
         Assert.True(field.GetProperty("surprise").GetBoolean());
         var reason = Assert.Single(field.GetProperty("nullableBecause").EnumerateArray());
         Assert.Equal("count-overflow", reason.GetProperty("rule").GetString());
-        Assert.Equal("https://github.com/sharpblue/haruspex/blob/main/docs/reasons/count-overflow.md", reason.GetProperty("page").GetString());
+        Assert.Equal("https://haruspex.tools/reasons/count-overflow", reason.GetProperty("page").GetString());
         Assert.Equal("SELECT count(l.line_id) AS line_count,", reason.GetProperty("line").GetString());
         Assert.Equal("haruspex explain shop.order_summary line_count", field.GetProperty("explain").GetString());
         Assert.Contains("COUNT_BIG", field.GetProperty("waysOut")[0].GetString(), StringComparison.Ordinal);

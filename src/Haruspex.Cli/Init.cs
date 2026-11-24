@@ -4,6 +4,7 @@ using System.Text.Json;
 using Haruspex.Cli.Output;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
+using Haruspex.Ir;
 
 namespace Haruspex.Cli;
 
@@ -178,7 +179,7 @@ internal static class Init
     {
         var text = new StringBuilder();
         text.Append("// haruspex's settings, written by haruspex init. Each is described in\n");
-        text.Append("// https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md\n");
+        text.Append($"// {HaruspexSite.Docs}configuration\n");
         text.Append("{\n");
         text.Append($"  \"$schema\": {Quoted(configSchema)},\n");
         text.Append($"  \"source\": {Quoted(source)},\n");

@@ -6,6 +6,6 @@ Unknowns by reason (--verbose lists each):
   1  HAR2009  A column that can't be found or is ambiguous
   1  HAR2013  JSON whose shape isn't visible
   1  results only a declaration can give, as the warnings say
-What each code means: https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md
+What each code means: https://haruspex.tools/diagnostics/
 --- standard error
 haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures["kennel.find_dogs"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.

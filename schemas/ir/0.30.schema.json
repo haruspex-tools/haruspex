@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/ir/0.30.schema.json",
+  "$id": "https://haruspex.tools/schemas/ir/0.30.schema.json",
   "title": "haruspex.ir.json",
   "description": "An IR file of version 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, and (0.30) the build that wrote it. The format is described in src/Haruspex.Ir/README.md.",
   "type": "object",

@@ -43,9 +43,9 @@ public class InitTests
         Assert.Equal(
             """
             // haruspex's settings, written by haruspex init. Each is described in
-            // https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md
+            // https://haruspex.tools/docs/configuration
             {
-              "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+              "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
               "source": "database",
               "out": "src/db",
               // Which procedures to type, by schema: every one, to start. Narrow each "include" to those the application calls.

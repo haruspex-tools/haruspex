@@ -266,7 +266,7 @@ public class IrJsonSchemaTests
             var fixture = Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json");
             Assert.True(File.Exists(fixture), $"schemas/ir/{Path.GetFileName(schema)} names no version the format has had: there is no {fixture}.");
             using var parsed = JsonDocument.Parse(File.ReadAllText(schema));
-            Assert.Equal($"https://github.com/sharpblue/haruspex/raw/main/schemas/ir/{version}.schema.json", parsed.RootElement.GetProperty("$id").GetString());
+            Assert.Equal($"https://haruspex.tools/schemas/ir/{version}.schema.json", parsed.RootElement.GetProperty("$id").GetString());
             using var instance = JsonDocument.Parse(File.ReadAllText(fixture));
             Assert.Empty(new SchemaSubset(parsed.RootElement.Clone()).Validate(instance.RootElement));
             Assert.Empty(AjvVerdicts.Of(schema, new Dictionary<string, string> { [version] = File.ReadAllText(fixture) })[version]);

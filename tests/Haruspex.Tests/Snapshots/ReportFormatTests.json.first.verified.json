@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.output.schema.json",
   "version": 1,
   "command": "generate",
   "exitCode": 0,
@@ -51,7 +51,7 @@
           "file": "haruspex.json",
           "line": null,
           "column": null,
-          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR4204.md"
+          "help": "https://haruspex.tools/diagnostics/HAR4204"
         },
         {
           "code": "HAR2009",
@@ -60,7 +60,7 @@
           "file": "db/procedures.sql",
           "line": 5,
           "column": 26,
-          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2009.md"
+          "help": "https://haruspex.tools/diagnostics/HAR2009"
         },
         {
           "code": "HAR2013",
@@ -69,7 +69,7 @@
           "file": "db/procedures.sql",
           "line": 2,
           "column": 26,
-          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md"
+          "help": "https://haruspex.tools/diagnostics/HAR2013"
         }
       ],
       "acknowledged": []

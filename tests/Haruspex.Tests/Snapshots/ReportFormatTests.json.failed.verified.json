@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.output.schema.json",
   "version": 1,
   "command": "generate",
   "exitCode": 1,
@@ -23,7 +23,7 @@
           "file": "db/broken.sql",
           "line": 1,
           "column": 42,
-          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR1001.md"
+          "help": "https://haruspex.tools/diagnostics/HAR1001"
         }
       ],
       "acknowledged": []

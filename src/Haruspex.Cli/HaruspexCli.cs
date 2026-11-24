@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Haruspex.Cli.Output;
 using Haruspex.Config;
+using Haruspex.Ir;
 
 namespace Haruspex.Cli;
 
@@ -96,7 +97,7 @@ internal static class HaruspexCli
     }
 
     private static RootCommand Build(TextWriter output, TextWriter error, string workingDirectory, Terminal terminal) =>
-        new("""
+        new($$"""
             haruspex types the results of SQL Server procedures and query files for TypeScript, from the database's own files.
 
             Examples:
@@ -109,7 +110,7 @@ internal static class HaruspexCli
               haruspex explain shop.order_summary last_shipped       why a field is what it is, from the committed IR
 
             Exit codes: 0 success, 1 failed (errors in the input, or a check that fails), 2 a usage error, 3 a fault in haruspex.
-            More: https://github.com/sharpblue/haruspex/blob/main/docs/command-line.md
+            More: {{HaruspexSite.Docs}}command-line
             """)
         {
             InitCommand(new Streams(output, error, workingDirectory, terminal)),

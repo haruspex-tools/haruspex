@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "$id": "https://haruspex.tools/schemas/main/haruspex.output.schema.json",
   "title": "What haruspex generate or haruspex check reports with --format json",
   "description": "One document on standard output for a whole run. Version 1. A field may be added without a new version; one is removed, renamed or given another meaning only with a new version, so a tool checks \"version\". Paths are relative to the working directory when they are below it, with / between names on every platform. docs/command-line.md describes each field.",
   "type": "object",

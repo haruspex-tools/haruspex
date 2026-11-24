@@ -72,10 +72,11 @@ dotnet publish src/Haruspex.Cli -c Release -r <rid> -p:HaruspexNativeAot=true -p
 
 `-p:HaruspexRelease=true` drops the preview's suffix, so the version is `0.1.0` and, with the SDK's commit, the binary says
 `0.1.0+<the whole commit>`; and it marks the binary a release, in the assembly's metadata, so that it names the
-schemas of the config file and of the JSON report at the tag's address, `raw/v0.1.0/schemas/...`, rather than `main`'s
+schemas of the config file and of the JSON report at the tag's address, `https://haruspex.tools/schemas/v0.1.0/...`, rather than `main`'s
 ([the configuration](../../docs/configuration.md)). The build refuses a release without its own version. Every IR file a release
 writes names that version and commit as its writer (`source.writtenBy`). So the tag must exist, and point at the commit built,
-before a file the release wrote is opened in an editor: push the tag with the release. The IR's schemas name their version in
+before a file the release wrote is opened in an editor: push the tag with the release, which also publishes the tag's schemas
+there (the site is built from `main` and every tag; [site/README.md](../../site/README.md)). The IR's schemas name their version in
 their file names (`schemas/ir/<version>.schema.json`), on `main`, and need no tag.
 
 ## Making the tarballs
