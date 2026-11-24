@@ -555,7 +555,7 @@ public static class ConfigReader
             {
                 if (NonEmpty(array.Items[i], Index(path, i)) is not { } name)
                     continue;
-                if (Path.GetFileName(name) != name || name.Contains('\\', StringComparison.Ordinal) || !name.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase))
+                if (Path.GetFileName(name) != name || name.IndexOfAny(['\\', ':']) >= 0 || !name.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase))
                     Report(ConfigCodes.WrongKind, array.Items[i], Index(path, i), $"is \"{name}\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder.");
                 else
                     packages.Add(name);

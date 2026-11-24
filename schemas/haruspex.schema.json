@@ -28,7 +28,7 @@
     "builds": {
       "description": "DACPACs, by file name (\"sales.dacpac\"), declared built from a project's scripts though the package doesn't say so, such as one a community SDK writes with DacFx's API: their primary keys and unique constraints are taken as enforced, which is your assumption. Without it a package not built by Microsoft.Build.Sql or SSDT claims no key constraint, since an extract can't say whether a constraint's index is disabled (docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md).",
       "type": "array",
-      "items": { "type": "string", "pattern": "^[^/\\\\]+\\.[dD][aA][cC][pP][aA][cC]$" }
+      "items": { "type": "string", "pattern": "^[^/\\\\:]+\\.[dD][aA][cC][pP][aA][cC]$" }
     },
     "collation": {
       "description": "The database's default collation, which a column without COLLATE takes, for a source that doesn't record it: a folder of .sql files. A .dacpac records its own and a .sqlproj gives its own, which wins. Without either, a value set of such a column is a comment, not an enum. The name must be one SQL Server has (sys.fn_helpcollations()) and not one of Unicode only, which no database can have; any other is an error.",

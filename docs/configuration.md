@@ -93,14 +93,14 @@ path names a share or a device (`\\server\share\…`), which is never looked in.
 nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) that lists every place looked, and the run goes on: whatever would
 have come from it is unknown, and each such unknown says the package it may be in.
 
-A package extracted from a database (SqlPackage's `/Action:Extract`) is read as a built one is, but for keys: an extract
+A package extracted from a database (SqlPackage's `/Action:Extract`) differs from a built one in its keys too: an extract
 doesn't record whether a primary key's or unique constraint's index is disabled, which lets the table hold duplicates, so no
 key constraint of an extract is claimed, and a query that fixes its columns isn't claimed to return at most one row
 ([decision 0120](decisions/0120-an-extract-s-key-constraints-are-no-key.md)). A unique index created apart is claimed unless the
 extract marks it disabled. A package is taken for a build only when its `Origin.xml` says DacFx's build task
 (`Microsoft.Build.Sql`'s or SSDT's) made it, so one written by DacFx's API, as community SDKs build, claims no key constraint
 either. `builds` lists the packages, by file name (`"builds": ["sales.dacpac"]`), that you declare built from a project:
-their key constraints are then claimed, on your word that every one is enforced, as `session` is taken on your word.
+their key constraints are then claimed, on your word that every one is enforced. The IR doesn't record it.
 
 Locations in what is read from a package name the package and the object, with a line in the object's own text:
 `sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).

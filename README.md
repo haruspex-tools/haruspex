@@ -399,6 +399,9 @@ fails loudly, with an error saying which, rather than reaching the application's
 - **In a folder of scripts, a definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it (a
   DACPAC records the setting for each definition, and it is read)
   ([the guide](docs/internals/02-the-inputs-and-the-model.md#a-script-becomes-the-model-in-three-steps)).
+- **A DACPAC named in `builds` was built from a project**, so its primary keys and unique constraints are enforced. Without it,
+  only a package Microsoft.Build.Sql or SSDT built keeps them: an extract can't say whether a constraint's index is disabled
+  ([decision 0120](docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md)).
 - **SQL Server 2025.** The rules are observed on the version the tests run, and an earlier one may differ
   ([the guide](docs/internals/08-the-sql-server-type-system-as-data.md#limits)).
 - **No query reads 2^63 rows**, which is why a `SUM` of a decimal of at most 19 digits is claimed never to overflow

@@ -21,11 +21,15 @@ public partial class SqlProjectReaderTests
     /// The project <c>p/p.sqlproj</c> of <paramref name="project"/>, beside the files given, read with <paramref name="search"/> as
     /// the config file's <c>references</c> and the package cache in <c>packages</c>, which holds only what the test puts there.
     /// </summary>
-    private static SqlProjectReadResult ReadWith(TempDirectory folder, string project, IReadOnlyList<string>? search = null, params (string Path, string Text)[] files)
+    private static SqlProjectReadResult ReadWith(TempDirectory folder, string project, IReadOnlyList<string>? search = null, params (string Path, string Text)[] files) =>
+        ReadWith(folder, project, search, [], files);
+
+    /// <summary>As the other, with <paramref name="builds"/> as the config file's <c>builds</c>.</summary>
+    private static SqlProjectReadResult ReadWith(TempDirectory folder, string project, IReadOnlyList<string>? search, IReadOnlyCollection<string> builds, params (string Path, string Text)[] files)
     {
         foreach (var (path, text) in files)
             folder.File(path, text);
-        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project), search ?? [], new PackageCache(Path.Combine(folder.Path, "packages")));
+        return SqlProjectReader.Read(folder.File("p/p.sqlproj", project), search ?? [], new PackageCache(Path.Combine(folder.Path, "packages")), builds);
     }
 
     /// <summary>Copies a package of <c>tests/dacpacs</c> to <paramref name="to"/>, under <paramref name="folder"/>.</summary>
@@ -119,6 +123,20 @@ public partial class SqlProjectReaderTests
         Assert.Equal(["crane.dacpac", "quay.dacpac"], read.References.Select(r => r.Name));
         Assert.All(read.References, r => Assert.NotNull(r.Found));
         Assert.All(read.References, r => Assert.Null(r.Database));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void A_referenced_extract_s_key_constraints_hold_only_when_the_config_file_declares_it_a_build(bool declared)
+    {
+        // An extract can't say whether a constraint's index is disabled, and pk_shelf's is (decision 0120).
+        using var folder = new TempDirectory();
+        Copy(folder, Path.Combine("versions", "atelier-extract.dacpac"), Path.Combine("lib", "atelier-extract.dacpac"));
+        var read = ReadWith(folder, Sdk("""<ItemGroup><ArtifactReference Include="..\lib\atelier-extract.dacpac" /></ItemGroup>"""), null, declared ? ["atelier-extract.dacpac"] : []);
+
+        var key = Assert.Single(read.Model.FindTable(new ObjectName("studio", "shelf"))!.UniqueKeys);
+        Assert.Equal(declared, key.DisabledAt is null);
     }
 
     [Theory]

@@ -271,6 +271,7 @@ public class ConfigReaderTests
         { """{ "references": ["no/such/folder"] }""", "haruspex.json:1:18: error HAR3021: references[0]: \"no/such/folder\" is not a folder, so no referenced DACPAC can be found in it." },
         { """{ "builds": "sales.dacpac" }""", "haruspex.json:1:13: error HAR3005: builds: must be an array of DACPACs' file names, such as \"sales.dacpac\", each built from a project though nothing in it says so." },
         { """{ "builds": ["bin/sales.dacpac"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"bin/sales.dacpac\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
+        { """{ "builds": ["C:sales.dacpac"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"C:sales.dacpac\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
         { """{ "builds": ["sales.sqlproj"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"sales.sqlproj\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 

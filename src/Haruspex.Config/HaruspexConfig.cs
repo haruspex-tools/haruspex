@@ -39,8 +39,9 @@ public sealed record HaruspexConfig
 
     /// <summary>
     /// The DACPACs, by file name, declared built from a project's scripts (<c>builds</c>), though what made them isn't known: their
-    /// primary keys and unique constraints are then taken as enforced, which is the user's assumption, as a declared session is
-    /// (docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md). Empty when the file names none.
+    /// primary keys and unique constraints are then taken as enforced, which is the user's assumption
+    /// (docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md). It is kept here and not recorded in the IR. Empty when the
+    /// file names none.
     /// </summary>
     public EquatableArray<string> Builds { get; init; } = [];
 

@@ -14,8 +14,8 @@ build one, keeps no key constraint either, since the API writes the same `Origin
 nor does one without an `Origin.xml`.
 
 The config file's `builds` lists packages, by file name, that the user declares built from a project. Their primary keys and
-unique constraints are then claimed. That is the user's assumption, as a declared session is: haruspex can't check it, and the
-guarantee rests on it. Its checks are read as before, by what the package says made it. The maintainer added the setting the
+unique constraints are then claimed. That is the user's assumption: haruspex can't check it, and the guarantee rests on it, as on
+a declared session. Unlike `session`, it is kept in the config file and not recorded in the IR. Its checks are read as before, by what the package says made it. The maintainer added the setting the
 same day: a disabled key is rare, and a team whose packages a community SDK builds should be able to keep its key claims. Checks keep
 their own rule, the other way round: only a package that names its server is an extract, whose checks are all read, since only
 an extract marks a check the server doesn't trust.
@@ -45,4 +45,5 @@ and written again, whose constraints still carry no mark (observed), so the two 
 - *Read the disabled state from the database.* That needs a connection, and haruspex reads only source.
 
 **Reason.** A claim haruspex makes must hold for every execution. An extract can't tell an enforced key from one that isn't, so
-claiming it would rest on a guess. A team that wants the claims builds its package from the project, whose keys hold.
+claiming it would rest on a guess. A team that wants the claims builds its package from the project, whose keys hold, or
+declares the package a build in `builds`, on its own word.
