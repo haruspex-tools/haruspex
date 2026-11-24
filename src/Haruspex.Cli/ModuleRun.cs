@@ -201,8 +201,8 @@ internal static class ModuleRun
         var package = SqlProject.IsPackage(plan.Source);
         var projectFile = SqlProject.IsProjectFile(plan.Source);
         var collation = plan.Config.Collation;
-        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation)
-            : projectFile ? SqlProject.LoadProject(plan.Source, plan.Config.References, collation)
+        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation, plan.Config.Builds)
+            : projectFile ? SqlProject.LoadProject(plan.Source, plan.Config.References, collation, plan.Config.Builds)
             : SqlProject.Load(plan.Source, collation);
         IEnumerable<Diagnostic> unused = package || projectFile || plan.Config.References.Count == 0
             ? []

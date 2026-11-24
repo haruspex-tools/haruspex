@@ -11,7 +11,7 @@
 #   tests/dacpacs/build.sh ssdt                 WideWorldImporters from its own legacy SSDT project file
 #   tests/dacpacs/build.sh versions             the orders fixture under older Microsoft.Build.Sql versions
 #   tests/dacpacs/build.sh extract              atelier and orders deployed and extracted again; needs SqlPackage on the
-#                                               PATH and HARUSPEX_TEST_SQLSERVER, a server of your own
+#                                               PATH, HARUSPEX_TEST_SQLSERVER, a server of your own, and SQLCMD (extract())
 #   tests/dacpacs/build.sh clr                  the CLR assembly compiled, and the script that deploys it written
 #   tests/dacpacs/build.sh shapes               the package in master.dacpac's shape, zipped from its hand-written model.xml
 #   tests/dacpacs/build.sh references           winery and cooperage, which refer to other databases and DACPACs, with
@@ -174,15 +174,22 @@ versions() {
 }
 
 # A package extracted from a database differs from one built from a project: a module's text starts at line 1, an encrypted
-# module's text is replaced, and constraints say whether the server trusts them. Each is deployed to a database of its own,
-# extracted, and the database dropped.
+# module's text is replaced, constraints say whether the server trusts them, and an index says whether it is disabled, though a
+# primary key or unique constraint whose index is disabled says nothing (decision 0120). So before atelier is extracted, the
+# indexes of a nonclustered primary key (pk_shelf), a unique constraint (uq_kiln_serial) and a unique index created apart
+# (ix_kiln_serial_peak) are disabled, by $SQLCMD: a sqlcmd command line that reaches the same server. Each package is deployed
+# to a database of its own and extracted.
 extract() {
   : "${HARUSPEX_TEST_SQLSERVER:?set HARUSPEX_TEST_SQLSERVER to a server of your own}"
+  : "${SQLCMD:?set SQLCMD to a sqlcmd command line that reaches the same server, such as docker exec -e SQLCMDPASSWORD <container> /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa}"
   for package in "$out/atelier/atelier.dacpac" "$out/fixtures/orders.dacpac"; do
     local name database
     name="$(basename "$package" .dacpac)"
     database="haruspex_dacpac_$name"
     sqlpackage /a:Publish /sf:"$package" /tcs:"$HARUSPEX_TEST_SQLSERVER;Initial Catalog=$database" > /dev/null
+    if [ "$name" = atelier ]; then
+      $SQLCMD -d "$database" -b -Q "ALTER INDEX pk_shelf ON studio.shelf DISABLE; ALTER INDEX uq_kiln_serial ON studio.kiln DISABLE; ALTER INDEX ix_kiln_serial_peak ON studio.kiln DISABLE;"
+    fi
     sqlpackage /a:Extract /scs:"$HARUSPEX_TEST_SQLSERVER;Initial Catalog=$database" /tf:"$out/versions/$name-extract.dacpac" > /dev/null
     echo "extracted $name; drop the database $database"
   done

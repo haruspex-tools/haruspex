@@ -11,7 +11,8 @@ namespace Haruspex.SqlServer.Model;
 /// <param name="DisabledAt">
 /// Where a statement may disable its index (<c>ALTER INDEX … DISABLE</c>) or drop it (<c>ALTER TABLE … DROP CONSTRAINT</c>,
 /// <c>DROP INDEX</c>), so that rows written meanwhile need not be unique; null when none does. Which runs last depends on the
-/// order of the scripts, which the source does not say.
+/// order of the scripts, which the source does not say. A DACPAC that can't say whether its index is enabled (an extract's
+/// primary key or unique constraint) gives the key's own place.
 /// </param>
 public sealed record UniqueKey(string? Name, EquatableArray<string> Columns, bool IsPrimaryKey, SourceLocation At, SourceLocation? DisabledAt = null)
 {

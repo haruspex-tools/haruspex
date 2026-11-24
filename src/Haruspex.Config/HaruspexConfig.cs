@@ -38,6 +38,13 @@ public sealed record HaruspexConfig
     public EquatableArray<string> References { get; init; } = [];
 
     /// <summary>
+    /// The DACPACs, by file name, declared built from a project's scripts (<c>builds</c>), though what made them isn't known: their
+    /// primary keys and unique constraints are then taken as enforced, which is the user's assumption, as a declared session is
+    /// (docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md). Empty when the file names none.
+    /// </summary>
+    public EquatableArray<string> Builds { get; init; } = [];
+
+    /// <summary>
     /// The database's default collation (<c>collation</c>), for a source that doesn't record one, or null when the file doesn't say:
     /// the collation a column without <c>COLLATE</c> takes (<c>DatabaseModel.WithDeclaredCollation</c>).
     /// </summary>

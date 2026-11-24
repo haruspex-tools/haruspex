@@ -16,7 +16,8 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// </remarks>
 /// <param name="folders">The config file's <c>references</c> folders, full paths, where a package not beside its referrer is looked for.</param>
 /// <param name="diagnostics">Where a package not found or not readable, or a reference not read, is reported.</param>
-internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic> diagnostics)
+/// <param name="builds">The config file's <c>builds</c>: the file names of the packages declared built from a project.</param>
+internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic> diagnostics, IReadOnlyCollection<string> builds)
 {
     private readonly Dictionary<(string Name, string? Database), DacPackage?> opened = [];
     private readonly Dictionary<(string Name, string? Database), ReferenceRead> seen = [];
@@ -84,7 +85,7 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
         }
 
         foreach (var package in database)
-            PackageReader.Read(package, into, quiet);
+            PackageReader.Read(package, into, quiet, builds.Contains(package.Name, StringComparer.OrdinalIgnoreCase));
         return unread;
     }
 
