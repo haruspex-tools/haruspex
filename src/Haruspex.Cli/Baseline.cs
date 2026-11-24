@@ -48,7 +48,7 @@ internal sealed class Baseline(string path, IrDocument document, bool isIr)
     /// another build as its writer, or none, as a file of a version before 0.30 doesn't. A fix to a rule may withdraw a claim without
     /// changing the IR's version, so a file of a version this build reads may still hold a claim it knows to be false. The source the
     /// file was inferred from is inferred again by this build, with its rules, so the warning steers to it. A file this build wrote
-    /// (the same version from the same known commit) holds its own claims, and is taken without a word.
+    /// (from the same known commit, one set of rules) holds its own claims, and is taken without a word.
     /// Why: docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md.
     /// </summary>
     private static Outcome<IrDocument> WhoseClaims(IrBuild running, IrDocument document, string shown)

@@ -17,8 +17,9 @@ public sealed record IrBuild(string Version)
     public string? Commit { get; init; }
 
     /// <summary>
-    /// Whether <paramref name="other"/> is known to be this build: the same version from the same commit. Two builds whose commits
-    /// aren't both known may differ, so they aren't.
+    /// Whether <paramref name="other"/> is known to make this build's claims: built from the same commit, which is one set of rules,
+    /// whatever version each says (a preview and a release of one commit claim alike). Two builds whose commits aren't both known
+    /// may differ, so they aren't.
     /// </summary>
-    public bool IsKnownToBe(IrBuild? other) => other is { Commit: not null } && Commit == other.Commit && Version == other.Version;
+    public bool IsKnownToBe(IrBuild? other) => other is { Commit: not null } && Commit == other.Commit;
 }

@@ -168,6 +168,18 @@ public class BaselineBuildTests
         Assert.Equal(FixedBuild.Terminal.Build, IrJsonReader.Read(Written(folder)).Source.WrittenBy);
     }
 
+    [Fact]
+    public void A_baseline_ir_from_the_same_commit_under_another_version_is_taken_without_a_word()
+    {
+        // A preview and a release of one commit hold the same rules, so the release takes the preview's file as its own claims.
+        using var folder = Released(new Terminal { Version = "0.0.0-preview-00000000+" + new string('0', 40) });
+
+        var (exitCode, _, error) = Run(folder, FixedBuild.Terminal, "generate", "--baseline", "release/haruspex.ir.json");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("", error);
+    }
+
     [Theory]
     [InlineData("0.0.0-preview-0123abcd+0123abcd00000000000000000000000000000000", "0.0.0-preview-0123abcd", "0123abcd00000000000000000000000000000000")]
     [InlineData("1.2.3+0123abcd000000000000000000000000000000000000000000000000000000ff", "1.2.3", "0123abcd000000000000000000000000000000000000000000000000000000ff")]

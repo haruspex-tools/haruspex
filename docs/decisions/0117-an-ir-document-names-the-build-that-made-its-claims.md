@@ -9,8 +9,8 @@ combined document names its baseline's writer too: the build that runs, when the
 the baseline's IR file names, or none when that file names none. The reader requires the build in a document of 0.30 and refuses
 it in one labelled earlier, which keeps its old meaning and is still read.
 
-A baseline given as an IR file holds the claims of the build that wrote it. Unless that is the build that runs (the same version
-from the same known commit), `generate` and `check` warn (HAR6043), naming both builds, and steer to the source the file was
+A baseline given as an IR file holds the claims of the build that wrote it. Unless it was built from the same known commit as the
+build that runs (one commit is one set of rules, whatever version each build says), `generate` and `check` warn (HAR6043), naming both builds, and steer to the source the file was
 inferred from, which the build that runs infers again with its own rules.
 
 The build is where the claims came from, not a claim, so nothing that compares claims looks at it: `check` passes an IR another
@@ -20,7 +20,7 @@ that never moves (`FixedBuild`, its commit all zeros), so no snapshot changes wi
 file with what the build makes, as the example application's does, compares it as `check` does.
 
 **Context.** [Decision 0095](0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md) corrected a
-claim (a value converted to `nchar(n)` is not always n code units long) without changing the format, so a file labelled 0.25 to 0.28
+claim (a value converted to `nchar(n)` is not always n code units long) without changing the format, so a file labelled 0.25 to 0.29
 written before it and one written after it share a label and say different things of the same source. Other soundness fixes did
 the same. Moving the version could not have told them apart: the label records which properties a document uses, and the
 correction added none. Read as a baseline, the earlier file carried the withdrawn claim into new types without a word.

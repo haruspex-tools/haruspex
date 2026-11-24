@@ -707,13 +707,13 @@ before 0.30 names none, and its label says only which properties it uses.
 **0.30** (23 Nov 2026, the build that wrote it). A source's `writtenBy`, the build of the tool that wrote the document's claims, its
 `version` and, when known, its `commit` ("A document", above;
 [decision 0117](../../docs/decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md)). Every document of 0.30 names its
-own; haruspex writes no other. Every 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 document is a 0.30 document that names no build,
-meaning the same, so this reader reads all eight
+own; haruspex writes no other. A 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23 document says nothing 0.30 changed the meaning of:
+it is what a 0.30 document would be without its `writtenBy`, under its own label, so this reader reads all seven
 ([decision 0024](../../docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)). **Older
 files may hold claims later builds corrected.** A file labelled 0.25 to 0.29 says nothing of the build that wrote it, and fixes made
 within those versions changed claims without moving the version. One is
 [decision 0095](../../docs/decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)
-(21 Nov 2026): a file of 0.25 to 0.28 written before it claims `length` n for a value converted to `nchar(n)`, which is false under
+(21 Nov 2026): a file of 0.25 to 0.29 written before it claims `length` n for a value converted to `nchar(n)`, which is false under
 a supplementary-character (`_SC`) collation, where the value may be n - 1 code units long; it is `maxLength` n and `minLength` n - 1
 since. Write such a file again from its source; `haruspex generate` and `check` warn of one given as a baseline (HAR6043).
 

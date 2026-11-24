@@ -193,6 +193,13 @@ older claim, and read as the current version it would carry it under a label tha
 `canonical` where 0.19 said `collation` of the same source, a weaker claim, so the 0.20 reader refused 0.19. What decides is the
 meaning of the claims, never only whether the properties are ones the reader knows.
 
+0.20 is history: a change to a rule moved the version then, and in the safe direction, since the older file claimed less than the
+newer reader would. A correction can go the other way, as
+[decision 0095](../decisions/0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md)'s did: an
+older file claimed more than is true, under a label no fix moved. From 0.30 a correction to a rule doesn't move the version; the
+build that wrote a document records it ([decision 0117](../decisions/0117-an-ir-document-names-the-build-that-made-its-claims.md)).
+The version moves when the format does: a property or a value added, or what one means changed.
+
 The other half of the rule is on the writer's side: **a document is labelled with the oldest version that says all it says**
 ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). Each version from
 0.24 to 0.30 added only something a document either has or lacks: a baseline, where a value came from, table types, binary

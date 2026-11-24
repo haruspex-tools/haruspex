@@ -25,6 +25,13 @@ it was written. Two cases show the two answers:
   `collation` of the same source, a weaker claim. Read as 0.20, a 0.19 document would carry the weaker claim under a label that
   promises the stronger one.
 
+0.20 is history: a change to a rule moved the version then, in the safe direction, since the older document claimed less. A
+correction can go the other way ([decision 0095](0095-a-length-is-the-server-s-and-a-target-claims-the-fewest-code-points-it-can-hold.md):
+older files claimed more than is true, under a label no fix moved). From 0.30 a correction to a rule doesn't move the version, and
+the build that wrote a document records it ([decision 0117](0117-an-ir-document-names-the-build-that-made-its-claims.md)); the
+version moves when the format does, a property or a value added or what one means changed, and this test decides which older
+versions are read.
+
 Every version from 0.24 to 0.30 added only what a document either has or lacks (a baseline, where a value came from, table types,
 binary values, declarations of a column's JSON, a reason in words, the build that wrote it), so the 0.30 reader reads each of them
 and 0.23. No 0.22
