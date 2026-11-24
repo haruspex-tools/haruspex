@@ -1,0 +1,69 @@
+name: Site
+
+# Builds haruspex.tools from the repository and deploys it to GitHub Pages: every address haruspex writes into a file it doesn't
+# own (docs/decisions/0121-every-address-haruspex-writes-is-served-from-haruspex-tools.md). A deployment replaces the whole site, so each
+# run builds all of it, main and every release tag, from the repository alone; a lost or broken site is mended by running this
+# again (site/README.md).
+on:
+  push:
+    branches: [main]
+    # A release's tag publishes its schemas at the tag's own address.
+    tags: ["v*"]
+  # Run by hand, from the Actions page or `gh workflow run Site --ref main`, to build the site again.
+  workflow_dispatch:
+
+# Nothing by default; each job asks for what it needs.
+permissions: {}
+
+# One deployment at a time, and one that has started is never cancelled, which could leave the site half replaced. A run
+# that waits builds from main as it is when it starts, so the newest run always deploys the newest site.
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # main, whatever pushed: a tag's run deploys main's site with the tag's schemas in it, not the tag's site alone. The
+      # whole history, for the tags.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      # No cache: the site is published, and the script needs no package, so nothing is restored that a run could have poisoned.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - run: node site/build.mjs . "$RUNNER_TEMP/site"
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    # Only from main and from tags: a run dispatched by hand on another branch builds the site, which tests the build, but
+    # deploys nothing.
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # What deploy-pages needs, and only here: to publish to Pages, and an OIDC token that proves the run to it.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

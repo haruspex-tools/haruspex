@@ -64,6 +64,8 @@ binary once on the example application, and keeps it, with the licences that go 
 those binaries it packs the npm tarballs ([packaging/npm](packaging/npm/README.md)), installs them into an empty project on
 each platform, and runs the command there.
 It runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint` and `zizmor`.
+A second workflow, `site.yml`, builds haruspex.tools and deploys it to GitHub Pages from `main` and from release tags
+([site](site/README.md)).
 Every relative link in the repository's Markdown, anchors included, must resolve; `MarkdownLinkTests` checks
 them.
 Package versions are central (`Directory.Packages.props`) and locked (`packages.lock.json`, committed).
