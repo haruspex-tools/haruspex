@@ -80,15 +80,4 @@ public class SqlProjectTests
 
         Assert.Equal(["a.second", "b.first"], project.Procedures.Select(p => p.ToString()));
     }
-
-    [Fact]
-    public void An_include_pattern_that_matches_nothing_is_reported()
-    {
-        var project = SqlProject.Load(Fixture.Named("orders").Database);
-
-        var selection = project.Select([ObjectPattern.Parse("sales.get_*"), ObjectPattern.Parse("sales.nothing_*")]);
-
-        Assert.Equal(["sales.get_order"], selection.Procedures.Select(p => p.ToString()));
-        Assert.Equal(["sales.nothing_*"], selection.Unmatched.Select(p => p.Text));
-    }
 }

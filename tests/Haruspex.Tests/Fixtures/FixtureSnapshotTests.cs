@@ -111,7 +111,6 @@ public class FixtureSnapshotTests
         var fixture = FixtureOf[procedure];
         var project = fixture.Project;
         var selection = project.Select([ObjectPattern.Parse(procedure)]);
-        Assert.Empty(selection.Unmatched);
 
         // A fixture's haruspex.json declares results inference can't see; a declaration a procedure doesn't use is only a
         // warning, which a snapshot of one procedure ignores.

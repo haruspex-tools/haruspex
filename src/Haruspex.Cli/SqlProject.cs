@@ -170,23 +170,6 @@ internal sealed class SqlProject
         return folders;
     }
 
-    /// <summary>
-    /// The procedures that match any of the patterns, and the patterns that match none. A pattern that matches
-    /// nothing is reported, not ignored: a typo would otherwise quietly drop an interface from the generated code.
-    /// </summary>
-    public Selection Select(IReadOnlyList<ObjectPattern> include)
-    {
-        ArgumentNullException.ThrowIfNull(include);
-        return new Selection([.. Procedures.Where(p => include.Any(i => i.Matches(p)))], [.. include.Where(i => !Procedures.Any(i.Matches))]);
-    }
-
-    /// <summary>
-    /// Infers the IR for the given procedures and settles their names with the default naming rules, as when there is no
-    /// config file.
-    /// </summary>
-    /// <returns>The document, with what inference could not check; or, when the default rules can't name them all (two names clash), why.</returns>
-    public Outcome<IrDocument> Infer(IReadOnlyList<ObjectName> selected) => Infer(selected, HaruspexConfig.None("."));
-
     /// <summary>Infers the IR for the given procedures and the query files, and applies the config file's overrides and naming to it.</summary>
     /// <param name="selected">The procedures to infer.</param>
     /// <param name="config">The config.</param>
