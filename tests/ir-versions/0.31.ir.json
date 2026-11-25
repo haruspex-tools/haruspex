@@ -1,0 +1,743 @@
+{
+  "irVersion": "0.31",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-preview-be03b34a",
+      "commit": "be03b34a221563749c6187b293730366eee18561"
+    },
+    "path": "orders-extract.dacpac",
+    "package": "orders-extract.dacpac",
+    "sha256": "a2b04cc020fb9efc54ee4a95e9fe9c5cf9861fdec962faa04ff3462f62f28955",
+    "builds": [
+      "orders-extract.dacpac"
+    ]
+  },
+  "objects": [
+    {
+      "id": "sales.get_order",
+      "name": "GetOrder",
+      "kind": "procedure",
+      "at": "orders-extract.dacpac/[sales].[get_order]:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetOrderRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "orders-extract.dacpac/[sales].[get_order]:7:5"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetOrderCustomer": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].customer"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.customer_id",
+              "sql": "int",
+              "at": "orders-extract.dacpac/[sales].[customer]:1:1"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.customer.name",
+              "sql": "nvarchar(100)",
+              "at": "orders-extract.dacpac/[sales].[customer]:2:1"
+            }
+          ]
+        },
+        {
+          "name": "email",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(256)",
+            "maxLength": {
+              "value": 256,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(256)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.customer.email"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.customer.email",
+              "sql": "nvarchar(256)",
+              "at": "orders-extract.dacpac/[sales].[customer]:3:1"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderLine": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.order_line_id",
+              "sql": "int",
+              "at": "orders-extract.dacpac/[sales].[order_line]:1:1"
+            }
+          ]
+        },
+        {
+          "name": "quantity",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.quantity",
+              "sql": "smallint",
+              "at": "orders-extract.dacpac/[sales].[order_line]:4:1"
+            }
+          ]
+        },
+        {
+          "name": "unitPrice",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order_line.unit_price",
+              "sql": "decimal(19,2)",
+              "at": "orders-extract.dacpac/[sales].[order_line]:5:1"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order_line.note"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order_line.note",
+              "sql": "nvarchar(200)",
+              "at": "orders-extract.dacpac/[sales].[order_line]:6:1"
+            }
+          ]
+        },
+        {
+          "name": "product",
+          "type": {
+            "ref": "GetOrderLineProduct"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "GetOrderLineProduct": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].lines[].product"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.product.sku",
+              "sql": "varchar(20)",
+              "at": "orders-extract.dacpac/[sales].[product]:2:1"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.product.name",
+              "sql": "nvarchar(100)",
+              "at": "orders-extract.dacpac/[sales].[product]:3:1"
+            }
+          ]
+        },
+        {
+          "name": "weightKg",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,3)",
+            "digits": {
+              "precision": 9,
+              "scale": 3,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "min": {
+              "value": -999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            },
+            "max": {
+              "value": 999999.999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,3)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.product.weight_kg"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.product.weight_kg",
+              "sql": "decimal(9,3)",
+              "at": "orders-extract.dacpac/[sales].[product]:4:1"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.order_id",
+              "sql": "int",
+              "at": "orders-extract.dacpac/[sales].[order]:1:1"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "type": {
+            "kind": "uuid",
+            "sql": "uniqueidentifier"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.reference",
+              "sql": "uniqueidentifier",
+              "at": "orders-extract.dacpac/[sales].[order]:4:1"
+            }
+          ]
+        },
+        {
+          "name": "placedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.placed_at",
+              "sql": "datetime2(0)",
+              "at": "orders-extract.dacpac/[sales].[order]:5:1"
+            }
+          ]
+        },
+        {
+          "name": "shippedAt",
+          "type": {
+            "kind": "datetime",
+            "format": "offset",
+            "sql": "datetimeoffset(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order.shipped_at"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order.shipped_at",
+              "sql": "datetimeoffset(0)",
+              "at": "orders-extract.dacpac/[sales].[order]:6:1"
+            }
+          ]
+        },
+        {
+          "name": "deliveryTime",
+          "type": {
+            "kind": "time",
+            "sql": "time(0)"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "sales.order.delivery_time"
+            }
+          ],
+          "from": [
+            {
+              "column": "sales.order.delivery_time",
+              "sql": "time(0)",
+              "at": "orders-extract.dacpac/[sales].[order]:7:1"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "encoding": "single-byte",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.status",
+              "sql": "varchar(20)",
+              "at": "orders-extract.dacpac/[sales].[order]:8:1"
+            }
+          ]
+        },
+        {
+          "name": "total",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(19,2)",
+            "digits": {
+              "precision": 19,
+              "scale": 2,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(19,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.total",
+              "sql": "decimal(19,2)",
+              "at": "orders-extract.dacpac/[sales].[order]:9:1"
+            }
+          ]
+        },
+        {
+          "name": "isPriority",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "sales.order.is_priority",
+              "sql": "bit",
+              "at": "orders-extract.dacpac/[sales].[order]:10:1"
+            }
+          ]
+        },
+        {
+          "name": "customer",
+          "type": {
+            "ref": "GetOrderCustomer"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "salesperson",
+          "type": {
+            "ref": "GetOrderSalesperson"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "all-fields-null",
+              "at": "orders-extract.dacpac/[sales].[get_order]:18:12"
+            }
+          ]
+        },
+        {
+          "name": "lines",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetOrderLine"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "orders-extract.dacpac/[sales].[get_order]:21:23"
+            }
+          ]
+        }
+      ]
+    },
+    "GetOrderSalesperson": {
+      "kind": "object",
+      "identity": {
+        "procedure": "sales.get_order",
+        "path": "results[0].salesperson"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "orders-extract.dacpac/[sales].[get_order]:37:15"
+            }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.salesperson_id",
+              "sql": "int",
+              "at": "orders-extract.dacpac/[hr].[salesperson]:1:1"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(100)",
+            "maxLength": {
+              "value": 100,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(100)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "orders-extract.dacpac/[sales].[get_order]:37:15"
+            }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.display_name",
+              "sql": "nvarchar(100)",
+              "at": "orders-extract.dacpac/[hr].[salesperson]:2:1"
+            }
+          ]
+        },
+        {
+          "name": "hiredOn",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unmatched-row",
+              "at": "orders-extract.dacpac/[sales].[get_order]:37:15"
+            }
+          ],
+          "from": [
+            {
+              "column": "hr.salesperson.hired_on",
+              "sql": "date",
+              "at": "orders-extract.dacpac/[hr].[salesperson]:3:1"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

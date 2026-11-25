@@ -4,7 +4,7 @@ namespace Haruspex.Ir;
 
 /// <summary>
 /// Where the shapes were inferred from: the dialect, the package they were read from when there is one, and what the callers'
-/// sessions are declared to set; and, for a document combining two databases, where the other was read from.
+/// sessions are declared to set and which packages are declared builds; and, for a document combining two databases, where the other was read from.
 /// </summary>
 /// <param name="Dialect">The SQL dialect of the source, such as <c>tsql</c>.</param>
 public sealed record IrSource(string Dialect)
@@ -44,6 +44,20 @@ public sealed record IrSource(string Dialect)
             .OrderBy(r => r.Name, StringComparer.Ordinal)
             .ThenBy(r => r.Database is not null)
             .ThenBy(r => r.Database, StringComparer.Ordinal)];
+    } = [];
+
+    /// <summary>
+    /// The packages read for this source that the config file declared builds (<c>builds</c>), by their file names as
+    /// <see cref="Package"/> and <see cref="References"/> name them, sorted (0.31): packages whose primary keys and unique constraints
+    /// are claimed on the user's word, as a declared session's options are, though nothing in them says what made them. Empty when
+    /// none is declared, or when no package declared one was read, and then the file leaves <c>builds</c> out. An assumption the
+    /// claims rest on, so comparing two documents (<see cref="IrComparison"/>) reports it changing.
+    /// Why: docs/decisions/0122-the-ir-records-the-packages-declared-builds.md.
+    /// </summary>
+    public EquatableArray<string> Builds
+    {
+        get;
+        init => field = [.. (value ?? throw new ArgumentNullException(nameof(value))).Order(StringComparer.Ordinal)];
     } = [];
 
     /// <summary>

@@ -48,13 +48,14 @@ public class BaselineBuildTests
     private static string Written(TempDirectory folder) => File.ReadAllText(Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName));
 
     [Fact]
-    public void Every_ir_file_generate_writes_names_the_build_that_runs_and_is_0_30()
+    public void Every_ir_file_generate_writes_names_the_build_that_runs_and_is_0_30_when_no_build_is_declared()
     {
+        // A document that records a package declared a build is 0.31 (DeclaredBuildTests); one that records none says no more than 0.30.
         using var folder = Released(FixedBuild.Terminal);
 
         var document = IrJsonReader.Read(Written(folder));
 
-        Assert.Equal(IrDocument.CurrentVersion, document.Version);
+        Assert.Equal(IrDocument.StampedVersion, document.Version);
         Assert.Equal(new IrBuild("0.0.0-test") { Commit = new string('0', 40) }, document.Source.WrittenBy);
         Assert.StartsWith("{\n  \"irVersion\": \"0.30\",\n  \"source\": {\n    \"dialect\": \"tsql\",\n    \"writtenBy\": {\n      \"version\": \"0.0.0-test\",\n      \"commit\": \"0000000000000000000000000000000000000000\"\n    },\n", Written(folder), StringComparison.Ordinal);
     }

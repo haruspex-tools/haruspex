@@ -155,7 +155,7 @@ internal sealed class ExplainWriter(IrDocument document, ExplainSources sources,
     private void SayIfNotDerived(TextWriter output)
     {
         if (!Derived)
-            Say(output, $"  this IR is {document.Version}, which doesn't say where a field came from: run haruspex generate to write it as {IrDocument.CurrentVersion}");
+            Say(output, $"  this IR is {document.Version}, which doesn't say where a field came from: run haruspex generate to write it as {IrDocument.StampedVersion} or later");
     }
 
     /// <summary>The unknowns at the field's place, with their detail and where.</summary>

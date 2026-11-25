@@ -9,4 +9,11 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <param name="Package">The package read; null when it couldn't be read at all.</param>
 /// <param name="References">Every package it refers to, directly or through another, each once, in the order met.</param>
 /// <param name="Diagnostics">Problems found while reading, in the order found.</param>
-public sealed record DacpacReadResult(DatabaseModel Model, LoadedPackage? Package, EquatableArray<ReferenceRead> References, EquatableArray<Diagnostic> Diagnostics);
+public sealed record DacpacReadResult(DatabaseModel Model, LoadedPackage? Package, EquatableArray<ReferenceRead> References, EquatableArray<Diagnostic> Diagnostics)
+{
+    /// <summary>
+    /// The packages read whose primary keys and unique constraints were taken as enforced because the config file declared them
+    /// builds (<c>builds</c>), each once, in the order read; empty when none was.
+    /// </summary>
+    public EquatableArray<LoadedPackage> ReadAsBuilds { get; init; } = [];
+}

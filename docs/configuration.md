@@ -100,7 +100,9 @@ key constraint of an extract is claimed, and a query that fixes its columns isn'
 extract marks it disabled. A package is taken for a build only when its `Origin.xml` says DacFx's build task
 (`Microsoft.Build.Sql`'s or SSDT's) made it, so one written by DacFx's API, as community SDKs build, claims no key constraint
 either. `builds` lists the packages, by file name (`"builds": ["sales.dacpac"]`), that you declare built from a project:
-their key constraints are then claimed, on your word that every one is enforced. The IR doesn't record it.
+their key constraints are then claimed, on your word that every one is enforced. The IR records each package read as one
+(`source.builds`), so a generated file says what it assumed, and `check` fails when the declaration changes, naming the package
+([decision 0122](decisions/0122-the-ir-records-the-packages-declared-builds.md)).
 
 Locations in what is read from a package name the package and the object, with a line in the object's own text:
 `sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).

@@ -322,6 +322,26 @@ public partial class IrComparisonTests
     }
 
     [Fact]
+    public void A_package_declared_a_build_or_no_longer_is_a_change_of_the_whole_document_naming_it()
+    {
+        var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");
+        IrDocument Declaring(params string[] builds) => before with { Source = before.Source with { Builds = [.. builds] } };
+
+        Assert.Equal(["source.builds[\"sales.dacpac\"]: now declared a build"], Changes(Declaring("ledger.dacpac"), Declaring("ledger.dacpac", "sales.dacpac")));
+        Assert.Equal(["source.builds[\"ledger.dacpac\"]: no longer declared a build"], Changes(Declaring("ledger.dacpac", "sales.dacpac"), Declaring("sales.dacpac")));
+        Assert.Empty(IrComparison.Compare(Declaring("sales.dacpac"), Declaring("sales.dacpac")));
+    }
+
+    [Fact]
+    public void A_baseline_s_package_declared_a_build_is_a_change_named_at_the_baseline()
+    {
+        var before = IrSamples.Built;
+        var after = before with { Source = before.Source with { Baseline = before.Source.Baseline! with { Builds = [] } } };
+
+        Assert.Equal(["source.baseline.builds[\"shop-release.dacpac\"]: no longer declared a build"], Changes(before, after));
+    }
+
+    [Fact]
     public void A_different_package_or_its_hash_is_not_a_claim()
     {
         var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");

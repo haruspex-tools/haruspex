@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Stamped"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Built"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here. And they agree on values and
 /// labels: each way of breaking a file in <see cref="Breakages"/> says which side refuses it, and a rule only the reader checks is
 /// one the IR README lists, so a disagreement in either direction fails here.
@@ -24,7 +24,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Stamped);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Built);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
@@ -59,6 +59,15 @@ public class IrReaderSchemaAgreementTests
         {
             Assert.Empty(schemaErrors);
             Assert.EndsWith($"which names no fold in $.folds.", refusal?.Problem, StringComparison.Ordinal);
+            return;
+        }
+
+        // What ties a package declared a build to a package the source read (0.31), which the schema can't follow from one place to
+        // another: the references as a whole, and the hash that says a reference declared a build was found.
+        if ((location == "/source" && key == "references") || (location == "/source/references/0" && key == "sha256"))
+        {
+            Assert.Empty(schemaErrors);
+            Assert.EndsWith("which names no package the source read: a build is its package or a reference found.", refusal?.Problem, StringComparison.Ordinal);
             return;
         }
 
@@ -237,6 +246,21 @@ public class IrReaderSchemaAgreementTests
         ["a writer's empty version"] = (Stamped, json => json["source"]!["writtenBy"]!["version"] = "", null),
         ["a writer's commit in capitals"] = (Stamped, json => json["source"]!["writtenBy"]!["commit"] = new string('E', 40), null),
         ["a writer's commit cut short"] = (Stamped, json => json["source"]!["writtenBy"]!["commit"] = "0123abcd", null),
+        // Packages declared builds (0.31): only in 0.31, where a source records one; each a package the source read, once.
+        ["0.31: no build recorded"] = (Stamped, json => json["irVersion"] = "0.31", null),
+        ["0.31: no build recorded, combined"] = (Built, json =>
+        {
+            json["source"]!.AsObject().Remove("builds");
+            json["source"]!["baseline"]!.AsObject().Remove("builds");
+        }, null),
+        ["0.30: a build recorded"] = (Stamped, json => json["source"]!["builds"] = new JsonArray("shop.dacpac"), null),
+        ["0.30: a baseline's build recorded"] = (Stamped, json => json["source"]!["baseline"]!["builds"] = new JsonArray("shop-release.dacpac"), null),
+        ["0.31: no writer named"] = (Built, json => json["source"]!.AsObject().Remove("writtenBy"), null),
+        ["no build listed"] = (Built, json => json["source"]!["builds"] = new JsonArray(), null),
+        ["a build listed twice"] = (Built, json => json["source"]!["builds"] = new JsonArray("shop.dacpac", "shop.dacpac"), null),
+        ["a build that is no package read"] = (Built, json => json["source"]!["builds"] = new JsonArray("elsewhere.dacpac"), NamesNothing),
+        ["a build that is a reference not found"] = (Built, json => json["source"]!["builds"] = new JsonArray("master.dacpac"), NamesNothing),
+        ["a baseline's build that is no package read"] = (Built, json => json["source"]!["baseline"]!["builds"] = new JsonArray("shop.dacpac"), NamesNothing),
         ["a baseline writer's commit cut short"] = (Stamped, json => json["source"]!["baseline"]!["writtenBy"]!["commit"] = "4567cdef", null),
 
         // A binary value says only its length, in bytes.
@@ -352,6 +376,8 @@ public class IrReaderSchemaAgreementTests
     private static string Declared() => IrJsonWriter.Write(IrSamples.Declared);
 
     private static string Stamped() => IrJsonWriter.Write(IrSamples.Stamped);
+
+    private static string Built() => IrJsonWriter.Write(IrSamples.Built);
 
     private static string VersionFile(string version) => System.IO.File.ReadAllText(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json"));
 

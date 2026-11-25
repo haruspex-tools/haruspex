@@ -69,10 +69,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, and (0.30) the build that wrote it. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.StampedVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, and (0.31) the packages the config file declared builds. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that records packages declared builds (source.builds, or its baseline's), else {IrDocument.StampedVersion} for one that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.StampedVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -115,7 +115,7 @@ public static class IrJsonSchema
     [
         Label(IrDocument.OneDatabaseVersion, combined: false),
         Label(IrDocument.CombinedVersion, combined: true),
-        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.CurrentVersion])
+        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.StampedVersion, IrDocument.CurrentVersion])
             .SelectMany(version => (JsonNode[])[Label(version, combined: false), Label(version, combined: true)]),
     ];
 
@@ -131,29 +131,50 @@ public static class IrJsonSchema
     {
         var sources = IrDocument.IsSince(version, IrDocument.SourcesVersion);
         var declares = IrDocument.IsSince(version, IrDocument.DeclaredVersion);
-        var writer = version == IrDocument.CurrentVersion;
+        var writer = IrDocument.IsSince(version, IrDocument.StampedVersion);
+        var builds = version == IrDocument.CurrentVersion;
         var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
         JsonObject Reasons() => Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth.DeepClone()))))));
 
         // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from; before 0.30,
-        // without the build that wrote it, which from 0.30 the document's own source always names.
+        // without the build that wrote it, which from 0.30 the document's own source always names; before 0.31, without packages
+        // declared builds, which in 0.31 the document's own source or its baseline records.
         JsonObject Source(bool baseline)
         {
-            var source = baseline ? Having("baseline") : Lacking("baseline");
-            string[] lacking = [.. sources ? [] : (string[])["path", "files"], .. writer ? [] : (string[])["writtenBy"]];
-            if (lacking.Length > 0)
+            string[] lacking = [.. sources ? [] : (string[])["path", "files"], .. writer ? [] : (string[])["writtenBy"], .. builds ? [] : (string[])["builds"]];
+            string[] absent = [.. baseline ? [] : (string[])["baseline"], .. lacking];
+            var source = Node(("type", "object"));
+            if (absent.Length > 0)
+                source["not"] = AnyHaving(absent);
+            var properties = Node();
+            var required = new List<string>();
+            if (baseline)
             {
-                source["not"] = AnyHaving([.. baseline ? [] : (string[])["baseline"], .. lacking]);
-                if (baseline)
-                    source["properties"] = Node(("baseline", Lacking(lacking)));
+                properties["baseline"] = lacking.Length > 0 ? Lacking(lacking) : true;
+                required.Add("baseline");
             }
 
             if (writer)
             {
-                source["properties"] = baseline ? Node(("baseline", true), ("writtenBy", true)) : Node(("writtenBy", true));
-                source["required"] = baseline ? Names("baseline", "writtenBy") : Names("writtenBy");
+                properties["writtenBy"] = true;
+                required.Add("writtenBy");
             }
 
+            if (builds && baseline)
+            {
+                // Either source may hold them: the document's own, or its baseline's, read from a package declared a build.
+                source["anyOf"] = new JsonArray(Having("builds"), Node(("type", "object"), ("properties", Node(("baseline", Having("builds"))))));
+            }
+            else if (builds)
+            {
+                properties["builds"] = true;
+                required.Add("builds");
+            }
+
+            if (properties.Count > 0)
+                source["properties"] = properties;
+            if (required.Count > 0)
+                source["required"] = Names([.. required]);
             return source;
         }
 
@@ -214,6 +235,12 @@ public static class IrJsonSchema
                 ("type", "array"),
                 ("minItems", 1),
                 ("items", Ref("packageReference")))),
+            ("builds", Node(
+                ("description", "The packages the config file declared builds, of those the source read: its package and the references found, by the names they give them, sorted (0.31). Their primary keys and unique constraints are claimed on the user's word. Left out when none is declared."),
+                ("type", "array"),
+                ("minItems", 1),
+                ("uniqueItems", true),
+                ("items", Text("A package's file name, as package or a reference names it.")))),
             ("session", Node(
                 ("description", "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared."),
                 ("type", "object"),
@@ -229,7 +256,7 @@ public static class IrJsonSchema
 
     private static JsonObject Definitions() => Node(
         ("build", Closed(
-            "The build of the tool that wrote the source's claims (0.30). Always given for a document's own source when irVersion is 0.30, never before it; a baseline's is left out when not known.",
+            "The build of the tool that wrote the source's claims (0.30). Always given for a document's own source when irVersion is 0.30 or later, never before it; a baseline's is left out when not known.",
             ["version"],
             ("version", Node(("description", "The tool's version, as it says it, without the commit."), ("type", "string"), ("minLength", 1))),
             ("commit", Node(("description", "The whole commit the build was made from; left out when the build didn't know it."), ("type", "string"), ("pattern", "^[0-9a-f]{40}([0-9a-f]{24})?$"))))),

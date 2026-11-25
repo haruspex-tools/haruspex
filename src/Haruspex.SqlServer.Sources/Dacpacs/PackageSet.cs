@@ -22,9 +22,17 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
     private readonly Dictionary<(string Name, string? Database), DacPackage?> opened = [];
     private readonly Dictionary<(string Name, string? Database), ReferenceRead> seen = [];
     private readonly Dictionary<string, DacPackage?> byPath = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<LoadedPackage> readAsBuilds = [];
 
     /// <summary>Every reference met, each once, in the order met.</summary>
     public IReadOnlyList<ReferenceRead> References => [.. seen.Values];
+
+    /// <summary>
+    /// Every package read whose key constraints were taken as enforced because the config file's <c>builds</c> names it, each once,
+    /// in the order read: what the IR's source record says was declared a build. A package <c>builds</c> names that wasn't read,
+    /// found or not, isn't here, since nothing was assumed of it.
+    /// </summary>
+    public IReadOnlyList<LoadedPackage> ReadAsBuilds => readAsBuilds;
 
     /// <summary>The config file's <c>references</c> folders.</summary>
     public IReadOnlyList<string> Folders { get; } = folders;
@@ -85,7 +93,13 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
         }
 
         foreach (var package in database)
-            PackageReader.Read(package, into, quiet, builds.Contains(package.Name, StringComparer.OrdinalIgnoreCase));
+        {
+            var declared = builds.Contains(package.Name, StringComparer.OrdinalIgnoreCase);
+            if (declared && !readAsBuilds.Exists(p => p.Path == package.Path))
+                readAsBuilds.Add(new LoadedPackage(package.Name, package.Path, package.Sha256));
+            PackageReader.Read(package, into, quiet, declared);
+        }
+
         return unread;
     }
 

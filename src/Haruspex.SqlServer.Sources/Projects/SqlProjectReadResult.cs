@@ -13,4 +13,11 @@ namespace Haruspex.SqlServer.Sources.Projects;
 /// found. A project of another database is read from its scripts, as the project given is, and isn't listed.
 /// </param>
 /// <param name="Diagnostics">Problems found while reading, each once, in the order found. Locations are relative to the given project's folder.</param>
-public sealed record SqlProjectReadResult(DatabaseModel Model, EquatableArray<string> Projects, EquatableArray<ReferenceRead> References, EquatableArray<Diagnostic> Diagnostics);
+public sealed record SqlProjectReadResult(DatabaseModel Model, EquatableArray<string> Projects, EquatableArray<ReferenceRead> References, EquatableArray<Diagnostic> Diagnostics)
+{
+    /// <summary>
+    /// The packages read whose primary keys and unique constraints were taken as enforced because the config file declared them
+    /// builds (<c>builds</c>), each once, in the order read; empty when none was.
+    /// </summary>
+    public EquatableArray<LoadedPackage> ReadAsBuilds { get; init; } = [];
+}
