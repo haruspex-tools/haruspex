@@ -247,7 +247,8 @@ public class IrJsonSchemaTests
     /// Each file in <c>schemas/ir</c> is the schema of a version the format has had, named for it, at the address its <c>$id</c>
     /// names; every version from the first published, 0.29, to the current one has its file, as each has its file in
     /// <c>tests/ir-versions</c>; and each still validates that version's file there, in the tests' own validator and in Ajv. An older
-    /// version's file is kept as it was, since the generator writes only the current one.
+    /// version's file is kept as it was when its version was current but for its <c>$id</c>, which moved to haruspex.tools with every
+    /// other address (schemas/ir/README.md), since the generator writes only the current one.
     /// </summary>
     [Fact]
     public void Each_version_s_schema_is_named_for_it_and_still_validates_its_file()

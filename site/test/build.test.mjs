@@ -124,6 +124,49 @@ test("each page leads to its Markdown on main, in the repository", (t) => {
   assert.equal(repository, "https://github.com/haruspex-tools/haruspex");
 });
 
+test("a page a release holds that main has dropped leads to the newest release that holds it", (t) => {
+  const site = repo({ ...base, "docs/old-name.md": "# Old\n", "docs/reasons/withdrawn.md": "# Withdrawn\n" });
+  t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));
+  site.git("tag", "v1.2.3");
+  site.put({ "docs/reasons/withdrawn.md": "# Withdrawn, reworded\n" });
+  site.git("tag", "v1.10.0");
+  site.put({ "docs/old-name.md": null, "docs/new-name.md": "# New\n", "docs/reasons/withdrawn.md": null });
+
+  const written = buildSite(site.checkout, site.out);
+
+  const target = (file) => read(site, file).match(/<meta http-equiv="refresh" content="0; url=([^"]+)">/)[1];
+  assert.equal(target("docs/new-name/index.html"), `${repository}/blob/main/docs/new-name.md`);
+  assert.equal(target("docs/old-name/index.html"), `${repository}/blob/v1.10.0/docs/old-name.md`);
+  // v1.10.0 is newer than v1.2.3, though it sorts before it as text.
+  assert.equal(target("reasons/withdrawn/index.html"), `${repository}/blob/v1.10.0/docs/reasons/withdrawn.md`);
+  assert.equal(target("docs/configuration/index.html"), `${repository}/blob/main/docs/configuration.md`);
+  assert.ok(written.includes("docs/old-name/index.html"));
+});
+
+test("a shallow clone is refused, since it may not hold the release tags", (t) => {
+  const site = repo(base);
+  t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));
+  site.git("tag", "v1.2.3");
+  site.put({ "docs/later.md": "# Later\n" });
+  const shallow = path.join(site.root, "shallow");
+  execFileSync("git", ["clone", "-q", "--depth", "1", "--no-tags", `file://${site.checkout}`, shallow], { stdio: "pipe" });
+
+  assert.throws(() => buildSite(shallow, site.out), /shallow/);
+  assert.equal(fs.existsSync(site.out), false);
+});
+
+test("a git error other than a missing folder is not taken for a tag without schemas", (t) => {
+  const site = repo(base);
+  t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));
+  site.git("tag", "v1.2.3");
+  // The tag's tree object is lost: git fails to read it, which must fail the build rather than leave the release out.
+  const tree = execFileSync("git", ["-C", site.checkout, "rev-parse", "v1.2.3:schemas"], { encoding: "utf8" }).trim();
+  site.put({ "schemas/haruspex.schema.json": '{"$id":"config on main"}\n' });
+  fs.rmSync(path.join(site.checkout, ".git", "objects", tree.slice(0, 2), tree.slice(2)));
+
+  assert.throws(() => buildSite(site.checkout, site.out));
+});
+
 test("the site is built only into a new folder", (t) => {
   const site = repo(base);
   t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));

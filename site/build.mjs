@@ -7,7 +7,7 @@
 // <checkout> is a clone whose working tree is main and which holds the release tags (v1.2.3). Each run builds the whole site
 // from it, main and every tag, since a deployment to GitHub Pages replaces the whole site: nothing is kept from an earlier one.
 // It runs offline, reading only the working tree and the clone's own tags through git.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,15 @@ const releaseTag = /^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 /** The tags among `names` that mark a release, in the order given. */
 export function releaseTags(names) {
   return names.filter((name) => releaseTag.test(name));
+}
+
+/** The release tags among `names`, newest version first (`v1.10.0` before `v1.2.3`). */
+function newestFirst(names) {
+  const parts = (tag) => tag.slice(1).split(".").map(Number);
+  return releaseTags(names).sort((a, b) => {
+    const [x, y] = [parts(a), parts(b)];
+    return y[0] - x[0] || y[1] - x[1] || y[2] - x[2];
+  });
 }
 
 /**
@@ -52,16 +61,23 @@ function escape(text) {
  * - `/` (`index.html`): leads to the repository.
  * - `/schemas/main/<file>.json`: the config file's and the report's schemas, `schemas/*.json` in the working tree.
  * - `/schemas/v1.2.3/<file>.json`: the same schemas as each release's tag holds them.
- * - `/schemas/ir/<version>.schema.json`: every IR schema main or any tag holds, main's where both do.
+ * - `/schemas/ir/<version>.schema.json`: every IR schema main or any tag holds; main's where both do, else the newest tag's.
  * - `/diagnostics/`, `/diagnostics/HAR2009`: lead to `docs/diagnostics/README.md` and `docs/diagnostics/HAR2009.md` on main.
  * - `/reasons/`, `/reasons/count-overflow`: lead to `docs/reasons/README.md` and `docs/reasons/count-overflow.md` on main.
  * - `/docs/`, `/docs/configuration`: lead to `docs/README.md` and `docs/configuration.md` on main.
  *
+ * A page that main no longer holds but a release does leads to the page at the newest release that holds it, as an IR schema
+ * main dropped is still served: a release writes these addresses into its users' files, so none may stop answering.
+ *
+ * A shallow clone is refused: it may lack the tags, and a site built without them would take every release's schemas offline.
  * A page is a folder's `index.html`, so that its address needs no extension: GitHub Pages answers `/diagnostics/HAR2009` by
  * sending the reader to `/diagnostics/HAR2009/`, which serves it.
  */
 export function buildSite(checkout, out) {
   if (fs.existsSync(out)) throw new Error(`${out} already exists: the site is built into a new folder, so nothing old is kept`);
+  if (git(checkout, ["rev-parse", "--is-shallow-repository"]).trim() !== "false")
+    throw new Error(`${checkout} is a shallow clone, which may not hold every release tag: clone it whole (fetch-depth: 0)`);
+  const tags = newestFirst(git(checkout, ["tag", "--list"]).split("\n"));
   const written = [];
   const write = (relative, contents) => {
     const file = path.join(out, ...relative.split("/"));
@@ -76,9 +92,9 @@ export function buildSite(checkout, out) {
   for (const file of jsonFiles(checkout, "schemas")) write(`schemas/main/${file}`, fs.readFileSync(path.join(checkout, "schemas", file)));
 
   const irSchemas = new Map(jsonFiles(checkout, "schemas/ir").map((file) => [file, fs.readFileSync(path.join(checkout, "schemas", "ir", file))]));
-  for (const tag of releaseTags(git(checkout, ["tag", "--list"]).split("\n"))) {
-    for (const file of tagJsonFiles(checkout, tag, "schemas")) write(`schemas/${tag}/${file}`, gitBytes(checkout, ["show", `${tag}:schemas/${file}`]));
-    for (const file of tagJsonFiles(checkout, tag, "schemas/ir"))
+  for (const tag of tags) {
+    for (const file of tagFiles(checkout, tag, "schemas", ".json")) write(`schemas/${tag}/${file}`, gitBytes(checkout, ["show", `${tag}:schemas/${file}`]));
+    for (const file of tagFiles(checkout, tag, "schemas/ir", ".json"))
       if (!irSchemas.has(file)) irSchemas.set(file, gitBytes(checkout, ["show", `${tag}:schemas/ir/${file}`]));
   }
   for (const [file, bytes] of irSchemas) write(`schemas/ir/${file}`, bytes);
@@ -88,8 +104,11 @@ export function buildSite(checkout, out) {
     ["docs/reasons", "reasons/", (name) => `haruspex: why ${name}`],
     ["docs", "docs/", (name) => `haruspex: ${name}`],
   ]) {
-    for (const name of markdownPages(checkout, folder)) {
-      const target = `${repository}/blob/main/${folder}/${name}.md`;
+    const pages = new Map(markdownPages(checkout, folder).map((name) => [name, "main"]));
+    for (const tag of tags)
+      for (const file of tagFiles(checkout, tag, folder, ".md")) if (!pages.has(file.slice(0, -3))) pages.set(file.slice(0, -3), tag);
+    for (const [name, at] of pages) {
+      const target = `${repository}/blob/${at}/${folder}/${name}.md`;
       if (name === "README") page(address, `haruspex: ${folder}`, target);
       else page(`${address}${name}/`, title(name), target);
     }
@@ -114,18 +133,18 @@ function markdownPages(checkout, folder) {
     .sort();
 }
 
-/** The `.json` files directly in `folder` at `tag`, sorted; none when the tag has no such folder. */
-function tagJsonFiles(checkout, tag, folder) {
-  let listing;
-  try {
-    listing = git(checkout, ["ls-tree", "-z", `${tag}:${folder}`]);
-  } catch {
-    return [];
-  }
-  return listing.split("\0")
+/**
+ * The files ending in `extension` directly in `folder` at `tag`, sorted; none when the tag has no such folder. Any other failure
+ * of git (an object it can't read) is thrown, so that a release is never left out of the site without a word.
+ */
+function tagFiles(checkout, tag, folder, extension) {
+  const found = spawnSync("git", ["-C", checkout, "rev-parse", "--verify", "--quiet", `${tag}:${folder}`], { stdio: "ignore" });
+  if (found.status === 1) return [];
+  if (found.status !== 0) throw new Error(`git couldn't look for ${folder} at ${tag} (status ${found.status ?? found.signal})`);
+  return git(checkout, ["ls-tree", "-z", `${tag}:${folder}`]).split("\0")
     .filter((entry) => entry !== "")
     .map((entry) => entry.split("\t"))
-    .filter(([info, name]) => info.split(" ")[1] === "blob" && name.endsWith(".json"))
+    .filter(([info, name]) => info.split(" ")[1] === "blob" && name.endsWith(extension))
     .map(([, name]) => name)
     .sort();
 }

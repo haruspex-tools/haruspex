@@ -12,8 +12,10 @@ describes.
 The site is GitHub Pages, deployed by a workflow from `main` and from release tags. Each run builds the whole site from the
 repository (`site/build.mjs`): `main`'s schemas at `/schemas/main/`, each release tag's at `/schemas/v1.2.3/`, every IR schema at
 `/schemas/ir/<version>.schema.json`, and a page for each diagnostic, reason and documentation page that leads to its Markdown on
-`main`, on GitHub. Nothing is kept from one deployment to the next, so the site is always what the repository holds, and a lost
-one is built again by running the workflow.
+`main`, on GitHub. An address a release wrote never stops answering while the repository keeps the release's tag: an IR schema or
+a page that `main` has dropped is served from the newest release that holds it. Nothing is kept from one deployment to the next,
+so the site is always what the repository holds, and a lost one is built again by running the workflow. A shallow clone, which
+may lack the tags, is refused rather than built into a site without the releases.
 
 A schema's new `$id` doesn't move the IR's version. Under [decision 0024](0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md)
 the version moves when the format does: a property or a value added, or what one means changed. The `$id` is where the schema

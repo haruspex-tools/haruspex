@@ -13,10 +13,14 @@ changing ([decision 0121](../docs/decisions/0121-every-address-haruspex-writes-i
 | `/` | A page that leads to the repository. |
 | `/schemas/main/haruspex.schema.json`, `/schemas/main/haruspex.output.schema.json` | `schemas/*.json` on `main`: what a preview build names. |
 | `/schemas/v1.2.3/haruspex.schema.json`, and the report's | The same files as the tag `v1.2.3` holds them: what that release names. |
-| `/schemas/ir/0.30.schema.json` | Each IR schema in `schemas/ir` on `main`, and any a release tag holds that `main` no longer does. |
+| `/schemas/ir/0.30.schema.json` | Each IR schema in `schemas/ir` on `main`, and any a release tag holds that `main` no longer does (the newest such tag's). |
 | `/diagnostics/`, `/diagnostics/HAR2009` | A page that leads to `docs/diagnostics/README.md` or `docs/diagnostics/HAR2009.md` on `main`, on GitHub. |
 | `/reasons/`, `/reasons/count-overflow` | A page that leads to `docs/reasons/README.md` or `docs/reasons/count-overflow.md` on `main`. |
 | `/docs/`, `/docs/configuration` | A page that leads to `docs/README.md` or `docs/configuration.md` on `main`. |
+
+A release writes these addresses into its users' files, so none of them stops answering when `main` moves on. A page that
+`main` no longer holds (a renamed `docs/configuration.md`, say) leads to the page at the newest release tag that holds it, as an
+IR schema `main` dropped is still served from the newest release that holds it.
 
 The schemas are served as files, so an editor that fetches one gets JSON. The pages are Markdown on GitHub, where they are
 written and reviewed. The site leads to them rather than rendering them, which needs no renderer and no second copy, and
@@ -37,7 +41,8 @@ node site/build.mjs <checkout> <out>
 ```
 
 builds the whole site from a clone whose working tree is `main` and which holds the release tags, into a new folder. It runs
-offline: it reads the working tree, and each tag through git. A tag is a release's when it is `v` and a version with no
+offline: it reads the working tree, and each tag through git. It refuses a shallow clone, which may lack the tags: a site
+built without them would take every release's schemas offline. A tag is a release's when it is `v` and a version with no
 suffix, as the release build requires ([packaging/npm](../packaging/npm/README.md#a-release)); any other is passed over.
 
 The workflow `.github/workflows/site.yml` runs it on every push to `main`, on every tag `v*`, and by hand, and deploys the result
