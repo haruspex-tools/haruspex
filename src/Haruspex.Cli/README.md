@@ -70,8 +70,8 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 ```
 
 `init` looks below the working directory for the database's files, a `.sqlproj` first, then a `.dacpac` (in `bin` too, where a
-build writes one, leaving out the system databases' packages beside it), then the deepest folder holding every `.sql` file that is
-more than queries (`QueryOnlyScripts`), naming each folder of queries alone as possible query files, and writes
+build writes one, leaving out the system databases' packages beside it), then the deepest folder holding every `.sql` file the folder
+reader takes something from (`QueryOnlyScripts`), naming each folder of the others as possible query files, and writes
 a `haruspex.json` that reads it, types every procedure of each schema that has one, and writes to `src/db` (or `generated`
 when there is no `src` folder). It never writes over a config file, and when it finds two of a kind it names them and asks
 for one: `haruspex init Sales/Sales.sqlproj`.

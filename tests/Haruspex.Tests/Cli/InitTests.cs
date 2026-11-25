@@ -79,13 +79,15 @@ public class InitTests
         folder.File("database/tables/plants.sql", "CREATE TABLE garden.plant (id int NOT NULL PRIMARY KEY, name nvarchar(40) NOT NULL);");
         folder.File("database/procedures/get_plant.sql", "CREATE PROCEDURE garden.get_plant @id int AS SELECT p.name FROM garden.plant AS p WHERE p.id = @id;");
         folder.File("queries/thirsty_plants.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/water_plant.sql", "INSERT INTO garden.water_log (plant_id, watered_at) VALUES (@plant_id, SYSUTCDATETIME());");
+        folder.File("queries/count_plants.sql", "SET NOCOUNT ON; SELECT COUNT(*) AS n FROM garden.plant AS p;");
 
         var (exitCode, output, error) = Run(folder);
 
         Assert.Equal((0, ""), (exitCode, error));
         Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
         Assert.Contains(
-            "\nThe .sql files in queries hold only queries, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.\n",
+            "\nThe .sql files in queries add nothing to the database, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.\n",
             output.ReplaceLineEndings("\n"),
             StringComparison.Ordinal);
     }
@@ -104,7 +106,7 @@ public class InitTests
 
         Assert.Equal(0, exitCode);
         Assert.Contains("\"source\": \"app/database\",", Config(folder), StringComparison.Ordinal);
-        Assert.Contains("The .sql files in app/queries hold only queries", output, StringComparison.Ordinal);
+        Assert.Contains("The .sql files in app/queries add nothing to the database", output, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -114,8 +116,8 @@ public class InitTests
     /// </summary>
     [Theory]
     [InlineData("ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;")]
-    [InlineData("SELECT p.id INTO garden.plant_copy FROM garden.plant AS p;")]
-    [InlineData("INSERT INTO garden.plant (id, height) VALUES (1, 2);")]
+    [InlineData("BULK INSERT garden.plant FROM 'plants.csv';")]
+    [InlineData("ALTER TABLE garden.plant ADD note nvarchar(20) NULL;")]
     [InlineData("SELECT p.id FROM garden.plant AS p;\nGO\nDROP TABLE garden.plant;")]
     public void A_script_that_changes_the_database_stays_in_the_source_and_queries_inside_it_are_named(string sql)
     {
@@ -129,7 +131,10 @@ public class InitTests
 
         Assert.Equal((0, ""), (exitCode, error));
         Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
-        Assert.Contains("The .sql files in queries hold only queries, but . holds them, so they are read as the database's scripts and not typed.", output, StringComparison.Ordinal);
+        Assert.Contains(
+            "The .sql files in queries add nothing to the database, but . holds them, so they are read as the database's scripts and not typed. It reads . because deploy, which adds to it, is outside database. If queries holds the application's query files, move it into database, remove haruspex.json and run haruspex init again.",
+            output,
+            StringComparison.Ordinal);
     }
 
     /// <summary>A script that doesn't parse stays in the source too, so that its error is said, not passed over.</summary>

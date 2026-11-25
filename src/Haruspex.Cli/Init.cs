@@ -44,7 +44,7 @@ internal static class Init
         var found = source is null ? Find(workingDirectory) : Given(source, workingDirectory);
         if (found is Failed<Chosen> failed)
             return Refused(error, [.. failed.Diagnostics]);
-        var (chosen, leftOut, readAsDatabase) = ((Succeeded<Chosen>)found).Value;
+        var (chosen, leftOut, readAsDatabase, main, pulling) = ((Succeeded<Chosen>)found).Value;
 
         // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
         // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
@@ -99,13 +99,21 @@ internal static class Init
         {
             var folders = leftOut.Select(f => Visible.Of(DisplayPath.From(workingDirectory, f))).ToList();
             var queries = folders.Count == 1 ? Quoted(folders[0]) : $"[{string.Join(", ", folders.Select(Quoted))}]";
-            output.WriteLine($"The .sql files in {EnglishList.Of(folders)} hold only queries, so the source leaves them out. If they are the application's query files, add \"queries\": {queries} to type them.");
+            output.WriteLine($"The .sql files in {EnglishList.Of(folders)} add nothing to the database, so the source leaves them out. If they are the application's query files, add \"queries\": {queries} to type them.");
         }
 
         if (readAsDatabase.Count > 0)
         {
             var folders = readAsDatabase.Select(f => Visible.Of(DisplayPath.From(workingDirectory, f))).ToList();
-            output.WriteLine($"The .sql files in {EnglishList.Of(folders)} hold only queries, but {shown} holds them, so they are read as the database's scripts and not typed. If they are the application's query files, move the database's own scripts into a folder of their own and name it: haruspex init <folder>.");
+            var line = $"The .sql files in {EnglishList.Of(folders)} add nothing to the database, but {shown} holds them, so they are read as the database's scripts and not typed.";
+            if (main is not null && pulling.Count > 0)
+            {
+                var named = pulling.Select(p => Visible.Of(DisplayPath.From(workingDirectory, p))).ToList();
+                var mainShown = Visible.Of(DisplayPath.From(workingDirectory, main));
+                line += $" It reads {shown} because {EnglishList.Of(named)}, which {(named.Count == 1 ? "adds" : "add")} to it, {(named.Count == 1 ? "is" : "are")} outside {mainShown}. If {EnglishList.Of(folders)} {(folders.Count == 1 ? "holds" : "hold")} the application's query files, move {(named.Count == 1 ? "it" : "them")} into {mainShown}, remove {HaruspexConfig.FileName} and run haruspex init again.";
+            }
+
+            output.WriteLine(line);
         }
         return HaruspexCli.ExitCodes.Success;
     }
@@ -118,17 +126,22 @@ internal static class Init
     }
 
     /// <summary>
-    /// The source chosen, and the folders of <c>.sql</c> files that hold only queries: those it leaves out, and those it holds and
+    /// The source chosen, and the folders of <c>.sql</c> files that add nothing to the database: those it leaves out, and those it holds and
     /// so reads as the database's scripts.
     /// </summary>
-    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase);
+    /// <param name="Source">The source.</param>
+    /// <param name="LeftOut">The folders of queries alone that the source leaves out.</param>
+    /// <param name="ReadAsDatabase">The folders of queries alone that the source holds.</param>
+    /// <param name="Main">When it holds some, the folder below the source that holds most of the database's scripts.</param>
+    /// <param name="Pulling">The database's scripts outside <paramref name="Main"/>, which made the source the folder above it.</param>
+    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, string? Main, EquatableArray<string> Pulling);
 
     /// <summary>The source the command line names, which must be there.</summary>
     private static Outcome<Chosen> Given(string source, string workingDirectory)
     {
         var path = Path.GetFullPath(Path.Combine(workingDirectory, source));
         return File.Exists(path) || Directory.Exists(path)
-            ? new Succeeded<Chosen>(new Chosen(path, [], []))
+            ? new Succeeded<Chosen>(new Chosen(path, [], [], null, []))
             : ModuleRun.Refused<Chosen>(CliCodes.SourceNotFound, $"not found: {source}");
     }
 
@@ -148,7 +161,7 @@ internal static class Init
         foreach (var (kind, candidates) in new[] { ("project files", projects), ("DACPACs", packages) })
         {
             if (candidates.Count == 1)
-                return new Succeeded<Chosen>(new Chosen(candidates[0], [], []));
+                return new Succeeded<Chosen>(new Chosen(candidates[0], [], [], null, []));
             if (candidates.Count > 1)
             {
                 var named = EnglishList.Of([.. candidates.Select(c => DisplayPath.From(workingDirectory, c))]);
@@ -165,25 +178,25 @@ internal static class Init
     }
 
     /// <summary>
-    /// The folder of <paramref name="scripts"/> to read as the database: the deepest that holds every script that isn't queries alone
-    /// (<see cref="QueryOnlyScripts"/>); or, when every one is, the deepest that holds them all.
+    /// The folder of <paramref name="scripts"/> to read as the database: the deepest that holds every script the folder reader takes
+    /// something from (<see cref="QueryOnlyScripts"/>); or, when it takes nothing from any, the deepest that holds them all.
     /// </summary>
     /// <remarks>
     /// The folder that holds every script would be wrong whenever scripts are in two places, as in an application that keeps its
     /// database in <c>database</c> and its query files in <c>queries</c>: a folder source reads every <c>.sql</c> file below it, so
     /// the query files would be read as the database's scripts, and with them whatever else is below the application's folder
-    /// that this search passes over but a folder source reads (installed packages, hidden folders, a build's output). A script that
-    /// holds only queries changes nothing a read of the database takes, so it can be left out; any other (a definition, an
-    /// <c>ALTER</c>, seed data) may, so the source holds every one, and claims no more than the database it describes. The
-    /// folders of query scripts are returned, for the developer to name as query files if they are: those the source leaves out,
-    /// and those it holds, which it reads as the database's scripts and so doesn't type.
+    /// that this search passes over but a folder source reads (installed packages, hidden folders, a build's output). A script the
+    /// reader takes nothing from can be left out without changing what is read; any other (a definition, an <c>ALTER</c>, a
+    /// <c>NOCHECK</c>, a bulk load) may change what is claimed, so the source holds every one, and claims no more than the database
+    /// it describes. The folders of the others are returned, for the developer to name as query files if they are: those the
+    /// source leaves out, and those it holds, which it reads as the database's scripts and so doesn't type, with what made it hold them.
     /// </remarks>
     private static Chosen Scripts(string workingDirectory, List<string> scripts)
     {
         var queries = scripts.Where(QueryOnlyScripts.Is).ToHashSet(StringComparer.Ordinal);
         var database = scripts.Where(s => !queries.Contains(s)).ToList();
         if (database.Count == 0)
-            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], []);
+            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], [], null, []);
 
         var source = Common([.. database.Select(Path.GetDirectoryName).OfType<string>()]);
 
@@ -194,7 +207,26 @@ internal static class Init
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToList();
-        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. folders.Where(f => Below(f, source))]);
+        var inside = folders.Where(f => Below(f, source)).ToList();
+        if (inside.Count == 0)
+            return new Chosen(source, [.. folders], [], null, []);
+
+        // What pulled the source up to hold them: the database's scripts outside the folder below the source that holds most of them,
+        // each named as the folder below the source it is in, or as itself when it is directly in the source.
+        var below = database.GroupBy(d => Top(Path.GetRelativePath(source, d)), StringComparer.Ordinal)
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key, StringComparer.Ordinal)
+            .ToList();
+        if (below.Count < 2 || below[0].Key.Length == 0)
+            return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], null, []);
+        var pulling = below.Skip(1).SelectMany(g => g.Key.Length == 0 ? g.Select(d => d) : [Path.Join(source, g.Key)]).Order(StringComparer.Ordinal);
+        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], Path.Join(source, below[0].Key), [.. pulling]);
+
+        static string Top(string path)
+        {
+            var at = path.IndexOfAny(['/', Path.DirectorySeparatorChar]);
+            return at < 0 ? "" : path[..at];
+        }
 
         string Highest(string folder, string limit)
         {
