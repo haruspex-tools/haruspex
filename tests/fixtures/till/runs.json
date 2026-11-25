@@ -44,10 +44,10 @@
   ],
 
   "notRun": {
-    "till.add_lines": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.grade_of": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.echo_readings": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.count_serials": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.echo_echoes": "Its table-valued parameters are ones runs.json can't give; ParameterObservationTests calls it."
+    "till.add_lines": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows, and ParameterObservationTests with the table left out.",
+    "till.grade_of": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows.",
+    "till.echo_readings": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows.",
+    "till.count_serials": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with the table left out, since no row can be sent in its type.",
+    "till.echo_echoes": "Its table-valued parameters are ones runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows."
   }
 }

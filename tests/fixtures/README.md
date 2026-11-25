@@ -16,10 +16,12 @@ this way is in [the guide's chapter *Observing the engine*](../../docs/internals
 |---|---|---|
 | `README.md` | What the fixture is for: the constructs it shows, and the cases its seed reaches. | you |
 | `database/` | The schema: `tables/`, `views/`, `functions/`, `procedures/` and `triggers/`, one object to a `.sql` file. It is what haruspex reads, and nothing else is in it. | `haruspex generate`, and the differential tests, which deploy it |
-| `haruspex.json` | The config file, when the fixture has one: declared results that inference can't see (`calls`), or a whole project's settings (`shop`). | `haruspex generate` |
+| `haruspex.json` | The config file, when the fixture has one: declared results that inference can't see (`calls`), JSON a column holds (`parcels`), or, for a project, the whole command's settings (`shop`, `market`). | `haruspex generate` |
 | `expected/` | What haruspex must produce: the reviewed snapshots. | the snapshot tests |
 | `seed.sql` | The rows inserted after the schema is deployed, chosen to reach every case the IR allows. | the differential tests |
 | `runs.json` | The calls the differential tests make, with their arguments. | the differential tests |
+| `schemas/` | JSON Schemas the config file names for JSON a column holds (`parcels`: `"json": "schemas/options.schema.json"`). | `haruspex generate`, through the config file |
+| `queries/` | A project's query files, in the folder its config file's `"queries"` names (`shop`, `market`): typed and emitted as the command does, so they are checked by the project's snapshots. | `haruspex generate` |
 | `sql/` | Query files, when the fixture has any: the application's own SQL, typed against `database/` as `"queries": "sql"` in a config file in the fixture's folder would type it, so each query's id is its path from there (`sql/getOrderLines.sql`). Only a deployed fixture may have them, and each must be run. | the differential tests, which call each through its generated function |
 
 The schema has a folder of its own so that haruspex reads exactly the database: the seed is SQL too, and haruspex reads
@@ -31,14 +33,19 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders/database
 
 ## Two kinds of fixture
 
-- **A fixture checked per procedure** (every one but `shop`). Its `expected/` folder holds, for each procedure, its IR
-  (`sales.get_order.ir.verified.json`) and its Zod (`sales.get_order.zod.verified.ts`), named for the procedure and what
-  they hold; `FixtureSnapshotTests` fails on a procedure without both, a snapshot without a procedure or any other file there. It has a seed and
+- **A fixture checked per procedure** (every one that isn't a project). Its `expected/` folder holds, for each procedure,
+  its IR (`sales.get_order.ir.verified.json`), its Zod (`sales.get_order.zod.verified.ts`) and its JSON Schema
+  (`sales.get_order.jsonschema.verified.json`), named for the procedure and what they hold; `FixtureSnapshotTests` fails on a
+  procedure without all three, a snapshot without a procedure or any other file there. It has a seed and
   runs, and the differential tests deploy it, call every procedure and check every value against the IR.
-- **A project for the CLI** (`shop`): its `haruspex.json` names its `source` folder, chooses the procedures and names
-  them, so what it must produce is the command's files, `expected/haruspex.ir.verified.json` and one for each emitter its
-  config names (`expected/haruspex.zod.verified.ts` and the rest), which `FixtureSnapshotTests` checks by running the CLI in the fixture's folder, as a
-  user would; anything else in `expected/` fails it. It is not deployed, so it has no seed or runs; its
+- **A project for the CLI**: a fixture whose `haruspex.json` names a `source` folder (`Fixture.IsProject`; today `shop` and
+  `market`). Its config chooses the procedures and names them, so what it must produce is the command's files, each as a
+  snapshot named for it: the IR (`haruspex.ir.verified.json`), one file for each emitter its config names
+  (`haruspex.zod.verified.ts` and the rest) and the list of what the command wrote (`haruspex.files.verified.json`). A config
+  that splits the output (`market`, `"split": "schema"`) writes a file for each module and emitter instead
+  (`sales.zod.verified.ts`, `sales.mssql.verified.ts`), and what two modules share in `shared.zod.verified.ts`.
+  `FixtureSnapshotTests` checks them by running the CLI in the fixture's folder, as a user would; anything else in
+  `expected/` fails it. It is not deployed, so it has no seed or runs; its
   README says why.
 
 A folder that lacks a part its kind needs fails discovery, and with it every test that uses a fixture: a fixture can't

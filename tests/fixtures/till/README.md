@@ -20,5 +20,5 @@ it comes from a real system.
 | `till.basket_total` | a table variable of a table type, filled and read in the body: its key, CHECK and nullability as the type's |
 
 Its runs don't reach every edge: the edges of each type are sent one by one by the tests above. A table-valued parameter is one
-`runs.json` can't give, so the procedures that take one are called by `ParameterObservationTests` and through the generated
-functions (`MssqlFunctionTests`) instead.
+`runs.json` can't give, so the procedures that take one are called through the generated functions instead
+(`MssqlFunctionTests`), and `till.add_lines` by `ParameterObservationTests` too, with its table left out.
