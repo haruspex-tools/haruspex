@@ -2,7 +2,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Haruspex.DifferentialTests.Server;
 
-/// <summary>The gate's rules, without a server. A wait that should not end is given a tenth of a second to.</summary>
+/// <summary>
+/// The gate's rules, without a server. A wait that should not end is given a tenth of a second to, and one that should a
+/// second, so a loaded runner can't fail it.
+/// </summary>
 [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
     Justification = "Each test releases what it holds by hand, at the moment the rule it tests needs; a using would release it too late.")]
 public class DatabaseGateTests
@@ -19,7 +22,7 @@ public class DatabaseGateTests
 
         var second = gate.EnterReadAsync(Token);
 
-        Assert.Same(second, await Task.WhenAny(second, Task.Delay(Moment, Token)));
+        Assert.Same(second, await Task.WhenAny(second, Task.Delay(Moment * 10, Token)));
         (await second).Dispose();
     }
 
