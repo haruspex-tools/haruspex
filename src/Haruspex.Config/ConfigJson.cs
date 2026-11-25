@@ -60,19 +60,22 @@ internal static class ConfigJson
     }
 
     /// <summary>
-    /// The encoding the text is in when it is plainly not UTF-8, or null: UTF-32 or UTF-16 by a byte order mark, or UTF-16 by a zero
-    /// byte first or second, which no UTF-8 text a JSON reader accepts has (a control character in JSON is written escaped). The
+    /// The encoding the text is in when it is plainly not UTF-8, or null: UTF-32 or UTF-16 by a byte order mark, or by where its zero
+    /// bytes are among the first four (an ASCII character is one byte and three zeros in UTF-32, one and one in UTF-16), which no UTF-8
+    /// text a JSON reader accepts has (a control character in JSON is written escaped). The
     /// JSON reader takes only UTF-8, and its account of such a file is of the first byte it can't start a value with.
     /// </summary>
     private static string? OtherEncoding(ReadOnlySpan<byte> bytes) =>
         bytes.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xFE, 0x00, 0x00]) || bytes.StartsWith((ReadOnlySpan<byte>)[0x00, 0x00, 0xFE, 0xFF]) ? "UTF-32"
         : bytes.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xFE]) || bytes.StartsWith((ReadOnlySpan<byte>)[0xFE, 0xFF]) ? "UTF-16"
+        : bytes.Length >= 4 && (bytes[1..4].IndexOfAnyExcept((byte)0) < 0 || bytes[..3].IndexOfAnyExcept((byte)0) < 0) && bytes[..4].IndexOfAnyExcept((byte)0) >= 0 ? "UTF-32"
         : bytes.Length >= 2 && bytes[0] == 0 != (bytes[1] == 0) ? "UTF-16"
         : null;
 
     /// <summary>
     /// Whether the text holds anything but white space (as JSON has it: space, tab, line feed and carriage return) and the comments
-    /// JSON with comments allows. A comment left open counts as something, which the reader then reports where it starts.
+    /// JSON with comments allows. A comment the reader refuses (left open, or a line comment holding U+2028 or U+2029) counts as
+    /// something, which the reader then reports where it is.
     /// </summary>
     private static bool HasValue(ReadOnlySpan<byte> text)
     {
@@ -85,7 +88,12 @@ internal static class ConfigJson
                     i++;
                     break;
                 case (byte)'/' when i + 1 < text.Length && text[i + 1] == (byte)'/':
-                    var end = text[i..].IndexOf((byte)'\n');
+                    // As the reader reads one: to a carriage return or a line feed (NEL is inside it), and refused when it holds a
+                    // line or paragraph separator, which the reader then says (observed, System.Text.Json 10).
+                    var end = text[i..].IndexOfAny((byte)'\n', (byte)'\r');
+                    var comment = end < 0 ? text[i..] : text.Slice(i, end);
+                    if (comment.IndexOf("\u2028"u8) >= 0 || comment.IndexOf("\u2029"u8) >= 0)
+                        return true;
                     i = end < 0 ? text.Length : i + end + 1;
                     break;
                 case (byte)'/' when i + 1 < text.Length && text[i + 1] == (byte)'*':

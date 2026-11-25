@@ -256,12 +256,15 @@ public class ConfigReaderTests
     [InlineData("20 20 0A 20 20", "The file holds only white space and comments; it must hold a JSON object.")]
     [InlineData("2F 2F 20 6F 6E 6C 79 0A", "The file holds only white space and comments; it must hold a JSON object.")]
     [InlineData("2F 2A 20 61 20 2A 2F 0D 0A 09", "The file holds only white space and comments; it must hold a JSON object.")]
+    [InlineData("2F 2F 20 61 C2 85 7B 7D", "The file holds only white space and comments; it must hold a JSON object.")]
     [InlineData("FF FE 7B 00 7D 00", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
     [InlineData("FE FF 00 7B 00 7D", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
     [InlineData("FF FE 00 00 7B 00 00 00 7D 00 00 00", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
     [InlineData("00 00 FE FF 00 00 00 7B 00 00 00 7D", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
     [InlineData("7B 00 7D 00", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
     [InlineData("00 7B 00 7D", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
+    [InlineData("7B 00 00 00 7D 00 00 00", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
+    [InlineData("00 00 00 7B 00 00 00 7D", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
     public void A_file_with_no_json_or_not_in_utf8_is_said_in_its_own_terms(string hex, string message)
     {
         var bytes = hex.Length == 0 ? [] : Convert.FromHexString(hex.Replace(" ", "", StringComparison.Ordinal));
@@ -269,6 +272,25 @@ public class ConfigReaderTests
         var result = ConfigReader.Read(bytes, "haruspex.json", Path.GetTempPath());
 
         Assert.Equal($"haruspex.json:1:1: error HAR3002: {message}", Assert.Single(result.Diagnostics).ToString());
+    }
+
+    /// <summary>A line comment ends at a carriage return as at a line feed, as old Mac editors end lines, so the object after it is read.</summary>
+    [Fact]
+    public void A_line_comment_ends_at_a_carriage_return()
+    {
+        var bytes = Encoding.UTF8.GetBytes("// strict\r{ \"objects\": \"strict\" }");
+
+        Assert.Equal(ObjectsPolicy.Strict, ConfigReader.Read(bytes, "haruspex.json", Path.GetTempPath()).Expected().Objects);
+    }
+
+    /// <summary>A line comment holding a line separator is the reader's to refuse, in its words, not a file of comments alone.</summary>
+    [Fact]
+    public void A_line_comment_with_a_line_separator_is_the_reader_s_to_refuse()
+    {
+        var problem = Single("// a\u2028b\n{}");
+
+        Assert.Contains("error HAR3002: ", problem, StringComparison.Ordinal);
+        Assert.DoesNotContain("only white space", problem, StringComparison.Ordinal);
     }
 
     /// <summary>A comment left open is the reader's to report, at its place: it is not a file of comments alone.</summary>
