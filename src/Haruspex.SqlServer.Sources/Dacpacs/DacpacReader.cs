@@ -30,14 +30,15 @@ public static class DacpacReader
     /// <summary>Reads the package at <paramref name="path"/> and every package of its database it refers to.</summary>
     /// <param name="path">The DACPAC.</param>
     /// <param name="searchFolders">More folders to look for referenced packages in, after the referring package's own (<c>references</c> in the config file).</param>
-    public static DacpacReadResult Read(string path, IReadOnlyList<string>? searchFolders = null)
+    /// <param name="builds">The file names of packages declared built from a project (<c>builds</c> in the config file), whose key constraints hold.</param>
+    public static DacpacReadResult Read(string path, IReadOnlyList<string>? searchFolders = null, IReadOnlyCollection<string>? builds = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         var diagnostics = new List<Diagnostic>();
         if (DacPackage.Open(path, diagnostics) is not { } root)
             return new DacpacReadResult(new SchemaDeclarations().ToModel(), null, [], [.. diagnostics]);
 
-        var packages = new PackageSet([.. (searchFolders ?? []).Select(Path.GetFullPath)], diagnostics);
+        var packages = new PackageSet([.. (searchFolders ?? []).Select(Path.GetFullPath)], diagnostics, builds ?? []);
         var own = new SchemaDeclarations();
         var others = new Dictionary<string, DacPackage>(StringComparer.OrdinalIgnoreCase);
         var unread = packages.ReadInto(own, [root], others);

@@ -44,11 +44,12 @@ internal static class PackageReader
     /// <param name="package">The package.</param>
     /// <param name="into">What the database's sources declare.</param>
     /// <param name="quiet">Whether to leave out the note of what isn't modelled, for a package of the system's objects.</param>
-    public static void Read(DacPackage package, SchemaDeclarations into, bool quiet = false)
+    /// <param name="declaredBuild">Whether the config file declares it built from a project (<c>builds</c>), so that its key constraints hold.</param>
+    public static void Read(DacPackage package, SchemaDeclarations into, bool quiet = false, bool declaredBuild = false)
     {
         var elements = package.Model.Elements(ModelXml.Name("Element")).ToList();
         var parts = elements.Where(e => TableParts.Contains(ModelXml.TypeOf(e))).ToLookup(Owner, StringComparer.Ordinal);
-        var tables = new TableReader(package.Name, package.Extracted, into.Diagnostics);
+        var tables = new TableReader(package.Name, package.Origin, declaredBuild || package.Origin == PackageOrigin.Built, into.Diagnostics);
         var modules = new List<XElement>();
         var notModelled = new SortedDictionary<string, int>(StringComparer.Ordinal);
         foreach (var element in elements)

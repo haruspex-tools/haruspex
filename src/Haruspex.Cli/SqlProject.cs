@@ -88,8 +88,9 @@ internal sealed class SqlProject
     /// <param name="project">The <c>.sqlproj</c>.</param>
     /// <param name="references">The config file's <c>references</c> folders.</param>
     /// <param name="collation">The config file's <c>collation</c>, used only when the project's isn't read (it always records one otherwise).</param>
-    public static SqlProject LoadProject(string project, IReadOnlyList<string> references, string? collation = null) =>
-        LoadProject(project, SqlProjectReader.Read(project, references), collation);
+    /// <param name="builds">The config file's <c>builds</c>: referenced packages declared built from a project.</param>
+    public static SqlProject LoadProject(string project, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null) =>
+        LoadProject(project, SqlProjectReader.Read(project, references, builds), collation);
 
     /// <summary>The project at <paramref name="project"/>, from what reading it found.</summary>
     /// <param name="project">The <c>.sqlproj</c>.</param>
@@ -113,9 +114,10 @@ internal sealed class SqlProject
     /// <param name="package">The package.</param>
     /// <param name="references">The config file's <c>references</c> folders.</param>
     /// <param name="collation">The config file's <c>collation</c>, used only when the package records none.</param>
-    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null)
+    /// <param name="builds">The config file's <c>builds</c>: packages declared built from a project, whose key constraints hold.</param>
+    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null)
     {
-        var read = DacpacReader.Read(package, references);
+        var read = DacpacReader.Read(package, references, builds);
         var folders = Folders(read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>());
         var beside = Path.GetDirectoryName(Path.GetFullPath(package)) ?? ".";
         return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));

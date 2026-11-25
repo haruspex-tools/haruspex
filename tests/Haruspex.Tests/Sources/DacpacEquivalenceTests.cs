@@ -2,6 +2,7 @@ using Haruspex.Cli;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
 
@@ -66,11 +67,11 @@ public class DacpacEquivalenceTests
     }
 
     /// <summary>The orders fixture built by older versions of Microsoft.Build.Sql, whose model.xml DacFx wrote differently.</summary>
-    public static TheoryData<string> Versions { get; } = ["orders-build-sql-1.0.0.dacpac", "orders-build-sql-2.0.0.dacpac", "orders-extract.dacpac"];
+    public static TheoryData<string> Versions { get; } = ["orders-build-sql-1.0.0.dacpac", "orders-build-sql-2.0.0.dacpac"];
 
     [Theory]
     [MemberData(nameof(Versions))]
-    public void The_orders_fixture_built_by_another_version_or_extracted_gives_its_folder_s_ir_and_zod(string file)
+    public void The_orders_fixture_built_by_another_version_gives_its_folder_s_ir_and_zod(string file)
     {
         var fixture = Fixture.Named("orders");
         var path = Path.Combine(Packages, "versions", file);
@@ -81,6 +82,32 @@ public class DacpacEquivalenceTests
         var folder = SqlProject.Load(fixture.Database, package.DefaultCollation);
         foreach (var procedure in fixture.Project.Procedures)
             AssertSame(folder.Infer([procedure]).Expected(), package.Infer([procedure]).Expected(), map);
+        Assert.Empty(map.Unmapped);
+    }
+
+    [Fact]
+    public void The_orders_fixture_extracted_gives_the_ir_of_its_folder_without_its_keys()
+    {
+        // An extract's primary keys and unique constraints are no key (decision 0120), and every key orders declares is one, so
+        // the folder is read with each key disabled where it is declared.
+        var fixture = Fixture.Named("orders");
+        var path = Path.Combine(Packages, "versions", "orders-extract.dacpac");
+        var package = DacpacReader.Read(path);
+        Assert.DoesNotContain(package.Diagnostics, d => d.IsError);
+        var read = SqlScriptFolder.Read(fixture.Database).Model.WithDeclaredCollation(package.Model.DefaultCollation);
+        var folder = new DatabaseModel(
+            read.Tables.Select(t => t with { UniqueKeys = [.. t.UniqueKeys.Select(k => k with { DisabledAt = k.At })] }),
+            read.UserTypes, read.Procedures, read.Functions, read.Views, read.Synonyms, read.Triggers, read.CascadingKeys, read.TableRedefinitions)
+        {
+            Settings = read.Settings,
+            DefaultCollation = read.DefaultCollation,
+        };
+        var map = new PackageLocationMap(read, fixture.Database, path);
+        var procedures = read.Procedures.Select(p => p.Name).ToList();
+
+        // The Zod isn't compared: it is emitted from the IR alone, and this IR's names aren't settled as a run settles them.
+        Assert.NotEmpty(read.Tables.SelectMany(t => t.UniqueKeys));
+        AssertSame(IrInference.Infer(folder, procedures).Value, IrInference.Infer(package.Model, procedures).Value, map, zod: false);
         Assert.Empty(map.Unmapped);
     }
 

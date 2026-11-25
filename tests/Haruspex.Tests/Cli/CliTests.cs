@@ -79,6 +79,23 @@ public partial class CliTests
         Assert.Single(error.Split('\n'), line => line.Contains("HAR1003", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("", "many")]
+    [InlineData(""" "builds": ["atelier-extract.dacpac"],""", "atMostOne")]
+    public void An_extract_s_key_constraints_hold_only_when_the_config_file_declares_it_a_build(string builds, string cardinality)
+    {
+        // Declaring it a build is the user's assumption that its keys are enforced (decision 0120): pk_shelf's index is in fact
+        // disabled in the database this package was extracted from, which the package can't say.
+        using var dir = new TempDirectory();
+        File.Copy(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "versions", "atelier-extract.dacpac"), Path.Combine(dir.Path, "atelier-extract.dacpac"));
+        dir.File("haruspex.json", $$"""{ "source": "atelier-extract.dacpac",{{builds}} "out": "out", "schemas": { "studio": { "include": ["shelf_by_id"] } } }""");
+
+        var (exitCode, _, _) = RunIn(dir.Path, "generate");
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains($"\"cardinality\": \"{cardinality}\"", File.ReadAllText(Path.Combine(dir.Path, "out", "haruspex.ir.json")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void References_beside_a_folder_of_scripts_are_a_warning_since_a_folder_has_none_to_find()
     {

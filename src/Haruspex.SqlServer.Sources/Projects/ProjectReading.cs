@@ -35,12 +35,13 @@ internal sealed class ProjectReading
     /// <param name="folder">The given project's folder, which every location is relative to.</param>
     /// <param name="searchFolders">The config file's <c>references</c> folders, full paths.</param>
     /// <param name="cache">Where packages are looked for.</param>
-    public ProjectReading(string folder, IReadOnlyList<string> searchFolders, PackageCache cache)
+    /// <param name="builds">The file names of packages declared built from a project (<c>builds</c>).</param>
+    public ProjectReading(string folder, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string> builds)
     {
         this.folder = folder;
         this.searchFolders = searchFolders;
         this.cache = cache;
-        packages = new PackageSet(searchFolders, diagnostics);
+        packages = new PackageSet(searchFolders, diagnostics, builds);
     }
 
     /// <summary>Reads the project at <paramref name="root"/>, the database it is part of and the databases it refers to.</summary>
