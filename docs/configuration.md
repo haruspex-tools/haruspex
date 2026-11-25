@@ -77,6 +77,38 @@ procedures the run leaves out are skipped). Without a file, the source argument,
 Keep `out` out of every formatter: add it to `.prettierignore`, or to Biome's `files.includes` as an exclusion after `**` (`!src/db`, for an `out` of `src/db`). Otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes
 ([HAR6015](diagnostics/HAR6015.md)).
 
+## The settings you probably want
+
+`haruspex init` writes `source`, `out` and `schemas`, and with those alone haruspex claims only what holds whatever the
+callers and the build are. Most projects meet one or more of these situations, where a setting lets it claim more, or read what
+it otherwise can't. Each is a statement about your project that haruspex can't see for itself, so it is yours to make.
+
+- **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session).
+  Without it, every value an overflow, a division by zero or a loss of precision could make NULL is nullable, since a session
+  with `ANSI_WARNINGS` and `ARITHABORT` off makes them NULL. The `mssql` package's driver, tedious, sets
+  `{ "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false }`, and the page's
+  section says what other drivers set.
+- **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`. Without it, a
+  masked column and every value computed from one claim only their type, whether they may be null and their greatest
+  length, since a caller without the permission reads the mask.
+- **The source is a DACPAC built by MSBuild.Sdk.SqlProj**, or by any tool that builds through DacFx's API rather than its
+  build task: name it in [`builds`](#reading-a-dacpac-source-and-references). Such a package can't be told from one extracted
+  from a database, so without it no primary key or unique constraint of it is claimed, and a query that fixes a key's columns
+  isn't claimed to return at most one row.
+- **The source is a folder of `.sql` files** and a table has a `CHECK` that lists its values: declare the database's
+  [`collation`](#the-databases-collation-collation). A folder doesn't record it, and without it such a set of strings is a
+  comment, not an enum.
+- **The source refers to other DACPACs** that its build doesn't leave beside it: list their folders in
+  [`references`](#reading-a-dacpac-source-and-references). One found nowhere is a warning, and what would have come from it is
+  unknown.
+- **The application keeps SQL in files of its own**: name them in [`queries`](#query-files-queries), and each is typed
+  with the procedures, against the same project.
+- **The application calls the database through the `mssql` package**: add `"mssql"` to [`emit`](#what-is-written-emit), and
+  each procedure and query file gets a function that checks its parameters, runs it and checks what comes back.
+- **The application and the database deploy separately**: name the database as last released in
+  [`baseline`](#the-baseline-baseline), so the types work against both while one is ahead of the other, and `check` fails on
+  a change the running application would fail on.
+
 ## Reading a folder of scripts: `source`
 
 `source` as a folder reads every `.sql` file below it, as a database project's build lists its default items (`**/*.sql`):

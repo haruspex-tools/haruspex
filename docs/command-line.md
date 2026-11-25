@@ -346,6 +346,8 @@ types every procedure of each schema that has one, and writes to `src/db`, or `g
 ```jsonc
 // haruspex's settings, written by haruspex init. Each is described in
 // https://haruspex.tools/docs/configuration
+// where "The settings you probably want" says which most projects need next: the callers' session,
+// a DACPAC's build, the collation of a folder of scripts.
 {
   "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
   "source": "database",

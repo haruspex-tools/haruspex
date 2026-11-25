@@ -44,6 +44,8 @@ public class InitTests
             """
             // haruspex's settings, written by haruspex init. Each is described in
             // https://haruspex.tools/docs/configuration
+            // where "The settings you probably want" says which most projects need next: the callers' session,
+            // a DACPAC's build, the collation of a folder of scripts.
             {
               "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
               "source": "database",
@@ -122,6 +124,19 @@ public class InitTests
             "haruspex: wrote haruspex.json, which reads db/Shop.sqlproj, but reading it gave 1 error. Correct it, then run haruspex generate.\n",
             output.ReplaceLineEndings("\n"));
         Assert.True(File.Exists(Path.Combine(folder.Path, "haruspex.json")));
+    }
+
+    /// <summary>The section the file init writes points to is on the configuration page, under the heading it names.</summary>
+    [Fact]
+    public void The_section_the_written_file_points_to_is_on_the_configuration_page()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/p.sql", Procedure);
+        Assert.Equal(0, Run(folder).ExitCode);
+        var heading = Config(folder).Split('"')[1];
+
+        var page = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "docs", "configuration.md"));
+        Assert.Contains($"\n## {heading}\n", page.ReplaceLineEndings("\n"), StringComparison.Ordinal);
     }
 
     [Fact]

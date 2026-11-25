@@ -256,6 +256,8 @@ internal static class Init
         var text = new StringBuilder();
         text.Append("// haruspex's settings, written by haruspex init. Each is described in\n");
         text.Append($"// {HaruspexSite.Docs}configuration\n");
+        text.Append("// where \"The settings you probably want\" says which most projects need next: the callers' session,\n");
+        text.Append("// a DACPAC's build, the collation of a folder of scripts.\n");
         text.Append("{\n");
         text.Append($"  \"$schema\": {Quoted(configSchema)},\n");
         text.Append($"  \"source\": {Quoted(source)},\n");
