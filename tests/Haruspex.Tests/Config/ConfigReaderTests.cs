@@ -287,7 +287,7 @@ public class ConfigReaderTests
     [Fact]
     public void A_line_comment_with_a_line_separator_is_the_reader_s_to_refuse()
     {
-        var problem = Single("// a\u2028b\n{}");
+        var problem = Single("// a\u2028b\n");
 
         Assert.Contains("error HAR3002: ", problem, StringComparison.Ordinal);
         Assert.DoesNotContain("only white space", problem, StringComparison.Ordinal);
