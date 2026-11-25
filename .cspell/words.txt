@@ -294,7 +294,7 @@ procName
 recordset
 recordsets
 
-# The GitHub account haruspex lives under, as a workflow names its repository (sharpblue/haruspex)
+# The maintainer's GitHub account, which CODEOWNERS names (@sharpblue)
 sharpblue
 
 # Terminals named in the command line's rule for which show links, by their own names and the variables they set

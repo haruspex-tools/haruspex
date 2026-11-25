@@ -106,6 +106,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0118](0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md) | 24 Nov 2026 | A masked column claims only its type, nullability and greatest length |
 | [0119](0119-names-that-differ-only-in-case-are-an-error.md) | 24 Nov 2026 | Names that differ only in case are an error |
 | [0120](0120-an-extract-s-key-constraints-are-no-key.md) | 24 Nov 2026 | An extract's key constraints are no key |
+| [0121](0121-every-address-haruspex-writes-is-served-from-haruspex-tools.md) | 24 Nov 2026 | Every address haruspex writes is served from haruspex.tools |
 
 ## Writing a record
 

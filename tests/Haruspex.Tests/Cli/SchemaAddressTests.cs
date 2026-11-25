@@ -6,7 +6,7 @@ namespace Haruspex.Tests.Cli;
 
 /// <summary>
 /// Where the command names the schemas of its config file and its JSON report (<see cref="SchemaAddress"/>): a release build at its
-/// own tag, <c>raw/v&lt;version&gt;</c>, and every other build at <c>raw/main</c>. A build is a release when it is built with
+/// own tag, <c>schemas/v&lt;version&gt;</c>, and every other build at <c>schemas/main</c>. A build is a release when it is built with
 /// <c>-p:HaruspexRelease=true</c>, which drops the preview's suffix and marks the binary; one marked so without its own version is
 /// refused by the build.
 /// </summary>
@@ -36,19 +36,19 @@ public class SchemaAddressTests
 
     [Fact]
     public void A_release_s_init_names_the_config_schema_at_its_own_tag() =>
-        Assert.Contains("  \"$schema\": \"https://github.com/sharpblue/haruspex/raw/v1.2.3/schemas/haruspex.schema.json\",\n", Init(Release), StringComparison.Ordinal);
+        Assert.Contains("  \"$schema\": \"https://haruspex.tools/schemas/v1.2.3/haruspex.schema.json\",\n", Init(Release), StringComparison.Ordinal);
 
     [Fact]
     public void Any_other_build_s_init_names_the_config_schema_at_main() =>
-        Assert.Contains("  \"$schema\": \"https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json\",\n", Init(Preview), StringComparison.Ordinal);
+        Assert.Contains("  \"$schema\": \"https://haruspex.tools/schemas/main/haruspex.schema.json\",\n", Init(Preview), StringComparison.Ordinal);
 
     [Fact]
     public void A_release_s_json_report_names_its_schema_at_its_own_tag() =>
-        Assert.Equal("https://github.com/sharpblue/haruspex/raw/v1.2.3/schemas/haruspex.output.schema.json", ReportSchema(Release));
+        Assert.Equal("https://haruspex.tools/schemas/v1.2.3/haruspex.output.schema.json", ReportSchema(Release));
 
     [Fact]
     public void Any_other_build_s_json_report_names_its_schema_at_main() =>
-        Assert.Equal("https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json", ReportSchema(Preview));
+        Assert.Equal("https://haruspex.tools/schemas/main/haruspex.output.schema.json", ReportSchema(Preview));
 
     [Fact]
     public void The_build_the_tests_run_is_not_a_release() => Assert.False(Terminal.ToolIsRelease);

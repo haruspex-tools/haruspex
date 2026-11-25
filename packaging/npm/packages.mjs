@@ -16,8 +16,8 @@ export const leastZod = "4.6.7";
 
 const common = {
   license: "Apache-2.0",
-  repository: { type: "git", url: "git+https://github.com/sharpblue/haruspex.git" },
-  homepage: "https://github.com/sharpblue/haruspex#readme",
+  repository: { type: "git", url: "git+https://github.com/haruspex-tools/haruspex.git" },
+  homepage: "https://github.com/haruspex-tools/haruspex#readme",
 };
 
 /** The `haruspex` package: the launcher, which runs the binary from whichever platform package npm installed. */
@@ -88,7 +88,7 @@ export function stagePlatform(folder, platform, version, binary) {
   copyLicenses(path.dirname(binary), folder);
   fs.writeFileSync(
     path.join(folder, "README.md"),
-    `# ${platform.packageName}\n\nThe [haruspex](https://github.com/sharpblue/haruspex) binary for ${platform.label}. ` +
+    `# ${platform.packageName}\n\nThe [haruspex](https://github.com/haruspex-tools/haruspex) binary for ${platform.label}. ` +
       "Install `haruspex`, which installs this package where it runs; it is not for use on its own.\n\n" +
       "The binary contains the .NET runtime and the libraries haruspex uses; their licences and notices are in `licenses`, " +
       "and haruspex's own is `LICENSE`.\n",

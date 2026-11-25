@@ -1,6 +1,6 @@
 # Haruspex.Emit.Zod
 
-Writes a [haruspex IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md) document as one TypeScript
+Writes a [haruspex IR](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Ir/README.md) document as one TypeScript
 module of [Zod 4](https://zod.dev) schemas: a schema and an inferred type for every named object type, every procedure's
 results and every procedure's parameters.
 It reads only the IR and knows nothing about SQL, which is what keeps it one emitter among several rather than the shape of
@@ -12,7 +12,7 @@ Three stages, each with one job. The plan decides what the module declares, in w
 IR's type graph about references and cycles. The lowering turns each IR type into a small model of Zod expressions, records
 that compare by value. The printer writes that model as TypeScript, and is the only part that knows TypeScript's syntax.
 Why three stages, rather than text written as the IR is walked, is argued in the guide's chapter
-[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
+[Emitting code](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/11-emitting-code.md).
 
 ```mermaid
 flowchart LR
@@ -35,12 +35,12 @@ if (emitted is Succeeded<string> { Value: var module })
 ```
 
 What a module looks like is shown, procedure by procedure, in
-[the guide's first chapter](https://github.com/sharpblue/haruspex/blob/main/docs/internals/01-the-shape-of-the-problem.md).
+[the guide's first chapter](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/01-the-shape-of-the-problem.md).
 
 ## What it guarantees
 
 **It claims everything the IR states, and nothing more**
-([decision 0005](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0005-claim-everything-the-engine-guarantees.md)).
+([decision 0005](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0005-claim-everything-the-engine-guarantees.md)).
 Each fact the IR carries becomes a Zod check: lengths, integer and decimal ranges, decimal steps (`.multipleOf`), exact
 value sets as `z.enum` or `z.literal`, and whether a field may be null or absent. A fact the target can't hold exactly is
 left out, and a note above the property says why, in one sentence; a fact many notes rest on is stated once, in the
@@ -62,10 +62,10 @@ What a value looks like depends on how it arrives, and the module follows what a
   driver: dates and times as `Date`, `bigint` as a string, a binary value as a Node `Buffer` of its length
   (`z.instanceof(Buffer).check(z.maxLength(8000))` for `varbinary(8000)`), which is why a module that holds one in a rowset or a
   parameter compiles against Node's types, as the driver does
-  ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
+  ([decision 0082](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
 - **A procedure's `FOR JSON` result** is the document, as the mssql driver hands it over with its `parseJSON` option: `null`
   when no rows matched, an array as much as an object, and an array that arrives has at least one item
-  ([decision 0048](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
+  ([decision 0048](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
 - **JSON that arrives as text** (a `FOR JSON` result that wasn't embedded) stays a `string`, since that is what arrives,
   and the check parses it and validates its content against the inner schema.
 - **Recursive types** (a tree built by a function that calls itself) use Zod 4's getter form, so the inferred type needs
@@ -74,7 +74,7 @@ What a value looks like depends on how it arrives, and the module follows what a
   each type is exported under its own name as that schema: under a name the config file gave one of them, or else as a
   constant the module doesn't export, named from a hash of its structure (`const shape3f2a9c = z.object(…)`), so no exported
   name depends on which procedure came first
-  ([decision 0071](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
+  ([decision 0071](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
   A check the schema already makes is not repeated:
   `z.int32()` rather than an `int`'s own bounds, and a union without a variant another one already accepts.
 - **It passes a linter.** A number a double can't hold is written as the double JavaScript reads it as, which is the check
@@ -83,20 +83,20 @@ What a value looks like depends on how it arrives, and the module follows what a
 
 **A procedure's results** are one schema under its name (`GetOrderSchema`, and its type `GetOrder`): its one result set's
 schema, a `z.tuple` of several, or, when the config file names its sets, a `z.strictObject` with a property for each set, even
-for one ([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+for one ([decision 0070](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
 That object is strict whatever the `objects` setting, because the generated function builds it from exactly its sets, and the
 JSON Schema of it has no other keys.
 The types inside are named after the sets: `GetOrderLinesRow` for a set named `lines`.
 
 **A procedure's parameters** are a strict schema of what may be sent (`GetOrderParamsSchema`, and its type `GetOrderParams`),
 declared before its results' schema, whatever the `objects` setting: a key it doesn't know is an error
-([decision 0009](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0009-parameters-are-strict.md)). Each value is
+([decision 0009](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0009-parameters-are-strict.md)). Each value is
 checked against its declared type's facts, because SQL Server cuts a longer string short and rounds a decimal of more places
 without an error
-([decision 0054](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)):
+([decision 0054](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0054-a-parameter-is-checked-against-its-declared-type.md)):
 a length in UTF-16 code units, an integer's and a decimal's range, a decimal's places. A date or time is an ISO 8601 string
 of exactly the form its type holds, never a `Date`
-([decision 0055](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)):
+([decision 0055](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0055-dates-and-times-are-sent-as-iso-8601-strings.md)):
 a `Date` a rowset result handed over is sent back as its `toISOString()` without the `Z`, cut to the digits its type holds,
 since a type without an offset would drop the `Z` without an error. A `bigint` is a safe integer, a JavaScript `bigint`, or the
 string of digits a rowset hands over. A binary value is a `Buffer` of at most its length, fixed or not, since a shorter one is
@@ -109,11 +109,11 @@ is named after the type (`LineListRowSchema`) and declared once for every proced
 object of every column, in the type's order, each a required key checked as a parameter of the column's type, and `null` only
 where the column takes it. A type no row can be sent in (an identity, computed or `rowversion` column) is `z.unknown()`, as its IR
 parameter is
-([decision 0076](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
+([decision 0076](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)).
 
 Objects strip unknown keys by default (`z.object`), so a database deployed ahead of its consumers can add a field without
 breaking them
-([decision 0008](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md)).
+([decision 0008](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md)).
 `ZodObjects.Strict` makes them `z.strictObject`. The setting governs the objects of results and named types only: the
 parameters, a table-valued parameter's rows and a procedure's named result sets are always strict, the object of what its
 `OUTPUT` parameters hold is never strict (`z.object`), and an open type's object accepts any key (`z.looseObject`). The output is deterministic, with stable ordering and LF line endings, so
@@ -128,7 +128,7 @@ value is null. The comment gives each reason's short text and code, the way out 
 and the `haruspex explain` command, in the lines `IrFieldText` gives every emitter. `ZodOptions.Comments` asks for those
 (`IrComments.Surprises`, the default), for every field (`IrComments.All`) or for none. A shape several types share is compared and declared without
 them, so comments never stop it being shared; each type exported as the shape says its own fields' reasons above its export
-([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## A module split into files
 
@@ -140,14 +140,14 @@ lowered once, as for one file (`ZodLowering.Placed`), so every name and every sh
 only to its own declarations and the shared file's, and the shared file only to its own, so no module imports another. A shape
 named by its structure is exported from the shared file marked `@internal`, with no type, since it is no public name; each file
 defines the helpers it calls and imports only the application's names it uses, so each passes the linter alone
-([decision 0075](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
+([decision 0075](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
 
 ## The mapping helper
 
 `MappingModule` holds `haruspex.mapping.ts`, which `"mapping"` in `"emit"` writes beside the module: TypeScript types, the same
 for every module, with which an application's mapper accounts for every key of a row the module declares, at any depth, so
 once the module is regenerated, a key the row gains is a compile error in the mapper
-([decision 0066](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)).
+([decision 0066](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)).
 It lives here because what it accounts for is this module's types: a `Date`, which a rowset's date arrives as, is a value
 rather than an object with keys.
 
@@ -160,6 +160,6 @@ rather than an object with keys.
 - **No SQL.** It can't look at a procedure, only at what the IR says about it. Every claim it makes is one the inference
   layer already proved.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API and its output will change. Its
-chapter of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
-[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API and its output will change. Its
+chapter of [the guide](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/README.md) is
+[Emitting code](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/11-emitting-code.md).

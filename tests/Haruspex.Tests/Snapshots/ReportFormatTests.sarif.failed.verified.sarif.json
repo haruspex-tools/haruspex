@@ -7,14 +7,14 @@
         "driver": {
           "name": "haruspex",
           "version": "0.0.0-test",
-          "informationUri": "https://github.com/sharpblue/haruspex",
+          "informationUri": "https://haruspex.tools",
           "rules": [
             {
               "id": "HAR1001",
               "shortDescription": {
                 "text": "The SQL doesn't parse"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR1001.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR1001",
               "defaultConfiguration": {
                 "level": "error"
               }

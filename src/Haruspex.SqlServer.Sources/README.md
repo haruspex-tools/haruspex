@@ -1,7 +1,7 @@
 # Haruspex.SqlServer.Sources
 
 Reads a SQL Server database project into a
-[Haruspex.SqlServer.Model](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): a folder of
+[Haruspex.SqlServer.Model](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Model/README.md): a folder of
 `.sql` scripts, such as an SSDT or `Microsoft.Build.Sql` project's; that project's file, `.sqlproj`, with the projects and DACPACs
 it refers to; or a DACPAC with the DACPACs it refers to. It parses with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom), Microsoft's own
 T-SQL parser (MIT), reads `model.xml` with .NET's own zip and XML readers, and needs neither DacFx nor a database.
@@ -28,7 +28,7 @@ Files are read in order of their relative path, so the result doesn't depend on 
 a byte order mark says otherwise (SSMS writes UTF-16), and is parsed with the SQL Server 2025 grammar. A script written for
 sqlcmd is read as the server would receive it: each `:setvar` defines a variable and each `$(name)` is replaced by its value
 first (`SqlcmdVariables`). A `$(name)` the script doesn't set is left as written, and inference reads a literal holding one as
-unknown, since a deployment sets it ([decision 0046](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
+unknown, since a deployment sets it ([decision 0046](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md)). `SqlScriptFolder.Read` can also be given which of a folder's scripts to read, such as the ones a
 project file builds.
 
 A DACPAC is read by `DacpacReader` into the same `SchemaDeclarations`, so the passes and the model are one for both:
@@ -86,11 +86,11 @@ statement, is refused (HAR1014), and so is one that uses a variable before its `
 every client library sets it; no SQLCMD variable is replaced, since the application sends the text as it is. A line comment
 `-- @param @name type` declares a parameter's type, read as a `DECLARE` of it reads, and one that can't be taken is refused
 with why (HAR1015): it doesn't read, it names a parameter twice, or it names a variable the file declares itself or doesn't use
-([decision 0059](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
+([decision 0059](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md)).
 A line comment `-- @sets order, lines` names the file's result sets, in order; one that names none, leaves a name out between
 commas or comes a second time is refused (HAR1018). Whether each name can name a set, and whether there is one for every set,
 is the config layer's to check, as it checks a procedure's `sets`
-([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
+([decision 0070](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)).
 
 ## Example
 
@@ -142,7 +142,7 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   case-sensitive collation. Once a model is read, `CaseVariants` looks for them in a table's and a table type's columns, a
   schema's objects, and each body's variables, temporary tables and declared tables' columns, a query file's included; each
   pair is an error naming both and where each is (HAR1022, or HAR1002 for two objects of one kind)
-  ([decision 0119](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
+  ([decision 0119](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 - **Every statement that weakens a claim is read, wherever it is.** A `NOCHECK`, a bulk load without `CHECK_CONSTRAINTS`, a key
   disabled or dropped, and a table altered, dropped or created again, under `IF`, in a block or in a body, in a folder's
   script, in a package's module text, and in a project's or a package's pre- and post-deployment scripts
@@ -172,7 +172,7 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   in a module's text is read as written, a bracketed name such as `[$(Ledger)]`. A database on another server isn't read.
 - **No DacFx.** DacFx's licence asks anyone who redistributes it to indemnify Microsoft, which no free tool should have to
   take on; ScriptDom is enough to read a project
-  ([decision 0004](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
+  ([decision 0004](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
 - **No other sqlcmd commands.** `:r`, which includes another file, is not followed in a folder's script, so a script that uses
   it fails to parse rather than being read as a different script from the one that runs. A project's deployment script is
   read with each file it includes by `:r`, apart; one that holds another command is a warning (HAR1021). Variables defined outside a script (sqlcmd's `-v`,
@@ -186,10 +186,10 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   its definition in another script (`ALTER PROCEDURE`, `DROP PROCEDURE`), or that changes a table anywhere (`ALTER TABLE …
   ALTER COLUMN`, `DROP TABLE`, a nested `CREATE TABLE`), is recorded as a `Redefinition`, not applied. Only a script's own procedures, functions and
   views are played in its order; an `ALTER PROCEDURE` or `ALTER VIEW` that no other script names stands
-  ([decision 0080](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0080-the-last-definition-in-a-script-stands.md)). Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
+  ([decision 0080](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0080-the-last-definition-in-a-script-stands.md)). Changes made only through code that would have to run, such as `EXEC sp_rename` or dynamic
   SQL, are not seen.
 - **No name resolution or typing.** What a reference in a body points to, and what type an expression has, are questions
   for a semantic layer over the model.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API will change. Its chapter of the guide is
-[*The inputs and the model*](https://github.com/sharpblue/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API will change. Its chapter of the guide is
+[*The inputs and the model*](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/02-the-inputs-and-the-model.md).

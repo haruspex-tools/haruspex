@@ -43,8 +43,8 @@ public static class IrJsonSchema
     /// </summary>
     public const string PublishedPath = "schemas/ir/" + IrDocument.CurrentVersion + ".schema.json";
 
-    /// <summary>Where the schema is published, as its <c>$id</c>: the address of <see cref="PublishedPath"/>, which names its version.</summary>
-    public const string Id = "https://github.com/sharpblue/haruspex/raw/main/" + PublishedPath;
+    /// <summary>Where the schema is published, as its <c>$id</c>: <see cref="PublishedPath"/> on the site (<see cref="HaruspexSite.IrSchemas"/>), named for its version.</summary>
+    public const string Id = HaruspexSite.IrSchemas + IrDocument.CurrentVersion + ".schema.json";
 
     /// <summary>The definitions of the type nodes, one per node of <see cref="IrType"/>'s closed set.</summary>
     private static readonly string[] TypeNodes = ["ref", "scalar", "array", "tuple", "record", "union", "jsonText", "anyJson", "import", "unknownType"];

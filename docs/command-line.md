@@ -35,7 +35,7 @@ Unknowns by reason (--verbose lists each):
   1  HAR2009  A column that can't be found or is ambiguous
   1  HAR2013  JSON whose shape isn't visible
   1  results only a declaration can give, as the warnings say
-What each code means: https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md
+What each code means: https://haruspex.tools/diagnostics/
 haruspex.json: warning HAR4204: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, …
 ```
 
@@ -79,7 +79,7 @@ haruspex: 4 procedures, 3 unknowns. Wrote src/db/haruspex.ir.json and src/db/har
 Unknowns: 1 new, 1 resolved, 2 as before (--verbose lists them).
   + kennel.walk_dogs results[0][].walker: HAR2008 A table the project doesn't define (db/procedures.sql:12:8)
   - kennel.get_dog results[0][].nickname: HAR2009 A column that can't be found or is ambiguous
-What each code means: https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md
+What each code means: https://haruspex.tools/diagnostics/
 ```
 
 When no claim changed but an emitted file's text did (a comment written from a reason, or the output of another version), it
@@ -284,7 +284,7 @@ shop.order_summary last_shipped: datetime (local), datetime2(0), nullable
   null empty-aggregate at procedures/order_summary.sql:11:8: it is an aggregate without GROUP BY, which is null over no rows
     | max(l.shipped_at) AS last_shipped
   to change it: if the data rules it out, declare it in the config file with "nullable": false and why
-  page nullable-column: https://github.com/sharpblue/haruspex/blob/main/docs/reasons/nullable-column.md
+  page nullable-column: https://haruspex.tools/reasons/nullable-column
   …
 ```
 
@@ -340,9 +340,9 @@ writes to `src/db`, or `generated` when there is no `src` folder:
 
 ```jsonc
 // haruspex's settings, written by haruspex init. Each is described in
-// https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md
+// https://haruspex.tools/docs/configuration
 {
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
   "source": "database",
   "out": "src/db",
   // Which procedures to type, by schema: every one, to start. Narrow each "include" to those the application calls.
@@ -369,7 +369,7 @@ It prints what it chose and the next command. It never writes over a config file
 | `github` | GitHub Actions | The text, then each error and warning as a workflow command, which GitHub shows as an annotation at its line. The default when `GITHUB_ACTIONS` is `true`. |
 
 **JSON.** The document is specified by [`schemas/haruspex.output.schema.json`](../schemas/haruspex.output.schema.json), which
-it names in `$schema`: a release at its own tag (`raw/v<its version>/schemas/...`), any other build on `main`, as
+it names in `$schema`: a release at its own tag (`https://haruspex.tools/schemas/v<its version>/...`), any other build on `main`, as
 [the configuration](configuration.md) says of the config file's schema. Its `version` is 1: a field may be added without a new version, but one is removed, renamed or given
 another meaning only with a new one, so a tool checks it. At the top are the `command`, the run's `exitCode`, `refused` (why
 no module ran, when none did) and `modules`, one for each module in the order they ran. Each module has:

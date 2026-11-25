@@ -1,6 +1,6 @@
 # Haruspex.Emit.JsonSchema
 
-Writes a [haruspex IR](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Ir/README.md) document as one
+Writes a [haruspex IR](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Ir/README.md) document as one
 [JSON Schema](https://json-schema.org) document, draft 2020-12: a definition in `$defs` for each procedure's results and for
 each named object type. It reads only the IR and knows nothing about SQL, as the Zod emitter doesn't: the two are equal
 backends of one IR, which is what shows the IR isn't shaped like either target. Any language with a JSON Schema validator can
@@ -11,7 +11,7 @@ check what a procedure returns with it.
 The same three stages as the Zod emitter's, each with one job. The plan decides what the document defines and in what order,
 and refuses an IR it can't write. The lowering turns each IR type into a small model of schemas, records that compare by value.
 The printer writes that model as JSON, and is the only part that knows JSON's syntax. The guide's chapter
-[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md) says why three stages, and
+[Emitting code](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/11-emitting-code.md) says why three stages, and
 what the two emitters share.
 
 ```mermaid
@@ -33,12 +33,12 @@ if (emitted is Succeeded<string> { Value: var schema })
 ```
 
 From the command line, `"emit": ["zod", "json-schema"]` in `haruspex.json` writes it beside the Zod module
-([the configuration page](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md#what-is-written-emit)).
+([the configuration page](https://github.com/haruspex-tools/haruspex/blob/main/docs/configuration.md#what-is-written-emit)).
 
 A procedure's schema is the definition under its generated name, the name the Zod module exports it by, and its `title` is
 its name in the database. It is its one result set's schema; for several, an array of exactly as many (`prefixItems`); and when
 the config file names its sets, an object with a property for each set, required, even for one
-([decision 0070](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). Here a basket, its lines nested by `FOR JSON`, and its status in a binary collation, where SQL Server
+([decision 0070](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0070-a-procedure-s-result-sets-are-named-all-or-none.md)). Here a basket, its lines nested by `FOR JSON`, and its status in a binary collation, where SQL Server
 ignores only trailing spaces:
 
 ```sql haruspex-example
@@ -152,7 +152,7 @@ A line's price is more than 0 with two places, so at least 0.01, and its places 
 
 A property's `description` ends with the lines that explain its field when it is a surprise, the same lines the Zod module's
 comments give (`IrFieldText`), as `JsonSchemaOptions.Comments` asks
-([decision 0079](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
+([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
 ## A document split into modules
 
@@ -162,7 +162,7 @@ modules reach is defined in the shared document, under `IrModules.Shared`, which
 own name, `shared.jsonschema.json#/$defs/PartNode` (`JsonSchemaOptions.SharedDocument`). Shapes aren't shared in JSON Schema, so
 the shared document holds only types that are one type, such as a recursive function's node. A consumer adds each document under
 its file name, so that a relative reference resolves
-([decision 0075](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
+([decision 0075](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0075-what-several-modules-share-is-written-once-in-a-shared-file.md)).
 
 A document describes results, not parameters, but it defines every named type of the IR, a table type's row among them (the
 rows a client sends in a table-valued parameter): strict whatever the `objects` setting, with every column required, since a row
@@ -173,7 +173,7 @@ parameters' rules, not as `FOR JSON` writes them (`SentScalars`): a date or time
 ## What it guarantees
 
 **It claims everything the IR states, and nothing more**
-([decision 0005](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0005-claim-everything-the-engine-guarantees.md)).
+([decision 0005](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0005-claim-everything-the-engine-guarantees.md)).
 Each fact becomes the most precise keyword JSON Schema has:
 
 | The IR says | JSON Schema |
@@ -188,14 +188,14 @@ Each fact becomes the most precise keyword JSON Schema has:
 | a date, a date and time with an offset, a GUID | `format` `date`, `date-time`, `uuid`, each with a `pattern` |
 | a time, a date and time without an offset | a `pattern`, since no RFC 3339 format fits |
 | the SQL type of a time or a date and time (`sql`) | in the `pattern`, a fraction of a second of exactly as many digits as the type's scale, or none, as `FOR JSON` writes it (three ending in 0, 3 or 7 for `datetime`, none for `smalldatetime`) |
-| a binary value, in a rowset or in JSON | the base64 text `FOR JSON` writes: `contentEncoding` `base64`, the `pattern` of padded base64, and its length in characters, four for every three bytes or part of three ([decision 0082](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)) |
+| a binary value, in a rowset or in JSON | the base64 text `FOR JSON` writes: `contentEncoding` `base64`, the `pattern` of padded base64, and its length in characters, four for every three bytes or part of three ([decision 0082](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)) |
 | an array, its items' nullability and length | `items`, `minItems`, `maxItems` |
 | a tuple (`json_array`) | `prefixItems`, `"items": false` and `minItems` |
 | a record (`json_objectagg`) | `additionalProperties` of its values' schema |
 | a union | `anyOf`, each variant once; an object variant refuses the keys only the others have |
 | a named type, recursion | a definition in `$defs`, and `$ref` |
 | JSON text of known content | `contentMediaType` `application/json` and `contentSchema` |
-| a JSON result that may be absent | nullable, as the mssql driver hands it over ([decision 0048](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)) |
+| a JSON result that may be absent | nullable, as the mssql driver hands it over ([decision 0048](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0048-an-absent-json-result-reads-as-null.md)) |
 | how many rows a result returns | `minItems` and `maxItems` on its array |
 | an unknown | `{}`, which accepts anything, with the IR's sentence for why |
 | the SQL type, where each fact came from, why a value may be null | `description` |
@@ -203,7 +203,7 @@ Each fact becomes the most precise keyword JSON Schema has:
 Every value is described as JSON, as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
 `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them (every column a key, null where it is null, and JSON text, a `json` column
 included, the string it holds)
-([decision 0051](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
+([decision 0051](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
 So a `bigint` is a JSON integer in a rowset as in a JSON result, and a date a string, whatever a driver makes of them.
 
 **For rowsets, the two emitters describe different things, on purpose.** The Zod module describes what the mssql driver hands a
@@ -226,7 +226,7 @@ what its driver gives against the Zod's rules in its own language. For `FOR JSON
 - **Decimal places.** `decimal(7,2)` has at most two places, but `multipleOf: 0.01` would be tested in binary floating point
   by most validators, which find 0.07 no multiple of 0.01, so it is left out and a note says how many places there are. A
   decimal of no places is `integer`, exact everywhere
-  ([decision 0052](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0052-a-decimal-s-places-are-a-note-not-multiple-of.md)).
+  ([decision 0052](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0052-a-decimal-s-places-are-a-note-not-multiple-of.md)).
 - **Precision past a double.** The bounds are exact in the file, but a validator that reads numbers as doubles reads a
   `bigint` exactly only up to 2^53, and a wide decimal's bounds as the nearest doubles. An inclusive bound is never crossed by
   rounding; an exclusive one of no known scale is written inclusive, and says so.
@@ -235,7 +235,7 @@ what its driver gives against the Zod's rules in its own language. For `FOR JSON
   refer to a TypeScript module, and its note names the schema.
 
 Objects allow other keys by default, so a database deployed ahead of its consumers can add a column without failing them
-([decision 0008](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md));
+([decision 0008](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0008-objects-strip-unknown-keys-by-default.md));
 `JsonSchemaObjects.Strict` gives `"additionalProperties": false`. The output is deterministic, with stable ordering and LF
 line endings, so a CI check can compare it byte for byte. Every document the fixtures give is checked against the draft 2020-12 meta-schema
 (`JsonSchemaMetaSchemaTests`), and every row the differential tests get from SQL Server is validated against it, with Ajv and
@@ -249,10 +249,10 @@ its formats asserted (`JsonSchemaAcceptanceTests`).
 - **No shared definitions.** Each named type is written in full under its own name, even where the Zod module declares a
   shape several types share once: every definition in `$defs` can be referred to, so there is no unexported name to declare a
   shared one under, and each says where it comes from
-  ([decision 0071](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
+  ([decision 0071](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
 - **No renaming of keys.** The document describes the wire format, the keys as SQL Server writes them.
 - **No SQL.** It can't look at a procedure, only at what the IR says about it.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its API and its output will change. Its
-chapter of [the guide](https://github.com/sharpblue/haruspex/blob/main/docs/internals/README.md) is
-[Emitting code](https://github.com/sharpblue/haruspex/blob/main/docs/internals/11-emitting-code.md).
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its API and its output will change. Its
+chapter of [the guide](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/README.md) is
+[Emitting code](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/11-emitting-code.md).

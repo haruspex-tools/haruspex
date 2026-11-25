@@ -15,14 +15,14 @@ namespace Haruspex.Ir;
 /// </remarks>
 public static class IrReasons
 {
-    /// <summary>Where the pages are published, on <c>main</c>, as the diagnostics' pages are.</summary>
-    public const string Pages = "https://github.com/sharpblue/haruspex/blob/main/docs/reasons/";
+    /// <summary>Where the pages are published, as the diagnostics' pages are: <see cref="HaruspexSite.Reasons"/>.</summary>
+    public const string Pages = HaruspexSite.Reasons;
 
-    /// <summary>The page of a code: <c>docs/reasons/count-overflow.md</c> on <c>main</c>.</summary>
+    /// <summary>The page of a code, <c>https://haruspex.tools/reasons/count-overflow</c>, which leads to <c>docs/reasons/count-overflow.md</c> on <c>main</c>.</summary>
     public static string Page(string code)
     {
         ArgumentNullException.ThrowIfNull(code);
-        return Pages + code + ".md";
+        return Pages + code;
     }
 
     /// <summary>Why a value may be null, for "may be null because …".</summary>

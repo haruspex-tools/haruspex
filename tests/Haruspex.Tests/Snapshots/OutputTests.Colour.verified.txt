@@ -7,8 +7,8 @@ haruspex: 4 procedures, 3 unknowns. Wrote src/db/haruspex.ir.json and src/db/har
   ␛[33m~␛[0m kennel.list_dogs results[0][].name: presence changed from always to omittedWhenNull
 3 unknowns, as before.
 --- standard error
-haruspex.json: ␛[1;33mwarning␛[0m ␛]8;;https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR4204.md␛\HAR4204␛]8;;␛\: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures["kennel.find_dogs"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
+haruspex.json: ␛[1;33mwarning␛[0m ␛]8;;https://haruspex.tools/diagnostics/HAR4204␛\HAR4204␛]8;;␛\: kennel.find_dogs: its result sets are unknown: EXEC sp_executesql @sql runs dynamic SQL, a string built when the procedure runs, so its result sets are not known. (procedures.sql:9:1) Declare them in haruspex.json under procedures["kennel.find_dogs"].results, as "none" or a JSON Schema, or declare the results of the procedure that runs it.
 ␛[1mkennel.get_dog (1 unknown)␛[0m
-db/procedures.sql:5:26: ␛[36mnote␛[0m ␛]8;;https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2009.md␛\HAR2009␛]8;;␛\: kennel.get_dog results[0][].nickname: The table kennel.dog has no column nickname.
+db/procedures.sql:5:26: ␛[36mnote␛[0m ␛]8;;https://haruspex.tools/diagnostics/HAR2009␛\HAR2009␛]8;;␛\: kennel.get_dog results[0][].nickname: The table kennel.dog has no column nickname.
 ␛[1mkennel.list_dogs (1 unknown)␛[0m
-db/procedures.sql:2:26: ␛[36mnote␛[0m ␛]8;;https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md␛\HAR2013␛]8;;␛\: kennel.list_dogs results[0][].notes: json_query(d.notes) reads JSON that is not built here, so its shape is unknown.
+db/procedures.sql:2:26: ␛[36mnote␛[0m ␛]8;;https://haruspex.tools/diagnostics/HAR2013␛\HAR2013␛]8;;␛\: kennel.list_dogs results[0][].notes: json_query(d.notes) reads JSON that is not built here, so its shape is unknown.

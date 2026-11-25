@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+  "$id": "https://haruspex.tools/schemas/main/haruspex.schema.json",
   "title": "haruspex.json",
   "description": "The haruspex config file: which procedures are typed, per schema; overrides of what inference found; naming rules and emitter settings. Paths in it are relative to the file. JSON with comments and trailing commas is allowed.",
   "type": "object",

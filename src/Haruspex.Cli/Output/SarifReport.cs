@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Haruspex.Diagnostics;
+using Haruspex.Ir;
 
 namespace Haruspex.Cli.Output;
 
@@ -70,7 +71,7 @@ internal sealed class SarifReport(string root, string version)
         json.WriteStartObject("driver");
         json.WriteString("name", "haruspex");
         json.WriteString("version", version);
-        json.WriteString("informationUri", "https://github.com/sharpblue/haruspex");
+        json.WriteString("informationUri", HaruspexSite.Host);
         json.WriteStartArray("rules");
         foreach (var code in rules)
         {

@@ -12,7 +12,7 @@ runs TypeScript without a build step.
 ## Generate the module
 
 ```sh
-git clone https://github.com/sharpblue/haruspex.git
+git clone https://github.com/haruspex-tools/haruspex.git
 cd haruspex
 mkdir out
 ```

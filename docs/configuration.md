@@ -6,9 +6,9 @@ module of its own. Paths in it are relative to the file. It is JSON with comment
 Its JSON Schema is published at [`schemas/haruspex.schema.json`](../schemas/haruspex.schema.json); name it in `$schema` and
 editors complete and check the file as you type. `haruspex init` writes a starter file, naming it
 ([the command line](command-line.md#init)) at the address the build you run names. A release names the schema at its own tag,
-`https://github.com/sharpblue/haruspex/raw/v<its version>/schemas/haruspex.schema.json`, which holds exactly the settings that
+`https://haruspex.tools/schemas/v<its version>/haruspex.schema.json`, which holds exactly the settings that
 release reads. Every other build, a preview's included, names it on `main`,
-`https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json`, which moves: it may offer a setting newer than the
+`https://haruspex.tools/schemas/main/haruspex.schema.json`, which moves: it may offer a setting newer than the
 haruspex you run, which that haruspex refuses as an unknown key. Whichever you name, haruspex reads `$schema` only as text; the
 schema file's own `$id` is its address on `main`.
 
@@ -17,7 +17,7 @@ otherwise silently do nothing.
 
 ```jsonc
 {
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json",
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "baseline": "release/database",           // the database before the change being made; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in

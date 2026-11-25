@@ -7,14 +7,14 @@
         "driver": {
           "name": "haruspex",
           "version": "0.0.0-test",
-          "informationUri": "https://github.com/sharpblue/haruspex",
+          "informationUri": "https://haruspex.tools",
           "rules": [
             {
               "id": "HAR2009",
               "shortDescription": {
                 "text": "A column that can't be found or is ambiguous"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2009.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR2009",
               "defaultConfiguration": {
                 "level": "note"
               }
@@ -24,7 +24,7 @@
               "shortDescription": {
                 "text": "JSON whose shape isn't visible"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR2013.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR2013",
               "defaultConfiguration": {
                 "level": "note"
               }
@@ -34,7 +34,7 @@
               "shortDescription": {
                 "text": "Result sets only a declaration can give"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR4204.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR4204",
               "defaultConfiguration": {
                 "level": "warning"
               }
@@ -44,7 +44,7 @@
               "shortDescription": {
                 "text": "What the module claims would change"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6014.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR6014",
               "defaultConfiguration": {
                 "level": "error"
               }
@@ -54,7 +54,7 @@
               "shortDescription": {
                 "text": "A selected procedure's result sets are unknown"
               },
-              "helpUri": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6016.md",
+              "helpUri": "https://haruspex.tools/diagnostics/HAR6016",
               "defaultConfiguration": {
                 "level": "error"
               }

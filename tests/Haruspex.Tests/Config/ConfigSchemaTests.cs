@@ -65,7 +65,7 @@ public class ConfigSchemaTests
         using var schema = JsonDocument.Parse(File.ReadAllText(SchemaPath));
 
         Assert.Equal("https://json-schema.org/draft/2020-12/schema", schema.RootElement.GetProperty("$schema").GetString());
-        Assert.Equal("https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.schema.json", schema.RootElement.GetProperty("$id").GetString());
+        Assert.Equal("https://haruspex.tools/schemas/main/haruspex.schema.json", schema.RootElement.GetProperty("$id").GetString());
     }
 
     [Theory]

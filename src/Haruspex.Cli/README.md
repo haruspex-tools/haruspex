@@ -1,11 +1,11 @@
 # Haruspex.Cli
 
 The `haruspex` command. It composes the layers: it reads a folder of `.sql` files, a `.sqlproj` or a DACPAC with
-[Haruspex.SqlServer.Sources](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
-with [Haruspex.SqlServer.Inference](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
-applies [`haruspex.json`](https://github.com/sharpblue/haruspex/blob/main/docs/configuration.md) with
-[Haruspex.Config](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Config/README.md), and writes the IR and the
-output of [Haruspex.Emit.Zod](https://github.com/sharpblue/haruspex/blob/main/src/Haruspex.Emit.Zod/README.md).
+[Haruspex.SqlServer.Sources](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
+with [Haruspex.SqlServer.Inference](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
+applies [`haruspex.json`](https://github.com/haruspex-tools/haruspex/blob/main/docs/configuration.md) with
+[Haruspex.Config](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Config/README.md), and writes the IR and the
+output of [Haruspex.Emit.Zod](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Emit.Zod/README.md).
 
 ## How data flows through it
 
@@ -113,7 +113,7 @@ checks every module in the repository:
 
 ```yaml
 - uses: actions/checkout@v7                      # haruspex itself, into .haruspex, which check --all doesn't look in
-  with: { repository: sharpblue/haruspex, ref: <commit>, path: .haruspex }
+  with: { repository: haruspex-tools/haruspex, ref: <commit>, path: .haruspex }
 - uses: actions/setup-dotnet@v6
   with: { global-json-file: .haruspex/global.json }
 - run: dotnet run --project .haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
@@ -123,7 +123,7 @@ Pin the two actions by commit too, as haruspex's own workflow does.
 
 What each run prints, mode by mode, with the options for colour and the formats for tools and CI (`--format json`, `sarif`,
 `github`), is [the command line's page](../../docs/command-line.md). Each error and warning goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
-the problem's code, whose page in [docs/diagnostics](https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/README.md)
+the problem's code, whose page in [docs/diagnostics](https://github.com/haruspex-tools/haruspex/blob/main/docs/diagnostics/README.md)
 says what it means and what to do; so does each note, one for each unknown, with `--verbose`:
 
 ```text
@@ -150,7 +150,7 @@ shown from it.
 when that SQL is at hand and, for a package, unchanged (`ExplainSources`, which reads a package's line through `PackageLines`);
 otherwise the reference alone. `check` ends a message about a changed field with the command (`ExplainPointer`). What it prints,
 and the JSON's shape, are in [the command line's page](../../docs/command-line.md#explain); why it reads the IR alone is
-[decision 0078](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0078-the-ir-says-where-each-field-came-from.md).
+[decision 0078](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0078-the-ir-says-where-each-field-came-from.md).
 
 ## What it guarantees
 
@@ -182,20 +182,20 @@ and the JSON's shape, are in [the command line's page](../../docs/command-line.m
   haruspex wrote, a hand edit), as does an output folder with nothing to compare
   with, an IR there of another version, and a selected procedure whose result sets are unknown and not declared. Unknowns are notes, and pass,
   unless the config file says `"check": { "unknowns": "fail" }`
-  ([decision 0050](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
+  ([decision 0050](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0050-check-compares-claims-not-files.md)).
 - **`generate` with a baseline writes types that work against both databases** (`CombinedTypes`): the baseline (`Baseline`),
   read once for the run as a source is, with the module's own config file, or from an IR file, is combined with the module's
   own document by `IrCombination`, and every emitter writes the combined one. A change no one function bridges is an error at its
   procedure (HAR6033), which the module leaves out while it is written for the rest, and the run fails with 1; a possible rename
   (HAR6034), a procedure in one database only (HAR6035) and a return shape that changes (HAR6028) are warnings
-  ([decision 0073](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)).
+  ([decision 0073](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0073-generate-with-a-baseline-writes-types-that-hold-against-both-databases.md)).
 - **`check` with a baseline also fails on what the application already running would fail on** (`BaselineCheck`): `IrFit`
   judges the module's own database against the baseline, the database that application was built against, and the output
   folder is compared with the combined module, as `generate` with the same baseline writes it. A change it would fail on is an error (HAR6026), one it sets aside
   a warning (HAR6027), and a function whose return shape changes a warning (HAR6028). The comparison with the output folder is
   still made, unless `--fit-only` asks for the fit alone, as a database's pipeline does against an application's committed
   contract
-  ([decision 0069](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0069-check-with-a-baseline-judges-the-deploy-window.md)).
+  ([decision 0069](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0069-check-with-a-baseline-judges-the-deploy-window.md)).
 - **The exit codes are fixed**, so scripts and CI can rely on them (`ExitCodeTests` holds each row). A run over several
   modules exits with the highest of theirs (`ModuleSetTests`):
 
@@ -212,9 +212,9 @@ and the JSON's shape, are in [the command line's page](../../docs/command-line.m
   layers and writes the results. `SqlProject` is that composition, kept here because no layer below may know both how a
   model is read and how it is inferred.
 - **No database connection.** Everything comes from the source files
-  ([decision 0001](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0001-infer-from-source-never-a-live-database.md)).
+  ([decision 0001](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0001-infer-from-source-never-a-live-database.md)).
 - **No watch mode or server.** It runs once and exits, which is what a build step or a CI job needs.
 
-It is part of [haruspex](https://github.com/sharpblue/haruspex), and pre-release: its commands, options and output will
+It is part of [haruspex](https://github.com/haruspex-tools/haruspex), and pre-release: its commands, options and output will
 change. How a run goes from input to output, step by step, and why it is built so, is
-[the guide's chapter 12](https://github.com/sharpblue/haruspex/blob/main/docs/internals/12-from-input-to-output.md).
+[the guide's chapter 12](https://github.com/haruspex-tools/haruspex/blob/main/docs/internals/12-from-input-to-output.md).

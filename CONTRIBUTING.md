@@ -64,6 +64,8 @@ binary once on the example application, and keeps it, with the licences that go 
 those binaries it packs the npm tarballs ([packaging/npm](packaging/npm/README.md)), installs them into an empty project on
 each platform, and runs the command there.
 It runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint` and `zizmor`.
+A second workflow, `site.yml`, builds haruspex.tools and deploys it to GitHub Pages from `main` and from release tags
+([site](site/README.md)).
 Every relative link in the repository's Markdown, anchors included, must resolve; `MarkdownLinkTests` checks
 them.
 Package versions are central (`Directory.Packages.props`) and locked (`packages.lock.json`, committed).
@@ -303,6 +305,7 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `examples` | Small applications that use what haruspex generates, compiled by the tests and in CI ([greenhouse](examples/greenhouse/README.md)). |
 | `tests/prose` | The prose checks (`check.sh`), their npm package and the fixtures that test them. |
 | `packaging/npm` | The npm packages: the launcher of the `haruspex` command, and the script that packs it and each platform's binary into tarballs ([its README](packaging/npm/README.md)). |
+| `site` | The script that builds haruspex.tools, which serves every address haruspex writes, and its tests ([its README](site/README.md)). |
 
 Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics` and
 `Collections` because their types are in those layers' public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API

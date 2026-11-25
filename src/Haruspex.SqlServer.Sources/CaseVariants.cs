@@ -7,7 +7,7 @@ namespace Haruspex.SqlServer.Sources;
 
 /// <summary>
 /// Finds two names in one namespace that differ only in case (<c>Code</c> and <c>code</c>), each an error (HAR1022,
-/// <see href="https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md">decision 0119</see>).
+/// <c>docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md</c>).
 /// </summary>
 /// <remarks>
 /// Every layer above matches names without case (<c>ObjectName</c>, <c>LocalName</c>, <c>Table.Column</c>). That is an

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://github.com/sharpblue/haruspex/raw/main/schemas/haruspex.output.schema.json",
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.output.schema.json",
   "version": 1,
   "command": "generate",
   "exitCode": 2,
@@ -48,7 +48,7 @@
           "file": null,
           "line": null,
           "column": null,
-          "help": "https://github.com/sharpblue/haruspex/blob/main/docs/diagnostics/HAR6004.md"
+          "help": "https://haruspex.tools/diagnostics/HAR6004"
         }
       ],
       "acknowledged": []
