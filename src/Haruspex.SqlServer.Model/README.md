@@ -59,7 +59,7 @@ foreach (var table in model.Tables)
   then by where each object starts. The same folder gives the same model however its files are listed.
 - **Names are two-part** (`schema.name`, `ObjectName`) and compared ignoring case, as SQL Server compares them under a
   case-insensitive collation. That is an assumption, which two names in one namespace that differ only in case would break,
-  so reading refuses them ([decision 0119](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
+  so reading refuses them ([decision 0119](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 - **Declarations are kept as written**, so a tool reading the model sees what the source says, not an interpretation.
 - **Collations are a closed list** (`CollationCatalogue`): every collation SQL Server 2025 has, with the code page its `char`
   and `varchar` data is stored in, checked against `sys.fn_helpcollations()` by a test. A name off the list is no collation's,

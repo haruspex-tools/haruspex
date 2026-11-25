@@ -453,7 +453,7 @@ walks the callee and solves recursion. Every engine rule here is observed and ke
   all: under a case-insensitive server collation its `#t` is its own `#T`
   (`A_callee_s_temporary_table_hides_its_caller_s_of_a_name_that_differs_only_in_case`), under a case-sensitive one the
   caller's, and two bodies' names prove nothing of which, so the call's results and what follows are unknown
-  ([decision 0119](https://github.com/sharpblue/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
+  ([decision 0119](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 - **Its parameters are its declared types, nullable** (`parameter`), so its shape holds for every call; arguments are not
   used to specialise it.
 - **The return code** (`EXEC @rc = …`) is never null after a call that succeeds: `RETURN NULL` gives 0
