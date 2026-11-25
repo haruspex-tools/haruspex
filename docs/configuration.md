@@ -202,8 +202,7 @@ anyone noticing), an exclude that removes nothing its include selected, an exclu
 block whose exclude removes everything its include selects. A one-off `--include` whose every match a schema's
 exclude leaves out is an error too: a run that would type nothing fails rather than writing an empty module.
 
-A block is an object so that settings can be added to it later (one output module per schema is planned) without
-breaking a file written today.
+A block is an object so that settings can be added to it later without breaking a file written today.
 
 ## Query files: `queries`
 

@@ -5,7 +5,9 @@ haruspex reports it and what to do. A code's number, severity and meaning never 
 page and its number ([decision 0036](../decisions/0036-diagnostics-have-stable-codes.md)). The first digit is the step
 the code was born in.
 
-An **error** stops the run, and nothing is written; a **warning** doesn't, and says what the output rests on that
+An **error** fails the run (exit code 1 or 2), and its page says what is still written: most stop the run before anything is
+written, some leave the output standing, and a run over several modules still writes each module that doesn't fail. A
+**warning** doesn't fail the run, and says what the output rests on that
 couldn't be checked, or what in the config file can go; a **note** says what the output is, such as an unknown with its
 reason.
 

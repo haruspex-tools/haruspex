@@ -4,14 +4,18 @@ The `haruspex` command. It composes the layers: it reads a folder of `.sql` file
 [Haruspex.SqlServer.Sources](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md), infers
 with [Haruspex.SqlServer.Inference](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Inference/README.md),
 applies [`haruspex.json`](https://github.com/haruspex-tools/haruspex/blob/main/docs/configuration.md) with
-[Haruspex.Config](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Config/README.md), and writes the IR and the
-output of [Haruspex.Emit.Zod](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Emit.Zod/README.md).
+[Haruspex.Config](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Config/README.md), and writes the IR and what
+the config file's `emit` names: the Zod module and the mapping helper of
+[Haruspex.Emit.Zod](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Emit.Zod/README.md), the JSON Schema of
+[Haruspex.Emit.JsonSchema](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Emit.JsonSchema/README.md) and the
+database module's functions of [Haruspex.Emit.Mssql](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.Emit.Mssql/README.md).
 
 ## How data flows through it
 
 `HaruspexCli` parses the command line, and `ModuleSet` runs the command once for each module it covers. `ModuleRun` runs the steps both commands share, each returning an outcome, up to the
 module in memory (`EmittedModule`); `Generate` writes it, and `Check` compares it with the files in the output folder, claim by claim
-(`IrComparison`, in the IR's layer). `SqlProject` composes the layers that read and infer. Neither command prints: each gives
+(`IrComparison`, in the IR's layer). With a baseline, the document is combined with the baseline's first (`CombinedTypes`), so
+the types work against both databases, and `check` also judges whether the module fits it (`BaselineCheck`). `SqlProject` composes the layers that read and infer. Neither command prints: each gives
 back a `ModuleReport` of what it found and did, and a report in `Output/` prints it in the format asked for (`TextReport`,
 `JsonReport`, `SarifReport`, `GitHubAnnotations`), as `OutputSettings` settles from the terminal. `Init` writes a starter
 config file.
@@ -29,12 +33,17 @@ flowchart LR
     model --> infer["IrInference.Infer"]
     selected --> infer
     infer --> apply["ConfigApplication.Apply"]
-    apply --> zod["ZodEmitter.Emit"]
-    apply --> jsonSchema["JsonSchemaEmitter.Emit"]
+    baseline["the baseline, read the same way"] --> combined["CombinedTypes"]
+    apply --> combined
+    combined --> zod["ZodEmitter.Emit"]
+    combined --> jsonSchema["JsonSchemaEmitter.Emit"]
+    combined --> mssql["MssqlEmitter.Emit"]
+    mapping["MappingModule"] --> emitted
     zod --> emitted["EmittedModule"]
     jsonSchema --> emitted
+    mssql --> emitted
     emitted --> generate["Generate"]
-    generate --> files["haruspex.ir.json, haruspex.zod.ts, haruspex.jsonschema.json, haruspex.files.json"]
+    generate --> files["haruspex.ir.json, haruspex.zod.ts, haruspex.jsonschema.json, haruspex.mssql.ts, haruspex.mapping.ts, haruspex.files.json"]
     emitted --> check["Check"]
     committed["the files in the output folder"] --> check
     check --> compare["IrComparison.Compare"]
@@ -61,7 +70,8 @@ haruspex generate -c plugins/orders/haruspex.json -c plugins/returns/haruspex.js
 ```
 
 `init` looks below the working directory for the database's files, a `.sqlproj` first, then a `.dacpac` (in `bin` too, where a
-build writes one, leaving out the system databases' packages beside it), then the folder holding every `.sql` file, and writes
+build writes one, leaving out the system databases' packages beside it), then the folder holding the top-level folders whose
+`.sql` files define objects, naming any whose files define none as possible query files, and writes
 a `haruspex.json` that reads it, types every procedure of each schema that has one, and writes to `src/db` (or `generated`
 when there is no `src` folder). It never writes over a config file, and when it finds two of a kind it names them and asks
 for one: `haruspex init Sales/Sales.sqlproj`.
@@ -86,6 +96,8 @@ take:
 | `--quiet`, `-q` | Print errors only. |
 | `--color` | `auto` (the default: colour on a terminal, unless `NO_COLOR` is set), `always` or `never`. |
 | `--format` | `text` (the default), `json` for a tool, `sarif` for code scanning, or `github` for annotations in GitHub Actions (the default when `GITHUB_ACTIONS` is `true`). |
+| `--baseline`, `-b` | The database before the change being made: a folder of `.sql` files, a `.sqlproj`, a `.dacpac` or an IR file. `generate` writes types that work against both; `check` also fails on what the application already running would fail on. Replaces `baseline` in the config file. |
+| `--fit-only` | `check` alone, with a baseline: judges only whether the module fits it, without comparing with the output folder, as a database's pipeline does. |
 
 Without a config file, the source, `--include` and `--out` are all required. `haruspex --help`, `haruspex generate --help`
 and `haruspex check --help` list the same.
@@ -112,14 +124,14 @@ In CI, until haruspex is published as a package, a job runs it from a copy of it
 checks every module in the repository:
 
 ```yaml
-- uses: actions/checkout@v7                      # haruspex itself, into .haruspex, which check --all doesn't look in
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1: haruspex itself, into .haruspex, which check --all doesn't look in
   with: { repository: haruspex-tools/haruspex, ref: <commit>, path: .haruspex }
-- uses: actions/setup-dotnet@v6
+- uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
   with: { global-json-file: .haruspex/global.json }
 - run: dotnet run --project .haruspex/src/Haruspex.Cli -- check --all   # every haruspex.json below; exit code 1 on a change
 ```
 
-Pin the two actions by commit too, as haruspex's own workflow does.
+The two actions are pinned by commit, with the version in a comment, as haruspex's own workflow pins them.
 
 What each run prints, mode by mode, with the options for colour and the formats for tools and CI (`--format json`, `sarif`,
 `github`), is [the command line's page](../../docs/command-line.md). Each error and warning goes to standard error, one line each, in the form compilers write and editors and CI annotate, with
