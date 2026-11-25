@@ -84,8 +84,8 @@ callers and the build are. Most projects meet one or more of these situations, w
 it otherwise can't. Each is a statement about your project that haruspex can't see for itself, so it is yours to make.
 
 - **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session).
-  Without it, every value an overflow, a division by zero or a loss of precision could make NULL is nullable, since a session
-  with `ANSI_WARNINGS` and `ARITHABORT` off makes them NULL. The `mssql` package's driver, tedious, sets
+  Without it, every value an overflow, a division by zero or a loss of precision could make NULL is nullable, since some
+  sessions make them NULL. The `mssql` package's driver, tedious, sets
   `{ "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false }`, and the page's
   section says what other drivers set.
 - **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`. Without it, a
@@ -111,8 +111,9 @@ it otherwise can't. Each is a statement about your project that haruspex can't s
 
 ## Reading a folder of scripts: `source`
 
-`source` as a folder reads every `.sql` file below it, as a database project's build lists its default items (`**/*.sql`):
-the extension matched ignoring case, in every folder below, hidden folders, `node_modules`, `bin` and `obj` included. A link
+`source` as a folder reads every `.sql` file below it, by the pattern a database project's build lists its default items with
+(`**/*.sql`), but without the build's exclusions: the extension matched ignoring case, in every folder below, hidden folders,
+`node_modules`, `bin` and `obj` included. A link
 to a folder elsewhere is followed, and one back to a folder already read isn't, so each script is read once. Nothing is left
 out, so name the database's own folder rather than the application's: a folder holding both would read the application's
 query files, its installed packages and a copy of the repository kept inside it as the database's scripts, and an object
