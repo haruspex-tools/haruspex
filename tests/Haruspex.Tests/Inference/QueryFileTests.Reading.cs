@@ -68,4 +68,31 @@ public partial class QueryFileTests
     [Fact]
     public void A_name_passed_to_a_procedure_is_the_callee_s_not_a_parameter_of_the_file() =>
         Assert.Equal(["@w nvarchar(20)"], Parameters("EXEC shop.touch @customer_id = 1, @why = @w;"));
+
+    /// <summary>The characters .NET's <c>ReplaceLineEndings</c> also takes for a line's end, which neither the parser nor SQL Server does.</summary>
+    private const string NotLineEnds = "\f\u2028\u2029\u0085";
+
+    [Fact]
+    public void A_query_file_s_text_is_kept_as_written_but_for_cr_and_crlf_which_become_lf()
+    {
+        // F068: ReplaceLineEndings turned each of these into LF, so the function sent another literal than the file's. SQL Server
+        // keeps each in a literal and ends neither a comment nor a line at one (QueryTextObservationTests).
+        using var dir = new TempDirectory();
+        var path = dir.File("q.sql", $"-- a{NotLineEnds}b\r\nSELECT N'c{NotLineEnds}d' AS label;\rSELECT 1 AS one;\n");
+
+        var file = QueryFileReader.Read(path, "q.sql").Expected();
+
+        Assert.Equal($"-- a{NotLineEnds}b\nSELECT N'c{NotLineEnds}d' AS label;\nSELECT 1 AS one;\n", file.Text);
+    }
+
+    [Fact]
+    public void A_parse_error_after_a_character_that_ends_no_line_is_reported_on_the_line_an_editor_shows()
+    {
+        using var dir = new TempDirectory();
+        var path = dir.File("q.sql", $"-- a{NotLineEnds}b\nSELECT N'{NotLineEnds}' AS label;\nSELECT FROM;\n");
+
+        var refused = Assert.IsType<Failed<SqlServer.Model.QueryFile>>(QueryFileReader.Read(path, "q.sql"));
+
+        Assert.StartsWith("q.sql:3:8: error HAR1001:", Assert.Single(refused.Diagnostics).ToString(), StringComparison.Ordinal);
+    }
 }

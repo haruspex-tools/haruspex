@@ -28,10 +28,12 @@ public static partial class QueryFileReader
 
         // UTF-8 unless a byte order mark says otherwise, as a script is read. The text is sent as it is but for its line endings,
         // which are LF so that the IR, which holds it, is the same on every machine; it is parsed so too, so that what is typed
-        // is what runs. A string literal spanning lines is the one thing that sees the difference.
+        // is what runs. A string literal spanning lines is the one thing that sees the difference. Only CR and CRLF are line
+        // endings here: a form feed, NEL, U+2028 or U+2029 is kept, since SQL Server keeps each in a literal and ends no line or
+        // comment at one, and the parser counts no line at one either (QueryTextObservationTests, F068).
         string text;
         using (var file = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
-            text = file.ReadToEnd().ReplaceLineEndings("\n");
+            text = SourceLines.WithLineFeeds(file.ReadToEnd());
         return Parse(text, relative);
     }
 

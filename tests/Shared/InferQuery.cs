@@ -43,7 +43,7 @@ internal static class InferQuery
         dir.File("schema.sql", schema);
         var read = SqlScriptFolder.Read(dir.Path);
         Assert.True(read.Diagnostics.Count == 0, string.Join("\n", read.Diagnostics));
-        return QueryFileReader.Parse(query.ReplaceLineEndings("\n"), path)
+        return QueryFileReader.Parse(SourceLines.WithLineFeeds(query), path)
             .Then(file => IrInference.Infer(read.Model, [], queries: [file]));
     }
 
