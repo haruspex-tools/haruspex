@@ -202,7 +202,7 @@ and the JSON's shape, are in [the command line's page](../../docs/command-line.m
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, it can't be compared with the files in the output folder, or the application already running, built against the baseline, would fail on a change; or a change between the baseline and the source can't be bridged, though the module is written for the rest |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed: what the module claims would change, it can't be compared with the files in the output folder, or the application already running, built against the baseline, would fail on a change; or a change between the baseline and the source can't be bridged, though the module is written for the rest; or `init` wrote the config file, but reading the source it names found errors |
 | 2 | The command line or the config file is wrong: an unknown option, a missing folder, a pattern that matches nothing, an override whose path doesn't exist, generated names that clash, an import the module can't write; or `init` wrote nothing, finding a config file, no database or more than one |
 | 3 | A fault in haruspex itself |
 

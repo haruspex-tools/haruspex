@@ -77,6 +77,17 @@ procedures the run leaves out are skipped). Without a file, the source argument,
 Keep `out` out of every formatter: add it to `.prettierignore`, or to Biome's `files.includes` as an exclusion after `**` (`!src/db`, for an `out` of `src/db`). Otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes
 ([HAR6015](diagnostics/HAR6015.md)).
 
+## Reading a folder of scripts: `source`
+
+`source` as a folder reads every `.sql` file below it, as a database project's build lists its default items (`**/*.sql`):
+the extension matched ignoring case, in every folder below, hidden folders, `node_modules`, `bin` and `obj` included. A link
+to a folder elsewhere is followed, and one back to a folder already read isn't, so each script is read once. Nothing is left
+out, so name the database's own folder rather than the application's: a folder holding both would read the application's
+query files, its installed packages and a copy of the repository kept inside it as the database's scripts, and an object
+defined twice is an error ([HAR1002](diagnostics/HAR1002.md)). [`haruspex init`](command-line.md#init) chooses such a folder
+for you. To leave scripts out of a folder, read it as a [project file](#reading-a-project-file-source-as-a-sqlproj), whose
+build says which scripts it reads.
+
 ## Reading a DACPAC: `source` and `references`
 
 `source` may name a `.dacpac` instead of a folder. The package's `model.xml` is then read, without DacFx, with every package

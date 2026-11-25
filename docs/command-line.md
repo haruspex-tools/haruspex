@@ -334,9 +334,14 @@ IR, and with a baseline given as an IR file, the command that explains the field
 
 `haruspex init` looks below the working directory, four folders deep, for the database: one `.sqlproj` first, then one
 `.dacpac` (in `bin` too, where a build writes one, leaving out the packages of SQL Server's system databases a build copies
-beside it), then the folder holding every `.sql` file. Hidden folders, `node_modules`, and `bin` and `obj` for anything but a
-DACPAC, are passed over. It writes a `haruspex.json` that reads it, types every procedure of each schema that has one, and
-writes to `src/db`, or `generated` when there is no `src` folder:
+beside it), then a folder of `.sql` files. Hidden folders, `node_modules`, and `bin` and `obj` for anything but a DACPAC, are
+passed over. The folder is the one that holds each folder (directly below the working directory) whose scripts define a table,
+a procedure or another object, so that the application's query files in a folder of their own, beside the database's, are not
+read as the database's scripts; it names such a folder, for you to add as [`queries`](configuration.md#query-files-queries) if that
+is what it holds. A folder source reads every `.sql` file below it
+([the configuration](configuration.md#reading-a-folder-of-scripts-source)), so this
+keeps the application's own folder, with its installed packages, out of the source. It writes a `haruspex.json` that reads it,
+types every procedure of each schema that has one, and writes to `src/db`, or `generated` when there is no `src` folder:
 
 ```jsonc
 // haruspex's settings, written by haruspex init. Each is described in
@@ -353,7 +358,8 @@ writes to `src/db`, or `generated` when there is no `src` folder:
 }
 ```
 
-It prints what it chose and the next command. It never writes over a config file (HAR6021). When it finds nothing it says so
+It prints what it chose and the next command. When reading the source finds errors (a script that doesn't parse, a project
+file that isn't one), it prints them, keeps the file it wrote, and fails (exit code 1). It never writes over a config file (HAR6021). When it finds nothing it says so
 (HAR6022), and when it finds two project files, or two DACPACs and no project file, it names them and asks for one (HAR6023):
 `haruspex init Sales/Sales.sqlproj`. [The configuration](configuration.md) describes every setting the file can have.
 
@@ -435,6 +441,6 @@ Fixed, so scripts and CI can rely on them. A run over several modules exits with
 | Code | Meaning |
 |---|---|
 | 0 | Success, with or without warnings and notes; `init` wrote its file |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed (a baseline's included) |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed (a baseline's included); or `init` wrote its file, but reading the source found errors |
 | 2 | The command line or the config file is wrong; or `init` wrote nothing: a config file is already there, or it found no database or more than one |
 | 3 | A fault in haruspex itself |

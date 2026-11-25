@@ -2,9 +2,12 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Haruspex.Cli.Output;
+using Haruspex.Collections;
 using Haruspex.Config;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.Cli;
 
@@ -29,7 +32,10 @@ internal static class Init
     /// Runs the command: <paramref name="source"/>, if given, rather than what it finds. The file names the config file's schema at
     /// the address the build in <paramref name="terminal"/> names it (<see cref="SchemaAddress"/>).
     /// </summary>
-    /// <returns>The exit code: 0; 2 when it finds a config file, no database or more than one; 1 when it can't write.</returns>
+    /// <returns>
+    /// The exit code: 0; 2 when it finds a config file, no database or more than one; 1 when it can't write, or when reading the source
+    /// finds errors, which it says.
+    /// </returns>
     public static int Run(string? source, TextWriter output, TextWriter error, string workingDirectory, Terminal terminal)
     {
         var config = Path.Join(workingDirectory, HaruspexConfig.FileName);
@@ -37,14 +43,14 @@ internal static class Init
             return Refused(error, CliCodes.ConfigExists.At(new FileLocation(HaruspexConfig.FileName), "a config file is already here, and init doesn't write over one. Edit it, or remove it to start again."));
 
         var found = source is null ? Find(workingDirectory) : Given(source, workingDirectory);
-        if (found is Failed<string> failed)
+        if (found is Failed<Chosen> failed)
             return Refused(error, [.. failed.Diagnostics]);
-        var chosen = ((Succeeded<string>)found).Value;
+        var (chosen, leftOut) = ((Succeeded<Chosen>)found).Value;
 
         // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
         // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
         var shown = DiagnosticFormatter.PathAsShown(Path.GetRelativePath(workingDirectory, chosen));
-        var schemas = Schemas(chosen);
+        var (schemas, errors) = Schemas(chosen);
         var @out = Directory.Exists(Path.Join(workingDirectory, "src")) ? "src/db" : "generated";
         try
         {
@@ -67,6 +73,18 @@ internal static class Init
         // Names from the files found are printed as the text report prints them, control characters escaped.
         var shownSchemas = schemas.Select(Visible.Of).ToList();
         shown = Visible.Of(shown);
+
+        // What reading the source found wrong is said here, since the next generate may stop at something else first (with no
+        // schema selected, at HAR6007), and the run fails, as any read with errors does. The file is kept: the source is still the
+        // one to read once the errors are corrected, and init never writes over a config file, so it couldn't be run again.
+        if (errors.Count > 0)
+        {
+            foreach (var problem in errors)
+                error.WriteLine(problem);
+            output.WriteLine($"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown}, but reading it gave {(errors.Count == 1 ? "1 error. Correct it" : $"{errors.Count} errors. Correct them")}, then run haruspex generate.");
+            return HaruspexCli.ExitCodes.Failed;
+        }
+
         output.WriteLine(schemas.Count == 0
             ? $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown}, where no procedure was found, so it selects none yet. Add a schema's \"include\", or \"queries\" for the application's query files, then run haruspex generate."
             : $"haruspex: wrote {HaruspexConfig.FileName}, which reads {shown} and types every procedure in {EnglishList.Of(shownSchemas)}, written to {@out}.");
@@ -76,6 +94,13 @@ internal static class Init
 
             // A team's format on save or pre-commit hook meets the generated files first, and check compares them as text.
             output.WriteLine($"Keep {@out} out of your formatter (in .prettierignore, or as \"!{@out}\" after \"**\" in Biome's files.includes): haruspex check fails on a file a formatter restyled.");
+        }
+
+        if (leftOut.Count > 0)
+        {
+            var folders = leftOut.Select(f => Visible.Of(DisplayPath.From(workingDirectory, f))).ToList();
+            var queries = folders.Count == 1 ? Quoted(folders[0]) : $"[{string.Join(", ", folders.Select(Quoted))}]";
+            output.WriteLine($"The .sql files in {EnglishList.Of(folders)} define no object, so the source leaves them out. If they are the application's query files, add \"queries\": {queries} to type them.");
         }
         return HaruspexCli.ExitCodes.Success;
     }
@@ -87,22 +112,25 @@ internal static class Init
         return HaruspexCli.ExitCodes.Usage;
     }
 
+    /// <summary>The source chosen, and the folders of <c>.sql</c> files it leaves out because they define nothing.</summary>
+    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut);
+
     /// <summary>The source the command line names, which must be there.</summary>
-    private static Outcome<string> Given(string source, string workingDirectory)
+    private static Outcome<Chosen> Given(string source, string workingDirectory)
     {
         var path = Path.GetFullPath(Path.Combine(workingDirectory, source));
         return File.Exists(path) || Directory.Exists(path)
-            ? new Succeeded<string>(path)
-            : ModuleRun.Refused<string>(CliCodes.SourceNotFound, $"not found: {source}");
+            ? new Succeeded<Chosen>(new Chosen(path, []))
+            : ModuleRun.Refused<Chosen>(CliCodes.SourceNotFound, $"not found: {source}");
     }
 
     /// <summary>
     /// The database below the working directory: its one project file; else its one DACPAC, leaving out the system databases' a
-    /// build copies beside it; else the folder that holds every <c>.sql</c> file. Hidden folders and <c>node_modules</c> are passed
-    /// over, and <c>bin</c> and <c>obj</c>, a build's, except that a DACPAC is looked for in <c>bin</c>, where a build writes it.
-    /// Two of the kind it settles on are a choice it leaves to the developer.
+    /// build copies beside it; else a folder of <c>.sql</c> files (<see cref="Scripts"/>). Hidden folders and <c>node_modules</c> are
+    /// passed over, and <c>bin</c> and <c>obj</c>, a build's, except that a DACPAC is looked for in <c>bin</c>, where a build writes
+    /// it. Two of the kind it settles on are a choice it leaves to the developer.
     /// </summary>
-    private static Outcome<string> Find(string workingDirectory)
+    private static Outcome<Chosen> Find(string workingDirectory)
     {
         var files = Files(workingDirectory, 0).ToList();
         var projects = files.Where(f => !f.InBuild && SqlProject.IsProjectFile(f.Path)).Select(f => f.Path).ToList();
@@ -112,20 +140,66 @@ internal static class Init
         foreach (var (kind, candidates) in new[] { ("project files", projects), ("DACPACs", packages) })
         {
             if (candidates.Count == 1)
-                return new Succeeded<string>(candidates[0]);
+                return new Succeeded<Chosen>(new Chosen(candidates[0], []));
             if (candidates.Count > 1)
             {
                 var named = EnglishList.Of([.. candidates.Select(c => DisplayPath.From(workingDirectory, c))]);
-                return ModuleRun.Refused<string>(CliCodes.SourceAmbiguous,
+                return ModuleRun.Refused<Chosen>(CliCodes.SourceAmbiguous,
                     $"found {candidates.Count} {kind}, {named}, and can't tell which is the application's. Name one: haruspex init {DisplayPath.From(workingDirectory, candidates[0])}.");
             }
         }
 
         if (scripts.Count > 0)
-            return new Succeeded<string>(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]));
+            return new Succeeded<Chosen>(Scripts(workingDirectory, scripts));
 
-        return ModuleRun.Refused<string>(CliCodes.NoSourceFound,
+        return ModuleRun.Refused<Chosen>(CliCodes.NoSourceFound,
             $"found no .sqlproj, .dacpac or .sql file in the working directory or the four folders below it. Run it beside the database's files, or name them: haruspex init path/to/Sales.sqlproj.");
+    }
+
+    /// <summary>
+    /// The folder of <paramref name="scripts"/> to read as the database: the deepest that holds every top-level folder (or the working
+    /// directory itself) whose scripts define an object, a table, procedure or other; or, when none does, the deepest that holds them
+    /// all.
+    /// </summary>
+    /// <remarks>
+    /// The folder that holds every script would be wrong whenever scripts are in two places, as in an application that keeps its
+    /// database in <c>database</c> and its query files in <c>queries</c>: a folder source reads every <c>.sql</c> file below it, so
+    /// the query files would be read as the database's scripts, and with them whatever else is below the application's folder
+    /// that this search passes over but a folder source reads (installed packages, hidden folders, a build's output). The top-level
+    /// folders are the unit, rather than each script's own folder, so that a script that defines nothing beside the database's
+    /// (a deployment script, seed data) stays in it, and folders of definitions side by side (<c>tables</c>, <c>procedures</c>) are
+    /// read as the one database they are. Each top-level folder whose scripts define nothing and which the source doesn't hold is
+    /// returned, for the developer to name as query files if they are.
+    /// </remarks>
+    private static Chosen Scripts(string workingDirectory, List<string> scripts)
+    {
+        var relative = scripts.Select(s => Path.GetRelativePath(workingDirectory, s)).ToList();
+        var read = SqlScriptFolder.Read(workingDirectory, relative);
+        var model = read.Model;
+        var defining = new IEnumerable<SchemaObject>[] { model.Tables, model.UserTypes, model.Procedures, model.Functions, model.Views, model.Synonyms, model.Triggers }
+            .SelectMany(objects => objects)
+            .Select(o => Path.GetFullPath(Path.Combine(workingDirectory, o.Span.File)))
+            .ToHashSet(StringComparer.Ordinal);
+
+        // A script directly in the working directory is in the top-level folder "", the working directory itself.
+        var tops = scripts.GroupBy(s => Top(Path.GetRelativePath(workingDirectory, s)), StringComparer.Ordinal).ToList();
+        var databases = tops.Where(t => t.Any(defining.Contains)).ToList();
+        if (databases.Count == 0)
+            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), []);
+
+        var source = Common([.. databases.SelectMany(t => t).Select(Path.GetDirectoryName).OfType<string>()]);
+        var leftOut = tops.Except(databases)
+            .Select(t => Path.Join(workingDirectory, t.Key))
+            .Where(f => !Below(f, source))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        return new Chosen(source, [.. leftOut]);
+
+        static string Top(string path)
+        {
+            var at = path.IndexOfAny(['/', Path.DirectorySeparatorChar]);
+            return at < 0 ? "" : path[..at];
+        }
     }
 
     /// <summary>A file found below the working directory, and whether it is in a build's folder (<c>bin</c>, <c>obj</c>).</summary>
@@ -160,18 +234,20 @@ internal static class Init
         }
 
         return common;
-
-        static bool Below(string folder, string root) =>
-            folder == root || folder.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal);
     }
 
-    /// <summary>The schemas the source's procedures are in, in ordinal order; none when it doesn't read, which generate will then say.</summary>
-    private static List<string> Schemas(string source)
+    /// <summary>Whether <paramref name="folder"/> is <paramref name="root"/> or below it.</summary>
+    private static bool Below(string folder, string root) =>
+        folder == root || folder.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+
+    /// <summary>The schemas the source's procedures are in, in ordinal order, and the errors reading it found.</summary>
+    private static (List<string> Schemas, List<Diagnostic> Errors) Schemas(string source)
     {
         var project = SqlProject.IsPackage(source) ? SqlProject.LoadPackage(source, [])
             : SqlProject.IsProjectFile(source) ? SqlProject.LoadProject(source, [])
             : SqlProject.Load(source);
-        return [.. project.Procedures.Select(p => p.Schema).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+        return ([.. project.Procedures.Select(p => p.Schema).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
+            [.. project.Diagnostics.Where(d => d.IsError)]);
     }
 
     /// <summary>The starter config file, with a comment on each setting saying what to change.</summary>

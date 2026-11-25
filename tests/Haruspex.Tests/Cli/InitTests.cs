@@ -64,6 +64,66 @@ public class InitTests
         Assert.StartsWith("haruspex: 2 procedures, no unknowns. Wrote src/db/haruspex.ir.json", generated.ToString(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The layout of the example application: the database's scripts in one folder and the application's query files in another.
+    /// The folder holding both would read the query files as the database's scripts, and with them anything else in the
+    /// application's folder that a folder source reads (installed packages, hidden folders), so the source is the folder whose
+    /// scripts define objects, and the other is named as what it may be.
+    /// </summary>
+    [Fact]
+    public void Scripts_that_define_nothing_in_a_folder_of_their_own_are_left_out_of_the_source_and_named()
+    {
+        using var folder = new TempDirectory();
+        folder.File("database/tables/plants.sql", "CREATE TABLE garden.plant (id int NOT NULL PRIMARY KEY, name nvarchar(40) NOT NULL);");
+        folder.File("database/procedures/get_plant.sql", "CREATE PROCEDURE garden.get_plant @id int AS SELECT p.name FROM garden.plant AS p WHERE p.id = @id;");
+        folder.File("queries/thirsty_plants.sql", "SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains(
+            "\nThe .sql files in queries define no object, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.\n",
+            output.ReplaceLineEndings("\n"),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>Two folders of definitions are one database's parts, as <c>tables</c> and <c>procedures</c> are, so both are read.</summary>
+    [Fact]
+    public void Scripts_that_define_objects_in_two_folders_are_read_from_the_folder_that_holds_both()
+    {
+        using var folder = new TempDirectory();
+        folder.File("tables/t.sql", "CREATE TABLE sales.t (id int NOT NULL);");
+        folder.File("procedures/p.sql", "CREATE PROCEDURE sales.p AS SELECT t.id FROM sales.t AS t;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
+        Assert.DoesNotContain("define no object", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// What reading the source found wrong is said, and the run fails: a project file that isn't XML was reported as a source where
+    /// no procedure was found, and the next generate said only that nothing was selected.
+    /// </summary>
+    [Fact]
+    public void A_source_that_reads_with_errors_says_them_and_is_1()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/Shop.sqlproj", "not a project");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("db/Shop.sqlproj", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR1010: ", error, StringComparison.Ordinal);
+        Assert.Equal(
+            "haruspex: wrote haruspex.json, which reads db/Shop.sqlproj, but reading it gave 1 error. Correct it, then run haruspex generate.\n",
+            output.ReplaceLineEndings("\n"));
+        Assert.True(File.Exists(Path.Combine(folder.Path, "haruspex.json")));
+    }
+
     [Fact]
     public void A_project_file_is_chosen_over_the_scripts_beside_it_and_the_packages_its_build_wrote()
     {
