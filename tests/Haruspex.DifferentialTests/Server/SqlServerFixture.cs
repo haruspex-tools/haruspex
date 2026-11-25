@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
+using Haruspex.SqlServer.Model;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
 
@@ -385,11 +386,14 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// it is alone and rolled back. It has the shared database's prefix, so one a killed run leaves behind is dropped after
     /// a day as that one is (<see cref="DropLeftoversAsync"/>); it is outside the gate, since nothing else reads it.
     /// </summary>
-    public async Task<ScratchDatabase> ScratchAsync()
+    /// <param name="collation">The database's collation, such as <c>Latin1_General_100_CS_AS</c>; null for the server's.</param>
+    public async Task<ScratchDatabase> ScratchAsync(string? collation = null)
     {
         Require();
         var name = DatabasePrefix + Guid.NewGuid().ToString("N");
-        await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(name)};").ConfigureAwait(false);
+        if (collation is not null && !CollationCatalogue.IsKnown(collation))
+            throw new ArgumentException($"{collation} is no collation SQL Server has.", nameof(collation));
+        await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(name)}{(collation is null ? "" : " COLLATE " + collation)};").ConfigureAwait(false);
         var connection = new SqlConnectionStringBuilder(server) { InitialCatalog = name, Pooling = false, ApplicationName = "haruspex-tests-scratch" };
         return new ScratchDatabase(connection.ConnectionString, () => DropAsync(name));
     }

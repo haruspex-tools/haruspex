@@ -27,13 +27,18 @@ public partial class BinderTests
     {
         /// <param name="statement">The procedure's one statement.</param>
         /// <param name="more">More of the schema, after the standard tables.</param>
-        public Sample(string statement, string more = "")
+        /// <param name="caseVariants">
+        /// Whether the schema holds names that differ only in case, which reading reports (HAR1022) and the binder is given anyway,
+        /// as a model built otherwise may hold them (decision 0107).
+        /// </param>
+        public Sample(string statement, string more = "", bool caseVariants = false)
         {
             using var dir = new TempDirectory();
             dir.File("tables.sql", Tables + "\n" + more);
             dir.File("p.sql", $"CREATE PROCEDURE dbo.p AS\n{statement}");
             var read = SqlScriptFolder.Read(dir.Path);
-            Assert.Empty(read.Diagnostics);
+            Assert.Equal(caseVariants, read.Diagnostics.Any(d => d.Code == SourceCodes.CaseVariants));
+            Assert.DoesNotContain(read.Diagnostics, d => d.Code != SourceCodes.CaseVariants);
             var procedure = read.Model.FindProcedure(new ObjectName("dbo", "p"))!;
             Statement = Assert.Single(((SqlBody)procedure.Body).Statements.Statements);
             Binder = new Bindings(read.Model).For(procedure.Span, SchemaSearch.Within(procedure));
@@ -338,12 +343,13 @@ public partial class BinderTests
     // ---- variables and declarations -----------------------------------------------------------------------------------
 
     /// <summary>A procedure's declarations, as binding reads them.</summary>
-    private static (BodyDeclarations Declarations, StatementList Body) Declarations(string parameters, string body)
+    private static (BodyDeclarations Declarations, StatementList Body) Declarations(string parameters, string body, bool caseVariants = false)
     {
         using var dir = new TempDirectory();
         dir.File("p.sql", $"CREATE PROCEDURE dbo.p {parameters}\nAS\n{body}");
         var read = SqlScriptFolder.Read(dir.Path);
-        Assert.Empty(read.Diagnostics);
+        Assert.Equal(caseVariants, read.Diagnostics.Any(d => d.Code == SourceCodes.CaseVariants));
+        Assert.DoesNotContain(read.Diagnostics, d => d.Code != SourceCodes.CaseVariants);
         var procedure = read.Model.FindProcedure(new ObjectName("dbo", "p"))!;
         var statements = ((SqlBody)procedure.Body).Statements;
         return (new Bindings(read.Model).For(procedure.Span, SchemaSearch.Within(procedure)).Declarations(procedure.Parameters, statements), statements);

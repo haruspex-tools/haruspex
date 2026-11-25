@@ -106,4 +106,10 @@ public static class SourceCodes
     /// is doubted, since what it does to each isn't known (<c>UnreadDeployment</c>).
     /// </summary>
     public static DiagnosticCode DeploymentScriptNotRead { get; } = new(1021, DiagnosticSeverity.Warning, "A deployment script can't be read in full");
+
+    /// <summary>
+    /// Two names in one namespace that differ only in case (<c>Code</c> and <c>code</c>), which only a server or database that
+    /// compares names by case allows: haruspex matches names without case, so it can't tell them apart (<c>CaseVariants</c>).
+    /// </summary>
+    public static DiagnosticCode CaseVariants { get; } = new(1022, DiagnosticSeverity.Error, "Names that differ only in case");
 }

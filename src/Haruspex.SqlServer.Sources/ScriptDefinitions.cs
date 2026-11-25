@@ -58,7 +58,7 @@ internal sealed class ScriptDefinitions<T>(List<Diagnostic> diagnostics, Func<T,
         }
         else if (!orAlter)
         {
-            diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at));
+            diagnostics.Add(SchemaDeclarations.Twice(name, at, objects.Keys.First(k => k.Equals(name)), state.At));
         }
 
         // Otherwise a CREATE OR ALTER that would change a function's kind, which is refused: the earlier definition stands.

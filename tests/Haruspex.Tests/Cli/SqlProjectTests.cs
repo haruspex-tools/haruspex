@@ -39,6 +39,24 @@ public class SqlProjectTests
     }
 
     [Fact]
+    public void Reports_two_columns_that_differ_only_in_case_under_a_case_sensitive_collation()
+    {
+        // The table of decision 0119: on Latin1_General_100_CS_AS the server gives code as an int that may be null and Qty as an int
+        // that is never null, where matching without case read Code's varchar(10) and qty's CHECK and nullability. Each pair is an
+        // error, so nothing is inferred from it (decision 0119).
+        using var dir = new TempDirectory();
+        dir.File("tables.sql", "CREATE TABLE dbo.item (id int NOT NULL PRIMARY KEY, Code varchar(10) NOT NULL, code int NULL, qty int NULL CHECK (qty BETWEEN 1 AND 5), Qty int NOT NULL);");
+        dir.File("p.sql", "CREATE PROCEDURE dbo.read_columns AS SELECT code, Qty FROM dbo.item;");
+
+        var project = SqlProject.Load(dir.Path, "Latin1_General_100_CS_AS");
+
+        Assert.Equal(
+            ["Code and code", "qty and Qty"],
+            project.Diagnostics.Select(d => (d.Code, d.IsError, d.Message)).Where(d => d.Code == SourceCodes.CaseVariants && d.IsError).Select(d => d.Message.Contains("Code (", StringComparison.Ordinal) ? "Code and code" : "qty and Qty"));
+        Assert.Equal(2, project.Diagnostics.Count);
+    }
+
+    [Fact]
     public void Reads_utf16_files_with_a_byte_order_mark_and_crlf_line_endings()
     {
         using var dir = new TempDirectory();

@@ -33,6 +33,7 @@ reason.
 | [HAR1019](HAR1019.md) | error | A query file's module comment can't be taken |
 | [HAR1020](HAR1020.md) | error | A script or folder can't be read |
 | [HAR1021](HAR1021.md) | warning | A deployment script can't be read in full |
+| [HAR1022](HAR1022.md) | error | Names that differ only in case |
 
 ## Inference
 

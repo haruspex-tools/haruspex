@@ -28,7 +28,11 @@ public interface ITable
     /// <summary>Whether it is a graph table, whose <c>SELECT *</c> includes pseudo-columns the declaration does not list.</summary>
     bool IsGraph { get; }
 
-    /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
+    /// <summary>
+    /// The column with this name, ignoring case, or null. Ignoring case is an assumption, which a table whose columns differ only in
+    /// case would break: reading refuses one (HAR1022, decision 0119), and the binder reads either column of a pair it is given as
+    /// unknown (decision 0107).
+    /// </summary>
     /// <param name="name">The column's name.</param>
     Column? Column(string name);
 

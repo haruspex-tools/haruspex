@@ -68,7 +68,7 @@ public static class SqlScriptFolder
         ReadInto(declarations, ScriptFile.InOrder(root, (listed ?? []).Select(path => Path.GetRelativePath(root, path)), listed: true));
         // The model first: settling it reports what only every script together shows (SchemaDeclarations.SettleSynonyms).
         var model = declarations.ToModel();
-        return new SchemaReadResult(model, [.. declarations.Diagnostics]);
+        return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)]);
     }
 
     /// <summary>A folder under the one read, as a person would name it from there.</summary>
@@ -95,7 +95,7 @@ public static class SqlScriptFolder
         ReadInto(declarations, ScriptFile.InOrder(directory, files));
         // The model first: settling it reports what only every script together shows (SchemaDeclarations.SettleSynonyms).
         var model = declarations.ToModel();
-        return new SchemaReadResult(model, [.. declarations.Diagnostics]);
+        return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)]);
     }
 
     /// <summary>

@@ -74,6 +74,7 @@ public static partial class QueryFileReader
         }
 
         var declared = Declarations(script, relative, statements, problems);
+        problems.AddRange(CaseVariants.InQuery(relative, declared, statements));
         var sets = Sets(script, relative, problems);
         var module = Module(script, relative, problems);
         if (problems.Count > 0)

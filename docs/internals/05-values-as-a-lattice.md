@@ -100,8 +100,11 @@ and missing.
 
 A map a record holds is an `EquatableMap`, equal to another with the same keys holding equal values, in whatever order they
 were added: the state (`FlowState`) and a call's context (`CallContext`) hold their tables, variables and traced JSON so.
-The keys are names that compare as SQL Server compares them, ignoring case (`LocalName`, `ObjectName`), so `#Lines` and
-`#lines` are one key, and the comparison is the key's own rather than a comparer each map must be given.
+The keys are names that compare ignoring case (`LocalName`, `ObjectName`), so `#Lines` and `#lines` are one key, and the
+comparison is the key's own rather than a comparer each map must be given. Ignoring case is an assumption: under a
+case-sensitive collation SQL Server tells the two apart. It holds for every project that deploys unless one namespace has two
+names that differ only in case, and reading refuses those
+([decision 0119](../decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 
 Every record of every layer is held to this by a test, `RecordEqualityTests`, which reads each record's fields and fails on
 one that compares by reference, looking through a tuple or a nullable value at what it holds, and refusing `object` or a

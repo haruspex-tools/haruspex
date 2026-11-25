@@ -385,12 +385,13 @@ public partial class SchemaFactsTests
 
     [Theory]
     // Two columns whose names differ only in case, as a database of a case-sensitive collation allows: the CHECK names one, and
-    // ignoring case it would be read for both. Neither is narrowed past its type (decision 0107); a CHECK on another column still is.
+    // ignoring case it would be read for both. Neither is narrowed past its type (decision 0107), though reading reports
+    // the pair (HAR1022); a CHECK on another column still is.
     [InlineData("qty")]
     [InlineData("Qty")]
     public void A_check_on_one_of_two_columns_whose_names_differ_only_in_case_proves_nothing_of_either(string column)
     {
-        var model = Model("CREATE TABLE dbo.t (id int NOT NULL CHECK (id > 0), qty int NULL CHECK (qty BETWEEN 1 AND 5), Qty int NOT NULL);");
+        var model = Model("CREATE TABLE dbo.t (id int NOT NULL CHECK (id > 0), qty int NULL CHECK (qty BETWEEN 1 AND 5), Qty int NOT NULL);", caseVariants: true);
         var table = model.FindTable(new ObjectName("dbo", "t"))!;
         var facts = SchemaRules.ColumnFacts(model, table, table.Columns.Single(c => c.Name == column));
 
