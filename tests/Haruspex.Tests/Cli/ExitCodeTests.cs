@@ -111,7 +111,7 @@ public class ExitCodeTests
     }
 
     [Theory]
-    [InlineData("HAR6001", "--colour", "blue")]
+    [InlineData("HAR6001", "db", "--colour")]
     [InlineData("HAR6001", "db", "--include")]
     [InlineData("HAR6005", "db", "--include", "*.*")]
     [InlineData("HAR6003", "--include", "*.*", "--out", "out")]
@@ -167,7 +167,7 @@ public class ExitCodeTests
     }
 
     [Theory]
-    [InlineData("HAR6001", "--colour", "blue")]
+    [InlineData("HAR6001", "db", "--colour")]
     [InlineData("HAR6005", "db", "--include", "*.*")]
     [InlineData("HAR4005", "db", "--include", "dbo.nothing", "--out", "out")]
     public void A_check_with_a_wrong_command_line_is_2(string code, params string[] args)

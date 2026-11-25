@@ -383,7 +383,7 @@ HAR5205
 haruspex: error HAR5205: s.p has a parameter named @__proto__, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter.
 
 HAR6001
-haruspex: error HAR6001: Unrecognized command or argument 'blue'.
+haruspex: error HAR6001: --colour is not an option of haruspex generate; the nearest is --color.
 
 HAR6002
 haruspex: error HAR6002: config file not found: nowhere.json

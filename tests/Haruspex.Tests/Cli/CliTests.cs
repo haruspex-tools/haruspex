@@ -164,12 +164,60 @@ public partial class CliTests
     [Fact]
     public void An_option_haruspex_does_not_know_is_a_usage_error_with_its_code()
     {
-        var (exitCode, output, error) = Run("generate", "--colour", "blue");
+        var (exitCode, output, error) = Run("generate", "--colour");
 
         Assert.Equal(2, exitCode);
         Assert.Equal("", output);
-        Assert.StartsWith("haruspex: error HAR6001: ", error, StringComparison.Ordinal);
-        Assert.EndsWith("Run 'haruspex --help' for usage.\n", error.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Equal(
+            "haruspex: error HAR6001: --colour is not an option of haruspex generate; the nearest is --color.\nRun 'haruspex --help' for usage.\n",
+            error.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// Each command's optional source, object or field is a positional argument, which the parser gives any token it can't match to
+    /// an option: so an option mistyped or guessed is named as what it is, not looked for as a folder, and only it is named, since
+    /// what follows it is most likely its value.
+    /// </summary>
+    [Theory]
+    [InlineData("--verse is not an option of haruspex check; the nearest is --verbose.", "check", "--verse")]
+    [InlineData("--dry-run is not an option of haruspex generate.", "generate", "--dry-run")]
+    [InlineData("--colour=never is not an option of haruspex check; the nearest is --color.", "check", "--colour=never")]
+    [InlineData("--colour is not an option of haruspex check; the nearest is --color.", "check", "--colour", "never")]
+    [InlineData("--colour is not an option of haruspex generate; the nearest is --color.", "generate", "db", "--colour", "blue")]
+    [InlineData("--force is not an option of haruspex init.", "init", "--force")]
+    [InlineData("--strict is not an option of haruspex explain.", "explain", "--strict", "dbo.get_plant")]
+    [InlineData("-x is not an option of haruspex explain.", "explain", "dbo.get_plant", "-x")]
+    public void An_option_haruspex_does_not_know_is_named_not_read_as_a_source(string message, params string[] args)
+    {
+        var (exitCode, output, error) = Run(args);
+
+        Assert.Equal(2, exitCode);
+        Assert.Equal("", output);
+        Assert.Equal($"haruspex: error HAR6001: {message}\nRun 'haruspex --help' for usage.\n", error.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>After <c>--</c>, a token is an argument whatever it starts with, as every command line reads it.</summary>
+    [Fact]
+    public void After_a_double_dash_a_token_that_starts_with_a_dash_is_the_source()
+    {
+        var (exitCode, _, error) = Run("check", "--", "--verse");
+
+        Assert.Equal(2, exitCode);
+        Assert.StartsWith("haruspex: error HAR6004: directory not found: --verse", error, StringComparison.Ordinal);
+    }
+
+    /// <summary>An option's own value may start with a dash; it is the option's, not an option haruspex doesn't know.</summary>
+    [Fact]
+    public void An_option_s_value_that_starts_with_a_dash_is_its_value()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/t.sql", "CREATE TABLE dbo.t (id int NOT NULL);\nGO\nCREATE PROCEDURE dbo.p AS SELECT t.id FROM dbo.t AS t;");
+
+        var (exitCode, _, error) = RunIn(folder.Path, "generate", "db", "--include", "dbo.p", "--out", "-out");
+
+        Assert.Equal("", error);
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(folder.Path, "-out", HaruspexCli.IrFileName)));
     }
 
     [Fact]

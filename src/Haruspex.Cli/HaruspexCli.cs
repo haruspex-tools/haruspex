@@ -75,10 +75,13 @@ internal static class HaruspexCli
         var parsed = root.Parse(args, new ParserConfiguration { ResponseFileTokenReplacer = null });
 
         // System.CommandLine exits with 1 on a parse error; usage errors are 2 here, and 1 is kept for failures.
-        if (parsed.Errors.Count > 0)
+        var unknown = UnknownOptions.In(parsed);
+        if (unknown.Count > 0 || parsed.Errors.Count > 0)
         {
-            foreach (var parseError in parsed.Errors)
-                error.WriteLine(CliCodes.BadCommandLine.At(null, parseError.Message));
+            // An option haruspex doesn't know is named alone: what follows it is most likely its value, which the parser reports
+            // as an argument too many, so naming that as well would point at the wrong token.
+            foreach (var message in unknown.Count > 0 ? unknown : parsed.Errors.Select(e => e.Message))
+                error.WriteLine(CliCodes.BadCommandLine.At(null, message));
             error.WriteLine("Run 'haruspex --help' for usage.");
             return ExitCodes.Usage;
         }
