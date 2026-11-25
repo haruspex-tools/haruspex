@@ -232,10 +232,15 @@ the differential tests hold every fixture's IR to the masks (`tests/fixtures/fit
 - **A scalar function's call** is masked when its body may read a masked column, found by name (`MaskedReaders`), since the server
   masks its result whatever the body does with the value
   (`A_scalar_function_that_reads_a_masked_column_returns_its_mask`).
+- **A rowset function given a masked argument**, built-in (`STRING_SPLIT`, `OPENJSON`, `GENERATE_SERIES`) or multi-statement,
+  returns every column of every row as its mask, a literal of its body and `STRING_SPLIT`'s ordinal included, so each is masked
+  (`Typer.MaskedByArguments`; `A_rowset_function_given_a_masked_argument_returns_every_column_as_its_mask`). An inline function
+  is inlined, so only what its query computes from the argument is masked, which the parameter's value carries.
 - **JSON computed from a masked column** is its mask, which is not JSON, so it is unknown, and a rowset's column of it claims no
-  text of JSON. A top-level `FOR JSON` that nests it is written with the mask in place, unquoted, so its text is not JSON and the
-  procedure's results can't be listed (`ResultShape.ResultsUnknown`;
-  `Json_computed_from_a_masked_column_is_its_mask_and_not_json`). A masked column's own value inside `FOR JSON` is masked as a
+  text of JSON. A top-level `FOR JSON` that nests it, or any masked value of unknown shape (`json_query` of a masked string is
+  one), is written with the mask in place, unquoted, so its text is not JSON and the procedure's results can't be listed
+  (`ResultShape.ResultsUnknown`; `Json_computed_from_a_masked_column_is_its_mask_and_not_json`,
+  `Json_query_of_a_masked_column_in_a_for_json_is_its_mask_unquoted`). A masked column's own value inside `FOR JSON` is masked as a
   value, and the JSON keeps its shape.
 - **A value kept** in a variable or a body's table stays masked. The server computes on a kept mask as on any value
   (`A_value_kept_in_a_variable_or_temporary_table_is_computed_on_as_any_value`), so this claims less than it could.

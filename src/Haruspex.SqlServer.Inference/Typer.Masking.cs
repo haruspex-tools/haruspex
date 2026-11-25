@@ -55,17 +55,38 @@ internal sealed partial class Typer
     /// Why a top-level <c>FOR JSON</c> query's text is not JSON for a caller without <c>UNMASK</c>: one of its values is JSON computed
     /// from a masked column (a nested <c>FOR JSON</c>, a constructor, <c>json_query</c>), which the server writes into the text as its
     /// mask without quotes, <c>{"kids":xxxx}</c> (observed: <c>Json_computed_from_a_masked_column_is_its_mask_and_not_json</c>).
-    /// No reader can parse it, so the procedure's results can't be listed. Null when every value is JSON or masked as a string,
-    /// which the text holds as a string. A json column's own mask is JSON (<c>{"masked":true}</c>), but a value is not told apart
-    /// from one computed from it, so it is read the same, which claims less.
+    /// No reader can parse it, so the procedure's results can't be listed. A masked value of unknown shape may be such JSON
+    /// (<c>json_query</c> of a masked string whose JSON isn't known is one: observed,
+    /// <c>Json_query_of_a_masked_column_in_a_for_json_is_its_mask_unquoted</c>), so it is read the same. Null when every masked
+    /// value is a string or a number, which the text holds quoted or as a number. A json column's own mask is JSON
+    /// (<c>{"masked":true}</c>), but a value is not told apart from one computed from it, so it is read the same, which claims less.
     /// </summary>
     private static UnknownShape? MaskedJson(Row row, SourceLocation at) =>
-        row.Columns.Select(c => c.Value).FirstOrDefault(v => v is { IsMasked: true, IsLiveJson: true }) is { MaskedBy: { } by }
+        row.Columns.Select(c => c.Value).FirstOrDefault(v => v is { IsMasked: true } && (v.IsLiveJson || v.Shape is UnknownShape)) is { MaskedBy: { } by }
             ? new UnknownShape(
                 IrUnknownReason.JsonShapeUnknown,
                 $"This FOR JSON nests JSON computed from the masked column {by}, which SQL Server writes as its mask without quotes for a caller without UNMASK, so its text is not JSON and the procedure's result sets cannot be listed. Declare \"unmask\": true in the config file's session if the callers hold UNMASK.",
                 at)
             : null;
+
+    /// <summary>
+    /// What a call of a rowset function gives, built-in (<c>STRING_SPLIT</c>, <c>OPENJSON</c>, <c>GENERATE_SERIES</c>) or
+    /// multi-statement, with every column of every row masked when one of its arguments is computed from a masked column: the server
+    /// then returns each value as its mask, a literal of the body's and <c>STRING_SPLIT</c>'s ordinal included (observed:
+    /// <c>A_rowset_function_given_a_masked_argument_returns_every_column_as_its_mask</c>). An inline function is not read here: the
+    /// server inlines it, so only what its query computes from the argument is masked, which the parameter's value carries.
+    /// </summary>
+    /// <param name="arguments">The call's arguments.</param>
+    /// <param name="scope">The scope they are read in.</param>
+    /// <param name="rows">What the call gives, unmasked.</param>
+    /// <param name="call">The call.</param>
+    private LocalRelationValues MaskedByArguments(IEnumerable<ScalarExpression?> arguments, ReadScope scope, LocalRelationValues rows, TSqlFragment call)
+    {
+        if (rows.Values is not { } values || !summaries.MasksApply)
+            return rows;
+        var by = arguments.OfType<ScalarExpression>().Select(a => Expression(a, scope).MaskedBy).FirstOrDefault(b => b is not null);
+        return by is null ? rows : rows with { Values = [.. values.Select(v => v.Masked(by, At(call)))] };
+    }
 
     /// <summary>
     /// What a call of a scalar function gives, masked when the function's body reads a masked column (<see cref="Summaries.ReadsMasked"/>).

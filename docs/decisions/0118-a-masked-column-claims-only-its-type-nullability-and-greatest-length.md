@@ -27,6 +27,9 @@ What the server does, observed in `MaskingObservationTests` as a user who holds 
   operation one of whose queries gives one. A condition doesn't mask: `CASE WHEN rating = 4 THEN 'a' ELSE 'b' END` gives `'a'` or
   `'b'`. JSON built from one (`JSON_OBJECT`, a `FOR JSON` subquery) is the text `xxxx`, and a top-level `FOR JSON` writes it into
   its text without quotes, which is not JSON.
+- **A rowset function given a masked argument returns every column as its mask**: `STRING_SPLIT`'s ordinal is `0`, and so is a
+  multi-statement function's literal; an inline function, which is inlined, keeps its literal. `json_query` of a masked column
+  in a top-level `FOR JSON` is written as its mask, unquoted.
 - **A scalar function that reads a masked column returns its mask**, even with inlining off and through a variable. A value a
   procedure keeps in a variable or a temporary table is the mask, and what is computed from it later is computed as from any
   value. A view, a derived table and a procedure's caller pass a mask on.
@@ -38,12 +41,14 @@ What the server does, observed in `MaskingObservationTests` as a user who holds 
 as either side's; `Value.Masked` leaves it the facets a mask keeps. Every expression the typer types counts the masked values its
 operands gave (`MaskTally`), and is masked when any did, so a rule that types an expression doesn't have to pass the fact on.
 Conditions are read as proofs, not typed as values, so a column one reads doesn't mask what it chooses. A scalar function call is
-masked when its body may read a masked column, found by name (`MaskedReaders`).
+masked when its body may read a masked column, found by name (`MaskedReaders`), and every column of a built-in or multi-statement
+rowset function's call when one of its arguments is masked.
 
 **Where it claims less than the server.** A value kept in a variable or a body's table stays masked, though the server computes
 on it as on any value; a function that only filters on a masked column, and a body that names a table with one without reading
-it, are taken to read it; a json column's own mask, which is JSON, nested in a top-level `FOR JSON` leaves the results unknown as
-JSON computed from one does; and one module anywhere that runs as another user keeps every mask, whichever procedures reach it.
+it, are taken to read it; a masked value of unknown shape in a top-level `FOR JSON` is taken to be JSON, so the results are
+unknown, and so is a json column's own mask there, though it is JSON; and one module anywhere that runs as another user keeps
+every mask, whichever procedures reach it.
 
 **Context.** Audit finding F012: nothing read `MASKED WITH`, so a masked column kept its CHECK facets and fixed length, and a
 caller without `UNMASK`, the reason to mask a column, received `0` where the generated schema said 1 to 5. The guide and the

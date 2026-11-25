@@ -192,6 +192,43 @@ public class MaskingObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_rowset_function_given_a_masked_argument_returns_every_column_as_its_mask()
+    {
+        var observed = await AsReader(
+            [
+                "CREATE TABLE dbo.obs_mask (id int NOT NULL PRIMARY KEY, n int MASKED WITH (FUNCTION = 'default()') NOT NULL, s varchar(10) MASKED WITH (FUNCTION = 'default()') NOT NULL, j nvarchar(100) MASKED WITH (FUNCTION = 'default()') NOT NULL); INSERT dbo.obs_mask VALUES (1, 2, 'a,b', N'{\"k\":1}');",
+                "CREATE FUNCTION dbo.obs_mask_rows (@x int) RETURNS @r TABLE (v char(6), c int CHECK (c BETWEEN 5 AND 9), b binary(4)) AS BEGIN INSERT @r VALUES ('ABCDEF', 7, 0x01020304); RETURN; END;",
+                "CREATE FUNCTION dbo.obs_mask_reads () RETURNS @r TABLE (c int) AS BEGIN INSERT @r SELECT n + 5 FROM dbo.obs_mask; RETURN; END;",
+                "CREATE FUNCTION dbo.obs_mask_inline (@x int) RETURNS TABLE AS RETURN SELECT @x AS x, 7 AS seven;",
+            ],
+            """
+            SELECT p.ordinal FROM dbo.obs_mask AS t CROSS APPLY STRING_SPLIT(t.s, ',', 1) AS p ORDER BY p.ordinal;
+            SELECT r.v, r.c, r.b FROM dbo.obs_mask AS t CROSS APPLY dbo.obs_mask_rows(t.n) AS r;
+            SELECT j.[type] FROM dbo.obs_mask AS t CROSS APPLY OPENJSON(t.j) AS j;
+            SELECT g.value FROM dbo.obs_mask AS t CROSS APPLY GENERATE_SERIES(1, t.n) AS g;
+            SELECT f.x, f.seven FROM dbo.obs_mask AS t CROSS APPLY dbo.obs_mask_inline(t.n) AS f;
+            SELECT c FROM dbo.obs_mask_reads()
+            """);
+
+        // Every column of a built-in or multi-statement function's rows is its mask, its literals and STRING_SPLIT's ordinal included,
+        // as many rows as the stored value gives. An inline function is inlined: its literal stays. A body that inserts a value
+        // computed from a masked column stores that value's mask, as a table variable does.
+        Assert.Equal(
+            "ordinal: 0;0 | v,c,b: [xxxx],0,0x30 | type: 0 | value: 0;0 | x,seven: 0,7 | c: 0",
+            observed);
+    }
+
+    [Fact]
+    public async Task Json_query_of_a_masked_column_in_a_for_json_is_its_mask_unquoted()
+    {
+        var observed = await AsReader(
+            ["CREATE TABLE dbo.obs_mask (id int NOT NULL PRIMARY KEY, j nvarchar(100) MASKED WITH (FUNCTION = 'default()') NOT NULL); INSERT dbo.obs_mask VALUES (1, N'{\"a\":{\"b\":1}}');"],
+            "SELECT id, json_query(j) AS doc, json_query(j, '$.a') AS a FROM dbo.obs_mask FOR JSON PATH");
+
+        Assert.Equal("JSON_F52E2B61-18A1-11d1-B105-00805F49916B: [[{\"id\":1,\"doc\":xxxx,\"a\":xxxx}]]", observed);
+    }
+
+    [Fact]
     public async Task A_scalar_function_that_reads_a_masked_column_returns_its_mask()
     {
         var observed = await AsReader(
