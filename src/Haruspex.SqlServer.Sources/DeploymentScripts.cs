@@ -56,28 +56,30 @@ internal static class DeploymentScripts
 
     /// <summary>
     /// A project's deployment script, from its item, with every file it includes by <c>:r</c>, each read apart and named relative
-    /// to <paramref name="folder"/>, as the project's scripts are, and with the variables set where it is included.
+    /// to <paramref name="folder"/>, as the project's scripts are, and with the variables set where it is included. Each file is
+    /// found on disk through the read's <paramref name="listings"/>, so that a script that includes thousands lists each folder once.
     /// </summary>
-    public static void ReadFile(ProjectItem item, string folder, SchemaDeclarations into)
+    public static void ReadFile(ProjectItem item, string folder, FolderListings listings, SchemaDeclarations into)
     {
         ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(listings);
         ArgumentNullException.ThrowIfNull(into);
         string? problem = null;
-        if (item.FullPath is not { } full || DiskPath.Locate(full, item.Spec, out problem) is not { } found)
+        if (item.FullPath is not { } full || DiskPath.Locate(full, item.Spec, listings, out problem) is not { } found)
         {
             Unreadable(item.At, problem ?? $"{item.Type} {item.Spec} isn't found", into);
             return;
         }
 
-        ReadIncluding(found, SqlcmdVariables.Values(), [found], folder, into);
+        ReadIncluding(found, SqlcmdVariables.Values(), [found], folder, listings, into);
     }
 
     /// <summary>
     /// One file of a project's deployment script, starting with the variables in <paramref name="values"/>, which it changes as
     /// sqlcmd would. Each file it includes is read after it, with the variables set at its <c>:r</c>; a file already being
-    /// included (<paramref name="including"/>) isn't read again.
+    /// included (<paramref name="including"/>) isn't read again. Each is found through <paramref name="listings"/>.
     /// </summary>
-    private static void ReadIncluding(string path, Dictionary<string, string> values, ImmutableHashSet<string> including, string folder, SchemaDeclarations into)
+    private static void ReadIncluding(string path, Dictionary<string, string> values, ImmutableHashSet<string> including, string folder, FolderListings listings, SchemaDeclarations into)
     {
         var relative = Path.GetRelativePath(folder, path).Replace('\\', '/');
         string text;
@@ -107,7 +109,7 @@ internal static class DeploymentScripts
                 }
 
                 var included = DiskPath.Full(Path.GetDirectoryName(path) ?? ".", written);
-                if (DiskPath.Locate(included, written, out var missing) is not { } file)
+                if (DiskPath.Locate(included, written, listings, out var missing) is not { } file)
                 {
                     Unreadable(at, $"{relative} includes {written}, which {missing ?? "isn't there"}", into);
                     continue;
@@ -116,19 +118,20 @@ internal static class DeploymentScripts
                 if (including.Contains(file))
                     continue;
                 later.Add((file, new Dictionary<string, string>(values, values.Comparer)));
-                Advance(file, values, including.Add(file));
+                Advance(file, values, including.Add(file), listings);
             }
         }, Unset);
         Sent(SqlcmdIncludes.Without(sent), relative, into);
         foreach (var (file, set) in later)
-            ReadIncluding(file, set, including.Add(file), folder, into);
+            ReadIncluding(file, set, including.Add(file), folder, listings, into);
     }
 
     /// <summary>
     /// The variables as they are after an included file and what it includes have run, without reading what they do: the file is
-    /// read for that after its including script (<see cref="ReadIncluding"/>), which reports what can't be read.
+    /// read for that after its including script (<see cref="ReadIncluding"/>), which reports what can't be read. Each is found
+    /// through <paramref name="listings"/>.
     /// </summary>
-    private static void Advance(string path, Dictionary<string, string> values, ImmutableHashSet<string> including)
+    private static void Advance(string path, Dictionary<string, string> values, ImmutableHashSet<string> including, FolderListings listings)
     {
         string text;
         try
@@ -147,10 +150,10 @@ internal static class DeploymentScripts
             {
                 var written = SqlcmdVariables.Replaced(command.Path, values);
                 if (!written.Contains("$(", StringComparison.Ordinal)
-                    && DiskPath.Locate(DiskPath.Full(Path.GetDirectoryName(path) ?? ".", written), written, out _) is { } file
+                    && DiskPath.Locate(DiskPath.Full(Path.GetDirectoryName(path) ?? ".", written), written, listings, out _) is { } file
                     && !including.Contains(file))
                 {
-                    Advance(file, values, including.Add(file));
+                    Advance(file, values, including.Add(file), listings);
                 }
             }
         }, null);
