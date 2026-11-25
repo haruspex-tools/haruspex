@@ -25,6 +25,20 @@ internal sealed class TempDirectory : IDisposable
         {
             Directory.Delete(Path, recursive: true);
         }
+        catch (UnauthorizedAccessException)
+        {
+            // Windows refuses to delete a read-only file, and git writes its objects read-only: clear the flag and try again.
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
+                    System.IO.File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(Path, recursive: true);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Best effort, as below.
+            }
+        }
         catch (IOException)
         {
             // Best effort: a leftover temp folder must not fail a test.
