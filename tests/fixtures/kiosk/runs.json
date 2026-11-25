@@ -1,6 +1,8 @@
 // The runs of the kiosk fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
 // key means.
 {
+  // Not held to every edge: its point is a SQLCMD variable in a body, which the seed stores as written; what a deployment that
+  // replaces it gives is observed by SqlcmdVariableObservationTests.
   "seedReachesEveryEdge": false,
 
   "runs": [

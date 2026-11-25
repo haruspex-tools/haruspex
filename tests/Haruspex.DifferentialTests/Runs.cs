@@ -15,9 +15,26 @@ public static class Runs
 
     /// <summary>
     /// The fixtures whose seed must reach every edge the IR claims (<c>Coverage.MissingEdges</c>): each bound, each value
-    /// of a set, each full length. Each fixture's file says why it is held to that or not.
+    /// of a set, each full length. Each fixture's file says why it is held to that or not; every other fixture is held to the
+    /// edges of facts its types alone don't give (<c>EdgeScope.NotFromTheType</c>).
     /// </summary>
     public static IReadOnlyList<string> EdgeFixtures { get; } = [.. Files.Where(f => f.File.SeedReachesEveryEdge).Select(f => f.Fixture.Name)];
+
+    /// <summary>
+    /// The edges each fixture's seed is excused from reaching, each with the reason (<c>edgesNotReached</c>), by fixture: keys are
+    /// a procedure, a path in one, or one edge, as <c>Coverage.MissingEdges</c> writes them.
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> EdgesNotReached { get; } =
+        Files.ToDictionary(f => f.Fixture.Name, f => f.File.EdgesNotReached, StringComparer.Ordinal);
+
+    /// <summary>Whether <paramref name="edge"/>, as <c>Coverage.MissingEdges</c> writes it, is one <paramref name="excuse"/> names.</summary>
+    public static bool Excuses(string excuse, string edge)
+    {
+        ArgumentNullException.ThrowIfNull(excuse);
+        ArgumentNullException.ThrowIfNull(edge);
+        return edge == excuse || edge.StartsWith(excuse + " ", StringComparison.Ordinal) || edge.StartsWith(excuse + ":", StringComparison.Ordinal)
+            || edge.StartsWith(excuse + ".", StringComparison.Ordinal) || edge.StartsWith(excuse + "[", StringComparison.Ordinal);
+    }
 
     /// <summary>Every run, fixture by fixture, in the order of each file.</summary>
     public static IReadOnlyList<ProcedureRun> All { get; } = [.. Files.SelectMany(f => f.File.Runs)];

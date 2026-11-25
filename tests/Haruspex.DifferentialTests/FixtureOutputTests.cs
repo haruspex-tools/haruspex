@@ -56,6 +56,34 @@ public class FixtureOutputTests(SqlServerFixture server)
     {
         server.Require();
 
+        var missing = await MissingEdges(fixture, EdgeScope.Every);
+
+        Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+    }
+
+    /// <summary>
+    /// Every deployed fixture's seed reaches the edges of facts its types alone don't give (<see cref="EdgeScope.NotFromTheType"/>):
+    /// a CHECK's bound carried into JSON or a second result set is tested by nothing else. A fixture's <c>edgesNotReached</c>
+    /// excuses an edge with the reason, and an excuse that names no missing edge fails, so none outlives its reason.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public async Task The_seed_reaches_every_edge_its_types_alone_do_not_give(string fixture)
+    {
+        server.Require();
+
+        var all = await MissingEdges(fixture, EdgeScope.NotFromTheType, excused: false);
+        var excuses = Runs.EdgesNotReached[fixture];
+        var missing = all.Where(m => !excuses.Keys.Any(e => Runs.Excuses(e, m))).ToList();
+        var stale = excuses.Keys.Where(e => !all.Any(m => Runs.Excuses(e, m))).ToList();
+
+        Assert.True(missing.Count == 0, "No run reached these edges, of facts a type alone doesn't give, so the facets there are untested. Extend the seed or add a run, or excuse the edge in edgesNotReached with the reason:\n" + string.Join("\n", missing));
+        Assert.True(stale.Count == 0, "edgesNotReached excuses these, but the runs reach every edge they name, or there is none: remove them:\n" + string.Join("\n", stale));
+    }
+
+    /// <summary>The edges of <paramref name="scope"/> no run of <paramref name="fixture"/> reached, less those of procedures not run, and of excused ones.</summary>
+    private async Task<List<string>> MissingEdges(string fixture, EdgeScope scope, bool excused = true)
+    {
         var reached = new Dictionary<string, IReadOnlySet<(string, string)>>(StringComparer.Ordinal);
         foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
         {
@@ -65,10 +93,9 @@ public class FixtureOutputTests(SqlServerFixture server)
             reached[run.Procedure] = into;
         }
 
-        var missing = Coverage.MissingEdges(Fixture.Named(fixture).Ir, reached)
+        return [.. Coverage.MissingEdges(Fixture.Named(fixture).Ir, reached, scope)
             .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
-            .ToList();
-        Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+            .Where(m => !excused || !Runs.EdgesNotReached[fixture].Keys.Any(e => Runs.Excuses(e, m)))];
     }
 
     /// <summary>

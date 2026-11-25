@@ -5,6 +5,11 @@
   // one.
   "seedReachesEveryEdge": false,
 
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "till.basket_total results[0][].quantity: min": "The body inserts a quantity of 2, so the line type's CHECK (quantity > 0) is never met at 1; the IR claims the CHECK's bound, which is only wider."
+  },
+
   "runs": [
     { "name": "find_products, by name", "procedure": "till.find_products", "parameters": { "@name": "Tea" } },
     { "name": "find_products, by name, code and label", "procedure": "till.find_products", "parameters": { "@name": "Tea", "@sku": "TEA-0001", "@label": "tea" } },

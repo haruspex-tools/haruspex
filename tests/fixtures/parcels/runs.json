@@ -7,7 +7,9 @@
     // FOR JSON over no rows returns no row at all, so each of its results may be absent.
     "no parcels": "DELETE FROM parcels.parcel;",
     // A run of a procedure that writes, in a session that is rolled back.
-    "writes": "SET NOCOUNT ON;"
+    "writes": "SET NOCOUNT ON;",
+    // A note of the fewest characters its schema allows (minLength 1); parcel 5's is of the most.
+    "a note of one character": "UPDATE parcels.parcel SET options = N'{\"speed\":\"standard\",\"signature\":false,\"note\":\"x\"}' WHERE parcel_id = 2;"
   },
 
   "runs": [
@@ -15,24 +17,34 @@
     { "name": "get_parcel, required options only", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 2 } },
     { "name": "get_parcel, no options", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 4 } },
     { "name": "get_parcel, no extra", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 3 } },
+    { "name": "get_parcel, the longest note", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 5 } },
+    { "name": "get_parcel, the shortest note", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 2 }, "setup": "a note of one character" },
     { "name": "get_parcel, a scalar extra", "procedure": "parcels.get_parcel", "parameters": { "@parcel_id": 4 }, "setup": "a scalar extra" },
     { "name": "parcel_feed", "procedure": "parcels.parcel_feed" },
+    { "name": "parcel_feed, the shortest note", "procedure": "parcels.parcel_feed", "setup": "a note of one character" },
     { "name": "parcel_feed, no parcels", "procedure": "parcels.parcel_feed", "setup": "no parcels" },
     { "name": "options_text", "procedure": "parcels.options_text" },
+    { "name": "options_text, the shortest note", "procedure": "parcels.options_text", "setup": "a note of one character" },
     { "name": "options_text, no parcels", "procedure": "parcels.options_text", "setup": "no parcels" },
     { "name": "staged_options", "procedure": "parcels.staged_options" },
+    { "name": "staged_options, the shortest note", "procedure": "parcels.staged_options", "setup": "a note of one character" },
     { "name": "staged_options, no parcels", "procedure": "parcels.staged_options", "setup": "no parcels" },
     { "name": "options_by_view", "procedure": "parcels.options_by_view" },
+    { "name": "options_by_view, the shortest note", "procedure": "parcels.options_by_view", "setup": "a note of one character" },
     { "name": "options_by_view, no parcels", "procedure": "parcels.options_by_view", "setup": "no parcels" },
     { "name": "options_of_one, every option", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 1 } },
     { "name": "options_of_one, a null note", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 3 } },
+    { "name": "options_of_one, the longest note", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 5 } },
+    { "name": "options_of_one, the shortest note", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 2 }, "setup": "a note of one character" },
     { "name": "options_of_one, no options", "procedure": "parcels.options_of_one", "parameters": { "@parcel_id": 4 } },
     { "name": "claimed_options", "procedure": "parcels.claimed_options", "setup": "writes" },
+    { "name": "claimed_options, the shortest note", "procedure": "parcels.claimed_options", "setup": "a note of one character" },
     { "name": "claimed_options, no parcels", "procedure": "parcels.claimed_options", "setup": "no parcels" },
     { "name": "routes", "procedure": "parcels.routes" },
     { "name": "staged_routes", "procedure": "parcels.staged_routes" },
     { "name": "staged_routes, no parcels", "procedure": "parcels.staged_routes", "setup": "no parcels" },
     { "name": "parcel_paths", "procedure": "parcels.parcel_paths" },
+    { "name": "parcel_paths, the shortest note", "procedure": "parcels.parcel_paths", "setup": "a note of one character" },
     { "name": "parcel_paths, no parcels", "procedure": "parcels.parcel_paths", "setup": "no parcels" }
   ]
 }

@@ -99,9 +99,13 @@ is short; the type is a claim of its own.
 A claim that a field may be null is only tested by data in which it is null; a claim that it never is, only by data that
 could have made it so. So the validator records what it saw at every path, and
 `The_seed_reaches_every_case_the_ir_allows` fails unless every nullable field was seen null, every field was seen with a
-value, and every result that may be absent was seen absent. For the fixtures about scalar facts (each says so in its
-`runs.json`, with `seedReachesEveryEdge`), `The_seed_reaches_every_edge_the_ir_claims` also requires each bound, each full
-length and each value of each set to be reached: a maximum of 255 is not shown to hold by values of 7.
+value, and every result that may be absent was seen absent. Every fixture's seed must also reach each edge of a fact its types
+alone don't give (`The_seed_reaches_every_edge_its_types_alone_do_not_give`): each bound, full length and minimum length from
+a CHECK, an expression's literals, the engine or a declaration, and each value of each set, since a maximum of 255 is not
+shown to hold by values of 7. A type's own range is held at its edges by the observation tests of the built-in types and the
+expressions, and for a first rowset by `DescribedTypeTests`. An edge no run can reach is excused in the fixture's
+`runs.json`, under `edgesNotReached`, with the reason. Four fixtures (`seedReachesEveryEdge`) are held to every edge, the
+types' too.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure no fixture procedure is forgotten; one that can't be run is
 listed in its fixture's `notRun`, with the reason.
 

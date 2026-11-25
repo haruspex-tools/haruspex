@@ -170,12 +170,20 @@ whose items may be null must be seen null (when they can be) and with a value. T
 own (`v[0]`, `v[1]`), a record's values share `v{}`, and a union's variants share their path; a value counts as seen
 for every variant it satisfies.
 
-For a fixture whose `runs.json` sets `seedReachesEveryEdge` (`Runs.EdgeFixtures`: the fixtures about scalar facts; each
-file that sets it says why), `The_seed_reaches_every_edge_the_ir_claims` also fails unless the data reached
-every edge of every facet: each bound (or, when exclusive, the nearest step inside it), each full length, each minimum
-length and each value of each set, and each array's fewest and most items when the IR bounds them. A maximum of 255 is
-not shown to hold by values of 7. A fixture about query shapes or statement flow doesn't set it: its scalars are types a
-fixture about scalar facts covers at their edges.
+A facet is only tested by data at its edge: a maximum of 255 is not shown to hold by values of 7. So
+`The_seed_reaches_every_edge_its_types_alone_do_not_give` fails unless, across every deployed fixture's runs, the data
+reached each edge of a fact the type alone doesn't give (`EdgeScope.NotFromTheType`): each bound (or, when exclusive, the
+nearest step inside it), full length and minimum length whose source is a CHECK, an expression's literals, the engine or a
+declaration, and each value of each set. That is where a fact travels with nothing else to hold it: a CHECK's bound carried
+into JSON or a second result set, a declared length inside JSON. A bound or length the type gives is held at its edges by
+`BuiltInTypeObservationTests` and the expression observation tests, and for a procedure's first rowset by
+`DescribedTypeTests`. An edge no run can reach (a CHECK's set wider than the values a procedure writes) is excused in the
+fixture's `edgesNotReached` with the reason, and an excuse that names no missing edge fails, so none outlives its reason.
+
+For a fixture whose `runs.json` sets `seedReachesEveryEdge` (`Runs.EdgeFixtures`: `checks`, `payloads`, `trees` and
+`values`; each says why), `The_seed_reaches_every_edge_the_ir_claims` also fails unless the data reached every edge of every
+facet, the type's too, and each array's fewest and most items when the IR bounds them, and a result of at most one row
+returned one.
 `Every_procedure_is_run_or_excluded_with_a_reason` makes sure a new fixture procedure is not forgotten.
 
 A recursive type's cases are counted by its name, not its path: every field of `ComponentsNode` is recorded as

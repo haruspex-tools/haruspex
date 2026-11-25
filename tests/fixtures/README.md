@@ -57,8 +57,13 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 
 ```jsonc
 {
-  // Why the seed is held to every edge, or isn't.
+  // Why the seed is held to every edge, the types' too, or isn't.
   "seedReachesEveryEdge": true,
+
+  // An edge no run can reach, with the reason.
+  "edgesNotReached": {
+    "sales.list_orders results[0][].status": "It lists open orders only, so that is all status can be."
+  },
 
   // SQL run before a call, in a transaction that is rolled back afterwards, by name.
   "setups": {
@@ -79,7 +84,8 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 
 | Key | Meaning |
 |---|---|
-| `seedReachesEveryEdge` | When `true`, the seed must reach every edge the IR claims: each bound, each full length, each value of a set (`The_seed_reaches_every_edge_the_ir_claims`). For the fixtures about scalar facts. Absent means `false`. |
+| `seedReachesEveryEdge` | When `true`, the seed must reach every edge the IR claims, the types' too: each bound, each full length, each value of a set (`The_seed_reaches_every_edge_the_ir_claims`). Absent means `false`: the seed must still reach every edge of a fact the types alone don't give, from a CHECK, an expression's literals, the engine or a declaration, and each value of each set (`The_seed_reaches_every_edge_its_types_alone_do_not_give`). |
+| `edgesNotReached` | Edges the seed is excused from reaching, each with the reason, such as a CHECK's set wider than the one value a procedure writes: a procedure (`depot.place_order`), a path in one (`depot.place_order results[0][].status`) or one edge (`… status: value picked`), as the test names them. An excuse that names no missing edge fails. |
 | `setups` | Named SQL to run before a call. A run with a setup writes, so it runs alone, in a session that is rolled back. `writes` (`SET NOCOUNT ON;`) changes nothing: it is how a run of a procedure that writes asks for that session. |
 | `runs` | Each call: a `name` unique in the file (the test shows it after the fixture's name, as in `orders: get_order, no such order`), the `procedure`, its `parameters` and a `setup`. Or a call of a query file: its `name`, the `query` by its path, and its `parameters`, with no setup. |
 | `notRun` | Procedures deliberately not run, each with the reason (`Every_procedure_is_run_or_excluded_with_a_reason`). |

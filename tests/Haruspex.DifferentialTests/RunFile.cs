@@ -10,11 +10,18 @@ namespace Haruspex.DifferentialTests;
 /// A fixture's <c>runs.json</c>: the calls the differential tests make, of its procedures and its query files, the procedures
 /// they leave out with the reason, and whether the seed must reach every edge. The keys are described in <c>tests/fixtures/README.md</c>.
 /// </summary>
-/// <param name="SeedReachesEveryEdge">Whether the seed must reach every bound, full length and value of a set the IR claims.</param>
+/// <param name="SeedReachesEveryEdge">
+/// Whether the seed must reach every bound, full length and value of a set the IR claims, rather than only the edges of facts the
+/// type alone doesn't give (<see cref="Validation.EdgeScope"/>).
+/// </param>
 /// <param name="Runs">The calls, in the order the file lists them.</param>
 /// <param name="NotRun">Procedures deliberately not run, each with the reason.</param>
 /// <param name="QueryRuns">The calls of the fixture's query files, in the order the file lists them among its runs.</param>
-internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun, IReadOnlyList<QueryRun> QueryRuns)
+/// <param name="EdgesNotReached">
+/// Edges the seed is excused from reaching, each with the reason: a procedure (<c>bazaar.mixed</c>), a path in one
+/// (<c>bazaar.mixed results[1].units</c>) or one edge (<c>bazaar.mixed results[1].units: min</c>).
+/// </param>
+internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun, IReadOnlyList<QueryRun> QueryRuns, IReadOnlyDictionary<string, string> EdgesNotReached)
 {
     // The file allows comments and trailing commas, as haruspex.json and tsconfig.json do, so a run can say why it is there.
     private static readonly JsonDocumentOptions Options = new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
@@ -26,7 +33,7 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
         var path = fixture.Runs ?? throw new ArgumentException($"The fixture {fixture.Name} is not deployed, so it has no runs.", nameof(fixture));
         using var document = JsonDocument.Parse(File.ReadAllText(path), Options);
         var root = document.RootElement;
-        Known(root, path, "seedReachesEveryEdge", "setups", "runs", "notRun");
+        Known(root, path, "seedReachesEveryEdge", "edgesNotReached", "setups", "runs", "notRun");
 
         var setups = root.TryGetProperty("setups", out var s)
             ? s.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
@@ -73,7 +80,10 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             ? n.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
             : [];
         var edges = root.TryGetProperty("seedReachesEveryEdge", out var e) && e.GetBoolean();
-        return new RunFile(edges, runs, notRun, queryRuns);
+        var notReached = root.TryGetProperty("edgesNotReached", out var u)
+            ? u.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
+            : [];
+        return new RunFile(edges, runs, notRun, queryRuns, notReached);
     }
 
     /// <summary>
