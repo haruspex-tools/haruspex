@@ -13,7 +13,10 @@ namespace Haruspex.DifferentialTests;
 /// <param name="Type">The declared type's SqlClient type.</param>
 /// <param name="Length">A string's or binary's declared length, -1 for <c>max</c>; 0 for a type that has none.</param>
 /// <param name="Precision">A <c>decimal</c>'s declared precision; 0 for any other type.</param>
-/// <param name="Scale">A <c>decimal</c>'s scale, or the fractional digits of <c>time</c>, <c>datetime2</c> or <c>datetimeoffset</c>.</param>
+/// <param name="Scale">
+/// A <c>decimal</c>'s declared scale; 7 for <c>time</c>, <c>datetime2</c> and <c>datetimeoffset</c>, which the server then rounds
+/// to the declared scale as it rounds an <c>EXEC</c>'s literal (SqlClient given the declared scale truncates instead).
+/// </param>
 public sealed record RunArgument(object? Value, SqlDbType Type, int Length = 0, byte Precision = 0, byte Scale = 0)
 {
     /// <summary>A parameter named <paramref name="name"/> holding the argument, of the declared type.</summary>

@@ -134,7 +134,7 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
     /// <c>tinyint</c> because the procedure declares one, and <c>"@day": "0001-01-01"</c> reaches a <c>date</c> parameter as
     /// that day, as an <c>EXEC</c> would (<see cref="RunArgument"/>).
     /// </summary>
-    private static RunArgument Value(JsonElement value, SqlType? type, string where)
+    internal static RunArgument Value(JsonElement value, SqlType? type, string where)
     {
         // sysname is the built-in alias of nvarchar(128), which is read as a type referred to by name.
         if (type is { Kind: SqlTypeKind.Named, Name: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
@@ -163,9 +163,12 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             "date" => new(Read(value, Date), SqlDbType.Date),
             "datetime" => new(Read(value, Date), SqlDbType.DateTime),
             "smalldatetime" => new(Read(value, Date), SqlDbType.SmallDateTime),
-            "datetime2" => new(Read(value, Date), SqlDbType.DateTime2, Scale: Argument(type, 0, 7)),
-            "time" => new(Read(value, v => TimeSpan.Parse(v.GetString()!, CultureInfo.InvariantCulture)), SqlDbType.Time, Scale: Argument(type, 0, 7)),
-            "datetimeoffset" => new(Read(value, v => DateTimeOffset.Parse(v.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None)), SqlDbType.DateTimeOffset, Scale: Argument(type, 0, 7)),
+            // Sent with all seven digits, whatever the declared scale, and the server converts to it as an EXEC's literal is
+            // converted: rounding. SqlClient given the declared scale cuts the extra digits off on the client instead (time(2)
+            // given 08:30:00.129: .13 from an EXEC, .12 at scale 2; observed on the test server, 25 Nov 2026).
+            "datetime2" => new(Read(value, Date), SqlDbType.DateTime2, Scale: 7),
+            "time" => new(Read(value, v => TimeSpan.Parse(v.GetString()!, CultureInfo.InvariantCulture)), SqlDbType.Time, Scale: 7),
+            "datetimeoffset" => new(Read(value, v => DateTimeOffset.Parse(v.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None)), SqlDbType.DateTimeOffset, Scale: 7),
             "char" => new(Read(value, v => v.GetString()), SqlDbType.Char, Length: Length(type)),
             "varchar" => new(Read(value, v => v.GetString()), SqlDbType.VarChar, Length: Length(type)),
             "nchar" => new(Read(value, v => v.GetString()), SqlDbType.NChar, Length: Length(type)),

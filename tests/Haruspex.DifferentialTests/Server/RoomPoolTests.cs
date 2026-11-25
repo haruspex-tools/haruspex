@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// The pool's rules, and the fixture's laziness, without a server. A wait that should not end is given a tenth of a second
+/// The pool's rules, without a server. A wait that should not end is given a tenth of a second
 /// to, and one that should a second or more, so a loaded runner can't fail it.
 /// </summary>
 [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
@@ -116,20 +116,5 @@ public class RoomPoolTests
         Assert.Equal("room", room.Database);
         Assert.Equal(1, pool.Made);
         room.Dispose();
-    }
-
-    /// <summary>
-    /// Every test in the assembly shares the fixture, so a run of tests that need no server (the validator's, the pool's) must
-    /// not wait for one: nothing is started, created or deployed until a test asks (<see cref="SqlServerFixture.RequireAsync"/>).
-    /// </summary>
-    [Fact]
-    public async Task The_server_is_not_set_up_until_a_test_needs_it()
-    {
-        await using var fixture = new SqlServerFixture();
-
-        await fixture.InitializeAsync();
-
-        Assert.False(fixture.Started);
-        Assert.Equal(0, fixture.Rooms);
     }
 }

@@ -58,13 +58,14 @@ So **no session that writes shares a database with any other session**:
 reading run of the same tables runs to its end, waiting on no lock of it.
 
 Why a room per writer rather than one gate: until 25 Nov 2026 every write session took the one database alone and waited
-for every reader, on the reasoning that writes were "a dozen setups and a few dozen observation tests". By then there were
-111 runs with a setup and some 600 observation tests, every call of which writes, so writers held the database for
+for every reader, on the reasoning that writes were "a dozen setups and a few dozen observation tests". By then there
+were 111 runs with a setup and some 600 observation tests, every call of which writes, so writers held the database for
 nearly the whole run and the suite ran almost serially (audit finding F049). Deploying and seeding a copy takes seconds,
-once per room, and a run makes no more rooms than it has writers at once. Measured on a 10-core x86-64 machine under WSL, the whole
-project, back to back with a load average of 8 to 13 from other work: 7 min 3 s with the gate, using 69% of one core, and
-2 min 52 s with rooms, using 183%; under a load of 17 to 40, 12 min 55 s and 3 min 46 s. A run of the tests that need no
-server (the 165 in `Validation/`) took 6.6 to 8.8 s while the fixture set up the server for them first, and takes 0.5 s.
+once per room, and a run makes no more rooms than it has writers at once. Measured on a 10-core x86-64 machine under
+WSL, the whole project, back to back with a load average of 8 to 13 from other work: 7 min 3 s with the gate, using 69%
+of one core, and 2 min 52 s with rooms, using 183%; under a load of 17 to 40, 12 min 55 s and 3 min 46 s. A run of the
+tests that need no server (the 165 in `Validation/`) took 6.6 to 8.8 s while the fixture set up the server for them
+first, and takes 0.5 s.
 
 ## The validator reads the IR, not the Zod
 
@@ -228,12 +229,14 @@ Stopping a run must not leave it behind either:
   and process exit drop the databases too. The three share one drop and each waits for it, because xunit
   carries on after SIGTERM and a process that exited during another path's drop would leave a database.
   The handlers are in place before the first `CREATE DATABASE` is sent, each database is named before its `CREATE` is,
-  and the drop waits for every `CREATE` under way and makes no more rooms, so a SIGTERM while one runs is covered. The drop retries, because tests still running can take the database between
-  `SET SINGLE_USER` and `DROP`. Checked on 9 Nov 2026 by sending SIGTERM at fifteen points from 0.5 to 2.0 s
-  into a run, SIGINT at five, and `timeout` around `dotnet test`: no database was left. Checked again on 25 Nov 2026, with rooms and a lazy start, by sending SIGTERM at eight points from 1 to 70 s into a
-  run (`timeout -s TERM`): no database was left. The first try left rooms and scratch databases behind: a room could be
-  named after the drop had taken its list, and `SqlServerFixture.ScratchAsync`'s databases weren't on it. Now naming a database and the
-  drop's list are one step, and every database the run creates is on it.
+  and the drop waits for every `CREATE` under way and makes no more rooms, so a SIGTERM while one runs is covered. The
+  drop retries, because tests still running can take the database between `SET SINGLE_USER` and `DROP`. Checked on 9 Nov
+  2026 by sending SIGTERM at fifteen points from 0.5 to 2.0 s into a run, SIGINT at five, and `timeout` around
+  `dotnet test`: no database was left. Checked again on 25 Nov 2026, with rooms and a lazy start, by sending SIGTERM at eight
+  points from 1 to 70 s into a run (`timeout -s TERM`): no database was left. The first try left rooms and scratch
+  databases behind: a room could be named after the drop had taken its list, and `SqlServerFixture.ScratchAsync`'s
+  databases weren't on it. Now naming a database and the drop's list are one step, and every database the run creates is
+  on it.
 - **SIGKILL** cannot be caught. The next run lists every `haruspex_test_*` database it did not create as a
   skipped test, `Earlier_runs_left_no_database_behind`, whose reason names them; a skip's reason is printed
   by `dotnet test`, where xunit's warnings are not. It is not a failure, because the database may belong to

@@ -57,11 +57,11 @@ public sealed class SqlServerFixture : IAsyncLifetime
     // Everything the fixture sets up, done by the first test that needs the server, once.
     private readonly Lazy<Task> ready;
 
-    // Each database this run creates (the test database, the rooms and the tests' scratch databases) is named here before its CREATE DATABASE is sent, with
-    // the CREATE's task, so a drop at any point waits for every CREATE under way and then drops every name. A name whose CREATE
-    // failed costs nothing: the drop checks the database exists. The drop is one task, started by whichever comes first of
-    // DisposeAsync, SIGTERM and process exit, and awaited by all of them: a process that exited while another path's drop was
-    // still running would leave databases behind. Once it has started no room is made.
+    // Each database this run creates (the test database, the rooms and the tests' scratch databases) is named here before
+    // its CREATE DATABASE is sent, with the CREATE's task, so a drop at any point waits for every CREATE under way and then
+    // drops every name. A name whose CREATE failed costs nothing: the drop checks the database exists. The drop is one task,
+    // started by whichever comes first of DisposeAsync, SIGTERM and process exit, and awaited by all of them: a process that
+    // exited while another path's drop was still running would leave databases behind. Once it has started no room is made.
     private readonly List<(string Name, Task Creation)> creations = [];
     private readonly Lock creating = new();
     private readonly Lazy<Task> drop;
