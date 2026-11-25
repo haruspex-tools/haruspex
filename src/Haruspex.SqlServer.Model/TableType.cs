@@ -32,7 +32,11 @@ public sealed record TableType(
     /// <summary>Never: a table type can't be a graph table.</summary>
     public bool IsGraph => false;
 
-    /// <summary>The column with this name, ignoring case as SQL Server does, or null.</summary>
+    /// <summary>
+    /// The column with this name, ignoring case, or null. Ignoring case is an assumption, which a table whose columns differ only in
+    /// case would break: reading refuses one (HAR1022, decision 0119), and the binder reads either column of a pair it is given as
+    /// unknown (decision 0107).
+    /// </summary>
     /// <param name="name">The column's name.</param>
     public Column? Column(string name) =>
         Columns.FirstOrDefault(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));

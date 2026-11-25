@@ -2,13 +2,14 @@ namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
 /// A name a body declares or creates for itself, with its sigil: a parameter, variable or table variable (<c>@total</c>), or a
-/// local temporary table (<c>#lines</c>). It compares as SQL Server compares them, ignoring case, so that <c>@Total</c> and
-/// <c>@total</c> are one variable wherever the walk keys what it holds by name (the state, a call's temporary tables).
+/// local temporary table (<c>#lines</c>). It compares ignoring case, so that <c>@Total</c> and <c>@TOTAL</c> are one variable
+/// wherever the walk keys what it holds by name (the state, a call's temporary tables).
 /// </summary>
 /// <remarks>
-/// SQL Server matches a variable's or temporary table's name by the server's collation, which is case-insensitive almost
-/// everywhere; haruspex assumes it is, as it does for object names (<c>ObjectName</c>). Brackets are the parser's: a name
-/// written <c>[#lines]</c> arrives as <c>#lines</c>.
+/// Ignoring case is an assumption: SQL Server matches a variable's or temporary table's name by the server's collation, and a
+/// case-sensitive one tells <c>@Total</c> from <c>@total</c>. The two ways agree for every body that deploys unless it declares
+/// two names that differ only in case, which reading refuses (HAR1022, decision 0119), as it does for object names
+/// (<c>ObjectName</c>). Brackets are the parser's: a name written <c>[#lines]</c> arrives as <c>#lines</c>.
 /// </remarks>
 /// <param name="Text">The name as declared or written, with its sigil.</param>
 public readonly record struct LocalName(string Text)

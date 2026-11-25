@@ -163,10 +163,11 @@ public partial class QueryFileTests
                 """));
 
     [Fact]
-    public void Parameters_come_in_the_order_the_text_first_uses_them_spelt_as_first_written() =>
+    // Spelt as written: two spellings of one name are an error (HAR1022, decision 0119).
+    public void Parameters_come_in_the_order_the_text_first_uses_them_spelt_as_written() =>
         Assert.Equal(
             ["@b int", "@A date"],
-            Parameters("SELECT 1 AS one FROM shop.customers AS c WHERE c.customer_id = @b AND c.joined = @A AND c.joined = @a;"));
+            Parameters("SELECT 1 AS one FROM shop.customers AS c WHERE c.customer_id = @b AND c.joined = @A AND c.joined > @A;"));
 
     [Fact]
     public void A_variable_the_file_declares_is_its_own_not_a_parameter() =>

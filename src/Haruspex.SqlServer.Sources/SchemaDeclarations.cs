@@ -92,8 +92,26 @@ internal sealed class SchemaDeclarations
     {
         ArgumentNullException.ThrowIfNull(into);
         if (!into.TryAdd(name, definition))
-            Diagnostics.Add(new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at));
+            Diagnostics.Add(Twice(name, at, into.Keys.First(k => k.Equals(name)), (into[name] as SchemaObject)?.Span.Start));
     }
+
+    /// <summary>
+    /// HAR1002 for <paramref name="name"/>, defined at <paramref name="at"/> after <paramref name="first"/>. Where the two are
+    /// spelt differently (<c>dbo.Item</c>, <c>dbo.ITEM</c>) they differ only in case, which a database that compares names by
+    /// case takes as two objects: the message names both and where each is, as HAR1022 does for every other namespace
+    /// (<see cref="CaseVariants"/>).
+    /// </summary>
+    /// <param name="name">The name as the second definition writes it.</param>
+    /// <param name="at">Where the second definition is.</param>
+    /// <param name="first">The name as the first definition writes it.</param>
+    /// <param name="firstAt">Where the first definition is, when known.</param>
+    internal static Diagnostic Twice(ObjectName name, SourceLocation at, ObjectName first, SourceLocation? firstAt) =>
+        string.Equals(first.ToString(), name.ToString(), StringComparison.Ordinal)
+            ? new Diagnostic(SourceCodes.DefinedTwice, $"{name} is defined more than once.", at)
+            : new Diagnostic(
+                SourceCodes.DefinedTwice,
+                $"{name} is defined more than once: {first}{(firstAt is null ? "" : $" ({firstAt})")} and {name} ({at}), whose names differ only in case: haruspex matches names without case, so it can't tell them apart.",
+                at);
 
     /// <summary>
     /// What one script leaves of each procedure or function it names: a definition it makes is defined (a second, from another

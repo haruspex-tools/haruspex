@@ -400,6 +400,10 @@ fails loudly, with an error saying which, rather than reaching the application's
   SqlPackage does ([decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md)).
 - **No caller reads uncommitted data.** A `NOLOCK` hint, or a level the procedure sets itself, is seen and drops the claims it
   breaks; the level a caller sets is not ([decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md)).
+- **Names are matched without case**, as SQL Server matches them under a case-insensitive collation. Under a case-sensitive
+  one the two agree for every project that deploys, unless two names in one namespace differ only in case (`[Code]` and `[code]`
+  in one table): haruspex stops on that with an error rather than take one name for the other
+  ([decision 0119](docs/decisions/0119-names-that-differ-only-in-case-are-an-error.md)).
 - **In a folder of scripts, a definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it (a
   DACPAC records the setting for each definition, and it is read)
   ([the guide](docs/internals/02-the-inputs-and-the-model.md#a-script-becomes-the-model-in-three-steps)).
@@ -411,13 +415,9 @@ fails loudly, with an error saying which, rather than reaching the application's
 - **No query reads 2^63 rows**, which is why a `SUM` of a decimal of at most 19 digits is claimed never to overflow
   ([the inference](src/Haruspex.SqlServer.Inference/README.md#sum-avg-and-the-statistical-aggregates)).
 
-**Known gaps.** In these cases a claim can be wrong today. They come from how a database is set up, run or loaded, and
-each needs a decision or a larger change before the code handles it. They aren't every bug: a rule of the analysis found
-wrong is fixed as a bug, in a change of its own, and isn't listed here.
-
-- **Names that differ only in case.** Names are compared ignoring case. In a database with a case-sensitive collation, two
-  columns of one table whose names differ only in case are taken as one: a reference to either is typed as the one declared
-  first, and a `CHECK` on either is taken as that one's. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->
+**Known gaps.** None is listed today. A case where a claim can be wrong because of how a database is set up, run or loaded,
+and which needs a decision or a larger change before the code handles it, is listed here until it is handled. Not every bug
+is: a rule of the analysis found wrong is fixed as a bug, in a change of its own, and isn't listed here.
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 

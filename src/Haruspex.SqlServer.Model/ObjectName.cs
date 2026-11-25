@@ -2,8 +2,10 @@ namespace Haruspex.SqlServer.Model;
 
 /// <summary>
 /// An object's name, <c>schema.name</c>, and for an object of another database the database as a body names it
-/// (<c>[$(Ledger)].ledger.entry</c>). Compared case-insensitively: identifiers are in a case-insensitive collation in almost every
-/// SQL Server database, and treating two spellings as one object can only merge names, never invent a type.
+/// (<c>[$(Ledger)].ledger.entry</c>). Compared ignoring case, which is an assumption: the database's collation decides how
+/// SQL Server compares an object's name, and a case-sensitive one tells <c>dbo.Item</c> from <c>dbo.ITEM</c>. The two ways agree
+/// for every project that deploys unless it defines two objects whose names differ only in case, which reading refuses
+/// (HAR1002, HAR1022, decision 0119).
 /// </summary>
 /// <param name="Schema">The schema, such as <c>dbo</c>.</param>
 /// <param name="Name">The object's name within its schema.</param>

@@ -49,6 +49,7 @@ public static class DacpacReader
         // database are recorded, not followed (decision 0040).
         var databases = others.ToDictionary(o => o.Key, o => OtherDatabase(o.Key, o.Value, packages, diagnostics), StringComparer.OrdinalIgnoreCase);
         var model = own.ToModel(PackageReader.Settings(root), unread, databases);
+        diagnostics.AddRange(CaseVariants.In(model));
         return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. packages.References], [.. diagnostics]);
     }
 

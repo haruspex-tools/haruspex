@@ -11,12 +11,18 @@ namespace Haruspex.Tests.Semantics;
 /// </summary>
 public partial class SchemaFactsTests
 {
-    private static DatabaseModel Model(string sql)
+    /// <param name="sql">The schema.</param>
+    /// <param name="caseVariants">
+    /// Whether it holds names that differ only in case, which reading reports (HAR1022) and the layer is given anyway, as a model
+    /// built otherwise may hold them (decision 0107).
+    /// </param>
+    private static DatabaseModel Model(string sql, bool caseVariants = false)
     {
         using var dir = new TempDirectory();
         dir.File("schema.sql", sql);
         var read = SqlScriptFolder.Read(dir.Path);
-        Assert.Empty(read.Diagnostics);
+        Assert.Equal(caseVariants, read.Diagnostics.Any(d => d.Code == SourceCodes.CaseVariants));
+        Assert.DoesNotContain(read.Diagnostics, d => d.Code != SourceCodes.CaseVariants);
         return read.Model;
     }
 

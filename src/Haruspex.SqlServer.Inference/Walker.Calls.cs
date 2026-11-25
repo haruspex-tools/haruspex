@@ -216,6 +216,7 @@ internal sealed partial class Walker
 
         var (walked, name) = target switch
         {
+            ProcedureCall { Procedure: var callee } when CaseVariantTemps(callee, state, at) is { } variants => (new Walked(null, [], variants, []), (ObjectName?)callee.Name),
             ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at, source), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
             SystemProcedureCall { Procedure: var system } => (SystemCalled(system, state, needEscapes, Text(execute), at), (ObjectName?)system.Name),
@@ -303,6 +304,33 @@ internal sealed partial class Walker
         }
 
         return caller.WithTemps(temps);
+    }
+
+    /// <summary>
+    /// Why a call isn't followed when the callee creates a temporary table whose name differs only in case from one the caller
+    /// holds (<c>#T</c> and <c>#t</c>); null when it creates none. A callee reads its caller's temporary tables, matched by the
+    /// server's collation: on a case-insensitive server its <c>#t</c> is its own <c>#T</c> (observed:
+    /// A_callee_s_temporary_table_hides_its_caller_s_of_a_name_that_differs_only_in_case), on a case-sensitive one the caller's.
+    /// Unlike two such names in one body, the pair proves nothing of the collation, so it is no error (decision 0119), and the
+    /// call is unknown rather than typed as either.
+    /// </summary>
+    private static UnknownShape? CaseVariantTemps(Procedure callee, FlowState state, SourceLocation at)
+    {
+        foreach (var created in Created(callee))
+        {
+            foreach (var (held, table) in state.Temps)
+            {
+                if (table is not AbsentTable && held == created && !string.Equals(held.Text, created.Text, StringComparison.Ordinal))
+                {
+                    return new UnknownShape(
+                        IrUnknownReason.UnsupportedStatement,
+                        $"{callee.Name} creates the temporary table {created}, whose name differs only in case from the caller's {held}: which of the two each name in it means depends on the server's collation, so the call is not followed.",
+                        at);
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>The temporary tables a procedure creates anywhere in its body: its own, gone when it returns.</summary>
