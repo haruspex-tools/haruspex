@@ -46,6 +46,17 @@ public partial class ColumnDeclarationTests
     private static string[] Problems(TempDirectory dir, Outcome<HaruspexConfig> read) =>
         [.. Problems(read).Select(p => p.Replace(DiagnosticFormatter.PathAsShown(dir.Path) + "/", "", StringComparison.Ordinal))];
 
+    /// <summary>A schema file goes through the config file's own parser, so one saved in UTF-16 is said as such too.</summary>
+    [Fact]
+    public void A_schema_file_in_utf16_is_said_to_be_one()
+    {
+        using var dir = new TempDirectory();
+        dir.File("schemas/settings.schema.json", "");
+        File.WriteAllText(Path.Combine(dir.Path, "schemas", "settings.schema.json"), "{ \"type\": \"object\" }", Encoding.Unicode);
+
+        Assert.Equal(["schemas/settings.schema.json:1:1: error HAR3002: The file is in UTF-16, not UTF-8; save it as UTF-8."], Problems(dir, Read(dir)));
+    }
+
     private static string Sha256(string text) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
 
     /// <summary>The fields of the object type a reference names in the declaration.</summary>

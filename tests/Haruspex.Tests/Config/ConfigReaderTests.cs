@@ -245,12 +245,41 @@ public class ConfigReaderTests
     public void Text_that_is_not_json_is_an_error_with_its_line(string text, string expected) =>
         Assert.Equal(expected, Single(text));
 
-    [Fact]
-    public void An_empty_file_is_an_error()
+    /// <summary>
+    /// A file with no JSON in it, or in another encoding than UTF-8, is said in the file's terms, not in the JSON reader's, whose
+    /// account of these ("when isFinalBlock is true", "'0xFF' is an invalid start of a value") names its own internals. Windows
+    /// PowerShell 5's <c>&gt;</c> writes UTF-16 with a byte order mark, the likeliest way a config file comes to be in it.
+    /// </summary>
+    [Theory]
+    [InlineData("", "The file is empty; it must hold a JSON object.")]
+    [InlineData("EF BB BF", "The file is empty; it must hold a JSON object.")]
+    [InlineData("20 20 0A 20 20", "The file holds only white space and comments; it must hold a JSON object.")]
+    [InlineData("2F 2F 20 6F 6E 6C 79 0A", "The file holds only white space and comments; it must hold a JSON object.")]
+    [InlineData("2F 2A 20 61 20 2A 2F 0D 0A 09", "The file holds only white space and comments; it must hold a JSON object.")]
+    [InlineData("FF FE 7B 00 7D 00", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
+    [InlineData("FE FF 00 7B 00 7D", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
+    [InlineData("FF FE 00 00 7B 00 00 00 7D 00 00 00", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
+    [InlineData("00 00 FE FF 00 00 00 7B 00 00 00 7D", "The file is in UTF-32, not UTF-8; save it as UTF-8.")]
+    [InlineData("7B 00 7D 00", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
+    [InlineData("00 7B 00 7D", "The file is in UTF-16, not UTF-8; save it as UTF-8.")]
+    public void A_file_with_no_json_or_not_in_utf8_is_said_in_its_own_terms(string hex, string message)
     {
-        var problem = Single("");
+        var bytes = hex.Length == 0 ? [] : Convert.FromHexString(hex.Replace(" ", "", StringComparison.Ordinal));
 
-        Assert.StartsWith("haruspex.json:1:1: error HAR3002: ", problem, StringComparison.Ordinal);
+        var result = ConfigReader.Read(bytes, "haruspex.json", Path.GetTempPath());
+
+        Assert.Equal($"haruspex.json:1:1: error HAR3002: {message}", Assert.Single(result.Diagnostics).ToString());
+    }
+
+    /// <summary>A comment left open is the reader's to report, at its place: it is not a file of comments alone.</summary>
+    [Fact]
+    public void A_comment_left_open_is_text_that_is_not_json()
+    {
+        var problem = Single("// fine\n/* open");
+
+        Assert.StartsWith("haruspex.json:2:", problem, StringComparison.Ordinal);
+        Assert.Contains("error HAR3002: ", problem, StringComparison.Ordinal);
+        Assert.DoesNotContain("only white space", problem, StringComparison.Ordinal);
     }
 
     public static TheoryData<string, string> Errors { get; } = new()
