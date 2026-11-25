@@ -187,6 +187,8 @@ public partial class CliTests
     [InlineData("--force is not an option of haruspex init.", "init", "--force")]
     [InlineData("--strict is not an option of haruspex explain.", "explain", "--strict", "dbo.get_plant")]
     [InlineData("-x is not an option of haruspex explain.", "explain", "dbo.get_plant", "-x")]
+    [InlineData("--verse is not an option of haruspex check; the nearest is --verbose.", "check", "--all", "--verse")]
+    [InlineData("-x is not an option of haruspex generate.", "generate", "--out", "-x", "-x")]
     public void An_option_haruspex_does_not_know_is_named_not_read_as_a_source(string message, params string[] args)
     {
         var (exitCode, output, error) = Run(args);

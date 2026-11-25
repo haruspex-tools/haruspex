@@ -13,7 +13,9 @@ namespace Haruspex.Cli;
 /// --verse</c> was read as a source called <c>--verse</c> and answered with "directory not found", which sent the person
 /// looking for the wrong thing. A token is an option haruspex doesn't know when it starts with <c>-</c>, comes before any
 /// <c>--</c> (after which every token is an argument, as on every command line), and is no option's value (<c>--out -x</c> writes
-/// to a folder called <c>-x</c>). A lone <c>-</c> is left as an argument, as it conventionally names a standard stream.
+/// to a folder called <c>-x</c>), unless the option may be given without a value: <c>check --all --verse</c> is an unknown option,
+/// not a folder for <c>--all</c>, which a folder whose name starts with <c>-</c> is written as <c>./-x</c> for. A lone <c>-</c> is
+/// left as an argument, as it conventionally names a standard stream.
 /// </remarks>
 internal static class UnknownOptions
 {
@@ -21,13 +23,18 @@ internal static class UnknownOptions
     public static List<string> In(ParseResult parsed)
     {
         var command = parsed.CommandResult.Command;
-        var values = parsed.CommandResult.Children.OfType<OptionResult>().SelectMany(o => o.Tokens).Select(t => t.Value).ToHashSet(StringComparer.Ordinal);
+        // By the token itself, not its text: in --out -x -x the first is the value and the second is not. An option whose value may
+        // be left out (--all) takes a token it can't match only because nothing else claims it, so its value never counts.
+        var values = parsed.CommandResult.Children.OfType<OptionResult>()
+            .Where(o => o.Option.Arity.MinimumNumberOfValues > 0)
+            .SelectMany(o => o.Tokens)
+            .ToHashSet(ReferenceEqualityComparer.Instance);
         var unknown = new List<string>();
         foreach (var token in parsed.Tokens)
         {
             if (token.Type == TokenType.DoubleDash)
                 break;
-            if (token.Type != TokenType.Argument || token.Value.Length < 2 || token.Value[0] != '-' || values.Contains(token.Value))
+            if (token.Type != TokenType.Argument || token.Value.Length < 2 || token.Value[0] != '-' || values.Contains(token))
                 continue;
             var nearest = Nearest(token.Value, command);
             unknown.Add($"{token.Value} is not an option of {Name(command)}{(nearest is null ? "" : $"; the nearest is {nearest}")}.");
