@@ -65,6 +65,14 @@
           ],
           "format": "date-time",
           "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?(?:Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "clocked_at": {
+          "description": "SQL type datetime2(7). May be null: parameter (@clocked_at).",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{7})?$"
         }
       },
       "required": [
@@ -73,7 +81,8 @@
         "logged_at",
         "rota_slot",
         "till_time",
-        "stamped_at"
+        "stamped_at",
+        "clocked_at"
       ]
     }
   }

@@ -37,7 +37,7 @@ public class SqlcmdVariableObservationTests(SqlServerFixture server)
             await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
-        return await ProcedureRunner.RunAsync(session, new ProcedureRun(procedure, "none", procedure, new Dictionary<string, object?>()));
+        return await ProcedureRunner.RunAsync(session, new ProcedureRun(procedure, "none", procedure, new Dictionary<string, RunArgument>()));
     }
 
     /// <summary>What haruspex infers from <paramref name="files"/> as written, before any deployment.</summary>

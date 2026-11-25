@@ -10,7 +10,7 @@ it comes from a real system.
 |---|---|
 | `till.find_products` | `nvarchar(n)`, `char(n)` and `varchar(n)`; defaults |
 | `till.price_band` | `decimal(p,s)`, `money` and `smallmoney` |
-| `till.shift_times` | `date`, `datetime2(n)`, `datetime`, `smalldatetime`, `time(n)` and `datetimeoffset(n)` |
+| `till.shift_times` | `date`, `datetime2(n)`, `datetime`, `smalldatetime`, `time(n)` and `datetimeoffset(n)`; a run that sends the earliest day and a seventh fractional digit |
 | `till.ring_up` | `int`, `smallint`, `bigint`, `tinyint`, `bit`, `uniqueidentifier`, `real` and `float`; an `OUTPUT` parameter and a return code |
 | `till.add_lines` | a table-valued parameter (`till.line_list`: a key, a CHECK and a nullable column) joined to a table, and a `json` parameter, which is unknown to the client for now |
 | `till.grade_of` | one row by a table-valued parameter's unique key, and the value set its CHECK closes (`till.tag_list`, with a default) |

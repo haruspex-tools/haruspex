@@ -55,6 +55,7 @@ parameter till.ring_up @ratio at procedures/ring_up.sql:10:5
 parameter till.ring_up @sale_id at procedures/ring_up.sql:11:5
 parameter till.ring_up @token at procedures/ring_up.sql:8:5
 parameter till.ring_up @weight at procedures/ring_up.sql:9:5
+parameter till.shift_times @clocked_at at procedures/shift_times.sql:9:5
 parameter till.shift_times @day at procedures/shift_times.sql:3:5
 parameter till.shift_times @logged_at at procedures/shift_times.sql:5:5
 parameter till.shift_times @opened_at at procedures/shift_times.sql:4:5

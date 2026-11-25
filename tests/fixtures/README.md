@@ -80,7 +80,8 @@ JSON, with comments and trailing commas allowed (as in `haruspex.json`), so each
 **A parameter's type comes from the procedure.** The file gives each argument as JSON: a number, a string, `true` or
 `false`, `null`, or a date and time in ISO 8601 (`"2026-11-03"`, `"2026-11-03T08:30:00.125"`, `"08:30:00"`, or with an offset,
 `"…+05:30"`), a GUID as a string, and a binary value as SQL writes one, `"0x"` and two hex digits a byte. The reader converts it to what the procedure declares (`tinyint`, `bigint`,
-`date` and the rest), as an `EXEC` would, so the call sends the declared type without the file repeating it. A key, setup,
+`date` and the rest), as an `EXEC` would, and the call sends it as that type, with its length, precision or scale, without the
+file repeating it: `"0001-01-01"` reaches a `date` and `.1234567` a `datetime2(7)` unchanged (`RunArgument`). A key, setup,
 procedure or parameter the reader doesn't know fails every run, rather than being ignored.
 
 **A query file's arguments are as its function takes them.** A query's parameter types are inferred, not declared in the

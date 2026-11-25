@@ -37,8 +37,8 @@ internal static class ProcedureRunner
     {
         await using var command = session.Command(run.Procedure);
         command.CommandType = CommandType.StoredProcedure;
-        foreach (var (name, value) in run.Parameters)
-            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        foreach (var (name, argument) in run.Parameters)
+            command.Parameters.Add(argument.Parameter(name));
 
         var sets = new List<ObservedResultSet>();
         await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);

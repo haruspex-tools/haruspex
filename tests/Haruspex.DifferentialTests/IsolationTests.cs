@@ -77,7 +77,7 @@ public class IsolationTests(SqlServerFixture server)
     {
         server.Require();
         var token = TestContext.Current.CancellationToken;
-        var run = new ProcedureRun("probe: writes", "trees", "dbo.gate_probe_write", new Dictionary<string, object?>());
+        var run = new ProcedureRun("probe: writes", "trees", "dbo.gate_probe_write", new Dictionary<string, RunArgument>());
 
         var e = await Assert.ThrowsAsync<SqlException>(() => server.RunAsync(run, token));
 

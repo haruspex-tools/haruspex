@@ -19,6 +19,13 @@
         "@rota_slot": "2026-11-16T09:00:00", "@till_time": "08:30:00.125", "@stamped_at": "2026-11-16T08:30:00.1234567+05:30"
       }
     },
+    // The earliest day and the seventh fractional digit, which reach the procedure only when each is sent as its declared type
+    // (FixtureOutputTests.A_run_s_date_argument_reaches_the_procedure_as_written).
+    {
+      "name": "shift_times, the edges",
+      "procedure": "till.shift_times",
+      "parameters": { "@day": "0001-01-01", "@opened_at": "0001-01-01T00:00:00", "@clocked_at": "2026-11-16T08:30:00.1234567" }
+    },
     { "name": "price_band, a null rate", "procedure": "till.price_band", "parameters": { "@lowest": 1, "@rate": null } },
     { "name": "shift_times, nulls", "procedure": "till.shift_times", "parameters": { "@day": null, "@opened_at": null } },
     { "name": "ring_up, nulls", "procedure": "till.ring_up", "parameters": { "@product_id": 1, "@quantity": 1, "@basket_id": null, "@discount": null, "@gift": null } },

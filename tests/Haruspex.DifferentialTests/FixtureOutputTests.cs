@@ -1,3 +1,4 @@
+using System.Data;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Ir;
@@ -96,6 +97,26 @@ public class FixtureOutputTests(SqlServerFixture server)
         Assert.True(Least("muted") <= 0, "The seed should break ck_ticket_muted.");
         Assert.True(Least("late") <= 0, "ticket_late.sql should break ck_ticket_late.");
         Assert.True(Least("restored") > 0);
+    }
+
+    /// <summary>
+    /// A run's argument is sent as the type its parameter declares (<see cref="RunArgument"/>), so the earliest day reaches a
+    /// <c>date</c> and the seventh fractional digit a <c>datetime2(7)</c>. Sent as <c>datetime</c>, the first is refused before
+    /// it leaves the driver, and the second rounded to <c>.1233333</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_run_s_date_argument_reaches_the_procedure_as_written()
+    {
+        server.Require();
+        var run = Runs.Named("till: shift_times, the edges");
+        Assert.Equal(SqlDbType.Date, run.Parameters["@day"].Parameter("@day").SqlDbType);
+
+        var set = Assert.Single(await server.ObserveAsync(run));
+        var row = Assert.Single(set.Rows);
+        object? Column(string name) => row[set.Columns.ToList().IndexOf(name)];
+        Assert.Equal(DateTime.MinValue, Column("day"));
+        Assert.Equal(DateTime.MinValue, Column("opened_at"));
+        Assert.Equal(new DateTime(2026, 11, 16, 8, 30, 0).AddTicks(1_234_567), Column("clocked_at"));
     }
 
     [Fact]
