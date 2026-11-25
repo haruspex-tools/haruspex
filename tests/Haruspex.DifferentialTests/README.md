@@ -177,7 +177,7 @@ for every variant it satisfies.
 
 A facet is only tested by data at its edge: a maximum of 255 is not shown to hold by values of 7. So
 `The_seed_reaches_every_edge_its_types_alone_do_not_give` fails unless, across every deployed fixture's runs, the data
-reached each edge of a fact the type alone doesn't give (`EdgeScope.NotFromTheType`): each bound (or, when exclusive, the
+reached each edge of a fact the type alone doesn't give (`EdgeScope`): each bound (or, when exclusive, the
 nearest step inside it), full length and minimum length whose source is a CHECK, an expression's literals, the engine or a
 declaration, and each value of each set. That is where a fact travels with nothing else to hold it: a CHECK's bound carried
 into JSON or a second result set, a declared length inside JSON. A bound or length the type gives is held at its edges by
@@ -232,7 +232,7 @@ Stopping a run must not leave it behind either:
   `SET SINGLE_USER` and `DROP`. Checked on 9 Nov 2026 by sending SIGTERM at fifteen points from 0.5 to 2.0 s
   into a run, SIGINT at five, and `timeout` around `dotnet test`: no database was left. Checked again on 25 Nov 2026, with rooms and a lazy start, by sending SIGTERM at eight points from 1 to 70 s into a
   run (`timeout -s TERM`): no database was left. The first try left rooms and scratch databases behind: a room could be
-  named after the drop had taken its list, and `ScratchAsync`'s databases weren't on it. Now naming a database and the
+  named after the drop had taken its list, and `SqlServerFixture.ScratchAsync`'s databases weren't on it. Now naming a database and the
   drop's list are one step, and every database the run creates is on it.
 - **SIGKILL** cannot be caught. The next run lists every `haruspex_test_*` database it did not create as a
   skipped test, `Earlier_runs_left_no_database_behind`, whose reason names them; a skip's reason is printed
