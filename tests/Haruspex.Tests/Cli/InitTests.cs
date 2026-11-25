@@ -26,7 +26,7 @@ public class InitTests
     {
         using var folder = new TempDirectory();
         folder.File("database/procedures/orders.sql", Procedure);
-        folder.File("database/tables/notes.sql", "-- nothing yet");
+        folder.File("database/tables/notes.sql", "CREATE TABLE sales.note (id int NOT NULL);");
         folder.File("src/app.ts", "");
 
         var (exitCode, output, error) = Run(folder);
@@ -85,9 +85,66 @@ public class InitTests
         Assert.Equal((0, ""), (exitCode, error));
         Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
         Assert.Contains(
-            "\nThe .sql files in queries define no object, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.\n",
+            "\nThe .sql files in queries hold only queries, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.\n",
             output.ReplaceLineEndings("\n"),
             StringComparison.Ordinal);
+    }
+
+    /// <summary>The same layout one folder down: the source is the database's folder, not the application's.</summary>
+    [Fact]
+    public void The_database_s_folder_is_found_below_the_application_s()
+    {
+        using var folder = new TempDirectory();
+        folder.File("app/database/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("app/database/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("app/queries/reports/q.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("app/queries/r.sql", "WITH p AS (SELECT 1 AS id) SELECT p.id FROM p;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"source\": \"app/database\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("The .sql files in app/queries hold only queries", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A script that isn't queries alone stays in the source wherever it is, since leaving it out could claim more than the
+    /// database holds: a deployment script that turns a check off, a <c>SELECT INTO</c>, seed data beside the database's folder.
+    /// The folder of queries the source then holds is named, as one it reads as the database's.
+    /// </summary>
+    [Theory]
+    [InlineData("ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;")]
+    [InlineData("SELECT p.id INTO garden.plant_copy FROM garden.plant AS p;")]
+    [InlineData("INSERT INTO garden.plant (id, height) VALUES (1, 2);")]
+    [InlineData("SELECT p.id FROM garden.plant AS p;\nGO\nDROP TABLE garden.plant;")]
+    public void A_script_that_changes_the_database_stays_in_the_source_and_queries_inside_it_are_named(string sql)
+    {
+        using var folder = new TempDirectory();
+        folder.File("database/t.sql", "CREATE TABLE garden.plant (id int NOT NULL, height int NOT NULL CONSTRAINT ck_height CHECK (height > 0));");
+        folder.File("database/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.height FROM garden.plant AS p;");
+        folder.File("deploy/script.sql", sql);
+        folder.File("queries/q.sql", "SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("The .sql files in queries hold only queries, but . holds them, so they are read as the database's scripts and not typed.", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>A script that doesn't parse stays in the source too, so that its error is said, not passed over.</summary>
+    [Fact]
+    public void A_script_that_does_not_parse_stays_in_the_source_and_its_error_is_said()
+    {
+        using var folder = new TempDirectory();
+        folder.File("database/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("broken/q.sql", "SELECT p.id FROM garden.plant AS p WHERE");
+
+        var (exitCode, _, error) = Run(folder);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("broken/q.sql:1:", error, StringComparison.Ordinal);
     }
 
     /// <summary>Two folders of definitions are one database's parts, as <c>tables</c> and <c>procedures</c> are, so both are read.</summary>

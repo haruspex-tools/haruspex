@@ -335,10 +335,11 @@ IR, and with a baseline given as an IR file, the command that explains the field
 `haruspex init` looks below the working directory, four folders deep, for the database: one `.sqlproj` first, then one
 `.dacpac` (in `bin` too, where a build writes one, leaving out the packages of SQL Server's system databases a build copies
 beside it), then a folder of `.sql` files. Hidden folders, `node_modules`, and `bin` and `obj` for anything but a DACPAC, are
-passed over. The folder is the one that holds each folder (directly below the working directory) whose scripts define a table,
-a procedure or another object, so that the application's query files in a folder of their own, beside the database's, are not
-read as the database's scripts; it names such a folder, for you to add as [`queries`](configuration.md#query-files-queries) if that
-is what it holds. A folder source reads every `.sql` file below it
+passed over. The folder is the deepest that holds every script that is more than queries: a script whose every statement is a
+`SELECT` without `INTO` changes nothing about the database, and any other (a definition, an `ALTER`, seed data, one that doesn't
+parse) may, so it is read. So the application's query files in a folder of their own, beside the database's, are not read as the
+database's scripts; init names such a folder, for you to add as [`queries`](configuration.md#query-files-queries) if that is what
+it holds, and names one the folder it chose holds too, whose files it then reads as the database's and doesn't type. A folder source reads every `.sql` file below it
 ([the configuration](configuration.md#reading-a-folder-of-scripts-source)), so this
 keeps the application's own folder, with its installed packages, out of the source. It writes a `haruspex.json` that reads it,
 types every procedure of each schema that has one, and writes to `src/db`, or `generated` when there is no `src` folder:
