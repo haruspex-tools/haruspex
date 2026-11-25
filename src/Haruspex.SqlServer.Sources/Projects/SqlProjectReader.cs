@@ -40,14 +40,16 @@ public static class SqlProjectReader
     /// More folders to look for a referenced DACPAC in, by its file name, after where the build takes it from (<c>references</c>
     /// in the config file).
     /// </param>
-    public static SqlProjectReadResult Read(string path, IReadOnlyList<string>? searchFolders = null) => Read(path, searchFolders ?? [], PackageCache.Default);
+    /// <param name="builds">The file names of referenced packages declared built from a project (<c>builds</c> in the config file), whose key constraints hold.</param>
+    public static SqlProjectReadResult Read(string path, IReadOnlyList<string>? searchFolders = null, IReadOnlyCollection<string>? builds = null) =>
+        Read(path, searchFolders ?? [], PackageCache.Default, builds ?? []);
 
     /// <summary>Reads the project at <paramref name="path"/>, finding the packages it refers to in <paramref name="cache"/>.</summary>
-    internal static SqlProjectReadResult Read(string path, IReadOnlyList<string> searchFolders, PackageCache cache)
+    internal static SqlProjectReadResult Read(string path, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string>? builds = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(searchFolders);
         var root = Path.GetFullPath(path);
-        return new ProjectReading(Path.GetDirectoryName(root) ?? ".", [.. searchFolders.Select(Path.GetFullPath)], cache).Read(root);
+        return new ProjectReading(Path.GetDirectoryName(root) ?? ".", [.. searchFolders.Select(Path.GetFullPath)], cache, builds ?? []).Read(root);
     }
 }

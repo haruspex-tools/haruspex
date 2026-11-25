@@ -140,6 +140,13 @@ public class ConfigReaderTests
     }
 
     [Fact]
+    public void The_packages_declared_builds_are_read_by_file_name_and_none_without_the_setting()
+    {
+        Assert.Equal(["sales.dacpac", "Shared.DACPAC"], Read("""{ "builds": ["sales.dacpac", "Shared.DACPAC"] }""").Expected().Builds);
+        Assert.Empty(Read("{}").Expected().Builds);
+    }
+
+    [Fact]
     public void The_collation_is_read_and_a_value_that_names_none_is_an_error()
     {
         Assert.Equal("Latin1_General_100_CI_AS", Read("""{ "collation": "Latin1_General_100_CI_AS" }""").Expected().Collation);
@@ -250,8 +257,8 @@ public class ConfigReaderTests
     {
         // The file as a whole, and its settings' types.
         { "[]", "haruspex.json:1:1: error HAR3005: must be an object." },
-        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge." },
-        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge." },
+        { """{ "colour": "red" }""", "haruspex.json:1:3: error HAR3004: colour: unknown setting \"colour\". The settings here are $schema, source, baseline, references, builds, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge." },
+        { """{ "include": ["sales.*"] }""", "haruspex.json:1:3: error HAR3004: include: unknown setting \"include\". The settings here are $schema, source, baseline, references, builds, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge." },
         { """{ "$schema": 1 }""", "haruspex.json:1:14: error HAR3005: $schema: must be a string." },
         { """{ "source": "" }""", "haruspex.json:1:13: error HAR3005: source: must not be empty." },
         { """{ "baseline": "" }""", "haruspex.json:1:15: error HAR3005: baseline: must not be empty." },
@@ -262,6 +269,10 @@ public class ConfigReaderTests
         { """{ "queries": "/srv/sql" }""", "haruspex.json:1:14: error HAR3022: queries: \"/srv/sql\" reaches outside the folder of the config file; a query file belongs to the module whose folder holds it, so name only files below this one." },
         { """{ "references": "lib" }""", "haruspex.json:1:17: error HAR3005: references: must be an array of folders to look for referenced DACPACs in, such as \"../shared/bin/Release\"." },
         { """{ "references": ["no/such/folder"] }""", "haruspex.json:1:18: error HAR3021: references[0]: \"no/such/folder\" is not a folder, so no referenced DACPAC can be found in it." },
+        { """{ "builds": "sales.dacpac" }""", "haruspex.json:1:13: error HAR3005: builds: must be an array of DACPACs' file names, such as \"sales.dacpac\", each built from a project though nothing in it says so." },
+        { """{ "builds": ["bin/sales.dacpac"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"bin/sales.dacpac\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
+        { """{ "builds": ["C:sales.dacpac"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"C:sales.dacpac\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
+        { """{ "builds": ["sales.sqlproj"] }""", "haruspex.json:1:14: error HAR3005: builds[0]: is \"sales.sqlproj\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder." },
         { """{ "objects": "loose" }""", "haruspex.json:1:14: error HAR3005: objects: must be \"strip\" or \"strict\", not \"loose\"." },
 
         // What generate writes beside the IR.

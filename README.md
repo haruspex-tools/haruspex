@@ -399,6 +399,9 @@ fails loudly, with an error saying which, rather than reaching the application's
 - **In a folder of scripts, a definition is created with `ANSI_NULLS` on**, unless its own script sets it off before it (a
   DACPAC records the setting for each definition, and it is read)
   ([the guide](docs/internals/02-the-inputs-and-the-model.md#a-script-becomes-the-model-in-three-steps)).
+- **A DACPAC named in `builds` was built from a project**, so its primary keys and unique constraints are enforced. Without it,
+  only a package Microsoft.Build.Sql or SSDT built keeps them: an extract can't say whether a constraint's index is disabled
+  ([decision 0120](docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md)).
 - **SQL Server 2025.** The rules are observed on the version the tests run, and an earlier one may differ
   ([the guide](docs/internals/08-the-sql-server-type-system-as-data.md#limits)).
 - **No query reads 2^63 rows**, which is why a `SUM` of a decimal of at most 19 digits is claimed never to overflow
@@ -415,9 +418,6 @@ wrong is fixed as a bug, in a change of its own, and isn't listed here.
 - **Names that differ only in case.** Names are compared ignoring case. In a database with a case-sensitive collation, two
   columns of one table whose names differ only in case are taken as one: a reference to either is typed as the one declared
   first, and a `CHECK` on either is taken as that one's. <!-- Known gap: remove this item when names that differ only in case are found where each namespace is built, and refused or made unknown. -->
-- **A disabled key in an extracted DACPAC.** An extract doesn't mark a primary key or unique constraint whose nonclustered
-  index is disabled, so a query on that key is claimed to return at most one row though the table may hold duplicates. A
-  unique index disabled on its own is marked, and read. <!-- Known gap: remove this item when a key in an extract is no longer taken as enforced, or the assumption is decided and moved to the list above. -->
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
@@ -562,7 +562,9 @@ what no test can observe is [stated as an assumption](#what-it-guarantees-and-wh
 - **Anyone wanting an API generated over the database**: Data API Builder, PostGraphile or Hasura.
 - **Databases other than SQL Server.** For PostgreSQL, pgtyped, sqlc or Kysely with `kysely-codegen`.
 - **Code that builds its SQL at run time.** A typed query builder such as Kysely types it where it is built.
-- **Databases with no project and no DACPAC.** Extract a DACPAC first, with SqlPackage's `/Action:Extract`.
+- **Databases with no project and no DACPAC.** Extract a DACPAC first, with SqlPackage's `/Action:Extract`. An extract can't
+  say whether a primary key's or unique constraint's index is enabled, so its keys give no "at most one row"
+  ([decision 0120](docs/decisions/0120-an-extract-s-key-constraints-are-no-key.md)); a package built from the project keeps them.
 - **Anyone who needs a supported tool.** This is a personal open-source project with
   [no support commitment](SUPPORT.md).
 - **Anyone who won't use code written by AI.** Better to know before you start.
