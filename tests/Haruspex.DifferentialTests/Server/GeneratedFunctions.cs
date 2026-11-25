@@ -31,7 +31,7 @@ internal static class GeneratedFunctions
     public static async Task<IReadOnlyList<Response>> RunAsync(
         SqlServerFixture server, IrDocument document, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, bool strict = false, IrModules? modules = null, ScratchDatabase? committed = null)
     {
-        server.Require();
+        await server.RequireAsync();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated functions were not run");
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
 

@@ -1,9 +1,9 @@
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// The test database held alone for a program outside this process, the mssql driver in Node (<see cref="MssqlDriver"/>),
-/// which can't share a session's connection. It holds the gate as a <see cref="WriteSession"/> does, until it is disposed,
-/// and the program must undo what it does: the driver script runs everything in a transaction it rolls back.
+/// A database held alone for a program outside this process, the mssql driver in Node (<see cref="MssqlDriver"/>), which
+/// can't share a session's connection. It holds a room as a <see cref="WriteSession"/> does (<see cref="RoomPool"/>), until
+/// it is disposed, and the program must undo what it does: the driver script runs everything in a transaction it rolls back.
 /// </summary>
 public sealed class DriverSession : IDisposable
 {

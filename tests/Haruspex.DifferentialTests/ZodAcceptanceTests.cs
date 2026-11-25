@@ -74,7 +74,7 @@ public class ZodAcceptanceTests(SqlServerFixture server)
     /// <summary>Runs every output of a fixture's runs through the Zod emitted for <paramref name="document"/>, strip and strict.</summary>
     private async Task<(bool Accepted, string Output, string? Why)> Accept(string fixture, IrDocument document)
     {
-        server.Require();
+        await server.RequireAsync();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
         var folder = Path.Combine(RepositoryPaths.EmitCheck, "accept", Guid.NewGuid().ToString("N"));

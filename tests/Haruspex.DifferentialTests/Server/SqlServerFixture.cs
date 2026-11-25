@@ -11,8 +11,11 @@ using Testcontainers.MsSql;
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// The SQL Server the differential tests run against, with one database for the whole test run, holding every
-/// fixture deployed and seeded. Where the server comes from, in order (see README.md):
+/// The SQL Server the differential tests run against, with one database for the whole test run, holding every fixture
+/// deployed and seeded, whose snapshot reading sessions share, and copies of it that writing sessions take one at a time
+/// (<see cref="RoomPool"/>). Nothing is started, created or deployed until a test first needs the server
+/// (<see cref="RequireAsync"/>), so a run of tests that need none, such as the validator's, waits for none of it. Where the
+/// server comes from, in order (see README.md):
 /// <list type="number">
 /// <item><c>HARUSPEX_TEST_SQLSERVER</c>, a connection string to a server of the developer's own;</item>
 /// <item>a container started by Testcontainers, from the pinned <see cref="Image"/>;</item>
@@ -41,9 +44,28 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// </summary>
     private const string Reader = "haruspex_reader";
 
-    private readonly DatabaseGate gate = new();
+    /// <summary>
+    /// Far longer than any write session lasts (seconds), so only a mistake waits this long for a room: a test holding as many
+    /// write sessions as there are rooms and asking for another.
+    /// </summary>
+    private static readonly TimeSpan Patience = TimeSpan.FromMinutes(2);
 
     private readonly ConcurrentDictionary<string, Lazy<Task<IReadOnlyList<ObservedResultSet>>>> observations = new(StringComparer.Ordinal);
+
+    private readonly RoomPool rooms;
+
+    // Everything the fixture sets up, done by the first test that needs the server, once.
+    private readonly Lazy<Task> ready;
+
+    // Each database this run creates (the test database, the rooms and the tests' scratch databases) is named here before its CREATE DATABASE is sent, with
+    // the CREATE's task, so a drop at any point waits for every CREATE under way and then drops every name. A name whose CREATE
+    // failed costs nothing: the drop checks the database exists. The drop is one task, started by whichever comes first of
+    // DisposeAsync, SIGTERM and process exit, and awaited by all of them: a process that exited while another path's drop was
+    // still running would leave databases behind. Once it has started no room is made.
+    private readonly List<(string Name, Task Creation)> creations = [];
+    private readonly Lock creating = new();
+    private readonly Lazy<Task> drop;
+    private bool stopping;
 
     private MsSqlContainer? container;
     private string? server;
@@ -51,16 +73,14 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private Exception? failure;
     private PosixSignalRegistration? terminate;
 
-    // Completes when the CREATE DATABASE, once started, has ended either way; created is 1 once it has succeeded. The drop is one task, started by whichever comes first of DisposeAsync,
-    // SIGTERM and process exit, and awaited by all of them: a process that exited while another path's drop was
-    // still running would leave the database behind.
-    private Task? creation;
-    private int created;
-    private readonly Lazy<Task> drop;
-
     public SqlServerFixture()
     {
-        drop = new(() => DropAsync(Database), LazyThreadSafetyMode.ExecutionAndPublication);
+        ready = new(StartAsync, LazyThreadSafetyMode.ExecutionAndPublication);
+        drop = new(DropAllAsync, LazyThreadSafetyMode.ExecutionAndPublication);
+
+        // As many rooms as tests run at once (xunit's default, a thread a processor), so a write session waits only for a
+        // room's first deploy.
+        rooms = new(Math.Max(2, Environment.ProcessorCount), Patience, MakeRoomAsync);
     }
 
     /// <summary>Databases of earlier runs found at the start and less than a day old, so not dropped (see <see cref="DropLeftoversAsync"/>).</summary>
@@ -68,6 +88,12 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     /// <summary>The database created for this run.</summary>
     public string Database { get; } = DatabasePrefix + Guid.NewGuid().ToString("N");
+
+    /// <summary>Whether a test has asked for the server: until one does, nothing is started, created or deployed.</summary>
+    internal bool Started => ready.IsValueCreated;
+
+    /// <summary>How many databases write sessions have been given so far (<see cref="RoomPool"/>).</summary>
+    internal int Rooms => rooms.Made;
 
     /// <summary>
     /// A database snapshot of <see cref="Database"/>, taken once it is seeded, which every <see cref="ReadSession"/>
@@ -78,119 +104,27 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private string Snapshot => Database + "_read";
 
     /// <summary>
-    /// A connection string to <see cref="Database"/>, deliberately private: tests reach the database only through
-    /// <see cref="ReadAsync"/> and <see cref="WriteAsync"/>, which go through the <see cref="DatabaseGate"/>.
+    /// A connection string to <see cref="Database"/>, deliberately private: tests reach the databases only through
+    /// <see cref="ReadAsync"/> and <see cref="WriteAsync"/>.
     /// </summary>
-    private string ConnectionString => new SqlConnectionStringBuilder(server) { InitialCatalog = Database }.ConnectionString;
+    private string ConnectionString => Connection(Database);
 
     // Each kind of session has a pool of its own (a pool is per connection string), so a connection that read as
-    // haruspex_reader is never handed to a write session, nor the other way round.
+    // haruspex_reader is never handed to a write session, nor the other way round; and each room has its own.
     private string ReadConnectionString => new SqlConnectionStringBuilder(ConnectionString) { InitialCatalog = Snapshot, ApplicationName = "haruspex-tests-read" }.ConnectionString;
 
-    private string WriteConnectionString => new SqlConnectionStringBuilder(ConnectionString) { ApplicationName = "haruspex-tests-write" }.ConnectionString;
-
-    public async ValueTask InitializeAsync()
-    {
-        server = Environment.GetEnvironmentVariable(ServerVariable);
-        if (string.IsNullOrWhiteSpace(server))
-        {
-            try
-            {
-                container = new MsSqlBuilder(Image).Build();
-                await container.StartAsync().ConfigureAwait(false);
-                server = container.GetConnectionString();
-            }
-#pragma warning disable CA1031 // Any reason Docker cannot be used is a reason to skip; HARUSPEX_REQUIRE_SQLSERVER turns it into a failure.
-            catch (Exception e)
-#pragma warning restore CA1031
-            {
-                // Not only DockerUnavailableException: an ssh:// Docker host (a Docker context over SSH) throws
-                // SshDockerEndpointNotSupportedException from a type initialiser, because Docker.DotNet has no SSH
-                // transport. Observed with Testcontainers 4.16.0; see README.md.
-                unavailable = $"{ServerVariable} is not set, and Testcontainers could not start SQL Server ({Innermost(e).GetType().Name}: {Innermost(e).Message}).";
-                server = null;
-                return;
-            }
-        }
-
-        try
-        {
-            RecentLeftovers = await DropLeftoversAsync().ConfigureAwait(false);
-
-            // DisposeAsync is not always reached when the process is stopped by SIGTERM (an IDE's stop button,
-            // `timeout`, `docker stop`), so the database is also dropped then, and at process exit. The handlers are
-            // in place before the CREATE starts, and wait for it, so a SIGTERM while it runs cannot leave the
-            // database behind. SIGINT (Ctrl+C) cancels the run gracefully and reaches DisposeAsync. Only SIGKILL
-            // escapes all three; a later run names what it leaves (RecentLeftovers) and drops it after a day.
-            terminate = PosixSignalRegistration.Create(PosixSignal.SIGTERM, _ => DropOnExit());
-            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
-            // Published before the CREATE is sent, and completed however it ends, so a SIGTERM at any point after
-            // this line waits for it.
-            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            Volatile.Write(ref creation, done.Task);
-            try
-            {
-                await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(Database)};").ConfigureAwait(false);
-                Volatile.Write(ref created, 1);
-            }
-            finally
-            {
-                done.TrySetResult();
-            }
-
-            // The one write that is committed, and the only one outside a WriteSession, because a fixture's batches
-            // are retried after failures, which a transaction would not survive. It holds the gate all the same,
-            // though no test has started yet, so that every write goes through it.
-            using (await gate.EnterWriteAsync(CancellationToken.None).ConfigureAwait(false))
-            {
-                foreach (var fixture in Fixture.All.Where(f => f.IsDeployed))
-                {
-                    await Deployer.DeployAsync(ConnectionString, fixture.Database).ConfigureAwait(false);
-                    await Deployer.ExecuteScriptAsync(ConnectionString, fixture.Seed!).ConfigureAwait(false);
-                }
-
-                await using var connection = new SqlConnection(ConnectionString);
-                await connection.OpenAsync().ConfigureAwait(false);
-                // The reader, and a probe for IsolationTests: a dbo procedure that writes, which ownership chaining
-                // would let the reader run anywhere but a snapshot. Outside every fixture's schema, so the IR and
-                // coverage never see it.
-                foreach (var batch in new[]
-                {
-                    $"CREATE USER {Reader} WITHOUT LOGIN; ALTER ROLE db_datareader ADD MEMBER {Reader}; GRANT EXECUTE TO {Reader};",
-                    "CREATE TABLE dbo.gate_probe (i int NOT NULL);",
-                    "CREATE PROCEDURE dbo.gate_probe_write AS SET NOCOUNT ON; INSERT INTO dbo.gate_probe VALUES (1);",
-                })
-                {
-#pragma warning disable CA2100 // The batches are the constant statements above.
-                    await using var command = new SqlCommand(batch, connection);
-#pragma warning restore CA2100
-                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-                }
-
-                // Last, so the snapshot holds the seed, the reader and the probe. Its sparse files go beside the
-                // database's own data files, wherever the server keeps them.
-                await ExecuteOnMasterAsync($"""
-                    DECLARE @files nvarchar(max) = (
-                        SELECT STRING_AGG(CONVERT(nvarchar(max), N'(NAME = ' + QUOTENAME(name) + N', FILENAME = N''' + REPLACE(physical_name, N'''', N'''''') + N'.snapshot'')'), N', ')
-                        FROM {Quote(Database)}.sys.database_files WHERE type = 0);
-                    DECLARE @create nvarchar(max) = N'CREATE DATABASE {Quote(Snapshot)} ON ' + @files + N' AS SNAPSHOT OF {Quote(Database)};';
-                    EXEC (@create);
-                    """).ConfigureAwait(false);
-            }
-        }
-#pragma warning disable CA1031 // Reported by every test that needs the server (Require), rather than failing the tests that don't.
-        catch (Exception e)
-#pragma warning restore CA1031
-        {
-            failure = e;
-        }
-    }
+    /// <summary>
+    /// Nothing: the server is set up by the first test that needs it (<see cref="RequireAsync"/>). Every test in the assembly
+    /// shares this fixture, so setting it up here made a run of tests that need no server, such as the validator's, wait for a
+    /// container, the deploy and seed of every fixture, and a snapshot.
+    /// </summary>
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
     /// <summary>
-    /// The database is dropped here, in a <c>finally</c>, whether the tests passed, failed or never got as far as
+    /// The databases are dropped here, in a <c>finally</c>, whether the tests passed, failed or never got as far as
     /// running. A developer's server is long-running and shared by every run, so a database left behind by each
     /// failed run would pile up, and could be mistaken for a current one. The only case this misses is a process
-    /// that is killed with SIGKILL (SIGTERM and process exit drop it too: see <see cref="InitializeAsync"/>); a
+    /// that is killed with SIGKILL (SIGTERM and process exit drop them too: see <see cref="StartAsync"/>); a
     /// later run names such a database and, after a day, drops it (<see cref="DropLeftoversAsync"/>).
     /// </summary>
     public async ValueTask DisposeAsync()
@@ -199,9 +133,9 @@ public sealed class SqlServerFixture : IAsyncLifetime
         terminate?.Dispose();
         try
         {
-            // Only a database this run created: when the server could not be reached there is nothing to drop,
-            // and the tests already report why.
-            if (Volatile.Read(ref created) == 1)
+            // Only databases this run created: when no test asked for the server, or it could not be reached, there is
+            // nothing to drop, and the tests already report why.
+            if (Created.Count > 0)
             {
                 try
                 {
@@ -209,45 +143,26 @@ public sealed class SqlServerFixture : IAsyncLifetime
                 }
                 catch (SqlException e)
                 {
-                    throw new InvalidOperationException($"The test database {Database} could not be dropped, so it is still on the server: drop it by hand. {e.Message}", e);
+                    throw new InvalidOperationException($"A test database could not be dropped, so it is still on the server: drop those named {DatabasePrefix}… by hand, once no run is going on. {e.Message}", e);
                 }
             }
         }
         finally
         {
-            gate.Dispose();
+            rooms.Dispose();
             if (container is not null)
                 await container.DisposeAsync().ConfigureAwait(false);
         }
     }
 
-    private void OnProcessExit(object? sender, EventArgs e) => DropOnExit();
-
     /// <summary>
-    /// Drops the database while the process is being stopped, waiting for it, so the process cannot exit half way.
-    /// Best effort: nothing is left to report a failure to but standard error.
+    /// Starts the server, if no test has yet, then skips the calling test if there is no server, or fails it if one is required
+    /// or setting up failed. Every way in (<see cref="ReadAsync"/>, <see cref="WriteAsync"/> and the rest) calls it first, so a
+    /// test that reaches the server is never ahead of its setup.
     /// </summary>
-    private void DropOnExit()
+    public async Task RequireAsync()
     {
-        if (Volatile.Read(ref creation) is not { } started)
-            return;
-        try
-        {
-            // A CREATE still running would otherwise finish after the drop. The drop checks the database exists, so
-            // a CREATE that failed costs nothing.
-            started.Wait(TimeSpan.FromSeconds(30));
-            if (!drop.Value.Wait(TimeSpan.FromSeconds(30)))
-                Console.Error.WriteLine($"haruspex: dropping the test database {Database} took over 30 seconds; it may be left on the server.");
-        }
-        catch (AggregateException e)
-        {
-            Console.Error.WriteLine($"haruspex: the test database {Database} could not be dropped while stopping: {e.InnerException?.Message}");
-        }
-    }
-
-    /// <summary>Skips the calling test if there is no server, or fails it if one is required or setting up failed.</summary>
-    public void Require()
-    {
+        await ready.Value.ConfigureAwait(false);
         if (unavailable is not null)
         {
             if (Environment.GetEnvironmentVariable(RequireVariable) == "1")
@@ -260,16 +175,17 @@ public sealed class SqlServerFixture : IAsyncLifetime
     }
 
     /// <summary>Runs a procedure once per test run; later calls reuse what it returned.</summary>
-    public Task<IReadOnlyList<ObservedResultSet>> ObserveAsync(ProcedureRun run)
+    public async Task<IReadOnlyList<ObservedResultSet>> ObserveAsync(ProcedureRun run)
     {
         ArgumentNullException.ThrowIfNull(run);
-        return observations.GetOrAdd(run.Name, _ => new Lazy<Task<IReadOnlyList<ObservedResultSet>>>(
-            () => RunAsync(run, CancellationToken.None))).Value;
+        await RequireAsync().ConfigureAwait(false);
+        return await observations.GetOrAdd(run.Name, _ => new Lazy<Task<IReadOnlyList<ObservedResultSet>>>(
+            () => RunAsync(run, CancellationToken.None))).Value.ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Runs a procedure now, not reusing an earlier run: in a <see cref="WriteSession"/>, alone, when it has a setup,
-    /// and otherwise in a <see cref="ReadSession"/>, beside any other reader.
+    /// Runs a procedure now, not reusing an earlier run: in a <see cref="WriteSession"/>, in a database of its own, when it has
+    /// a setup, and otherwise in a <see cref="ReadSession"/>, beside any other session.
     /// </summary>
     public async Task<IReadOnlyList<ObservedResultSet>> RunAsync(ProcedureRun run, CancellationToken token)
     {
@@ -285,13 +201,13 @@ public sealed class SqlServerFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// A session that only reads, beside any number of others, once no write session is open. A test that writes
-    /// through it fails loudly (see <see cref="ReadSession"/>). Hold one session at a time: the gate is
-    /// not re-entrant, and a second request waits for the first to end (see <see cref="DatabaseGate.Patience"/>).
+    /// A session that only reads the test database's snapshot, beside any number of other sessions: nothing writes the test
+    /// database once it is seeded, since write sessions have databases of their own. A test that writes through it fails
+    /// loudly (see <see cref="ReadSession"/>).
     /// </summary>
     public async Task<ReadSession> ReadAsync(CancellationToken token)
     {
-        var pass = await gate.EnterReadAsync(token).ConfigureAwait(false);
+        await RequireAsync().ConfigureAwait(false);
         var connection = new SqlConnection(ReadConnectionString);
         try
         {
@@ -303,53 +219,54 @@ public sealed class SqlServerFixture : IAsyncLifetime
                 $"DECLARE @cookie varbinary(8000); EXECUTE AS USER = N'{Reader}' WITH COOKIE INTO @cookie; SELECT @cookie;",
                 connection);
             var cookie = (byte[])await become.ExecuteScalarAsync(token).ConfigureAwait(false);
-            return new ReadSession(connection, cookie, pass);
+            return new ReadSession(connection, cookie);
         }
         catch
         {
             await connection.DisposeAsync().ConfigureAwait(false);
-            pass.Dispose();
             throw;
         }
     }
 
     /// <summary>
-    /// A session that writes, alone in the database: it waits for every open session to end, and none starts until
-    /// it is disposed, which rolls back everything it did. Every test that inserts, deletes, creates or alters
-    /// anything in the test database does it here.
+    /// A session that writes, alone in a database of its own, a copy of the test database (a room of <see cref="RoomPool"/>)
+    /// that it holds until it is disposed, when everything it did is rolled back and the room goes to the next write session.
+    /// Every test that inserts, deletes, creates or alters anything does it here.
     /// </summary>
     public async Task<WriteSession> WriteAsync(CancellationToken token)
     {
-        var pass = await gate.EnterWriteAsync(token).ConfigureAwait(false);
-        var connection = new SqlConnection(WriteConnectionString);
+        await RequireAsync().ConfigureAwait(false);
+        var room = await rooms.EnterAsync(token).ConfigureAwait(false);
+        var connection = new SqlConnection(WriteConnectionString(room.Database));
         try
         {
             await connection.OpenAsync(token).ConfigureAwait(false);
             var transaction = (SqlTransaction)await connection.BeginTransactionAsync(token).ConfigureAwait(false);
-            return new WriteSession(connection, transaction, pass);
+            return new WriteSession(connection, transaction, room);
         }
         catch
         {
             await connection.DisposeAsync().ConfigureAwait(false);
-            pass.Dispose();
+            room.Dispose();
             throw;
         }
     }
 
     /// <summary>
-    /// The database alone, as for a <see cref="WriteSession"/>, for the mssql driver in Node, which connects by itself and
-    /// rolls back what it does (<see cref="DriverSession"/>). Its connection is the write session's, as the driver's config.
+    /// A room held as for a <see cref="WriteSession"/>, for the mssql driver in Node, which connects by itself and rolls back
+    /// what it does (<see cref="DriverSession"/>). Its connection is a write session's, as the driver's config.
     /// </summary>
     public async Task<DriverSession> DriverAsync(CancellationToken token)
     {
-        var pass = await gate.EnterWriteAsync(token).ConfigureAwait(false);
+        await RequireAsync().ConfigureAwait(false);
+        var room = await rooms.EnterAsync(token).ConfigureAwait(false);
         try
         {
-            return new DriverSession(MssqlConfig(WriteConnectionString), pass);
+            return new DriverSession(MssqlConfig(WriteConnectionString(room.Database)), room);
         }
         catch
         {
-            pass.Dispose();
+            room.Dispose();
             throw;
         }
     }
@@ -382,18 +299,19 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     /// <summary>
     /// A database of the calling test's own, created now and dropped when it is disposed, whose writes are committed: for
-    /// observing what one session sees of another's commits, which the shared database can't show, since every session in
-    /// it is alone and rolled back. It has the shared database's prefix, so one a killed run leaves behind is dropped after
-    /// a day as that one is (<see cref="DropLeftoversAsync"/>); it is outside the gate, since nothing else reads it.
+    /// observing what one session sees of another's commits, which the shared databases can't show, since every session in
+    /// them is alone and rolled back. It has the shared database's prefix, so one a killed run leaves behind is dropped after
+    /// a day as that one is (<see cref="DropLeftoversAsync"/>); nothing else reads it.
     /// </summary>
     /// <param name="collation">The database's collation, such as <c>Latin1_General_100_CS_AS</c>; null for the server's.</param>
     public async Task<ScratchDatabase> ScratchAsync(string? collation = null)
     {
-        Require();
+        await RequireAsync().ConfigureAwait(false);
         var name = DatabasePrefix + Guid.NewGuid().ToString("N");
         if (collation is not null && !CollationCatalogue.IsKnown(collation))
             throw new ArgumentException($"{collation} is no collation SQL Server has.", nameof(collation));
-        await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(name)}{(collation is null ? "" : " COLLATE " + collation)};").ConfigureAwait(false);
+        // Named among the run's databases too, so a run stopped by SIGTERM, which never reaches the test's own drop, drops it.
+        await CreateAsync(name, collation).ConfigureAwait(false);
         var connection = new SqlConnectionStringBuilder(server) { InitialCatalog = name, Pooling = false, ApplicationName = "haruspex-tests-scratch" };
         return new ScratchDatabase(connection.ConnectionString, () => DropAsync(name));
     }
@@ -403,6 +321,202 @@ public sealed class SqlServerFixture : IAsyncLifetime
     {
         ArgumentNullException.ThrowIfNull(run);
         return IrValidator.Validate(Fixture.Named(run.Fixture).Ir, run.Procedure, await ObserveAsync(run).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Sets up the server, once, for <see cref="RequireAsync"/>: where it comes from, the leftovers' drop, the test database's
+    /// creation, the deploy and seed of every fixture, the reader and the snapshot. A reason not to go on is kept
+    /// (<see cref="unavailable"/>, <see cref="failure"/>) and reported to every test that needs the server, rather than failing
+    /// the tests that don't.
+    /// </summary>
+    private async Task StartAsync()
+    {
+        server = Environment.GetEnvironmentVariable(ServerVariable);
+        if (string.IsNullOrWhiteSpace(server))
+        {
+            try
+            {
+                container = new MsSqlBuilder(Image).Build();
+                await container.StartAsync().ConfigureAwait(false);
+                server = container.GetConnectionString();
+            }
+#pragma warning disable CA1031 // Any reason Docker cannot be used is a reason to skip; HARUSPEX_REQUIRE_SQLSERVER turns it into a failure.
+            catch (Exception e)
+#pragma warning restore CA1031
+            {
+                // Not only DockerUnavailableException: an ssh:// Docker host (a Docker context over SSH) throws
+                // SshDockerEndpointNotSupportedException from a type initialiser, because Docker.DotNet has no SSH
+                // transport. Observed with Testcontainers 4.16.0; see README.md.
+                unavailable = $"{ServerVariable} is not set, and Testcontainers could not start SQL Server ({Innermost(e).GetType().Name}: {Innermost(e).Message}).";
+                server = null;
+                return;
+            }
+        }
+
+        try
+        {
+            RecentLeftovers = await DropLeftoversAsync().ConfigureAwait(false);
+
+            // DisposeAsync is not always reached when the process is stopped by SIGTERM (an IDE's stop button,
+            // `timeout`, `docker stop`), so the databases are also dropped then, and at process exit. The handlers are
+            // in place before the first CREATE starts, and wait for every one, so a SIGTERM while one runs cannot leave
+            // a database behind. SIGINT (Ctrl+C) cancels the run gracefully and reaches DisposeAsync. Only SIGKILL
+            // escapes all three; a later run names what it leaves (RecentLeftovers) and drops it after a day.
+            terminate = PosixSignalRegistration.Create(PosixSignal.SIGTERM, _ => DropOnExit());
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            await CreateAsync(Database).ConfigureAwait(false);
+
+            // Committed, and outside any session, because a fixture's batches are retried after failures, which a
+            // transaction would not survive. No session can start until this method has ended.
+            await PrepareAsync(ConnectionString).ConfigureAwait(false);
+
+            // Last, so the snapshot holds the seed, the reader and the probe. Its sparse files go beside the
+            // database's own data files, wherever the server keeps them.
+            await ExecuteOnMasterAsync($"""
+                DECLARE @files nvarchar(max) = (
+                    SELECT STRING_AGG(CONVERT(nvarchar(max), N'(NAME = ' + QUOTENAME(name) + N', FILENAME = N''' + REPLACE(physical_name, N'''', N'''''') + N'.snapshot'')'), N', ')
+                    FROM {Quote(Database)}.sys.database_files WHERE type = 0);
+                DECLARE @create nvarchar(max) = N'CREATE DATABASE {Quote(Snapshot)} ON ' + @files + N' AS SNAPSHOT OF {Quote(Database)};';
+                EXEC (@create);
+                """).ConfigureAwait(false);
+        }
+#pragma warning disable CA1031 // Reported by every test that needs the server (RequireAsync), rather than failing the tests that don't.
+        catch (Exception e)
+#pragma warning restore CA1031
+        {
+            failure = e;
+        }
+    }
+
+    /// <summary>
+    /// Deploys and seeds every fixture into the database <paramref name="connectionString"/> names, and adds the reader and,
+    /// for IsolationTests, a probe: a dbo procedure that writes, which ownership chaining would let the reader run anywhere
+    /// but a snapshot. The probe is outside every fixture's schema, so the IR and coverage never see it. The test database and
+    /// every room are made by this one method, so a write session sees what a read session does.
+    /// </summary>
+    private static async Task PrepareAsync(string connectionString)
+    {
+        foreach (var fixture in Fixture.All.Where(f => f.IsDeployed))
+        {
+            await Deployer.DeployAsync(connectionString, fixture.Database).ConfigureAwait(false);
+            await Deployer.ExecuteScriptAsync(connectionString, fixture.Seed!).ConfigureAwait(false);
+        }
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync().ConfigureAwait(false);
+        foreach (var batch in new[]
+        {
+            $"CREATE USER {Reader} WITHOUT LOGIN; ALTER ROLE db_datareader ADD MEMBER {Reader}; GRANT EXECUTE TO {Reader};",
+            "CREATE TABLE dbo.gate_probe (i int NOT NULL);",
+            "CREATE PROCEDURE dbo.gate_probe_write AS SET NOCOUNT ON; INSERT INTO dbo.gate_probe VALUES (1);",
+        })
+        {
+#pragma warning disable CA2100 // The batches are the constant statements above.
+            await using var command = new SqlCommand(batch, connection);
+#pragma warning restore CA2100
+            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>A room for <see cref="RoomPool"/>: a database of its own, prepared as the test database is.</summary>
+    private async Task<string> MakeRoomAsync(CancellationToken token)
+    {
+        var name = DatabasePrefix + Guid.NewGuid().ToString("N");
+        await CreateAsync(name).ConfigureAwait(false);
+        await PrepareAsync(Connection(name)).ConfigureAwait(false);
+        return name;
+    }
+
+    /// <summary>
+    /// Creates a database, named first among those to drop, with its CREATE kept for the drop to wait for. Once the drop has
+    /// taken its list none is created: the check and the naming are one step, so no CREATE can slip in between the drop's
+    /// list and its end (seen on 25 Nov 2026: rooms a SIGTERM caught while being made were left behind).
+    /// </summary>
+    private async Task CreateAsync(string name, string? collation = null)
+    {
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (creating)
+        {
+            if (stopping)
+                throw new InvalidOperationException("The test run is stopping, so no database is made.");
+            creations.Add((name, done.Task));
+        }
+
+        try
+        {
+            await ExecuteOnMasterAsync($"CREATE DATABASE {Quote(name)}{(collation is null ? "" : " COLLATE " + collation)};").ConfigureAwait(false);
+        }
+        finally
+        {
+            done.TrySetResult();
+        }
+    }
+
+    private string Connection(string database) => new SqlConnectionStringBuilder(server) { InitialCatalog = database }.ConnectionString;
+
+    private string WriteConnectionString(string room) =>
+        new SqlConnectionStringBuilder(Connection(room)) { ApplicationName = "haruspex-tests-write" }.ConnectionString;
+
+    private void OnProcessExit(object? sender, EventArgs e) => DropOnExit();
+
+    /// <summary>The databases named so far, whether or not their CREATE has ended.</summary>
+    private List<(string Name, Task Creation)> Created
+    {
+        get
+        {
+            lock (creating)
+                return [.. creations];
+        }
+    }
+
+    /// <summary>
+    /// Drops the databases while the process is being stopped, waiting for it, so the process cannot exit half way.
+    /// Best effort: nothing is left to report a failure to but standard error.
+    /// </summary>
+    private void DropOnExit()
+    {
+        if (Created.Count == 0)
+            return;
+        try
+        {
+            if (!drop.Value.Wait(TimeSpan.FromMinutes(1)))
+                Console.Error.WriteLine($"haruspex: dropping the test databases took over a minute; some named {DatabasePrefix}… may be left on the server.");
+        }
+        catch (AggregateException e)
+        {
+            Console.Error.WriteLine($"haruspex: the test databases could not all be dropped while stopping: {e.InnerException?.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Drops every database this run created, once no more room can be made: it waits for each CREATE still running, which
+    /// would otherwise finish after the drop, then drops each, the test database (and its snapshot) first.
+    /// </summary>
+    private async Task DropAllAsync()
+    {
+        List<(string Name, Task Creation)> created;
+        lock (creating)
+        {
+            stopping = true;
+            created = [.. creations];
+        }
+
+        await Task.WhenAny(Task.WhenAll(created.Select(c => c.Creation)), Task.Delay(TimeSpan.FromSeconds(30))).ConfigureAwait(false);
+        SqlException? first = null;
+        foreach (var (name, _) in created)
+        {
+            try
+            {
+                await DropAsync(name).ConfigureAwait(false);
+            }
+            catch (SqlException e)
+            {
+                first ??= e;
+            }
+        }
+
+        if (first is not null)
+            throw first;
     }
 
     /// <summary>

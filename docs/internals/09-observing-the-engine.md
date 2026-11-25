@@ -159,4 +159,4 @@ argument is in the inference's rules, and the harness is what keeps those rules 
   turned on the database itself, with the engine checked against a rewritten form of each query.
 - [`tests/fixtures/README.md`](../../tests/fixtures/README.md): a fixture's folder, `runs.json`, and how to add one.
 - [`tests/Haruspex.DifferentialTests/README.md`](../../tests/Haruspex.DifferentialTests/README.md): how a run works, how
-  the server is found, why writes take a gate, and every rule each observation test pins.
+  the server is found, why each write has a database of its own, and every rule each observation test pins.

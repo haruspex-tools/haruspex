@@ -22,7 +22,7 @@ public class QueryParameterObservationTests(SqlServerFixture server)
     /// </summary>
     private async Task<(IReadOnlyList<string> Parameters, int? Error)> Described(string query)
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var session = await server.WriteAsync(token);
         foreach (var batch in new[] { $"CREATE SCHEMA {Schema};" }.Concat(InferQuery.Shop.Split("\nGO\n").Select(OnServer)))

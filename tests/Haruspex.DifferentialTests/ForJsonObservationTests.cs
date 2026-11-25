@@ -13,7 +13,7 @@ public class ForJsonObservationTests(SqlServerFixture server)
     /// <summary>Runs one query and returns each result set's rows, the JSON chunks joined.</summary>
     private async Task<IReadOnlyList<IReadOnlyList<string?>>> Query(string sql)
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
         await using var command = session.Command(sql);
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);

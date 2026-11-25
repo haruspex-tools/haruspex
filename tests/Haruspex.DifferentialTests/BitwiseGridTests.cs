@@ -34,7 +34,7 @@ public class BitwiseGridTests(SqlServerFixture server)
     [Fact]
     public async Task Each_operator_has_the_type_sql_server_describes_or_is_unknown_where_it_refuses()
     {
-        server.Require();
+        await server.RequireAsync();
         var expressions = Expressions();
         var inferred = Infer(expressions);
         var described = await Describe(expressions);

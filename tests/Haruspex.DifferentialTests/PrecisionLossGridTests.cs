@@ -113,7 +113,7 @@ public class PrecisionLossGridTests(SqlServerFixture server)
     [Fact]
     public async Task Haruspex_gives_precision_loss_exactly_where_the_server_rounds_to_null()
     {
-        server.Require();
+        await server.RequireAsync();
         var expressions = Expressions().ToList();
         var inferred = Infer(expressions);
 

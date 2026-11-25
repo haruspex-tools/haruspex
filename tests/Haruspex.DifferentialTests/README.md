@@ -7,7 +7,9 @@ by a user at runtime.
 
 ## What happens in a run
 
-1. **A server is found** (below), and one database is created for the run, named `haruspex_test_<random>`.
+1. **A server is found** (below), when the first test that needs one asks for it (`SqlServerFixture.RequireAsync`), and one
+   database is created for the run, named `haruspex_test_<random>`. A run of tests that need no server, such as the
+   validator's own (`Validation/`) or the pool's (`Server/RoomPoolTests.cs`), starts nothing and creates nothing.
 2. **Each fixture with a seed is deployed** into it (`Runs.Fixtures`, found by listing `tests/fixtures`, whose
    [README](../fixtures/README.md) describes a fixture's folder): every batch of every `.sql` file under its
    `database/` folder, retried after the others when it fails, because a fixture's scripts are in no particular order (a
@@ -16,50 +18,53 @@ by a user at runtime.
 4. **Each run in `Runs.All` calls a procedure** and reads every result set. The runs are read from each fixture's
    `runs.json`, which gives each parameter as JSON and leaves its type to the procedure's declaration, as an `EXEC` does. A run with `ProcedureRun.Setup` runs that SQL
    first in a transaction that is rolled back, which is how a procedure without parameters is run against
-   empty tables. Such a run writes, so it runs alone (see "Runs that write").
+   empty tables. Such a run writes, so it runs alone, in a copy of the database (see "Runs that write").
 5. **The output is validated against the IR** (`Validation/IrValidator.cs`).
-6. **The database is dropped**, in the fixture's `DisposeAsync`, whatever happened before (see below).
+6. **The databases are dropped**, in the fixture's `DisposeAsync`, whatever happened before (see below).
 
 ## Runs that write
 
-Tests run in parallel against one database. Most only read, but some write inside a transaction that is rolled
-back: a run's `ProcedureRun.Setup` (deleting rows, to see a procedure on empty tables), and the observation tests that create
-a table or functions to watch the engine (`CheckConstraintObservationTests`, `JsonFunctionObservationTests`). The
-rollback hides what they wrote, but not their locks: until it, a run reading the same tables waits on them, and
-when the two take their locks in opposite orders SQL Server kills one with error 1205. GitHub's CI did on
-9 Nov 2026 (four tests on `trees`). `IsolationTests.A_run_that_writes_never_overlaps_a_run_that_reads` makes the
-overlap certain, holding a setup open while a reading run starts; before the fix the reader waited on `LCK_M_S`
-every time.
+Tests run in parallel. Most only read, but some write inside a transaction that is rolled back: a run's
+`ProcedureRun.Setup` (deleting rows, to see a procedure on empty tables), and the observation tests that create a table,
+a type or a procedure to watch the engine (most of them, through `Server/ObservedCall.cs`). The rollback hides what they
+wrote, but not their locks: until it, a run reading the same tables waits on them, and when the two take their locks in
+opposite orders SQL Server kills one with error 1205. GitHub's CI did on 9 Nov 2026 (four tests on `trees`). Two writers
+creating the same `dbo.obs_…` procedure would wait on each other the same way.
 
-So the fixture has a **reader-writer gate** (`Server/DatabaseGate.cs`): any number of sessions that read at
-once, or one that writes, alone. Nothing reaches the database except through it:
+So **no session that writes shares a database with any other session**:
 
-- The fixture keeps the connection string to itself. A test asks for a **`ReadSession`**
-  (`server.ReadAsync`) or a **`WriteSession`** (`server.WriteAsync`); both hold their place in the gate until
-  disposed. A write session's work is one transaction, always rolled back. `server.ObserveAsync` and
-  `server.RunAsync` pick the session from the run: a write session when it has a `ProcedureRun.Setup`.
-- **A read session cannot write**, so a test or procedure that tries fails at once rather than deadlocking
-  another test by luck. It reads a **database snapshot** of the test database, taken once it is seeded,
-  which is read-only to everyone: even a `dbo` procedure, which ownership chaining lets past every
-  permission, fails with error 3906. It also runs as `haruspex_reader`, a database user with
-  `db_datareader` and `EXECUTE` only, switched to `WITH COOKIE`, a cookie only the session holds. So a test
-  cannot `REVERT` to `dbo` (15591), nor `USE` the writable database, because an impersonated user is confined
-  to its own (916). Temporary tables are allowed: they are the session's own, in tempdb. Writes see the
-  database itself, and roll back, so readers always see the seed.
+- The fixture keeps the connection strings to itself. A test asks for a **`ReadSession`** (`server.ReadAsync`) or a
+  **`WriteSession`** (`server.WriteAsync`). `server.ObserveAsync` and `server.RunAsync` pick the session from the run: a
+  write session when it has a `ProcedureRun.Setup`.
+- **Read sessions share the test database's snapshot.** A database snapshot, taken once the database is seeded, is
+  read-only to everyone, and nothing writes the database itself after that, so readers run side by side and never wait
+  on a writer. A read session cannot write either: even a `dbo` procedure, which ownership chaining lets past every
+  permission, fails with error 3906. It also runs as `haruspex_reader`, a database user with `db_datareader` and `EXECUTE`
+  only, switched to `WITH COOKIE`, a cookie only the session holds. So a test cannot `REVERT` to `dbo` (15591), nor `USE`
+  the writable database, because an impersonated user is confined to its own (916). Temporary tables are allowed: they
+  are the session's own, in tempdb.
+- **Each write session has a database of its own while it lasts**, a room (`Server/RoomPool.cs`): a copy of the test
+  database, made by the same deploy, seed, reader and probe (`SqlServerFixture.PrepareAsync`), so a writer sees what a
+  reader does. A room is made the first time every room so far is taken, up to one a processor (xunit runs that many tests
+  at once), and is handed to the next write session once the last has rolled back. The mssql driver in Node, which
+  connects by itself, takes a room the same way (`SqlServerFixture.DriverAsync`).
 - `No_test_opens_a_connection_of_its_own` fails if a file outside the fixture names `SqlConnection`,
   `SqlClientFactory` or `DbProviderFactories`. It is there to catch a mistake, not to stop someone set on
   going around it.
-- Deploying and seeding, the one write that is committed, holds the gate too, though no test has started.
-- The gate is not re-entrant: a test holding a session that asks for another waits on itself. A wait over
-  two minutes fails, naming the likely cause.
+- A test that holds as many write sessions as there are rooms and asks for another waits on itself; a wait over two
+  minutes fails, naming the likely cause.
 
-Why a gate rather than a database per writing run: the writes are few and short (a dozen setups and a few
-dozen observation tests, each well under a second), so making them wait costs little, while a copy per run
-means deploying and seeding again, seconds each, or a snapshot per run. Retrying on 1205 or running the
-whole suite serially would hide the cause, or slow every read for the sake of a few writes. The one shared
-snapshot is not there for isolation (the gate is) but to make writing through a read session impossible;
-the drop removes it before the database, killing its sessions, since a read-only database cannot be set to
-`SINGLE_USER`.
+`IsolationTests.A_run_that_writes_never_shares_a_database_with_a_run_that_reads` holds a writing run's setup open while a
+reading run of the same tables runs to its end, waiting on no lock of it.
+
+Why a room per writer rather than one gate: until 25 Nov 2026 every write session took the one database alone and waited
+for every reader, on the reasoning that writes were "a dozen setups and a few dozen observation tests". By then there were
+111 runs with a setup and some 600 observation tests, every call of which writes, so writers held the database for
+nearly the whole run and the suite ran almost serially (audit finding F049). Deploying and seeding a copy takes seconds,
+once per room, and a run makes no more rooms than it has writers at once. Measured on a 10-core x86-64 machine under WSL, the whole
+project, back to back with a load average of 8 to 13 from other work: 7 min 3 s with the gate, using 69% of one core, and
+2 min 52 s with rooms, using 183%; under a load of 17 to 40, 12 min 55 s and 3 min 46 s. A run of the tests that need no
+server (the 165 in `Validation/`) took 6.6 to 8.8 s while the fixture set up the server for them first, and takes 0.5 s.
 
 ## The validator reads the IR, not the Zod
 
@@ -145,8 +150,8 @@ The driver itself is called too, through `tests/emit-check/src/driver.mjs` with 
 `MssqlDriverObservationTests` records what it hands an application for each form of JSON, with its `parseJSON` option on and
 off, and `MssqlDriverAcceptanceTests` creates procedures returning each form, then parses what an application reads from the
 driver with the schemas emitted for them ([decision 0048](../../docs/decisions/0048-an-absent-json-result-reads-as-null.md)).
-The script connects by itself, so it holds the database alone (`SqlServerFixture.DriverAsync`, a write session's place at the
-gate) and runs everything in a transaction it rolls back.
+The script connects by itself, so it holds a database alone (`SqlServerFixture.DriverAsync`, a room as a write session holds
+one) and runs everything in a transaction it rolls back.
 
 A failure names the procedure, the path with array indexes, the claim and the value:
 
@@ -209,23 +214,26 @@ is only reachable over SSH, run a long-lived SQL Server container there and use 
 
 ## Why the database is dropped in a `finally`
 
-A developer's server is long-running and every run creates a database on it. If a failing run left its
-database behind, they would pile up, and an old one could be mistaken for the current run's. So
-`DisposeAsync` drops it in a `finally` whether the tests passed, failed or never ran. A failure while
-deploying or seeding is reported by each test rather than thrown, so the fixture is still disposed. Only a
-database the run actually created is dropped: when the server cannot be reached there is nothing to drop,
-and a drop that fails says so under its own message.
+A developer's server is long-running and every run creates databases on it: the test database and its rooms. If a
+failing run left them behind, they would pile up, and an old one could be mistaken for the current run's. So
+`DisposeAsync` drops them in a `finally` whether the tests passed, failed or never ran. A failure while
+deploying or seeding is reported by each test rather than thrown, so the fixture is still disposed. Only
+databases the run actually created are dropped: when no test asked for the server, or it cannot be reached, there is
+nothing to drop, and a drop that fails says so under its own message.
 
 Stopping a run must not leave it behind either:
 
 - **SIGINT** (Ctrl+C) cancels the run, which still reaches `DisposeAsync`.
 - **SIGTERM** (an IDE's stop button, `timeout`, `docker stop`) does not always reach it, so a SIGTERM handler
-  and process exit drop the database too. The three share one drop and each waits for it, because xunit
-  carries on after SIGTERM and a process that exited during another path's drop would leave the database.
-  The handlers are in place before the `CREATE DATABASE` is sent, and wait for it to finish, so a SIGTERM
-  while it runs is covered. The drop retries, because tests still running can take the database between
+  and process exit drop the databases too. The three share one drop and each waits for it, because xunit
+  carries on after SIGTERM and a process that exited during another path's drop would leave a database.
+  The handlers are in place before the first `CREATE DATABASE` is sent, each database is named before its `CREATE` is,
+  and the drop waits for every `CREATE` under way and makes no more rooms, so a SIGTERM while one runs is covered. The drop retries, because tests still running can take the database between
   `SET SINGLE_USER` and `DROP`. Checked on 9 Nov 2026 by sending SIGTERM at fifteen points from 0.5 to 2.0 s
-  into a run, SIGINT at five, and `timeout` around `dotnet test`: no database was left.
+  into a run, SIGINT at five, and `timeout` around `dotnet test`: no database was left. Checked again on 25 Nov 2026, with rooms and a lazy start, by sending SIGTERM at eight points from 1 to 70 s into a
+  run (`timeout -s TERM`): no database was left. The first try left rooms and scratch databases behind: a room could be
+  named after the drop had taken its list, and `ScratchAsync`'s databases weren't on it. Now naming a database and the
+  drop's list are one step, and every database the run creates is on it.
 - **SIGKILL** cannot be caught. The next run lists every `haruspex_test_*` database it did not create as a
   skipped test, `Earlier_runs_left_no_database_behind`, whose reason names them; a skip's reason is printed
   by `dotnet test`, where xunit's warnings are not. It is not a failure, because the database may belong to

@@ -19,7 +19,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(RunNames))]
     public async Task The_output_keeps_every_claim_of_the_ir(string run)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var report = await server.ValidateAsync(Runs.Named(run));
 
@@ -30,7 +30,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task The_seed_reaches_every_case_the_ir_allows(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var seen = new Dictionary<string, IReadOnlySet<(string, Seen)>>(StringComparer.Ordinal);
         foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
@@ -54,7 +54,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(EdgeFixtures))]
     public async Task The_seed_reaches_every_edge_the_ir_claims(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var missing = await MissingEdges(fixture, EdgeScope.Every);
 
@@ -70,7 +70,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task The_seed_reaches_every_edge_its_types_alone_do_not_give(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var all = await MissingEdges(fixture, EdgeScope.NotFromTheType, excused: false);
         var excuses = Runs.EdgesNotReached[fixture];
@@ -106,7 +106,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [Fact]
     public async Task An_untrusted_constraint_claims_nothing_and_the_data_breaks_it()
     {
-        server.Require();
+        await server.RequireAsync();
         var fields = Fixture.Named("checks").Ir.Types["ListTicketsRow"].Fields;
         IrFacets Facets(string name) => Assert.IsType<IrScalar>(fields.Single(f => f.Name == name).Type).Facets!;
 
@@ -134,7 +134,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [Fact]
     public async Task A_run_s_date_argument_reaches_the_procedure_as_written()
     {
-        server.Require();
+        await server.RequireAsync();
         var run = Runs.Named("till: shift_times, the edges");
         Assert.Equal(SqlDbType.Date, run.Parameters["@day"].Parameter("@day").SqlDbType);
 
@@ -147,9 +147,9 @@ public class FixtureOutputTests(SqlServerFixture server)
     }
 
     [Fact]
-    public void Earlier_runs_left_no_database_behind()
+    public async Task Earlier_runs_left_no_database_behind()
     {
-        server.Require();
+        await server.RequireAsync();
 
         // Reported as a skip, which the test output prints with its reason at any verbosity (xunit's warnings are
         // not shown by `dotnet test`). Not a failure: the database may belong to another run going on now against

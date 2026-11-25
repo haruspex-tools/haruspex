@@ -29,7 +29,7 @@ public class SqlcmdVariableObservationTests(SqlServerFixture server)
     /// <summary>Creates the deployed text of <paramref name="create"/>, after <paramref name="setup"/>, and runs <paramref name="procedure"/>; rolled back.</summary>
     private async Task<IReadOnlyList<ObservedResultSet>> Run(string create, string procedure, string? setup = null)
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
         foreach (var batch in new[] { setup, create }.OfType<string>())
         {
