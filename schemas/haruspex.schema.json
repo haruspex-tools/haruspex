@@ -5,6 +5,26 @@
   "description": "The haruspex config file: which procedures are typed, per schema; overrides of what inference found; naming rules and emitter settings. Paths in it are relative to the file. JSON with comments and trailing commas is allowed.",
   "type": "object",
   "additionalProperties": false,
+  "dependentSchemas": {
+    "serverOnly": {
+      "description": "serverOnly, either value, is about haruspex.mssql.ts, so emit must name \"mssql\".",
+      "required": [
+        "emit"
+      ],
+      "properties": {
+        "emit": {
+          "type": "array",
+          "not": {
+            "items": {
+              "not": {
+                "const": "mssql"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "properties": {
     "$schema": {
       "description": "This schema, for editors.",
@@ -16,7 +36,7 @@
       "minLength": 1
     },
     "baseline": {
-      "description": "The database the application already running was built against, for haruspex check to judge whether this one fits it: a folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json of this version. Relative to this file. --baseline overrides it. haruspex never fetches it: put it there first, as CI does.",
+      "description": "The database the application already running was built against: generate writes types that work against both it and this one, and check fails on any change the running application would fail on. A folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json of this version. Relative to this file. --baseline overrides it. haruspex never fetches it: put it there first, as CI does.",
       "type": "string",
       "minLength": 1
     },
@@ -99,7 +119,31 @@
           "mapping"
         ]
       },
-      "minItems": 1
+      "minItems": 1,
+      "uniqueItems": true,
+      "anyOf": [
+        {
+          "description": "It names \"zod\": what no item is not.",
+          "not": {
+            "items": {
+              "not": {
+                "const": "zod"
+              }
+            }
+          }
+        },
+        {
+          "description": "Or it names neither \"mssql\" nor \"mapping\", which need \"zod\" beside them.",
+          "items": {
+            "not": {
+              "enum": [
+                "mssql",
+                "mapping"
+              ]
+            }
+          }
+        }
+      ]
     },
     "serverOnly": {
       "description": "Whether haruspex.mssql.ts starts with import 'server-only', so that a Next.js build fails where browser code imports the functions. Needs \"mssql\" in emit. false by default: haruspex assumes no framework.",
@@ -123,8 +167,9 @@
       }
     },
     "acknowledge": {
-      "description": "Warnings read and to be lived with, each named by its code and its subject together, never by its code alone, and with why. An acknowledged warning is counted rather than said on each run (--verbose lists it); an entry that matches no warning in a run is a warning itself. Only warnings about the source that name a subject can be acknowledged: HAR1003, HAR1007, HAR1008 and HAR2101.",
+      "description": "Warnings read and to be lived with, each named by its code and its subject together, never by its code alone, and with why. An acknowledged warning is counted rather than said on each run (--verbose lists it); an entry that matches no warning in a run is a warning itself. Only warnings about the source that name a subject can be acknowledged: HAR1003, HAR1007, HAR1008 and HAR2101. Each code and subject is acknowledged once.",
       "type": "array",
+      "uniqueItems": true,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -536,7 +581,7 @@
       }
     },
     "declaredSchema": {
-      "description": "A JSON Schema (type, properties, required, items, minItems, maxItems, additionalProperties, format and $ref to $defs are read), or the path of a file holding one.",
+      "description": "A JSON Schema (type, properties, required, additionalProperties, items, minItems, maxItems, enum, const, anyOf, oneOf, minLength, maxLength, format, and $ref to a pointer in the same document or to another local file are read; any other keyword is a warning and not checked), or the path of a file holding one.",
       "anyOf": [
         {
           "type": "object"

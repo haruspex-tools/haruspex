@@ -1,0 +1,1 @@
+{ "$schema": "../../../../schemas/haruspex.schema.json", "columns": { "orders.settings": { "json": "settings.schema.json" } } }

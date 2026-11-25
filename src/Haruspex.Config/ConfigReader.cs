@@ -9,11 +9,15 @@ namespace Haruspex.Config;
 
 /// <summary>
 /// Reads <c>haruspex.json</c>: finds it, parses it (JSON with comments and trailing commas, as tsconfig.json allows) and
-/// checks every setting, reporting each problem with the path inside the file and its line. The checks are the same as
-/// the published JSON Schema's (<c>schemas/haruspex.schema.json</c>), plus what a schema can't say: that a pattern or a
-/// regular expression is well formed. An unknown key is an error, never ignored: a misspelt setting would otherwise
-/// silently do nothing.
+/// checks every setting, reporting each problem with the path inside the file and its line. An unknown key is an error, never
+/// ignored: a misspelt setting would otherwise silently do nothing.
 /// </summary>
+/// <remarks>
+/// Its checks are the published JSON Schema's (<c>schemas/haruspex.schema.json</c>), which an editor checks the file with, and
+/// the rules a schema can't say, which <c>docs/configuration.md</c> lists under "What an editor can't check" (a key written
+/// twice, names that differ only in case, a file that isn't there, and the rest). <c>ConfigSchemaTests</c> holds the two
+/// together: an example each refuses alike, and a config for each rule only this reader checks.
+/// </remarks>
 public static class ConfigReader
 {
     /// <summary>How long one naming replacement may run on one name; regular expressions come from users.</summary>

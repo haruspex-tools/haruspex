@@ -1,6 +1,6 @@
 // Validates each document in a folder against one of haruspex's own schemas, and prints every document's verdict, so that a test
-// can compare Ajv's verdict on each with its own validator's and with a reader's. Called by IrJsonSchemaTests and
-// IrReaderSchemaAgreementTests as `node src/verdicts.mjs <schema> <folder>` (documents.mjs). It prints one JSON object, each
+// can compare Ajv's verdict on each with its own validator's and with a reader's. Called by IrJsonSchemaTests,
+// IrReaderSchemaAgreementTests and ConfigSchemaTests as `node src/verdicts.mjs <schema> <folder>` (documents.mjs). It prints one JSON object, each
 // document's file name mapped to its errors (an empty list when it is valid), and exits with 0 whether or not the documents are
 // valid: deciding which should be is the test's. It exits with 1 only when the schema doesn't compile.
 //

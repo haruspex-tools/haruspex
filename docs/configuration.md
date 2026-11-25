@@ -26,8 +26,8 @@ otherwise silently do nothing.
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
   "split": "schema",                        // a module per schema; see "Splitting the output into modules"
 
-  "emit": ["zod"],                          // and "json-schema", "mssql", "mapping"; see "What is written"
-  "serverOnly": false,                      // true: the functions import 'server-only'; see "What is written"
+  "emit": ["zod", "mssql"],                 // and "json-schema", "mapping"; see "What is written"
+  "serverOnly": false,                      // with "mssql", true: the functions import 'server-only'; see "What is written"
   "objects": "strip",                       // or "strict"
   "comments": "surprises",                  // or "none", "all"; see "Comments"
 
@@ -801,6 +801,27 @@ between objects, because that renumbered names whenever an object was added and 
 procedure two types can still meet (a nested key `row` beside the row type, or the variants of a union, which share a
 path); there a number is added in the order the procedure's results are written (`GetOrderRow2`), because it depends
 on nothing but that procedure.
+
+## What an editor can't check
+
+The schema an editor checks the file with refuses every setting of the wrong form, but some rules can't be written in a JSON
+Schema, or depend on the files beside the config file, so an editor shows these as valid and `haruspex generate` refuses them:
+
+- **A key written twice in one object**, which a JSON parser keeps the last of.
+- **A procedure named in other than two parts**, `schema.name`, in `procedures`.
+- **A pattern, a path or a regular expression that is not well formed**: a pattern or a path with a bracket left open, a
+  naming rule's expression that doesn't compile.
+- **A name that is a reserved word** in the generated code: a type's, or a set's.
+- **Two names that differ only in case**: two schemas' blocks, or two modules, since a file system that ignores case would
+  hold one file for both.
+- **A schema in two modules**, compared ignoring case, as SQL Server compares schema names.
+- **A warning acknowledged twice**: one code and subject with two reasons.
+- **A collation SQL Server does not have**, or one no database can have.
+- **A file or folder that is not there**: a folder of `references`, a JSON Schema file, or a `$ref` in one.
+- **A declared JSON Schema haruspex can't type** ([what a declaration reads](#the-json-schemas-a-declaration-reads)).
+
+Nor can an editor check what depends on the database: a pattern that matches no procedure, an override's path that its results
+don't have. `generate` and `check` report each with its line.
 
 ## Errors
 

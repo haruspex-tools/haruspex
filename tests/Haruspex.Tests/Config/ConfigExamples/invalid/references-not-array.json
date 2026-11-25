@@ -1,0 +1,1 @@
+{ "$schema": "../../../../schemas/haruspex.schema.json", "references": "../shared/bin/Release" }

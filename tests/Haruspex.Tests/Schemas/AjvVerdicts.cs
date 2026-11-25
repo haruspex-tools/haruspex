@@ -6,7 +6,7 @@ namespace Haruspex.Tests.Schemas;
 /// What Ajv, the JSON Schema validator a consumer is most likely to use, makes of each of a set of documents against one of
 /// haruspex's own schemas, compiled in strict mode (<c>tests/emit-check/src/verdicts.mjs</c>). <see cref="SchemaSubset"/> is
 /// written for the tests; a keyword it read differently from a real validator would pass both a schema and its tests, so the tests
-/// that hold the IR's schema to its reader ask Ajv too.
+/// that hold the IR's schema and the config file's to their readers ask Ajv too.
 /// </summary>
 internal static class AjvVerdicts
 {
