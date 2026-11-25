@@ -30,7 +30,7 @@ jobs:
       contents: read # to check out the repository
     steps:
       # main, whatever pushed: a tag's run deploys main's site with the tag's schemas in it, not the tag's site alone. The
-      # whole history, for the tags.
+      # whole history, for the tags: build.mjs refuses a shallow clone.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -52,8 +52,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    # Only from main and from tags: a run dispatched by hand on another branch builds the site, which tests the build, but
-    # deploys nothing.
+    # Only from main and from tags. A run dispatched by hand on another branch takes only the workflow file from it (the build
+    # still checks out main), so it tests the workflow, and deploys nothing.
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     timeout-minutes: 10
