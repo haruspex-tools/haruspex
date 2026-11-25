@@ -75,7 +75,7 @@ public partial class QueryFileTests
     [Fact]
     public void A_query_file_s_text_is_kept_as_written_but_for_cr_and_crlf_which_become_lf()
     {
-        // F068: ReplaceLineEndings turned each of these into LF, so the function sent another literal than the file's. SQL Server
+        // The reader once turned each into LF with ReplaceLineEndings, so the function sent another literal than the file's. SQL Server
         // keeps each in a literal and ends neither a comment nor a line at one (QueryTextObservationTests).
         using var dir = new TempDirectory();
         var path = dir.File("q.sql", $"-- a{NotLineEnds}b\r\nSELECT N'c{NotLineEnds}d' AS label;\rSELECT 1 AS one;\n");

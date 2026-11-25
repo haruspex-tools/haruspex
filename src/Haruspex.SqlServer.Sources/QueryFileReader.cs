@@ -30,7 +30,7 @@ public static partial class QueryFileReader
         // which are LF so that the IR, which holds it, is the same on every machine; it is parsed so too, so that what is typed
         // is what runs. A string literal spanning lines is the one thing that sees the difference. Only CR and CRLF are line
         // endings here: a form feed, NEL, U+2028 or U+2029 is kept, since SQL Server keeps each in a literal and ends no line or
-        // comment at one, and the parser counts no line at one either (QueryTextObservationTests, F068).
+        // comment at one, and the parser counts no line at one either (QueryTextObservationTests).
         string text;
         using (var file = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
             text = SourceLines.WithLineFeeds(file.ReadToEnd());

@@ -5,7 +5,7 @@ namespace Haruspex.DifferentialTests;
 /// <summary>
 /// What SQL Server does with the characters .NET's <c>ReplaceLineEndings</c> takes for a line's end besides CR and LF: form feed,
 /// NEL (U+0085), and the Unicode line and paragraph separators (U+2028, U+2029). It keeps each in a string literal, and ends neither
-/// a <c>--</c> comment nor a line at one, so a query file's text is sent with them as written (F068; <c>QueryFileReader.Read</c>).
+/// a <c>--</c> comment nor a line at one, so a query file's text is sent with them as written (<c>QueryFileReader.Read</c>).
 /// That the generated function sends them is in <c>MssqlFunctionTests</c>. Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
 public class QueryTextObservationTests(SqlServerFixture server)

@@ -40,7 +40,7 @@ public partial class MssqlFunctionTests
     [Fact]
     public async Task A_query_file_s_function_sends_a_form_feed_nel_and_the_unicode_separators_as_the_file_holds_them()
     {
-        // F068: the reader turned each into LF, so the function sent another literal than the file's; the server keeps each
+        // The reader once turned each into LF, so the function sent another literal than the file's; the server keeps each
         // (QueryTextObservationTests).
         var module = Queries(("sql/marks.sql", "SELECT UNICODE(SUBSTRING(N'a\f\u0085\u2028\u2029', 2, 1)) AS ff, UNICODE(SUBSTRING(N'a\f\u0085\u2028\u2029', 3, 1)) AS nel,\r\n"
             + "  UNICODE(SUBSTRING(N'a\f\u0085\u2028\u2029', 4, 1)) AS ls, UNICODE(SUBSTRING(N'a\f\u0085\u2028\u2029', 5, 1)) AS ps;"));
