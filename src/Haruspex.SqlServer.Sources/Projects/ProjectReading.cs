@@ -31,16 +31,21 @@ internal sealed class ProjectReading
     /// <summary>The DACPACs the read opens, and every reference to one it meets.</summary>
     private readonly PackageSet packages;
 
+    /// <summary>The folders the read has looked in, each listed once for every project and both configurations.</summary>
+    private readonly FolderListings listings;
+
     /// <summary>A read of the project in <paramref name="folder"/>.</summary>
     /// <param name="folder">The given project's folder, which every location is relative to.</param>
     /// <param name="searchFolders">The config file's <c>references</c> folders, full paths.</param>
     /// <param name="cache">Where packages are looked for.</param>
     /// <param name="builds">The file names of packages declared built from a project (<c>builds</c>).</param>
-    public ProjectReading(string folder, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string> builds)
+    /// <param name="listings">What the read finds a path on disk through; listings for this machine when not given.</param>
+    public ProjectReading(string folder, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string> builds, FolderListings? listings = null)
     {
         this.folder = folder;
         this.searchFolders = searchFolders;
         this.cache = cache;
+        this.listings = listings ?? new FolderListings();
         packages = new PackageSet(searchFolders, diagnostics, builds);
     }
 
@@ -83,7 +88,7 @@ internal sealed class ProjectReading
         for (var i = 0; i < queue.Count; i++)
         {
             var (next, referrer, reference) = queue[i];
-            var located = DiskPath.Locate(next, reference?.FullPath ?? next, out var problem);
+            var located = DiskPath.Locate(next, reference?.FullPath ?? next, listings, out var problem);
             if (located is not null && read.Contains(located, StringComparer.OrdinalIgnoreCase))
                 continue;
             if (located is null && referrer is not null && reference is not null)
@@ -187,7 +192,7 @@ internal sealed class ProjectReading
         if (reference.FullPath is { } path)
             places.Add(path);
         places.AddRange(searchFolders.Select(f => Path.Join(f, reference.FileName)));
-        var at = places.Select(p => DiskPath.Locate(p, p, out _)).FirstOrDefault(p => p is not null && File.Exists(p));
+        var at = places.Select(p => DiskPath.Locate(p, p, listings, out _)).FirstOrDefault(p => p is not null && File.Exists(p));
         var package = at is null ? null : packages.Open(at);
         found[key] = package;
         packages.Record(package?.Name ?? reference.FileName, reference.Database, package);
@@ -285,7 +290,7 @@ internal sealed class ProjectReading
             return null;
         into.AddRange(project.Problems);
         var settings = ProjectSettings.Read(project, into, out var collation);
-        var scripts = ProjectFiles.Read(project, into);
+        var scripts = ProjectFiles.Read(project, listings, into);
         var references = ProjectReferences.Read(project, cache, into, noted);
         return new ProjectRead([.. scripts], settings, collation, references, project.Targets, ProjectFiles.DeploymentScripts(project));
     }

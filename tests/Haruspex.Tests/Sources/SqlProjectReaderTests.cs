@@ -322,6 +322,28 @@ public partial class SqlProjectReaderTests
     }
 
     [Fact]
+    public void A_project_read_as_debug_and_as_release_lists_each_folder_once_however_many_scripts_it_builds()
+    {
+        // Each script's path was walked folder by folder, listing each afresh, for the Debug read and again for the Release
+        // one. The walk is forced here, as a file system that ignores case makes it, and the project lists its scripts, as a
+        // legacy one does, in another case than the disk's.
+        using var folder = new TempDirectory();
+        var scripts = Enumerable.Range(0, 30).Select(i => (Path: $"p/Tables/t{i}.sql", Text: $"CREATE TABLE dbo.t{i} (id int NOT NULL);")).ToArray();
+        foreach (var (path, text) in scripts)
+            folder.File(path, text);
+        var project = folder.File("p/p.sqlproj", Legacy(string.Concat(scripts.Select(s => $"<Build Include=\"TABLES\\{Path.GetFileName(s.Path)}\" />"))));
+        var listings = new FolderListings(caseIgnored: true);
+
+        var read = SqlProjectReader.Read(project, [], new PackageCache(Path.Combine(folder.Path, "no-packages")), listings: listings);
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(30, read.Model.Tables.Count);
+        Assert.All(read.Model.Tables, t => Assert.StartsWith("Tables/", t.Span.File, StringComparison.Ordinal));
+        var script = Path.Combine(folder.Path, "p", "Tables", "t0.sql");
+        Assert.Equal(script[Path.GetPathRoot(script)!.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).Length, listings.Listed);
+    }
+
+    [Fact]
     public void A_script_a_project_builds_that_isn_t_there_is_an_error_and_so_is_one_rooted_the_windows_way_read_elsewhere()
     {
         using var folder = new TempDirectory();

@@ -33,15 +33,19 @@ internal static class ProjectFiles
     /// <summary>The deployment scripts, whose <c>:r</c> includes the build takes out too.</summary>
     private static readonly string[] Deployment = [ProjectXml.PreDeploy, ProjectXml.PostDeploy];
 
-    /// <summary>The scripts of <paramref name="project"/>'s build, in its items' order, each once; what isn't read is reported.</summary>
-    public static IReadOnlyList<ProjectScript> Read(EvaluatedProject project, ICollection<Diagnostic> diagnostics)
+    /// <summary>
+    /// The scripts of <paramref name="project"/>'s build, in its items' order, each once, found on disk through the read's
+    /// <paramref name="listings"/>; what isn't read is reported.
+    /// </summary>
+    public static IReadOnlyList<ProjectScript> Read(EvaluatedProject project, FolderListings listings, ICollection<Diagnostic> diagnostics)
     {
         ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(listings);
         ArgumentNullException.ThrowIfNull(diagnostics);
         var name = Path.GetFileName(project.File.Path);
         var defaults = Defaults(project, diagnostics);
-        var taken = TakenOut(project, diagnostics);
-        var unsure = Unsure(project, taken, diagnostics);
+        var taken = TakenOut(project, listings, diagnostics);
+        var unsure = Unsure(project, taken, listings, diagnostics);
         var scripts = new List<ProjectScript>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in project.OfType(ProjectXml.Build))
@@ -60,7 +64,7 @@ internal static class ProjectFiles
 
             if (taken.Contains(full) || unsure.Contains(full))
                 continue;
-            if (DiskPath.Locate(full, item.Spec, out var problem) is not { } found)
+            if (DiskPath.Locate(full, item.Spec, listings, out var problem) is not { } found)
             {
                 var why = item.Unexpanded is { } unexpanded
                     ? $"a build can't expand: {unexpanded}, so the build takes the pattern for a file's name, and stops (SQL72001)"
@@ -102,7 +106,7 @@ internal static class ProjectFiles
     /// project, since it could name any. None of them is read: a script the build may not read is never typed. A doubted
     /// <c>Build</c> include adds nothing, and says so.
     /// </summary>
-    private static HashSet<string> Unsure(EvaluatedProject project, HashSet<string> taken, ICollection<Diagnostic> diagnostics)
+    private static HashSet<string> Unsure(EvaluatedProject project, HashSet<string> taken, FolderListings listings, ICollection<Diagnostic> diagnostics)
     {
         var name = Path.GetFileName(project.File.Path);
         var folder = project.File.Folder;
@@ -123,7 +127,7 @@ internal static class ProjectFiles
                 continue;
             var named = item.Spec is not { } spec
                 ? built
-                : [.. built.Where(p => ItemSpecs.AnyNames(folder, spec, p)).Concat(Deployment.Contains(item.Type, StringComparer.OrdinalIgnoreCase) ? Includes(ItemSpecs.Files(folder, spec)) : [])
+                : [.. built.Where(p => ItemSpecs.AnyNames(folder, spec, p)).Concat(Deployment.Contains(item.Type, StringComparer.OrdinalIgnoreCase) ? Includes(ItemSpecs.Files(folder, spec), listings) : [])
                     .Where(p => built.Contains(p, StringComparer.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase)];
             if (named.Count == 0)
                 continue;
@@ -205,7 +209,7 @@ internal static class ProjectFiles
     /// The files a <c>Microsoft.Build.Sql</c> build takes out of <c>Build</c> as it runs: each a deployment script includes with
     /// <c>:r</c>, and each <c>PrePlan</c> script where the version does. None for a legacy project.
     /// </summary>
-    private static HashSet<string> TakenOut(EvaluatedProject project, ICollection<Diagnostic> diagnostics)
+    private static HashSet<string> TakenOut(EvaluatedProject project, FolderListings listings, ICollection<Diagnostic> diagnostics)
     {
         var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (project.Format.SdkVersion is not { } version)
@@ -214,7 +218,7 @@ internal static class ProjectFiles
         foreach (var script in project.OfType(ProjectXml.PreDeploy).Concat(project.OfType(ProjectXml.PostDeploy)))
         {
             if (script.FullPath is { } path)
-                taken.UnionWith(Includes([path], script, diagnostics));
+                taken.UnionWith(Includes([path], listings, script, diagnostics));
         }
 
         var preplan = project.OfType(ProjectXml.PrePlan).Select(i => i.FullPath).OfType<string>().ToList();
@@ -249,16 +253,17 @@ internal static class ProjectFiles
             : null;
 
     /// <summary>
-    /// Every file <paramref name="scripts"/> include with <c>:r</c>, and every file those include, as full paths; an include through a
-    /// SQLCMD variable, which isn't evaluated, is reported when <paramref name="from"/> is given.
+    /// Every file <paramref name="scripts"/> include with <c>:r</c>, and every file those include, as full paths, each found through
+    /// <paramref name="listings"/>; an include through a SQLCMD variable, which isn't evaluated, is reported when
+    /// <paramref name="from"/> is given.
     /// </summary>
-    private static HashSet<string> Includes(IEnumerable<string> scripts, ProjectItem? from = null, ICollection<Diagnostic>? diagnostics = null)
+    private static HashSet<string> Includes(IEnumerable<string> scripts, FolderListings listings, ProjectItem? from = null, ICollection<Diagnostic>? diagnostics = null)
     {
         var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pending = new Queue<string>(scripts);
         while (pending.TryDequeue(out var script))
         {
-            if (DiskPath.Locate(script, script, out _) is not { } file)
+            if (DiskPath.Locate(script, script, listings, out _) is not { } file)
                 continue;
             // One that can't be read is passed by here: what it would take out isn't known, and reading the deployment scripts reports
             // it (DeploymentScripts).
