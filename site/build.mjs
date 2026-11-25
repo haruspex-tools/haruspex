@@ -7,7 +7,7 @@
 // <checkout> is a clone whose working tree is main and which holds the release tags (v1.2.3). Each run builds the whole site
 // from it, main and every tag, since a deployment to GitHub Pages replaces the whole site: nothing is kept from an earlier one.
 // It runs offline, reading only the working tree and the clone's own tags through git.
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -134,18 +134,17 @@ function markdownPages(checkout, folder) {
 }
 
 /**
- * The files ending in `extension` directly in `folder` at `tag`, sorted; none when the tag has no such folder. Any other failure
- * of git (an object it can't read) is thrown, so that a release is never left out of the site without a word.
+ * The files ending in `extension` directly in `folder` at `tag`, sorted; none when the tag has no such folder. `ls-tree` with a
+ * path reads every tree from the tag's root down, lists nothing for a folder that isn't there, and fails for a tree it can't read
+ * (the root's included), which is thrown: a release is never left out of the site without a word. (`rev-parse tag:folder` can't
+ * tell a lost root tree from a missing folder.)
  */
 function tagFiles(checkout, tag, folder, extension) {
-  const found = spawnSync("git", ["-C", checkout, "rev-parse", "--verify", "--quiet", `${tag}:${folder}`], { stdio: "ignore" });
-  if (found.status === 1) return [];
-  if (found.status !== 0) throw new Error(`git couldn't look for ${folder} at ${tag} (status ${found.status ?? found.signal})`);
-  return git(checkout, ["ls-tree", "-z", `${tag}:${folder}`]).split("\0")
+  return git(checkout, ["ls-tree", "-z", tag, "--", `${folder}/`]).split("\0")
     .filter((entry) => entry !== "")
     .map((entry) => entry.split("\t"))
     .filter(([info, name]) => info.split(" ")[1] === "blob" && name.endsWith(extension))
-    .map(([, name]) => name)
+    .map(([, name]) => name.slice(folder.length + 1))
     .sort();
 }
 

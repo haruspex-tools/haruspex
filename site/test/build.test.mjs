@@ -167,6 +167,18 @@ test("a git error other than a missing folder is not taken for a tag without sch
   assert.throws(() => buildSite(site.checkout, site.out));
 });
 
+test("a tag whose root tree is lost fails the build rather than dropping the release", (t) => {
+  const site = repo(base);
+  t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));
+  site.git("tag", "v1.2.3");
+  // Only the tag's root tree is lost: rev-parse of tag:schemas can't tell that from a missing folder.
+  const root = execFileSync("git", ["-C", site.checkout, "rev-parse", "v1.2.3^{tree}"], { encoding: "utf8" }).trim();
+  site.put({ "schemas/haruspex.schema.json": '{"$id":"config on main"}\n' });
+  fs.rmSync(path.join(site.checkout, ".git", "objects", root.slice(0, 2), root.slice(2)));
+
+  assert.throws(() => buildSite(site.checkout, site.out));
+});
+
 test("the site is built only into a new folder", (t) => {
   const site = repo(base);
   t.after(() => fs.rmSync(site.root, { recursive: true, force: true }));
