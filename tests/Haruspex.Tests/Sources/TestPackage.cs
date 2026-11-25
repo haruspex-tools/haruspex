@@ -5,7 +5,8 @@ namespace Haruspex.Tests.Sources;
 
 /// <summary>
 /// A DACPAC a test writes for itself: a <c>model.xml</c> holding the elements given, and the database references given in its
-/// header, zipped as a package is. For a case no built package in <c>tests/dacpacs</c> shows, or one built packages can't (a
+/// header, zipped as a package is, with the <c>Origin.xml</c> of a build (<c>Microsoft.Build.Sql</c>'s), so that it is read as
+/// one. For a case no built package in <c>tests/dacpacs</c> shows, or one built packages can't (a
 /// reference named one way and a body another); the elements are written in the shapes DacFx writes them, which those packages
 /// show.
 /// </summary>
@@ -29,6 +30,16 @@ internal static class TestPackage
             $"""<CustomData Category="Reference" Type="SqlSchema"><Metadata Name="FileName" Value="{r.Recorded ?? $@"C:\build\{r.Package}"}" /><Metadata Name="LogicalName" Value="{r.Package}" />{(r.Database is null ? "" : $"""<Metadata Name="ExternalParts" Value="{(r.Server is null ? "" : $"[{r.Server}].")}[{r.Database}]" />""")}</CustomData>"""));
         var options = collation is null ? "" : $"""<Element Type="SqlDatabaseOptions"><Property Name="Collation" Value="{collation}" /></Element>""";
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
+        using (var origin = new StreamWriter(zip.CreateEntry("Origin.xml").Open(), new UTF8Encoding(false)))
+        {
+            origin.Write("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <DacOrigin xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+                  <Operation><ProductName>Microsoft.Data.Tools.Schema.Tasks.Sql, Version=170.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91</ProductName></Operation>
+                </DacOrigin>
+                """);
+        }
+
         using var writer = new StreamWriter(zip.CreateEntry("model.xml").Open(), new UTF8Encoding(false));
         writer.Write($"""
             <?xml version="1.0" encoding="utf-8"?>

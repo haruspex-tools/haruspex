@@ -140,7 +140,7 @@ internal static class ModuleTextReader
     /// </summary>
     private static DeclaredTable ReturnTable(XElement element, ObjectName function, SourceSpan span, bool inline, ICollection<Diagnostic> diagnostics)
     {
-        var reader = new TableReader(span.File, extracted: true, diagnostics);
+        var reader = new TableReader(span.File, PackageOrigin.Extracted, keysHold: false, diagnostics);
         var columns = ModelXml.Elements(element, ModelXml.Columns)
             .Select(c => reader.Column(c, ElementName.Last(ModelXml.Named(c)), span.Start))
             .Select(c => inline ? c with { Nullability = DeclaredNullability.Null } : c);

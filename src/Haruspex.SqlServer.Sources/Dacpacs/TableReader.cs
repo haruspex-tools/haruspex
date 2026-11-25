@@ -26,13 +26,19 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// <para>
 /// <b>Unique keys.</b> The primary key, unique constraints and unique indexes without a filter, wherever they were created: a
 /// package holds a unique index made by a <c>CREATE UNIQUE INDEX</c> of its own, which a folder's reader passes over, and the
-/// database has it, so the key is claimed. A disabled index's key is recorded as disabled.
+/// database has it, so the key is claimed. A unique index marked <c>IsDisabled</c> is recorded as disabled, as both a build and
+/// an extract mark one. A primary key or unique constraint is recorded as disabled unless the package is a build: an extract
+/// writes nothing on one whose index is disabled (observed: <c>atelier-extract.dacpac</c>'s <c>pk_shelf</c> and
+/// <c>uq_kiln_serial</c>), so it can't say the key holds (decision 0120). The config file may declare a package a build.
 /// </para>
 /// </remarks>
 /// <param name="package">The package's file name, for locations.</param>
-/// <param name="extracted">Whether the package was extracted from a database (<see cref="DacPackage.Extracted"/>).</param>
+/// <param name="origin">What made the package (<see cref="DacPackage.Origin"/>), which says whether its checks are marked.</param>
+/// <param name="keysHold">
+/// Whether its primary keys and unique constraints hold: when it is a build, or the config file declares it one (<c>builds</c>).
+/// </param>
 /// <param name="diagnostics">Where an expression that doesn't parse is reported.</param>
-internal sealed class TableReader(string package, bool extracted, ICollection<Diagnostic> diagnostics)
+internal sealed class TableReader(string package, PackageOrigin origin, bool keysHold, ICollection<Diagnostic> diagnostics)
 {
     /// <summary>The table, from its element and the parts that name it, in <c>model.xml</c>'s order; and the foreign keys on it with an action.</summary>
     public (Table Table, IReadOnlyList<CascadingKey> Keys) Read(XElement element, IReadOnlyList<XElement> parts)
@@ -74,7 +80,10 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
                     checks.Add(check);
                     break;
                 case ModelXml.SqlPrimaryKeyConstraint or ModelXml.SqlUniqueConstraint:
-                    keys.Add(new UniqueKey(PartName(part), KeyColumns(part), ModelXml.TypeOf(part) == ModelXml.SqlPrimaryKeyConstraint, at));
+                    keys.Add(new UniqueKey(PartName(part), KeyColumns(part), ModelXml.TypeOf(part) == ModelXml.SqlPrimaryKeyConstraint, at)
+                    {
+                        DisabledAt = keysHold ? null : at,
+                    });
                     break;
                 case ModelXml.SqlIndex when ModelXml.IsTrue(part, ModelXml.IsUnique) && ModelXml.Property(part, ModelXml.FilterPredicate) is null:
                     // A filtered index is unique only among the rows its filter keeps.
@@ -201,7 +210,7 @@ internal sealed class TableReader(string package, bool extracted, ICollection<Di
     private CheckConstraint? Check(XElement check, Dictionary<string, string> owners, SourceLocation at, bool trusted = false)
     {
         var owner = ModelXml.Disambiguators(check).Select(d => owners.GetValueOrDefault(d)).FirstOrDefault(o => o is not null);
-        if (!extracted && !trusted && owner is null)
+        if (origin != PackageOrigin.Extracted && !trusted && owner is null)
             return null;
         if (Parse(ModelXml.Property(check, ModelXml.CheckExpressionScript) ?? "", at, (parser, reader) => (parser.ParseBooleanExpression(reader, out var errors), errors)) is not { } condition)
             return null;

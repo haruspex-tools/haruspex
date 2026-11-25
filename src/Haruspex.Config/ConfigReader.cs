@@ -113,6 +113,9 @@ public static class ConfigReader
                     case "references":
                         config = config with { References = [.. Folders(member.Value, path, directory)] };
                         break;
+                    case "builds":
+                        config = config with { Builds = [.. Packages(member.Value, path)] };
+                        break;
                     case "collation":
                         if (NonEmpty(member.Value, path) is { } collation)
                         {
@@ -188,7 +191,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
                         break;
                 }
             }
@@ -532,6 +535,33 @@ public static class ConfigReader
             }
 
             return folders;
+        }
+
+        /// <summary>
+        /// The DACPACs <c>builds</c> names, each by its file name, as a package is named wherever it is found: a path would tie the
+        /// declaration to one machine's folders.
+        /// </summary>
+        private List<string> Packages(JsonValue value, string path)
+        {
+            const string Expected = "must be an array of DACPACs' file names, such as \"sales.dacpac\", each built from a project though nothing in it says so.";
+            var packages = new List<string>();
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, Expected);
+                return packages;
+            }
+
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                if (NonEmpty(array.Items[i], Index(path, i)) is not { } name)
+                    continue;
+                if (Path.GetFileName(name) != name || name.IndexOfAny(['\\', ':']) >= 0 || !name.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase))
+                    Report(ConfigCodes.WrongKind, array.Items[i], Index(path, i), $"is \"{name}\", which is no DACPAC's file name: name the package as \"sales.dacpac\", without its folder.");
+                else
+                    packages.Add(name);
+            }
+
+            return packages;
         }
 
         /// <summary>

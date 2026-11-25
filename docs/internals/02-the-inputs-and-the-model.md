@@ -213,11 +213,17 @@ module's text, and keeps a placeholder that, read as a body, would claim the pro
 text in either. Such a module is still read, from its element, which keeps what a caller needs: its parameters, a scalar
 function's return type, a table function's columns, a view's column names, a trigger's table and events. Its body is a
 `ClrBody` (the element names the assembly, class and method) or an `EncryptedBody`, so what calls it is typed from what it
-declares, and what it does is unknown with the true reason (`external-code`, `encrypted-definition`). An extract records
-which constraints the server doesn't trust; a build doesn't say whether a check added by `ALTER TABLE … WITH NOCHECK` is
-trusted, so unless a package is an extract only a check written in its table is read, as a folder reads none that
-`ALTER TABLE` adds. A package is taken for an extract only when its `Origin.xml` names the server it came from; one made any
-other way, by the DacFx API as community SDKs make one, is read as a build, the side that claims less.
+declares, and what it does is unknown with the true reason (`external-code`, `encrypted-definition`).
+
+Each also leaves out something about constraints, so each fact is taken from the side that records it. An extract marks each
+check the server doesn't trust; a build doesn't say whether a check added by `ALTER TABLE … WITH NOCHECK` is trusted, so unless
+a package is an extract only a check written in its table is read, as a folder reads none that `ALTER TABLE` adds. Both mark a
+unique index that is disabled. But an extract writes nothing on a primary key or unique constraint whose index is disabled,
+which a build can't hold, so unless a package is a build its key constraints are no key
+([decision 0120](../decisions/0120-an-extract-s-key-constraints-are-no-key.md)). A package is an extract when its `Origin.xml`
+names the server it came from, and a build when it names none and its product is DacFx's build task. DacFx's API, which
+community SDKs build with, writes the same `Origin.xml` for an extract it loads and writes again as for a model of scripts, so
+its packages, like any that say neither, are read as each rule's stricter side: a build for checks, an extract for keys.
 
 **References.** A database split across projects builds a package per project, each referring to the ones it uses. The
 reader follows them, breadth first, reading each package of the same database once into the one model, which is what the

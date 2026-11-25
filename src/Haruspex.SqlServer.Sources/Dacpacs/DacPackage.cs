@@ -12,12 +12,13 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// </summary>
 /// <param name="Path">Where it was found.</param>
 /// <param name="Sha256">The SHA-256 of its bytes, in lower-case hexadecimal, which the IR records so that its claims are reproducible.</param>
-/// <param name="Extracted">
-/// Whether it was extracted from a database, which its <c>Origin.xml</c> says by naming the server (a <c>Server</c> element,
-/// which no build writes, observed in <c>tests/dacpacs</c>). The two differ in what they keep: a build keeps the project's text
-/// of every module, encrypted or not, and doesn't record whether a constraint added by <c>ALTER TABLE … WITH NOCHECK</c> is
-/// trusted; an extract keeps no encrypted text and marks each constraint the server doesn't trust. A package made any other way
-/// (by the DacFx API, as community SDKs build one) is read as a build, the side that claims less.
+/// <param name="Origin">
+/// What made it (<see cref="OriginOf"/>). A build and an extract differ in what they keep: a build keeps the project's text of
+/// every module, encrypted or not, and doesn't record whether a constraint added by <c>ALTER TABLE … WITH NOCHECK</c> is trusted;
+/// an extract keeps no encrypted text, marks each constraint the server doesn't trust, and marks a disabled index, but writes
+/// nothing on a primary key or unique constraint whose index is disabled (observed, decision 0120), which a build can't hold
+/// (it refuses <c>ALTER INDEX</c> on a constraint's index, SQL71001). So a check that isn't marked is trusted only in an
+/// extract, and a key constraint only in a build; a package that is neither, as far as it says, trusts neither.
 /// </param>
 /// <param name="Model">The <c>Model</c> element of <c>model.xml</c>, whose children are the schema's elements.</param>
 /// <param name="References">The database references its header records, in order.</param>
@@ -26,7 +27,7 @@ namespace Haruspex.SqlServer.Sources.Dacpacs;
 /// Its pre- and post-deployment scripts (<c>predeploy.sql</c>, <c>postdeploy.sql</c>), each by its part's name with its text, in
 /// that order: a build writes each with the files it includes by <c>:r</c> already in its text.
 /// </param>
-internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode, IReadOnlyList<(string Part, string Text)> Deployment)
+internal sealed class DacPackage(string Path, string Sha256, PackageOrigin Origin, XElement Model, IReadOnlyList<PackageReference> References, int? CompatibilityMode, IReadOnlyList<(string Part, string Text)> Deployment)
 {
     /// <summary>The parts of a package that hold its deployment scripts, in the order a deployment runs them.</summary>
     private static readonly string[] DeploymentParts = ["predeploy.sql", "postdeploy.sql"];
@@ -47,8 +48,8 @@ internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XEl
     /// <summary>The SHA-256 of its bytes.</summary>
     public string Sha256 { get; } = Sha256;
 
-    /// <summary>Whether it was extracted from a database.</summary>
-    public bool Extracted { get; } = Extracted;
+    /// <summary>What made it, as far as its <c>Origin.xml</c> says.</summary>
+    public PackageOrigin Origin { get; } = Origin;
 
     /// <summary>The <c>Model</c> element of <c>model.xml</c>.</summary>
     public XElement Model { get; } = Model;
@@ -78,7 +79,7 @@ internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XEl
             return new DacPackage(
                 path,
                 Convert.ToHexStringLower(SHA256.HashData(bytes)),
-                origin?.Root?.Element(ModelXml.Name("Server")) is not null,
+                OriginOf(origin),
                 elements,
                 [.. Header(root)],
                 HeaderCompatibility(root) ?? ProviderLevel(root),
@@ -89,6 +90,30 @@ internal sealed class DacPackage(string Path, string Sha256, bool Extracted, XEl
             diagnostics.Add(SourceCodes.UnreadablePackage.At(new FileLocation(path), $"{System.IO.Path.GetFileName(path)} can't be read as a DACPAC: {e.Message}"));
             return null;
         }
+    }
+
+    /// <summary>
+    /// The tool that builds a package from a project's scripts, by the assembly <c>Origin.xml</c>'s <c>ProductName</c> names: the
+    /// build task Microsoft.Build.Sql and SSDT's legacy projects run (observed in <c>tests/dacpacs</c>). An extract names
+    /// <c>Microsoft.SqlServer.Dac</c>. DacFx's API (<c>DacPackageExtensions.BuildPackage</c>, which community SDKs build with)
+    /// names <c>Microsoft.SqlServer.Dac.Extensions</c> and no server whatever its model came from, an extract loaded and written
+    /// again included (observed, decision 0120), so it isn't taken for a build.
+    /// </summary>
+    private const string Builder = "Microsoft.Data.Tools.Schema.Tasks.Sql";
+
+    /// <summary>
+    /// What made a package: extracted when its <c>Origin.xml</c> names the server (a <c>Server</c> element, which every extract
+    /// observed writes and no build does), built when it names no server and its <c>ProductName</c> is the build task, and
+    /// otherwise not known.
+    /// </summary>
+    private static PackageOrigin OriginOf(XDocument? origin)
+    {
+        if (origin?.Root is not { } root)
+            return PackageOrigin.Unknown;
+        if (root.Element(ModelXml.Name("Server")) is not null)
+            return PackageOrigin.Extracted;
+        var product = (string?)root.Element(ModelXml.Name("Operation"))?.Element(ModelXml.Name("ProductName"));
+        return product?.Split(',')[0].Trim() == Builder ? PackageOrigin.Built : PackageOrigin.Unknown;
     }
 
     /// <summary>The deployment scripts the package holds, each as text without its byte order mark.</summary>

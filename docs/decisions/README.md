@@ -104,6 +104,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0113](0113-a-clause-no-rule-reads-makes-the-call-unknown.md) | 23 Nov 2026 | A clause no rule reads makes the call unknown |
 | [0117](0117-an-ir-document-names-the-build-that-made-its-claims.md) | 23 Nov 2026 | An IR document names the build that made its claims |
 | [0118](0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md) | 24 Nov 2026 | A masked column claims only its type, nullability and greatest length |
+| [0120](0120-an-extract-s-key-constraints-are-no-key.md) | 24 Nov 2026 | An extract's key constraints are no key |
 
 ## Writing a record
 

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Haruspex.Cli;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -301,6 +302,70 @@ public class DacpacReaderTests
         Assert.Null(checks.Single(c => c.Name == "ck_kiln_late").DisabledAt);
     }
 
+    /// <summary>
+    /// A table's keys by name, each with whether it holds (its index can't have been disabled): <c>studio.kiln</c>'s and
+    /// <c>studio.shelf</c>'s.
+    /// </summary>
+    private static Dictionary<string, bool> KeysHeld(DacpacReadResult read) =>
+        new[] { Studio("kiln"), Studio("shelf") }.SelectMany(t => read.Model.FindTable(t)!.UniqueKeys)
+            .ToDictionary(k => k.Name!, k => k.DisabledAt is null, StringComparer.Ordinal);
+
+    [Fact]
+    public void An_extract_marks_a_disabled_unique_index_but_nothing_on_a_key_constraint_whose_index_is_disabled()
+    {
+        // build.sh extract disables the indexes of pk_shelf, uq_kiln_serial and ix_kiln_serial_peak before it extracts, and the
+        // server then holds two shelves with one id and two kilns with one serial (decision 0120).
+        using var zip = ZipFile.OpenRead(Path.Combine(Packages, "versions", "atelier-extract.dacpac"));
+        var elements = XDocument.Load(zip.GetEntry("model.xml")!.Open()).Descendants().Where(e => e.Name.LocalName == "Element").ToList();
+        string? Disabled(string type, string name) => elements.Single(e => (string?)e.Attribute("Type") == type && (string?)e.Attribute("Name") == name)
+            .Elements().SingleOrDefault(p => p.Name.LocalName == "Property" && (string?)p.Attribute("Name") == "IsDisabled")?.Attribute("Value")?.Value;
+
+        Assert.Equal("True", Disabled("SqlIndex", "[studio].[kiln].[ix_kiln_serial_peak]"));
+        Assert.Null(Disabled("SqlIndex", "[studio].[kiln].[ix_kiln_label]"));
+        Assert.Null(Disabled("SqlPrimaryKeyConstraint", "[studio].[pk_shelf]"));
+        Assert.Null(Disabled("SqlUniqueConstraint", "[studio].[uq_kiln_serial]"));
+    }
+
+    [Fact]
+    public void An_extract_s_primary_keys_and_unique_constraints_are_no_key_and_its_unique_indexes_hold_unless_marked_disabled()
+    {
+        var held = KeysHeld(AtelierExtract.Value);
+
+        Assert.False(held["pk_kiln"]);
+        Assert.False(held["pk_shelf"]);
+        Assert.False(held["uq_kiln_serial"]);
+        Assert.True(held["ix_kiln_label"]);
+        Assert.False(held["ix_kiln_serial_peak"]);
+    }
+
+    [Fact]
+    public void A_built_package_s_keys_hold() =>
+        // A build refuses ALTER INDEX on a constraint's index (SQL71001), so its keys are the database's once deployed.
+        Assert.All(KeysHeld(Atelier.Value), k => Assert.True(k.Value, k.Key));
+
+    [Fact]
+    public void An_extract_declared_a_build_keeps_its_key_constraints_and_still_reads_its_checks_as_an_extract()
+    {
+        // The declaration is the user's assumption about the keys alone; the checks the extract marks are read as before.
+        var read = DacpacReader.Read(Path.Combine(Packages, "versions", "atelier-extract.dacpac"), builds: ["Atelier-Extract.dacpac"]);
+
+        Assert.All(KeysHeld(read).Where(k => k.Key != "ix_kiln_serial_peak"), k => Assert.True(k.Value, k.Key));
+        Assert.False(KeysHeld(read)["ix_kiln_serial_peak"]);
+        Assert.Contains(Kiln(read).Checks, c => c.Name == "ck_kiln_late");
+        Assert.False(KeysHeld(DacpacReader.Read(Path.Combine(Packages, "versions", "atelier-extract.dacpac"), builds: ["atelier.dacpac"]))["pk_shelf"]);
+    }
+
+    [Theory]
+    [InlineData("shelf_by_id", IrCardinality.AtMostOne, IrCardinality.Many)]
+    [InlineData("kiln_by_serial", IrCardinality.AtMostOne, IrCardinality.Many)]
+    [InlineData("kiln_by_label", IrCardinality.AtMostOne, IrCardinality.AtMostOne)]
+    [InlineData("kiln_by_serial_and_peak", IrCardinality.AtMostOne, IrCardinality.Many)]
+    public void A_lookup_by_a_key_is_at_most_one_row_from_a_build_and_from_an_extract_only_by_an_index_not_marked_disabled(string procedure, IrCardinality built, IrCardinality extracted)
+    {
+        Assert.Equal(built, Assert.Single(Infer("atelier", "atelier.dacpac", procedure).Objects[0].Results!).Cardinality);
+        Assert.Equal(extracted, Assert.Single(Infer("versions", "atelier-extract.dacpac", procedure).Objects[0].Results!).Cardinality);
+    }
+
     [Fact]
     public void A_location_in_a_module_names_the_package_and_the_quoted_object_and_counts_lines_in_the_module_s_text()
     {
@@ -433,27 +498,58 @@ public class DacpacReaderTests
         Assert.Equal(IrUnknownReason.ExternalCode, Assert.Single(Infer("versions", "kiln-clr-extract.dacpac", "report").Unknowns).Reason);
     }
 
-    [Fact]
-    public void A_package_without_a_server_in_its_origin_is_read_as_a_build_whatever_made_it()
+    /// <summary>A copy of <paramref name="package"/> in <paramref name="dir"/> whose <c>Origin.xml</c> is changed by <paramref name="change"/>, or left out when it gives null.</summary>
+    private static string WithOrigin(TempDirectory dir, string package, Func<string, string?> change)
     {
-        // A build marks no check added WITH NOCHECK, so a package not positively an extract must not trust one (ck_kiln_late).
-        using var dir = new TempDirectory();
-        var path = Path.Combine(dir.Path, "atelier.dacpac");
-        File.Copy(Path.Combine(Packages, "versions", "atelier-extract.dacpac"), path);
-        using (var zip = ZipFile.Open(path, ZipArchiveMode.Update))
+        var path = Path.Combine(dir.Path, Path.GetFileName(package));
+        File.Copy(Path.Combine(Packages, package), path);
+        using var zip = ZipFile.Open(path, ZipArchiveMode.Update);
+        var origin = zip.GetEntry("Origin.xml")!;
+        string text;
+        using (var reader = new StreamReader(origin.Open()))
+            text = reader.ReadToEnd();
+        origin.Delete();
+        if (change(text) is { } changed)
         {
-            var origin = zip.GetEntry("Origin.xml")!;
-            string text;
-            using (var reader = new StreamReader(origin.Open()))
-                text = reader.ReadToEnd();
-            origin.Delete();
             using var writer = new StreamWriter(zip.CreateEntry("Origin.xml").Open(), new UTF8Encoding(false));
-            writer.Write(Regex.Replace(text, "<Server>.*?</Server>", "", RegexOptions.Singleline)
-                .Replace("Microsoft.SqlServer.Dac,", "Some.Other.Tool,", StringComparison.Ordinal));
+            writer.Write(changed);
         }
 
-        Assert.DoesNotContain(Kiln(DacpacReader.Read(path)).Checks, c => c.Name == "ck_kiln_late");
+        return path;
+    }
+
+    [Fact]
+    public void A_package_neither_built_nor_extracted_as_far_as_its_origin_says_trusts_no_unmarked_check_and_no_key_constraint()
+    {
+        // A build marks no check added WITH NOCHECK, so a package not positively an extract must not trust one (ck_kiln_late); an
+        // extract marks no key constraint whose index is disabled, so one not positively a build must not trust its keys.
+        using var dir = new TempDirectory();
+        var path = WithOrigin(dir, Path.Combine("versions", "atelier-extract.dacpac"), text => Regex.Replace(text, "<Server>.*?</Server>", "", RegexOptions.Singleline)
+            .Replace("Microsoft.SqlServer.Dac,", "Some.Other.Tool,", StringComparison.Ordinal));
+        var read = DacpacReader.Read(path);
+
+        Assert.DoesNotContain(Kiln(read).Checks, c => c.Name == "ck_kiln_late");
         Assert.Contains(Kiln(AtelierExtract.Value).Checks, c => c.Name == "ck_kiln_late");
+        Assert.False(KeysHeld(read)["uq_kiln_serial"]);
+        Assert.True(KeysHeld(read)["ix_kiln_label"]);
+    }
+
+    [Theory]
+    [InlineData("Microsoft.Data.Tools.Schema.Tasks.Sql", true)]
+    [InlineData("Microsoft.SqlServer.Dac.Extensions", false)]
+    [InlineData("Microsoft.SqlServer.Dac", false)]
+    [InlineData("Some.Other.Tool", false)]
+    [InlineData(null, false)]
+    public void A_package_is_a_build_only_when_its_origin_names_no_server_and_the_build_task(string? product, bool built)
+    {
+        // Microsoft.Build.Sql and SSDT's build task write the first; DacFx's API (DacPackageExtensions.BuildPackage) the second,
+        // whatever it wrote, an extract loaded and written again included; an extract the third, with its server (observed,
+        // decision 0120). Without an Origin.xml nothing says what made it.
+        using var dir = new TempDirectory();
+        var path = WithOrigin(dir, Path.Combine("atelier", "atelier.dacpac"), text => product is null ? null
+            : text.Replace("Microsoft.Data.Tools.Schema.Tasks.Sql,", product + ",", StringComparison.Ordinal));
+
+        Assert.Equal(built, KeysHeld(DacpacReader.Read(path))["uq_kiln_serial"]);
     }
 
     [Fact]
