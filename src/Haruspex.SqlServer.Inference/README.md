@@ -466,7 +466,7 @@ The statements that return nothing but change which statements run, or how the o
 - **`EXECUTE AS` and `REVERT`** change whose permissions the statements between them run with, until `REVERT` or until the
   procedure returns. In a module an unqualified name still binds in the module's schema, not in the user's default schema;
   in a query file, outside a module, it binds in the impersonated user's default schema
-  (`Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns`). That changes no claim: a
+  (`Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns`). That changes no claim: a
   query file's one-part name binds only when one schema of the project has an object of that name. Of what haruspex claims,
   only what a masked column gives rests on the permissions, so a module whose body impersonates anyone but its caller
   keeps every mask, as `WITH EXECUTE AS` does ("Masked columns"). A query file is not a module, so an `EXECUTE AS` in one,

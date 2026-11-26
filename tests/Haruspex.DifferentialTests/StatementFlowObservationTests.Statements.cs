@@ -145,7 +145,7 @@ public partial class StatementFlowObservationTests
     }
 
     [Fact]
-    public async Task Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns()
+    public async Task Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns()
     {
         string[] setup = [
             "CREATE SCHEMA obs_elsewhere;",

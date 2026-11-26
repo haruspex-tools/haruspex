@@ -166,7 +166,7 @@ public partial class StatementFlowTests
     [InlineData("EXECUTE AS USER = 'clerk';\nREVERT;")]
     public void Execute_as_and_revert_return_nothing_and_change_no_type(string impersonate)
     {
-        // Observed: Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns.
+        // Observed: Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns.
         var doc = Procedure(impersonate + "\nSELECT t.id, t.status FROM dbo.t AS t;");
 
         Assert.False(Field(doc, "id").Nullable);

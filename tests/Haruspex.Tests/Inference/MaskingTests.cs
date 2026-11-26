@@ -165,7 +165,7 @@ public partial class MaskingTests
     [InlineData("EXECUTE AS CALLER; SELECT 1 AS one;", false)]
     public void A_module_whose_body_impersonates_another_user_keeps_every_mask(string body, bool kept)
     {
-        // Observed: Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns. The masks are
+        // Observed: Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns. The masks are
         // kept everywhere, as for WITH EXECUTE AS, since which procedures reach the module is not followed.
         var other = ("other.sql", $"CREATE PROCEDURE clinic.other AS {body}");
         var read = InferProcedure.Inferred("clinic.p", new SessionOptions(Unmask: true), ("tables.sql", Tables), other, ("p.sql", "CREATE PROCEDURE clinic.p AS SELECT band FROM clinic.patient;"));

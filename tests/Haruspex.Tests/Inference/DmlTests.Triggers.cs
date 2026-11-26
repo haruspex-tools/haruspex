@@ -234,7 +234,7 @@ public partial class DmlTests
     public void A_trigger_statement_known_to_return_nothing_adds_nothing(string statement)
     {
         // Observed: Waitfor_delay_and_time_return_nothing_and_waitfor_receive_returns_a_result_set and
-        // Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns.
+        // Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns.
         var doc = Doc(
             ("trigger", $"CREATE TRIGGER dbo.item_quiet ON dbo.item AFTER INSERT AS {statement}"),
             ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item (id) VALUES (1); SELECT 1 AS a;"));
