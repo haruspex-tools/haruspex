@@ -200,10 +200,13 @@ internal static class Init
 
         var source = Common([.. database.Select(Path.GetDirectoryName).OfType<string>()]);
 
-        // Each query script's folder, widened to the highest that holds no database script, below the working directory and, for
-        // one inside the source, below the source; so queries/ is named once for every file in it and its folders.
+        // Each query script's folder that holds no database script, at it or below, widened to the highest that holds none, below
+        // the working directory and, for one inside the source, below the source; so queries/ is named once for every file in it
+        // and its folders. A script beside the database's own, as a CREATE SCHEMA is beside its tables, is part of that folder.
         var folders = queries
-            .Select(q => Highest(Path.GetDirectoryName(q) ?? workingDirectory, Below(q, source) ? source : workingDirectory))
+            .Select(q => Path.GetDirectoryName(q) ?? workingDirectory)
+            .Where(f => !database.Any(d => Below(d, f)))
+            .Select(f => Highest(f, Below(f, source) ? source : workingDirectory))
             .Distinct(StringComparer.Ordinal)
             .Order(StringComparer.Ordinal)
             .ToList();

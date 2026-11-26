@@ -137,6 +137,57 @@ public class InitTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The greenhouse example as a developer has it before init: its <c>CREATE SCHEMA</c> script adds nothing the folder reader
+    /// records, but it sits beside the table it is for, in the database's folder, so it is read as the database's and nothing more
+    /// is said of it. Only <c>queries</c>, outside the source, is named.
+    /// </summary>
+    [Fact]
+    public void The_greenhouse_example_reads_its_database_folder_and_names_only_its_queries()
+    {
+        using var folder = new TempDirectory();
+        var example = Path.Combine(RepositoryPaths.Root, "examples", "greenhouse");
+        foreach (var part in new[] { "database", "queries", "src" })
+        {
+            foreach (var file in Directory.EnumerateFiles(Path.Combine(example, part), "*", SearchOption.AllDirectories))
+                folder.File(Path.GetRelativePath(example, file), File.ReadAllText(file));
+        }
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
+        Assert.Equal(
+            """
+            haruspex: wrote haruspex.json, which reads database and types every procedure in garden, written to src/db.
+            Next, run haruspex generate. Then narrow each schema's "include" to the procedures the application calls.
+            Keep src/db out of your formatter (in .prettierignore, or as "!src/db" after "**" in Biome's files.includes): haruspex check fails on a file a formatter restyled.
+            The .sql files in queries add nothing to the database, so the source leaves them out. If they are the application's query files, add "queries": "queries" to type them.
+
+            """,
+            output.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// A script that adds nothing, beside one that adds to the database, is part of the database's folder wherever the source is:
+    /// its folder isn't named, even when the queries folder pulls the source up.
+    /// </summary>
+    [Fact]
+    public void A_script_that_adds_nothing_beside_the_database_s_scripts_is_not_named()
+    {
+        using var folder = new TempDirectory();
+        folder.File("database/tables/schemas.sql", "CREATE SCHEMA garden;");
+        folder.File("database/tables/plants.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("database/seed/plants.sql", "INSERT INTO garden.plant (id) VALUES (1);");
+        folder.File("database/procedures/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("The .sql files in database/seed add nothing to the database, but database holds them", output, StringComparison.Ordinal);
+    }
+
     /// <summary>A script that doesn't parse stays in the source too, so that its error is said, not passed over.</summary>
     [Fact]
     public void A_script_that_does_not_parse_stays_in_the_source_and_its_error_is_said()
