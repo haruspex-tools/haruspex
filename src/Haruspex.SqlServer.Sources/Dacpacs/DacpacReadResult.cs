@@ -16,4 +16,7 @@ public sealed record DacpacReadResult(DatabaseModel Model, LoadedPackage? Packag
     /// A package that is a build by its origin is here too when <c>builds</c> names it: the declaration is recorded, needed or not.
     /// </summary>
     public EquatableArray<LoadedPackage> ReadAsBuilds { get; init; } = [];
+
+    /// <summary>The full path of every package opened, in the order opened, each once: for tests, which count opens rather than time a read.</summary>
+    internal EquatableArray<string> Opened { get; init; } = [];
 }

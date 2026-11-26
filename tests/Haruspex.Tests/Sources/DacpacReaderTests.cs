@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -754,19 +753,25 @@ public class DacpacReaderTests
     }
 
     [Fact]
-    public void A_chain_of_a_hundred_packages_of_one_database_is_read_whole_and_quickly()
+    public void A_chain_of_a_hundred_packages_of_one_database_is_read_whole_opening_each_once()
     {
+        // Each part refers to the next two, and the last to the first, so most packages are met through more than one reference.
+        // What is counted is the packages opened, not the time taken, which a loaded machine stretches.
         using var dir = new TempDirectory();
         for (var i = 0; i < 100; i++)
-            TestPackage.Write(Path.Combine(dir.Path, $"part{i}.dacpac"), TestPackage.Table("dbo", $"t{i}", "id int"), references: i < 99 ? [new TestPackage.Reference($"part{i + 1}.dacpac")] : []);
+        {
+            TestPackage.Reference[] next = i < 98 ? [new($"part{i + 1}.dacpac"), new($"part{i + 2}.dacpac")]
+                : i == 98 ? [new("part99.dacpac")]
+                : [new("part0.dacpac")];
+            TestPackage.Write(Path.Combine(dir.Path, $"part{i}.dacpac"), TestPackage.Table("dbo", $"t{i}", "id int"), references: next);
+        }
 
-        var clock = Stopwatch.StartNew();
         var read = DacpacReader.Read(Path.Combine(dir.Path, "part0.dacpac"));
 
         Assert.Equal(100, read.Model.Tables.Count);
         Assert.Equal(99, read.References.Count);
         Assert.Empty(read.Diagnostics);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"took {clock.Elapsed}");
+        Assert.Equal(Enumerable.Range(0, 100).Select(i => $"part{i}.dacpac"), read.Opened.Select(Path.GetFileName));
     }
 
     [Fact]

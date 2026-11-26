@@ -23,6 +23,7 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
     private readonly Dictionary<(string Name, string? Database), ReferenceRead> seen = [];
     private readonly Dictionary<string, DacPackage?> byPath = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<LoadedPackage> readAsBuilds = [];
+    private readonly List<string> openings = [];
 
     /// <summary>Every reference met, each once, in the order met.</summary>
     public IReadOnlyList<ReferenceRead> References => [.. seen.Values];
@@ -35,15 +36,32 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
     /// </summary>
     public IReadOnlyList<LoadedPackage> ReadAsBuilds => readAsBuilds;
 
+    /// <summary>
+    /// The full path of every package opened, readable or not, in the order opened: each once, which a test of a long chain of
+    /// references counts in place of timing the read.
+    /// </summary>
+    public IReadOnlyList<string> Opened => openings;
+
     /// <summary>The config file's <c>references</c> folders.</summary>
     public IReadOnlyList<string> Folders { get; } = folders;
 
     /// <summary>The package at <paramref name="path"/>, opened once however often it is asked for; null, reported, when it can't be read.</summary>
-    public DacPackage? Open(string path)
+    public DacPackage? Open(string path) => Open(path, Path.GetFullPath(path));
+
+    /// <summary>
+    /// The package a read starts from, at <paramref name="path"/> as given, which names it where it is reported; opened once, as
+    /// <see cref="Open(string)"/> opens one, by its full path.
+    /// </summary>
+    public DacPackage? OpenRoot(string path) => Open(Path.GetFullPath(path), path);
+
+    private DacPackage? Open(string full, string given)
     {
-        var full = Path.GetFullPath(path);
         if (!byPath.TryGetValue(full, out var package))
-            byPath[full] = package = DacPackage.Open(full, diagnostics);
+        {
+            openings.Add(full);
+            byPath[full] = package = DacPackage.Open(given, diagnostics);
+        }
+
         return package;
     }
 
