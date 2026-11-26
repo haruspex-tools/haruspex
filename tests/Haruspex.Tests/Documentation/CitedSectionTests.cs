@@ -13,8 +13,10 @@ namespace Haruspex.Tests.Documentation;
 /// <remarks>
 /// <para>
 /// A page is named as the prose names it: the Inference README (or "the inference reference", or the SQL Server front end's
-/// README), the IR README, the README in this folder, chapter N (of the guide), a path to a Markdown file, or a link to one.
-/// A Markdown page may also cite its own sections: "X", below; "X" above; see "X". A title is in straight double quotes and
+/// README), the IR README, a project's README by the project's name (<c>Haruspex.SqlServer.Inference's README.md</c>,
+/// <c>Haruspex.SqlServer.Inference, README</c>), the README in this folder, chapter N (of the guide), a path to a Markdown
+/// file, or a link to one. In C#, a bare <c>README.md</c> is the nearest one at or above the file's folder, as the code's
+/// comments use it. A Markdown page may also cite its own sections: "X", below; "X" above; see "X". A title is in straight double quotes and
 /// doesn't start with a lower-case letter, so a quoted value (<c>"strip"</c>) is not taken for one; several may follow one
 /// name, separated by commas or <i>and</i>. In C#, only comments are read.
 /// </para>
@@ -68,6 +70,11 @@ public partial class CitedSectionTests
     [InlineData("src/Haruspex.Emit.JsonSchema/Lowering/Scalars.cs", "/// the SQL Server front end's README (\"Scalars in JSON\") lists it.", Inference, "Scalars in JSON")]
     [InlineData("src/Haruspex.SqlServer.Inference/ProcedureCalls.cs", "/// README.md in this folder (\"Calls\") gives the model", Inference, "Calls")]
     [InlineData("tests/x.cs", "// (src/Haruspex.Ir/README.md, \"Facets\")", Ir, "Facets")]
+    [InlineData("tests/x.cs", "/// (Haruspex.SqlServer.Inference's README.md, \"Combining types\")", Inference, "Combining types")]
+    [InlineData("tests/x.cs", "/// (Haruspex.SqlServer.Inference, README \"APPLY\" and \"Views\")", Inference, "APPLY|Views")]
+    [InlineData("tests/x.cs", "// Inference's README.md, \"Dates\", gives the rules", Inference, "Dates")]
+    [InlineData("src/Haruspex.Ir/IrResult.cs", "/// the reader conventions in README.md (\"Results\")", Ir, "Results")]
+    [InlineData("tests/Haruspex.DifferentialTests/Server/RoomPool.cs", "/// one session at a time (README.md, \"Runs that write\")", "tests/Haruspex.DifferentialTests/README.md", "Runs that write")]
     [InlineData("docs/README.md", "the column's collation (\"Value sets\", below)", "docs/README.md", "Value sets")]
     [InlineData("docs/README.md", "the IR README,\n\"Paths\", says so", Ir, "Paths")]
     public void A_title_cited_after_a_page_is_found(string path, string text, string page, string titles) =>
@@ -78,6 +85,7 @@ public partial class CitedSectionTests
     [Theory]
     [InlineData("docs/README.md", "the IR README says \"must not\" there")]
     [InlineData("docs/README.md", "the IR README, \"strip\" or \"strict\"")]
+    [InlineData("docs/README.md", "the module's README.md, \"Results\", in Markdown")]
     [InlineData("docs/internals/03-binding.md", "Andrew W. Appel, *Modern Compiler Implementation in ML* (Cambridge University Press, 1998), chapter 5, \"Semantic analysis\"")]
     [InlineData("tests/x.cs", "var s = \"the IR README, \\\"Facets\\\"\";")]
     public void A_quote_that_is_not_a_cited_title_is_not_checked(string path, string text) =>
@@ -132,7 +140,7 @@ public partial class CitedSectionTests
 
         foreach (Match m in Named().Matches(all))
         {
-            var page = Page(m, folder);
+            var page = Page(m, folder, csharp);
             if (page is NotAPage)
                 continue;
             foreach (Capture title in m.Groups["title"].Captures)
@@ -158,12 +166,16 @@ public partial class CitedSectionTests
     private const string NotAPage = "\0";
 
     /// <summary>The page a name in <paramref name="m"/> stands for, from a file in <paramref name="folder"/>.</summary>
-    private static string? Page(Match m, string folder)
+    private static string? Page(Match m, string folder, bool csharp)
     {
         if (m.Groups["inference"].Success)
             return Inference;
         if (m.Groups["ir"].Success)
             return Ir;
+        if (m.Groups["project"].Success)
+            return $"src/{m.Groups["project"].Value}/README.md";
+        if (m.Groups["bare"].Success)
+            return csharp ? Nearest(folder) : NotAPage;
         if (m.Groups["here"].Success)
             return folder + "/README.md";
         if (m.Groups["path"].Success)
@@ -176,6 +188,18 @@ public partial class CitedSectionTests
         return Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "docs", "internals"), chapter + "-*.md")
             .Select(MarkdownText.Relative)
             .SingleOrDefault();
+    }
+
+    /// <summary>The README.md nearest a file in <paramref name="folder"/>: in it, or in the closest folder above it that has one.</summary>
+    private static string? Nearest(string folder)
+    {
+        for (var at = folder; at.Length > 0; at = Path.GetDirectoryName(at)!.Replace('\\', '/'))
+        {
+            if (File.Exists(Path.Combine(RepositoryPaths.Root, at, "README.md")))
+                return at + "/README.md";
+        }
+
+        return null;
     }
 
     /// <summary>A link's target, from a file in <paramref name="folder"/>, as a path from the repository root.</summary>
@@ -217,9 +241,11 @@ public partial class CitedSectionTests
     private const string Title = @"""(?<title>[^""a-z\s][^""]{0,80})""";
 
     [GeneratedRegex(
-        @"(?:(?<inference>\b(?:(?:Inference|inference) (?:README|reference)|SQL Server front end's README))"
+        @"(?:(?<project>\bHaruspex(?:\.[A-Z][A-Za-z]*)+)(?:'s README(?:\.md)?|, README(?:\.md)?)"
+        + @"|(?<inference>\b(?:(?:Inference|inference)(?:'s)? (?:README(?:\.md)?|reference)|SQL Server front end's README))"
         + @"|(?<ir>\bIR(?:'s)? README)"
         + @"|(?<here>\bREADME(?:\.md)? in this folder)"
+        + @"|(?<bare>(?<![\w/.-])README\.md)"
         + @"|(?<book>\b\d{4}\), chapter \d{1,2})"
         + @"|(?:\b(?:Chapter|chapter) (?<chapter>\d{1,2})(?: of the guide)?)"
         + @"|(?<path>\b(?:src|docs|tests)/[A-Za-z0-9_./-]+\.md)\b"

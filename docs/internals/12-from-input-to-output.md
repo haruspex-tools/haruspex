@@ -32,8 +32,8 @@ flowchart LR
 - **Settle** works out what the run is asked: it reads the config file (named, or `haruspex.json` in the working folder
   or the nearest above it), then settles the folder to read, the folder to write and the `--include` patterns, the
   command line over the config file.
-- **ReadProject** reads the source into the model: a folder of `.sql` files or several, a `.sqlproj` as its build would, or a
-  DACPAC, with the packages each refers to.
+- **ReadProject** reads the source into the model: a folder of `.sql` files or several, a `.sqlproj`, evaluated in part as
+  its build reads it (the rest reported), or a DACPAC, with the packages each refers to.
 - **Select** picks the procedures to type, and finds and reads the query files `queries` names (`QuerySelection`,
   `QueryFileReader`), reporting what is wrong with both at once.
 - **Infer** infers their results, the query files' too, and applies the config file: overrides, declared results, names.
