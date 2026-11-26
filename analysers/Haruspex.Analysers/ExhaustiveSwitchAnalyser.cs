@@ -125,14 +125,6 @@ public sealed class ExhaustiveSwitchAnalyser : DiagnosticAnalyzer
         }
     }
 
-    /// <summary>Whether an arm's value only throws: a throw expression, which the compiler wraps in a conversion to the switch's type.</summary>
-    private static bool Throws(IOperation value) => value switch
-    {
-        IThrowOperation => true,
-        IConversionOperation { Operand: var operand } => Throws(operand),
-        _ => false,
-    };
-
     /// <summary>Whether the compiler's nullable analysis says a value may be null where it is switched on.</summary>
     private static bool MayBeNull(IOperation value) =>
         value.SemanticModel?.GetTypeInfo(value.Syntax).Nullability.FlowState != NullableFlowState.NotNull;
