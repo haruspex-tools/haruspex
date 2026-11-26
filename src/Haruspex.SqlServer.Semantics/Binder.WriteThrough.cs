@@ -104,7 +104,8 @@ public sealed partial class Binder
                         columns.AddRange(below.Columns);
                         break;
 
-                    // A column with COLLATE is refused (observed, 4406), so it is not one of the table's unchanged.
+                    // A column with COLLATE is not one of the table's unchanged: the server refuses a write to it (observed, 4406),
+                    // and reads it in OUTPUT as a computed column, which is not modelled.
                     case SelectScalarExpression { Expression: var value, ColumnName: var alias }
                         when WithoutParentheses(value) is ColumnReferenceExpression { ColumnType: ColumnType.Regular, Collation: null, MultiPartIdentifier.Identifiers: { Count: > 0 } parts }
                             && QualifiesTheSource([.. parts.Take(parts.Count - 1)], only):

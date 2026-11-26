@@ -33,6 +33,9 @@ public partial class DmlObservationTests
         // DELETE, INSERT and MERGE through a CTE of one table, likewise.
         Assert.Equal("id,label: 1,one", (await Run(setup, "WITH c AS (SELECT TOP (1) * FROM dbo.obs_item ORDER BY id) DELETE c OUTPUT deleted.id, deleted.label;")).ToString());
         Assert.Equal("id,label,qty: 3,null,0", (await Run(setup, "WITH c AS (SELECT * FROM dbo.obs_item) INSERT INTO c (id) OUTPUT inserted.* VALUES (3);")).ToString());
+
+        // An INSERT's row need not meet the CTE's WHERE: label is null although the CTE keeps only rows where it isn't.
+        Assert.Equal("id,label: 3,null", (await Run(setup, "WITH c AS (SELECT id, label FROM dbo.obs_item WHERE label IS NOT NULL) INSERT INTO c (id) OUTPUT inserted.id, inserted.label VALUES (3);")).ToString());
         Assert.Equal("$action,id,label: UPDATE,1,m", (await Run(setup,
             "WITH c AS (SELECT id, label FROM dbo.obs_item) MERGE c USING (VALUES (1)) AS s (id) ON c.id = s.id WHEN MATCHED THEN UPDATE SET label = N'm' OUTPUT $action, inserted.*;")).ToString());
 
@@ -61,7 +64,7 @@ public partial class DmlObservationTests
         Assert.Equal(4405, (await Run(setup, $"{Joined} DELETE c;")).Error);
         Assert.Equal(404, (await Run(setup, $"{Joined} UPDATE c SET label = N'j' OUTPUT inserted.*;")).Error);
 
-        // An aggregate or DISTINCT (4403), a set operation or a column with COLLATE (4406), a VALUES list (4421).
+        // An aggregate or DISTINCT (4403), a set operation or a write to a column with COLLATE (4406), a VALUES list (4421).
         Assert.Equal(4403, (await Run(setup, "WITH c AS (SELECT label, COUNT(*) AS k FROM dbo.obs_item GROUP BY label) UPDATE c SET label = N'g';")).Error);
         Assert.Equal(4403, (await Run(setup, "WITH c AS (SELECT DISTINCT label FROM dbo.obs_item) UPDATE c SET label = N'd';")).Error);
         Assert.Equal(4406, (await Run(setup, "WITH c AS (SELECT id, label FROM dbo.obs_item UNION ALL SELECT id, text FROM dbo.obs_note) UPDATE c SET label = N'u';")).Error);

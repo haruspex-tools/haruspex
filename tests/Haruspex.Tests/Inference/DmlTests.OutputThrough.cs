@@ -76,6 +76,9 @@ public partial class DmlTests
     [InlineData("DELETE c OUTPUT deleted.id, deleted.label", "WITH c AS (SELECT TOP (1) * FROM dbo.item ORDER BY id)")]
     [InlineData("MERGE c USING (VALUES (1)) AS s (id) ON c.id = s.id WHEN MATCHED THEN UPDATE SET label = N'm' WHEN NOT MATCHED THEN INSERT (id) VALUES (s.id) OUTPUT inserted.id, deleted.label", "WITH c AS (SELECT id, label FROM dbo.item)")]
     [InlineData("INSERT INTO c (id) OUTPUT inserted.id, inserted.label VALUES (1)", "WITH c AS (SELECT id, label FROM dbo.item)")]
+
+    // An INSERT's row need not meet the CTE's WHERE, so label stays nullable.
+    [InlineData("INSERT INTO c (id) OUTPUT inserted.id, inserted.label VALUES (1)", "WITH c AS (SELECT id, label FROM dbo.item WHERE label IS NOT NULL)")]
     public void Every_write_through_a_cte_of_one_table_is_typed_from_the_table(string write, string with)
     {
         // Observed: Output_through_a_cte_or_derived_table_is_the_columns_it_names_typed_as_the_table_declares_them.

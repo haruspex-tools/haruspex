@@ -696,9 +696,9 @@ it on the stack of calls.
   while each is one query of one source, a table of the project or another such source, whose every column is a column of
   that source unchanged (by name, through parentheses, or a star). Anything else leaves `inserted` and `deleted` unknown,
   with the reason: a join or `APPLY`, which may write another table and whose star reaches it (404); an aggregate,
-  `DISTINCT` or a set operation, which the server refuses (4403, 4406); a column with `COLLATE` (4406); a `VALUES` list
-  (4421); a view, a synonym, a temporary table or a table variable underneath; and a computed column, which the server
-  allows, evaluated over the row, but which isn't modelled
+  `DISTINCT` or a set operation, which the server refuses (4403, 4406); a `VALUES` list (4421); a view, a synonym, a
+  temporary table or a table variable underneath; and a computed column, a column with `COLLATE` among them, which the
+  server refuses to write (4406) but allows in `OUTPUT`, evaluated over the row, and which isn't modelled
   (`Writes_through_a_cte_of_a_join_an_aggregate_distinct_or_a_set_operation_are_refused_or_reach_another_table`).
 - **`MERGE`** (`Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source`):
   `deleted` is null for the rows it inserts, `inserted` for the rows it deletes, and the source's columns for the rows it
