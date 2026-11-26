@@ -34,7 +34,7 @@ public sealed partial class Binder
     /// <summary>
     /// Why a semantic search function (<c>SEMANTICKEYPHRASETABLE</c>, <c>SEMANTICSIMILARITYTABLE</c>,
     /// <c>SEMANTICSIMILARITYDETAILSTABLE</c>) in FROM is unknown: it needs a semantic index and a database of language statistics,
-    /// which no project has been seen to use, so its columns are not modelled.
+    /// which the test server doesn't have, so its columns are not modelled until a project needs them.
     /// </summary>
     private static string SemanticWhy(SemanticTableReference call) =>
         $"{call.SemanticFunctionType.ToString().ToUpperInvariant()} is a semantic search function, which is not modelled.";
