@@ -49,7 +49,7 @@ internal static class ModuleSet
     {
         if (request.All is not null && request.Configs.Count > 0)
             return ModuleRun.Refused<EquatableArray<RunRequest>>(CliCodes.OptionsApart, "--all finds the config files itself: give --all or --config, not both.");
-        if (request.Several && (request.Directory is not null || request.Include.Count > 0 || request.Out is not null || request.Baseline is not null))
+        if (request.Several && (request.Sources.Count > 0 || request.Include.Count > 0 || request.Out is not null || request.Baseline is not null))
         {
             return ModuleRun.Refused<EquatableArray<RunRequest>>(CliCodes.OptionsApart,
                 "a source, --include, --out and --baseline are for one module; with several config files, each says its own source, selection, out and baseline.");
@@ -60,7 +60,7 @@ internal static class ModuleSet
             : new Succeeded<EquatableArray<string?>>(request.Configs.Count > 0 ? [.. request.Configs] : [null]);
         return configs
             .Select(found => (EquatableArray<RunRequest>)[.. found.Select(config =>
-                new RunRequest(request.Directory, config, request.Include, request.Out, request.WorkingDirectory) { Baseline = request.Baseline, FitOnly = request.FitOnly, Build = request.Build })])
+                new RunRequest(request.Sources, config, request.Include, request.Out, request.WorkingDirectory) { Baseline = request.Baseline, FitOnly = request.FitOnly, Build = request.Build })])
             .Then(Apart);
     }
 

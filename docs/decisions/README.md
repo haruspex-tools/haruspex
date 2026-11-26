@@ -108,6 +108,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0120](0120-an-extract-s-key-constraints-are-no-key.md) | 24 Nov 2026 | An extract's key constraints are no key |
 | [0121](0121-every-address-haruspex-writes-is-served-from-haruspex-tools.md) | 24 Nov 2026 | Every address haruspex writes is served from haruspex.tools |
 | [0122](0122-the-ir-records-the-packages-declared-builds.md) | 25 Nov 2026 | The IR records the packages declared builds |
+| [0127](0127-a-source-may-be-several-folders.md) | 26 Nov 2026 | A source may be several folders |
 
 ## Writing a record
 

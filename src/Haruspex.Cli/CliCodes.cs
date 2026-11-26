@@ -20,6 +20,12 @@ internal static class CliCodes
     /// <summary>The folder of SQL files, the project file or the DACPAC named doesn't exist.</summary>
     public static DiagnosticCode SourceNotFound { get; } = new(6004, DiagnosticSeverity.Error, "The source isn't there");
 
+    /// <summary>
+    /// The command line's sources, several, name a project file or a DACPAC, each a whole database of its own: a list names folders
+    /// of SQL files only (docs/decisions/0127-a-source-may-be-several-folders.md).
+    /// </summary>
+    public static DiagnosticCode SourcesNotFolders { get; } = new(6044, DiagnosticSeverity.Error, "Several sources name a project or a package");
+
     /// <summary>Neither the command line nor the config file says where to write.</summary>
     public static DiagnosticCode NoOut { get; } = new(6005, DiagnosticSeverity.Error, "No output folder is given");
 

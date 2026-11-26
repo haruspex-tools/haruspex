@@ -204,6 +204,7 @@ public static class IrJsonReader
         ExplainsAsLabelled(document, version);
         NamesItsWriterAsLabelled(document, version);
         DeclaresBuildsAsLabelled(document, version);
+        ReadsFoldersAsLabelled(document, version);
         return document;
     }
 
@@ -372,6 +373,7 @@ public static class IrJsonReader
         {
             WrittenBy = json.OptionalObject("writtenBy") is { } build ? Build(build) : null,
             Path = json.OptionalString("path"),
+            Paths = Paths(json),
             Session = Session(json.OptionalObject("session")),
             Files = Files(json.OptionalObject("files")),
             Package = Package(json),
@@ -411,14 +413,31 @@ public static class IrJsonReader
     /// </summary>
     private static void DeclaresBuildsAsLabelled(IrDocument document, string version)
     {
-        if (version == IrDocument.CurrentVersion && !document.DeclaresBuilds)
+        if (version == IrDocument.BuildsVersion && !document.DeclaresBuilds)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that records packages declared builds, and this one records none. One that records none is labelled {IrDocument.StampedVersion} or earlier, by what else it says.");
-        if (version == IrDocument.CurrentVersion)
+        if (IrDocument.IsSince(version, IrDocument.BuildsVersion))
             return;
         if (document.Source.Builds.Count > 0)
-            throw new IrFormatException("$.source.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.BuildsVersion} or later.");
         if (document.Source.Baseline?.Builds.Count > 0)
-            throw new IrFormatException("$.source.baseline.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.baseline.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.BuildsVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses a source read from several folders (0.32) in a document labelled earlier, its own or its baseline's, by its path, and
+    /// a document labelled 0.32 whose sources were each read from one place, which is labelled by the rest of what it says
+    /// (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void ReadsFoldersAsLabelled(IrDocument document, string version)
+    {
+        if (version == IrDocument.CurrentVersion && !document.ReadsFolders)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document whose source was read from several folders, and this one records no such source. One that records none is labelled {IrDocument.BuildsVersion} or earlier, by what else it says.");
+        if (version == IrDocument.CurrentVersion)
+            return;
+        if (document.Source.Paths.Count > 0)
+            throw new IrFormatException("$.source.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.CurrentVersion}.");
+        if (document.Source.Baseline?.Paths.Count > 0)
+            throw new IrFormatException("$.source.baseline.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>The source of the other database a combined document describes, which has nothing more.</summary>
@@ -968,6 +987,31 @@ public static class IrJsonReader
         }
 
         return builds.Count > 0 ? [.. builds] : throw new IrFormatException(json.PathOf("builds"), "must list at least one package; leave builds out when none is declared.");
+    }
+
+    /// <summary>
+    /// The folders a source was read from (0.32); none when the file leaves <c>paths</c> out. Fewer than two are refused, since one
+    /// folder is the source's <c>path</c>, and so is <c>path</c> beside them, a folder named twice, and an empty name: each is said
+    /// one way only.
+    /// </summary>
+    private static EquatableArray<string> Paths(IrJsonObject json)
+    {
+        if (json.Optional("paths") is null)
+            return [];
+        if (json.Optional("path") is not null)
+            throw new IrFormatException(json.PathOf("path"), "is given beside paths: a source read from several folders has no one path.");
+        var folders = new List<string>();
+        foreach (var (item, path) in json.Array("paths"))
+        {
+            var folder = IrJsonObject.AsString(item, path);
+            if (folder.Length == 0)
+                throw new IrFormatException(path, "is empty: a folder is named by its path.");
+            if (folders.Contains(folder, StringComparer.Ordinal))
+                throw new IrFormatException(path, $"is \"{folder}\", named twice: a folder is read once.");
+            folders.Add(folder);
+        }
+
+        return folders.Count >= 2 ? [.. folders] : throw new IrFormatException(json.PathOf("paths"), "must list at least two folders; a source read from one folder names it in path.");
     }
 
     /// <summary>A package the source's package refers to: its name, its hash when it was found, and its database when another.</summary>

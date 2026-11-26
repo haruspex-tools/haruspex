@@ -65,9 +65,24 @@ public sealed record IrSource(string Dialect)
     /// Where the source was read from, as the config file names it (0.25): relative to the config file's folder, with <c>/</c>
     /// between its parts, so that it is the same on every machine (<c>database</c>, <c>../db/Shop.sqlproj</c>,
     /// <c>release/Shop.dacpac</c>). What <c>haruspex explain</c> labels each side of a combined field with. Null when it isn't
-    /// known, as for a document built by hand, and then the file leaves <c>path</c> out. Where the claims came from, not a claim.
+    /// known, as for a document built by hand, or for a source read from several folders, which <see cref="Paths"/> names instead,
+    /// and then the file leaves <c>path</c> out. Where the claims came from, not a claim.
     /// </summary>
     public string? Path { get; init; }
+
+    /// <summary>
+    /// For a source read from several folders of scripts as one database (0.32), the folders, each as <see cref="Path"/> writes one,
+    /// sorted: then <see cref="Path"/> is null, since no one path says where the source is. Empty for a source read from one folder,
+    /// a project or a package, and then the file leaves <c>paths</c> out, so that such a document reads as it did before 0.32. Which
+    /// folders the database is made of is what every claim rests on, so comparing two documents (<see cref="IrComparison"/>)
+    /// reports a folder read in one and not the other.
+    /// Why: docs/decisions/0127-a-source-may-be-several-folders.md.
+    /// </summary>
+    public EquatableArray<string> Paths
+    {
+        get;
+        init => field = [.. (value ?? throw new ArgumentNullException(nameof(value))).Order(StringComparer.Ordinal)];
+    } = [];
 
     /// <summary>
     /// The SHA-256 of each script file the document's locations point into, by its path as a location writes it (0.25): so that a

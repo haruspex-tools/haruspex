@@ -107,8 +107,7 @@ public static class ConfigReader
                         String(member.Value, path);
                         break;
                     case "source":
-                        if (NonEmpty(member.Value, path) is { } source)
-                            config = config with { Source = Path.GetFullPath(Path.Combine(directory, source)) };
+                        config = Source(member.Value, path, directory, config);
                         break;
                     case "baseline":
                         if (NonEmpty(member.Value, path) is { } baseline)
@@ -539,6 +538,55 @@ public static class ConfigReader
             }
 
             return folders;
+        }
+
+        /// <summary>
+        /// The source: one path (a folder of scripts, a <c>.sqlproj</c> or a <c>.dacpac</c>), or a list of folders of scripts read as one
+        /// database. A list holds only folders, since a project or a package is a whole database of its own; each is named once as
+        /// written, and whether two name one folder is the folder reader's to say (decision 0127). A list of one is that folder.
+        /// </summary>
+        private HaruspexConfig Source(JsonValue value, string path, string directory, HaruspexConfig config)
+        {
+            if (value is not JsonArrayValue array)
+                return NonEmpty(value, path) is { } source ? config with { Source = Path.GetFullPath(Path.Combine(directory, source)) } : config;
+            if (array.Items.Count == 0)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must name at least one folder; give a folder, a .sqlproj or a .dacpac as one path, or list the folders of scripts the database is in.");
+                return config;
+            }
+
+            var folders = new List<string>();
+            var written = new List<string>();
+            var wrong = false;
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                if (NonEmpty(array.Items[i], Index(path, i)) is not { } folder)
+                {
+                    wrong = true;
+                    continue;
+                }
+
+                if (folder.EndsWith(".sqlproj", StringComparison.OrdinalIgnoreCase) || folder.EndsWith(".dacpac", StringComparison.OrdinalIgnoreCase))
+                {
+                    Report(ConfigCodes.WrongKind, array.Items[i], Index(path, i), $"is \"{folder}\", a project or a package, which is a whole database: a list names folders of .sql files only. Give the {Path.GetExtension(folder)} alone, as \"source\": \"{folder}\".");
+                    wrong = true;
+                    continue;
+                }
+
+                if (written.Contains(folder, StringComparer.Ordinal))
+                {
+                    Report(ConfigCodes.WrongKind, array.Items[i], Index(path, i), $"is \"{folder}\", listed already: list each folder once.");
+                    wrong = true;
+                    continue;
+                }
+
+                written.Add(folder);
+                folders.Add(Path.GetFullPath(Path.Combine(directory, folder)));
+            }
+
+            return wrong ? config
+                : folders.Count == 1 ? config with { Source = folders[0] }
+                : config with { SourceFolders = [.. folders] };
         }
 
         /// <summary>

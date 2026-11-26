@@ -31,9 +31,16 @@
       "type": "string"
     },
     "source": {
-      "description": "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Relative to this file. The command line's source argument overrides it.",
-      "type": "string",
-      "minLength": 1
+      "description": "The folder of .sql files to read, including subfolders; a database project's .sqlproj, read as its build reads it; or a .dacpac, read with the packages of its database it refers to. Or a list of folders of .sql files, for a database kept in folders side by side (\"tables\", \"procedures\"), read together as one: no .sqlproj or .dacpac, no folder twice and none inside another. Relative to this file. The command line's source argument overrides it.",
+      "anyOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "not": { "pattern": "\\.([sS][qQ][lL][pP][rR][oO][jJ]|[dD][aA][cC][pP][aA][cC])$" } }
+        }
+      ]
     },
     "baseline": {
       "description": "The database the application already running was built against: generate writes types that work against both it and this one, and check fails on any change the running application would fail on. A folder of .sql files, a .sqlproj, a .dacpac, or an haruspex.ir.json of this version. Relative to this file. --baseline overrides it. haruspex never fetches it: put it there first, as CI does.",

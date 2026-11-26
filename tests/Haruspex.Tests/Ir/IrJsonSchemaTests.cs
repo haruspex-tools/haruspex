@@ -65,6 +65,7 @@ public class IrJsonSchemaTests
         (typeof(IrSource), nameof(IrSource.Baseline), "document.source", "baseline"),
         (typeof(IrSource), nameof(IrSource.WrittenBy), "document.source", "writtenBy"),
         (typeof(IrSource), nameof(IrSource.Builds), "document.source", "builds"),
+        (typeof(IrSource), nameof(IrSource.Paths), "document.source", "paths"),
         (typeof(IrBuild), nameof(IrBuild.Version), "build", "version"),
         (typeof(IrBuild), nameof(IrBuild.Commit), "build", "commit"),
         (typeof(IrDocument), nameof(IrDocument.Version), "", "irVersion"),
@@ -295,11 +296,11 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Built));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Folders));
 
     [Fact]
     public void The_samples_of_each_version_the_reader_reads_pass_the_schema() =>
-        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built], d => AssertValid(IrJsonWriter.Write(d)));
+        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders], d => AssertValid(IrJsonWriter.Write(d)));
 
     /// <summary>
     /// Every file haruspex writes passes the schema in Ajv too, a validator a consumer would use, compiled strictly: what the tests
@@ -316,7 +317,7 @@ public class IrJsonSchemaTests
             documents[$"{fixture.Name}, inferred"] = IrJsonWriter.Write(fixture.Ir);
         foreach (var run in Corpus.Corpus.Runs)
             documents[$"{run.Corpus.Name}, inferred"] = IrJsonWriter.Write(run.Document);
-        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built]).Select((d, i) => (d, i)))
+        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders]).Select((d, i) => (d, i)))
             documents[$"sample {i}"] = IrJsonWriter.Write(sample);
 
         var verdicts = AjvVerdicts.Of(SchemaPath, documents);

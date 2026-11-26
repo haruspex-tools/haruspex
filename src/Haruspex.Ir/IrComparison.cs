@@ -11,7 +11,8 @@ namespace Haruspex.Ir;
 /// Only claims are compared: what a reader of the document, or of code generated from it, may rely on. What says where a
 /// claim came from is not a claim, so it is not compared: every location (<c>at</c>), the reasons a value may be null or
 /// absent (only whether there is one is a claim), the sources of facts (<c>from</c>), the package a source was read from and
-/// its hash (but a declared column's schema files, whose text is the claim: 0.28, and which packages are declared builds: 0.31), an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
+/// its hash (but a declared column's schema files, whose text is the claim: 0.28, which packages are declared builds: 0.31, and which
+/// folders a source of several was read from: 0.32), an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
 /// the types), and a type's identity and whether it is recursive (both follow from the types). So editing a procedure without
 /// changing what it returns, or rebuilding a DACPAC, changes nothing here. Why: docs/decisions/0050-check-compares-claims-not-files.md.
 /// </para>
@@ -64,8 +65,36 @@ public static class IrComparison
         if (before.Source.Session != after.Source.Session)
             changes.Add(new IrChange(IrChangeKind.SessionChanged, "", "source.session", IrClaimText.Session(before.Source.Session), IrClaimText.Session(after.Source.Session)));
         Builds(before.Source, after.Source, "source.builds", changes);
+        Folders(before.Source, after.Source, "source.paths", changes);
         if (before.Source.Baseline is { } was && after.Source.Baseline is { } now)
+        {
             Builds(was, now, "source.baseline.builds", changes);
+            Folders(was, now, "source.baseline.paths", changes);
+        }
+    }
+
+    /// <summary>
+    /// Each folder read in one source and not in the other (0.32), by its path, where either was read from several folders: the
+    /// claims rest on the database being every script in them, so a folder added or removed is reported even where no claim the
+    /// document shows changes. A source of one folder counts as its <see cref="IrSource.Path"/>. Two sources each of one place
+    /// compare no paths: where a source was read from is not a claim, so renaming the database's only folder changes nothing.
+    /// Why: docs/decisions/0127-a-source-may-be-several-folders.md.
+    /// </summary>
+    private static void Folders(IrSource before, IrSource after, string path, List<IrChange> changes)
+    {
+        if (before.Paths.Count == 0 && after.Paths.Count == 0)
+            return;
+        var was = Read(before);
+        var now = Read(after);
+        foreach (var folder in was.Union(now, StringComparer.Ordinal).Order(StringComparer.Ordinal))
+        {
+            var then = was.Contains(folder, StringComparer.Ordinal);
+            var later = now.Contains(folder, StringComparer.Ordinal);
+            if (then != later)
+                changes.Add(new IrChange(IrChangeKind.FoldersChanged, "", path + IrPath.Key(folder), Flag(then), Flag(later)));
+        }
+
+        static IEnumerable<string> Read(IrSource source) => source.Paths.Count > 0 ? source.Paths : source.Path is { } one ? [one] : [];
     }
 
     /// <summary>

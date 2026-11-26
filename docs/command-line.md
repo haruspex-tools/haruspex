@@ -118,7 +118,7 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 
 | Argument or option | What it is |
 |---|---|
-| `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
+| `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read; or several folders of `.sql` files, read as one database (`haruspex generate tables procedures`), none of them a `.sqlproj` or a `.dacpac` ([HAR6044](diagnostics/HAR6044.md)). Replaces `source` in the config file ([several folders](configuration.md#several-folders-source-as-a-list)). |
 | `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module. |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again for more. Replaces the config file's includes for this run, which then removes no file of the last run's ([the files generate removes](configuration.md#the-files-generate-removes)). |

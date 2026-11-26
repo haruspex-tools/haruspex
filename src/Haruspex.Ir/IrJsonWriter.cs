@@ -40,9 +40,19 @@ public static class IrJsonWriter
             throw new ArgumentException("The document records packages declared builds and names no build of the tool that wrote it, so it can't be written: name the build.", nameof(document));
         }
 
+        if (document.ReadsFolders && document.Source.WrittenBy is null)
+        {
+            // Labelled 0.32 for its folders, it would be refused for lacking its writer, which every document of 0.30 or later names.
+            throw new ArgumentException("The document records a source read from several folders and names no build of the tool that wrote it, so it can't be written: name the build.", nameof(document));
+        }
+
         RequireBuildsRead(document.Source, nameof(document));
+        RequireFolders(document.Source, nameof(document));
         if (document.Source.Baseline is { } other)
+        {
             RequireBuildsRead(other, nameof(document));
+            RequireFolders(other, nameof(document));
+        }
 
         using var buffer = new MemoryStream();
         using (var json = new Utf8JsonWriter(buffer, Options))
@@ -223,6 +233,22 @@ public static class IrJsonWriter
     }
 
     /// <summary>
+    /// Refuses a source whose folders the reader refuses: one folder, which <see cref="IrSource.Path"/> says alone, a folder named
+    /// twice, or folders beside a path.
+    /// </summary>
+    private static void RequireFolders(IrSource source, string parameter)
+    {
+        if (source.Paths.Count == 0)
+            return;
+        if (source.Paths.Count == 1)
+            throw new ArgumentException($"The source names one folder in Paths, {source.Paths[0]}, so it can't be written: one folder is its Path.", parameter);
+        if (source.Paths.Distinct(StringComparer.Ordinal).Count() < source.Paths.Count)
+            throw new ArgumentException("The source names a folder twice in Paths, so it can't be written.", parameter);
+        if (source.Path is not null)
+            throw new ArgumentException($"The source names both a Path, {source.Path}, and Paths, so it can't be written: a source read from several folders has no one path.", parameter);
+    }
+
+    /// <summary>
     /// A source's own properties: its dialect, the build that wrote its claims, where it was read from, its package and references,
     /// the packages declared builds, the callers' session and its files.
     /// </summary>
@@ -241,6 +267,15 @@ public static class IrJsonWriter
 
         if (source.Path is { } read)
             json.WriteString("path", read);
+        if (source.Paths.Count > 0)
+        {
+            // Left out for a source of one folder, a project or a package, so that one reads as it did before 0.32.
+            json.WriteStartArray("paths");
+            foreach (var folder in source.Paths)
+                json.WriteStringValue(folder);
+            json.WriteEndArray();
+        }
+
         WritePackage(json, source);
         if (source.Builds.Count > 0)
         {

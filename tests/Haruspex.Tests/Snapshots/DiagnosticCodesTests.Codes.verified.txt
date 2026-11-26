@@ -19,6 +19,7 @@ HAR1019 E A query file's module comment can't be taken [Haruspex.SqlServer.Sourc
 HAR1020 E A script or folder can't be read [Haruspex.SqlServer.Sources.SourceCodes.UnreadableScript]
 HAR1021 W A deployment script can't be read in full [Haruspex.SqlServer.Sources.SourceCodes.DeploymentScriptNotRead]
 HAR1022 E Names that differ only in case [Haruspex.SqlServer.Sources.SourceCodes.CaseVariants]
+HAR1023 E Two of the source's folders hold the same scripts [Haruspex.SqlServer.Sources.SourceCodes.FoldersOverlap]
 HAR2001 N A statement that isn't modelled yet [Haruspex.SqlServer.Inference.InferenceCodes.UnsupportedStatement]
 HAR2002 N Results from code outside the project (retired) [Haruspex.SqlServer.Inference.InferenceCodes.ExternalCode]
 HAR2003 N An object whose definition depends on the order of scripts [Haruspex.SqlServer.Inference.InferenceCodes.Redefined]
@@ -179,3 +180,4 @@ HAR6040 W A listed path generate doesn't remove [Haruspex.Cli.CliCodes.ListedOut
 HAR6041 W A file no longer written can't be removed [Haruspex.Cli.CliCodes.CannotRemove]
 HAR6042 E A file generate would remove [Haruspex.Cli.CliCodes.NoLongerWritten]
 HAR6043 W A baseline whose claims are another build's [Haruspex.Cli.CliCodes.BaselineOtherBuild]
+HAR6044 E Several sources name a project or a package [Haruspex.Cli.CliCodes.SourcesNotFolders]

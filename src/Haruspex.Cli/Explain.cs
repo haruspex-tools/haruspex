@@ -24,7 +24,7 @@ internal static class Explain
     /// <returns>The exit code: 0; 1 when the IR can't be read; 2 when what is named isn't in it.</returns>
     public static int Run(string target, string? field, string? ir, string? config, bool json, TextWriter output, TextWriter error, string workingDirectory, IrBuild build)
     {
-        var request = new RunRequest(null, config, [], null, workingDirectory) { Build = build };
+        var request = new RunRequest([], config, [], null, workingDirectory) { Build = build };
         var path = ir is not null
             ? Path.GetFullPath(Path.Combine(workingDirectory, ir))
             : ModuleRun.OutOf(request) is { } folder ? Path.Join(folder, HaruspexCli.IrFileName) : null;

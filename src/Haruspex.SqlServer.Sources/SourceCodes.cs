@@ -112,4 +112,11 @@ public static class SourceCodes
     /// compares names by case allows: haruspex matches names without case, so it can't tell them apart (<c>CaseVariants</c>).
     /// </summary>
     public static DiagnosticCode CaseVariants { get; } = new(1022, DiagnosticSeverity.Error, "Names that differ only in case");
+
+    /// <summary>
+    /// Two of the folders a source lists that hold the same scripts: the same folder twice, one inside the other, or a folder both
+    /// reach through a link. Read together, those scripts would be read twice, so nothing is read
+    /// (docs/decisions/0127-a-source-may-be-several-folders.md).
+    /// </summary>
+    public static DiagnosticCode FoldersOverlap { get; } = new(1023, DiagnosticSeverity.Error, "Two of the source's folders hold the same scripts");
 }

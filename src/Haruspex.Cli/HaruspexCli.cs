@@ -264,10 +264,10 @@ internal static class HaruspexCli
     private static Command Module(string name, string description, CommandName command, Func<RunRequest, Progress, ModuleReport> run, Streams streams)
     {
         var workingDirectory = streams.WorkingDirectory;
-        var directory = new Argument<string?>("source")
+        var directory = new Argument<string[]>("source")
         {
-            Description = "A folder of .sql files, a .sqlproj or a .dacpac. Overrides \"source\" in the config file.",
-            Arity = ArgumentArity.ZeroOrOne,
+            Description = "A folder of .sql files, a .sqlproj or a .dacpac; or several folders of .sql files, read as one database. Overrides \"source\" in the config file.",
+            Arity = ArgumentArity.ZeroOrMore,
         };
         var config = new Option<string[]>("--config", "-c")
         {
@@ -350,7 +350,7 @@ internal static class HaruspexCli
         made.SetAction(parsed =>
         {
             var request = new ModulesRequest(
-                parsed.GetValue(directory),
+                [.. parsed.GetValue(directory) ?? []],
                 [.. parsed.GetValue(config) ?? []],
                 parsed.GetResult(all) is null ? null : parsed.GetValue(all) ?? "",
                 [.. parsed.GetValue(include) ?? []],

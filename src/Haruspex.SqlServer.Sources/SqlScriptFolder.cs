@@ -71,6 +71,99 @@ public static class SqlScriptFolder
         return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)]);
     }
 
+    /// <summary>
+    /// Reads every <c>*.sql</c> file under each of <paramref name="folders"/> as one database: a database kept as folders side by
+    /// side (<c>tables/</c>, <c>procedures/</c>), beside folders that aren't the database's. Each folder is listed as
+    /// <see cref="Read(string)"/> lists one, and positions in the model are relative to <paramref name="directory"/>, so that each
+    /// says which folder its script is in (<c>tables/orders.sql</c>).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// No script is read twice, as no script of one folder is: two entries that are the same folder (in any spelling this file
+    /// system takes for the same, its case included where it ignores case), one inside the other, or two that reach one folder
+    /// through a link, is an error naming both (HAR1023), and nothing is read. Read anyway, each of those scripts would define its
+    /// objects twice. Each entry is compared by where it really is (<see cref="Projects.DiskPath.Real"/>), and each folder a walk
+    /// enters by where its files really are.
+    /// </para>
+    /// <para>
+    /// Two spellings of one folder that only the file system knows are one, a drive that is another folder under a second name or
+    /// a folder that differs only in case on a file system that ignores case where this platform's usually doesn't (a Windows
+    /// drive under WSL), aren't seen as one: their scripts are then read twice and define their objects twice (HAR1002), never
+    /// typed wrongly. <see cref="Projects.DiskPath.Real"/> gives the same limit.
+    /// </para>
+    /// <para>The scripts are read in order of their path relative to <paramref name="directory"/>, so the order of the list doesn't matter.</para>
+    /// </remarks>
+    /// <param name="directory">The folder the list is written in (the config file's), which positions are relative to.</param>
+    /// <param name="folders">The folders, full or relative to <paramref name="directory"/>, as written.</param>
+    /// <exception cref="DirectoryNotFoundException">A folder listed does not exist.</exception>
+    public static SchemaReadResult ReadFolders(string directory, IReadOnlyList<string> folders)
+    {
+        ArgumentNullException.ThrowIfNull(directory);
+        ArgumentNullException.ThrowIfNull(folders);
+        var declarations = new SchemaDeclarations();
+        var entries = new List<(string Written, string Root, string Real)>();
+        foreach (var written in folders)
+        {
+            var full = Path.GetFullPath(Path.Combine(directory, written));
+            if (!Directory.Exists(full))
+                throw new DirectoryNotFoundException($"Directory not found: {written}");
+            var root = Projects.DiskPath.Locate(full, written, out _) ?? full;
+            entries.Add((written, root, Projects.DiskPath.Real(root) ?? root));
+        }
+
+        foreach (var overlap in Overlaps(entries))
+            declarations.Diagnostics.Add(SourceCodes.FoldersOverlap.At(null, overlap));
+        if (declarations.Diagnostics.Count > 0)
+            return new SchemaReadResult(declarations.ToModel(), [.. declarations.Diagnostics]);
+
+        var files = new List<string>();
+        var reached = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (written, root, _) in entries)
+        {
+            var listed = Projects.Glob.Of(root, "**/*.sql").Files(out var unexpanded, out var unreadable);
+            foreach (var folder in unreadable)
+                declarations.Diagnostics.Add(SourceCodes.UnreadableScript.At(new FileLocation(Shown(directory, folder)), $"{Shown(directory, folder)} can't be entered, so no script in it is read."));
+            if (listed is null)
+                declarations.Diagnostics.Add(SourceCodes.UnreadableScript.At(new FileLocation(written), $"The folder can't be listed, so no script in it is read: {unexpanded}."));
+            foreach (var real in (listed ?? []).Select(Path.GetDirectoryName).OfType<string>().Distinct(StringComparer.Ordinal).Select(f => Projects.DiskPath.Real(f) ?? f))
+            {
+                if (!reached.TryAdd(real, written) && reached[real] != written)
+                    declarations.Diagnostics.Add(SourceCodes.FoldersOverlap.At(null, $"{reached[real]} and {written} both reach {Shown(directory, real)} (through a link), so its scripts would be read twice. List each folder once, or remove the link."));
+            }
+
+            files.AddRange(listed ?? []);
+        }
+
+        if (declarations.Diagnostics.Any(d => d.Code == SourceCodes.FoldersOverlap))
+            return new SchemaReadResult(new SchemaDeclarations().ToModel(), [.. declarations.Diagnostics.DistinctBy(d => d.Message)]);
+
+        ReadInto(declarations, ScriptFile.InOrder(directory, files.Select(file => Path.GetRelativePath(directory, file)), listed: true));
+        var model = declarations.ToModel();
+        return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)]);
+    }
+
+    /// <summary>Each pair of entries that is one folder, or one inside the other, said once, in the order listed.</summary>
+    private static IEnumerable<string> Overlaps(List<(string Written, string Root, string Real)> entries)
+    {
+        for (var i = 0; i < entries.Count; i++)
+        {
+            for (var j = i + 1; j < entries.Count; j++)
+            {
+                var (a, b) = (entries[i], entries[j]);
+                if (a.Real == b.Real)
+                    yield return $"{a.Written} and {b.Written} are the same folder, so its scripts would be read twice. List it once.";
+                else if (Inside(b.Real, a.Real))
+                    yield return $"{b.Written} is inside {a.Written}, so its scripts would be read twice. List {a.Written} alone, or list its folders but not it.";
+                else if (Inside(a.Real, b.Real))
+                    yield return $"{a.Written} is inside {b.Written}, so its scripts would be read twice. List {b.Written} alone, or list its folders but not it.";
+            }
+        }
+    }
+
+    /// <summary>Whether the folder <paramref name="inner"/> is below <paramref name="outer"/>, both real paths.</summary>
+    private static bool Inside(string inner, string outer) =>
+        inner.StartsWith(Path.TrimEndingDirectorySeparator(outer) + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+
     /// <summary>A folder under the one read, as a person would name it from there.</summary>
     private static string Shown(string root, string folder) => Path.GetRelativePath(root, folder).Replace('\\', '/') + "/";
 

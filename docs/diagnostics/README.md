@@ -36,6 +36,7 @@ reason.
 | [HAR1020](HAR1020.md) | error | A script or folder can't be read |
 | [HAR1021](HAR1021.md) | warning | A deployment script can't be read in full |
 | [HAR1022](HAR1022.md) | error | Names that differ only in case |
+| [HAR1023](HAR1023.md) | error | Two of the source's folders hold the same scripts |
 
 ## Inference
 
@@ -221,3 +222,4 @@ reason.
 | [HAR6041](HAR6041.md) | warning | A file no longer written can't be removed |
 | [HAR6042](HAR6042.md) | error | A file generate would remove |
 | [HAR6043](HAR6043.md) | warning | A baseline whose claims are another build's |
+| [HAR6044](HAR6044.md) | error | Several sources name a project or a package |

@@ -58,6 +58,9 @@ db/p2.sql:1:1: warning HAR1021: A deployment script can't be read: p2.sql doesn'
 HAR1022
 db/p1.sql:1:46: error HAR1022: lib.p declares the variables @Total (p1.sql:1:24) and @total (p1.sql:1:46), whose names differ only in case: haruspex matches names without case, so it can't tell them apart.
 
+HAR1023
+haruspex: error HAR1023: db/inner is inside db, so its scripts would be read twice. List db alone, or list its folders but not it.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -470,7 +473,7 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.
@@ -510,4 +513,7 @@ out/old.zod.ts: error HAR6042: generate wrote this file last and doesn't write i
 
 HAR6043
 haruspex: warning HAR6043: the baseline release.ir.json holds the claims of the haruspex that wrote it, 0.0.0-test (commit 111111111111), and this is 0.0.0-test (commit 000000000000). A fix made between the two may have withdrawn a claim the file holds, and the types would still rest on it. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this haruspex infers again with its own rules.
+
+HAR6044
+haruspex: error HAR6044: release.dacpac is a .dacpac, a whole database, so it can't be read with other sources: give it alone, or give only folders of .sql files.
 

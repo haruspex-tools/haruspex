@@ -73,6 +73,7 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.ValueSetRemoved => $"no longer drawn from a value set (was {Before})",
         IrChangeKind.ValueMatchChanged => $"value set's match changed from {Before} to {After}",
         IrChangeKind.BuildsChanged => After == "true" ? "now declared a build" : "no longer declared a build",
+        IrChangeKind.FoldersChanged => After == "true" ? "now read" : "no longer read",
         IrChangeKind.DialectChanged or IrChangeKind.SessionChanged or IrChangeKind.FoldChanged or IrChangeKind.ColumnDeclarationChanged => $"changed from {Before} to {After}",
     };
 

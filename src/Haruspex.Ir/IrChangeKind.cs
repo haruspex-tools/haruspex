@@ -157,6 +157,12 @@ public enum IrChangeKind
     /// </summary>
     BuildsChanged,
 
+    /// <summary>
+    /// A folder is now read as part of the source, or no longer is (0.32): the database is made of other scripts. Compared only where
+    /// either document's source was read from several folders.
+    /// </summary>
+    FoldersChanged,
+
     /// <summary>A fold a canonical value set names was added, removed or compares otherwise.</summary>
     FoldChanged,
 

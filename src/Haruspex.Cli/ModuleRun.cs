@@ -27,7 +27,7 @@ internal static class ModuleRun
     /// <param name="progress">Where to say which step the run is at, for a run long enough to show it.</param>
     public static Outcome<EmittedModule> Emitted(RunRequest request, Progress progress) =>
         Settle(request)
-            .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
+            .Then(plan => Said(progress, Reading(request, plan), plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
             .Then(inferred => Combined(request, progress, inferred))
@@ -40,8 +40,8 @@ internal static class ModuleRun
     /// </summary>
     public static Outcome<IrDocument> InferredAsBaseline(RunRequest request, Progress progress) =>
         Settle(request)
-            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Source, plan.Out, plan.Include, plan.Build))
-            .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
+            .Select(plan => new Plan(new Settings(plan.Config with { AppliedToBaseline = true }, plan.Settings.Path), plan.Sources, plan.Out, plan.Include, plan.Build))
+            .Then(plan => Said(progress, Reading(request, plan), plan).Then(ReadProject))
             .Then(Select)
             .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
             .Select(inferred => inferred.Database);
@@ -52,6 +52,9 @@ internal static class ModuleRun
         progress.Step(what);
         return new Succeeded<T>(value);
     }
+
+    /// <summary>The step of reading, with what it reads: <c>reading database</c>, or <c>reading tables, procedures</c> for several folders.</summary>
+    private static string Reading(RunRequest request, Plan plan) => $"reading {string.Join(", ", plan.Sources.Select(s => DisplayPath.From(request.WorkingDirectory, s)))}";
 
     /// <summary>The step of inference, with what it infers: <c>inferring 12 procedures and 3 query files</c>.</summary>
     private static string Inferring(Selection selection)
@@ -68,11 +71,24 @@ internal static class ModuleRun
     /// What the run is asked: the settings, the folders to read and write, the command line's patterns, and the build that runs.
     /// Like each value handed from one step to the next, a class: nothing compares two.
     /// </summary>
-    private sealed class Plan(Settings settings, string source, string @out, EquatableArray<ObjectPattern> include, IrBuild build)
+    private sealed class Plan(Settings settings, EquatableArray<string> sources, string @out, EquatableArray<ObjectPattern> include, IrBuild build)
     {
         public Settings Settings { get; } = settings;
 
-        public string Source { get; } = source;
+        /// <summary>What to read, full paths: one folder, project file or package, or several folders read as one database.</summary>
+        public EquatableArray<string> Sources { get; } = sources;
+
+        /// <summary>The one source, or the first of several folders.</summary>
+        public string Source => Sources[0];
+
+        /// <summary>Whether the source is several folders, read as one database (decision 0127).</summary>
+        public bool Folders => Sources.Count > 1;
+
+        /// <summary>
+        /// Each folder of several, relative to the config file's folder and <c>/</c>-separated, as the IR records them, as messages name
+        /// them, and as the folder reader is given them.
+        /// </summary>
+        public EquatableArray<string> Shown => [.. Sources.Select(s => Path.GetRelativePath(Config.Directory, s).Replace('\\', '/'))];
 
         public string Out { get; } = @out;
 
@@ -139,33 +155,51 @@ internal static class ModuleRun
         return read.Then(settings => Outcome.Combine(
                 Folders(request, settings),
                 include.Then(patterns => Selects(settings, patterns).Select(_ => patterns)))
-            .Select(settled => new Plan(settings, settled.First.Source, settled.First.Out, settled.Second, request.Build)));
+            .Select(settled => new Plan(settings, settled.First.Sources, settled.First.Out, settled.Second, request.Build)));
     }
 
     /// <summary>The folders to read and write, which don't depend on each other, so a problem with each is reported.</summary>
-    private static Outcome<(string Source, string Out)> Folders(RunRequest request, Settings settings) =>
-        Outcome.Combine(Source(request, settings), Out(request, settings));
+    private static Outcome<(EquatableArray<string> Sources, string Out)> Folders(RunRequest request, Settings settings) =>
+        Outcome.Combine(Sources(request, settings), Out(request, settings));
 
-    /// <summary>The folder of scripts, the project file or the DACPAC to read, which must exist.</summary>
-    private static Outcome<string> Source(RunRequest request, Settings settings)
+    /// <summary>
+    /// What to read, which must exist: the folder of scripts, the project file or the DACPAC; or several folders of scripts, the
+    /// command line's or the config file's list, none of them a project or a package, each problem said by the entry at fault.
+    /// </summary>
+    private static Outcome<EquatableArray<string>> Sources(RunRequest request, Settings settings)
     {
-        if ((request.Directory is { } given ? request.Resolve(given) : settings.Config.Source) is not { } source)
+        // Each source as given on the command line, else as the config file names it, with its full path.
+        (string Given, string Full)[] sources = request.Sources.Count > 0
+            ? [.. request.Sources.Select(given => (given, request.Resolve(given)))]
+            : settings.Config.SourceFolders.Count > 0 ? [.. settings.Config.SourceFolders.Select(full => (DiagnosticFormatter.PathAsShown(full), full))]
+            : settings.Config.Source is { } one ? [(DiagnosticFormatter.PathAsShown(one), one)]
+            : [];
+        if (sources.Length == 0)
         {
-            return Refused<string>(CliCodes.NoSource, settings.Path is null
+            return Refused<EquatableArray<string>>(CliCodes.NoSource, settings.Path is null
                 ? "give the folder of .sql files, the .sqlproj or the .dacpac to read, or a config file with \"source\"."
                 : $"give the folder of .sql files, the .sqlproj or the .dacpac to read, or \"source\" in {DiagnosticFormatter.PathAsShown(settings.Path)}.");
         }
 
-        if (SqlProject.IsPackage(source) || SqlProject.IsProjectFile(source))
+        if (sources.Length > 1)
         {
-            return File.Exists(source)
-                ? new Succeeded<string>(source)
-                : Refused<string>(CliCodes.SourceNotFound, $"file not found: {request.Directory ?? DiagnosticFormatter.PathAsShown(source)}");
+            // Only folders make a list: a project or a package is a database of its own. The config file's list is checked as it is read.
+            var whole = sources.Where(s => SqlProject.IsPackage(s.Full) || SqlProject.IsProjectFile(s.Full)).ToList();
+            if (whole.Count > 0)
+            {
+                return new Failed<EquatableArray<string>>([.. whole.Select(s => CliCodes.SourcesNotFolders.At(null,
+                    $"{s.Given} is a {(SqlProject.IsPackage(s.Full) ? ".dacpac" : ".sqlproj")}, a whole database, so it can't be read with other sources: give it alone, or give only folders of .sql files."))]);
+            }
         }
 
-        return Directory.Exists(source)
-            ? new Succeeded<string>(source)
-            : Refused<string>(CliCodes.SourceNotFound, $"directory not found: {request.Directory ?? DiagnosticFormatter.PathAsShown(source)}");
+        var missing = sources.Where(s => !(SqlProject.IsPackage(s.Full) || SqlProject.IsProjectFile(s.Full) ? File.Exists(s.Full) : Directory.Exists(s.Full))).ToList();
+        if (missing.Count > 0)
+        {
+            return new Failed<EquatableArray<string>>([.. missing.Select(s => CliCodes.SourceNotFound.At(null,
+                $"{(SqlProject.IsPackage(s.Full) || SqlProject.IsProjectFile(s.Full) ? "file" : "directory")} not found: {s.Given}"))]);
+        }
+
+        return new Succeeded<EquatableArray<string>>([.. sources.Select(s => s.Full)]);
     }
 
     private static Outcome<string> Out(RunRequest request, Settings settings) =>
@@ -201,12 +235,15 @@ internal static class ModuleRun
         var package = SqlProject.IsPackage(plan.Source);
         var projectFile = SqlProject.IsProjectFile(plan.Source);
         var collation = plan.Config.Collation;
-        var project = package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation, plan.Config.Builds)
+        var project = plan.Folders ? SqlProject.LoadFolders(plan.Config.Directory, plan.Shown, collation)
+            : package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation, plan.Config.Builds)
             : projectFile ? SqlProject.LoadProject(plan.Source, plan.Config.References, collation, plan.Config.Builds)
             : SqlProject.Load(plan.Source, collation);
         IEnumerable<Diagnostic> unused = package || projectFile || plan.Config.References.Count == 0
             ? []
-            : [CliCodes.ReferencesUnused.At(plan.Config.Location, $"\"references\" is read only when the source is a .dacpac or a .sqlproj, and {plan.Source} is a folder of scripts.")];
+            : [CliCodes.ReferencesUnused.At(plan.Config.Location, plan.Folders
+                ? $"\"references\" is read only when the source is a .dacpac or a .sqlproj, and {string.Join(", ", plan.Shown)} are folders of scripts."
+                : $"\"references\" is read only when the source is a .dacpac or a .sqlproj, and {plan.Source} is a folder of scripts.")];
         IEnumerable<Diagnostic> overruled = collation is null || string.Equals(project.DefaultCollation, collation, StringComparison.OrdinalIgnoreCase)
             ? []
             : [CliCodes.CollationOverruled.At(plan.Config.Location, $"\"collation\" is {collation}, but {Path.GetFileName(plan.Source)} records {project.DefaultCollation}, the database's own, which is the one used.")];
@@ -260,9 +297,10 @@ internal static class ModuleRun
         var project = selection.Loaded.Project;
         // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine;
         // and the build that runs, whose claims these are (decision 0117).
-        var path = Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
+        // Several folders are recorded each so, and no one path (decision 0127).
+        var path = plan.Folders ? null : Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
         var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out)
-            .Select(document => document with { Source = document.Source with { Path = path, WrittenBy = plan.Build } });
+            .Select(document => document with { Source = document.Source with { Path = path, Paths = plan.Folders ? plan.Shown : [], WrittenBy = plan.Build } });
         return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
     }
 

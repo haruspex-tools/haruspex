@@ -1,0 +1,4410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haruspex.tools/schemas/ir/0.32.schema.json",
+  "title": "haruspex.ir.json",
+  "description": "An IR file of version 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, (0.31) the packages the config file declared builds, and (0.32) the folders of a source read from several. The format is described in src/Haruspex.Ir/README.md.",
+  "type": "object",
+  "properties": {
+    "irVersion": {
+      "description": "The IR's version, which a reader checks before anything else, the oldest that says all the document says: 0.32 for a document whose source was read from several folders (source.paths, or its baseline's), else 0.31 for one that records packages declared builds (source.builds, or its baseline's), else 0.30 for one that names the build that wrote it (source.writtenBy), else 0.29 for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else 0.28 for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else 0.27 for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else 0.26 for one that defines a table type, else 0.25 for one that says where a field's value came from, else 0.24 for one combining two databases, else 0.23.",
+      "enum": [
+        "0.32",
+        "0.31",
+        "0.30",
+        "0.29",
+        "0.28",
+        "0.27",
+        "0.26",
+        "0.25",
+        "0.24",
+        "0.23"
+      ]
+    },
+    "source": {
+      "description": "Where the shapes were inferred from.",
+      "type": "object",
+      "properties": {
+        "dialect": {
+          "description": "The SQL dialect, such as tsql.",
+          "type": "string"
+        },
+        "writtenBy": {
+          "$ref": "#/$defs/build"
+        },
+        "path": {
+          "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known, and for a source read from several folders.",
+          "type": "string"
+        },
+        "paths": {
+          "description": "For a source read from several folders of scripts as one database, the folders, each as path writes one, sorted (0.32). Left out for a source read from one folder, a project or a package, which path names.",
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "package": {
+          "description": "The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 of the package's bytes. Given exactly when package is.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "references": {
+          "description": "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/packageReference"
+          }
+        },
+        "builds": {
+          "description": "The packages the config file declared builds, of those the source read: its package and the references found, by the names they give them, sorted (0.31). Their primary keys and unique constraints are claimed on the user's word. Left out when none is declared.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "description": "A package's file name, as package or a reference names it.",
+            "type": "string"
+          }
+        },
+        "session": {
+          "description": "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "files": {
+          "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "description": "The file's SHA-256.",
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "baseline": {
+          "description": "For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.",
+          "type": "object",
+          "properties": {
+            "dialect": {
+              "description": "The SQL dialect, such as tsql.",
+              "type": "string"
+            },
+            "writtenBy": {
+              "$ref": "#/$defs/build"
+            },
+            "path": {
+              "description": "Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known, and for a source read from several folders.",
+              "type": "string"
+            },
+            "paths": {
+              "description": "For a source read from several folders of scripts as one database, the folders, each as path writes one, sorted (0.32). Left out for a source read from one folder, a project or a package, which path names.",
+              "type": "array",
+              "minItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "package": {
+              "description": "The file name of the package the source was read from, such as a DACPAC. Left out for a source that is not a package.",
+              "type": "string"
+            },
+            "sha256": {
+              "description": "The SHA-256 of the package's bytes. Given exactly when package is.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "references": {
+              "description": "The packages the package refers to, found or not, sorted by name and then database. Left out when there are none.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/packageReference"
+              }
+            },
+            "builds": {
+              "description": "The packages the config file declared builds, of those the source read: its package and the references found, by the names they give them, sorted (0.31). Their primary keys and unique constraints are claimed on the user's word. Left out when none is declared.",
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "description": "A package's file name, as package or a reference names it.",
+                "type": "string"
+              }
+            },
+            "session": {
+              "description": "The options the callers' sessions are declared to set, by the dialect's name for each: true for on, false for off. Left out when none is declared.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            },
+            "files": {
+              "description": "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none.",
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "description": "The file's SHA-256.",
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "required": [
+            "dialect"
+          ],
+          "additionalProperties": false,
+          "dependentRequired": {
+            "package": [
+              "sha256"
+            ],
+            "sha256": [
+              "package"
+            ]
+          },
+          "not": {
+            "type": "object",
+            "properties": {
+              "path": true,
+              "paths": true
+            },
+            "required": [
+              "path",
+              "paths"
+            ]
+          }
+        }
+      },
+      "required": [
+        "dialect"
+      ],
+      "additionalProperties": false,
+      "dependentRequired": {
+        "package": [
+          "sha256"
+        ],
+        "sha256": [
+          "package"
+        ]
+      },
+      "not": {
+        "type": "object",
+        "properties": {
+          "path": true,
+          "paths": true
+        },
+        "required": [
+          "path",
+          "paths"
+        ]
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/object"
+      }
+    },
+    "types": {
+      "description": "The named object types, by name.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/objectType"
+      }
+    },
+    "tableTypes": {
+      "description": "The table types the parameters take, by the key a parameter's tableType names (0.26). Always given when irVersion is 0.26, never before it, and when it is 0.27 exactly when a parameter takes a table type.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/tableType"
+      }
+    },
+    "columns": {
+      "description": "The columns the config file declares to hold JSON of a schema, sorted by column (0.28). Never given before 0.28.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/columnDeclaration"
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unknown"
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/override"
+      }
+    },
+    "folds": {
+      "description": "The folds the canonical value sets name, by name: how a collation compares a column's strings (0.20).",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/fold"
+      }
+    }
+  },
+  "required": [
+    "irVersion",
+    "source",
+    "objects",
+    "types",
+    "unknowns",
+    "overrides",
+    "folds"
+  ],
+  "additionalProperties": false,
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.23"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      }
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.24"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "path": true
+                },
+                "required": [
+                  "path"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "files": true
+                },
+                "required": [
+                  "files"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": true
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "files": true
+                    },
+                    "required": [
+                      "files"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": true
+                        },
+                        "required": [
+                          "from"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "sides": true
+                        },
+                        "required": [
+                          "sides"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.25"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.25"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tableTypes": true
+            },
+            "required": [
+              "tableTypes"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "columns": true
+            },
+            "required": [
+              "columns"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        },
+        "tableTypes": true
+      },
+      "required": [
+        "tableTypes"
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.26"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        },
+        "tableTypes": true
+      },
+      "required": [
+        "tableTypes"
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "presence": {
+                      "not": {
+                        "const": "optional"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.27"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "not": {
+              "type": "object",
+              "properties": {
+                "open": true
+              },
+              "required": [
+                "open"
+              ]
+            },
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "setting": {
+                "not": {
+                  "const": "column-json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "not": {
+        "type": "object",
+        "properties": {
+          "columns": true
+        },
+        "required": [
+          "columns"
+        ]
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.28"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.28"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.29"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.29"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "writtenBy": true
+                },
+                "required": [
+                  "writtenBy"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "writtenBy": true
+                    },
+                    "required": [
+                      "writtenBy"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "baseline"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.30"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "writtenBy": true
+          },
+          "required": [
+            "writtenBy"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.30"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "builds": true
+                },
+                "required": [
+                  "builds"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "builds": true
+                    },
+                    "required": [
+                      "builds"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "paths": true
+                    },
+                    "required": [
+                      "paths"
+                    ]
+                  }
+                ]
+              }
+            },
+            "writtenBy": true
+          },
+          "required": [
+            "baseline",
+            "writtenBy"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.31"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "baseline": true
+                },
+                "required": [
+                  "baseline"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "writtenBy": true,
+            "builds": true
+          },
+          "required": [
+            "writtenBy",
+            "builds"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.31"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "paths": true
+            },
+            "required": [
+              "paths"
+            ]
+          },
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "builds": true
+              },
+              "required": [
+                "builds"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "baseline": {
+                  "type": "object",
+                  "properties": {
+                    "builds": true
+                  },
+                  "required": [
+                    "builds"
+                  ]
+                }
+              }
+            }
+          ],
+          "properties": {
+            "baseline": {
+              "type": "object",
+              "not": {
+                "type": "object",
+                "properties": {
+                  "paths": true
+                },
+                "required": [
+                  "paths"
+                ]
+              }
+            },
+            "writtenBy": true
+          },
+          "required": [
+            "baseline",
+            "writtenBy"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.32"
+        },
+        "source": {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "properties": {
+              "baseline": true
+            },
+            "required": [
+              "baseline"
+            ]
+          },
+          "properties": {
+            "writtenBy": true,
+            "paths": true
+          },
+          "required": [
+            "writtenBy",
+            "paths"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "not": {
+                    "type": "object",
+                    "properties": {
+                      "sides": true
+                    },
+                    "required": [
+                      "sides"
+                    ]
+                  },
+                  "properties": {
+                    "nullableBecause": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rule": {
+                            "not": {
+                              "const": "not-in-both"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "results": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "absentBecause": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rule": {
+                                "not": {
+                                  "const": "not-in-both"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "properties": {
+        "irVersion": {
+          "const": "0.32"
+        },
+        "source": {
+          "type": "object",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "paths": true
+              },
+              "required": [
+                "paths"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "baseline": {
+                  "type": "object",
+                  "properties": {
+                    "paths": true
+                  },
+                  "required": [
+                    "paths"
+                  ]
+                }
+              }
+            }
+          ],
+          "properties": {
+            "baseline": true,
+            "writtenBy": true
+          },
+          "required": [
+            "baseline",
+            "writtenBy"
+          ]
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "build": {
+      "description": "The build of the tool that wrote the source's claims (0.30). Always given for a document's own source when irVersion is 0.30 or later, never before it; a baseline's is left out when not known.",
+      "type": "object",
+      "properties": {
+        "version": {
+          "description": "The tool's version, as it says it, without the commit.",
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "description": "The whole commit the build was made from; left out when the build didn't know it.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "packageReference": {
+      "description": "A package the source's package refers to.",
+      "type": "object",
+      "properties": {
+        "package": {
+          "description": "Its file name, as the referring package names it.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 of the package read for it; left out when none was found.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "database": {
+          "description": "Left out for the same database; otherwise the other database, by name or SQLCMD variable, as the reference names it.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "package"
+      ],
+      "additionalProperties": false
+    },
+    "object": {
+      "description": "A typed object: a procedure of the database, or a query file of the application.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Its identity: a procedure's name in the database, or a query file's path relative to its config file's folder.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name settled for generated code.",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "procedure",
+            "query"
+          ]
+        },
+        "at": {
+          "description": "Where it is defined, as path:line:column.",
+          "type": "string"
+        },
+        "text": {
+          "description": "What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.",
+          "type": "string"
+        },
+        "returnsCode": {
+          "description": "Whether a call may end with a return code other than 0.",
+          "type": "boolean"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
+        },
+        "results": {
+          "description": "Its result sets in order, or null when they cannot be listed; named all or none.",
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": true
+                },
+                "required": [
+                  "name"
+                ],
+                "$ref": "#/$defs/result"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "not": {
+                  "type": "object",
+                  "properties": {
+                    "name": true
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "$ref": "#/$defs/result"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "at",
+        "returnsCode",
+        "parameters",
+        "results"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "query"
+            },
+            "text": true
+          },
+          "required": [
+            "kind",
+            "text"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "not": {
+                "const": "query"
+              }
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "text": true
+            },
+            "required": [
+              "text"
+            ]
+          }
+        }
+      ]
+    },
+    "parameter": {
+      "description": "A declared parameter.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Its name as declared, with its sigil.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "tableType": {
+          "description": "For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.",
+          "type": "string"
+        },
+        "hasDefault": {
+          "description": "Whether the caller may omit it.",
+          "type": "boolean"
+        },
+        "output": {
+          "description": "Whether it is an output parameter.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "hasDefault",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "description": "One result set.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The set's name, a key of the object its function returns; left out when the object's sets are unnamed, and given for all of them or none.",
+          "type": "string",
+          "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+          "not": {
+            "enum": [
+              "output",
+              "returnValue"
+            ]
+          }
+        },
+        "encoding": {
+          "enum": [
+            "rowset",
+            "json"
+          ]
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "mayBeAbsent": {
+          "description": "Whether the result can arrive with no value at all.",
+          "type": "boolean"
+        },
+        "absentBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "cardinality": {
+          "enum": [
+            "many",
+            "atMostOne",
+            "one"
+          ]
+        }
+      },
+      "required": [
+        "encoding",
+        "type",
+        "mayBeAbsent",
+        "cardinality"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mayBeAbsent": {
+              "const": true
+            },
+            "absentBecause": true
+          },
+          "required": [
+            "mayBeAbsent",
+            "absentBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "mayBeAbsent": {
+              "const": false
+            }
+          },
+          "required": [
+            "mayBeAbsent"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "absentBecause": true
+            },
+            "required": [
+              "absentBecause"
+            ]
+          }
+        }
+      ],
+      "not": {
+        "type": "object",
+        "properties": {
+          "encoding": {
+            "const": "rowset"
+          },
+          "type": {
+            "not": {
+              "$ref": "#/$defs/rows"
+            }
+          }
+        },
+        "required": [
+          "encoding",
+          "type"
+        ]
+      }
+    },
+    "rows": {
+      "description": "What a rowset's type is: one statement's rows, or a union of several statements' when paths differ.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/statementRows"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "union"
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/statementRows"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "variants"
+          ]
+        }
+      ]
+    },
+    "statementRows": {
+      "description": "One statement's rows: an array of a named object type or of an unknown, an unknown, or what the config file declared them to be.",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ref"
+                },
+                {
+                  "$ref": "#/$defs/unknownType"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
+        },
+        {
+          "$ref": "#/$defs/unknownType"
+        },
+        {
+          "$ref": "#/$defs/declaredType"
+        }
+      ]
+    },
+    "declaredType": {
+      "description": "A type the config file declared, or arrays of one.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/import"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "array"
+            },
+            "items": {
+              "$ref": "#/$defs/declaredType"
+            }
+          },
+          "required": [
+            "kind",
+            "items"
+          ]
+        }
+      ]
+    },
+    "objectType": {
+      "description": "A named object type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "object"
+        },
+        "recursive": {
+          "description": "Whether the type refers to itself; left out when it doesn't.",
+          "type": "boolean"
+        },
+        "nameDeclared": {
+          "description": "Whether the config file gave the type its name; left out when the naming rules did.",
+          "type": "boolean"
+        },
+        "open": {
+          "description": "Whether its values may hold keys it doesn't list, of any value (0.28): JSON a column is declared to hold; left out when they hold only its fields' keys.",
+          "type": "boolean"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "description": "Where a type comes from: the database object it belongs to, keyed by the object's kind, and the path to it there.",
+      "type": "object",
+      "properties": {
+        "procedure": {
+          "description": "The procedure the type belongs to.",
+          "type": "string"
+        },
+        "function": {
+          "description": "The function the type belongs to.",
+          "type": "string"
+        },
+        "query": {
+          "description": "The query the type belongs to.",
+          "type": "string"
+        },
+        "tableType": {
+          "description": "The tableType the type belongs to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The path to the type, in the IR's path syntax.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false,
+      "maxProperties": 2,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "procedure": true
+          },
+          "required": [
+            "procedure"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "function": true
+          },
+          "required": [
+            "function"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "query": true
+          },
+          "required": [
+            "query"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "tableType": true
+          },
+          "required": [
+            "tableType"
+          ]
+        }
+      ]
+    },
+    "tableType": {
+      "description": "A table type's definition (0.26): what a table-valued parameter of it takes.",
+      "type": "object",
+      "properties": {
+        "schema": {
+          "description": "The schema it is defined in.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name within its schema.",
+          "type": "string"
+        },
+        "at": {
+          "description": "Where it is defined, as path:line:column.",
+          "type": "string"
+        },
+        "columns": {
+          "description": "Its columns in the order declared, which is the order a client sends them in.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/tableColumn"
+          }
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tableKey"
+          }
+        },
+        "checks": {
+          "description": "Its CHECK constraints' conditions, each as written, on one line.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "name",
+        "at",
+        "columns",
+        "keys",
+        "checks"
+      ],
+      "additionalProperties": false
+    },
+    "tableColumn": {
+      "description": "A column of a table type.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Its name as declared.",
+          "type": "string"
+        },
+        "sql": {
+          "description": "Its type as the database spells it; left out only for a computed column.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/scalar"
+        },
+        "nullable": {
+          "description": "Whether a row may hold NULL in it.",
+          "type": "boolean"
+        },
+        "generated": {
+          "enum": [
+            "identity",
+            "computed",
+            "rowversion"
+          ]
+        },
+        "collation": {
+          "description": "The collation its strings compare under, when known; left out otherwise.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "sql": true
+          },
+          "required": [
+            "sql"
+          ]
+        },
+        {
+          "properties": {
+            "generated": {
+              "const": "computed"
+            }
+          },
+          "required": [
+            "generated"
+          ]
+        }
+      ]
+    },
+    "tableKey": {
+      "description": "A key of a table type: columns whose values no two rows may share.",
+      "type": "object",
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "ignoresDuplicates": {
+          "description": "Whether a row whose key another has is dropped without an error; left out when false.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "columns"
+      ],
+      "additionalProperties": false
+    },
+    "field": {
+      "description": "A field of an object type.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The key or column name.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "presence": {
+          "enum": [
+            "always",
+            "omittedWhenNull",
+            "optional"
+          ]
+        },
+        "nullable": {
+          "description": "Whether the value can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        },
+        "sides": {
+          "description": "In a document combining two databases (0.25), the field as each gave it; a side is left out where that database doesn't return the key.",
+          "type": "object",
+          "properties": {
+            "baseline": {
+              "$ref": "#/$defs/side"
+            },
+            "candidate": {
+              "$ref": "#/$defs/side"
+            }
+          },
+          "additionalProperties": false,
+          "minProperties": 1
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "presence",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": true
+            },
+            "nullableBecause": true
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "required": [
+            "nullable"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
+            "required": [
+              "nullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "from": {
+      "description": "The table columns a value is read from, in the order the SQL first reads them (0.25). Left out when it reads none directly.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourceColumn"
+      },
+      "minItems": 1
+    },
+    "sourceColumn": {
+      "description": "A table column a value is read from (0.25).",
+      "type": "object",
+      "properties": {
+        "column": {
+          "description": "The column, as schema.table.column.",
+          "type": "string"
+        },
+        "sql": {
+          "description": "The column's type as a scalar's sql is written; left out when it is not a scalar the IR types.",
+          "type": "string"
+        },
+        "at": {
+          "description": "Where the column is declared, as path:line:column.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "column",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "side": {
+      "description": "A field as one of the two combined databases gives it (0.25).",
+      "type": "object",
+      "properties": {
+        "presence": {
+          "enum": [
+            "always",
+            "omittedWhenNull"
+          ]
+        },
+        "nullable": {
+          "description": "Whether that database's value can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "sql": {
+          "description": "The value's SQL type there, when it is a scalar.",
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/from"
+        }
+      },
+      "required": [
+        "presence",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": true
+            },
+            "nullableBecause": true
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "required": [
+            "nullable"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
+            "required": [
+              "nullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "reasons": {
+      "description": "Why a value can be null, or a result absent: at least one reason.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reason"
+      },
+      "minItems": 1
+    },
+    "reason": {
+      "description": "One reason a value can be null.",
+      "type": "object",
+      "properties": {
+        "rule": {
+          "enum": [
+            "nullable-column",
+            "unmatched-row",
+            "unmatched-lateral-row",
+            "empty-subquery",
+            "all-fields-null",
+            "empty-aggregate",
+            "function-result",
+            "parameter",
+            "null-input",
+            "no-rows",
+            "not-run",
+            "variable",
+            "count-overflow",
+            "arithmetic-overflow",
+            "precision-loss",
+            "failed-conversion",
+            "subtotal-row",
+            "missing-for-action",
+            "no-branch-matched",
+            "null-literal",
+            "out-of-range",
+            "read-twice",
+            "null-when-equal",
+            "json-null-or-absent",
+            "empty-frame",
+            "window-edge",
+            "domain-error",
+            "too-few-values",
+            "unknown",
+            "declared",
+            "not-in-both"
+          ]
+        },
+        "at": {
+          "description": "What the rule applies to: a column or a source location.",
+          "type": "string"
+        },
+        "detail": {
+          "description": "What makes it so, in words, when there is more to say than the rule (0.29): for a value read from JSON at a path, the steps that may find nothing or null.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "type": {
+      "description": "A type node: a reference to a named type, or a kind.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ref"
+        },
+        {
+          "$ref": "#/$defs/scalar"
+        },
+        {
+          "$ref": "#/$defs/array"
+        },
+        {
+          "$ref": "#/$defs/tuple"
+        },
+        {
+          "$ref": "#/$defs/record"
+        },
+        {
+          "$ref": "#/$defs/union"
+        },
+        {
+          "$ref": "#/$defs/jsonText"
+        },
+        {
+          "$ref": "#/$defs/anyJson"
+        },
+        {
+          "$ref": "#/$defs/import"
+        },
+        {
+          "$ref": "#/$defs/unknownType"
+        }
+      ]
+    },
+    "ref": {
+      "description": "A reference to a named object type.",
+      "type": "object",
+      "properties": {
+        "ref": {
+          "description": "The type's name in types.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "additionalProperties": false
+    },
+    "scalar": {
+      "description": "A scalar with its logical kind, the SQL type it came from, and its facets.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "date",
+            "time",
+            "datetime",
+            "uuid",
+            "bytes"
+          ]
+        },
+        "format": {
+          "enum": [
+            "uint8",
+            "int16",
+            "int32",
+            "int64",
+            "decimal",
+            "float",
+            "local",
+            "offset"
+          ]
+        },
+        "sql": {
+          "description": "The source's own type, as written.",
+          "type": "string"
+        },
+        "length": {
+          "$ref": "#/$defs/length"
+        },
+        "maxLength": {
+          "$ref": "#/$defs/length"
+        },
+        "minLength": {
+          "$ref": "#/$defs/minLength"
+        },
+        "digits": {
+          "$ref": "#/$defs/digits"
+        },
+        "min": {
+          "$ref": "#/$defs/bound"
+        },
+        "max": {
+          "$ref": "#/$defs/bound"
+        },
+        "values": {
+          "$ref": "#/$defs/values"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "not": {
+        "type": "object",
+        "properties": {
+          "length": true,
+          "maxLength": true
+        },
+        "required": [
+          "length",
+          "maxLength"
+        ]
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "kind": {
+              "not": {
+                "const": "bytes"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "not": {
+            "type": "object",
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "format": true
+                },
+                "required": [
+                  "format"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "minLength": true
+                },
+                "required": [
+                  "minLength"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "digits": true
+                },
+                "required": [
+                  "digits"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "min": true
+                },
+                "required": [
+                  "min"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "max": true
+                },
+                "required": [
+                  "max"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "values": true
+                },
+                "required": [
+                  "values"
+                ]
+              }
+            ]
+          },
+          "properties": {
+            "length": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "const": "bytes"
+                }
+              },
+              "not": {
+                "type": "object",
+                "properties": {
+                  "encoding": true
+                },
+                "required": [
+                  "encoding"
+                ]
+              }
+            },
+            "maxLength": {
+              "type": "object",
+              "properties": {
+                "unit": {
+                  "const": "bytes"
+                }
+              },
+              "not": {
+                "type": "object",
+                "properties": {
+                  "encoding": true
+                },
+                "required": [
+                  "encoding"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "length": {
+      "description": "A string's length: a maximum (maxLength) or a fixed length (length).",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "unit": {
+          "enum": [
+            "utf16",
+            "bytes",
+            "code-points"
+          ]
+        },
+        "encoding": {
+          "enum": [
+            "single-byte",
+            "utf-8",
+            "double-byte"
+          ]
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "minLength": {
+      "description": "A string's minimum length, in UTF-16 code units, or (0.29) in code points when its unit says so.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "unit": {
+          "description": "What value counts when not UTF-16 code units (0.29).",
+          "const": "code-points"
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "digits": {
+      "description": "A decimal's precision and scale.",
+      "type": "object",
+      "properties": {
+        "precision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "scale": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "precision",
+        "scale",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "bound": {
+      "description": "A bound on a number: exact decimal text written as a JSON number, in plain form (no exponent), which a reader must not round. JSON Schema can't check a number's form; the reader refuses any other.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "inclusive": {
+          "description": "Whether the bound itself is allowed.",
+          "type": "boolean"
+        },
+        "from": {
+          "$ref": "#/$defs/factSource"
+        }
+      },
+      "required": [
+        "value",
+        "inclusive",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "values": {
+      "description": "A set the value is drawn from.",
+      "type": "object",
+      "properties": {
+        "match": {
+          "enum": [
+            "exact",
+            "collation",
+            "padded",
+            "canonical"
+          ]
+        },
+        "items": {
+          "description": "The values: strings, or numbers in plain decimal form (no exponent), which JSON Schema can't check and the reader does.",
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "from": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/factSource"
+          }
+        },
+        "fold": {
+          "description": "The name of the fold in folds that gives a value's canonical form: present exactly when the match is canonical.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "match",
+        "items",
+        "from"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "match": {
+              "const": "canonical"
+            },
+            "fold": true
+          },
+          "required": [
+            "match",
+            "fold"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "match": {
+              "not": {
+                "const": "canonical"
+              }
+            }
+          },
+          "required": [
+            "match"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "fold": true
+            },
+            "required": [
+              "fold"
+            ]
+          }
+        }
+      ]
+    },
+    "fold": {
+      "description": "How a collation compares a column's strings. A string's canonical form drops each character of ignored, puts a class's name in place of each character of that class, keeps every other character, and then drops trailing spaces (U+0020), in that order.",
+      "type": "object",
+      "properties": {
+        "ignored": {
+          "description": "The characters ignored, in ordinal order.",
+          "type": "string"
+        },
+        "classes": {
+          "description": "The characters of each class, in ordinal order, by the class's name, which is what they become.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "ignored",
+        "classes"
+      ],
+      "additionalProperties": false
+    },
+    "factSource": {
+      "description": "Where a fact came from: one property, named for the kind of source, whose value is the type's or constraint's name or a location.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The type the fact came from.",
+          "type": "string"
+        },
+        "check": {
+          "description": "The check the fact came from.",
+          "type": "string"
+        },
+        "engine": {
+          "description": "The engine the fact came from.",
+          "type": "string"
+        },
+        "expression": {
+          "description": "The expression the fact came from.",
+          "type": "string"
+        },
+        "declared": {
+          "description": "The declared the fact came from.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "maxProperties": 1,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": true
+          },
+          "required": [
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "check": true
+          },
+          "required": [
+            "check"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "engine": true
+          },
+          "required": [
+            "engine"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "expression": true
+          },
+          "required": [
+            "expression"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "declared": true
+          },
+          "required": [
+            "declared"
+          ]
+        }
+      ]
+    },
+    "array": {
+      "description": "An array of items.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "array"
+        },
+        "items": {
+          "$ref": "#/$defs/type"
+        },
+        "itemsNullable": {
+          "description": "Whether an item can be null; left out when none can.",
+          "type": "boolean"
+        },
+        "itemsNullableBecause": {
+          "$ref": "#/$defs/reasons"
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "itemsNullable": {
+              "const": true
+            },
+            "itemsNullableBecause": true
+          },
+          "required": [
+            "itemsNullable",
+            "itemsNullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "itemsNullable": {
+              "const": false
+            }
+          },
+          "not": {
+            "type": "object",
+            "properties": {
+              "itemsNullableBecause": true
+            },
+            "required": [
+              "itemsNullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "tuple": {
+      "description": "An array of a fixed length whose every position has its own type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "tuple"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/element"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "element": {
+      "description": "One position of a tuple.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/type"
+        },
+        "nullable": {
+          "description": "Whether the element can be null.",
+          "type": "boolean"
+        },
+        "nullableBecause": {
+          "$ref": "#/$defs/reasons"
+        }
+      },
+      "required": [
+        "type",
+        "nullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": true
+            },
+            "nullableBecause": true
+          },
+          "required": [
+            "nullable",
+            "nullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "nullable": {
+              "const": false
+            }
+          },
+          "required": [
+            "nullable"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "nullableBecause": true
+            },
+            "required": [
+              "nullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "record": {
+      "description": "An object whose keys are data, every value of one type.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "record"
+        },
+        "values": {
+          "$ref": "#/$defs/type"
+        },
+        "valuesNullable": {
+          "description": "Whether a value can be null.",
+          "type": "boolean"
+        },
+        "valuesNullableBecause": {
+          "$ref": "#/$defs/reasons"
+        }
+      },
+      "required": [
+        "kind",
+        "values",
+        "valuesNullable"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "valuesNullable": {
+              "const": true
+            },
+            "valuesNullableBecause": true
+          },
+          "required": [
+            "valuesNullable",
+            "valuesNullableBecause"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "valuesNullable": {
+              "const": false
+            }
+          },
+          "required": [
+            "valuesNullable"
+          ],
+          "not": {
+            "type": "object",
+            "properties": {
+              "valuesNullableBecause": true
+            },
+            "required": [
+              "valuesNullableBecause"
+            ]
+          }
+        }
+      ]
+    },
+    "union": {
+      "description": "A value that has one of several types.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "union"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/type"
+          },
+          "minItems": 2
+        }
+      },
+      "required": [
+        "kind",
+        "variants"
+      ],
+      "additionalProperties": false
+    },
+    "jsonText": {
+      "description": "A string that holds JSON, with what it parses to when that is known.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "json-text"
+        },
+        "content": {
+          "$ref": "#/$defs/type"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "anyJson": {
+      "description": "Any JSON value (0.28): an object, an array, a string, a number, a boolean or null, of any content.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "any-json"
+        },
+        "objectOrArray": {
+          "description": "Whether it is only ever an object or an array; left out when it may be any JSON value.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "columnDeclaration": {
+      "description": "A column the config file declares to hold JSON of a schema (0.28).",
+      "type": "object",
+      "properties": {
+        "column": {
+          "description": "The column, as schema.table.column.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "The schema file, relative to the folder of the config file, /-separated.",
+          "type": "string"
+        },
+        "pointer": {
+          "description": "The JSON Pointer to the schema used inside the file, when not the whole file.",
+          "type": "string"
+        },
+        "files": {
+          "description": "The SHA-256 of every schema file the declaration read, by its path, written as schema is.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      },
+      "required": [
+        "column",
+        "schema",
+        "files"
+      ],
+      "additionalProperties": false
+    },
+    "import": {
+      "description": "A schema the application already has, which the config file declared.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "import"
+        },
+        "name": {
+          "description": "The exported name.",
+          "type": "string"
+        },
+        "from": {
+          "description": "The module it is exported by.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "from"
+      ],
+      "additionalProperties": false
+    },
+    "unknownType": {
+      "description": "A value whose type is not known.",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "const": "unknown"
+        },
+        "reason": {
+          "enum": [
+            "unsupported-statement",
+            "external-code",
+            "redefined",
+            "unsupported-query",
+            "unsupported-expression",
+            "unsupported-source",
+            "unsupported-sql-type",
+            "unresolved-table",
+            "unresolved-column",
+            "unnamed-column",
+            "duplicate-column",
+            "unresolved-recursion",
+            "json-shape-unknown",
+            "caller-temp-table",
+            "varying-results",
+            "dynamic-sql",
+            "procedure-variable",
+            "system-procedure",
+            "missing-procedure",
+            "ambiguous-procedure",
+            "trigger-results",
+            "hidden-column",
+            "encrypted-definition",
+            "sqlcmd-variable",
+            "undecided-parameter"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "unknown": {
+      "description": "Something that could not be typed.",
+      "type": "object",
+      "properties": {
+        "object": {
+          "description": "The id of the object it belongs to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Where in the object, in the IR's path syntax.",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "unsupported-statement",
+            "external-code",
+            "redefined",
+            "unsupported-query",
+            "unsupported-expression",
+            "unsupported-source",
+            "unsupported-sql-type",
+            "unresolved-table",
+            "unresolved-column",
+            "unnamed-column",
+            "duplicate-column",
+            "unresolved-recursion",
+            "json-shape-unknown",
+            "caller-temp-table",
+            "varying-results",
+            "dynamic-sql",
+            "procedure-variable",
+            "system-procedure",
+            "missing-procedure",
+            "ambiguous-procedure",
+            "trigger-results",
+            "hidden-column",
+            "encrypted-definition",
+            "sqlcmd-variable",
+            "undecided-parameter"
+          ]
+        },
+        "detail": {
+          "description": "A human-readable explanation.",
+          "type": "string"
+        },
+        "at": {
+          "description": "The source location of the construct.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object",
+        "path",
+        "reason",
+        "detail",
+        "at"
+      ],
+      "additionalProperties": false
+    },
+    "override": {
+      "description": "A claim the config file made rather than inference.",
+      "type": "object",
+      "properties": {
+        "object": {
+          "description": "The id of the object it applies to.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Where in the object, in the IR's path syntax.",
+          "type": "string"
+        },
+        "setting": {
+          "enum": [
+            "not-null",
+            "type",
+            "exact-values",
+            "results",
+            "column-json"
+          ]
+        },
+        "via": {
+          "description": "What the claim rests on, when not the object's own declaration: the procedure whose declared results it includes, or (0.28) the declared column it reads.",
+          "type": "string"
+        },
+        "why": {
+          "description": "The reason given in the config file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "object",
+        "path",
+        "setting"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

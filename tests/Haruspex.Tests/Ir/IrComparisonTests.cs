@@ -355,6 +355,37 @@ public partial class IrComparisonTests
     }
 
     [Fact]
+    public void A_folder_added_to_or_removed_from_a_source_of_several_is_a_change_naming_it()
+    {
+        var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");
+        IrDocument Folders(params string[] folders) => before with { Source = before.Source with { Paths = [.. folders] } };
+        IrDocument Folder(string folder) => before with { Source = before.Source with { Path = folder } };
+
+        Assert.Equal(["source.paths.views: now read"], Changes(Folders("procedures", "tables"), Folders("procedures", "tables", "views")));
+        Assert.Equal(["source.paths.procedures: no longer read", "source.paths.views: now read"], Changes(Folders("procedures", "tables"), Folders("tables", "views")));
+        Assert.Equal(["source.paths.tables: now read"], Changes(Folder("procedures"), Folders("procedures", "tables")));
+        Assert.Equal(["source.paths.tables: no longer read"], Changes(Folders("procedures", "tables"), Folder("procedures")));
+        Assert.Empty(IrComparison.Compare(Folders("procedures", "tables"), Folders("tables", "procedures")));
+    }
+
+    [Fact]
+    public void Two_sources_each_of_one_folder_compare_no_paths()
+    {
+        var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");
+
+        Assert.Empty(IrComparison.Compare(before with { Source = before.Source with { Path = "database" } }, before with { Source = before.Source with { Path = "db" } }));
+    }
+
+    [Fact]
+    public void A_baseline_s_folder_removed_is_a_change_named_at_the_baseline()
+    {
+        var before = IrSamples.Folders;
+        var after = before with { Source = before.Source with { Baseline = before.Source.Baseline! with { Paths = ["release/procedures", "release/views"] } } };
+
+        Assert.Equal(["source.baseline.paths[\"release/tables\"]: no longer read", "source.baseline.paths[\"release/views\"]: now read"], Changes(before, after));
+    }
+
+    [Fact]
     public void A_different_package_or_its_hash_is_not_a_claim()
     {
         var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");

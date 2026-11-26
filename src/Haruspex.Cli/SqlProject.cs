@@ -71,6 +71,19 @@ internal sealed class SqlProject
         return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
     }
 
+    /// <summary>
+    /// Reads every <c>*.sql</c> file under each of <paramref name="folders"/> as one database, its locations relative to
+    /// <paramref name="directory"/>, the config file's folder, so that each says which folder its script is in (decision 0127).
+    /// </summary>
+    /// <param name="directory">The config file's folder.</param>
+    /// <param name="folders">The folders, relative to <paramref name="directory"/>.</param>
+    /// <param name="collation">The config file's <c>collation</c>, since a folder doesn't say.</param>
+    public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null)
+    {
+        var read = SqlScriptFolder.ReadFolders(directory, folders);
+        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
+    }
+
     /// <summary>The database's default collation, as the source records it or else as the config file declares it; null when neither does.</summary>
     public string? DefaultCollation => model.DefaultCollation;
 

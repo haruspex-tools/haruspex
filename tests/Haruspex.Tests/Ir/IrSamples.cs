@@ -327,6 +327,15 @@ internal static class IrSamples
         },
     };
 
+    /// <summary>
+    /// <see cref="Built"/> with its baseline read from several folders (0.32), so that it holds every property the format has: its
+    /// own source names its one <c>path</c>, and its baseline, read from two folders, their <c>paths</c>.
+    /// </summary>
+    public static IrDocument Folders { get; } = Built with
+    {
+        Source = Built.Source with { Baseline = Built.Source.Baseline with { Path = null, Paths = ["release/tables", "release/procedures"] } },
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

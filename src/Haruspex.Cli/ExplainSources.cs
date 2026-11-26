@@ -8,7 +8,8 @@ namespace Haruspex.Cli;
 /// <summary>
 /// The line of SQL a location in the IR points at, when it is at hand and is the one the location was written from: what
 /// <c>haruspex explain</c> prints under a reference. A location is relative to the source it was inferred from (a folder of
-/// scripts, a project's folder, the config file's folder for a query file), or names a package and an object in it. A script's
+/// scripts, a project's folder, the config file's folder for a query file or for a source of several folders), or names a package
+/// and an object in it. A script's
 /// line is shown only when the file's hash is the one the IR recorded (<see cref="IrSource.Files"/>), and a package's only when
 /// its SHA-256 is, so that a file edited since shows no line rather than the wrong one. A location that leaves the folder it is
 /// looked for in, or is absolute, is never followed: the IR is a committed file anyone may edit. Anything else gives null, and
@@ -39,6 +40,16 @@ internal sealed class ExplainSources(IrDocument document, HaruspexConfig? config
 
         if (!recorded.Files.TryGetValue(location.File, out var hash) || Path.IsPathRooted(location.File))
             return null;
+
+        // A source of several folders writes its locations relative to the config file's folder; each is followed only into a
+        // folder the config file lists, which may be beside that folder rather than under it (decision 0127).
+        if (!baseline && config is { SourceFolders.Count: > 0 })
+        {
+            var path = Path.GetFullPath(Path.Combine(config.Directory, location.File));
+            if (config.SourceFolders.Any(folder => Inside(Path.GetFullPath(folder), path)) && ScriptFiles.Sha256(path) == hash)
+                return Read(path, location.Line);
+        }
+
         foreach (var root in Roots(source))
         {
             var folder = Path.GetFullPath(root);

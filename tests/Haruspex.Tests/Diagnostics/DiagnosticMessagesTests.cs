@@ -250,6 +250,7 @@ public class DiagnosticMessagesTests
         (1020, () => Cli([GetBook, "CREATE PROCEDURE lib.q AS SELECT b.id FROM lib.book AS b;"], held: "db/p2.sql")),
         (1021, () => Project("<ItemGroup><PostDeploy Include=\"p2.sql\" /></ItemGroup>", sql: [GetBook, ":on error exit\nUPDATE lib.book SET note = NULL;"])),
         (1022, () => Cli(["CREATE PROCEDURE lib.p @Total int AS DECLARE @total varchar(10) = 'x'; SELECT b.id FROM lib.book AS b WHERE b.copies = @Total;"])),
+        (1023, () => Cli([GetBook], args: ["db", "db/inner", "--include", "*.*", "--out", "out"], arrange: f => f.File("db/inner/p9.sql", "CREATE PROCEDURE lib.r AS SELECT 1 AS one;"))),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),
@@ -423,6 +424,7 @@ public class DiagnosticMessagesTests
         (6028, () => AgainstBaseline(GetBook, GetBook + "\nSELECT count(*) AS books FROM lib.book;", "\"emit\": [\"zod\", \"mssql\"]")),
         (6029, () => AgainstBaseline(GetBook, GetBook, baseline: "release/Library.dacpac")),
         (6030, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f => f.File("release.ir.json", "{ \"irVersion\": \"0.9\" }"))),
+        (6044, () => Cli([GetBook], args: ["db", "release.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("release.dacpac", ""))),
         (6043, () => AgainstBaseline(GetBook, GetBook, baseline: "release.ir.json", arrange: f =>
         {
             // The release's IR, written by an earlier build from another commit.

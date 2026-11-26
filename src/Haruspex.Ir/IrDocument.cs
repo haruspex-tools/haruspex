@@ -19,11 +19,17 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that records packages the config file declared builds is written in (0.31,
-    /// <see cref="IrSource.Builds"/>). The IR is versioned separately from the tool, because it is a file that other programs read:
-    /// a change that would break a reader changes this. Why: docs/decisions/0122-the-ir-records-the-packages-declared-builds.md.
+    /// The newest IR format version, the one a document whose source was read from several folders is written in (0.32,
+    /// <see cref="IrSource.Paths"/>). The IR is versioned separately from the tool, because it is a file that other programs read:
+    /// a change that would break a reader changes this. Why: docs/decisions/0127-a-source-may-be-several-folders.md.
     /// </summary>
-    public const string CurrentVersion = "0.31";
+    public const string CurrentVersion = "0.32";
+
+    /// <summary>
+    /// The version a document read from no more than one folder that records packages the config file declared builds is written in
+    /// (0.31, <see cref="IrSource.Builds"/>). Why: docs/decisions/0122-the-ir-records-the-packages-declared-builds.md.
+    /// </summary>
+    public const string BuildsVersion = "0.31";
 
     /// <summary>
     /// The version a document that declares no build but names the build of the tool that wrote it is written in (0.30,
@@ -88,7 +94,7 @@ public sealed record IrDocument(
     /// that means the same (0.30 back to 0.23, each a document that says nothing a later version added). Any other is refused.
     /// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md, which says why 0.22 is not one.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, BuildsVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// Whether <paramref name="version"/> is <paramref name="since"/> or later, both of <see cref="ReadableVersions"/>: by their order
@@ -101,7 +107,8 @@ public sealed record IrDocument(
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it records a package declared a build (<see cref="DeclaresBuilds"/>); else
+    /// <see cref="CurrentVersion"/> when a source was read from several folders (<see cref="ReadsFolders"/>); else
+    /// <see cref="BuildsVersion"/> when it records a package declared a build (<see cref="DeclaresBuilds"/>); else
     /// <see cref="StampedVersion"/> when it names the build that wrote it (<see cref="NamesItsWriter"/>); else
     /// <see cref="ExplainedVersion"/> when it explains a reason (<see cref="Explains"/>); else <see cref="DeclaredVersion"/> when it
     /// declares a column's JSON (<see cref="Declares"/>); else <see cref="BytesVersion"/> when it
@@ -113,7 +120,8 @@ public sealed record IrDocument(
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        DeclaresBuilds ? CurrentVersion
+        ReadsFolders ? CurrentVersion
+        : DeclaresBuilds ? BuildsVersion
         : NamesItsWriter ? StampedVersion
         : Explains ? ExplainedVersion
         : Declares ? DeclaredVersion
@@ -136,7 +144,7 @@ public sealed record IrDocument(
     /// </summary>
     internal bool SaysSources =>
         Types.Values.Any(t => t.Fields.Any(f => f.From.Count > 0 || f.Sides is not null)) || Source.Files.Count > 0 || Source.Baseline?.Files.Count > 0
-        || Source.Path is not null || Source.Baseline?.Path is not null;
+        || Source.Path is not null || Source.Baseline?.Path is not null || ReadsFolders;
 
     /// <summary>
     /// Whether it names the build that wrote it, or its baseline's (0.30, <see cref="IrSource.WrittenBy"/>). A document that names
@@ -149,6 +157,9 @@ public sealed record IrDocument(
     /// baseline's.
     /// </summary>
     internal bool DeclaresBuilds => Source.Builds.Count > 0 || Source.Baseline?.Builds.Count > 0;
+
+    /// <summary>Whether its source, or its baseline, was read from several folders (0.32, <see cref="IrSource.Paths"/>).</summary>
+    internal bool ReadsFolders => Source.Paths.Count > 0 || Source.Baseline?.Paths.Count > 0;
 
     /// <summary>Whether it says what only 0.29 says: a <see cref="IrNullReason.Detail"/>, or a minimum length in code points, anywhere.</summary>
     internal bool Explains => IrDocumentExplained.First(this) is not null;

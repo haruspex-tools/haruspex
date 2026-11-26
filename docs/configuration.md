@@ -18,7 +18,7 @@ otherwise silently do nothing.
 ```jsonc
 {
   "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
-  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
+  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac; or a list of folders
   "baseline": "release/database",           // the database before the change being made; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
@@ -70,7 +70,7 @@ otherwise silently do nothing.
 }
 ```
 
-The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`) replaces `source`, `--out` replaces `out`, `--baseline` replaces `baseline`, and
+The command line overrides the file for one run: the source argument (a folder, a `.sqlproj` or a `.dacpac`, or several folders) replaces `source`, `--out` replaces `out`, `--baseline` replaces `baseline`, and
 `--include schema.pattern` replaces the schemas' includes (each schema's `exclude` still applies, and overrides of
 procedures the run leaves out are skipped). Without a file, the source argument, `--include` and `--out` are required.
 
@@ -98,6 +98,9 @@ it otherwise can't. Each is a statement about your project that haruspex can't s
 - **The source is a folder of `.sql` files** and a table has a `CHECK` that lists its values: declare the database's
   [`collation`](#the-databases-collation-collation). A folder doesn't record it, and without it such a set of strings is a
   comment, not an enum.
+- **The database is kept as folders side by side** (`tables`, `procedures`) beside folders that aren't its own, such as the
+  application's query files: list them as [`source`](#several-folders-source-as-a-list). A folder that holds them all would
+  read the others as the database's scripts too.
 - **The source refers to other DACPACs** that its build doesn't leave beside it: list their folders in
   [`references`](#reading-a-dacpac-source-and-references). One found nowhere is a warning, and what would have come from it is
   unknown.
@@ -119,7 +122,37 @@ out, so name the database's own folder rather than the application's: a folder h
 query files, its installed packages and a copy of the repository kept inside it as the database's scripts, and an object
 defined twice is an error ([HAR1002](diagnostics/HAR1002.md)). [`haruspex init`](command-line.md#init) chooses such a folder
 for you. To leave scripts out of a folder, read it as a [project file](#reading-a-project-file-source-as-a-sqlproj), whose
-build says which scripts it reads.
+build says which scripts it reads, or list the folders that hold the database's scripts (below).
+
+### Several folders: `source` as a list
+
+A database kept as folders side by side, beside folders that aren't the database's, is read by listing its folders:
+
+```jsonc
+{
+  "source": ["tables", "procedures"],            // read together as one database; "queries" beside them is not read
+  "queries": "queries",
+}
+```
+
+Every `.sql` file below each folder listed is read, as for one folder, and the folders together are one database: a procedure
+in `procedures` reads a table in `tables`. Use a list when the folder that holds all the database's scripts would hold others too,
+such as the application's query files; when one folder holds the database alone, name it as one path. The order of the list
+doesn't matter, and a list of one folder is that folder.
+
+A list names folders only: a `.sqlproj` or a `.dacpac` in it is an error ([HAR3005](diagnostics/HAR3005.md)), since each is a
+whole database of its own. Each script is read once, so the same folder listed twice, in any spelling the file system takes for
+the same (`db` and `./db`, or `Tables/` and `tables/` where the file system ignores case), one folder inside another, or two
+folders that reach one folder through a link, is an error naming both ([HAR1023](diagnostics/HAR1023.md)). Two spellings only
+the file system knows are one, such as a Windows drive read from Linux, which ignores case where Linux usually doesn't, aren't
+seen as one: each script is then read twice, and defining its objects twice is an error
+([HAR1002](diagnostics/HAR1002.md)).
+
+The IR records the folders read, each relative to this file's folder, in `source.paths`, and a location in it, such as an
+object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).
+A document of a list is IR 0.32; one of one folder is written as before. `check` reports a folder added to the list or removed
+from it, even where no type changes, since what the database is made of is what every claim rests on
+([decision 0127](decisions/0127-a-source-may-be-several-folders.md)).
 
 ## Reading a DACPAC: `source` and `references`
 

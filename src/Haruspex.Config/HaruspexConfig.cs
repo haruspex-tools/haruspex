@@ -20,8 +20,18 @@ public sealed record HaruspexConfig
     /// <summary>The folder holding the file, which its relative paths are relative to.</summary>
     public required string Directory { get; init; }
 
-    /// <summary>The folder of <c>.sql</c> files or the DACPAC, resolved against <see cref="Directory"/>, or null when the file doesn't say.</summary>
+    /// <summary>
+    /// The folder of <c>.sql</c> files, the project file or the DACPAC, resolved against <see cref="Directory"/>; or null when the file
+    /// doesn't say, or when <c>source</c> lists several folders (<see cref="SourceFolders"/>).
+    /// </summary>
     public string? Source { get; init; }
+
+    /// <summary>
+    /// The folders of <c>.sql</c> files <c>source</c> lists, when it lists more than one, resolved against <see cref="Directory"/>, in
+    /// the order written: read together as one database (docs/decisions/0127-a-source-may-be-several-folders.md). Empty otherwise, and
+    /// then <see cref="Source"/> names the one source.
+    /// </summary>
+    public EquatableArray<string> SourceFolders { get; init; } = [];
 
     /// <summary>
     /// What the application already running was built against (<c>baseline</c>): a folder of <c>.sql</c> files, a project file, a

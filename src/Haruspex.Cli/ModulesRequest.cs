@@ -4,14 +4,14 @@ using Haruspex.Ir;
 namespace Haruspex.Cli;
 
 /// <summary>What <c>haruspex generate</c> or <c>haruspex check</c> was asked, as the command line gave it: one module or several.</summary>
-/// <param name="Directory">The folder of <c>.sql</c> files or the DACPAC, as given, or null to take each config file's <c>source</c>.</param>
+/// <param name="Sources">The folder of <c>.sql</c> files, the project file or the DACPAC, or several folders, as given; empty to take each config file's <c>source</c>.</param>
 /// <param name="Configs">The config files <c>--config</c> names, as given, in order; empty to look for one, or with <c>--all</c>.</param>
 /// <param name="All">The folder <c>--all</c> names, as given; empty when it names none (the working directory); null without <c>--all</c>.</param>
 /// <param name="Include">The <c>--include</c> patterns, as given.</param>
 /// <param name="Out">The folder <c>--out</c> names, as given, or null to take each config file's <c>out</c>.</param>
 /// <param name="WorkingDirectory">Where relative paths start, and a config file is looked for.</param>
 internal sealed record ModulesRequest(
-    string? Directory,
+    EquatableArray<string> Sources,
     EquatableArray<string> Configs,
     string? All,
     EquatableArray<string> Include,

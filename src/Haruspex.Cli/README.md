@@ -87,7 +87,7 @@ take:
 
 | Argument or option | What it is |
 |---|---|
-| `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read. Replaces `source` in the config file. |
+| `source` | The folder of `.sql` files, the `.sqlproj` or the `.dacpac` to read; or several folders of `.sql` files, read as one database, none of them a `.sqlproj` or a `.dacpac`. Replaces `source` in the config file. |
 | `--config`, `-c` | The config file. By default, `haruspex.json` in the working directory or the nearest folder above it. Give it again for more modules. |
 | `--all`, `-a` | Every `haruspex.json` below the folder given, or below the working directory, each a module ("Several modules", below). |
 | `--include`, `-i` | Procedures to type, as `schema.name`, where `*` and `?` match within a part; give it again, or give several, for more. Replaces the config file's includes for this run, which then removes no file of the last run's ([decision 0091](../../docs/decisions/0091-generate-removes-only-the-files-its-list-names.md)). |
