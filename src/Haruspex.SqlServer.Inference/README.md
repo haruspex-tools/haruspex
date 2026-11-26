@@ -217,8 +217,8 @@ masked value inference claims only its type, its reasons to be null and its grea
 `ScalarFacets.Masked`): the type's own range and digits stay, and a CHECK's range or set, a fixed length and a minimum length
 go. A `random()` range the type can't hold is refused when the column is declared
 (`A_random_mask_draws_from_its_range_which_must_lie_in_the_column_s_type`), so the type's range holds. The masks apply unless
-the config file declares that the callers hold `UNMASK` (`SessionOptions.MasksAreLifted`) and no module runs `WITH EXECUTE AS`
-another user (`Summaries.MasksApply`, [HAR2103](../../docs/diagnostics/HAR2103.md)). The tests' reader holds no `UNMASK`, so
+the config file declares that the callers hold `UNMASK` (`SessionOptions.MasksAreLifted`) and no module runs as another
+user, by `WITH EXECUTE AS` or an `EXECUTE AS` statement in its body (`Summaries.MasksApply`, [HAR2103](../../docs/diagnostics/HAR2103.md)). The tests' reader holds no `UNMASK`, so
 the differential tests hold every fixture's IR to the masks (`tests/fixtures/fittings`).
 
 - **A column read** (`Typer.FromColumn`) is masked when its table's column is. A body's own temporary table is never masked to the
@@ -437,6 +437,47 @@ body's known to be open: whether every error that reaches one leaves the transac
 (a deadlock victim's was seen to), so it claims less (`A_catch_may_follow_an_error_that_rolled_the_transaction_back_so_its_reads_are_raced`). A write that may reach a permanent table, a call, a `TRUNCATE` or a
 `ROLLBACK` ends the fact altogether, since then the body itself may have removed the row, which is not a race; so does an
 assignment to a variable the guard compared with.
+
+## Flow statements
+
+The statements that return nothing but change which statements run, or how the ones after them run: their cases in
+`Walker.Statement`, and `Walker.Jumps.cs`. Each is observed in `StatementFlowObservationTests.Statements.cs`.
+
+- **`GOTO` and labels.** A `GOTO` ends its path, and the state it jumps with joins the paths at its label: a label holds what
+  reaches it from the statement before, if anything does, joined with what each `GOTO` to it jumped with (`Walker.Landed`).
+  The server matches a label ignoring case, and refuses a `GOTO` to a label the body lacks, or a second label of one name,
+  when the procedure is created (`A_goto_jumps_forward_or_back_out_of_blocks_and_into_them_but_not_into_try`). Only a jump
+  forward to a label in the `GOTO`'s own statement list, or in one around it, is followed (`BodyLabels`): the walk reaches
+  such a label after the `GOTO` on every path and on every pass of a loop, so the jumps of every pass are joined there. That
+  takes in a jump forward out of a block, a loop, a `TRY` or a `CATCH`. A jump back makes a loop, and a jump into a block (an
+  `IF`'s arm or a loop's body, which the server allows) starts the block partway; the walk follows neither, and the results
+  are unknown. A jump into `TRY` or `CATCH` the server refuses (1026), but only when the procedure runs.
+- **`SET ROWCOUNT n`** caps the rows of each query after it, of a `FOR JSON` query's rows before its text is made (the text
+  itself is not cut), of `SELECT … INTO` and of the writes, but not an aggregate over every row or a subquery's rows. It
+  lasts until another `SET ROWCOUNT` or until the procedure returns: a callee's ends when it returns, and a caller's holds
+  in its callees (`Set_rowcount_caps_the_rows_of_a_query_and_lasts_until_the_procedure_returns`). A cap never adds a row,
+  so a claim of many rows or of exactly one stands under any limit, and only a known limit of 1 adds a claim: a query of
+  many rows returns at most one (`FlowState.RowLimit`). A limit a variable gives, the caller's, and one that differs
+  between paths are not known; a callee's queries under its caller's limit are not capped, which only claims less.
+- **`WAITFOR DELAY` and `WAITFOR TIME`** return nothing. `WAITFOR (RECEIVE …)` returns a result set of the queue's columns,
+  even when no message arrives, and `WAITFOR (GET CONVERSATION GROUP …)` sets a variable: Service Broker's reads, which
+  are not modelled, so either makes the results unknown
+  (`Waitfor_delay_and_time_return_nothing_and_waitfor_receive_returns_a_result_set`).
+- **`EXECUTE AS` and `REVERT`** change whose permissions the statements between them run with, until `REVERT` or until the
+  procedure returns. In a module an unqualified name still binds in the module's schema, not in the user's default schema;
+  in a query file, outside a module, it binds in the impersonated user's default schema
+  (`Execute_as_changes_permissions_and_masks_and_names_only_outside_a_module_and_ends_when_the_procedure_returns`). That changes no claim: a
+  query file's one-part name binds only when one schema of the project has an object of that name. Of what haruspex claims,
+  only what a masked column gives rests on the permissions, so a module whose body impersonates anyone but its caller
+  keeps every mask, as `WITH EXECUTE AS` does ("Masked columns"). A query file is not a module, so an `EXECUTE AS` in one,
+  where the callers are declared to hold `UNMASK`, makes its results unknown. `WITH COOKIE INTO`, which the server allows
+  only outside a module (15590), sets a variable, which is not modelled.
+- **`SET LANGUAGE`, `SET DATEFIRST` and `SET DATEFORMAT`** change values: the names `DATENAME` writes, the weekday
+  `DATEPART` counts, and how a string reads as a date. In every language the server has, they change no type and nothing
+  claimed of a value: a date or a time converted to text, in every style, needs no escape inside a JSON string; a number
+  converts to the same text; and `DATENAME` of a date that isn't NULL is never NULL and never longer than 30 characters
+  (`The_language_changes_values_but_no_type_or_claimed_fact_and_lasts_until_the_procedure_returns`). So each is passed
+  over. No value of `DATENAME` is claimed, before one or after it, and `FORMAT` is not typed.
 
 ## Result sets are positional
 

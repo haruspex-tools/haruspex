@@ -6,6 +6,7 @@
     "no employees": "DELETE FROM flow.employee;",
     "no regions": "DELETE FROM flow.region;",
     "one sale": "DELETE FROM flow.sale WHERE sale_id <> 12;",
+    "nothing paid last": "DELETE FROM flow.sale WHERE sale_id > 11;",
     // Every region code of the CHECK with a sale in it: the seed has no WST region, and no sale in EST.
     "a sale in every region": "INSERT INTO flow.region (region_id, code, name) VALUES (4, 'WST', N'Westerby'); INSERT INTO flow.sale (sale_id, region_id, amount, channel, note) VALUES (16, 3, 1.00, 'web', NULL), (17, 4, 2.00, 'web', NULL);"
   },
@@ -56,6 +57,12 @@
     { "name": "sale_line, by phone", "procedure": "flow.sale_line", "parameters": { "@sale_id": 12 } },
     { "name": "region_card, with sales", "procedure": "flow.region_card", "parameters": { "@region_id": 1 } },
     { "name": "region_card, a region with no sales", "procedure": "flow.region_card", "parameters": { "@region_id": 3 } },
-    { "name": "region_card, no such region", "procedure": "flow.region_card", "parameters": { "@region_id": 99 } }
+    { "name": "region_card, no such region", "procedure": "flow.region_card", "parameters": { "@region_id": 99 } },
+    { "name": "sale_digest", "procedure": "flow.sale_digest" },
+    { "name": "sale_digest, brief", "procedure": "flow.sale_digest", "parameters": { "@brief": true } },
+    { "name": "sale_digest, no sales", "procedure": "flow.sale_digest", "setup": "no sales" },
+    // The latest sale paid nothing, the least amount the CHECK allows, at both positions it may be returned at.
+    { "name": "sale_digest, the latest sale paid nothing", "procedure": "flow.sale_digest", "setup": "nothing paid last" },
+    { "name": "sale_digest, brief, the latest sale paid nothing", "procedure": "flow.sale_digest", "parameters": { "@brief": true }, "setup": "nothing paid last" }
   ]
 }

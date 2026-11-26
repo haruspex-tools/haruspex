@@ -34,6 +34,7 @@ parameter flow.part_list @with_units at procedures/part_list.sql:4:5
 parameter flow.region_card @region_id at procedures/region_card.sql:5:5
 parameter flow.region_report @channel at procedures/region_report.sql:5:5
 parameter flow.sale_card @sale_id at procedures/sale_card.sql:5:5
+parameter flow.sale_digest @brief at procedures/sale_digest.sql:5:5
 parameter flow.sale_line @sale_id at procedures/sale_line.sql:5:5
 parameter flow.sale_receipt @sale_id at procedures/sale_receipt.sql:6:5
 parameter flow.sales_by_mode @mode at procedures/sales_by_mode.sql:5:5
@@ -50,6 +51,7 @@ procedure flow.region_card at procedures/region_card.sql:4:1
 procedure flow.region_report at procedures/region_report.sql:4:1
 procedure flow.region_sales at procedures/region_sales.sql:3:1
 procedure flow.sale_card at procedures/sale_card.sql:4:1
+procedure flow.sale_digest at procedures/sale_digest.sql:4:1
 procedure flow.sale_line at procedures/sale_line.sql:4:1
 procedure flow.sale_receipt at procedures/sale_receipt.sql:5:1
 procedure flow.sales_by_mode at procedures/sales_by_mode.sql:4:1

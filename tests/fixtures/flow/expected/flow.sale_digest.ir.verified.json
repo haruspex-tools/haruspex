@@ -1,0 +1,424 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/sale_digest.sql": "19388c9d41406fef46418a3ea3bf5ff3123863d4bd289239173b94d9f72d5273",
+      "tables/sale.sql": "5c69103893aea0ad11a260ee56728fa1ea0d177912fc9634867b4b086e4c9818"
+    }
+  },
+  "objects": [
+    {
+      "id": "flow.sale_digest",
+      "name": "SaleDigest",
+      "kind": "procedure",
+      "at": "procedures/sale_digest.sql:4:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@brief",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "SaleDigestResult1Row"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "SaleDigestResult1Row2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "SaleDigestResult2Row"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "SaleDigestResult2Row2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        },
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SaleDigestResult3Row"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "not-run",
+              "at": "procedures/sale_digest.sql:25:1"
+            }
+          ],
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SaleDigestResult1Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sale_digest",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "channel",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(6)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "web",
+                "store",
+                "phone"
+              ],
+              "from": [
+                {
+                  "check": "flow.ck_sale_channel"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.channel",
+              "sql": "varchar(6)",
+              "at": "tables/sale.sql:6:5"
+            }
+          ]
+        }
+      ]
+    },
+    "SaleDigestResult1Row2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sale_digest",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "flow.ck_sale_amount"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/sale.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "month",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/sale_digest.sql:22:45"
+            }
+          ]
+        }
+      ]
+    },
+    "SaleDigestResult2Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sale_digest",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "sale_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.sale_id",
+              "sql": "int",
+              "at": "tables/sale.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "amount",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(9,2)",
+            "digits": {
+              "precision": 9,
+              "scale": 2,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            },
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "check": "flow.ck_sale_amount"
+              }
+            },
+            "max": {
+              "value": 9999999.99,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(9,2)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "flow.sale.amount",
+              "sql": "decimal(9,2)",
+              "at": "tables/sale.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "month",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(30)",
+            "maxLength": {
+              "value": 30,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(30)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/sale_digest.sql:22:45"
+            }
+          ]
+        }
+      ]
+    },
+    "SaleDigestResult2Row2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sale_digest",
+        "path": "results[1][]"
+      },
+      "fields": [
+        {
+          "name": "scope",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "SaleDigestResult3Row": {
+      "kind": "object",
+      "identity": {
+        "procedure": "flow.sale_digest",
+        "path": "results[2][]"
+      },
+      "fields": [
+        {
+          "name": "scope",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

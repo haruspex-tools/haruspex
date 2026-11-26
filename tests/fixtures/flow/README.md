@@ -20,3 +20,4 @@ through temporary tables, table variables, control flow and CTEs. No part of it 
 | `flow.sale_receipt` | an existence guard read with `UPDLOCK, HOLDLOCK` in a transaction the procedure began at `READ COMMITTED`: the reads before its `COMMIT` find the sale, and one after it may not (`read-twice` at the guard) |
 | `flow.sale_line` | a key added by `ALTER TABLE … ADD PRIMARY KEY` to a table `SELECT … INTO` made: a `FOR JSON … WITHOUT_ARRAY_WRAPPER` subquery and a query that fix it read at most one row |
 | `flow.region_card` | a table variable keyed by its declaration, left joined to a temporary table keyed by its `CREATE TABLE`: at most one row |
+| `flow.sale_digest` | a `GOTO` that skips a result on one path, so the results after it move up (`not-run`); `SET ROWCOUNT 1`, which leaves a query of many rows at most one; `WAITFOR DELAY` and `SET LANGUAGE`, which change no type |

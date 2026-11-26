@@ -210,10 +210,10 @@ public partial class StatementFlowTests
     }
 
     [Theory]
-    [InlineData("IF @x = 1 WAITFOR DELAY '00:00:01';")]
-    [InlineData("WHILE @x > 0 BEGIN WAITFOR DELAY '00:00:01'; END")]
-    [InlineData("BEGIN TRY SELECT t.id FROM dbo.t AS t; END TRY BEGIN CATCH WAITFOR DELAY '00:00:01'; END CATCH")]
-    [InlineData("GOTO done;\ndone:")]
+    [InlineData("IF @x = 1 SET STATISTICS XML ON;")]
+    [InlineData("WHILE @x > 0 BEGIN SET STATISTICS XML ON; END")]
+    [InlineData("BEGIN TRY SELECT t.id FROM dbo.t AS t; END TRY BEGIN CATCH SET STATISTICS XML ON; END CATCH")]
+    [InlineData("again:\nSET @x = @x - 1;\nIF @x > 0 GOTO again;")]
     public void A_statement_not_modelled_anywhere_makes_the_results_unknown(string body)
     {
         var doc = Procedure(body + "\nSELECT t.id FROM dbo.t AS t;", "@x int");

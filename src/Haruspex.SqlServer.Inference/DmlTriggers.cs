@@ -202,7 +202,8 @@ internal sealed class DmlTriggers(DatabaseModel model, List<Diagnostic> warnings
                 or CreateTableStatement or DropTableStatement or AlterTableStatement or CreateIndexStatement or AlterIndexStatement or DropIndexStatement
                 or TruncateTableStatement
                 or DeclareCursorStatement or OpenCursorStatement or CloseCursorStatement or DeallocateCursorStatement
-                or GoToStatement or LabelStatement or SetRowCountStatement => null,
+                or GoToStatement or LabelStatement or SetRowCountStatement or ExecuteAsStatement or RevertStatement
+                or WaitForStatement { WaitForOption: WaitForOption.Delay or WaitForOption.Time } => null,
             _ => $"runs {statement.ScriptTokenStream[statement.FirstTokenIndex].Text.ToUpperInvariant()} at {at}, which is not known to return no result set",
         };
     }
