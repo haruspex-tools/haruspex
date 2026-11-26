@@ -3,24 +3,15 @@
 import { z } from 'zod'
 
 export const UpdateThroughACteRowSchema = z.object({
-  /**
-   * Not known (unsupported-statement); the IR's unknowns say why.
-   * To change it: declare the results in the config file's "results".
-   * Why: haruspex explain lib.update_through_a_cte loan_id
-   */
-  loan_id: z.unknown(),
-  /**
-   * Not known (unsupported-statement); the IR's unknowns say why.
-   * To change it: declare the results in the config file's "results".
-   * Why: haruspex explain lib.update_through_a_cte returned_on
-   */
-  returned_on: z.unknown(),
+  loan_id: z.int32(),
+  returned_on: z.date().nullable(),
 })
 export type UpdateThroughACteRow = z.infer<typeof UpdateThroughACteRowSchema>
 
 /** lib.update_through_a_cte: its parameters, checked before anything is sent. */
 export const UpdateThroughACteParamsSchema = z.strictObject({
   member_id: z.int32().nullable(),
+  returned_on: z.iso.date().nullable().optional(),
 })
 export type UpdateThroughACteParams = z.infer<typeof UpdateThroughACteParamsSchema>
 

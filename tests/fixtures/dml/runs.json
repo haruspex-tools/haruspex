@@ -4,7 +4,10 @@
   // Edges of facts the types alone don't give that no run can reach, each with the reason.
   "edgesNotReached": {
     "depot.cancel_order results[0][].now": "The UPDATE sets status to 'cancelled', so that is all now can be; the IR claims the column's whole CHECK set, which is only wider.",
-    "depot.place_order results[0][].status": "The INSERT writes 'open', so that is all status can be; the IR claims the column's whole CHECK set, which is only wider."
+    "depot.place_order results[0][].status": "The INSERT writes 'open', so that is all status can be; the IR claims the column's whole CHECK set, which is only wider.",
+    "depot.claim_order results[0][].state": "The UPDATE sets state to 'picked', so that is all it can be; the IR claims the column's whole CHECK set, which is only wider.",
+    "depot.claim_order results[0][].was": "The CTE claims only open orders, so that is all was can be; the IR claims the column's whole CHECK set, which is only wider.",
+    "depot.reopen_order results[0][].status": "The UPDATE sets status to 'open', so that is all it can be; the IR claims the column's whole CHECK set, which is only wider."
   },
 
   "setups": {
@@ -13,7 +16,9 @@
     "nothing low": "UPDATE depot.stock SET qty = 100;",
     "a shelved part low": "UPDATE depot.stock SET qty = 1 WHERE part_id = 2;",
     "an order cancelled": "UPDATE depot.pick_order SET status = 'cancelled' WHERE order_id = 1;",
-    "a part out of stock": "UPDATE depot.stock SET qty = 0 WHERE part_id = 1;"
+    "a part out of stock": "UPDATE depot.stock SET qty = 0 WHERE part_id = 1;",
+    "every order picked": "UPDATE depot.pick_order SET status = 'picked';",
+    "only the first order picked": "UPDATE depot.pick_order SET status = CASE order_id WHEN 1 THEN 'picked' ELSE 'cancelled' END;"
   },
 
   "runs": [
@@ -47,6 +52,12 @@
     { "name": "low_floor, a value when declared", "procedure": "depot.low_floor", "parameters": { "@start": 3 } },
     { "name": "add_note_by_synonym", "procedure": "depot.add_note_by_synonym", "parameters": { "@note_id": 3, "@text": "via" }, "setup": "writes" },
     { "name": "pick_order_lines, no note", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 1 }, "setup": "writes" },
-    { "name": "pick_order_lines, a note", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 2 }, "setup": "writes" }
+    { "name": "pick_order_lines, a note", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 2 }, "setup": "writes" },
+    // The oldest open order has no note; with it cancelled, the next has one; with every order picked, there is none to claim.
+    { "name": "claim_order, no note", "procedure": "depot.claim_order", "setup": "writes" },
+    { "name": "claim_order, a note", "procedure": "depot.claim_order", "setup": "an order cancelled" },
+    { "name": "claim_order, none open", "procedure": "depot.claim_order", "setup": "every order picked" },
+    { "name": "reopen_order, a note", "procedure": "depot.reopen_order", "setup": "writes" },
+    { "name": "reopen_order, no note", "procedure": "depot.reopen_order", "setup": "only the first order picked" }
   ]
 }

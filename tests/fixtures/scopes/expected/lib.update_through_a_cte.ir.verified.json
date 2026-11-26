@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/update_through_a_cte.sql": "a833d25b841ae8e8bede649624f906d888d772135ec18ab9a8a5c11e62ff8aa9"
+      "procedures/update_through_a_cte.sql": "1fd9f9382beaf968a49d1fbf8eb6fda36be403d5cb17f9f0923be2bbd405dd13"
     }
   },
   "objects": [
@@ -11,7 +11,7 @@
       "id": "lib.update_through_a_cte",
       "name": "UpdateThroughACte",
       "kind": "procedure",
-      "at": "procedures/update_through_a_cte.sql:2:1",
+      "at": "procedures/update_through_a_cte.sql:3:1",
       "returnsCode": false,
       "parameters": [
         {
@@ -36,6 +36,15 @@
             }
           },
           "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@returned_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "hasDefault": true,
           "output": false
         }
       ],
@@ -65,52 +74,46 @@
         {
           "name": "loan_id",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-statement"
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "unknown",
-              "at": "procedures/update_through_a_cte.sql:13:8"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "returned_on",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-statement"
+            "kind": "date",
+            "sql": "date"
           },
           "presence": "always",
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unknown",
-              "at": "procedures/update_through_a_cte.sql:13:26"
+              "rule": "nullable-column",
+              "at": "lib.loan.returned_on"
             }
           ]
         }
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "lib.update_through_a_cte",
-      "path": "results[0][].loan_id",
-      "reason": "unsupported-statement",
-      "detail": "The OUTPUT at procedures/update_through_a_cte.sql:6:1 of a write through a CTE or derived table, open_loans, is not modelled.",
-      "at": "procedures/update_through_a_cte.sql:13:8"
-    },
-    {
-      "object": "lib.update_through_a_cte",
-      "path": "results[0][].returned_on",
-      "reason": "unsupported-statement",
-      "detail": "The OUTPUT at procedures/update_through_a_cte.sql:6:1 of a write through a CTE or derived table, open_loans, is not modelled.",
-      "at": "procedures/update_through_a_cte.sql:13:26"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

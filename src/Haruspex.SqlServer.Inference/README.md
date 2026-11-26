@@ -671,18 +671,35 @@ it on the stack of calls.
 
 - **Without `INTO`** a write returns one result set of the rows it wrote, many of them, and there even when it wrote none
   (`Output_without_into_returns_a_result_set_even_when_no_row_is_affected`). Its columns are named as a select list's.
+  At most one row when the write has its own `TOP (1)`, or when an `UPDATE` or `DELETE` writes through a CTE or derived
+  table whose `TOP (1)` or `FETCH NEXT 1` (at any depth) limits it, even joined to several rows in `FROM`; an `INSERT` or a
+  `MERGE` through such a source writes past it, so stays many
+  (`Top_1_caps_the_output_of_a_write_and_of_an_update_or_delete_through_a_cte_but_not_an_insert_or_merge_through_it`).
 - It is read as a select list over the write's `FROM` sources (`MERGE`'s `USING` source), filtered by its `WHERE`, with two
   relations added: `inserted`, the target after the write, and `deleted`, before it. For a permanent table they are its
   declared columns: every value is converted to the column, and a NOT NULL column is never null
   (`Output_columns_are_the_values_converted_to_the_target_columns`); that holds also when the target is an alias of a
-  table in `FROM` (`UPDATE o … FROM t AS o JOIN …`), and not through a CTE, a derived table, a view or a synonym, whose
-  `inserted` and `deleted` are unknown. For a temporary table, the table as tracked after and
+  table in `FROM` (`UPDATE o … FROM t AS o JOIN …`), and not through a view or a synonym, whose `inserted` and `deleted`
+  are unknown. For a temporary table, the table as tracked after and
   before the write; for a table variable, its declaration. `inserted.*` and `deleted.*` are stars over the target, so they leave out what a star over it leaves out ("`SELECT *`"). `INSERT`
   has no `deleted`, `DELETE` no `inserted`. Refinement works as for any query: a `WHERE` on a `FROM` source proves its
   columns, and a `DELETE`'s `WHERE` proves `deleted`'s. An `UPDATE`'s `WHERE` without a qualifier names the target's columns
   as they were before, which is `deleted`; in the query read they are ambiguous between `inserted` and `deleted`, so
   `deleted` is not refined by it, which only claims less (refining it would mean binding the `WHERE` to `deleted` alone,
   and `inserted`'s values may differ).
+- **Through a CTE or a derived table** (the queue-claim idiom, `WITH next AS (SELECT TOP (1) … ORDER BY …) UPDATE next … OUTPUT
+  inserted.…`), `inserted` and `deleted` are rows of the source: named as it names its columns, a column list or an alias
+  included, with a star listing only those, and each the table's column as declared, after or before the write, not as the
+  source's `WHERE` found it
+  (`Output_through_a_cte_or_derived_table_is_the_columns_it_names_typed_as_the_table_declares_them`). Semantics follows
+  the source down to its table (`Binder.WriteThrough`), through CTEs of CTEs and derived tables of derived tables, only
+  while each is one query of one source, a table of the project or another such source, whose every column is a column of
+  that source unchanged (by name, through parentheses, or a star). Anything else leaves `inserted` and `deleted` unknown,
+  with the reason: a join or `APPLY`, which may write another table and whose star reaches it (404); an aggregate,
+  `DISTINCT` or a set operation, which the server refuses (4403, 4406); a column with `COLLATE` (4406); a `VALUES` list
+  (4421); a view, a synonym, a temporary table or a table variable underneath; and a computed column, which the server
+  allows, evaluated over the row, but which isn't modelled
+  (`Writes_through_a_cte_of_a_join_an_aggregate_distinct_or_a_set_operation_are_refused_or_reach_another_table`).
 - **`MERGE`** (`Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source`):
   `deleted` is null for the rows it inserts, `inserted` for the rows it deletes, and the source's columns for the rows it
   changes under `WHEN NOT MATCHED BY SOURCE`. Each such column has the null rule `missing-for-action`, when the statement has that
