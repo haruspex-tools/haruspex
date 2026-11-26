@@ -97,13 +97,16 @@ is short; the type is a claim of its own.
 ## The seed must reach every case
 
 A claim that a field may be null is only tested by data in which it is null; a claim that it never is, only by data that
-could have made it so. So the validator records what it saw at every path, and
-`The_seed_reaches_every_case_the_ir_allows` fails unless every nullable field was seen null, every field was seen with a
-value, and every result that may be absent was seen absent. For the fixtures about scalar facts (each says so in its
-`runs.json`, with `seedReachesEveryEdge`), `The_seed_reaches_every_edge_the_ir_claims` also requires each bound, each full
-length and each value of each set to be reached: a maximum of 255 is not shown to hold by values of 7.
-`Every_procedure_is_run_or_excluded_with_a_reason` makes sure no fixture procedure is forgotten; one that can't be run is
-listed in its fixture's `notRun`, with the reason.
+could have made it so. So the validator records what it saw at every path, and `The_seed_reaches_every_case_the_ir_allows`
+fails unless every nullable field was seen null, every field was seen with a value, and every result that may be absent
+was seen absent. Every fixture's seed must also reach each edge of a fact its types alone don't give
+(`The_seed_reaches_every_edge_its_types_alone_do_not_give`): each bound, full length and minimum length from a CHECK, an
+expression's literals, the engine or a declaration, and each value of each set, since a maximum of 255 is not shown to
+hold by values of 7. A type's own range is held at its edges by the observation tests of the built-in types and the
+expressions, and for a first rowset by `DescribedTypeTests`. An edge no run can reach is excused in the fixture's
+`runs.json`, under `edgesNotReached`, with the reason. Four fixtures (`seedReachesEveryEdge`) are held to every edge, the
+types' too. `Every_procedure_is_run_or_excluded_with_a_reason` makes sure no fixture procedure is forgotten; one that
+can't be run is listed in its fixture's `notRun`, with the reason.
 
 In the literature this is **coverage**, here measured over the claims rather than over the code: the question is not "did
 the test run this line?" but "did the data give this claim a chance to fail?". Line coverage of haruspex would be the obvious
@@ -114,13 +117,13 @@ would break a claim.
 
 Three choices keep a passing run meaningful.
 
-**Runs read a snapshot that can't be written.** Tests run in parallel against one database, seeded once. A run that wrote,
-even inside a transaction rolled back, would hold locks other runs wait on, and a procedure that wrote by mistake would
-change what later runs see. So every run that only reads goes through a **database snapshot**, read-only to everyone, as a
-user who can do nothing else; a run that writes says so (a `setup` in `runs.json`) and runs alone, in a transaction that is
-rolled back. The obvious alternatives were a database per writing run, which costs a deploy and a seed each, and retrying a
-run that deadlocks, which hides the cause; the [differential tests' README](../../tests/Haruspex.DifferentialTests/README.md)
-weighs them.
+**Runs read a snapshot that can't be written.** Tests run in parallel. A run that wrote, even inside a transaction rolled
+back, would hold locks other runs wait on, and a procedure that wrote by mistake would change what later runs see. So every
+run that only reads goes through a **database snapshot** of the seeded database, read-only to everyone, as a user who can do
+nothing else; a run that writes says so (a `setup` in `runs.json`) and runs alone in a copy of the database, a room of its
+own, in a transaction that is rolled back. The alternatives were one gate that made every write wait for every read, which
+made the suite nearly serial once most observations wrote, and retrying a run that deadlocks, which hides the cause; the
+[differential tests' README](../../tests/Haruspex.DifferentialTests/README.md) weighs them.
 
 **The server's image is pinned by tag and digest** (`SqlServerFixture.Image`). Pinned by tag alone, the image can be replaced
 under the same name; unpinned, a new cumulative update changes the engine between two runs of the same commit, and a failure
@@ -155,4 +158,4 @@ argument is in the inference's rules, and the harness is what keeps those rules 
   turned on the database itself, with the engine checked against a rewritten form of each query.
 - [`tests/fixtures/README.md`](../../tests/fixtures/README.md): a fixture's folder, `runs.json`, and how to add one.
 - [`tests/Haruspex.DifferentialTests/README.md`](../../tests/Haruspex.DifferentialTests/README.md): how a run works, how
-  the server is found, why writes take a gate, and every rule each observation test pins.
+  the server is found, why each write has a database of its own, and every rule each observation test pins.

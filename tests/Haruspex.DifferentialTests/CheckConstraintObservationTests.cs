@@ -15,7 +15,7 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     /// <summary>Runs <paramref name="setup"/>, then returns the first column of the first row of <paramref name="query"/>; rolled back.</summary>
     private async Task<object?> Query(string setup, string query)
     {
-        server.Require();
+        await server.RequireAsync();
         // It creates a table and writes to it, so it is alone in the database while it does (README.md).
         await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
         await using (var command = session.Command(setup))
@@ -70,7 +70,7 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     {
         // Collations is a closed list, so that a name off it is unknown and never read as single-byte: every name the server has
         // must be on it with the server's code page, and nothing else.
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
         await using var command = session.Command("SELECT name, CAST(COLLATIONPROPERTY(name, 'CodePage') AS int) FROM sys.fn_helpcollations();");
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);
@@ -88,7 +88,7 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     {
         // A collation of no code page (Indic_General_100_CI_AS, Assamese_100_CI_AS) holds only nvarchar: CREATE DATABASE refuses
         // each with Msg 453, so the config refuses one as the database's collation. Each is tried, and none is ever made.
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var scratch = await server.ScratchAsync();
         await using var connection = await scratch.OpenAsync(token);
@@ -356,7 +356,7 @@ public class CheckConstraintObservationTests(SqlServerFixture server)
     [InlineData(SqlBulkCopyOptions.CheckConstraints, false)]
     public async Task A_bulk_copy_checks_no_row_unless_asked_and_leaves_the_check_not_trusted(SqlBulkCopyOptions options, bool stored)
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
         await using (var create = session.Command(Words))
             await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);

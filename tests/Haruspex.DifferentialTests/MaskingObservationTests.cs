@@ -21,7 +21,7 @@ public class MaskingObservationTests(SqlServerFixture server)
     /// </summary>
     private async Task<string> AsReader(string[] setup, string query, string user = "obs_mask_reader")
     {
-        server.Require();
+        await server.RequireAsync();
         var cancel = TestContext.Current.CancellationToken;
         await using var session = await server.WriteAsync(cancel);
         foreach (var batch in (string[])[Reader, .. setup])

@@ -3,17 +3,17 @@ using Microsoft.Data.SqlClient;
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// A connection to the test database that holds its place in the <see cref="DatabaseGate"/> until it is disposed.
-/// Only <see cref="SqlServerFixture"/> hands them out (<see cref="SqlServerFixture.ReadAsync"/>,
-/// <see cref="SqlServerFixture.WriteAsync"/>), and it gives no connection string away, so a test cannot reach the
-/// database except through the gate. <c>IsolationTests</c> fails if one opens a connection of its own.
+/// A connection to a test database: the shared snapshot, or for a write session a room it holds until it is disposed
+/// (<see cref="RoomPool"/>). Only <see cref="SqlServerFixture"/> hands them out (<see cref="SqlServerFixture.ReadAsync"/>,
+/// <see cref="SqlServerFixture.WriteAsync"/>), and it gives no connection string away, so a test cannot reach a database
+/// except through a session. <c>IsolationTests</c> fails if one opens a connection of its own.
 /// </summary>
 public abstract class DatabaseSession : IAsyncDisposable
 {
     private readonly SqlConnection connection;
-    private readonly IDisposable pass;
+    private readonly IDisposable? pass;
 
-    private protected DatabaseSession(SqlConnection connection, SqlTransaction? transaction, IDisposable pass)
+    private protected DatabaseSession(SqlConnection connection, SqlTransaction? transaction, IDisposable? pass)
     {
         this.connection = connection;
         Transaction = transaction;
@@ -44,8 +44,8 @@ public abstract class DatabaseSession : IAsyncDisposable
             }
             finally
             {
-                // Last, so no other session starts while this one's locks may still be held.
-                pass.Dispose();
+                // Last, so no other session is given the room while this one's locks may still be held.
+                pass?.Dispose();
             }
         }
 

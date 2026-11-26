@@ -3,7 +3,7 @@
   "source": {
     "dialect": "tsql",
     "files": {
-      "procedures/shift_times.sql": "6fbdae39f9ebe57d0727f5d8e07da69c96a3c55e24050cf2f3070faf83a84cff"
+      "procedures/shift_times.sql": "aaec8d40eade432465f37e4080b83f179f55c3578cccd2d2022d2809e2040825"
     }
   },
   "objects": [
@@ -68,6 +68,16 @@
             "kind": "datetime",
             "format": "offset",
             "sql": "datetimeoffset(7)"
+          },
+          "hasDefault": true,
+          "output": false
+        },
+        {
+          "name": "@clocked_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
           },
           "hasDefault": true,
           "output": false
@@ -187,6 +197,22 @@
             {
               "rule": "parameter",
               "at": "@stamped_at"
+            }
+          ]
+        },
+        {
+          "name": "clocked_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(7)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@clocked_at"
             }
           ]
         }

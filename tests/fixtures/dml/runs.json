@@ -1,11 +1,19 @@
 // The runs of the dml fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
 // each key means.
 {
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "depot.cancel_order results[0][].now": "The UPDATE sets status to 'cancelled', so that is all now can be; the IR claims the column's whole CHECK set, which is only wider.",
+    "depot.place_order results[0][].status": "The INSERT writes 'open', so that is all status can be; the IR claims the column's whole CHECK set, which is only wider."
+  },
+
   "setups": {
     // Changes nothing, but asks for a write session, which a run of a procedure that writes permanent tables needs.
     "writes": "SET NOCOUNT ON;",
     "nothing low": "UPDATE depot.stock SET qty = 100;",
-    "a shelved part low": "UPDATE depot.stock SET qty = 1 WHERE part_id = 2;"
+    "a shelved part low": "UPDATE depot.stock SET qty = 1 WHERE part_id = 2;",
+    "an order cancelled": "UPDATE depot.pick_order SET status = 'cancelled' WHERE order_id = 1;",
+    "a part out of stock": "UPDATE depot.stock SET qty = 0 WHERE part_id = 1;"
   },
 
   "runs": [
@@ -14,6 +22,12 @@
     { "name": "get_order, with lines and no note", "procedure": "depot.get_order", "parameters": { "@order_id": 1 } },
     { "name": "get_order, no lines", "procedure": "depot.get_order", "parameters": { "@order_id": 3 } },
     { "name": "get_order, no such order", "procedure": "depot.get_order", "parameters": { "@order_id": 999 } },
+    // The edges of the CHECKs: each status, and the least quantity of a line (qty > 0) and of stock (qty >= 0).
+    { "name": "get_order, picked, a line of one", "procedure": "depot.get_order", "parameters": { "@order_id": 2 } },
+    { "name": "get_order, cancelled", "procedure": "depot.get_order", "parameters": { "@order_id": 1 }, "setup": "an order cancelled" },
+    { "name": "list_parts, a part out of stock", "procedure": "depot.list_parts", "setup": "a part out of stock" },
+    { "name": "cancel_order, cancelled already", "procedure": "depot.cancel_order", "parameters": { "@order_id": 1 }, "setup": "an order cancelled" },
+    { "name": "pick_order_lines, cancelled", "procedure": "depot.pick_order_lines", "parameters": { "@order_id": 1 }, "setup": "an order cancelled" },
     { "name": "log_error", "procedure": "depot.log_error", "parameters": { "@procedure": "depot.test", "@message": null }, "setup": "writes" },
     { "name": "place_order", "procedure": "depot.place_order", "parameters": { "@part_id": 2, "@qty": 5 }, "setup": "writes" },
     { "name": "place_order, a part with no stock, a note", "procedure": "depot.place_order", "parameters": { "@part_id": 3, "@qty": 1, "@note": "call first" }, "setup": "writes" },

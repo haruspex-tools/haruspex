@@ -99,6 +99,23 @@ public class FixtureSnapshotTests
     public void Each_procedure_emits_the_reviewed_json_schema(string procedure) =>
         Snapshot.Match(JsonSchemaEmitter.Emit(IrJsonReader.Read(IrJsonWriter.Write(Infer(procedure)))).Expected(), FixtureOf[procedure].Expected, $"{procedure}.jsonschema", "json");
 
+    /// <summary>
+    /// The fixtures' README describes a project by its rule and names each one, so a contributor copying a project fixture
+    /// finds them all; a project added or removed without the README saying so fails here.
+    /// </summary>
+    [Fact]
+    public void The_fixtures_readme_names_every_project_and_no_other()
+    {
+        var readme = File.ReadAllText(Path.Combine(RepositoryPaths.Fixtures, "README.md"));
+        var start = readme.IndexOf("- **A project for the CLI**", StringComparison.Ordinal);
+        Assert.True(start >= 0, "The README has no bullet for a project for the CLI.");
+        var bullet = readme[start..readme.IndexOf("\n\n", start, StringComparison.Ordinal)];
+        var named = bullet[..bullet.IndexOf(')', StringComparison.Ordinal)];
+
+        var fixtures = Fixture.All.Select(f => f.Name).Where(n => named.Contains($"`{n}`", StringComparison.Ordinal));
+        Assert.Equal(Fixture.All.Where(f => f.IsProject).Select(f => f.Name), fixtures);
+    }
+
     /// <summary>The names of the files in a fixture's <c>expected/</c>, leaving out any received file a failing run wrote.</summary>
     private static List<string> Reviewed(string folder) =>
         [.. Directory.EnumerateFiles(folder).Select(f => Path.GetFileName(f)).Where(f => !f.Contains(".received.", StringComparison.Ordinal)).Order(StringComparer.Ordinal)];

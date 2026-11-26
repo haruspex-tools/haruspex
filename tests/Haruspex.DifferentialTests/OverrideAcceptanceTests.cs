@@ -26,7 +26,7 @@ public class OverrideAcceptanceTests(SqlServerFixture server)
     [MemberData(nameof(Claims))]
     public async Task A_wrong_override_is_rejected_by_the_generated_zod(string config, string rejectedKey, bool accepted)
     {
-        server.Require();
+        await server.RequireAsync();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated Zod was not run against real output");
 
         var project = SqlProject.Load(Fixture.Named("checks").Database);

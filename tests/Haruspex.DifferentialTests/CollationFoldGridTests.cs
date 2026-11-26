@@ -24,7 +24,7 @@ public class CollationFoldGridTests(SqlServerFixture server)
     [MemberData(nameof(Cells))]
     public async Task The_fold_of_each_proven_collation_is_the_one_observed(string collation)
     {
-        server.Require();
+        await server.RequireAsync();
         var observed = await Observe(collation);
         var path = Path.Combine(RepositoryPaths.Root, "src", "Haruspex.SqlServer.Semantics", "Collations", CollationFold.FileName(collation, StringKind.CodePage) + ".json");
         if (Environment.GetEnvironmentVariable("HARUSPEX_ACCEPT") == "1")
@@ -43,7 +43,7 @@ public class CollationFoldGridTests(SqlServerFixture server)
     [MemberData(nameof(UnicodeCells))]
     public async Task Under_the_Unicode_rules_a_repeat_mark_equals_the_character_before_it(string collation)
     {
-        server.Require();
+        await server.RequireAsync();
         var cancel = TestContext.Current.CancellationToken;
         await using var session = await server.ReadAsync(cancel);
         foreach (var type in collation.EndsWith("_UTF8", StringComparison.Ordinal) ? ["nvarchar(10)", "varchar(10)"] : new[] { "nvarchar(10)" })

@@ -5,6 +5,11 @@
   // one.
   "seedReachesEveryEdge": false,
 
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "till.basket_total results[0][].quantity: min": "The body inserts a quantity of 2, so the line type's CHECK (quantity > 0) is never met at 1; the IR claims the CHECK's bound, which is only wider."
+  },
+
   "runs": [
     { "name": "find_products, by name", "procedure": "till.find_products", "parameters": { "@name": "Tea" } },
     { "name": "find_products, by name, code and label", "procedure": "till.find_products", "parameters": { "@name": "Tea", "@sku": "TEA-0001", "@label": "tea" } },
@@ -18,6 +23,13 @@
         "@day": "2026-11-16", "@opened_at": "2026-11-16T08:30:00", "@logged_at": "2026-11-16T08:30:00.997",
         "@rota_slot": "2026-11-16T09:00:00", "@till_time": "08:30:00.125", "@stamped_at": "2026-11-16T08:30:00.1234567+05:30"
       }
+    },
+    // The earliest day and the seventh fractional digit, which reach the procedure only when each is sent as its declared type
+    // (FixtureOutputTests.A_run_s_date_argument_reaches_the_procedure_as_written).
+    {
+      "name": "shift_times, the edges",
+      "procedure": "till.shift_times",
+      "parameters": { "@day": "0001-01-01", "@opened_at": "0001-01-01T00:00:00", "@clocked_at": "2026-11-16T08:30:00.1234567" }
     },
     { "name": "price_band, a null rate", "procedure": "till.price_band", "parameters": { "@lowest": 1, "@rate": null } },
     { "name": "shift_times, nulls", "procedure": "till.shift_times", "parameters": { "@day": null, "@opened_at": null } },
@@ -37,10 +49,10 @@
   ],
 
   "notRun": {
-    "till.add_lines": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.grade_of": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.echo_readings": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.count_serials": "Its table-valued parameter is one runs.json can't give; ParameterObservationTests calls it.",
-    "till.echo_echoes": "Its table-valued parameters are ones runs.json can't give; ParameterObservationTests calls it."
+    "till.add_lines": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows, and ParameterObservationTests with the table left out.",
+    "till.grade_of": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows.",
+    "till.echo_readings": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows.",
+    "till.count_serials": "Its table-valued parameter is one runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with the table left out, since no row can be sent in its type.",
+    "till.echo_echoes": "Its table-valued parameters are ones runs.json can't give; MssqlFunctionTests.The_till_fixture_s_table_valued_parameters_return_what_their_schemas_accept calls it with rows."
   }
 }

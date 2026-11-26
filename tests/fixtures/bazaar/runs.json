@@ -4,13 +4,16 @@
   "setups": {
     "no sales": "DELETE FROM bazaar.stall_sale; DELETE FROM bazaar.web_order; DELETE FROM bazaar.auction_lot; DELETE FROM bazaar.barter;",
     "lenient": "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF;",
-    "no tallies": "DELETE FROM bazaar.swap_tally;"
+    "no tallies": "DELETE FROM bazaar.swap_tally;",
+    // Barters of 1 and 100 units, which meet the stall sales at the ends of their quantity's CHECK (1 to 100) in mixed's INTERSECT.
+    "barters at the stall's bounds": "INSERT INTO bazaar.barter (barter_id, swapped_at, opened, units, estimate, small_fee, memo) VALUES (10, '2026-05-02 11:30', '10:00', 1, 40.5, 1.50, NULL), (11, '2026-05-02 11:30', '10:00', 100, 40.5, 1.50, NULL);"
   },
 
   "runs": [
     { "name": "sales_feed", "procedure": "bazaar.sales_feed" },
     { "name": "sales_feed, no sales", "procedure": "bazaar.sales_feed", "setup": "no sales" },
     { "name": "mixed", "procedure": "bazaar.mixed" },
+    { "name": "mixed, the INTERSECT at its CHECK's bounds", "procedure": "bazaar.mixed", "setup": "barters at the stall's bounds" },
     { "name": "mixed, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.mixed", "setup": "lenient" },
     { "name": "lenient, under ANSI_WARNINGS and ARITHABORT off", "procedure": "bazaar.lenient", "setup": "lenient" },
     { "name": "swap_tally_types", "procedure": "bazaar.swap_tally_types" },

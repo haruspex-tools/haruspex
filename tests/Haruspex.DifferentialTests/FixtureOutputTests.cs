@@ -1,3 +1,4 @@
+using System.Data;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.Ir;
@@ -18,7 +19,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(RunNames))]
     public async Task The_output_keeps_every_claim_of_the_ir(string run)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var report = await server.ValidateAsync(Runs.Named(run));
 
@@ -29,7 +30,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task The_seed_reaches_every_case_the_ir_allows(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
 
         var seen = new Dictionary<string, IReadOnlySet<(string, Seen)>>(StringComparer.Ordinal);
         foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
@@ -53,8 +54,36 @@ public class FixtureOutputTests(SqlServerFixture server)
     [MemberData(nameof(EdgeFixtures))]
     public async Task The_seed_reaches_every_edge_the_ir_claims(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
 
+        var missing = await MissingEdges(fixture, EdgeScope.Every);
+
+        Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+    }
+
+    /// <summary>
+    /// Every deployed fixture's seed reaches the edges of facts its types alone don't give (<see cref="EdgeScope.NotFromTheType"/>):
+    /// a CHECK's bound carried into JSON or a second result set is tested by nothing else. A fixture's <c>edgesNotReached</c>
+    /// excuses an edge with the reason, and an excuse that names no missing edge fails, so none outlives its reason.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Fixtures))]
+    public async Task The_seed_reaches_every_edge_its_types_alone_do_not_give(string fixture)
+    {
+        await server.RequireAsync();
+
+        var all = await MissingEdges(fixture, EdgeScope.NotFromTheType, excused: false);
+        var excuses = Runs.EdgesNotReached[fixture];
+        var missing = all.Where(m => !excuses.Keys.Any(e => Runs.Excuses(e, m))).ToList();
+        var stale = excuses.Keys.Where(e => !all.Any(m => Runs.Excuses(e, m))).ToList();
+
+        Assert.True(missing.Count == 0, "No run reached these edges, of facts a type alone doesn't give, so the facets there are untested. Extend the seed or add a run, or excuse the edge in edgesNotReached with the reason:\n" + string.Join("\n", missing));
+        Assert.True(stale.Count == 0, "edgesNotReached excuses these, but the runs reach every edge they name, or there is none: remove them:\n" + string.Join("\n", stale));
+    }
+
+    /// <summary>The edges of <paramref name="scope"/> no run of <paramref name="fixture"/> reached, less those of procedures not run, and of excused ones.</summary>
+    private async Task<List<string>> MissingEdges(string fixture, EdgeScope scope, bool excused = true)
+    {
         var reached = new Dictionary<string, IReadOnlySet<(string, string)>>(StringComparer.Ordinal);
         foreach (var run in Runs.All.Where(r => r.Fixture == fixture))
         {
@@ -64,10 +93,9 @@ public class FixtureOutputTests(SqlServerFixture server)
             reached[run.Procedure] = into;
         }
 
-        var missing = Coverage.MissingEdges(Fixture.Named(fixture).Ir, reached)
+        return [.. Coverage.MissingEdges(Fixture.Named(fixture).Ir, reached, scope)
             .Where(m => !Runs.NotRun.Keys.Any(p => m.StartsWith(p + " ", StringComparison.Ordinal)))
-            .ToList();
-        Assert.True(missing.Count == 0, "No run reached these edges, so the facets there are untested. Extend the seed:\n" + string.Join("\n", missing));
+            .Where(m => !excused || !Runs.EdgesNotReached[fixture].Keys.Any(e => Runs.Excuses(e, m)))];
     }
 
     /// <summary>
@@ -78,7 +106,7 @@ public class FixtureOutputTests(SqlServerFixture server)
     [Fact]
     public async Task An_untrusted_constraint_claims_nothing_and_the_data_breaks_it()
     {
-        server.Require();
+        await server.RequireAsync();
         var fields = Fixture.Named("checks").Ir.Types["ListTicketsRow"].Fields;
         IrFacets Facets(string name) => Assert.IsType<IrScalar>(fields.Single(f => f.Name == name).Type).Facets!;
 
@@ -98,10 +126,30 @@ public class FixtureOutputTests(SqlServerFixture server)
         Assert.True(Least("restored") > 0);
     }
 
+    /// <summary>
+    /// A run's argument is sent as the type its parameter declares (<see cref="RunArgument"/>), so the earliest day reaches a
+    /// <c>date</c> and the seventh fractional digit a <c>datetime2(7)</c>. Sent as <c>datetime</c>, the first is refused before
+    /// it leaves the driver, and the second rounded to <c>.1233333</c>.
+    /// </summary>
     [Fact]
-    public void Earlier_runs_left_no_database_behind()
+    public async Task A_run_s_date_argument_reaches_the_procedure_as_written()
     {
-        server.Require();
+        await server.RequireAsync();
+        var run = Runs.Named("till: shift_times, the edges");
+        Assert.Equal(SqlDbType.Date, run.Parameters["@day"].Parameter("@day").SqlDbType);
+
+        var set = Assert.Single(await server.ObserveAsync(run));
+        var row = Assert.Single(set.Rows);
+        object? Column(string name) => row[set.Columns.ToList().IndexOf(name)];
+        Assert.Equal(DateTime.MinValue, Column("day"));
+        Assert.Equal(DateTime.MinValue, Column("opened_at"));
+        Assert.Equal(new DateTime(2026, 11, 16, 8, 30, 0).AddTicks(1_234_567), Column("clocked_at"));
+    }
+
+    [Fact]
+    public async Task Earlier_runs_left_no_database_behind()
+    {
+        await server.RequireAsync();
 
         // Reported as a skip, which the test output prints with its reason at any verbosity (xunit's warnings are
         // not shown by `dotnet test`). Not a failure: the database may belong to another run going on now against

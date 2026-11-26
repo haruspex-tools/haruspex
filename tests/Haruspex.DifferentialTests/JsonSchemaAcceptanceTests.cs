@@ -38,7 +38,7 @@ public class JsonSchemaAcceptanceTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task The_generated_json_schema_accepts_every_output(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the generated JSON Schema was not run against real output");
 
         var document = Fixture.Named(fixture).Ir;

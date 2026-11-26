@@ -28,7 +28,7 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
     [MemberData(nameof(Forms))]
     public async Task Each_expression_haruspex_types_has_the_type_sql_server_describes(string form)
     {
-        server.Require();
+        await server.RequireAsync();
         var outcomes = CatalogueSweep.Infer(form);
         var typed = outcomes.Where(o => o.Sql is not null).ToList();
         var described = await Describe([.. typed.Select(o => CatalogueSweep.Query(o.Expression))]);
@@ -52,7 +52,7 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
         // failed conversion is an error that ends its statement and claims nothing about a value; but it ends the statement
         // for every row, so an expression that errors over the whole table runs again a row at a time, and each row it gives
         // is checked. A claim is left unchecked only when every row errors: those are the snapshot below.
-        server.Require();
+        await server.RequireAsync();
         var claims = CatalogueSweep.Infer(form)
             .Where(o => o.Field is { Type: IrScalar scalar } field && (field.NullableBecause.Count == 0 || scalar.Facets is { Min: not null } or { Max: not null } or { Length: not null }))
             .ToList();
@@ -106,14 +106,17 @@ public class CatalogueSweepGridTests(SqlServerFixture server)
     /// <summary>The values a batch of claims gave, and the errors that ended the others.</summary>
     private sealed record EdgeRun(List<EdgeValue> Rows, List<(int Claim, int? Row, int Error)> Errors);
 
-    /// <summary>The most queries one read session runs: the gate lets a writer wait two minutes for the readers already in.</summary>
+    /// <summary>
+    /// The most queries one read session runs. Chosen when every write waited at one gate for the reads already in, which a long
+    /// read could hold for two minutes; write sessions now have databases of their own, and the batches are kept as they were,
+    /// so the sweep runs the same queries.
+    /// </summary>
     private const int RunsPerSession = 250;
 
     /// <summary>
     /// Runs each claim's query, over the whole edge table or over one row of it, each in its own <c>TRY</c>, and returns the
     /// values they gave and the errors that ended them. They run in batches, each in a read session of its own over a
-    /// temporary copy of the table, so that no read holds the gate long enough to time out a writer waiting for it
-    /// (<see cref="RunsPerSession"/>).
+    /// temporary copy of the table (<see cref="RunsPerSession"/>).
     /// </summary>
     private async Task<EdgeRun> RunOverEdges(List<CatalogueSweep.Outcome> claims, IReadOnlyList<(int Claim, int? Row)> runs, CancellationToken cancel)
     {

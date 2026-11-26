@@ -16,7 +16,7 @@ public partial class DeclaredColumnObservationTests(SqlServerFixture server)
     /// </summary>
     private async Task<string?> Stored(string? text, string query, string type = "nvarchar(max)")
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
         await using (var create = session.Command($"CREATE TABLE dbo.obs_stored (v {type} NULL);"))
             await create.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);

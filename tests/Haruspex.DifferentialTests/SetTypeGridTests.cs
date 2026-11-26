@@ -87,7 +87,7 @@ public class SetTypeGridTests(SqlServerFixture server)
 
     private async Task Compare(string form, IEnumerable<string[]> all)
     {
-        server.Require();
+        await server.RequireAsync();
 
         // COALESCE whose first argument is a string literal is folded by the server to that literal beside a string of its kind
         // or a lesser one, and typed by it alone (observed: Coalesce_of_a_string_literal_first_is_folded_to_it_beside_a_string);

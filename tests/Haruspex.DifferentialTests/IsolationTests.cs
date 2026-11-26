@@ -1,50 +1,46 @@
 using System.Text.RegularExpressions;
 using Haruspex.DifferentialTests.Server;
-using Haruspex.DifferentialTests.Validation;
 using Microsoft.Data.SqlClient;
 
 namespace Haruspex.DifferentialTests;
 
 /// <summary>
-/// A run that writes must never overlap a run that reads the same database (README.md, "Runs that write"). GitHub's
-/// CI lost four tests to SQL Server error 1205 when a run's setup deleted rows that another run was reading.
+/// A run that writes must never share a database with a run that reads (README.md, "Runs that write"). GitHub's CI lost
+/// four tests to SQL Server error 1205 when a run's setup deleted rows that another run was reading.
 /// </summary>
 public class IsolationTests(SqlServerFixture server)
 {
     /// <summary>
-    /// The deadlock, made certain: a writing run's setup is held open while a reading run of the same tables starts.
-    /// Before the gate the reader waited on the writer's locks every time (LCK_M_S on bom.part's key), the first half
-    /// of the 1205 seen in CI. Now it must wait at the gate instead, never touch the tables while they are being
-    /// written, and see the seeded rows once the writer has rolled back.
+    /// The deadlock, made impossible: a writing run's setup is held open while a reading run of the same tables runs.
+    /// With one database the reader waited on the writer's locks every time (LCK_M_S on bom.part's key), the first half
+    /// of the 1205 seen in CI; then a gate made every write wait for every read, and the suite nearly serial. Now the
+    /// writer is in a database of its own, so the reader runs to its end while the writer is still open, waits on no
+    /// lock of it, and sees the seeded rows the writer deleted.
     /// </summary>
     [Fact]
-    public async Task A_run_that_writes_never_overlaps_a_run_that_reads()
+    public async Task A_run_that_writes_never_shares_a_database_with_a_run_that_reads()
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         var writing = Runs.Named("trees: list_parts, no parts");
         var reading = Runs.Named("trees: list_parts");
 
-        Task<IReadOnlyList<ObservedResultSet>> read;
-        string? blocked;
-        await using (var writer = await server.WriteAsync(token))
-        {
-            // The writing run's setup, held open: its locks stay until the session rolls back.
-            await using (var setup = writer.Command(writing.Setup!))
-                await setup.ExecuteNonQueryAsync(token);
+        await using var writer = await server.WriteAsync(token);
+        // The writing run's setup, held open: its locks stay until the session rolls back.
+        await using (var setup = writer.Command(writing.Setup!))
+            await setup.ExecuteNonQueryAsync(token);
+        await using (var empty = writer.Command("SELECT COUNT(*) FROM bom.part;"))
+            Assert.Equal(0, await empty.ExecuteScalarAsync(token));
 
-            read = server.RunAsync(reading, token);
-            await Task.WhenAny(read, Task.Delay(TimeSpan.FromSeconds(1), token));
+        var read = server.RunAsync(reading, token);
+        var ended = await Task.WhenAny(read, Task.Delay(TimeSpan.FromSeconds(30), token));
 
-            await using var waiting = writer.Command(
-                "SELECT TOP (1) CONCAT('session ', session_id, ' waits on ', wait_type, ' for ', wait_resource) FROM sys.dm_exec_requests WHERE blocking_session_id = @@SPID;");
-            blocked = await waiting.ExecuteScalarAsync(token) as string;
-            Assert.False(read.IsCompleted, "The reading run ended while the writing run was still open, so the two overlapped.");
-        }
-
-        var rows = Assert.Single(await read).Rows;
+        await using var waiting = writer.Command(
+            "SELECT TOP (1) CONCAT('session ', session_id, ' waits on ', wait_type, ' for ', wait_resource) FROM sys.dm_exec_requests WHERE blocking_session_id = @@SPID;");
+        var blocked = await waiting.ExecuteScalarAsync(token) as string;
         Assert.True(blocked is null, $"A run that reads waited on the locks of a run that writes ({blocked}); with another lock the other way round, that is a deadlock.");
-        Assert.NotEmpty(rows);
+        Assert.True(ended == read, "The reading run didn't end within 30 seconds while the writing run was open, so it waited for it.");
+        Assert.NotEmpty(Assert.Single(await read).Rows);
     }
 
     /// <summary>
@@ -58,7 +54,7 @@ public class IsolationTests(SqlServerFixture server)
     [InlineData("CREATE TABLE dbo.obs_never (i int NULL);", 3906)]
     public async Task A_read_session_cannot_write(string sql, int error)
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
         await using var command = session.Command(sql);
 
@@ -75,9 +71,9 @@ public class IsolationTests(SqlServerFixture server)
     [Fact]
     public async Task A_run_whose_procedure_writes_fails_without_a_setup()
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
-        var run = new ProcedureRun("probe: writes", "trees", "dbo.gate_probe_write", new Dictionary<string, object?>());
+        var run = new ProcedureRun("probe: writes", "trees", "dbo.gate_probe_write", new Dictionary<string, RunArgument>());
 
         var e = await Assert.ThrowsAsync<SqlException>(() => server.RunAsync(run, token));
 
@@ -93,7 +89,7 @@ public class IsolationTests(SqlServerFixture server)
     [Fact]
     public async Task A_read_session_cannot_switch_back_to_the_login_user()
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var session = await server.ReadAsync(token);
         await using (var revert = session.Command("REVERT;"))
@@ -107,7 +103,7 @@ public class IsolationTests(SqlServerFixture server)
     [Fact]
     public async Task A_read_session_cannot_reach_the_test_database_itself()
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var session = await server.ReadAsync(token);
         await using var escape = session.Command($"USE [{server.Database}];");
@@ -118,7 +114,7 @@ public class IsolationTests(SqlServerFixture server)
     [Fact]
     public async Task A_read_session_may_use_a_temporary_table_of_its_own()
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
         await using var command = session.Command("CREATE TABLE #t (i int NOT NULL); INSERT INTO #t VALUES (1); SELECT i FROM #t;");
 
@@ -127,7 +123,7 @@ public class IsolationTests(SqlServerFixture server)
 
     /// <summary>
     /// The fixture gives no connection string away, but a test could still build one; this keeps every connection
-    /// to the test database inside the fixture and the sessions, where the gate is. It looks for the types' names,
+    /// to the test databases inside the fixture and the sessions, which keep reads and writes apart. It looks for the types' names,
     /// not for one way of constructing them, so <c>new(…)</c>, a fully qualified name and a provider factory are all
     /// caught. It catches a mistake; it cannot stop someone set on going around it.
     /// </summary>
@@ -154,7 +150,7 @@ public class IsolationTests(SqlServerFixture server)
             .Where(f => NewConnection().IsMatch(File.ReadAllText(Path.Combine(project, f))))
             .ToList();
 
-        Assert.True(offenders.Count == 0, "These name a connection type, so may open a connection of their own around the gate. Use SqlServerFixture.ReadAsync or WriteAsync:\n" + string.Join("\n", offenders));
+        Assert.True(offenders.Count == 0, "These name a connection type, so may open a connection of their own around the sessions. Use SqlServerFixture.ReadAsync or WriteAsync:\n" + string.Join("\n", offenders));
     }
 
     // Built from pieces so that this file, which is scanned like any other, does not name the types itself. A

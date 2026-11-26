@@ -88,7 +88,7 @@ public class ArithmeticGridTests(SqlServerFixture server)
     [MemberData(nameof(Grids))]
     public async Task Each_expression_has_the_type_sql_server_describes(string grid)
     {
-        server.Require();
+        await server.RequireAsync();
         var expressions = grid switch
         {
             "binary" => BinaryExpressions().ToList(),
