@@ -15,10 +15,19 @@
       "type": "object",
       "properties": {
         "loan_id": {
-          "description": "Not known (unsupported-statement): The OUTPUT at procedures/update_through_a_cte.sql:6:1 of a write through a CTE or derived table, open_loans, is not modelled. May be null: unknown (procedures/update_through_a_cte.sql:13:8). To change it: declare the results in the config file's \"results\". Why: haruspex explain lib.update_through_a_cte loan_id"
+          "description": "SQL type int.",
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         },
         "returned_on": {
-          "description": "Not known (unsupported-statement): The OUTPUT at procedures/update_through_a_cte.sql:6:1 of a write through a CTE or derived table, open_loans, is not modelled. May be null: unknown (procedures/update_through_a_cte.sql:13:26). To change it: declare the results in the config file's \"results\". Why: haruspex explain lib.update_through_a_cte returned_on"
+          "description": "SQL type date. May be null: nullable-column (lib.loan.returned_on).",
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
         }
       },
       "required": [

@@ -19,7 +19,13 @@ internal sealed partial class Typer
     /// table is its declaration (every value is converted to the column, observed:
     /// Output_columns_are_the_values_converted_to_the_target_columns), and null too for the MERGE actions that give it none.
     /// </summary>
-    internal LocalRelationValues Pseudo(DataModificationSpecification spec, DmlTarget target, ReadScope statement, IrNullReason? merged, SourceLocation at)
+    /// <param name="spec">The write.</param>
+    /// <param name="target">Its target, as written.</param>
+    /// <param name="through">The table a write through a CTE or derived table changes, or why it isn't known (<see cref="Binder.WriteThrough"/>); null for any other write.</param>
+    /// <param name="statement">The scope of the state it is read in: after the write for <c>inserted</c>, before it for <c>deleted</c>.</param>
+    /// <param name="merged">Why a MERGE's action gives it no row, when it has such an action.</param>
+    /// <param name="at">The statement.</param>
+    internal LocalRelationValues Pseudo(DataModificationSpecification spec, DmlTarget target, WrittenThrough? through, ReadScope statement, IrNullReason? merged, SourceLocation at)
     {
         LocalRelationValues values;
         if (target.Direct is { } direct)
@@ -31,11 +37,18 @@ internal sealed partial class Typer
             var source = new BoundSource(table.Name.Name, new TableTarget(table), null, spec.Target);
             values = new LocalRelationValues([.. table.Columns.Select(c => c.Name)], [.. table.Columns.Select(c => FromColumn(new TableColumn(source, table, c), statement))], null);
         }
+        else if (through is { Table: { } underneath } written)
+        {
+            // The table's columns after or before the write, as the table declares them, under the names the CTE gives them: not
+            // the CTE's projection, whose WHERE held before the write and may not after it.
+            var source = new BoundSource(underneath.Name.Name, new TableTarget(underneath), null, spec.Target);
+            values = new LocalRelationValues([.. written.Columns.Select(c => c.Name)], [.. written.Columns.Select(c => FromColumn(new TableColumn(source, underneath, c.Column), statement))], null);
+        }
         else
         {
-            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, target.Named is { } through
-                ? $"The OUTPUT at {at} of a write to {Text(through)}, which is not one table of the project (a view, a synonym, a table defined elsewhere or more than one), is not modelled."
-                : $"The OUTPUT at {at} of a write through a CTE or derived table, {Text(spec.Target)}, is not modelled.", at));
+            values = LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedStatement, target.Named is { } named
+                ? $"The OUTPUT at {at} of a write to {Text(named)}, which is not one table of the project (a view, a synonym, a table defined elsewhere or more than one), is not modelled."
+                : $"The OUTPUT at {at} of a write through a CTE or derived table, {Text(spec.Target)}, is not modelled: {through?.Why ?? "its source is not followed"}.", at));
         }
 
         if (merged is null || values.Values is null)

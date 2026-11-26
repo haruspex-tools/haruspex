@@ -58,6 +58,7 @@ parameter depot.place_order @qty at procedures/place_order.sql:5:5
 procedure depot.add_note at procedures/add_note.sql:2:1
 procedure depot.add_note_by_synonym at procedures/add_note_by_synonym.sql:2:1
 procedure depot.cancel_order at procedures/cancel_order.sql:3:1
+procedure depot.claim_order at procedures/claim_order.sql:3:1
 procedure depot.get_order at procedures/get_order.sql:2:1
 procedure depot.list_parts at procedures/list_parts.sql:2:1
 procedure depot.log_error at procedures/log_error.sql:2:1
@@ -68,6 +69,7 @@ procedure depot.place_order at procedures/place_order.sql:3:1
 procedure depot.prune_prices at procedures/prune_prices.sql:3:1
 procedure depot.purge at procedures/purge.sql:3:1
 procedure depot.recent_note at procedures/recent_note.sql:1:1
+procedure depot.reopen_order at procedures/reopen_order.sql:3:1
 procedure depot.restock at procedures/restock.sql:3:1
 procedure depot.sync_prices at procedures/sync_prices.sql:4:1
 synonym depot.legacy_note_alias for depot.legacy_note
