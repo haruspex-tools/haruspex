@@ -1,5 +1,8 @@
 CREATE PROCEDURE loom.count_threads @pattern_id int AS
-SELECT t.c.value('@colour', 'nvarchar(20)') AS colour
+SELECT
+    t.c.value('@colour', 'nvarchar(20)') AS colour,
+    t.c.exist('@colour') AS coloured,
+    t.c.query('.') AS end_xml
 FROM loom.pattern AS p
 CROSS APPLY p.draft.nodes('/draft/threading/end') AS t(c)
 WHERE p.pattern_id = @pattern_id;

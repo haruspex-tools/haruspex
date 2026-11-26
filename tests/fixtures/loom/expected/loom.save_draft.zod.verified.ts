@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const SaveDraftRowSchema = z.object({
   draft: z.string().brand<"Xml">().nullable(),
   /**
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.save_draft shafts
    */
   shafts: z.int().min(0).max(255).nullable(),

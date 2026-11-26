@@ -1,0 +1,170 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/thread_colours.sql": "4b806244f588d59808bac406f60d6e707cde6221a2d45e3df7ba199aa2b360f2",
+      "tables/pattern.sql": "1c5b8aeb729e205b326bbc881529f5e8f2f770d783cd18a07156ea809c62a48c"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.thread_colours",
+      "name": "ThreadColours",
+      "kind": "procedure",
+      "at": "procedures/thread_colours.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ThreadColoursRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ThreadColoursRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.thread_colours",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.pattern_id",
+              "sql": "int",
+              "at": "tables/pattern.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "colours_xml",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/thread_colours.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "colours_text",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/thread_colours.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "ends_text",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/thread_colours.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "colour_list",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/thread_colours.sql:7:11"
+            },
+            {
+              "rule": "out-of-range",
+              "at": "procedures/thread_colours.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "end_count",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "names_before",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/thread_colours.sql:9:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

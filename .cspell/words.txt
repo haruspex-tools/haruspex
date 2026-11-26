@@ -56,12 +56,15 @@ isjson
 isnull
 keyset
 listextendedproperty
+localname
 ltrim
 msoledbsql
+namespaceuri
 nchar
 nestlevel
 newsequentialid
 nocount
+nodetype
 noexec
 noexpand
 nonclustered
@@ -77,9 +80,11 @@ openquery
 openrowset
 openxml
 paglock
+parentid
 parsename
 parseonly
 patindex
+preparedocument
 quotename
 raiserror
 readcommitted
@@ -89,6 +94,7 @@ readuncommitted
 refreshsqlmodule
 refreshview
 releaseapplock
+removedocument
 repeatableread
 replacer
 roundabort

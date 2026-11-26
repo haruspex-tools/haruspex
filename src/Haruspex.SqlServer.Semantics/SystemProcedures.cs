@@ -36,6 +36,26 @@ public static class SystemProcedures
             "int: 0 released, -999 not held or an argument refused",
             ["Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int"]),
 
+        // Parses a document for OPENXML and sets the handle passed OUTPUT; returns no result set and 0 (observed). XML that
+        // isn't well formed is an error (6602) that ends the batch. An extended procedure: sys.all_parameters lists none, so
+        // none is listed here; Microsoft documents three: the handle, an int OUTPUT, the text and its namespaces. Nothing it does changes
+        // what a query returns but OPENXML's rows, which the document's data decides.
+        new(
+            new ObjectName("sys", "sp_xml_preparedocument"),
+            [],
+            ResultsUnknownBecause: null,
+            "int: 0 when the document is parsed",
+            ["Sp_xml_preparedocument_and_sp_xml_removedocument_return_no_result_set"]),
+
+        // Frees a handle; returns no result set (observed): 0, or 1 with error 8179 when no document has the handle. An
+        // extended procedure, listing no parameters as the one above.
+        new(
+            new ObjectName("sys", "sp_xml_removedocument"),
+            [],
+            ResultsUnknownBecause: null,
+            "int: 0 freed, 1 when no document has the handle",
+            ["Sp_xml_preparedocument_and_sp_xml_removedocument_return_no_result_set"]),
+
         // SQL Server 2025. Disabled on the test server ('external rest endpoint enabled' is 0, error 31643), so what a call
         // returns is not observed. Microsoft's page documents no result set, the response in @response OUTPUT as JSON (or
         // XML) and a return code of 0 or the HTTP status; until a server observes it, its result sets stay unknown.

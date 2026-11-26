@@ -50,7 +50,7 @@
           "contentMediaType": "application/xml"
         },
         "shafts": {
-          "description": "SQL type int. May be null: xml-value (procedures/check_drafts.sql:6:9). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.check_drafts shafts",
+          "description": "SQL type int. May be null: xml-value (procedures/check_drafts.sql:6:9). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.check_drafts shafts",
           "type": [
             "integer",
             "null"

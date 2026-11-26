@@ -1,9 +1,13 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.34",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "files": {
-      "procedures/count_threads.sql": "f7aa75d3f4c38a8c2f86f5379cd5f007a450537ac5ff22d11d2a6168271458b0"
+      "procedures/count_threads.sql": "3c6a27af8cfde2419246424c928a633ff1a731f3ad3a948f067c059e036c0a31"
     }
   },
   "objects": [
@@ -65,30 +69,47 @@
         {
           "name": "colour",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-source"
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
           },
           "presence": "always",
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unknown",
-              "at": "procedures/count_threads.sql:2:8"
+              "rule": "xml-value",
+              "at": "procedures/count_threads.sql:3:5"
             }
           ]
+        },
+        {
+          "name": "coloured",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "end_xml",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false
         }
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "loom.count_threads",
-      "path": "results[0][].colour",
-      "reason": "unsupported-source",
-      "detail": "p.draft.nodes('/draft/threading/end') AS t(c): XML's nodes() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type.",
-      "at": "procedures/count_threads.sql:2:8"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

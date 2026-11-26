@@ -141,4 +141,5 @@ window.percentile_cont
 window.percentile_disc
 rowset.generate_series
 rowset.openjson
+rowset.openxml
 rowset.string_split

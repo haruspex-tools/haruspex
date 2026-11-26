@@ -54,14 +54,21 @@
         {
           "name": "colour",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-source"
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
           },
           "presence": "always",
           "nullable": true,
           "nullableBecause": [
             {
-              "rule": "unknown",
+              "rule": "xml-value",
               "at": "procedures/list_ends.sql:2:8"
             }
           ]
@@ -69,15 +76,7 @@
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "loom.list_ends",
-      "path": "results[0][].colour",
-      "reason": "unsupported-source",
-      "detail": "The table source @draft.nodes('/draft/threading/end') AS e(c) is not modelled yet.",
-      "at": "procedures/list_ends.sql:2:8"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

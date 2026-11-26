@@ -210,18 +210,6 @@ public class XmlTests
     }
 
     [Fact]
-    public void Query_and_nodes_are_unknown_with_a_reason()
-    {
-        var query = Procedure("SELECT p.spec.query('/spec') AS a FROM shop.product AS p;");
-        var nodes = Procedure("SELECT n.c.value('.', 'int') AS a FROM shop.product AS p CROSS APPLY p.spec.nodes('/spec/part') AS n(c);");
-
-        Assert.Contains("XML's query() is not modelled yet", Typed(query, "a"), StringComparison.Ordinal);
-        Assert.Equal(IrUnknownReason.UnsupportedExpression, Assert.IsType<IrUnknownType>(Field(query, "a").Type).Reason);
-        Assert.Contains("XML's nodes() is not modelled yet", Typed(nodes, "a"), StringComparison.Ordinal);
-        Assert.DoesNotContain("317", Typed(nodes, "a"), StringComparison.Ordinal); // a function's refusal, not this valid SQL's
-    }
-
-    [Fact]
     public void A_method_of_a_value_that_is_not_xml_is_unknown()
     {
         var doc = Procedure("SELECT CAST(p.name AS nvarchar(40)).value('(/a)[1]', 'int') AS a FROM shop.product AS p;");

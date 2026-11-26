@@ -4,11 +4,10 @@ import { z } from 'zod'
 
 export const ListEndsRowSchema = z.object({
   /**
-   * Not known (unsupported-source); the IR's unknowns say why.
-   * To change it: declare the results in the config file's "results".
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.list_ends colour
    */
-  colour: z.unknown(),
+  colour: z.string().max(20).nullable(),
 })
 export type ListEndsRow = z.infer<typeof ListEndsRowSchema>
 

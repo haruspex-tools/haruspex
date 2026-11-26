@@ -2,6 +2,9 @@
 
 **Date:** 26 Nov 2026
 
+**Superseded in part** by [decision 0137](0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md) (26 Nov
+2026): `query()`, `nodes()`, `FOR XML` subqueries and `OPENXML … WITH` are now typed. What follows still holds for the rest.
+
 **Decision.** The IR has a scalar kind for XML text, `xml`, which SQL Server's `xml` is, typed by a schema collection or not.
 It has no format and no facets: an `xml` value has no length a type declares (it holds up to 2 GB), no digits, bounds or value
 set, and a reader refuses an `xml` value that says any of them. Its `sql` is the type, spelt with the schema collection
@@ -39,7 +42,7 @@ annotation that validates nothing more.
 - `x.exist('path')`: `bit`, NULL exactly when the instance is NULL (observed: a NULL `sql:variable` or `sql:column` in the path,
   or an empty instance, gives 0), so never null over an instance that never is.
 - `x.query(…)` and `x.nodes(…)` stay unknown with a reason: what they return is XML that the path and, later, the collection
-  shape. `OPENXML` and `WITH XMLNAMESPACES` stay unknown as before.
+  shape. `OPENXML` and `WITH XMLNAMESPACES` stay unknown as before. (Decision 0137 types the first three now.)
 
 *XML schema collections.* `CREATE XML SCHEMA COLLECTION` and `ALTER XML SCHEMA COLLECTION … ADD` are read from scripts, and
 `SqlXmlSchemaCollection` elements from a package, into the model, each with the text of its schemas, and each typed `xml`

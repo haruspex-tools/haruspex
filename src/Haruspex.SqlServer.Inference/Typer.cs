@@ -461,6 +461,7 @@ internal sealed partial class Typer(
             $"{Text(column)} names the table the write changes, which OUTPUT may read before or after the change; read inserted or deleted instead.",
             At(column))),
         TableColumn bound => FromColumn(bound, scope),
+        RelationColumn { Relation: XmlNodesCall } => NodeColumn(Text(column), At(column)),
         RelationColumn local => FromLocal(local.Source, local.Ordinal, scope, At(column)),
         UnlistedColumn unlisted => FromLocal(unlisted.Source, -1, scope, At(column)),
         Unresolved unbound => Value.Unknown(Unknown(unbound.Problem)),
@@ -606,8 +607,10 @@ internal sealed partial class Typer(
         }
 
         var query = subquery.QueryExpression;
+        if (ForOf(query) is XmlForClause xml)
+            return ForXmlValue(subquery, xml, scope);
         if (ForOf(query) is not JsonForClause json)
-            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A FOR XML subquery is not modelled yet: {Text(subquery)}", at));
+            return Value.Unknown(Unsupported(IrUnknownReason.UnsupportedExpression, $"A subquery with this FOR clause is not modelled: {Text(subquery)}", at));
 
         // A FOR JSON subquery is JSON that an enclosing FOR JSON or constructor embeds without escaping, but only with
         // its array wrapper: WITHOUT_ARRAY_WRAPPER makes it text, escaped as a string wherever it nests, until json_query
@@ -624,6 +627,68 @@ internal sealed partial class Typer(
         return json.Options.Any(o => o.OptionKind == JsonForClauseOptions.WithoutArrayWrapper)
             ? new Value(new JsonTextShape(shape), empty) { Pieces = forJson.Rows is IrCardinality.One or IrCardinality.AtMostOne ? [new JsonPiece(shape)] : null }
             : new Value(shape, empty, IsLiveJson: true);
+    }
+
+    /// <summary>
+    /// A <c>FOR XML</c> subquery as a value, in any mode (<c>RAW</c>, <c>AUTO</c>, <c>PATH</c>, <c>EXPLICIT</c>) and with any other
+    /// option: <c>xml</c> with <c>TYPE</c>, <c>nvarchar(max)</c> without; NULL exactly when its query returns no rows, a
+    /// <c>ROOT</c> included, and never NULL over a row, even one whose every column is NULL (observed:
+    /// A_for_xml_subquery_is_xml_with_type_and_nvarchar_max_without_and_null_only_over_no_rows). Without <c>TYPE</c> the
+    /// text escapes <c>&amp;</c>, <c>&lt;</c> and <c>&gt;</c>, so <c>STUFF((SELECT ',' + name … FOR XML PATH('')), 1, 1, '')</c>
+    /// holds <c>&amp;amp;</c> for <c>&amp;</c>: a matter of its value, not its type. A column not modelled may be one the server
+    /// refuses there, so it leaves the value unknown with its own reason.
+    /// </summary>
+    private Value ForXmlValue(ScalarSubquery subquery, XmlForClause clause, ReadScope scope)
+    {
+        var row = Nested(subquery.QueryExpression, scope);
+        return ForXmlText(row, clause, subquery);
+    }
+
+    /// <summary>
+    /// What a <c>FOR XML</c> query whose rows are <paramref name="row"/> builds, a subquery's value or the one column of a
+    /// derived table or CTE (<see cref="ForXmlRelation"/>): see <see cref="ForXmlValue"/>.
+    /// </summary>
+    private Value ForXmlText(Row row, XmlForClause clause, TSqlFragment query)
+    {
+        if (row.Unlisted is { } whole)
+            return Value.Unknown(whole);
+        if (row.Columns.Select(c => c.Value).FirstOrDefault(v => v.Shape is UnknownShape) is { } unknown)
+            return Value.Unknown((UnknownShape)unknown.Shape);
+
+        var type = clause.Options.Any(o => o.OptionKind == XmlForClauseOptions.Type)
+            ? ScalarType.Of(BuiltInType.Xml)
+            : new ScalarType(BuiltInType.NVarChar, -1);
+        return Typed(type, row.Rows == IrCardinality.One ? [] : [Empty(row, At(query))], query);
+    }
+
+    /// <summary>
+    /// A derived table or a CTE whose query is <c>FOR XML</c>, <c>(SELECT … FOR XML PATH('')) AS d (x)</c>: exactly one row, over no
+    /// rows too, whose one column, named by the column list the server requires (8155), is the text the query builds, as a
+    /// subquery's value is: <c>xml</c> with <c>TYPE</c>, <c>nvarchar(max)</c> without, NULL when the query returns no rows (observed:
+    /// A_for_xml_derived_table_or_cte_is_one_row_of_what_the_query_builds). Null when the query has no FOR clause; <c>FOR JSON</c>
+    /// there is unknown.
+    /// </summary>
+    /// <param name="symbol">The derived table or CTE.</param>
+    /// <param name="query">Its query, as written.</param>
+    /// <param name="columns">Its column list, as written.</param>
+    /// <param name="row">Its query's rows.</param>
+    private LocalRelationValues? ForXmlRelation(RelationSymbol symbol, QueryExpression query, IList<Identifier> columns, Row row)
+    {
+        var at = At(query);
+        switch (ForOf(query))
+        {
+            case null:
+                return null;
+            case XmlForClause clause when columns.Count == 1:
+                var value = ForXmlText(row, clause, query);
+                return value.Shape is UnknownShape unknown
+                    ? LocalRelationValues.Unknown(unknown)
+                    : new LocalRelationValues([columns[0].Value], [value], null) { Rows = IrCardinality.One, AtLeastOne = true };
+            case XmlForClause:
+                return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{symbol.Name}: a FOR XML query gives one column, which a column list must name (8155).", at));
+            default:
+                return LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, $"{symbol.Name}: a derived table or CTE whose query has this FOR clause is not modelled.", at));
+        }
     }
 
     /// <summary>

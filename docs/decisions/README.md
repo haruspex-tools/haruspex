@@ -4,7 +4,7 @@ The decisions haruspex's design rests on, one short record each: when it was mad
 alternatives, and why they lost. The code and the guide link here rather than repeat the argument. A record describes the
 decision as it stands; when one is reversed, the record says so and links its successor, and is not deleted. A number is
 set aside when work that may need a record starts, so a number whose work needed none is never used: the log has 30
-gaps today, from 0049 to 0134, and no record was deleted to make them.
+gaps today, from 0049 to 0136, and no record was deleted to make them.
 
 | Record | Date | Decision |
 |---|---|---|
@@ -113,6 +113,7 @@ gaps today, from 0049 to 0134, and no record was deleted to make them.
 | [0127](0127-a-source-may-be-several-folders.md) | 26 Nov 2026 | A source may be several folders |
 | [0128](0128-a-column-s-description-reaches-the-fields-that-are-that-column.md) | 26 Nov 2026 | A column's description reaches the fields that are that column |
 | [0135](0135-a-full-text-search-s-key-is-its-key-column-s-type-and-its-rank-is-nullable.md) | 26 Nov 2026 | A full-text search's key is its key column's type, and its rank is nullable |
+| [0137](0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md) | 26 Nov 2026 | XML's `nodes()`, `query()`, `FOR XML` subqueries and `OPENXML` are typed as the server gives them |
 
 ## Writing a record
 

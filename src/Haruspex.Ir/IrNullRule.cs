@@ -181,8 +181,9 @@ public enum IrNullRule
     NotInBoth,
 
     /// <summary>
-    /// It is read from XML by <c>.value()</c> (0.34), which is NULL where its path finds no node, or the XML is NULL. Why:
-    /// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+    /// It is read from XML by <c>.value()</c> (0.34) or as an <c>OPENXML</c> column, which is NULL where its path finds no node,
+    /// or the XML is NULL. Why: docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md and
+    /// docs/decisions/0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md.
     /// </summary>
     XmlValue,
 }

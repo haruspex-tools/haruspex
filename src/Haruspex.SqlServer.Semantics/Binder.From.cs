@@ -172,8 +172,9 @@ public sealed partial class Binder
 
     /// <summary>
     /// The relation a derived table or a rowset in FROM is, with the alias its columns are qualified by: a derived table, a
-    /// table-valued function's call, a VALUES list, OPENJSON, GENERATE_SERIES, STRING_SPLIT, CONTAINSTABLE or FREETEXTTABLE. Each reads the enclosing query's scope, or an
-    /// APPLY's left input's, never the sources beside it. Null for any other reference.
+    /// table-valued function's call, XML's nodes(), a VALUES list, OPENJSON, OPENXML, GENERATE_SERIES, STRING_SPLIT, CONTAINSTABLE
+    /// or FREETEXTTABLE. Each reads the enclosing query's scope, or an APPLY's left input's, never the sources beside it. Null for
+    /// any other reference.
     /// </summary>
     private (string? Alias, RelationSymbol Relation)? Relation(Adding adding, TableReference reference)
     {
@@ -188,13 +189,17 @@ public sealed partial class Binder
 
             case SchemaObjectFunctionTableReference call:
             {
-                // A table-valued function takes no table hints (a syntax error), so it is never read uncommitted by its own.
                 // x.nodes('path') AS t(c) is XML's, not a function: a function takes no column list (317), and nodes() needs one.
-                var callee = call.Columns.Count > 0 && XmlMethods.Named(call.SchemaObject.BaseIdentifier.Value) == XmlMethod.Nodes
-                    ? new XmlNodesCallee()
-                    : Callee(call.SchemaObject);
+                if (call.Columns.Count > 0 && XmlMethods.Named(call.SchemaObject.BaseIdentifier.Value) == XmlMethod.Nodes && NodesTarget(call.SchemaObject) is { } target)
+                    return (call.Alias?.Value, Nodes(adding, call, target, call.Parameters, call.Columns));
+
+                // A table-valued function takes no table hints (a syntax error), so it is never read uncommitted by its own.
+                var callee = Callee(call.SchemaObject);
                 return (call.Alias?.Value ?? call.SchemaObject.BaseIdentifier.Value, new TableFunctionCall(call, callee, QueryScope.Empty(adding.Outer, adding.Names), FunctionColumns(call, callee)));
             }
+
+            case VariableMethodCallTableReference method when XmlMethods.Named(method.MethodName.Value) == XmlMethod.Nodes:
+                return (method.Alias?.Value, Nodes(adding, method, method.Variable, method.Parameters, method.Columns));
 
             case InlineDerivedTable values:
             {
@@ -212,6 +217,12 @@ public sealed partial class Binder
                     ? ["key", "value", "type"]
                     : [.. openJson.SchemaDeclarationItems.Select(i => i.ColumnDefinition.ColumnIdentifier.Value)];
                 return (openJson.Alias?.Value, new OpenJsonCall(openJson, QueryScope.Empty(adding.Outer, adding.Names), names.Distinct(StringComparer.OrdinalIgnoreCase).Count() == names.Count ? [.. names] : null));
+            }
+
+            case OpenXmlTableReference openXml:
+            {
+                var table = OpenXmlCall.TableOf(openXml, Model);
+                return (openXml.Alias?.Value, new OpenXmlCall(openXml, QueryScope.Empty(adding.Outer, adding.Names), table, OpenXmlCall.ColumnsOf(openXml, table)));
             }
 
             case GlobalFunctionTableReference { Name.Value: var function } series
@@ -232,6 +243,37 @@ public sealed partial class Binder
             default:
                 return null;
         }
+    }
+
+    /// <summary>XML's <c>nodes()</c>, read in the scope beyond it, as any call in FROM is; one column, named by its column list.</summary>
+    private static XmlNodesCall Nodes(Adding adding, TableReference call, ScalarExpression target, IList<ScalarExpression> path, IList<Identifier> columns) =>
+        new(call, target, [.. path], QueryScope.Empty(adding.Outer, adding.Names), columns.Count == 1 ? [columns[0].Value] : null);
+
+    /// <summary>
+    /// The column <c>nodes()</c> is called on, made of the parts of the name before it (<c>x</c>, <c>o.x</c>, <c>dbo.o.x</c>),
+    /// placed where they are so that it binds and is located as written; null when there are none, or more than a column has.
+    /// </summary>
+    private static ColumnReferenceExpression? NodesTarget(SchemaObjectName name)
+    {
+        var parts = name.Identifiers.Take(name.Identifiers.Count - 1).ToList();
+        if (parts.Count is < 1 or > 3)
+            return null;
+        var identifier = new MultiPartIdentifier
+        {
+            FirstTokenIndex = parts[0].FirstTokenIndex,
+            LastTokenIndex = parts[^1].LastTokenIndex,
+            ScriptTokenStream = name.ScriptTokenStream,
+        };
+        foreach (var part in parts)
+            identifier.Identifiers.Add(part);
+        return new ColumnReferenceExpression
+        {
+            ColumnType = ColumnType.Regular,
+            MultiPartIdentifier = identifier,
+            FirstTokenIndex = identifier.FirstTokenIndex,
+            LastTokenIndex = identifier.LastTokenIndex,
+            ScriptTokenStream = name.ScriptTokenStream,
+        };
     }
 
     /// <summary>A source's optional side, from the location of the outermost one it is inside and how it came about.</summary>

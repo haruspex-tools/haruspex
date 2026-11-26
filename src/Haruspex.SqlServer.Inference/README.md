@@ -2316,8 +2316,8 @@ client is handed is the text the server writes the instance as: the mssql driver
 (`An_xml_column_is_null_only_where_it_is_and_an_empty_instance_is_not`,
 `The_driver_hands_over_xml_as_its_text_and_sends_text_as_xml`). The driver can't receive an `xml` `OUTPUT` parameter, which fails
 the call with error 257 however it is bound (`An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as`); the IR still types
-it, and the mssql emitter leaves out that procedure's function with a warning (HAR5206), writing the rest. Observed in `XmlObservationTests`; the unit tests are
-`XmlTests`, and the fixture `tests/fixtures/loom`.
+it, and the mssql emitter leaves out that procedure's function with a warning (HAR5206), writing the rest. Observed in `XmlObservationTests` and `XmlExpressionObservationTests`; the
+unit tests are `XmlTests` and `XmlExpressionTests`, and the fixture `tests/fixtures/loom`.
 
 - **Conversions.** `CAST(… AS xml)` and `CONVERT(xml, …)`, with or without a style, are `xml`, NULL only when the operand is; text
   that isn't well formed is an error (9400), and so is an instance converted into text or a binary type too short for it (6354),
@@ -2339,12 +2339,42 @@ it, and the mssql emitter leaves out that procedure's function with a warning (H
   (`Xml_value_of_json_or_vector_is_typed_by_what_the_client_supports_and_other_types_are_refused`).
 - **`x.exist('path')`** is a `bit`, NULL exactly when `x` is: an empty instance, and a NULL `sql:variable` or `sql:column` in the
   path, give 0 (`Xml_exist_is_a_bit_null_exactly_when_the_xml_is`).
-- **`FOR XML`.** A result set a procedure or query file returns as `FOR XML` stays unknown, with a note, HAR2026: the mssql
-  driver joins its rows into one string and never parses it (`For_xml_is_joined_into_one_row_and_never_parsed`), and `FOR JSON`
-  builds the same data, which is typed (`XmlResultNotes`). A `FOR XML` subquery is a value, not a result set, and stays unknown
-  without the note.
-- **`x.query(…)`**, and **`x.nodes(…)`** as a source, are unknown: what they give is XML its path shapes, which a schema
-  collection may later type.
+- **`x.query('path')`** is untyped `xml`, whatever collection `x` is typed by, NULL exactly when `x` is: where the path finds
+  nothing it is an empty instance, not NULL (`Query_is_untyped_xml_null_exactly_when_its_instance_is`,
+  [decision 0137](../../docs/decisions/0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md)).
+- **`x.nodes('path') AS t(c)`** in `FROM` or `APPLY`, on a column (`o.lines.nodes(…)`, `lines.nodes(…)`), a variable or another
+  node, is a source (`XmlNodesCall`, `Typer.XmlNodes`): a row for each node the path finds, none for a NULL instance or a path that
+  finds nothing, so any number for each outer row, and an `OUTER APPLY` keeps the outer row with NULL
+  (`Nodes_gives_a_row_for_each_node_and_none_for_null`). Its one column is the node, which is never NULL and which `value()`,
+  `exist()`, `query()` and `nodes()` read as any `xml` value; the server refuses it anywhere else, alone in a select list, in `*`,
+  a conversion, `GROUP BY` or `COUNT` (493, 525), so read there it is unknown
+  (`A_nodes_column_is_never_null_and_is_read_only_by_xml_s_methods`). Two columns in its list (8159), a path that isn't a literal
+  (8172) and a value that isn't `xml` (9506) are refused, and unknown (`Nodes_takes_one_column_a_literal_path_and_only_xml`).
+- **`FOR XML`.** A subquery is a value: `xml` with `TYPE` and `nvarchar(max)` without, in every mode and with any other option,
+  NULL exactly when its query returns no rows (`empty-subquery`), a `ROOT` included, and never over a row, even one whose every
+  column is NULL; so never NULL when its query always returns one row, as an aggregate without `GROUP BY` does
+  (`A_for_xml_subquery_is_xml_with_type_and_nvarchar_max_without_and_null_only_over_no_rows`, `Typer.ForXmlValue`). A column of
+  its query not modelled leaves it unknown, since the server may refuse it there. A derived table or CTE whose query is
+  `FOR XML` is exactly one row, over no rows too, whose one column (the column list must name it, 8155) is that same value
+  (`A_for_xml_derived_table_or_cte_is_one_row_of_what_the_query_builds`, `Typer.ForXmlRelation`); one whose query is
+  `FOR JSON` is unknown. `STUFF((SELECT ',' + name … FOR XML PATH('')),
+  1, 1, '')` is then `nvarchar(max)` by `STUFF`'s own rule, and nullable: without `TYPE` the text escapes `&`, `<` and `>`, which
+  is its value's matter, not its type's (`The_stuff_idiom_escapes_what_xml_escapes_and_is_null_over_no_rows`). A result set a
+  procedure or query file returns as `FOR XML` stays unknown, with a note, HAR2026: the mssql driver joins its rows into one
+  string and never parses it (`For_xml_is_joined_into_one_row_and_never_parsed`), and `FOR JSON` builds the same data, which is
+  typed (`XmlResultNotes`).
+- **`OPENXML(handle, 'pattern' [, flags]) WITH (…)`** gives its `WITH` columns, each of its declared type, the text its path finds
+  converted as `CAST` converts `nvarchar`: a string cut short silently, a `char` padded, a decimal rounded, text that doesn't
+  convert an error, an overflow an error or NULL under the callers' options (`Typer.Converting`); and NULL where the path
+  finds nothing (`xml-value`, at the call). `WITH` a table named with its schema gives that table's columns, read the same way,
+  so NULL even where the table declares `NOT NULL`
+  (`Openxml_with_columns_are_their_declared_types_converted_as_cast_converts_text`,
+  `Openxml_with_a_table_s_name_is_null_where_its_path_finds_nothing_whatever_the_table_declares`, `Typer.OpenXmlRelation`). Only
+  the types observed are read: strings, numbers, `bit`, dates and times, `uniqueidentifier`, binary and untyped `xml`; any other
+  is unknown, and so is a table's computed or hidden column or one of its own collation. Without `WITH` it is the edge table
+  (`Openxml_without_with_is_the_edge_table`), which isn't modelled, and neither is a table named without its schema. `sp_xml_preparedocument` and `sp_xml_removedocument` are in the catalogue of system
+  procedures: each returns no result set and changes nothing a query reads but the document `OPENXML` reads
+  (`Sp_xml_preparedocument_and_sp_xml_removedocument_return_no_result_set`).
 - **Schema collections.** A typed `xml` is bound to its collection by the rules that find an alias type: by its schema, or
   without one in a module's schema and then `dbo`, and outside a module the one collection of that name
   (`An_unqualified_xml_schema_collection_is_found_as_an_alias_type_is`, `SchemaRules.ResolveXmlCollection`), and its `sql` is

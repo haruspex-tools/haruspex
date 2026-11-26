@@ -9,39 +9,34 @@ import { z } from 'zod'
 export const PatternFactsRowSchema = z.object({
   pattern_id: z.int32(),
   /**
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.pattern_facts shafts
    */
   shafts: z.int32().nullable(),
   /**
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.pattern_facts sett
    */
   sett: z.number().min(-9999.9).max(9999.9).multipleOf(1e-1).nullable(),
   /**
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.pattern_facts title
    */
   title: z.string().max(10).nullable(),
   /**
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.pattern_facts initial
    */
   initial: z.string().max(1).nullable(),
   /**
    * varchar(20) counts bytes and its collation isn't declared, so the length is at most 20.
-   * May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value).
+   * May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value).
    * Why: haruspex explain loom.pattern_facts noted_by
    */
   noted_by: z.string().max(20).nullable(),
   has_treadling: z.boolean(),
   has_notes: z.boolean().nullable(),
-  /**
-   * Not known (unsupported-expression); the IR's unknowns say why.
-   * To change it: declare the results in the config file's "results".
-   * Why: haruspex explain loom.pattern_facts threading
-   */
-  threading: z.unknown(),
+  threading: z.string().brand<"Xml">(),
   /**
    * Its type is xml, where loom.pattern.pattern_id is int: what it is computed with makes it another type.
    * Why: haruspex explain loom.pattern_facts id_as_xml

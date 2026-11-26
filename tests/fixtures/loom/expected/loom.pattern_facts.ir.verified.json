@@ -233,17 +233,11 @@
         {
           "name": "threading",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-expression"
+            "kind": "xml",
+            "sql": "xml"
           },
           "presence": "always",
-          "nullable": true,
-          "nullableBecause": [
-            {
-              "rule": "unknown",
-              "at": "procedures/pattern_facts.sql:11:5"
-            }
-          ]
+          "nullable": false
         },
         {
           "name": "id_as_xml",
@@ -424,15 +418,7 @@
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "loom.pattern_facts",
-      "path": "results[0][].threading",
-      "reason": "unsupported-expression",
-      "detail": "p.draft.query('/draft/threading'): XML's query() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type.",
-      "at": "procedures/pattern_facts.sql:11:5"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

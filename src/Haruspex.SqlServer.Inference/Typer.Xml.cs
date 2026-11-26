@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -7,9 +8,11 @@ namespace Haruspex.SqlServer.Inference;
 
 /// <summary>
 /// The methods of an <c>xml</c> value: <c>x.value('path', 'type')</c> typed by its type argument and always nullable,
-/// <c>x.exist('path')</c> a <c>bit</c> that is NULL exactly when <c>x</c> is, and <c>x.query()</c> and <c>x.nodes()</c> unknown.
-/// Every rule was observed on SQL Server 2025 CU10 (<c>XmlObservationTests</c>). Why:
-/// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+/// <c>x.exist('path')</c> a <c>bit</c> and <c>x.query('path')</c> untyped <c>xml</c>, each NULL exactly when <c>x</c> is, and
+/// <c>x.nodes('path')</c> in FROM, a row for each node its path finds. Every rule was observed on SQL Server 2025 CU10
+/// (<c>XmlObservationTests</c>, <c>XmlExpressionObservationTests</c>). Why:
+/// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md and
+/// docs/decisions/0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md.
 /// </summary>
 internal sealed partial class Typer
 {
@@ -39,7 +42,7 @@ internal sealed partial class Typer
         if (CallClauses.Of(call) != Clause.None)
             return NotModelled(call, "an XML method call with a clause is not modelled.");
 
-        var receiver = Expression(target, scope);
+        var receiver = XmlReceiver(target, scope);
         if (receiver.Shape is UnknownShape)
             return receiver;
         if (TypeOf(receiver) is not { Type: var type } || type != BuiltInType.Xml)
@@ -49,9 +52,62 @@ internal sealed partial class Typer
         {
             XmlMethod.Value => XmlValue(call),
             XmlMethod.Exist => XmlExist(call, receiver),
-            XmlMethod.Nodes => NotModelled(call, "XML's nodes() is a source in FROM, not a value."),
-            _ => NotModelled(call, "XML's query() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type."),
+            XmlMethod.Query => XmlQuery(call, receiver),
+            _ => NotModelled(call, "XML's nodes() is a source in FROM, not a value."),
         };
+    }
+
+    /// <summary>
+    /// What a method is called on: the value of <paramref name="target"/>, or, for a column <c>nodes()</c> gives, the node, which
+    /// is never NULL itself (observed: A_nodes_column_is_never_null_and_is_read_only_by_xml_s_methods), and NULL only on an
+    /// <c>OUTER APPLY</c>'s optional side, as any column there is. The server takes such a column only as a method's target or in
+    /// <c>IS NULL</c>, so it is read only here (<see cref="NodeColumn"/>).
+    /// </summary>
+    private Value XmlReceiver(ScalarExpression target, ReadScope scope) =>
+        target is ColumnReferenceExpression column && binder.Resolve(column, scope.Bound) is RelationColumn { Relation: XmlNodesCall } node
+            ? FromLocal(node.Source, node.Ordinal, scope, At(column))
+            : Expression(target, scope);
+
+    /// <summary>
+    /// A column <c>nodes()</c> gives, read as anything but a method's target: the server refuses it, in a select list, <c>*</c>,
+    /// a conversion, <c>GROUP BY</c> or <c>COUNT</c> (493 and 525: observed), so it has no value to type.
+    /// </summary>
+    private static Value NodeColumn(string name, SourceLocation at) => Value.Unknown(new UnknownShape(
+        IrUnknownReason.UnsupportedExpression,
+        $"The column {name} that XML's nodes() returns can't be used directly: the server takes it only with an XML method, value(), exist(), query() or nodes(), or in IS NULL (493).",
+        at));
+
+    /// <summary>
+    /// <c>x.query('path')</c>: untyped <c>xml</c>, whatever collection <c>x</c> is typed by, NULL exactly when <c>x</c> is; where the
+    /// path finds nothing it is an empty instance, not NULL (observed: Query_is_untyped_xml_null_exactly_when_its_instance_is).
+    /// The server takes only a literal (8172).
+    /// </summary>
+    private Value XmlQuery(FunctionCall call, Value receiver) =>
+        call.Parameters is [StringLiteral]
+            ? Typed(ScalarType.Of(BuiltInType.Xml), receiver.NullableBecause, call)
+            : NotModelled(call, "XML's query() takes a literal path, which the server requires.");
+
+    /// <summary>
+    /// XML's <c>nodes('path') AS t(c)</c> in FROM: a row for each node the path finds, none for a NULL instance or a path that
+    /// finds nothing, so any number for each outer row; an <c>OUTER APPLY</c> keeps the outer row with NULL, as for any source on
+    /// its optional side. Its one column is the node, an <c>xml</c> value never NULL, which only XML's methods read (observed:
+    /// A_nodes_column_is_never_null_and_is_read_only_by_xml_s_methods, Nodes_gives_a_row_for_each_node_and_none_for_null).
+    /// </summary>
+    private LocalRelationValues XmlNodes(XmlNodesCall symbol, ReadScope scope)
+    {
+        var at = At(symbol.Syntax);
+        LocalRelationValues Fails(string detail) => LocalRelationValues.Unknown(Unsupported(IrUnknownReason.UnsupportedSource, $"{Text(symbol.Syntax)}: {detail}", at));
+
+        if (symbol.Columns is not { } columns)
+            return Fails("XML's nodes() gives one column, so its column list names one (8159).");
+        if (symbol.Path is not [StringLiteral])
+            return Fails("XML's nodes() takes a literal path, which the server requires (8172).");
+        var receiver = XmlReceiver(symbol.Target, scope);
+        if (receiver.Shape is UnknownShape unknown)
+            return LocalRelationValues.Unknown(unknown);
+        if (TypeOf(receiver) is not { Type: var type } || type != BuiltInType.Xml)
+            return Fails("XML's nodes() is called on a value that is not xml (9506).");
+        return new LocalRelationValues(columns, [Typed(ScalarType.Of(BuiltInType.Xml), [], symbol.Syntax)], null);
     }
 
     /// <summary>

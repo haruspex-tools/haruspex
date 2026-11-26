@@ -35,6 +35,7 @@ internal sealed partial class Typer
             columns.AddRange(expanded.Select(c => c.Column switch
             {
                 TableColumn table => new RowColumn(c.Name, FromColumn(table, scope), at, table) { From = [SourceColumn(table)], Description = Described(table) },
+                RelationColumn { Relation: XmlNodesCall } => new RowColumn(c.Name, NodeColumn(c.Name, at), at),
                 RelationColumn relation => new RowColumn(c.Name, FromLocal(relation.Source, relation.Ordinal, scope, at), at)
                 {
                     From = scope.Of(relation.Source).From is { } traced && relation.Ordinal < traced.Count ? traced[relation.Ordinal] : [],

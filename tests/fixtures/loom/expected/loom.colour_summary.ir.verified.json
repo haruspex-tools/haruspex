@@ -1,0 +1,105 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/colour_summary.sql": "5002710ac636655f6a4e049cf6c8f2739f76ddc7b2558788accf6ec55e3401e2"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.colour_summary",
+      "name": "ColourSummary",
+      "kind": "procedure",
+      "at": "procedures/colour_summary.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ColourSummaryRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ColourSummaryRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.colour_summary",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "colours",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/colour_summary.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/colour_summary.sql:10:13"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

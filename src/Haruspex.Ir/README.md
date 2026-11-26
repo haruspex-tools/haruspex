@@ -542,7 +542,7 @@ not a claim: a reader must not read meaning from its words. A reader must refuse
 | `unknown` | its type is unknown, so nothing is proved about it |
 | `declared` | the config file declares it may be null, or absent (in declared results); `at` is the procedure declared |
 | `not-in-both` | (0.24, of a result in a combined document) only one of the two databases returns it, so against the other it is missing; `at` is the object |
-| `xml-value` | (0.34) it is read from XML by `.value()`, which is null where its path finds no node, or the XML is null; `at` is the call |
+| `xml-value` | (0.34) it is read from XML by `.value()`, or as an `OPENXML` column, which is null where its path finds no node, or the XML is null; `at` is the `.value()` or `OPENXML` call |
 
 ## Unknowns and overrides
 

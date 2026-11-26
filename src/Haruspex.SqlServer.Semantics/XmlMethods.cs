@@ -2,7 +2,7 @@ namespace Haruspex.SqlServer.Semantics;
 
 /// <summary>
 /// The catalogue of an <c>xml</c> value's methods, by name: what <see cref="BuiltInFunctions"/> is for the functions, kept apart
-/// because a method is called on a value, never alone. <c>nodes()</c> is read in <c>FROM</c> (<see cref="XmlNodesCallee"/>), and
+/// because a method is called on a value, never alone. <c>nodes()</c> is read in <c>FROM</c> (<see cref="XmlNodesCall"/>), and
 /// <c>modify()</c>, not listed, only in an <c>UPDATE</c>'s <c>SET</c>.
 /// </summary>
 public static class XmlMethods

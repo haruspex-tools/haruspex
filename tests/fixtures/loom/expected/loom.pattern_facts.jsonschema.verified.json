@@ -21,7 +21,7 @@
           "maximum": 2147483647
         },
         "shafts": {
-          "description": "SQL type int. May be null: xml-value (procedures/pattern_facts.sql:4:5). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts shafts",
+          "description": "SQL type int. May be null: xml-value (procedures/pattern_facts.sql:4:5). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts shafts",
           "type": [
             "integer",
             "null"
@@ -30,7 +30,7 @@
           "maximum": 2147483647
         },
         "sett": {
-          "description": "SQL type decimal(5,1). At most 1 decimal place, which multipleOf would check inexactly. May be null: xml-value (procedures/pattern_facts.sql:5:5). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts sett",
+          "description": "SQL type decimal(5,1). At most 1 decimal place, which multipleOf would check inexactly. May be null: xml-value (procedures/pattern_facts.sql:5:5). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts sett",
           "type": [
             "number",
             "null"
@@ -39,7 +39,7 @@
           "maximum": 9999.9
         },
         "title": {
-          "description": "SQL type nvarchar(10). May be null: xml-value (procedures/pattern_facts.sql:6:5). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts title",
+          "description": "SQL type nvarchar(10). May be null: xml-value (procedures/pattern_facts.sql:6:5). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts title",
           "type": [
             "string",
             "null"
@@ -47,7 +47,7 @@
           "maxLength": 10
         },
         "initial": {
-          "description": "SQL type nvarchar(1). May be null: xml-value (procedures/pattern_facts.sql:7:5). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts initial",
+          "description": "SQL type nvarchar(1). May be null: xml-value (procedures/pattern_facts.sql:7:5). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts initial",
           "type": [
             "string",
             "null"
@@ -55,7 +55,7 @@
           "maxLength": 1
         },
         "noted_by": {
-          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: xml-value (procedures/pattern_facts.sql:8:5). May be null: XML's value() is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts noted_by",
+          "description": "SQL type varchar(20). varchar(20) counts bytes and its collation isn't declared, so the length is at most 20 code points. May be null: xml-value (procedures/pattern_facts.sql:8:5). May be null: XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null (xml-value). Why: haruspex explain loom.pattern_facts noted_by",
           "type": [
             "string",
             "null"
@@ -74,7 +74,9 @@
           ]
         },
         "threading": {
-          "description": "Not known (unsupported-expression): p.draft.query('/draft/threading'): XML's query() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type. May be null: unknown (procedures/pattern_facts.sql:11:5). To change it: declare the results in the config file's \"results\". Why: haruspex explain loom.pattern_facts threading"
+          "description": "SQL type xml.",
+          "type": "string",
+          "contentMediaType": "application/xml"
         },
         "id_as_xml": {
           "description": "SQL type xml. Its type is xml, where loom.pattern.pattern_id is int: what it is computed with makes it another type. Why: haruspex explain loom.pattern_facts id_as_xml",

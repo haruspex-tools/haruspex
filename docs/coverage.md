@@ -15,13 +15,13 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 131 |
-| Not in it, and unknown where they are called | 207 |
+| In the catalogue | 132 |
+| Not in it, and unknown where they are called | 206 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 173 |
+| Modelled, wholly or in part | 175 |
 | Read, changing no result | 30 |
-| Unknown | 302 |
+| Unknown | 300 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -402,7 +402,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Relational operators
 
-3 of 8 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/relational-operators-transact-sql?view=sql-server-ver17).
+4 of 8 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/relational-operators-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -410,7 +410,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `OPENDATASOURCE` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 | `OPENQUERY` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 | `OPENROWSET` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
-| `OPENXML` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
+| `OPENXML` | `rowset.openxml` | its WITH columns as declared, each NULL where its path finds nothing; without WITH, the edge table, not modelled |  | [Openxml_with_columns_are_their_declared_types_converted_as_cast_converts_text](../tests/Haruspex.DifferentialTests/XmlExpressionObservationTests.cs), [Openxml_with_a_table_s_name_is_null_where_its_path_finds_nothing_whatever_the_table_declares](../tests/Haruspex.DifferentialTests/XmlExpressionObservationTests.cs), [Openxml_without_with_is_the_edge_table](../tests/Haruspex.DifferentialTests/XmlExpressionObservationTests.cs) |
 | `OPENJSON` | `rowset.openjson` | its WITH columns as declared, or key, value and type |  | [Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs), [Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types](../tests/Haruspex.DifferentialTests/JsonTracingObservationTests.cs) |
 | `PREDICT` | | not modelled: unknown, [`unsupported-source`](diagnostics/HAR2006.md) | | |
 | `STRING_SPLIT` | `rowset.string_split` | value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1 |  | [String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked](../tests/Haruspex.DifferentialTests/FunctionObservationTests.StringSplit.cs), [String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there](../tests/Haruspex.DifferentialTests/FunctionObservationTests.StringSplit.cs) |
@@ -771,7 +771,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `OUTPUT … INTO` | `OutputIntoClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#output) | Writes the rows written into a table, returning nothing. |
 | `FOR JSON` | `JsonForClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#json-built-here-traced) | One column of JSON text whose shape is the query's. |
 | `ROOT, INCLUDE_NULL_VALUES, …` | `JsonForClauseOption` | part of `JsonForClause` |  |
-| `FOR XML` | `XmlForClause` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled; a result set returned as FOR XML has a note, HAR2026, since FOR JSON builds the same data typed. |
+| `FOR XML` | `XmlForClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-query`](diagnostics/HAR2004.md) | A subquery is xml with TYPE and nvarchar(max) without, NULL when it returns no rows; a result set returned as FOR XML is not modelled, and has a note, HAR2026, since FOR JSON builds the same data typed. |
 | `RAW, AUTO, PATH, …` | `XmlForClauseOption` | part of `XmlForClause` |  |
 | `FOR BROWSE` | `BrowseForClause` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled. |
 | `FOR READ ONLY` | `ReadOnlyForClause` | part of `DeclareCursorStatement` |  |
@@ -806,7 +806,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `CROSS JOIN` | `UnqualifiedJoinType.CrossJoin` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#cross-join-and-full-outer-join) | Both sides' columns as they are. |
 | `CROSS APPLY` | `UnqualifiedJoinType.CrossApply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#apply) | Both sides' columns as they are. |
 | `OUTER APPLY` | `UnqualifiedJoinType.OuterApply` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#apply) | The right side's columns may be NULL. |
-| `table-valued function` | `SchemaObjectFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#table-valued-functions) | A function of the project's returns its declared or inferred columns. |
+| `table-valued function` | `SchemaObjectFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#table-valued-functions) | A function of the project's returns its declared or inferred columns; t.c.nodes( … ) AS n (c) is XML's nodes(), read as XML values says. |
 | `GENERATE_SERIES, STRING_SPLIT, REGEXP_SPLIT_TO_TABLE` | `GlobalFunctionTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#generate_series) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | GENERATE_SERIES gives value, of its arguments' type; STRING_SPLIT value, of its string's type, and ordinal with 1; REGEXP_MATCHES and REGEXP_SPLIT_TO_TABLE aren't modelled. |
 | `OPENJSON` | `OpenJsonTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#openjson) | Its WITH columns as declared, or key, value and type. |
 | `( DELETE … OUTPUT ) AS t` | `DataModificationTableReference` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | The nested write fires its own table's triggers, which aren't followed, so the INSERT it stands in ends what haruspex can list. |
@@ -818,13 +818,13 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `OPENROWSET of an internal table` | `InternalOpenRowset` | never parsed from a body | SQL Server's own form, which a body doesn't hold. |
 | `OPENQUERY` | `OpenQueryTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `OPENDATASOURCE(…).db.schema.table` | `AdHocTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
-| `OPENXML` | `OpenXmlTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
+| `OPENXML` | `OpenXmlTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Its WITH columns as declared, each NULL where its path finds nothing; without WITH, the edge table, and WITH a table's name, aren't modelled. |
 | `CONTAINSTABLE, FREETEXTTABLE` | `FullTextTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#full-text-table-functions) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | RANK is an int that may be null; KEY is of the full-text key column's type, and unknown where the project creates no full-text index on the table. |
 | `SEMANTICKEYPHRASETABLE, …` | `SemanticTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | A semantic search function, not modelled. |
 | `CHANGETABLE (CHANGES …)` | `ChangeTableChangesTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `CHANGETABLE (VERSION …)` | `ChangeTableVersionTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `PREDICT` | `PredictTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
-| `@x.nodes(…)` | `VariableMethodCallTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Its rows are read; its column, a node, is XML that nodes() shapes, which isn't modelled yet. |
+| `@x.nodes(…)` | `VariableMethodCallTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A row for each node its path finds, its column a node that XML's methods read; the column read alone the server refuses (493). |
 | `::fn_name( … )` | `BuiltInFunctionTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `{ OJ … }` | `OdbcQualifiedJoinTableReference` | unknown, [`unresolved-column`](diagnostics/HAR2009.md) | Not modelled: the join inside isn't bound, so a column read through it is unresolved. |
 | `AI_GENERATE_CHUNKS` | `AIGenerateChunksTableReference` | never parsed from a body | The parser makes the fixed-size form, the only one, as AIGenerateFixedChunksTableReference. |
@@ -887,8 +887,8 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `{ fn … }` | `OdbcFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
 | `SQL_ type in { fn CONVERT }` | `OdbcConvertSpecification` | part of `OdbcFunctionCall` |  |
 | `{ d '…' }` | `OdbcLiteral` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
-| `schema.f( … ), t.c.method( … )` | `MultiPartIdentifierCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the project called by its schema is typed by its body, and an xml column's value() and exist() as XML values says; its query(), and a method of a CLR column, aren't modelled. |
-| `( expression ).method( … )` | `ExpressionCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | An xml value's value() and exist() are typed as XML values says; its query(), and a method of a CLR value, aren't modelled. |
+| `schema.f( … ), t.c.method( … )` | `MultiPartIdentifierCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the project called by its schema is typed by its body, and an xml column's value(), exist() and query() as XML values says; value() of a type the server gives as another, and a method of a CLR column, aren't modelled. |
+| `( expression ).method( … )` | `ExpressionCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | An xml value's value(), exist() and query() are typed as XML values says; a method of a CLR value isn't modelled. |
 | `type::method( … )` | `UserDefinedTypeCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `type::property, value.property` | `UserDefinedTypePropertyAccess` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `key : value in JSON_OBJECT` | `JsonKeyValue` | part of `FunctionCall` |  |

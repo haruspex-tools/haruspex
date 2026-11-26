@@ -180,10 +180,11 @@ A one-part name is looked for in the names the body has defined first, and in th
    `NoObject` (which then means `dbo`'s), and each user says only what it makes of each.
 
 Each thing a FROM can read that is not a table of the schema is a `RelationSymbol`: a `CommonTable`, a `DerivedTable` (with its
-query, bound), a `ValuesTable`, a `ViewRelation`, a `TableFunctionCall`, an `OpenJsonCall`, a `SeriesCall`, a
-`TemporaryTable`, a `TableVariable` or a `PseudoTable`. A symbol carries its columns' names, which binding works out itself:
+query, bound), a `ValuesTable`, a `ViewRelation`, a `TableFunctionCall`, an `XmlNodesCall` (XML's `nodes()`, which the
+parser reads as a function's call and its column list tells apart), an `OpenJsonCall`, an `OpenXmlCall`, a `SeriesCall`, a
+`SplitCall`, a `FullTextCall`, a `TemporaryTable`, a `TableVariable` or a `PseudoTable`. A symbol carries its columns' names, which binding works out itself:
 a select list's aliases and column names (a set operation's from its first query), a column list, a declaration,
-`OPENJSON`'s `WITH`, and a star's columns (below).
+`OPENJSON`'s and `OPENXML`'s `WITH`, and a star's columns (below).
 
 ### `SELECT *`
 

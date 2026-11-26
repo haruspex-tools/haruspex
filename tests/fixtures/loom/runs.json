@@ -23,6 +23,16 @@
     { "name": "check_drafts", "procedure": "loom.check_drafts" },
     { "name": "check_drafts, a card", "procedure": "loom.check_drafts", "parameters": { "@card": "<card weaver=\"Grace\"/>" } },
     { "name": "count_threads", "procedure": "loom.count_threads", "parameters": { "@pattern_id": 1 } },
-    { "name": "list_ends", "procedure": "loom.list_ends", "parameters": { "@draft": "<draft><threading><end colour=\"red\"/></threading></draft>" } }
+    { "name": "list_ends", "procedure": "loom.list_ends", "parameters": { "@draft": "<draft><threading><end colour=\"red\"/></threading></draft>" } },
+    { "name": "list_ends, no draft", "procedure": "loom.list_ends", "parameters": { "@draft": null } },
+    { "name": "count_threads, no ends", "procedure": "loom.count_threads", "parameters": { "@pattern_id": 2 } },
+    { "name": "count_threads, an end with no colour", "procedure": "loom.count_threads", "parameters": { "@pattern_id": 3 } },
+    { "name": "list_ends, an end with no colour", "procedure": "loom.list_ends", "parameters": { "@draft": "<draft><threading><end/></threading></draft>" } },
+    { "name": "list_threading", "procedure": "loom.list_threading" },
+    { "name": "thread_colours", "procedure": "loom.thread_colours" },
+    { "name": "colour_summary", "procedure": "loom.colour_summary", "parameters": { "@pattern_id": 1 } },
+    { "name": "colour_summary, no such pattern", "procedure": "loom.colour_summary", "parameters": { "@pattern_id": 99 } },
+    { "name": "read_card", "procedure": "loom.read_card", "parameters": { "@card": "<cards><card weaver=\"Ada Lovelace\" width=\"90.25\" shafts=\"8\" started=\"2026-11-02\"><note>rigid heddle first</note><detail><yarn>linen</yarn></detail></card><card/></cards>" } },
+    { "name": "read_card, no cards", "procedure": "loom.read_card", "parameters": { "@card": "<cards/>" } }
   ]
 }

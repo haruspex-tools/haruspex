@@ -282,6 +282,7 @@ internal sealed partial class Typer
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
         Typing(RowsetFunctions.StringSplit, (2, 3), "value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1", [], ["String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked", "String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there"], null, readsOnlyItsArguments: false),
+        Typing(RowsetFunctions.OpenXml, (2, 3), "its WITH columns as declared, each NULL where its path finds nothing; without WITH, the edge table, not modelled", [], ["Openxml_with_columns_are_their_declared_types_converted_as_cast_converts_text", "Openxml_with_a_table_s_name_is_null_where_its_path_finds_nothing_whatever_the_table_declares", "Openxml_without_with_is_the_edge_table"], null, readsOnlyItsArguments: false),
         Typing(RowsetFunctions.OpenJson, null, "its WITH columns as declared, or key, value and type", [], ["Openjson_with_over_json_built_here_converts_its_own_types_exactly_and_cuts_strings_short", "Openjson_without_with_over_json_built_here_gives_its_keys_and_their_types"], null, readsOnlyItsArguments: false),
     ];
 

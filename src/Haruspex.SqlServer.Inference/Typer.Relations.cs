@@ -170,7 +170,7 @@ internal sealed partial class Typer
         if (!symbol.IsRecursive)
         {
             var row = Query(bound.Query, scope);
-            return Holds(symbol, row) ?? Unlisted(name, row, at);
+            return ForXmlRelation(symbol, symbol.Definition.QueryExpression, symbol.Definition.Columns, row) ?? Holds(symbol, row) ?? Unlisted(name, row, at);
         }
 
         // A recursive CTE is an anchor member, then recursive members, each joined by UNION ALL; SQL Server refuses any
@@ -317,6 +317,8 @@ internal sealed partial class Typer
         var at = At(derived.Syntax);
         var name = derived.Name.Length > 0 ? derived.Name : "(derived table)";
         var row = Query(derived.Query, scope);
+        if (ForXmlRelation(derived, derived.Syntax.QueryExpression, derived.Syntax.Columns, row) is { } built)
+            return built;
         return Holds(derived, row) is { } relation
             ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One }
             : Unlisted(name, row, at);
