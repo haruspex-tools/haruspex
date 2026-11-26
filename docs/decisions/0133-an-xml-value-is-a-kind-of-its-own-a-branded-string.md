@@ -30,8 +30,9 @@ annotation that validates nothing more.
   for the instance it fails (observed), so the length the target declares holds.
 - `CASE`, `IIF`, `COALESCE`, `ISNULL` and `UNION ALL` of `xml` with text give `xml`, by type precedence (observed), the text
   converted.
-- `x.value('path', 'type')`: the type its literal second argument names, whose facets hold as a conversion's do (`varchar(3)`
-  cuts the text to 3 characters: observed), and always nullable, with a new null rule, `xml-value`: NULL where the path finds no
+- `x.value('path', 'type')`: the type its literal second argument names, whose facets hold as a conversion's do (a string is
+  cut to the type's length, silently, as its type counts it: `nvarchar(3)` to 3 UTF-16 code units, `varchar(3)` to 3 bytes, which
+  in a UTF-8 collation may hold fewer characters: observed), and always nullable, with a new null rule, `xml-value`: NULL where the path finds no
   node or the instance is NULL (observed). A type argument the server takes but turns into another type (`json` and `vector(n)`
   are `varchar(max)`: observed), or one not built in, leaves it unknown; the server refuses `xml`, `text`, `ntext`, `image`,
   `sql_variant` and the CLR types (observed). Nullable unless proven: no proof is modelled yet.

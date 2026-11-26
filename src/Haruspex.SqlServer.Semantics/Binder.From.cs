@@ -186,7 +186,10 @@ public sealed partial class Binder
             case SchemaObjectFunctionTableReference call:
             {
                 // A table-valued function takes no table hints (a syntax error), so it is never read uncommitted by its own.
-                var callee = Callee(call.SchemaObject);
+                // x.nodes('path') AS t(c) is XML's, not a function: a function takes no column list (317), and nodes() needs one.
+                var callee = call.Columns.Count > 0 && XmlMethods.Named(call.SchemaObject.BaseIdentifier.Value) == XmlMethod.Nodes
+                    ? new XmlNodesCallee()
+                    : Callee(call.SchemaObject);
                 return (call.Alias?.Value ?? call.SchemaObject.BaseIdentifier.Value, new TableFunctionCall(call, callee, QueryScope.Empty(adding.Outer, adding.Names), FunctionColumns(call, callee)));
             }
 

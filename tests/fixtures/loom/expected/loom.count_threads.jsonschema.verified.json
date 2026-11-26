@@ -15,7 +15,7 @@
       "type": "object",
       "properties": {
         "colour": {
-          "description": "Not known (unsupported-source): p.draft.nodes('/draft/threading/end') AS t(c): a table-valued function cannot have a column alias (317), and XML's nodes(), which takes one, is not modelled yet. May be null: unknown (procedures/count_threads.sql:2:8). To change it: declare the results in the config file's \"results\". Why: haruspex explain loom.count_threads colour"
+          "description": "Not known (unsupported-source): p.draft.nodes('/draft/threading/end') AS t(c): XML's nodes() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type. May be null: unknown (procedures/count_threads.sql:2:8). To change it: declare the results in the config file's \"results\". Why: haruspex explain loom.count_threads colour"
         }
       },
       "required": [

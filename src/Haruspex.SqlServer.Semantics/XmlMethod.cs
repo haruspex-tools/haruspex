@@ -11,4 +11,7 @@ public enum XmlMethod
 
     /// <summary><c>query('path')</c>: the XML the path finds.</summary>
     Query,
+
+    /// <summary><c>nodes('path')</c>, a source in <c>FROM</c>: a row for each node the path finds.</summary>
+    Nodes,
 }

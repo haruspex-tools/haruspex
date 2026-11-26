@@ -85,7 +85,7 @@
       "object": "loom.count_threads",
       "path": "results[0][].colour",
       "reason": "unsupported-source",
-      "detail": "p.draft.nodes('/draft/threading/end') AS t(c): a table-valued function cannot have a column alias (317), and XML's nodes(), which takes one, is not modelled yet.",
+      "detail": "p.draft.nodes('/draft/threading/end') AS t(c): XML's nodes() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type.",
       "at": "procedures/count_threads.sql:2:8"
     }
   ],

@@ -49,6 +49,7 @@ internal sealed partial class Typer
         {
             XmlMethod.Value => XmlValue(call),
             XmlMethod.Exist => XmlExist(call, receiver),
+            XmlMethod.Nodes => NotModelled(call, "XML's nodes() is a source in FROM, not a value."),
             _ => NotModelled(call, "XML's query() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type."),
         };
     }

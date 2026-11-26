@@ -217,7 +217,8 @@ public class XmlTests
 
         Assert.Contains("XML's query() is not modelled yet", Typed(query, "a"), StringComparison.Ordinal);
         Assert.Equal(IrUnknownReason.UnsupportedExpression, Assert.IsType<IrUnknownType>(Field(query, "a").Type).Reason);
-        Assert.Contains("XML's nodes()", Typed(nodes, "a"), StringComparison.Ordinal);
+        Assert.Contains("XML's nodes() is not modelled yet", Typed(nodes, "a"), StringComparison.Ordinal);
+        Assert.DoesNotContain("317", Typed(nodes, "a"), StringComparison.Ordinal); // a function's refusal, not this valid SQL's
     }
 
     [Fact]

@@ -22,17 +22,20 @@ internal sealed partial class Typer
         var at = At(call);
         LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{Text(call)}: {detail}", at));
 
-        // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error). XML's
-        // x.nodes('path') AS t(c) parses as a function of the parts before it, with the column list it needs; what it returns is
-        // XML its path shapes, so it stays unknown too.
+        // XML's x.nodes('path') AS t(c), which binding tells apart: what it returns is XML its path shapes, so it stays unknown.
+        if (symbol.Callee is XmlNodesCallee)
+            return Fails(IrUnknownReason.UnsupportedSource, "XML's nodes() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type.");
+
+        // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error).
         if (call.Columns.Count > 0)
-            return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317), and XML's nodes(), which takes one, is not modelled yet.");
+            return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
         // Which function the call names, binding resolved; why none, it says, and the words for it are said here.
         return symbol.Callee switch
         {
             KnownCallee known => Rows(known.Function),
             ForeignCallee => Fails(IrUnknownReason.UnsupportedSource, "a function of another database is not modelled yet."),
             AmbiguousCallee ambiguous => Fails(IrUnknownReason.UnresolvedTable, $"{ambiguous.Name} is not schema-qualified, and {string.Join(" and ", ambiguous.Candidates.Select(c => c.Name))} have that name."),
+            XmlNodesCallee => Fails(IrUnknownReason.UnsupportedSource, "XML's nodes() is not modelled yet."),
             MissingCallee => Fails(IrUnknownReason.UnresolvedTable, $"there is no such function in the project.{SchemaGaps.MayBeIn(model)}"),
         };
 
