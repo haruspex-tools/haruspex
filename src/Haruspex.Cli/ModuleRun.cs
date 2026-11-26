@@ -303,10 +303,10 @@ internal static class ModuleRun
         var project = selection.Loaded.Project;
         // The source as the config file names it, relative to its folder and /-separated, so the IR says the same on every machine;
         // and the build that runs, whose claims these are (decision 0117).
-        // Several folders are recorded each so, and no one path (decision 0127).
+        // Several folders are recorded each as found on disk, by the project, and no one path (decision 0127).
         var path = plan.Folders ? null : Path.GetRelativePath(plan.Config.Directory, plan.Source).Replace('\\', '/');
         var applied = project.Infer(selection.Procedures, plan.Config, selection.ByFile, plan.Out)
-            .Select(document => document with { Source = document.Source with { Path = path, Paths = plan.Folders ? plan.Shown : [], WrittenBy = plan.Build } });
+            .Select(document => document with { Source = document.Source with { Path = path, WrittenBy = plan.Build } });
         return Rebased(applied, project).Select(document => new Typed(plan, project, document, document));
     }
 

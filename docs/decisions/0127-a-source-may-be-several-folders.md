@@ -8,8 +8,9 @@ that folder. The folders are read together, and no script may be read twice: two
 the file system takes for the same, its case included where it ignores case), or one entry inside another, is an error naming
 both. A folder that two entries reach through a link is one too.
 
-From IR 0.32, a source read from several folders records them in `source.paths`, each as `path` writes one (relative to the
-config file's folder, with `/`), sorted, and leaves `path` out. A source read from one folder still records `path` alone, so a
+From IR 0.32, a source read from several folders records them in `source.paths`, each by its name as found on disk (relative to the
+config file's folder, with `/`, in the case the disk has it, as each location and `source.files` name it), sorted, and leaves
+`path` out. So a change of case alone in the list, on a file system that ignores case, changes nothing in the document. A source read from one folder still records `path` alone, so a
 document of one folder is labelled as before: 0.32 only when a document records `paths`
 ([decision 0072](0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)'s rule, as
 [decision 0122](0122-the-ir-records-the-packages-declared-builds.md) applied it). The reader refuses `paths` before 0.32, a
@@ -24,7 +25,8 @@ other is a change, reported as `source.paths.tables: no longer read` (or `source
 folder compares no paths, as before: renaming the database's only folder changes no claim.
 
 The maintainer asked for a list on 26 Nov 2026, for a database kept as folders side by side (`tables/`, `procedures/`, beside the
-application's `queries/`), which until then had to be moved into one folder to be read.
+application's `queries/`), which until then had to be moved into one folder to be read, and chose that each folder is recorded
+as found on disk ("Yes, as on disk").
 
 **Context.** A database's scripts are often kept as folders beside each other and beside the application's own query files.
 Pointing `source` at their common parent reads the query files as the database's; moving the folders changes the user's
@@ -48,6 +50,9 @@ towards a check that fails rather than one that passes.
   change, and be labelled 0.32, for nothing it says.
 - *Locations relative to each folder, as before.* Two folders may each hold `procedures.sql`; a location would no longer say which
   file it means.
+- *Record each folder as the list writes it.* Simpler, but where the file system ignores case the folders and the locations
+  would disagree (`Tables/` beside `tables/kennel.sql`), and writing the list in another case would fail `check` though nothing
+  read changed.
 - *Compare `path` in every document.* Renaming the one folder of a project, or moving its `.sqlproj`, would fail `check`
   where no claim and no script changed.
 - *Allow a list for `baseline` too.* Nothing asks for it yet; a baseline of several folders can be added the same way.

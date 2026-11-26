@@ -148,7 +148,11 @@ public static class SqlScriptFolder
 
         ReadInto(declarations, ScriptFile.InOrder(directory, files.Select(file => Path.GetRelativePath(directory, file)), listed: true));
         var model = declarations.ToModel();
-        return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)]);
+        return new SchemaReadResult(model, [.. declarations.Diagnostics, .. CaseVariants.In(model)])
+        {
+            // As found, as each script's position is, so that the IR's folders and its locations name them alike.
+            Folders = [.. entries.Select(e => Path.GetRelativePath(directory, e.Root).Replace('\\', '/'))],
+        };
     }
 
     /// <summary>Each pair of entries that is one folder, or one inside the other, said once, in the order listed.</summary>

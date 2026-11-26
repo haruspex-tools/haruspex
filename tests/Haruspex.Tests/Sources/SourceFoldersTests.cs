@@ -101,6 +101,33 @@ public class SourceFoldersTests
     }
 
     [Fact]
+    public void Each_folder_read_is_given_as_found_relative_to_the_folder_the_list_is_written_in()
+    {
+        using var dir = new TempDirectory();
+        dir.File("tables/ingot.sql", Ingot);
+        dir.File("procedures/weigh.sql", Weigh);
+
+        var read = SqlScriptFolder.ReadFolders(dir.Path, ["./tables/", Path.Combine(dir.Path, "procedures")]);
+
+        Assert.Equal(["tables", "procedures"], read.Folders);
+    }
+
+    [Fact]
+    public void A_folder_listed_in_another_case_where_the_file_system_ignores_case_is_given_by_its_name_on_disk()
+    {
+        using var dir = new TempDirectory();
+        dir.File("tables/ingot.sql", Ingot);
+        dir.File("procedures/weigh.sql", Weigh);
+        if (!Directory.Exists(Path.Combine(dir.Path, "TABLES")))
+            Assert.Skip("this file system tells case apart, so TABLES isn't there");
+
+        var read = SqlScriptFolder.ReadFolders(dir.Path, ["TABLES", "procedures"]);
+
+        Assert.Equal(["tables", "procedures"], read.Folders);
+        Assert.Equal("tables/ingot.sql", Assert.Single(read.Model.Tables).Span.File);
+    }
+
+    [Fact]
     public void An_entry_is_named_in_a_message_as_the_user_wrote_it()
     {
         using var dir = new TempDirectory();

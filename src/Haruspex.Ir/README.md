@@ -355,8 +355,9 @@ and must not be written empty. A baseline lists its own. It is an assumption the
 reports a package listed in one document and not the other, at `source.builds["sales.dacpac"]` (or the baseline's)
 ([decision 0122](../../docs/decisions/0122-the-ir-records-the-packages-declared-builds.md)).
 
-`source.paths` (0.32) lists the folders of a source read from several folders of scripts as one database, each as `path` writes
-one (relative to the config file's folder, with `/`), each once, sorted by ordinal order; the source then has no `path`, since no
+`source.paths` (0.32) lists the folders of a source read from several folders of scripts as one database, each by its name as
+found on disk, relative to the config file's folder, with `/`: in the case the disk has it, as each location and `files` name
+it, whatever case the config file's list wrote it in. Each is listed once, sorted by ordinal order; the source then has no `path`, since no
 one path says where it is. A source read from one folder, a project or a package names it in `path` and leaves `paths` out, so
 a document of one source reads as it did before 0.32. The locations of a document read from several folders are relative to the
 config file's folder (`tables/orders.sql:3:5`), so that each says which folder its script is in; a document of one folder keeps

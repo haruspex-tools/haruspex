@@ -71,8 +71,8 @@ public sealed record IrSource(string Dialect)
     public string? Path { get; init; }
 
     /// <summary>
-    /// For a source read from several folders of scripts as one database (0.32), the folders, each as <see cref="Path"/> writes one,
-    /// sorted: then <see cref="Path"/> is null, since no one path says where the source is, and every location into the source's
+    /// For a source read from several folders of scripts as one database (0.32), the folders, each by its name as found on disk,
+    /// relative to the config file's folder and <c>/</c>-separated, as the locations name it, sorted: then <see cref="Path"/> is null, since no one path says where the source is, and every location into the source's
     /// scripts is relative to the config file's folder, beginning with the folder listed, rather than relative to one folder read. Empty for a source read from one folder,
     /// a project or a package, and then the file leaves <c>paths</c> out, so that such a document reads as it did before 0.32. Which
     /// folders the database is made of is what every claim rests on, so comparing two documents (<see cref="IrComparison"/>)

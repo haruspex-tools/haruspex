@@ -148,7 +148,8 @@ judged by the folders' own listings, so a Windows drive read from Linux, which i
 A drive that is another folder under a second name (`subst`, a mapped drive) isn't known to be that folder: listed under both
 names, its scripts are read twice, and haruspex may not say so, so list each folder by one name.
 
-The IR records the folders read, each relative to this file's folder, in `source.paths`, and a location in it, such as an
+The IR records the folders read, each by its name on disk relative to this file's folder, in `source.paths` (so writing the list
+in another case, where the file system ignores case, changes nothing), and a location in it, such as an
 object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).
 A document of a list is IR 0.32; one of one folder is written as before. `check` reports a folder added to the list or removed
 from it, even where no type changes, since what the database is made of is what every claim rests on

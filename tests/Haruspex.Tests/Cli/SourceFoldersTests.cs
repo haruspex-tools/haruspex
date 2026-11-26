@@ -54,6 +54,23 @@ public class SourceFoldersTests
     }
 
     [Fact]
+    public void A_change_of_case_alone_in_the_list_where_the_file_system_ignores_case_changes_nothing_check_sees()
+    {
+        // The IR records each folder by its name on disk, as its locations and files do: what the list says in another case is
+        // the same folder, so the same document.
+        using var folder = SideBySide("""["tables", "procedures"]""");
+        if (!Directory.Exists(Path.Combine(folder.Path, "TABLES")))
+            Assert.Skip("this file system tells case apart, so TABLES would be another folder");
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+        folder.File("haruspex.json", """{ "source": ["TABLES", "Procedures"], "out": "out", "schemas": { "shop": { "include": ["*"] } } }""");
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.True(exitCode == 0, error);
+        Assert.Equal(["procedures", "tables"], Ir(folder)["source"]!["paths"]!.AsArray().Select(p => p!.GetValue<string>()));
+    }
+
+    [Fact]
     public void Folders_the_command_line_gives_override_the_config_file_s_source_and_read_alike()
     {
         using var listed = SideBySide("""["tables", "procedures"]""");

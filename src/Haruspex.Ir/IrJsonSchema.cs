@@ -243,7 +243,7 @@ public static class IrJsonSchema
             ("writtenBy", Ref("build")),
             ("path", Text("Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known, and for a source read from several folders.")),
             ("paths", Node(
-                ("description", "For a source read from several folders of scripts as one database, the folders, each as path writes one, sorted (0.32). Every location into the source's scripts is then relative to the config file's folder, and so begins with the folder listed, rather than relative to one folder read. Left out for a source read from one folder, a project or a package, which path names."),
+                ("description", "For a source read from several folders of scripts as one database, the folders, each by its name as found on disk relative to the config file's folder, /-separated, as the locations name it, sorted (0.32). Every location into the source's scripts is then relative to the config file's folder, and so begins with the folder listed, rather than relative to one folder read. Left out for a source read from one folder, a project or a package, which path names."),
                 ("type", "array"),
                 ("minItems", 2),
                 ("uniqueItems", true),

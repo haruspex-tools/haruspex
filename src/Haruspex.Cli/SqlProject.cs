@@ -82,7 +82,9 @@ internal sealed class SqlProject
     public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null, IReadOnlyList<string>? named = null)
     {
         var read = SqlScriptFolder.ReadFolders(directory, folders, named);
-        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
+
+        // The folders as found on disk, as the locations name them, so that a change of case alone in the list changes nothing.
+        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory, source => source with { Paths = read.Folders });
     }
 
     /// <summary>The database's default collation, as the source records it or else as the config file declares it; null when neither does.</summary>
