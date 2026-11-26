@@ -60,10 +60,13 @@ dotnet format
 CI builds and runs the unit tests on Windows, macOS and Linux, since haruspex must write the same bytes on each; the
 differential tests run on Linux alone, where SQL Server's container does. It also compiles the command line ahead of time for
 each platform (Native AOT, `-p:HaruspexNativeAot=true`), so a change that breaks trimming or AOT fails there, runs each
-binary once on the example application, and keeps it, with the licences that go with it, as an artifact of the run. From
+binary once on the example application, checks that each Linux binary needs no newer glibc and no higher x86-64 level than
+[packaging/npm](packaging/npm/README.md) says, and keeps it, with the licences that go with it, as an artifact of the run. From
 those binaries it packs the npm tarballs ([packaging/npm](packaging/npm/README.md)), installs them into an empty project on
 each platform, and runs the command there.
 It runs `dotnet format --verify-no-changes` after the build, and lints the workflow files with `actionlint` and `zizmor`.
+It runs on each push to `main` and each pull request, weekly on `main`, and by hand on any branch pushed to GitHub
+(`gh workflow run CI --ref <branch>`), which tests a change before it reaches `main`.
 A second workflow, `site.yml`, builds haruspex.tools and deploys it to GitHub Pages from `main` and from release tags
 ([site](site/README.md)).
 Every relative link in the repository's Markdown, anchors included, must resolve; `MarkdownLinkTests` checks
@@ -71,7 +74,12 @@ them.
 Package versions are central (`Directory.Packages.props`) and locked (`packages.lock.json`, committed).
 To add or update a package, change `Directory.Packages.props`, run `dotnet restore --force-evaluate`,
 and commit the updated lock files with the change. Dependency updates are read by hand, never merged
-automatically. A package the command line is built from goes into its native binary, so its licence goes with every copy:
+automatically. A known vulnerability in any package restored, a test's transitive one included, fails the restore on purpose:
+NuGet reports it as NU1901 to NU1904, and the build treats those warnings as errors, as it does every other. So an advisory
+published today fails the restore of every commit, old ones too. CI runs weekly, as well as on each change, so that the
+maintainer's run meets it first, and the fix is a commit that updates or pins the package. To work past one until then, or to
+build an old commit for a bisect, set `NuGetAudit=false` in the environment (`NuGetAudit=false dotnet test`), which turns the
+audit off for every command run with it, on any commit; a later command without it fails again. CI never sets it. A package the command line is built from goes into its native binary, so its licence goes with every copy:
 commit its licence text from upstream in [packaging/licenses](packaging/licenses/README.md), whose README says how, and
 `LicenseTests` fails until it is there.
 
@@ -387,8 +395,9 @@ snapshot library; `tests/Haruspex.Tests/Snapshotting/README.md` says why.
 
 ## Review of agent and CI configuration
 
-`.github/CODEOWNERS` requires the maintainer's review for changes to `.claude/`, `.github/`, `AGENTS.md`
-and `CLAUDE.md`. Agent instructions and hooks run on contributors' machines, and workflows run in CI with
+`.github/CODEOWNERS` names the maintainer as the owner of `.claude/`, `.github/`, `AGENTS.md` and `CLAUDE.md`, so GitHub
+asks for the maintainer's review on a pull request that changes them. It asks; no setting requires it yet, so the review is
+the maintainer's rule rather than GitHub's. Agent instructions and hooks run on contributors' machines, and workflows run in CI with
 the repository's permissions, so a change to them is a change to what runs on other people's computers.
 
 ## Licence

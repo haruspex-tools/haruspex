@@ -5,8 +5,16 @@ on:
     branches: [main]
   pull_request:
   # Run by hand, from the Actions page or `gh workflow run CI --ref main`: the one run whose binaries and npm tarballs are
-  # handed out (ARTIFACTS below).
+  # handed out (ARTIFACTS below). On any other branch (`gh workflow run CI --ref feature/<name>`, once it is pushed) it tests
+  # a tip before it reaches main, and hands nothing out.
   workflow_dispatch:
+  # Weekly, on main, so that what moves without a commit fails the maintainer's run first, not a contributor's pull request:
+  # a NuGet advisory (fatal, CONTRIBUTING.md says why), the SDK's patch, a runner image, a fetched corpus. Mondays at 05:17
+  # UTC: off the hour, since GitHub delays or drops scheduled runs at busy times, the start of an hour above all. GitHub
+  # turns a public repository's schedule off after 60 days without activity in it; it is then turned on again by hand (the
+  # Actions page, or `gh workflow enable CI`).
+  schedule:
+    - cron: "17 5 * * 1"
 
 # Read-only: this workflow builds and tests, and never writes to the repository.
 permissions:
@@ -121,7 +129,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # A named image, not ubuntu-latest, since the build image sets the binary's floors (packaging/npm/floors.mjs): its
+          # glibc bounds the newest symbol version the binary can use, and Ubuntu 26.04's runner installs the x86-64-v3
+          # variant of glibc's startup files, whose note makes the binary need x86-64-v3. 24.04 is the arm64 leg's release,
+          # with the plain amd64 packages. Moving to another image is a change here, checked by the floors step.
+          - os: ubuntu-24.04
             rid: linux-x64
           - os: windows-latest
             rid: win-x64
@@ -184,6 +196,14 @@ jobs:
           node-version: 24
 
       - run: node packaging/npm/licenses.mjs publish "$RID"
+        env:
+          RID: ${{ matrix.rid }}
+
+      # A Linux binary needs no newer glibc, and no higher x86-64 level, than packaging/npm/README.md says: objdump -T and
+      # readelf -n, read against the floors the script holds. Before the upload, so that a binary that would refuse to start
+      # on a machine the README names is never handed out.
+      - run: node packaging/npm/floors.mjs publish/haruspex "$RID"
+        if: runner.os == 'Linux'
         env:
           RID: ${{ matrix.rid }}
 

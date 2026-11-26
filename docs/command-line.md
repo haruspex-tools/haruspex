@@ -184,7 +184,8 @@ with the module's config file, or from an IR file this version wrote. The compar
 unless `--fit-only` asks for the fit alone, as the database's side below does. A query file is the application's
 own SQL, sent with the text it was built with, so it is judged only against an IR baseline whose text is unchanged; otherwise
 the check warns that it isn't (HAR6031). A baseline is never fetched: a step before the check puts it there. Two
-recipes for GitHub Actions, one for each side.
+recipes for GitHub Actions, one for each side. Each pins its actions by commit, with the version in a comment, as haruspex's
+own workflow does, since a tag can be moved.
 
 **The application's side**: the database as of the last release, checked out from its tag into a folder, beside the change.
 The same baseline makes the module's types work against both databases, so the module a developer generates with it, and
