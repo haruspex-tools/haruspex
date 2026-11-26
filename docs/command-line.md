@@ -339,7 +339,10 @@ passed over. The folder is the deepest that holds every script a folder source t
 passes over whole (queries, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `EXEC`, `SET NOCOUNT`) changes nothing about the database, and
 any other (a definition, an `ALTER`, a `NOCHECK`, a bulk load, one that doesn't parse) may, so it is read. So the application's
 query files in a folder of their own, beside the database's, are not read as the database's scripts; init names such a folder,
-for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. When the folder that holds every
+for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. A query script in a folder that
+holds none of the database's scripts but has one further down, so that the folder can't be named, is named as itself: left out,
+with the `queries` entry that would type it, or read as the database's and not typed, with the database's scripts below its
+folder, which keep the folder in the source. When the folder that holds every
 database script would hold one too, the source is instead [the list](configuration.md#several-folders-source-as-a-list) of the
 folders directly below it that hold the database's scripts (`"source": ["procedures", "tables"]`), which leaves the others out.
 Where one of those scripts is directly in that folder, which a list of folders can't name, init reads the folder, says it holds
