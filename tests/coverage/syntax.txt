@@ -103,7 +103,7 @@ SetCommandStatement | SET DATEFORMAT, LANGUAGE, … | partly unsupported-stateme
 SetStatisticsStatement | SET STATISTICS | unknown unsupported-statement | | Not modelled. | SET STATISTICS IO ON;
 SetOffsetsStatement | SET OFFSETS | unknown unsupported-statement | | Not modelled. | SET OFFSETS SELECT ON;
 SetErrorLevelStatement | SET ERRLVL | unknown unsupported-statement | | Not modelled. | SET ERRLVL 1;
-ExecuteAsStatement | EXECUTE AS | partly unsupported-statement | Flow statements | Changes permissions, not how a name binds, so a module that runs it keeps every mask; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. | EXECUTE AS USER = 'someone'; REVERT; && DECLARE @c varbinary(100); EXECUTE AS USER = 'someone' WITH COOKIE INTO @c;
+ExecuteAsStatement | EXECUTE AS | partly unsupported-statement | Flow statements | Changes permissions, so a module that runs it keeps every mask, and how a one-part name binds only outside a module, where the name binds only when one schema has it; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. | EXECUTE AS USER = 'someone'; REVERT; && DECLARE @c varbinary(100); EXECUTE AS USER = 'someone' WITH COOKIE INTO @c;
 RevertStatement | REVERT | no-effect | Flow statements | Ends EXECUTE AS, and returns nothing. | REVERT;
 SetUserStatement | SETUSER | unknown unsupported-statement | | Not modelled. | SETUSER;
 UseStatement | USE | unknown unsupported-statement | | Not modelled. | USE elsewhere;

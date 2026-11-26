@@ -172,12 +172,19 @@ public partial class StatementFlowObservationTests
         ];
 
         // The test's own session holds UNMASK, and the user doesn't: under EXECUTE AS it reads the mask. An unqualified name
-        // binds in the procedure's schema as before, not the user's default schema. The procedure's last EXECUTE AS ends when it
-        // returns, and a cookie, allowed only outside a module, fails the call when it runs (15590).
+        // binds in the procedure's schema as before, not the user's default schema (outside a module it does: below). The
+        // procedure's last EXECUTE AS ends when it returns, and a cookie, allowed only outside a module, fails the call when it
+        // runs (15590).
         Assert.Equal(
             "code: abc | who: obs_impersonated | mine: dbo | code: xxxx | code: abc | who: dbo",
             (await Run(setup, "EXEC dbo.obs_execute_as; SELECT USER_NAME() AS who;")).ToString());
         Assert.Equal(15590, (await Run(setup, "EXEC dbo.obs_execute_as_cookie")).Error);
+
+        // Outside a module, as a query file runs, an unqualified name binds in the impersonated user's default schema, directly
+        // and through sp_executesql alike.
+        Assert.Equal(
+            "other: 1 | other: 1 | mine: dbo",
+            (await Run(setup, "EXECUTE AS USER = 'obs_impersonated'; SELECT * FROM obs_named; EXEC sp_executesql N'SELECT * FROM obs_named'; REVERT; SELECT * FROM obs_named;")).ToString());
     }
 
     [Fact]

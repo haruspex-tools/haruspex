@@ -464,8 +464,10 @@ The statements that return nothing but change which statements run, or how the o
   are not modelled, so either makes the results unknown
   (`Waitfor_delay_and_time_return_nothing_and_waitfor_receive_returns_a_result_set`).
 - **`EXECUTE AS` and `REVERT`** change whose permissions the statements between them run with, until `REVERT` or until the
-  procedure returns. An unqualified name still binds in the module's schema, not in the user's default schema
-  (`Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns`). Of what haruspex claims,
+  procedure returns. In a module an unqualified name still binds in the module's schema, not in the user's default schema;
+  in a query file, outside a module, it binds in the impersonated user's default schema
+  (`Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns`). That changes no claim: a
+  query file's one-part name binds only when one schema of the project has an object of that name. Of what haruspex claims,
   only what a masked column gives rests on the permissions, so a module whose body impersonates anyone but its caller
   keeps every mask, as `WITH EXECUTE AS` does ("Masked columns"). A query file is not a module, so an `EXECUTE AS` in one,
   where the callers are declared to hold `UNMASK`, makes its results unknown. `WITH COOKIE INTO`, which the server allows
@@ -473,7 +475,7 @@ The statements that return nothing but change which statements run, or how the o
 - **`SET LANGUAGE`, `SET DATEFIRST` and `SET DATEFORMAT`** change values: the names `DATENAME` writes, the weekday
   `DATEPART` counts, and how a string reads as a date. In every language the server has, they change no type and nothing
   claimed of a value: a date or a time converted to text, in every style, needs no escape inside a JSON string; a number
-  converts to the same text; and `DATENAME` is never NULL and never longer than 30 characters
+  converts to the same text; and `DATENAME` of a date that isn't NULL is never NULL and never longer than 30 characters
   (`The_language_changes_values_but_no_type_or_claimed_fact_and_lasts_until_the_procedure_returns`). So each is passed
   over. No value of `DATENAME` is claimed, before one or after it, and `FORMAT` is not typed.
 

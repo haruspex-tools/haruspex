@@ -698,7 +698,7 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `SET STATISTICS` | `SetStatisticsStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `SET OFFSETS` | `SetOffsetsStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `SET ERRLVL` | `SetErrorLevelStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
-| `EXECUTE AS` | `ExecuteAsStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Changes permissions, not how a name binds, so a module that runs it keeps every mask; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. |
+| `EXECUTE AS` | `ExecuteAsStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Changes permissions, so a module that runs it keeps every mask, and how a one-part name binds only outside a module, where the name binds only when one schema has it; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. |
 | `REVERT` | `RevertStatement` | read, changing no result | Ends EXECUTE AS, and returns nothing. |
 | `SETUSER` | `SetUserStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `USE` | `UseStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |

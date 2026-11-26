@@ -47,7 +47,9 @@ internal sealed partial class Walker
 
     /// <summary>
     /// <c>EXECUTE AS</c>: the statements after it run with another user's permissions until <c>REVERT</c> or the procedure
-    /// returns, and a name binds as before, in the module's schema (observed:
+    /// returns. In a module a name binds as before, in the module's schema; outside one, as a query file runs, a one-part name
+    /// binds in the user's default schema, which changes no claim, since a query file's one-part name binds only when one
+    /// schema has it (observed:
     /// <c>Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns</c>). Of what haruspex
     /// claims, only what a masked column gives rests on whose permissions they are: a module whose body impersonates anyone but
     /// its caller keeps every mask (<see cref="Model.Module.RunsAsAnother"/>). A query file's does not, so where the callers
