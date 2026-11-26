@@ -45,31 +45,33 @@ public partial class CitedSectionTests
 
     /// <summary>
     /// Cited titles that more than one section of the page has, so that a citation can't say which it means and renaming either
-    /// section leaves it green. These were there when the check came in; each is to be given distinct titles, and none is to be
-    /// added.
+    /// section leaves it green, each with how many times it is cited. These were there when the check came in; each is to be
+    /// given distinct titles, and no title or citation is to be added.
     /// </summary>
-    private static readonly HashSet<(string Page, string Title)> SharedTitles =
-    [
-        ("docs/configuration.md", "Query files"),
-        ("docs/configuration.md", "What is written"),
-        (Inference, "Binary values"),
-        (Inference, "Conversions"),
-        (Inference, "JSON built here, traced"),
-        (Inference, "Literals"),
-        (Inference, "Names"),
-        (Inference, "OPENJSON"),
-        (Inference, "Precision lost"),
-        (Inference, "Strings"),
-    ];
+    private static readonly Dictionary<(string Page, string Title), int> SharedTitles = new()
+    {
+        [("docs/configuration.md", "Query files")] = 5,
+        [("docs/configuration.md", "What is written")] = 2,
+        [(Inference, "Binary values")] = 5,
+        [(Inference, "Conversions")] = 1,
+        [(Inference, "JSON built here, traced")] = 9,
+        [(Inference, "Literals")] = 1,
+        [(Inference, "Names")] = 2,
+        [(Inference, "OPENJSON")] = 2,
+        [(Inference, "Precision lost")] = 5,
+        [(Inference, "Strings")] = 3,
+    };
 
     [Fact]
-    public void Every_title_listed_as_shared_is_still_cited_and_shared()
+    public void Every_title_listed_as_shared_is_still_shared_and_cited_as_often_as_listed()
     {
-        var cited = Read().SelectMany(Citations).Select(c => (c.Page, c.Title)).ToHashSet();
+        var cited = Read().SelectMany(Citations).CountBy(c => (c.Page, c.Title)).ToDictionary();
+        var wrong = SharedTitles
+            .Where(t => cited.GetValueOrDefault(t.Key) != t.Value || Sections(t.Key.Page).Count(s => Cites(t.Key.Title, s)) < 2)
+            .Select(t => $"{t.Key.Page}, \"{t.Key.Title}\": listed {t.Value.ToString(CultureInfo.InvariantCulture)}, cited {cited.GetValueOrDefault(t.Key).ToString(CultureInfo.InvariantCulture)}")
+            .ToList();
 
-        var stale = SharedTitles.Where(t => !cited.Contains(t) || Sections(t.Page).Count(s => Cites(t.Title, s)) < 2).ToList();
-
-        Assert.True(stale.Count == 0, "Listed as shared, but no longer cited or shared:\n" + string.Join("\n", stale));
+        Assert.True(wrong.Count == 0, "Listed as shared, but no longer shared, or cited another number of times:\n" + string.Join("\n", wrong));
     }
 
     [Theory]
@@ -85,7 +87,7 @@ public partial class CitedSectionTests
                 problems.Add($"{at}: \"{title}\" is cited after a page that isn't there ({page ?? "no such chapter"}).");
             else if (Sections(page).Count(s => Cites(title, s)) is var count && count == 0)
                 problems.Add($"{at}: {page} has no section \"{title}\"; cite one of its headings, or the bold label of a paragraph.");
-            else if (count > 1 && !SharedTitles.Contains((page, title)))
+            else if (count > 1 && !SharedTitles.ContainsKey((page, title)))
                 problems.Add($"{at}: {page} has {count.ToString(CultureInfo.InvariantCulture)} sections \"{title}\", so the citation can't say which; give them distinct titles.");
         }
 
