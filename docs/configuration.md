@@ -143,10 +143,10 @@ doesn't matter, and a list of one folder is that folder.
 A list names folders only: a `.sqlproj` or a `.dacpac` in it is an error ([HAR3005](diagnostics/HAR3005.md)), since each is a
 whole database of its own. Each script is read once, so the same folder listed twice, in any spelling the file system takes for
 the same (`db` and `./db`, or `Tables/` and `tables/` where the file system ignores case), one folder inside another, or two
-folders that reach one folder through a link, is an error naming both ([HAR1023](diagnostics/HAR1023.md)). Two spellings only
-the file system knows are one, such as a Windows drive read from Linux, which ignores case where Linux usually doesn't, aren't
-seen as one: each script is then read twice, and defining its objects twice is an error
-([HAR1002](diagnostics/HAR1002.md)).
+folders that reach one folder through a link, is an error naming both ([HAR1023](diagnostics/HAR1023.md)). Case is
+judged by the folders' own listings, so a Windows drive read from Linux, which ignores case, is judged as Windows would.
+A drive that is another folder under a second name (`subst`, a mapped drive) isn't known to be that folder: listed under both
+names, its scripts are read twice, and haruspex may not say so, so list each folder by one name.
 
 The IR records the folders read, each relative to this file's folder, in `source.paths`, and a location in it, such as an
 object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).

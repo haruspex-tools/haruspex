@@ -586,7 +586,7 @@ public static class ConfigReader
 
             return wrong ? config
                 : folders.Count == 1 ? config with { Source = folders[0] }
-                : config with { SourceFolders = [.. folders] };
+                : config with { SourceFolders = [.. written] };
         }
 
         /// <summary>

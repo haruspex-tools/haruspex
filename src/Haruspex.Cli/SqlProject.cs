@@ -78,9 +78,10 @@ internal sealed class SqlProject
     /// <param name="directory">The config file's folder.</param>
     /// <param name="folders">The folders, relative to <paramref name="directory"/>.</param>
     /// <param name="collation">The config file's <c>collation</c>, since a folder doesn't say.</param>
-    public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null)
+    /// <param name="named">Each folder as the user wrote it, for messages; by default as <paramref name="folders"/> gives it.</param>
+    public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null, IReadOnlyList<string>? named = null)
     {
-        var read = SqlScriptFolder.ReadFolders(directory, folders);
+        var read = SqlScriptFolder.ReadFolders(directory, folders, named);
         return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
     }
 

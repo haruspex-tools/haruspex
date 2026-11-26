@@ -27,6 +27,16 @@ public partial class IrJsonReaderTests
     }
 
     [Fact]
+    public void Every_folder_of_many_is_written_and_read_back()
+    {
+        var document = ReadFrom("views", "tables", "procedures", "functions");
+        var json = IrJsonWriter.Write(document);
+
+        Assert.Equal(["functions", "procedures", "tables", "views"], JsonNode.Parse(json)!["source"]!["paths"]!.AsArray().Select(p => p!.GetValue<string>()));
+        Assert.Equal(document, IrJsonReader.Read(json));
+    }
+
+    [Fact]
     public void A_document_whose_baseline_alone_was_read_from_several_folders_is_labelled_0_32()
     {
         var json = IrJsonWriter.Write(IrSamples.Folders);

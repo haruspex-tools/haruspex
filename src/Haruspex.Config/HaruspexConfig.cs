@@ -27,8 +27,8 @@ public sealed record HaruspexConfig
     public string? Source { get; init; }
 
     /// <summary>
-    /// The folders of <c>.sql</c> files <c>source</c> lists, when it lists more than one, resolved against <see cref="Directory"/>, in
-    /// the order written: read together as one database (docs/decisions/0127-a-source-may-be-several-folders.md). Empty otherwise, and
+    /// The folders of <c>.sql</c> files <c>source</c> lists, when it lists more than one, as written (relative to
+    /// <see cref="Directory"/>, unless absolute), in the order written, so that a message names each as the user wrote it: read together as one database (docs/decisions/0127-a-source-may-be-several-folders.md). Empty otherwise, and
     /// then <see cref="Source"/> names the one source.
     /// </summary>
     public EquatableArray<string> SourceFolders { get; init; } = [];

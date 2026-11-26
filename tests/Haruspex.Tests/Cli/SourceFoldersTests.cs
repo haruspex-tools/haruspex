@@ -174,6 +174,17 @@ public class SourceFoldersTests
     }
 
     [Fact]
+    public void A_folder_listed_twice_in_two_spellings_is_named_as_the_config_file_writes_each()
+    {
+        using var folder = SideBySide("""["tables", "procedures", "./tables"]""");
+
+        var (exitCode, _, error) = Run(folder, "generate");
+
+        Assert.Equal(HaruspexCli.ExitCodes.Usage, exitCode);
+        Assert.Contains("error HAR1023: tables and ./tables are the same folder", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Check_reports_a_folder_added_to_the_list_or_removed_from_it()
     {
         using var folder = SideBySide("""["tables", "procedures"]""");

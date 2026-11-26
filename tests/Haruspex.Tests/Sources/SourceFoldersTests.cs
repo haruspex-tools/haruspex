@@ -84,6 +84,34 @@ public class SourceFoldersTests
     }
 
     [Fact]
+    public void Two_folders_whose_names_differ_only_in_case_where_the_file_system_tells_case_apart_are_two()
+    {
+        // The exact name listed wins: each entry is the folder of its own name, and both are read.
+        using var dir = new TempDirectory();
+        dir.File("Tables/ingot.sql", Ingot);
+        if (Directory.Exists(Path.Combine(dir.Path, "tables")))
+            Assert.Skip("this file system ignores case, so tables and Tables are one folder");
+        dir.File("tables/weigh.sql", Weigh);
+
+        var read = SqlScriptFolder.ReadFolders(dir.Path, ["Tables", "tables"]);
+
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal("Tables/ingot.sql", Assert.Single(read.Model.Tables).Span.File);
+        Assert.Equal("tables/weigh.sql", Assert.Single(read.Model.Procedures).Span.File);
+    }
+
+    [Fact]
+    public void An_entry_is_named_in_a_message_as_the_user_wrote_it()
+    {
+        using var dir = new TempDirectory();
+        dir.File("db/ingot.sql", Ingot);
+
+        var error = Assert.Single(SqlScriptFolder.ReadFolders(dir.Path, ["db", "db"], ["db", "./db"]).Diagnostics);
+
+        Assert.Contains("db and ./db are the same folder", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Folders_whose_names_share_a_beginning_are_not_one_inside_the_other()
     {
         using var dir = new TempDirectory();

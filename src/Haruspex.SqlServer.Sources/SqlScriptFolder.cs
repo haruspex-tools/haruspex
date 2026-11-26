@@ -86,28 +86,37 @@ public static class SqlScriptFolder
     /// enters by where its files really are.
     /// </para>
     /// <para>
-    /// Two spellings of one folder that only the file system knows are one, a drive that is another folder under a second name or
-    /// a folder that differs only in case on a file system that ignores case where this platform's usually doesn't (a Windows
-    /// drive under WSL), aren't seen as one: their scripts are then read twice and define their objects twice (HAR1002), never
-    /// typed wrongly. <see cref="Projects.DiskPath.Real"/> gives the same limit.
+    /// Each entry is first found by the names its folders list: a name listed exactly is taken, and otherwise the one listed that
+    /// is equal ignoring case. So two entries that differ only in case are one folder wherever the file system ignores case,
+    /// whatever the platform usually does (a Windows drive under WSL ignores case where Linux tells it apart), and two folders
+    /// wherever it tells case apart and both are there. This is the entries' finding alone: the walk below each is unchanged.
+    /// </para>
+    /// <para>
+    /// A drive that is another folder under a second name (<c>subst</c>, a mapped drive) isn't known to be that folder, as
+    /// <see cref="Projects.DiskPath.Real"/> says: listed under both names, its scripts would be read twice.
     /// </para>
     /// <para>The scripts are read in order of their path relative to <paramref name="directory"/>, so the order of the list doesn't matter.</para>
     /// </remarks>
     /// <param name="directory">The folder the list is written in (the config file's), which positions are relative to.</param>
-    /// <param name="folders">The folders, full or relative to <paramref name="directory"/>, as written.</param>
+    /// <param name="folders">The folders, full or relative to <paramref name="directory"/>.</param>
+    /// <param name="named">How each folder is named in a message, as the user wrote it; by default as <paramref name="folders"/> gives it.</param>
     /// <exception cref="DirectoryNotFoundException">A folder listed does not exist.</exception>
-    public static SchemaReadResult ReadFolders(string directory, IReadOnlyList<string> folders)
+    public static SchemaReadResult ReadFolders(string directory, IReadOnlyList<string> folders, IReadOnlyList<string>? named = null)
     {
         ArgumentNullException.ThrowIfNull(directory);
         ArgumentNullException.ThrowIfNull(folders);
+        if (named is not null && named.Count != folders.Count)
+            throw new ArgumentException("Each folder needs one name.", nameof(named));
         var declarations = new SchemaDeclarations();
         var entries = new List<(string Written, string Root, string Real)>();
-        foreach (var written in folders)
+        var listings = new Projects.FolderListings(caseIgnored: true);
+        for (var i = 0; i < folders.Count; i++)
         {
-            var full = Path.GetFullPath(Path.Combine(directory, written));
+            var written = named?[i] ?? folders[i];
+            var full = Path.GetFullPath(Path.Combine(directory, folders[i]));
             if (!Directory.Exists(full))
                 throw new DirectoryNotFoundException($"Directory not found: {written}");
-            var root = Projects.DiskPath.Locate(full, written, out _) ?? full;
+            var root = Projects.DiskPath.Locate(full, written, listings, out _) ?? full;
             entries.Add((written, root, Projects.DiskPath.Real(root) ?? root));
         }
 

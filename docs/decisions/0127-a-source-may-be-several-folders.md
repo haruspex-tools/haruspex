@@ -20,7 +20,7 @@ that it says which folder its script is in (`tables/orders.sql:3:5`). A document
 to that folder.
 
 `check` compares the folders read as a claim, wherever either document records `paths`: a folder read in one and not the
-other is a change, reported as `source.paths["db/tables"]: no longer read`. A document of one folder against another of one
+other is a change, reported as `source.paths.tables: no longer read` (or `source.paths["db/tables"]` for a folder whose name needs quoting). A document of one folder against another of one
 folder compares no paths, as before: renaming the database's only folder changes no claim.
 
 The maintainer asked for a list on 26 Nov 2026, for a database kept as folders side by side (`tables/`, `procedures/`, beside the
@@ -32,8 +32,9 @@ repository to suit the tool. `init` advised the move.
 
 What the claims rest on is that every script of the database was read, and only once. One folder walked once guarantees the
 second already (each folder entered once by where it really is). Several folders don't: one inside another, or one listed in
-two spellings, reads its scripts twice, and a script read twice defines its objects twice (HAR1002), so the read stops rather
-than guesses. Saying so up front, naming both entries, is clearer than a duplicate definition per object.
+two spellings, reads its scripts twice. A table or a procedure read twice is defined twice (HAR1002), but a trigger or an
+`ALTER TABLE` read twice gives no error, and the database would be described as two copies of one folder. Refusing up front,
+naming both entries, catches every case, and is clearer than a duplicate definition per object.
 
 Which folders were read is part of what a document describes, as which packages are declared builds is: a folder added may
 hold a trigger or a constraint that changes no field a module shows but changes what the database does. Reporting it errs

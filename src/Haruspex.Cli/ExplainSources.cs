@@ -46,7 +46,7 @@ internal sealed class ExplainSources(IrDocument document, HaruspexConfig? config
         if (!baseline && config is { SourceFolders.Count: > 0 })
         {
             var path = Path.GetFullPath(Path.Combine(config.Directory, location.File));
-            if (config.SourceFolders.Any(folder => Inside(Path.GetFullPath(folder), path)) && ScriptFiles.Sha256(path) == hash)
+            if (config.SourceFolders.Any(folder => Inside(Path.GetFullPath(Path.Combine(config.Directory, folder)), path)) && ScriptFiles.Sha256(path) == hash)
                 return Read(path, location.Line);
         }
 
