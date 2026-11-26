@@ -55,10 +55,10 @@ is: the driver joins its rows into one string and never parses it (observed), so
 itself, and `FOR JSON` builds the same data, which haruspex types. A `FOR XML` subquery builds a value, not a result set, so it
 has no note.
 
-*An `xml` `OUTPUT` parameter.* The mssql driver can't receive one: bound as `sql.Xml()` or as `sql.NVarChar(sql.MAX)`, the call fails with
-error 257 ("Implicit conversion from data type xml to nvarchar is not allowed", observed), typed by a collection or not. The IR
-still types the parameter, since the claim is the server's; the mssql module refuses to write that procedure's function, with
-a diagnostic that says why.
+*An `xml` `OUTPUT` parameter.* The mssql driver, as of 12.7.14, can't receive one: it declares the parameter as `nvarchar`, so
+bound as `sql.Xml()` or as `sql.NVarChar(sql.MAX)` the call fails with error 257 ("Implicit conversion from data type xml to
+nvarchar is not allowed", observed), typed by a collection or not. The IR still types the parameter, since the claim is the
+server's; the mssql module leaves out that procedure's function, with a warning (HAR5206), and writes the rest.
 
 **Context.** Until now `xml` was not modelled: every `xml` column, parameter, conversion and XML method was an unknown
 (`unsupported-sql-type` or `unsupported-expression`), most of them in one corpus of [the harvest](../corpus-harvest.md). An application reading an

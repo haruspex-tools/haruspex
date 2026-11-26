@@ -105,4 +105,15 @@ public partial class IrJsonReaderTests
         Assert.Equal($"$.types.FindOrdersRow.fields[2].type.{property}", e.Path);
         Assert.Contains("XML value (kind \"xml\")", e.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_document_without_xml_is_written_as_0_33_wrote_it_byte_for_byte()
+    {
+        // 0.34 adds only what a document either has or lacks: the committed 0.33 file reads as 0.33 and writes back unchanged.
+        var file = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", "0.33.ir.json")).ReplaceLineEndings("\n");
+        var document = IrJsonReader.Read(file);
+
+        Assert.Equal(IrDocument.DescribedVersion, document.Version);
+        Assert.Equal(file, IrJsonWriter.Write(document));
+    }
 }

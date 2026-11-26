@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Haruspex.Diagnostics;
 using Haruspex.Emit.Mssql;
 using Haruspex.Emit.Mssql.Planning;
 using Haruspex.Emit.Zod;
@@ -62,7 +63,7 @@ public partial class MssqlEmitterTests
 
         Assert.Equal(
             "haruspex: error HAR5205: shop.GetOrder has a parameter named @__proto__, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter.",
-            Assert.Single(Assert.IsType<Haruspex.Diagnostics.Failed<string>>(refused).Diagnostics).ToString());
+            Assert.Single(Assert.IsType<Failed<string>>(refused).Diagnostics).ToString());
     }
 
     [Fact]
@@ -128,16 +129,20 @@ public partial class MssqlEmitterTests
     }
 
     [Fact]
-    public void A_procedure_with_an_xml_output_parameter_is_refused_since_the_driver_can_t_receive_one()
+    public void A_procedure_with_an_xml_output_parameter_has_no_function_and_the_rest_of_the_module_is_written()
     {
-        // An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as: error 257 however it is bound. One that only takes xml is
-        // written.
+        // An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as (mssql 12.7.14): error 257 however it is bound. The warning
+        // leaves out that one function; a procedure that only takes xml, beside it, has its function.
         var xml = new IrScalar(IrScalarKind.Xml, null, "xml");
-        var refused = MssqlEmitter.Emit(Document(Procedure("P", [Parameter("@spec", xml, output: true)], Rows)), new MssqlOptions());
-        var taken = MssqlEmitter.Emit(Document(Procedure("P", [Parameter("@spec", xml)], Rows)), new MssqlOptions());
+        var emitted = MssqlEmitter.Emit(Document(Procedure("Describe", [Parameter("@spec", xml, output: true)], Rows), Procedure("Take", [Parameter("@spec", xml)], Rows)));
 
-        Assert.Equal(["HAR5206"], refused.Diagnostics.Select(d => d.Code.ToString()));
-        Assert.Empty(taken.Diagnostics);
+        var module = Assert.IsType<Succeeded<string>>(emitted);
+        var warning = Assert.Single(module.Diagnostics);
+        Assert.Equal(("HAR5206", DiagnosticSeverity.Warning), (warning.Code.ToString(), warning.Severity));
+        Assert.Contains("shop.Describe has an xml OUTPUT parameter, @spec", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("function describe(", module.Value, StringComparison.Ordinal);
+        Assert.Contains("function take(", module.Value, StringComparison.Ordinal);
+        Assert.Contains("request.input('spec', sql.Xml, p.spec)", module.Value, StringComparison.Ordinal);
     }
 
     [Fact]

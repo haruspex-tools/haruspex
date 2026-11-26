@@ -392,7 +392,7 @@ HAR5205
 haruspex: error HAR5205: s.p has a parameter named @__proto__, which the mssql driver never sends, since it keeps a request's parameters as keys of an object; rename the parameter.
 
 HAR5206
-haruspex: error HAR5206: shop.describe_product has an xml OUTPUT parameter, @spec, which the mssql driver can't receive: the call fails with error 257 however it is bound. Return the XML in a result set instead, or convert it to nvarchar(max) in the procedure.
+haruspex: warning HAR5206: shop.describe_product has an xml OUTPUT parameter, @spec, which the mssql driver (12.7.14) can't receive: the call fails with error 257 however it is bound, so the module has no function for it. Return the XML in a result set instead, or convert it to nvarchar(max) in the procedure.
 
 HAR6001
 haruspex: error HAR6001: --colour is not an option of haruspex generate; the nearest is --color.

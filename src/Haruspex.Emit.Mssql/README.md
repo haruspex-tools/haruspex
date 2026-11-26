@@ -59,8 +59,10 @@ files of several config files are ([decision 0074](https://github.com/haruspex-t
   none (the driver's types declare `sql.Binary` with no length): the parameters' schema has refused a longer one, which
   `sql.VarBinary(n)` would fail with error 8016
   ([decision 0082](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
-  XML is sent as `sql.Xml`, text the server parses. The driver can't receive an `xml` `OUTPUT` parameter (the call fails with
-  error 257 however it is bound, observed), so a procedure with one is refused (HAR5206)
+  XML is sent as `sql.Xml`, text the server parses, and text that isn't XML fails the call with the server's error 9400: the
+  parameters' schema takes any string. mssql 12.7.14 can't receive an `xml` `OUTPUT` parameter (it declares `sql.Xml` as
+  `nvarchar`, and the call fails with error 257 however it is bound, observed), so a procedure with one has no function, with a
+  warning (HAR5206), and the module's other functions are written
   ([decision 0133](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)).
 - **A table-valued parameter is sent as an `sql.Table` of its type** (`TableValue`, built by the module's `table` helper): the
   type named by its schema and name apart, so that no name needs quoting, and every column declared in the type's order, each

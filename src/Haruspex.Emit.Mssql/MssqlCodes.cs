@@ -4,7 +4,8 @@ namespace Haruspex.Emit.Mssql;
 
 /// <summary>
 /// The codes of what the mssql emitter refuses (HAR52xx), each explained on its page in <c>docs/diagnostics</c>: a document whose
-/// functions it can't name, or a query file whose parameters it can't declare, refused before anything is written.
+/// functions it can't name, or a query file whose parameters it can't declare, refused before anything is written; and one
+/// warning, a procedure whose function it leaves out (HAR5206).
 /// </summary>
 public static class MssqlCodes
 {
@@ -37,7 +38,8 @@ public static class MssqlCodes
 
     /// <summary>
     /// An <c>OUTPUT</c> parameter of type <c>xml</c>, which the driver can't receive: bound as <c>Xml</c> or as text, the call fails
-    /// with error 257 (observed).
+    /// with error 257 (observed with mssql 12.7.14). A warning, not a refusal: only that procedure's function is left out, and the
+    /// rest of the module is written.
     /// </summary>
-    public static DiagnosticCode XmlOutputCannotBeReceived { get; } = new(5206, DiagnosticSeverity.Error, "An xml OUTPUT parameter the driver can't receive");
+    public static DiagnosticCode XmlOutputCannotBeReceived { get; } = new(5206, DiagnosticSeverity.Warning, "An xml OUTPUT parameter the driver can't receive");
 }

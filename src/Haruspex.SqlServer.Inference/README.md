@@ -2226,7 +2226,7 @@ client is handed is the text the server writes the instance as: the mssql driver
 (`An_xml_column_is_null_only_where_it_is_and_an_empty_instance_is_not`,
 `The_driver_hands_over_xml_as_its_text_and_sends_text_as_xml`). The driver can't receive an `xml` `OUTPUT` parameter, which fails
 the call with error 257 however it is bound (`An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as`); the IR still types
-it, and the mssql emitter refuses the procedure's function (HAR5206). Observed in `XmlObservationTests`; the unit tests are
+it, and the mssql emitter leaves out that procedure's function with a warning (HAR5206), writing the rest. Observed in `XmlObservationTests`; the unit tests are
 `XmlTests`, and the fixture `tests/fixtures/loom`.
 
 - **Conversions.** `CAST(… AS xml)` and `CONVERT(xml, …)`, with or without a style, are `xml`, NULL only when the operand is; text

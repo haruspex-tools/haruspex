@@ -73,10 +73,12 @@ internal static class FunctionPlanner
             }
 
             // The driver can't receive an xml OUTPUT parameter: bound as Xml or as NVarChar(MAX), the server fails the call with
-            // error 257, an implicit conversion from xml to nvarchar (observed: An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as).
+            // error 257, an implicit conversion from xml to nvarchar (observed with mssql 12.7.14:
+            // An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as). That procedure's function alone is left out, with a
+            // warning; the module's other functions are written.
             if (obj.Parameters.FirstOrDefault(p => p is { IsOutput: true, Type: IrScalar { Kind: IrScalarKind.Xml } }) is { } xml)
             {
-                refusals.Add(MssqlCodes.XmlOutputCannotBeReceived.At(null, $"{obj.Id} has an xml OUTPUT parameter, {xml.Name}, which the mssql driver can't receive: the call fails with error 257 however it is bound. Return the XML in a result set instead, or convert it to nvarchar(max) in the procedure."));
+                refusals.Add(MssqlCodes.XmlOutputCannotBeReceived.At(null, $"{obj.Id} has an xml OUTPUT parameter, {xml.Name}, which the mssql driver (12.7.14) can't receive: the call fails with error 257 however it is bound, so the module has no function for it. Return the XML in a result set instead, or convert it to nvarchar(max) in the procedure."));
                 continue;
             }
 

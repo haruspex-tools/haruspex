@@ -160,6 +160,27 @@ public class ParameterAcceptanceTests(SqlServerFixture server)
         Assert.True(wrong.Count == 0, string.Join("\n", wrong));
     }
 
+    [Fact]
+    public async Task Xml_the_parameter_schema_accepts_may_still_fail_the_call_with_the_server_s_error_9400()
+    {
+        // The schema takes any string, since checking XML needs a parser (decision 0133): text that isn't XML passes it and the
+        // server refuses the call when it parses it, error 9400, at run time; haruspex claims nothing it would prevent. Well-formed
+        // XML arrives as the server writes it.
+        const string Echo = "CREATE PROCEDURE shop.echo_xml @v xml AS SELECT CONVERT(nvarchar(max), @v) AS v;";
+        var document = InferProcedure.Infer("shop.*", ("schema.sql", "CREATE SCHEMA shop;"), ("echo.sql", Echo));
+        var module = ZodEmitter.Emit(document).Expected();
+        string[] setup = ["IF SCHEMA_ID(N'shop') IS NULL EXEC (N'CREATE SCHEMA shop');", Echo];
+        static MssqlDriver.Call Call(string text) => new(text, ParseJson: false, Procedure: "shop.echo_xml", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("Xml", text) }, Accepts: "EchoXmlParamsSchema");
+
+        // One run a call: the error ends the transaction the calls of a run share.
+        var malformed = Assert.Single(await MssqlDriver.RunAsync(server, module, setup, [Call("<a")], TestContext.Current.CancellationToken));
+        var wellFormed = Assert.Single(await MssqlDriver.RunAsync(server, module, setup, [Call("<a  b='1'/>")], TestContext.Current.CancellationToken));
+
+        Assert.Equal((true, 9400), (malformed.Accepted, malformed.Error?.Number));
+        Assert.True(wellFormed.Accepted);
+        Assert.Equal("<a b=\"1\"/>", Assert.Single(Assert.Single(wellFormed.Recordsets).Rows).GetProperty("v").GetString());
+    }
+
     /// <summary>Whether the server's text for the value it holds is the value sent, compared as the type's values compare.</summary>
     private static bool Kept(string declared, object? sent, string? kept)
     {

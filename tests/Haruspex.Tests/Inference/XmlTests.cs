@@ -132,6 +132,18 @@ public class XmlTests
         Assert.Equal([IrNullRule.XmlValue], Rules(doc, "code"));
     }
 
+    [Theory]
+    [InlineData("SELECT p.spec.value('(/spec/@weight)[1]', 'int') AS a FROM shop.product AS p WHERE p.spec.exist('/spec/@weight') = 1;")]
+    [InlineData("SELECT CASE WHEN p.spec.exist('(/spec/@weight)[1]') = 1 THEN p.spec.value('(/spec/@weight)[1]', 'int') ELSE 0 END AS a FROM shop.product AS p;")]
+    [InlineData("SELECT p.spec.value('(/spec/@weight)[1]', 'int') AS a FROM shop.product AS p WHERE p.spec.value('(/spec/@weight)[1]', 'int') IS NOT NULL;")]
+    public void Value_is_nullable_even_where_its_path_is_guarded(string body)
+    {
+        // No proof that a path finds a node is modelled, so a guard by exist(), or by the same value() tested for NULL, proves nothing.
+        var doc = Procedure(body);
+
+        Assert.Contains(IrNullRule.XmlValue, Rules(doc, "a"));
+    }
+
     [Fact]
     public void Value_of_a_variable_or_an_expression_is_typed_too()
     {
