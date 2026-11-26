@@ -34,6 +34,16 @@ public static class IrJsonWriter
             throw new ArgumentException("The document names the build that wrote its baseline and not its own, so it can't be written: name both, or neither.", nameof(document));
         }
 
+        if (document.DeclaresBuilds && document.Source.WrittenBy is null)
+        {
+            // Labelled 0.31 for its builds, it would be refused for lacking its writer, which every document of 0.30 or later names.
+            throw new ArgumentException("The document records packages declared builds and names no build of the tool that wrote it, so it can't be written: name the build.", nameof(document));
+        }
+
+        RequireBuildsRead(document.Source, nameof(document));
+        if (document.Source.Baseline is { } other)
+            RequireBuildsRead(other, nameof(document));
+
         using var buffer = new MemoryStream();
         using (var json = new Utf8JsonWriter(buffer, Options))
         {
@@ -200,8 +210,21 @@ public static class IrJsonWriter
     }
 
     /// <summary>
+    /// Refuses a source whose packages declared builds are not all packages it read, its own or a reference found, which the reader
+    /// refuses: a package not read can't be read as a build.
+    /// </summary>
+    private static void RequireBuildsRead(IrSource source, string parameter)
+    {
+        foreach (var name in source.Builds)
+        {
+            if (name != source.Package?.Name && !source.References.Any(r => r.Name == name && r.Sha256 is not null))
+                throw new ArgumentException($"The source declares {name} a build, which is no package it read, so it can't be written.", parameter);
+        }
+    }
+
+    /// <summary>
     /// A source's own properties: its dialect, the build that wrote its claims, where it was read from, its package and references,
-    /// the callers' session and its files.
+    /// the packages declared builds, the callers' session and its files.
     /// </summary>
     private static void WriteSource(Utf8JsonWriter json, IrSource source)
     {
@@ -219,6 +242,15 @@ public static class IrJsonWriter
         if (source.Path is { } read)
             json.WriteString("path", read);
         WritePackage(json, source);
+        if (source.Builds.Count > 0)
+        {
+            // Left out when none is declared, so that a document that declares none reads as it did before 0.31.
+            json.WriteStartArray("builds");
+            foreach (var name in source.Builds)
+                json.WriteStringValue(name);
+            json.WriteEndArray();
+        }
+
         if (source.Session.Count > 0)
         {
             // Left out when nothing is declared, so that a document that assumes nothing reads as it did before 0.17.

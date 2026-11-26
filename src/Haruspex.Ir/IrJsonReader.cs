@@ -203,6 +203,7 @@ public static class IrJsonReader
         DeclaresAsLabelled(document, version);
         ExplainsAsLabelled(document, version);
         NamesItsWriterAsLabelled(document, version);
+        DeclaresBuildsAsLabelled(document, version);
         return document;
     }
 
@@ -364,7 +365,7 @@ public static class IrJsonReader
         return key;
     }
 
-    /// <summary>A source's own properties: its dialect, its package and references, and the callers' session.</summary>
+    /// <summary>A source's own properties: its dialect, its package and references, the packages declared builds, and the callers' session.</summary>
     private static IrSource DocumentSource(IrJsonObject json)
     {
         var source = new IrSource(json.String("dialect"))
@@ -376,7 +377,7 @@ public static class IrJsonReader
             Package = Package(json),
             References = References(json),
         };
-        return source;
+        return source with { Builds = Builds(json, source) };
     }
 
     /// <summary>The build that wrote a source's claims (0.30): its version, never empty, and its commit when it knew it.</summary>
@@ -388,19 +389,36 @@ public static class IrJsonReader
     }
 
     /// <summary>
-    /// Refuses a document labelled 0.30 that doesn't name the build that wrote it, and the build named in a document labelled earlier,
-    /// its own or its baseline's, by its path: a document of 0.30 always names its writer, and one labelled earlier names none.
+    /// Refuses a document labelled 0.30 or later that doesn't name the build that wrote it, and the build named in a document labelled
+    /// earlier, its own or its baseline's, by its path: a document of 0.30 or later always names its writer, and one labelled earlier
+    /// names none.
     /// </summary>
     private static void NamesItsWriterAsLabelled(IrDocument document, string version)
     {
-        if (version == IrDocument.CurrentVersion && document.Source.WrittenBy is null)
-            throw new IrFormatException("$.source.writtenBy", $"is missing: a document of IR {version} names the build that wrote it. One labelled earlier names none, and is labelled by what else it says.");
-        if (version == IrDocument.CurrentVersion)
+        if (IrDocument.IsSince(version, IrDocument.StampedVersion) && document.Source.WrittenBy is null)
+            throw new IrFormatException("$.source.writtenBy", $"is missing: a document of IR {version} names the build that wrote it. One labelled before {IrDocument.StampedVersion} names none, and is labelled by what else it says.");
+        if (IrDocument.IsSince(version, IrDocument.StampedVersion))
             return;
         if (document.Source.WrittenBy is not null)
-            throw new IrFormatException("$.source.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.StampedVersion} or later.");
         if (document.Source.Baseline?.WrittenBy is not null)
-            throw new IrFormatException("$.source.baseline.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.baseline.writtenBy", $"is given in a document of IR {version}: the build that wrote a document is IR {IrDocument.StampedVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses packages declared builds (0.31) in a document labelled earlier, its own source's or its baseline's, by their path, and
+    /// a document labelled 0.31 that declares none, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void DeclaresBuildsAsLabelled(IrDocument document, string version)
+    {
+        if (version == IrDocument.CurrentVersion && !document.DeclaresBuilds)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that records packages declared builds, and this one records none. One that records none is labelled {IrDocument.StampedVersion} or earlier, by what else it says.");
+        if (version == IrDocument.CurrentVersion)
+            return;
+        if (document.Source.Builds.Count > 0)
+            throw new IrFormatException("$.source.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.CurrentVersion}.");
+        if (document.Source.Baseline?.Builds.Count > 0)
+            throw new IrFormatException("$.source.baseline.builds", $"is given in a document of IR {version}: packages declared builds are IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>The source of the other database a combined document describes, which has nothing more.</summary>
@@ -927,6 +945,29 @@ public static class IrJsonReader
             return [];
         var references = source.Array("references").Select(r => Reference(IrJsonObject.At(r.Item, r.Path))).ToList();
         return references.Count > 0 ? [.. references] : throw new IrFormatException(source.PathOf("references"), "must list at least one package; leave references out when there are none.");
+    }
+
+    /// <summary>
+    /// The packages the config file declared builds (0.31); none when the file leaves <c>builds</c> out. An empty array is refused:
+    /// the writer leaves it out, so there is one way to say "none". Each is named once, and names a package the source read: its own
+    /// <c>package</c>, or one of its <c>references</c> that was found, since a package not read can't be read as a build.
+    /// </summary>
+    private static EquatableArray<string> Builds(IrJsonObject json, IrSource source)
+    {
+        if (json.Optional("builds") is null)
+            return [];
+        var builds = new List<string>();
+        foreach (var (item, path) in json.Array("builds"))
+        {
+            var name = IrJsonObject.AsString(item, path);
+            if (builds.Contains(name, StringComparer.Ordinal))
+                throw new IrFormatException(path, $"is \"{name}\", named twice: a package is declared a build once.");
+            if (name != source.Package?.Name && !source.References.Any(r => r.Name == name && r.Sha256 is not null))
+                throw new IrFormatException(path, $"is \"{name}\", which names no package the source read: a build is its package or a reference found.");
+            builds.Add(name);
+        }
+
+        return builds.Count > 0 ? [.. builds] : throw new IrFormatException(json.PathOf("builds"), "must list at least one package; leave builds out when none is declared.");
     }
 
     /// <summary>A package the source's package refers to: its name, its hash when it was found, and its database when another.</summary>

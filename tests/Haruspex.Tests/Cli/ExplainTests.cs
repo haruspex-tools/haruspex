@@ -341,7 +341,7 @@ public class ExplainTests
 
         var output = Run(folder, "explain", "shop.order_summary", "last_shipped").Output;
 
-        Assert.Contains("  this IR is 0.23, which doesn't say where a field came from: run haruspex generate to write it as 0.30\n", output, StringComparison.Ordinal);
+        Assert.Contains("  this IR is 0.23, which doesn't say where a field came from: run haruspex generate to write it as 0.30 or later\n", output, StringComparison.Ordinal);
         Assert.DoesNotContain("|", output, StringComparison.Ordinal);
     }
 

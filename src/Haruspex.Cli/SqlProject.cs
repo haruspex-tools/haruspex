@@ -104,7 +104,7 @@ internal sealed class SqlProject
             read.Model.WithDeclaredCollation(collation),
             read.Diagnostics,
             file => packages.GetValueOrDefault(file.Split('/')[0], folder),
-            source => source with { References = Recorded(read.References) });
+            source => source with { References = Recorded(read.References), Builds = Builds(null, read.References, read.ReadAsBuilds) });
     }
 
     /// <summary>
@@ -155,7 +155,29 @@ internal sealed class SqlProject
     {
         Package = read.Package is { } package ? new IrPackage(package.Name, package.Sha256) : null,
         References = Recorded(read.References),
+        Builds = Builds(read.Package, read.References, read.ReadAsBuilds),
     };
+
+    /// <summary>
+    /// The packages read as builds because the config file declared them so, by the names the IR's source record gives them: the
+    /// package's own name, or the name of each reference it was found for (decision 0122).
+    /// </summary>
+    /// <param name="package">The package the source was read from, or null for a project.</param>
+    /// <param name="references">The packages it refers to.</param>
+    /// <param name="readAsBuilds">The packages read as builds.</param>
+    private static EquatableArray<string> Builds(LoadedPackage? package, IEnumerable<ReferenceRead> references, IReadOnlyCollection<LoadedPackage> readAsBuilds)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var build in readAsBuilds)
+        {
+            if (package is not null && package.Path == build.Path)
+                names.Add(package.Name);
+            foreach (var reference in references.Where(r => r.Found?.Path == build.Path))
+                names.Add(reference.Name);
+        }
+
+        return [.. names];
+    }
 
     /// <summary>The packages a source refers to, by file name and SHA-256, as the IR records them.</summary>
     private static EquatableArray<IrPackageReference> Recorded(IEnumerable<ReferenceRead> references) =>

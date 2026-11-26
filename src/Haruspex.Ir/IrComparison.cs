@@ -11,7 +11,7 @@ namespace Haruspex.Ir;
 /// Only claims are compared: what a reader of the document, or of code generated from it, may rely on. What says where a
 /// claim came from is not a claim, so it is not compared: every location (<c>at</c>), the reasons a value may be null or
 /// absent (only whether there is one is a claim), the sources of facts (<c>from</c>), the package a source was read from and
-/// its hash (but a declared column's schema files, whose text is the claim: 0.28), an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
+/// its hash (but a declared column's schema files, whose text is the claim: 0.28, and which packages are declared builds: 0.31), an unknown's reason and detail (only that the value is unknown is a claim), the overrides (their effect is in
 /// the types), and a type's identity and whether it is recursive (both follow from the types). So editing a procedure without
 /// changing what it returns, or rebuilding a DACPAC, changes nothing here. Why: docs/decisions/0050-check-compares-claims-not-files.md.
 /// </para>
@@ -63,6 +63,25 @@ public static class IrComparison
             changes.Add(new IrChange(IrChangeKind.DialectChanged, "", "source.dialect", before.Source.Dialect, after.Source.Dialect));
         if (before.Source.Session != after.Source.Session)
             changes.Add(new IrChange(IrChangeKind.SessionChanged, "", "source.session", IrClaimText.Session(before.Source.Session), IrClaimText.Session(after.Source.Session)));
+        Builds(before.Source, after.Source, "source.builds", changes);
+        if (before.Source.Baseline is { } was && after.Source.Baseline is { } now)
+            Builds(was, now, "source.baseline.builds", changes);
+    }
+
+    /// <summary>
+    /// Each package declared a build in one source and not in the other (0.31), by its name. Its keys are claimed on that declaration,
+    /// as some values' nullability is on a declared session, so a change of it is reported even where no claim the document shows
+    /// changes.
+    /// </summary>
+    private static void Builds(IrSource before, IrSource after, string path, List<IrChange> changes)
+    {
+        foreach (var name in before.Builds.Union(after.Builds, StringComparer.Ordinal).Order(StringComparer.Ordinal))
+        {
+            var was = before.Builds.Contains(name, StringComparer.Ordinal);
+            var now = after.Builds.Contains(name, StringComparer.Ordinal);
+            if (was != now)
+                changes.Add(new IrChange(IrChangeKind.BuildsChanged, "", path + IrPath.Key(name), Flag(was), Flag(now)));
+        }
     }
 
     private static void Folds(IrDocument before, IrDocument after, List<IrChange> changes)
@@ -425,7 +444,7 @@ public static class IrComparison
 
         private void Add(IrChangeKind kind, IrPathSegment[] path, string? before = null, string? after = null) =>
             changes.Add(new IrChange(kind, id, IrPath.Render(path), before, after));
-
-        private static string Flag(bool value) => value ? "true" : "false";
     }
+
+    private static string Flag(bool value) => value ? "true" : "false";
 }

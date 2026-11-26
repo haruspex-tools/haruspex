@@ -15,7 +15,8 @@ nor does one without an `Origin.xml`.
 
 The config file's `builds` lists packages, by file name, that the user declares built from a project. Their primary keys and
 unique constraints are then claimed. That is the user's assumption: haruspex can't check it, and the guarantee rests on it, as on
-a declared session. Unlike `session`, it is kept in the config file and not recorded in the IR. Its checks are read as before, by what the package says made it. The maintainer added the setting the
+a declared session. The IR records it, from 0.31, as it records `session`: each package read as a build, in `source.builds`
+([decision 0122](0122-the-ir-records-the-packages-declared-builds.md)). Its checks are read as before, by what the package says made it. The maintainer added the setting the
 same day: a disabled key is rare, and a team whose packages a community SDK builds should be able to keep its key claims. Checks keep
 their own rule, the other way round: only a package that names its server is an extract, whose checks are all read, since only
 an extract marks a check the server doesn't trust.

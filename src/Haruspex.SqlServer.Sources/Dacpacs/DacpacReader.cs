@@ -50,7 +50,10 @@ public static class DacpacReader
         var databases = others.ToDictionary(o => o.Key, o => OtherDatabase(o.Key, o.Value, packages, diagnostics), StringComparer.OrdinalIgnoreCase);
         var model = own.ToModel(PackageReader.Settings(root), unread, databases);
         diagnostics.AddRange(CaseVariants.In(model));
-        return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. packages.References], [.. diagnostics]);
+        return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. packages.References], [.. diagnostics])
+        {
+            ReadAsBuilds = [.. packages.ReadAsBuilds],
+        };
     }
 
     /// <summary>

@@ -314,6 +314,19 @@ internal static class IrSamples
         },
     };
 
+    /// <summary>
+    /// <see cref="Stamped"/> with packages the config file declared builds (0.31): its own package and one it refers to, and its
+    /// baseline's package, so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Built { get; } = Stamped with
+    {
+        Source = Stamped.Source with
+        {
+            Builds = ["shop.dacpac", "catalogue.dacpac"],
+            Baseline = Stamped.Source.Baseline with { Builds = ["shop-release.dacpac"] },
+        },
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

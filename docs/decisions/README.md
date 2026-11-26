@@ -107,6 +107,7 @@ decision as it stands; when one is reversed, the record says so and links its su
 | [0119](0119-names-that-differ-only-in-case-are-an-error.md) | 24 Nov 2026 | Names that differ only in case are an error |
 | [0120](0120-an-extract-s-key-constraints-are-no-key.md) | 24 Nov 2026 | An extract's key constraints are no key |
 | [0121](0121-every-address-haruspex-writes-is-served-from-haruspex-tools.md) | 24 Nov 2026 | Every address haruspex writes is served from haruspex.tools |
+| [0122](0122-the-ir-records-the-packages-declared-builds.md) | 25 Nov 2026 | The IR records the packages declared builds |
 
 ## Writing a record
 

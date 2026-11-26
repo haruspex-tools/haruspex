@@ -151,6 +151,12 @@ public enum IrChangeKind
     /// <summary>The options the callers' sessions are declared to set changed.</summary>
     SessionChanged,
 
+    /// <summary>
+    /// A package the source read is now declared a build in the config file, or no longer is (0.31): its primary keys and unique
+    /// constraints are claimed, or no longer, on the user's word.
+    /// </summary>
+    BuildsChanged,
+
     /// <summary>A fold a canonical value set names was added, removed or compares otherwise.</summary>
     FoldChanged,
 
