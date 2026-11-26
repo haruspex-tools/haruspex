@@ -5,18 +5,23 @@
     "no sales": "DELETE FROM flow.sale;",
     "no employees": "DELETE FROM flow.employee;",
     "no regions": "DELETE FROM flow.region;",
-    "one sale": "DELETE FROM flow.sale WHERE sale_id <> 12;"
+    "one sale": "DELETE FROM flow.sale WHERE sale_id <> 12;",
+    // Every region code of the CHECK with a sale in it: the seed has no WST region, and no sale in EST.
+    "a sale in every region": "INSERT INTO flow.region (region_id, code, name) VALUES (4, 'WST', N'Westerby'); INSERT INTO flow.sale (sale_id, region_id, amount, channel, note) VALUES (16, 3, 1.00, 'web', NULL), (17, 4, 2.00, 'web', NULL);"
   },
 
   "runs": [
     { "name": "region_report", "procedure": "flow.region_report" },
     { "name": "region_report, web only", "procedure": "flow.region_report", "parameters": { "@channel": "web" } },
+    { "name": "region_report, a sale in every region", "procedure": "flow.region_report", "setup": "a sale in every region" },
     { "name": "region_report, a channel with no sales", "procedure": "flow.region_report", "parameters": { "@channel": "post" } },
     { "name": "region_sales", "procedure": "flow.region_sales" },
     { "name": "region_sales, no sales", "procedure": "flow.region_sales", "setup": "no sales" },
     { "name": "sales_by_mode, sales", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 1, "@region": 1 } },
     { "name": "sales_by_mode, regions, no such region", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 2, "@region": 99 } },
     { "name": "sales_by_mode, regions with codes", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 4, "@region": 2 } },
+    { "name": "sales_by_mode, regions with codes, EST", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 4, "@region": 3 } },
+    { "name": "sales_by_mode, regions with codes, WST", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 4, "@region": 4 }, "setup": "a sale in every region" },
     { "name": "sales_by_mode, returns early", "procedure": "flow.sales_by_mode", "parameters": { "@mode": 3 } },
     { "name": "part_list", "procedure": "flow.part_list" },
     { "name": "part_list, units cleared", "procedure": "flow.part_list", "parameters": { "@with_units": false } },
@@ -43,8 +48,12 @@
     { "name": "sale_receipt, with a note", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 13 } },
     { "name": "sale_receipt, without a note", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 12 } },
     { "name": "sale_receipt, no such sale", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 99 } },
+    // The least amount the CHECK allows (amount >= 0), and each channel.
+    { "name": "sale_receipt, nothing paid, in store", "procedure": "flow.sale_receipt", "parameters": { "@sale_id": 11 } },
     { "name": "sale_line", "procedure": "flow.sale_line", "parameters": { "@sale_id": 13 } },
     { "name": "sale_line, no such sale", "procedure": "flow.sale_line", "parameters": { "@sale_id": 99 } },
+    { "name": "sale_line, nothing paid, in store", "procedure": "flow.sale_line", "parameters": { "@sale_id": 11 } },
+    { "name": "sale_line, by phone", "procedure": "flow.sale_line", "parameters": { "@sale_id": 12 } },
     { "name": "region_card, with sales", "procedure": "flow.region_card", "parameters": { "@region_id": 1 } },
     { "name": "region_card, a region with no sales", "procedure": "flow.region_card", "parameters": { "@region_id": 3 } },
     { "name": "region_card, no such region", "procedure": "flow.region_card", "parameters": { "@region_id": 99 } }

@@ -19,8 +19,8 @@ public sealed class ReadSession : DatabaseSession
 {
     private readonly byte[] cookie;
 
-    internal ReadSession(SqlConnection connection, byte[] cookie, IDisposable pass)
-        : base(connection, null, pass)
+    internal ReadSession(SqlConnection connection, byte[] cookie)
+        : base(connection, null, null)
     {
         this.cookie = cookie;
     }

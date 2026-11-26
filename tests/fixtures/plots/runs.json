@@ -15,6 +15,7 @@
     { "name": "crops_of", "procedure": "plot.crops_of", "parameters": { "@bed_id": 1 } },
     { "name": "bed_json, a bed with sowings", "procedure": "plot.bed_json", "parameters": { "@bed_id": 1 } },
     { "name": "bed_json, a bed with none", "procedure": "plot.bed_json", "parameters": { "@bed_id": 2 } },
+    { "name": "bed_json, sand", "procedure": "plot.bed_json", "parameters": { "@bed_id": 3 } },
     { "name": "bed_json, no such bed", "procedure": "plot.bed_json", "parameters": { "@bed_id": 999 } },
     { "name": "harvest_dates", "procedure": "plot.harvest_dates", "parameters": { "@bed_id": 1 } },
     { "name": "harvest_dates, a bed with none", "procedure": "plot.harvest_dates", "parameters": { "@bed_id": 2 } },

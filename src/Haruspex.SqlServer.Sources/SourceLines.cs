@@ -26,4 +26,10 @@ public static class SourceLines
         lines.Add(text[start..]);
         return lines;
     }
+
+    /// <summary>
+    /// <paramref name="text"/> with each CR and CRLF made LF and nothing else changed: the lines of <see cref="Of"/> joined by LF,
+    /// where <c>ReplaceLineEndings("\n")</c> would change a form feed, NEL, U+2028 and U+2029 too.
+    /// </summary>
+    public static string WithLineFeeds(string text) => string.Join('\n', Of(text));
 }

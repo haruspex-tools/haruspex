@@ -3,13 +3,13 @@ using Microsoft.Data.SqlClient;
 namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
-/// A session that writes, alone in the database while it lasts. Everything runs in one transaction, rolled back when
-/// the session is disposed, so what a test writes never reaches another test.
+/// A session that writes, alone in a database of its own while it lasts (<see cref="RoomPool"/>). Everything runs in one
+/// transaction, rolled back when the session is disposed, so what a test writes never reaches another test.
 /// </summary>
 public sealed class WriteSession : DatabaseSession
 {
-    internal WriteSession(SqlConnection connection, SqlTransaction transaction, IDisposable pass)
-        : base(connection, transaction, pass)
+    internal WriteSession(SqlConnection connection, SqlTransaction transaction, IDisposable room)
+        : base(connection, transaction, room)
     {
     }
 

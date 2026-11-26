@@ -19,8 +19,8 @@ internal static class ProcedureRunner
     /// <summary>
     /// Runs <see cref="ProcedureRun.Setup"/>, then the procedure, and reads every result set it returns. The session
     /// rolls back when it is disposed, so a run can see the tables in a state the seed does not leave them in (empty,
-    /// say) without changing what other runs see; it is alone in the database while it lasts, so no run reading the
-    /// same tables waits on its locks (see <see cref="DatabaseGate"/>).
+    /// say) without changing what other runs see; it is alone in a database of its own while it lasts, so no run reading
+    /// the same tables waits on its locks (see <see cref="RoomPool"/>).
     /// </summary>
     public static async Task<IReadOnlyList<ObservedResultSet>> RunAsync(WriteSession session, ProcedureRun run)
     {
@@ -37,8 +37,8 @@ internal static class ProcedureRunner
     {
         await using var command = session.Command(run.Procedure);
         command.CommandType = CommandType.StoredProcedure;
-        foreach (var (name, value) in run.Parameters)
-            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+        foreach (var (name, argument) in run.Parameters)
+            command.Parameters.Add(argument.Parameter(name));
 
         var sets = new List<ObservedResultSet>();
         await using var reader = await command.ExecuteReaderAsync().ConfigureAwait(false);

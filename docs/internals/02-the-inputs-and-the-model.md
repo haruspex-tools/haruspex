@@ -299,7 +299,10 @@ things true at once. Nothing read is a guess, since what a doubt reaches isn't r
 
 A project is read as `Debug`, as `dotnet build` builds it, and evaluated again as `Release` to find what differs by
 configuration, which is reported. Paths are matched ignoring case, as on Windows, where these projects are written and
-built. A wildcard's folders are walked as a build walks them, following a link to a folder elsewhere, and each folder is
+built. Where the file system ignores case, or where a path the project writes isn't on disk in that case, the path is found
+name by name in each folder's listing, so that a location is written as on disk, and the same on every machine. One read lists
+each folder once (`FolderListings`), for every script, deployment include, project and configuration: listing afresh for each
+script made a large project slow to read on macOS, and on Linux too when it named its folders in another case. A wildcard's folders are walked as a build walks them, following a link to a folder elsewhere, and each folder is
 entered once by where it really is (`DiskPath.Real`: every link followed, each name in its case on disk), so a link back up
 the tree is no loop. The real path is read from the root down, and a root is never asked for a link, which Windows can't
 answer for a drive's root. A link to a folder that isn't there, which Windows lists as a folder, can't be entered, and a

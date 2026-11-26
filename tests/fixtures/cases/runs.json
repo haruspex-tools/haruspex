@@ -10,6 +10,7 @@
     { "name": "job_card, two lines, one without a price", "procedure": "desk.job_card", "parameters": { "@job_id": 11 } },
     { "name": "job_card, one free line", "procedure": "desk.job_card", "parameters": { "@job_id": 12 } },
     { "name": "job_card, no lines", "procedure": "desk.job_card", "parameters": { "@job_id": 10 } },
+    { "name": "job_card, cancelled", "procedure": "desk.job_card", "parameters": { "@job_id": 13 } },
     { "name": "job_card, no such job", "procedure": "desk.job_card", "parameters": { "@job_id": 99 } },
     { "name": "customer_jobs", "procedure": "desk.customer_jobs" },
     { "name": "status_totals", "procedure": "desk.status_totals" },

@@ -4,6 +4,11 @@
   // Not held to every edge: a caller without UNMASK reads the masks, which reach no edge of a CHECK the seed does.
   "seedReachesEveryEdge": false,
 
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "tailor.customer_summary results[0][].kind: value retail": "is_trade's CHECK makes it 1, so the CASE always gives 'trade'; the IR claims both of its literals, which is only wider."
+  },
+
   "runs": [
     { "name": "customer_card, at the lower edges", "procedure": "tailor.customer_card", "parameters": { "@customer_id": 1 } },
     { "name": "customer_card, at the upper edges", "procedure": "tailor.customer_card", "parameters": { "@customer_id": 2 } },

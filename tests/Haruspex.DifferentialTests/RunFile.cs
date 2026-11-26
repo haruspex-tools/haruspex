@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 using System.Text.Json;
 using Haruspex.SqlServer.Model;
@@ -9,11 +10,18 @@ namespace Haruspex.DifferentialTests;
 /// A fixture's <c>runs.json</c>: the calls the differential tests make, of its procedures and its query files, the procedures
 /// they leave out with the reason, and whether the seed must reach every edge. The keys are described in <c>tests/fixtures/README.md</c>.
 /// </summary>
-/// <param name="SeedReachesEveryEdge">Whether the seed must reach every bound, full length and value of a set the IR claims.</param>
+/// <param name="SeedReachesEveryEdge">
+/// Whether the seed must reach every bound, full length and value of a set the IR claims, rather than only the edges of facts the
+/// type alone doesn't give (<see cref="Validation.EdgeScope"/>).
+/// </param>
 /// <param name="Runs">The calls, in the order the file lists them.</param>
 /// <param name="NotRun">Procedures deliberately not run, each with the reason.</param>
 /// <param name="QueryRuns">The calls of the fixture's query files, in the order the file lists them among its runs.</param>
-internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun, IReadOnlyList<QueryRun> QueryRuns)
+/// <param name="EdgesNotReached">
+/// Edges the seed is excused from reaching, each with the reason: a procedure (<c>bazaar.mixed</c>), a path in one
+/// (<c>bazaar.mixed results[1].units</c>) or one edge (<c>bazaar.mixed results[1].units: min</c>).
+/// </param>
+internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<ProcedureRun> Runs, IReadOnlyDictionary<string, string> NotRun, IReadOnlyList<QueryRun> QueryRuns, IReadOnlyDictionary<string, string> EdgesNotReached)
 {
     // The file allows comments and trailing commas, as haruspex.json and tsconfig.json do, so a run can say why it is there.
     private static readonly JsonDocumentOptions Options = new() { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
@@ -25,7 +33,7 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
         var path = fixture.Runs ?? throw new ArgumentException($"The fixture {fixture.Name} is not deployed, so it has no runs.", nameof(fixture));
         using var document = JsonDocument.Parse(File.ReadAllText(path), Options);
         var root = document.RootElement;
-        Known(root, path, "seedReachesEveryEdge", "setups", "runs", "notRun");
+        Known(root, path, "seedReachesEveryEdge", "edgesNotReached", "setups", "runs", "notRun");
 
         var setups = root.TryGetProperty("setups", out var s)
             ? s.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
@@ -46,7 +54,7 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             var name = run.GetProperty("name").GetString()!;
             var procedure = run.GetProperty("procedure").GetString()!;
             var declared = Declared(model, procedure, path);
-            var parameters = new Dictionary<string, object?>(StringComparer.Ordinal);
+            var parameters = new Dictionary<string, RunArgument>(StringComparer.Ordinal);
             if (run.TryGetProperty("parameters", out var given))
             {
                 foreach (var parameter in given.EnumerateObject())
@@ -72,7 +80,10 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
             ? n.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
             : [];
         var edges = root.TryGetProperty("seedReachesEveryEdge", out var e) && e.GetBoolean();
-        return new RunFile(edges, runs, notRun, queryRuns);
+        var notReached = root.TryGetProperty("edgesNotReached", out var u)
+            ? u.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString()!, StringComparer.Ordinal)
+            : [];
+        return new RunFile(edges, runs, notRun, queryRuns, notReached);
     }
 
     /// <summary>
@@ -119,40 +130,71 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
     }
 
     /// <summary>
-    /// The argument as the CLR type that SqlClient sends as the parameter's declared type, so a run file says
-    /// <c>"@mode": 1</c> and the call passes a <c>tinyint</c> because the procedure declares one, as an <c>EXEC</c> would.
+    /// The argument with the procedure's declared type, so a run file says <c>"@mode": 1</c> and the call passes a
+    /// <c>tinyint</c> because the procedure declares one, and <c>"@day": "0001-01-01"</c> reaches a <c>date</c> parameter as
+    /// that day, as an <c>EXEC</c> would (<see cref="RunArgument"/>).
     /// </summary>
-    private static object? Value(JsonElement value, SqlType? type, string where)
+    internal static RunArgument Value(JsonElement value, SqlType? type, string where)
     {
-        // A NULL sent with no type is nvarchar, which the server won't convert to a binary type implicitly (257), so a binary
-        // parameter's NULL is typed.
-        if (value.ValueKind == JsonValueKind.Null)
-            return type is { Kind: SqlTypeKind.BuiltIn, Name: "binary" or "varbinary" or "image" or "timestamp" or "rowversion" } ? System.Data.SqlTypes.SqlBinary.Null : (object?)null;
-
         // sysname is the built-in alias of nvarchar(128), which is read as a type referred to by name.
         if (type is { Kind: SqlTypeKind.Named, Name: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
-            return value.GetString();
-        return type is { Kind: SqlTypeKind.BuiltIn } ? type.Name switch
+            return new(Read(value, v => v.GetString()), SqlDbType.NVarChar, Length: 128);
+        if (type is not { Kind: SqlTypeKind.BuiltIn })
+            return Unsupported();
+
+        return type.Name switch
         {
-            "tinyint" => value.GetByte(),
-            "smallint" => value.GetInt16(),
-            "int" => value.GetInt32(),
-            "bigint" => value.GetInt64(),
-            "bit" => value.GetBoolean(),
-            "decimal" or "numeric" or "money" or "smallmoney" => value.GetDecimal(),
-            "real" => value.GetSingle(),
-            "float" => value.GetDouble(),
-            "uniqueidentifier" => Guid.Parse(value.GetString()!, CultureInfo.InvariantCulture),
-            "date" or "datetime" or "datetime2" or "smalldatetime" => DateTime.Parse(value.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None),
-            "time" => TimeSpan.Parse(value.GetString()!, CultureInfo.InvariantCulture),
-            "datetimeoffset" => DateTimeOffset.Parse(value.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None),
-            "char" or "varchar" or "nchar" or "nvarchar" => value.GetString(),
+            "tinyint" => new(Read(value, v => v.GetByte()), SqlDbType.TinyInt),
+            "smallint" => new(Read(value, v => v.GetInt16()), SqlDbType.SmallInt),
+            "int" => new(Read(value, v => v.GetInt32()), SqlDbType.Int),
+            "bigint" => new(Read(value, v => v.GetInt64()), SqlDbType.BigInt),
+            "bit" => new(Read(value, v => v.GetBoolean()), SqlDbType.Bit),
+
+            // decimal is decimal(18,0), as SQL Server reads it.
+            "decimal" or "numeric" => new(Read(value, v => v.GetDecimal()), SqlDbType.Decimal, Precision: Argument(type, 0, 18), Scale: Argument(type, 1, 0)),
+            "money" => new(Read(value, v => v.GetDecimal()), SqlDbType.Money),
+            "smallmoney" => new(Read(value, v => v.GetDecimal()), SqlDbType.SmallMoney),
+            "real" => new(Read(value, v => v.GetSingle()), SqlDbType.Real),
+
+            // float(1) to float(24) is real.
+            "float" when Argument(type, 0, 53) <= 24 => new(Read(value, v => v.GetSingle()), SqlDbType.Real),
+            "float" => new(Read(value, v => v.GetDouble()), SqlDbType.Float),
+            "uniqueidentifier" => new(Read(value, v => Guid.Parse(v.GetString()!, CultureInfo.InvariantCulture)), SqlDbType.UniqueIdentifier),
+            "date" => new(Read(value, Date), SqlDbType.Date),
+            "datetime" => new(Read(value, Date), SqlDbType.DateTime),
+            "smalldatetime" => new(Read(value, Date), SqlDbType.SmallDateTime),
+            // Sent with all seven digits, whatever the declared scale, and the server converts to it as an EXEC's literal is
+            // converted: rounding. SqlClient given the declared scale cuts the extra digits off on the client instead (time(2)
+            // given 08:30:00.129: .13 from an EXEC, .12 at scale 2; observed on the test server, 25 Nov 2026).
+            "datetime2" => new(Read(value, Date), SqlDbType.DateTime2, Scale: 7),
+            "time" => new(Read(value, v => TimeSpan.Parse(v.GetString()!, CultureInfo.InvariantCulture)), SqlDbType.Time, Scale: 7),
+            "datetimeoffset" => new(Read(value, v => DateTimeOffset.Parse(v.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None)), SqlDbType.DateTimeOffset, Scale: 7),
+            "char" => new(Read(value, v => v.GetString()), SqlDbType.Char, Length: Length(type)),
+            "varchar" => new(Read(value, v => v.GetString()), SqlDbType.VarChar, Length: Length(type)),
+            "nchar" => new(Read(value, v => v.GetString()), SqlDbType.NChar, Length: Length(type)),
+            "nvarchar" => new(Read(value, v => v.GetString()), SqlDbType.NVarChar, Length: Length(type)),
 
             // Written as SQL writes it, 0x and two hex digits a byte.
-            "binary" or "varbinary" or "image" or "timestamp" or "rowversion" => Convert.FromHexString(value.GetString()![2..]),
-            _ => Unsupported(),
-        } : Unsupported();
+            "binary" => new(Read(value, Bytes), SqlDbType.Binary, Length: Length(type)),
+            "varbinary" => new(Read(value, Bytes), SqlDbType.VarBinary, Length: Length(type)),
+            "image" => new(Read(value, Bytes), SqlDbType.Image),
 
-        object Unsupported() => throw new InvalidOperationException($"{where}: no argument of the declared type is supported yet; add the type here.");
+            // Eight bytes, sent as binary(8), which converts to a rowversion parameter (observed on the test server, 25 Nov 2026).
+            "timestamp" or "rowversion" => new(Read(value, Bytes), SqlDbType.Binary, Length: 8),
+            _ => Unsupported(),
+        };
+
+        static object? Read(JsonElement value, Func<JsonElement, object?> read) => value.ValueKind == JsonValueKind.Null ? null : read(value);
+        static object Date(JsonElement value) => DateTime.Parse(value.GetString()!, CultureInfo.InvariantCulture, DateTimeStyles.None);
+        static object Bytes(JsonElement value) => Convert.FromHexString(value.GetString()![2..]);
+
+        // A type written with no argument takes its default: char(1), datetime2(7), decimal(18,0).
+        static byte Argument(SqlType type, int index, byte omitted) =>
+            type.Arguments.Count > index ? byte.Parse(type.Arguments[index], CultureInfo.InvariantCulture) : omitted;
+        static int Length(SqlType type) => type.Arguments.Count == 0 ? 1
+            : type.Arguments[0].Equals("max", StringComparison.OrdinalIgnoreCase) ? -1
+            : int.Parse(type.Arguments[0], CultureInfo.InvariantCulture);
+
+        RunArgument Unsupported() => throw new InvalidOperationException($"{where}: no argument of the declared type is supported yet; add the type here.");
     }
 }

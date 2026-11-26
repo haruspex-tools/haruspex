@@ -49,4 +49,36 @@ public class EdgeCoverageTests
         Assert.DoesNotContain("dbo.p results[0][].n: min", Coverage.MissingEdges(doc, reached));
         Assert.DoesNotContain("dbo.p results[0][].s: length 4", Coverage.MissingEdges(doc, reached));
     }
+
+    /// <summary>
+    /// Every fixture is held to the edges of facts its types alone don't give: a CHECK's bound, a declared or engine's length,
+    /// every value of a set whatever its source, but not a bound or length the type gives, a single row or an array's items.
+    /// </summary>
+    [Fact]
+    public void Only_a_fact_the_type_alone_does_not_give_is_an_edge_every_fixture_reaches()
+    {
+        var check = new IrFactSource(IrFactSourceKind.Check, "dbo.ck_n");
+        var doc = Doc(
+            Field("n", new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets(Min: new IrBound("1", true, check), Max: new IrBound("2147483647", true, From)))),
+            Field("s", new IrScalar(IrScalarKind.String, null, "nvarchar(200)", new IrFacets(
+                Length: new IrLength(200, false, IrLengthUnit.CodePoints, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Declared, "dbo.t.s")),
+                MinLength: new IrMinLength(1, From),
+                Values: new IrValueSet([new IrValue("a", true)], IrValueMatch.Collation, [From])))));
+
+        Assert.Equal(
+            ["dbo.p results[0][].n: min", "dbo.p results[0][].s: length 200", "dbo.p results[0][].s: value a"],
+            Coverage.MissingEdges(doc, new Dictionary<string, IReadOnlySet<(string, string)>>(), EdgeScope.NotFromTheType));
+    }
+
+    [Theory]
+    [InlineData("bazaar.mixed", "bazaar.mixed results[1][].units: min", true)]
+    [InlineData("bazaar.mixed results[1][].units", "bazaar.mixed results[1][].units: min", true)]
+    [InlineData("bazaar.mixed results[1]", "bazaar.mixed results[1][].units: min", true)]
+    [InlineData("bazaar.mixed results[1][].units: min", "bazaar.mixed results[1][].units: min", true)]
+    [InlineData("bazaar.mixed results[1][].units: min", "bazaar.mixed results[1][].units: max", false)]
+    [InlineData("bazaar.mixed results[1][].unit", "bazaar.mixed results[1][].units: min", false)]
+    [InlineData("bazaar.mix", "bazaar.mixed results[1][].units: min", false)]
+    [InlineData("bazaar.mixed results[1]", "bazaar.mixed results[10][].units: min", false)]
+    public void An_excuse_names_a_procedure_a_path_in_one_or_one_edge(string excuse, string edge, bool excused) =>
+        Assert.Equal(excused, Runs.Excuses(excuse, edge));
 }

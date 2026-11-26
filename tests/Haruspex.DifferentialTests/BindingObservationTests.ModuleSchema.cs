@@ -58,7 +58,7 @@ public partial class BindingObservationTests
     /// </summary>
     private async Task<string> AsBothCommitted(string[] setup, string call)
     {
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var database = await server.ScratchAsync();
         foreach (var batch in setup)

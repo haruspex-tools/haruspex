@@ -3,7 +3,9 @@
 {
   "setups": {
     "an empty library": "DELETE FROM lend.loan; DELETE FROM lend.copy; DELETE FROM lend.title; DELETE FROM lend.member;",
-    "no loans": "DELETE FROM lend.loan;"
+    "no loans": "DELETE FROM lend.loan;",
+    // The seed's one science title has no author, so the report leaves it out.
+    "a science title with an author": "UPDATE lend.title SET author = N'E. Astronomer' WHERE title_id = 3;"
   },
 
   "runs": [
@@ -11,6 +13,7 @@
     { "name": "search_titles, by author", "procedure": "lend.search_titles", "parameters": { "@author": "A. Writer" } },
     { "name": "search_titles, by genre and name", "procedure": "lend.search_titles", "parameters": { "@genre": "fiction", "@name": "T" } },
     { "name": "authors_report", "procedure": "lend.authors_report" },
+    { "name": "authors_report, science", "procedure": "lend.authors_report", "setup": "a science title with an author" },
     { "name": "authors_report, no titles", "procedure": "lend.authors_report", "setup": "an empty library" },
     { "name": "get_member, with a home branch", "procedure": "lend.get_member", "parameters": { "@member_id": 1 } },
     { "name": "get_member, no email or home branch", "procedure": "lend.get_member", "parameters": { "@member_id": 2 } },

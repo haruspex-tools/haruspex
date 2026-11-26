@@ -62,7 +62,7 @@ public class JsonFunctionObservationTests(SqlServerFixture server)
     /// <summary>Creates the table and the functions, then returns the first column of the first row of <paramref name="query"/>, as text; rolled back.</summary>
     private async Task<string?> Query(string query)
     {
-        server.Require();
+        await server.RequireAsync();
         // It creates a table and functions, so it is alone in the database while it does (README.md).
         await using var session = await server.WriteAsync(TestContext.Current.CancellationToken);
 

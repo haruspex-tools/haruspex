@@ -4,7 +4,8 @@ namespace Haruspex.Tests.Sources;
 
 /// <summary>
 /// <see cref="DiskPath.Real"/>: where a folder really is, as walking a project's folder needs it to enter each folder once, on
-/// Windows, macOS and Linux.
+/// Windows, macOS and Linux; and <see cref="DiskPath.Locate(string, string, FolderListings, out string?)"/> walking a path name by
+/// name, as it does where the file system ignores case, here forced on whatever this one does.
 /// </summary>
 public class DiskPathTests
 {
@@ -113,5 +114,53 @@ public class DiskPathTests
         Assert.Equal(real, DiskPath.Real(real));
         if (OperatingSystem.IsMacOS() && temp.StartsWith("/var/", StringComparison.Ordinal))
             Assert.StartsWith("/private/var/", real, StringComparison.Ordinal);
+    }
+
+    /// <summary>The number of folders on the full path <paramref name="full"/> of a file, from its root: each one a walk lists.</summary>
+    private static int FoldersAbove(string full) =>
+        full[Path.GetPathRoot(full)!.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).Length;
+
+    [Fact]
+    public void Locating_every_script_of_a_folder_through_one_read_s_listings_lists_each_folder_on_the_path_once()
+    {
+        // Listed afresh for each script, the folder and every one above it were listed once a script, and a project of
+        // 3,301 scripts took 25 s of system time to read on macOS.
+        using var folder = new TempDirectory();
+        var scripts = Enumerable.Range(0, 40).Select(i => folder.File(Path.Combine("p", "Tables", $"t{i}.sql"), "")).ToList();
+        var listings = new FolderListings(caseIgnored: true);
+
+        var found = scripts.Select(s => DiskPath.Locate(s, s, listings, out _)).ToList();
+
+        Assert.Equal(scripts.Cast<string?>(), found);
+        Assert.Equal(FoldersAbove(scripts[0]), listings.Listed);
+    }
+
+    [Fact]
+    public void A_path_written_in_another_case_is_located_as_on_disk_by_its_folders_listings()
+    {
+        using var folder = new TempDirectory();
+        var script = folder.File(Path.Combine("p", "Tables", "Kiln.sql"), "");
+        var listings = new FolderListings(caseIgnored: true);
+
+        Assert.Equal(script, DiskPath.Locate(Path.Combine(folder.Path, "P", "TABLES", "kiln.SQL"), "TABLES/kiln.SQL", listings, out var problem));
+        Assert.Null(problem);
+        Assert.Equal(script, DiskPath.Locate(script, script, listings, out _));
+    }
+
+    [Fact]
+    public void A_path_that_names_two_files_differing_only_in_case_is_none_and_the_one_written_exactly_is_itself()
+    {
+        using var folder = new TempDirectory();
+        var upper = folder.File(Path.Combine("p", "Kiln.sql"), "");
+        var lower = Path.Combine(folder.Path, "p", "kiln.sql");
+        if (File.Exists(lower))
+            Assert.Skip("this file system ignores case, so it can't hold two files whose names differ only in case");
+        File.WriteAllText(lower, "");
+        var listings = new FolderListings(caseIgnored: true);
+
+        Assert.Null(DiskPath.Locate(Path.Combine(folder.Path, "p", "KILN.sql"), "KILN.sql", listings, out var problem));
+        Assert.Equal("KILN.sql names 2 files whose names differ only in case, as a build on Windows can't tell apart", problem);
+        Assert.Equal(upper, DiskPath.Locate(upper, upper, listings, out _));
+        Assert.Equal(lower, DiskPath.Locate(lower, lower, listings, out _));
     }
 }
