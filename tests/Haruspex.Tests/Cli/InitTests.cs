@@ -312,6 +312,31 @@ public class InitTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>Each folder of such scripts has a line of its own, naming only the database scripts below that folder.</summary>
+    [Fact]
+    public void Each_folder_of_query_scripts_read_as_the_database_s_names_only_the_database_scripts_below_it()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/t.sql", "CREATE TABLE garden.plant (id int NOT NULL, height int NOT NULL CONSTRAINT ck_height CHECK (height > 0));");
+        folder.File("db/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("reports/q.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("reports/legacy/fix.sql", "ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;");
+        folder.File("tasks/r.sql", "SELECT p.height FROM garden.plant AS p;");
+        folder.File("tasks/old/seed.sql", "BULK INSERT garden.plant FROM 'plants.csv';");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.EndsWith(
+            """
+            reports/q.sql adds nothing to the database, but . holds it, so it is read as the database's script and not typed. Its folder can't be left out, since reports/legacy/fix.sql, below it, adds to the database.
+            tasks/r.sql adds nothing to the database, but . holds it, so it is read as the database's script and not typed. Its folder can't be left out, since tasks/old/seed.sql, below it, adds to the database.
+
+            """,
+            output.ReplaceLineEndings("\n"),
+            StringComparison.Ordinal);
+    }
+
     /// <summary>When the source is a list of folders, such scripts are named with the listed folder that holds them.</summary>
     [Fact]
     public void Query_scripts_read_as_the_database_s_in_a_listed_folder_are_named_with_it()

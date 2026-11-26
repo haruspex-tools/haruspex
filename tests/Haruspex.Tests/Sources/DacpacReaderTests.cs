@@ -775,6 +775,21 @@ public class DacpacReaderTests
     }
 
     [Fact]
+    public void Another_database_s_reference_back_to_the_root_s_file_reuses_the_root_rather_than_opening_it_again()
+    {
+        // The root is opened through the package set, keyed by its full path, so another database that refers back to its file by a
+        // database name finds the package already open.
+        using var dir = new TempDirectory();
+        TestPackage.Write(Path.Combine(dir.Path, "main.dacpac"), TestPackage.Table("dbo", "t", "id int"), references: [new TestPackage.Reference("ledger.dacpac", "Ledger")]);
+        TestPackage.Write(Path.Combine(dir.Path, "ledger.dacpac"), TestPackage.Table("dbo", "entry", "id int"), references: [new TestPackage.Reference("main.dacpac", "Main")]);
+
+        var read = DacpacReader.Read(Path.Combine(dir.Path, "main.dacpac"));
+
+        Assert.Equal(["main.dacpac", "ledger.dacpac"], read.Opened.Select(Path.GetFileName));
+        Assert.NotNull(read.Model.Databases["Ledger"].FindTable(new ObjectName("dbo", "entry")));
+    }
+
+    [Fact]
     public void A_readonly_parameter_is_read_from_its_package_as_a_script_declares_it()
     {
         var parameters = WideWorldImporters.Value.Model.FindProcedure(new ObjectName("Website", "InsertCustomerOrders"))!.Parameters;
