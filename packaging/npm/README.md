@@ -24,12 +24,20 @@ works out which platform package belongs to this machine, finds its binary with 
 is the same version as itself, and runs it with the arguments as given, its standard streams inherited and its exit code
 passed back. `lib/launcher.js` holds the table of platforms, which the pack script reads too, so there is one list.
 
-The Linux binaries need glibc 2.34 or later (the newest symbol version the x64 binary uses): Ubuntu 22.04, Debian 12 and RHEL 9
-have it, and an older distribution fails when the binary starts. The Linux x64 binary also needs a processor with x86-64-v3
-(AVX2 and the rest): `readelf -n` lists it among the ISA levels the binary needs, and the loader refuses it on a processor
-without it, with exit code 127 ("CPU ISA level is lower than required"). The Windows and macOS x64 binaries are compiled with
-the same compiler defaults, but their requirement hasn't been measured. There is no binary for musl (Alpine) or for Windows on arm64
-yet; on those the launcher says so and lists the platforms there are.
+The Linux binaries need glibc 2.34 or later (the newest symbol version they use): Ubuntu 22.04, Debian 12 and RHEL 9 have it,
+and an older distribution fails when the binary starts. The Linux x64 binary's note of the x86-64 levels it needs (`readelf
+-n`, which the loader checks before the program starts) names only x86-64-baseline. CI's native job checks both for each
+Linux binary before it keeps it (`floors.mjs`, which holds the floors), so a build that needs more fails there.
+
+Both come from the image the binary is built on as much as from the code. Its glibc bounds the newest symbol version the
+binary can be linked against, and Ubuntu 26.04's runner installs the x86-64-v3 variant of glibc's startup files, whose note
+makes every binary linked with them need x86-64-v3, refused with exit code 127 ("CPU ISA level is lower than required") on a
+processor without AVX2. CI built the x64 binary there in November 2026, so those binaries carry that note; it is now built on Ubuntu
+24.04, named rather than `ubuntu-latest`, whose startup files say x86-64-baseline. Apart from the note, the .NET runtime checks
+at start that the processor has the instruction sets the AOT compiler targeted (its default, as no instruction set is set),
+and stops with "The required instruction sets are not supported by the current CPU" if not; which set that is hasn't been
+measured, on Linux, Windows or macOS. There is no binary for musl (Alpine) or for Windows on arm64 yet; on those the launcher
+says so and lists the platforms there are.
 
 ### What it borrows
 

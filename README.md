@@ -504,9 +504,8 @@ npm install --save-optional ./vendor/haruspex/haruspex.tools-linux-x64-0.0.0-pre
 
 Then `npx haruspex generate` and `npx haruspex check` run it, and so does a package script (`"db": "haruspex generate"`). The
 package holds the JSON Schema of `haruspex.json`, so the config file can name it as
-`"$schema": "./node_modules/haruspex/haruspex.schema.json"`. The Linux binaries need glibc 2.34 or later, and the Linux x64
-binary a processor with x86-64-v3 (AVX2 and the rest: Intel's since Haswell, AMD's since Excavator, though not every low-end
-Pentium or Celeron).
+`"$schema": "./node_modules/haruspex/haruspex.schema.json"`. The Linux binaries need glibc 2.34 or later, which CI checks;
+[packaging/npm](packaging/npm/README.md) says what else they need of the processor.
 
 pnpm installs the tarballs the same way (`pnpm add`). Yarn 1 can't: it looks for every optional dependency on the registry,
 where none is published yet. Yarn 4 can when `package.json` names every platform's tarball in `resolutions` before the command
