@@ -4,7 +4,9 @@
 # are in cspell.config.yaml, beside the file, with the reason.
 
 # T-SQL keywords, functions, types and settings, and SQL Server's own names
+addextendedproperty
 arithabort
+arrayagg
 charindex
 checkident
 clob
@@ -12,6 +14,7 @@ collationproperty
 cume
 databasepropertyex
 datalength
+datareader
 dateadd
 datediff
 datefirst
@@ -24,6 +27,7 @@ datetimeoffsetfromparts
 datetrunc
 dbcc
 dflt
+dropextendedproperty
 eomonth
 executesql
 filegroup
@@ -46,6 +50,7 @@ isdate
 isjson
 isnull
 keyset
+listextendedproperty
 ltrim
 msoledbsql
 nchar
@@ -60,8 +65,8 @@ ntext
 ntile
 nvarchar
 objectagg
-openjson
 opendatasource
+openjson
 openquery
 openrowset
 openxml
@@ -81,9 +86,9 @@ releaseapplock
 repeatableread
 replacer
 roundabort
+rowcount
 rowguid
 rowguidcol
-rowcount
 rowset
 rowsets
 rowstat
@@ -114,17 +119,16 @@ todatetimeoffset
 tran
 trancount
 unpivot
+updateextendedproperty
 updlock
 varbinary
 varchar
 varp
 virtualfilestats
-xact
-xmlnamespaces
-arrayagg
-datareader
 wansung
+xact
 xjis
+xmlnamespaces
 
 # CTEs and UDDT (a user-defined data type), as ScriptDom's type names spell them (WithCtesAndXmlNamespaces,
 # CreateTypeUddtStatement)

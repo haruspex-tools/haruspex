@@ -2,7 +2,7 @@
 
 **Date:** 26 Nov 2026
 
-**Decision.** haruspex reads the descriptions a database keeps in extended properties, and writes each onto the output that is
+**Decision.** The descriptions a database keeps in extended properties are read, and each is written onto the output that is
 exactly the thing described: a field that is one column, unchanged; a procedure's parameter; a procedure.
 
 *What is read.* From a package, each `SqlExtendedProperty` element, whose value the package holds as a SQL literal. From a
@@ -44,9 +44,10 @@ In the Zod module a description is the property's `.describe("…")`, outermost,
 hover show it, and the first lines of the comment above the property. In JSON Schema it is the first paragraph of the
 `description`, before the notes. It is the IR's `description` on a field, a parameter and an object, from IR 0.33.
 
-*Escaping.* A description is text from the database. In a string literal it is escaped as JSON escapes it. In a comment each
-of its lines is a line of the comment, with `*/` written `*\/`, and a line ending, `U+2028` and `U+2029` each end a line, so
-nothing in it ends the comment early.
+*Escaping.* A description is text from the database, kept with LF line endings. In a string literal it is escaped as JSON
+escapes it. In a comment each of its lines is a line of the comment, blank ones and trailing space left out; `*/` is written
+`*\/`, `U+2028` and `U+2029` as spaces, so nothing in it ends the comment early; and each `@` is written `\@`, since TypeScript
+reads an `@` after a space as a tag (observed with TypeScript 6.0.3), and `@deprecated` would strike the field out in an editor.
 
 *The IR.* `description` (0.33) on a field, a parameter and an object, left out where there is none. A document that records
 one is labelled 0.33; one that records none keeps the label it had, as [decision 0122](0122-the-ir-records-the-packages-declared-builds.md)
