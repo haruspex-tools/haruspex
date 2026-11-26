@@ -339,8 +339,12 @@ passed over. The folder is the deepest that holds every script a folder source t
 passes over whole (queries, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `EXEC`, `SET NOCOUNT`) changes nothing about the database, and
 any other (a definition, an `ALTER`, a `NOCHECK`, a bulk load, one that doesn't parse) may, so it is read. So the application's
 query files in a folder of their own, beside the database's, are not read as the database's scripts; init names such a folder,
-for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. When the folder it chose holds one
-too, it says so, and names the folders and scripts of the database it holds, for you to put together in one folder of their own. A folder source reads every `.sql` file below it
+for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. When the folder that holds every
+database script would hold one too, the source is instead [the list](configuration.md#several-folders-source-as-a-list) of the
+folders directly below it that hold the database's scripts (`"source": ["procedures", "tables"]`), which leaves the others out.
+Where one of those scripts is directly in that folder, which a list of folders can't name, init reads the folder, says it holds
+the query files, and names the folders and scripts of the database, for you to put together in one folder of their own. A
+folder of query files inside one of the listed folders is read as that folder's, and named with it. A folder source reads every `.sql` file below it
 ([the configuration](configuration.md#reading-a-folder-of-scripts-source)), so this
 keeps the application's own folder, with its installed packages, out of the source. It writes a `haruspex.json` that reads it,
 types every procedure of each schema that has one, and writes to `src/db`, or `generated` when there is no `src` folder:

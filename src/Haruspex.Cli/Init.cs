@@ -44,19 +44,22 @@ internal static class Init
         var found = source is null ? Find(workingDirectory) : Given(source, workingDirectory);
         if (found is Failed<Chosen> failed)
             return Refused(error, [.. failed.Diagnostics]);
-        var (chosen, leftOut, readAsDatabase, parts) = ((Succeeded<Chosen>)found).Value;
+        var (chosen, leftOut, readAsDatabase, parts, listed) = ((Succeeded<Chosen>)found).Value;
 
         // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
         // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
-        var shown = DiagnosticFormatter.PathAsShown(Path.GetRelativePath(workingDirectory, chosen));
-        var (schemas, errors) = Schemas(chosen);
+        List<string> written = listed.Count > 0
+            ? [.. listed.Select(f => DiagnosticFormatter.PathAsShown(Path.GetRelativePath(workingDirectory, f)))]
+            : [DiagnosticFormatter.PathAsShown(Path.GetRelativePath(workingDirectory, chosen))];
+        var shown = EnglishList.Of(written);
+        var (schemas, errors) = listed.Count > 0 ? Schemas(workingDirectory, written) : Schemas(chosen);
         var @out = Directory.Exists(Path.Join(workingDirectory, "src")) ? "src/db" : "generated";
         try
         {
             // CreateNew, so a file that appeared since the check above is left as it is.
             using var file = new FileStream(config, FileMode.CreateNew, FileAccess.Write);
             using var writer = new StreamWriter(file, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            writer.Write(Text(shown, @out, schemas, SchemaAddress.Of(SchemaAddress.ConfigFile, terminal)));
+            writer.Write(Text(written, @out, schemas, SchemaAddress.Of(SchemaAddress.ConfigFile, terminal)));
         }
         catch (IOException e) when (File.Exists(config))
         {
@@ -71,7 +74,7 @@ internal static class Init
 
         // Names from the files found are printed as the text report prints them, control characters escaped.
         var shownSchemas = schemas.Select(Visible.Of).ToList();
-        shown = Visible.Of(shown);
+        shown = EnglishList.Of([.. written.Select(Visible.Of)]);
 
         // What reading the source found wrong is said here, since the next generate may stop at something else first (with no
         // schema selected, at HAR6007), and the run fails, as any read with errors does. The file is kept: the source is still the
@@ -105,7 +108,10 @@ internal static class Init
         if (readAsDatabase.Count > 0)
         {
             var folders = readAsDatabase.Select(f => Visible.Of(DisplayPath.From(workingDirectory, f))).ToList();
-            var line = $"The .sql files in {EnglishList.Of(folders)} add nothing to the database, but {shown} holds them, so they are read as the database's scripts and not typed.";
+            List<string> holders = listed.Count > 0
+                ? [.. listed.Where(l => readAsDatabase.Any(f => Below(f, l))).Select(l => Visible.Of(DisplayPath.From(workingDirectory, l)))]
+                : [shown];
+            var line = $"The .sql files in {EnglishList.Of(folders)} add nothing to the database, but {EnglishList.Of(holders)} {(holders.Count == 1 ? "holds" : "hold")} them, so they are read as the database's scripts and not typed.";
             if (parts.Count > 0)
             {
                 // Advice to bring the database's parts together, not to move one into another: which of them is the database's own
@@ -135,17 +141,21 @@ internal static class Init
     /// <param name="LeftOut">The folders of queries alone that the source leaves out.</param>
     /// <param name="ReadAsDatabase">The folders of queries alone that the source holds.</param>
     /// <param name="Parts">
-    /// When it holds some, where the database's scripts are: each folder directly below the source that holds some, and each script
-    /// directly in it.
+    /// When it holds some and they can't be left out by listing folders, where the database's scripts are: each folder directly below
+    /// the source that holds some, and each script directly in it, one of which is a script.
     /// </param>
-    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, EquatableArray<string> Parts);
+    /// <param name="Folders">
+    /// When the source would hold some and the database's scripts are all in folders directly below it, those folders: the source is
+    /// then the list of them, which leaves the others out (docs/decisions/0127-a-source-may-be-several-folders.md).
+    /// </param>
+    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, EquatableArray<string> Parts, EquatableArray<string> Folders);
 
     /// <summary>The source the command line names, which must be there.</summary>
     private static Outcome<Chosen> Given(string source, string workingDirectory)
     {
         var path = Path.GetFullPath(Path.Combine(workingDirectory, source));
         return File.Exists(path) || Directory.Exists(path)
-            ? new Succeeded<Chosen>(new Chosen(path, [], [], []))
+            ? new Succeeded<Chosen>(new Chosen(path, [], [], [], []))
             : ModuleRun.Refused<Chosen>(CliCodes.SourceNotFound, $"not found: {source}");
     }
 
@@ -165,7 +175,7 @@ internal static class Init
         foreach (var (kind, candidates) in new[] { ("project files", projects), ("DACPACs", packages) })
         {
             if (candidates.Count == 1)
-                return new Succeeded<Chosen>(new Chosen(candidates[0], [], [], []));
+                return new Succeeded<Chosen>(new Chosen(candidates[0], [], [], [], []));
             if (candidates.Count > 1)
             {
                 var named = EnglishList.Of([.. candidates.Select(c => DisplayPath.From(workingDirectory, c))]);
@@ -200,7 +210,7 @@ internal static class Init
         var queries = scripts.Where(QueryOnlyScripts.Is).ToHashSet(StringComparer.Ordinal);
         var database = scripts.Where(s => !queries.Contains(s)).ToList();
         if (database.Count == 0)
-            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], [], []);
+            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], [], [], []);
 
         var source = Common([.. database.Select(Path.GetDirectoryName).OfType<string>()]);
 
@@ -216,15 +226,25 @@ internal static class Init
             .ToList();
         var inside = folders.Where(f => Below(f, source)).ToList();
         if (inside.Count == 0)
-            return new Chosen(source, [.. folders], [], []);
+            return new Chosen(source, [.. folders], [], [], []);
 
         // Where the database's scripts are, which made the source hold them: each folder directly below the source that holds some,
         // and each script directly in it. None of them is taken as the database's own, since which it is isn't known.
         var parts = database
             .Select(d => Top(Path.GetRelativePath(source, d)) is { Length: > 0 } top ? Path.Join(source, top) : d)
             .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal);
-        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], [.. parts]);
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        // When every part is a folder, the source is the list of them, and a folder of queries beside them is left out as one outside
+        // the source is. A script directly in the source can't be listed (a list names folders), so then the advice stays.
+        if (parts.All(p => !database.Contains(p, StringComparer.Ordinal)))
+        {
+            var within = inside.Where(f => parts.Any(p => Below(f, p))).ToList();
+            return new Chosen(source, [.. folders.Where(f => !within.Contains(f, StringComparer.Ordinal))], [.. within], [], [.. parts]);
+        }
+
+        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], [.. parts], []);
 
         static string Top(string path)
         {
@@ -292,8 +312,16 @@ internal static class Init
             [.. project.Diagnostics.Where(d => d.IsError)]);
     }
 
-    /// <summary>The starter config file, with a comment on each setting saying what to change.</summary>
-    private static string Text(string source, string @out, List<string> schemas, string configSchema)
+    /// <summary>The schemas the procedures of the folders listed are in, read as one database, and the errors reading them found.</summary>
+    private static (List<string> Schemas, List<Diagnostic> Errors) Schemas(string directory, List<string> folders)
+    {
+        var project = SqlProject.LoadFolders(directory, folders);
+        return ([.. project.Procedures.Select(p => p.Schema).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],
+            [.. project.Diagnostics.Where(d => d.IsError)]);
+    }
+
+    /// <summary>The starter config file, with a comment on each setting saying what to change; the source one path, or a list of folders.</summary>
+    private static string Text(List<string> source, string @out, List<string> schemas, string configSchema)
     {
         var text = new StringBuilder();
         text.Append("// haruspex's settings, written by haruspex init. Each is described in\n");
@@ -302,7 +330,7 @@ internal static class Init
         text.Append("// a DACPAC's build, the collation of a folder of scripts.\n");
         text.Append("{\n");
         text.Append($"  \"$schema\": {Quoted(configSchema)},\n");
-        text.Append($"  \"source\": {Quoted(source)},\n");
+        text.Append(source.Count == 1 ? $"  \"source\": {Quoted(source[0])},\n" : $"  \"source\": [{string.Join(", ", source.Select(Quoted))}],\n");
         text.Append($"  \"out\": {Quoted(@out)},\n");
         text.Append("  // Which procedures to type, by schema: every one, to start. Narrow each \"include\" to those the application calls.\n");
         text.Append("  \"schemas\": {");

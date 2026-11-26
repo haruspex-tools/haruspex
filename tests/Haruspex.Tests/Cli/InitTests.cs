@@ -112,7 +112,7 @@ public class InitTests
     /// <summary>
     /// A script that isn't queries alone stays in the source wherever it is, since leaving it out could claim more than the
     /// database holds: a deployment script that turns a check off, a <c>SELECT INTO</c>, seed data beside the database's folder.
-    /// The folder of queries the source then holds is named, as one it reads as the database's.
+    /// With the database in folders side by side beside the queries, the source lists those folders, and the queries are left out.
     /// </summary>
     [Theory]
     [InlineData("ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;")]
@@ -130,11 +130,13 @@ public class InitTests
         var (exitCode, output, error) = Run(folder);
 
         Assert.Equal((0, ""), (exitCode, error));
-        Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("\"source\": [\"database\", \"deploy\"],", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("haruspex: wrote haruspex.json, which reads database and deploy and types every procedure in garden", output, StringComparison.Ordinal);
         Assert.Contains(
-            "The .sql files in queries add nothing to the database, but . holds them, so they are read as the database's scripts and not typed. It reads . because what adds to the database is in database and deploy. If queries holds the application's query files, put database and deploy together in one folder of their own, remove haruspex.json and run haruspex init again.",
+            "The .sql files in queries add nothing to the database, so the source leaves them out. If they are the application's query files, add \"queries\": \"queries\" to type them.",
             output,
             StringComparison.Ordinal);
+        Assert.DoesNotContain("one folder of their own", output, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -170,7 +172,8 @@ public class InitTests
 
     /// <summary>
     /// A script that adds nothing, beside one that adds to the database, is part of the database's folder wherever the source is:
-    /// its folder isn't named, while a folder of such scripts alone inside the source is.
+    /// its folder isn't named, while a folder of such scripts alone beside the database's folders is left out, the source listing
+    /// those folders.
     /// </summary>
     [Fact]
     public void A_script_that_adds_nothing_beside_the_database_s_scripts_is_not_named()
@@ -184,16 +187,16 @@ public class InitTests
         var (exitCode, output, _) = Run(folder);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
-        Assert.Contains("The .sql files in database/seed add nothing to the database, but database holds them", output, StringComparison.Ordinal);
+        Assert.Contains("\"source\": [\"database/procedures\", \"database/tables\"],", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("The .sql files in database/seed add nothing to the database, so the source leaves them out.", output, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// With the database's folders beside the queries folder, no one of them is the database's: init names them all and advises
-    /// putting them together, so that the folder holding them leaves the queries out.
+    /// With the database's folders beside the queries folder, no one of them is the database's: init lists them all as the source,
+    /// which leaves the queries out, rather than advising a move (decision 0127). The file it writes reads as generate reads it.
     /// </summary>
     [Fact]
-    public void Database_folders_beside_the_queries_are_named_together()
+    public void Database_folders_beside_the_queries_are_listed_as_the_source()
     {
         using var folder = new TempDirectory();
         folder.File("tables/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
@@ -204,13 +207,44 @@ public class InitTests
         var (exitCode, output, _) = Run(folder);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains(
-            "It reads . because what adds to the database is in procedures and tables. If queries holds the application's query files, put procedures and tables together in one folder of their own, remove haruspex.json and run haruspex init again.",
-            output,
-            StringComparison.Ordinal);
+        Assert.Contains("  \"source\": [\"procedures\", \"tables\"],\n", Config(folder), StringComparison.Ordinal);
+        Assert.Equal(
+            """
+            haruspex: wrote haruspex.json, which reads procedures and tables and types every procedure in garden, written to generated.
+            Next, run haruspex generate. Then narrow each schema's "include" to the procedures the application calls.
+            Keep generated out of your formatter (in .prettierignore, or as "!generated" after "**" in Biome's files.includes): haruspex check fails on a file a formatter restyled.
+            The .sql files in queries add nothing to the database, so the source leaves them out. If they are the application's query files, add "queries": "queries" to type them.
+
+            """,
+            output.ReplaceLineEndings("\n"));
+        Assert.Empty(ConfigReader.Read(Path.Combine(folder.Path, HaruspexConfig.FileName)).Diagnostics);
     }
 
-    /// <summary>A database script directly in the source is named as itself, since there is no folder of it to name.</summary>
+    /// <summary>
+    /// A folder of queries alone inside one of the database's folders is read as that folder's, which a list can't leave out: it is
+    /// named, with the folder that holds it.
+    /// </summary>
+    [Fact]
+    public void Queries_inside_a_listed_folder_are_named_with_the_folder_that_holds_them()
+    {
+        using var folder = new TempDirectory();
+        folder.File("tables/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("tables/reports/r.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("procedures/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/q.sql", "SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("\"source\": [\"procedures\", \"tables\"],", Config(folder), StringComparison.Ordinal);
+        Assert.Contains("The .sql files in tables/reports add nothing to the database, but tables holds them, so they are read as the database's scripts and not typed.", output, StringComparison.Ordinal);
+        Assert.Contains("The .sql files in queries add nothing to the database, so the source leaves them out.", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A database script directly in the source is named as itself, since there is no folder of it to name; and a list, which names
+    /// folders, can't hold it, so init advises the move it would otherwise make for you.
+    /// </summary>
     [Fact]
     public void A_database_script_directly_in_the_source_is_named_as_itself()
     {
