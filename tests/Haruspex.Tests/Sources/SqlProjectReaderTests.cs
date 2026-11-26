@@ -321,28 +321,22 @@ public partial class SqlProjectReaderTests
         Assert.Equal("Tables/Kiln.sql", read.Model.FindTable(new ObjectName("dbo", "kiln"))!.Span.File);
     }
 
-    /// <summary>How many folders a walk lists to find the file at <paramref name="path"/>, below <paramref name="folder"/>: each one on its path, from the root.</summary>
-    private static int FoldersAbove(TempDirectory folder, string path)
-    {
-        var full = Path.Combine(folder.Path, path);
-        return full[Path.GetPathRoot(full)!.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).Length;
-    }
-
     [Fact]
     public void A_project_read_as_debug_and_as_release_lists_each_folder_once_however_many_scripts_it_builds()
     {
         // Each script's path was walked folder by folder, listing each afresh, for the Debug read and again for the Release
         // one. The walk is forced here, as a file system that ignores case makes it, and the project lists its scripts, as a
-        // legacy one does, in another case than the disk's. A script in a hidden folder is found too, and one only the Release
-        // read builds is in a folder of its own, which only that read lists: so the count holds only if the Release read lists
-        // through the same listings.
+        // legacy one does, in another case than the disk's and not always the same one, so that a folder kept by its path as
+        // written would be listed twice. A script in a hidden folder is found too, and one only the Release read builds is in a folder of its
+        // own, which only that read lists: so the folders listed are these only if the Release read lists through the same
+        // listings.
         using var folder = new TempDirectory();
         var scripts = Enumerable.Range(0, 30).Select(i => (Path: $"p/Tables/t{i}.sql", Text: $"CREATE TABLE dbo.t{i} (id int NOT NULL);")).ToArray();
         foreach (var (path, text) in scripts)
             folder.File(path, text);
         folder.File("p/.hidden/h.sql", "CREATE TABLE dbo.h (id int NOT NULL);");
         folder.File("p/Rel/r.sql", "CREATE TABLE dbo.r (id int NOT NULL);");
-        var items = string.Concat(scripts.Select(s => $"<Build Include=\"TABLES\\{Path.GetFileName(s.Path)}\" />"))
+        var items = string.Concat(scripts.Select((s, i) => $"<Build Include=\"{(i % 2 == 0 ? "TABLES" : "tables")}\\{Path.GetFileName(s.Path)}\" />"))
             + "<Build Include=\".Hidden\\H.sql\" /><Build Include=\"REL\\r.sql\" Condition=\"'$(Configuration)' == 'Release'\" />";
         var listings = new FolderListings(caseIgnored: true);
 
@@ -353,8 +347,9 @@ public partial class SqlProjectReaderTests
         Assert.Equal(31, read.Model.Tables.Count);
         Assert.Equal(".hidden/h.sql", read.Model.FindTable(new ObjectName("dbo", "h"))!.Span.File);
         Assert.All(read.Model.Tables.Where(t => t.Name.Name != "h"), t => Assert.StartsWith("Tables/", t.Span.File, StringComparison.Ordinal));
-        // The folders on a script's path, and .hidden and Rel beside Tables.
-        Assert.Equal(FoldersAbove(folder, "p/Tables/t0.sql") + 2, listings.Listed);
+        // The folders on a script's path, and .hidden and Rel beside Tables, each once.
+        var p = Path.Join(folder.Path, "p");
+        FolderWalk.Listed(FolderWalk.To(Path.Join(p, "Tables", "t0.sql")).Append(Path.Join(p, ".hidden")).Append(Path.Join(p, "Rel")), listings);
     }
 
     [Fact]
@@ -362,9 +357,9 @@ public partial class SqlProjectReaderTests
     {
         // A post-deployment script that includes a seed file a table, written in another case than the disk's, walked each include
         // from the root twice, listing every folder afresh. A legacy project builds none of them, so only the deployment script's
-        // reading lists their folder.
+        // reading lists their folder. They name it in two cases, as one folder.
         using var folder = new TempDirectory();
-        var includes = string.Concat(Enumerable.Range(0, 40).Select(i => $":r .\\SEED\\s{i}.sql\n"));
+        var includes = string.Concat(Enumerable.Range(0, 40).Select(i => $":r .\\{(i % 2 == 0 ? "SEED" : "seed")}\\s{i}.sql\n"));
         foreach (var i in Enumerable.Range(0, 40))
             folder.File($"p/deploy/Seed/s{i}.sql", $"PRINT {i};\n");
         folder.File("p/deploy/post.sql", "PRINT 0;\nGO\n" + includes);
@@ -374,7 +369,7 @@ public partial class SqlProjectReaderTests
             folder.File("p/p.sqlproj", Legacy("<PostDeploy Include=\"DEPLOY\\post.sql\" />")), [], new PackageCache(Path.Combine(folder.Path, "no-packages")), listings: listings);
 
         Assert.Empty(read.Diagnostics);
-        Assert.Equal(FoldersAbove(folder, "p/deploy/Seed/s0.sql"), listings.Listed);
+        FolderWalk.Listed(FolderWalk.To(Path.Join(folder.Path, "p", "deploy", "Seed", "s0.sql")), listings);
     }
 
     [Fact]

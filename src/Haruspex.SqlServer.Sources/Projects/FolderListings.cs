@@ -44,8 +44,8 @@ internal sealed class FolderListings(bool caseIgnored)
     /// </summary>
     public bool CaseIgnored { get; } = caseIgnored;
 
-    /// <summary>How many folders have been listed: each once, however often it is looked in.</summary>
-    public int Listed => listed.Count;
+    /// <summary>The folders listed, each once however often it is looked in, by full path as found on disk, in no order.</summary>
+    public IReadOnlyCollection<string> Folders => listed.Keys;
 
     /// <summary>
     /// The entries of <paramref name="folder"/> whose name is <paramref name="name"/> ignoring case, as full paths written as on
