@@ -24,7 +24,7 @@ your applications"), and they are rebuilt only when a test needs a new one.
 | `master-shape/master.dacpac` | A package in `master.dacpac`'s shape, standing in for it: a `sys` view and an `INFORMATION_SCHEMA` view whose columns are untyped, and a system procedure with a parameter and no text. Its `model.xml` is written by hand in `projects/master-shape` from the shapes of the real package's elements, not copied from it | zipped by `build.sh shapes` |
 | `versions/orders-build-sql-<version>.dacpac` | The `orders` fixture under older versions | `Microsoft.Build.Sql` 2.0.0 (DacFx 170.2.70) and 1.0.0 (DacFx 162.5.57), SQL Server 2022's provider |
 | `versions/<name>-extract.dacpac` | `atelier` and `orders` deployed to SQL Server 2025 and extracted again, `atelier` after the indexes of `pk_shelf`, `uq_kiln_serial` and `ix_kiln_serial_peak` are disabled, so that it shows what an extract writes of each (decision 0120) | SqlPackage 170.2.70, `/a:Publish` then `/a:Extract` |
-| `versions/kiln-clr-extract.dacpac` | A CLR scalar function and procedure (`projects/kiln-clr`, compiled for .NET Framework 4.8), and a procedure that calls the function, deployed by the script `build.sh clr` writes and extracted, since a project's build in the dev container refuses a .NET Framework assembly (SQL70557) | SqlPackage 170.2.70, `/a:Extract` |
+| `versions/kiln-clr-extract.dacpac` | A CLR scalar function and procedure (`projects/kiln-clr`, compiled for .NET Framework 4.8), and a procedure that calls the function, deployed by the script `build.sh clr` writes and extracted, since a project's build on Linux refused a .NET Framework assembly (SQL70557) | SqlPackage 170.2.70, `/a:Extract` |
 | `versions/options-off.dacpac` | `projects/options-off`: every database option off, compatibility level 150 and a collation of its own, which is what a package writes when each differs from DacFx's default | `Microsoft.Build.Sql` 2.3.0, SQL Server 2022's provider |
 
 `harbour`, `winery` and `cooperage` also reference `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package or
@@ -42,7 +42,7 @@ package is found beside the one that references it, as a build leaves it.
 
 ## How they were built
 
-`build.sh` builds each group in the dev container (`fixtures`, `corpus`, `projects`, `legacy`, `ssdt`, `versions`, `extract`, `clr`, `shapes`, `references`). It writes an
+`build.sh` builds each group (`fixtures`, `corpus`, `projects`, `legacy`, `ssdt`, `versions`, `extract`, `clr`, `shapes`, `references`). It writes an
 SDK-style project for a fixture's folder of scripts; the two projects of their own keep their `.sqlproj` in `projects/`.
 `legacy` and `ssdt` build a legacy SSDT project, which Visual Studio's SSDT builds on Windows, on Linux: with Microsoft.Build.Sql's
 own copy of the same build targets, named by `SQLDBExtensionsRefPath` as the project file's own `Import` allows, and
@@ -51,11 +51,13 @@ project file is used as it is, and nothing given changes what is built or its se
 `extract` deploys to a server of your own (`HARUSPEX_TEST_SQLSERVER`, as for the differential tests), extracts, and leaves
 dropping the database to you.
 
-`build.sh` needs the dev container. When it isn't to hand, a package can be built the same way on the host with the .NET 10
-SDK and `DOTNET_ROLL_FORWARD=Major` (Microsoft.Build.Sql's tasks target .NET 8): `orchard/*.dacpac` and the fixtures `beads`,
-`folds`, `gallery` and `parcels` were built so on macOS on 23 Nov 2026, from the project `build.sh` writes, and `atelier/atelier.dacpac`
-and `fixtures/fittings.dacpac` on 24 Nov 2026, and `fixtures/lectern.dacpac` in WSL on 26 Nov 2026; `versions/atelier-extract.dacpac` was extracted from atelier's the same day with
-SqlPackage 170.2.70 in the .NET SDK's container, as `build.sh extract` does.
+`build.sh` runs on Linux or macOS, under bash 3.2 or later, with the .NET SDK and network access to NuGet; its opening
+comment lists the rest each group needs. Microsoft.Build.Sql's tasks target .NET 8, so with only a later SDK, set
+`DOTNET_ROLL_FORWARD=Major`. Until it ran outside the maintainer's own container, some packages were built by hand the same
+way, from the project `build.sh` writes, with the .NET 10 SDK and that setting: `orchard/*.dacpac` and the fixtures `beads`,
+`folds`, `gallery` and `parcels` on macOS on 23 Nov 2026, `atelier/atelier.dacpac` and `fixtures/fittings.dacpac` on 24 Nov
+2026, and `fixtures/lectern.dacpac` in WSL on 26 Nov 2026; `versions/atelier-extract.dacpac` was extracted from atelier's the
+same day with SqlPackage 170.2.70 in the .NET SDK's container, as `build.sh extract` does.
 
 A package's `Origin.xml` records when it was built, so a rebuild changes every file even when nothing else has. Rebuild
 only the packages a change needs, and say in the commit which and why: the IR records each package's SHA-256, so a

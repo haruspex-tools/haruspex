@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Builds the test DACPACs with Microsoft.Build.Sql and SqlPackage, both of which are DacFx. DacFx's licence allows it in
 # development ("to develop and test your applications"), and nothing here ships it: no project in the solution refers to
-# it, and this script is run by hand, in the dev container, never by the tests. README.md says what each package is for.
+# it, and this script is run by hand, never by the tests. README.md says what each package is for.
 #
-# Usage, from the repository root, in the dev container (it needs the .NET SDK and network access to NuGet):
+# It runs on Linux or macOS, under bash 3.2 (macOS's) or later, so it uses neither bash 4's builtins nor GNU sed's options.
+# It needs the .NET SDK (Microsoft.Build.Sql's tasks target .NET 8, so with a later SDK alone set DOTNET_ROLL_FORWARD=Major),
+# network access to NuGet, and NuGet's packages in ~/.nuget/packages, where a restore puts them unless told otherwise. shapes
+# needs zip; extract needs SqlPackage and a server of your own, as its line below says.
+#
+# Usage, from the repository root:
 #   tests/dacpacs/build.sh fixtures [name...]   every fixture that builds as a project, or the ones named
 #   tests/dacpacs/build.sh corpus               WideWorldImporters, from its project's Build items
 #   tests/dacpacs/build.sh projects             the projects in projects/, with their references
@@ -60,7 +65,9 @@ build() {
 # says with each one's error, so with no names given they are left out; named, they are tried.
 fixtures() {
   local names=("$@") failed=()
-  [ ${#names[@]} -gt 0 ] || mapfile -t names < <(ls "$root/tests/fixtures" | grep -vxE 'README.md|checks|adventure-works|wide-world-importers')
+  if [ ${#names[@]} -eq 0 ]; then
+    while IFS= read -r f; do names+=("$f"); done < <(ls "$root/tests/fixtures" | grep -vxE 'README.md|checks|adventure-works|wide-world-importers')
+  fi
   for f in "${names[@]}"; do
     local dir="$work/fixtures/$f"
     mkdir -p "$dir"
@@ -195,20 +202,22 @@ extract() {
   done
 }
 
-# A CLR module has no text in a package, only its assembly, class and method. A project's build in the dev container refuses a
-# .NET Framework assembly (SQL70557), so the package is extracted from a database: the assembly in
+# A CLR module has no text in a package, only its assembly, class and method. A project's build on Linux refused a .NET
+# Framework assembly (SQL70557), so the package is extracted from a database: the assembly in
 # projects/kiln-clr is compiled, and a script is written that enables CLR, trusts the assembly by its hash, creates it and the
 # modules that use it in a database of their own. Run it with sqlcmd on a server of your own, extract the database, then undo
 # what it changed (drop the database, sys.sp_drop_trusted_assembly, and 'clr enabled' back as it was).
 clr() {
   local dir="$work/kiln-clr"
+  # sha512sum is GNU's; macOS has shasum.
+  sha512() { if command -v sha512sum > /dev/null; then sha512sum "$1"; else shasum -a 512 "$1"; fi | cut -d' ' -f1; }
   mkdir -p "$dir"
   cp -R "$out/projects/kiln-clr/." "$dir/"
   dotnet build "$dir/KilnClr.csproj" -c Release -nologo -v:q > "$dir/build.log" 2>&1
   local dll="$dir/bin/Release/net48/KilnClr.dll"
   cat > "$out/kiln-clr-deploy.sql" <<SQL
 EXEC sp_configure 'clr enabled', 1; RECONFIGURE;
-EXEC sys.sp_add_trusted_assembly 0x$(sha512sum "$dll" | cut -d' ' -f1), N'KilnClr';
+EXEC sys.sp_add_trusted_assembly 0x$(sha512 "$dll"), N'KilnClr';
 GO
 CREATE DATABASE haruspex_dacpac_clr;
 GO
@@ -258,7 +267,11 @@ references() {
   mkdir -p "$old"
   cp -R "$work/projects/winery" "$work/projects/vault" "$work/projects/almanac" "$work/projects/barrel" "$work/projects/tasting" "$old/"
   rm -rf "$old"/*/bin "$old"/*/obj
-  sed -i 's#Microsoft.Build.Sql/2.3.0#Microsoft.Build.Sql/1.0.0#; s#Sql170DatabaseSchemaProvider#Sql160DatabaseSchemaProvider#; s#Version="170.0.0"#Version="160.2.8"#' "$old"/*/*.sqlproj
+  # Through a copy rather than sed -i, whose argument GNU and BSD sed read differently.
+  for file in "$old"/*/*.sqlproj; do
+    sed 's#Microsoft.Build.Sql/2.3.0#Microsoft.Build.Sql/1.0.0#; s#Sql170DatabaseSchemaProvider#Sql160DatabaseSchemaProvider#; s#Version="170.0.0"#Version="160.2.8"#' "$file" > "$file.new"
+    mv "$file.new" "$file"
+  done
   # Its own lib, since 1.0.0 can't load a package 2.3.0 built for SQL Server 2025 (SQL72025); winery-1.0.0 holds the copies.
   build "$old/barrel" barrel "$old/lib" > /dev/null
   build "$old/tasting" tasting "$old/lib" > /dev/null
