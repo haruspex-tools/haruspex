@@ -70,6 +70,7 @@ internal sealed class TableReader(string package, PackageOrigin origin, bool key
         var checks = new List<CheckConstraint>();
         var keys = new List<UniqueKey>();
         var cascading = new List<CascadingKey>();
+        var fullText = new List<FullTextKey>();
         for (var i = 0; i < parts.Count; i++)
         {
             var part = parts[i];
@@ -89,6 +90,11 @@ internal sealed class TableReader(string package, PackageOrigin origin, bool key
                     // A filtered index is unique only among the rows its filter keeps.
                     keys.Add(new UniqueKey(PartName(part), KeyColumns(part), false, at) { DisabledAt = ModelXml.IsTrue(part, ModelXml.IsDisabled) ? at : null });
                     break;
+                case ModelXml.SqlFullTextIndex when ModelXml.References(part, ModelXml.KeyName).FirstOrDefault() is { } key:
+                    // KeyName names the key index as schema and name for a constraint, and as schema, table and name for an index
+                    // (observed: glossary.dacpac); its last part is the name either way.
+                    fullText.Add(new FullTextKey(ElementName.Last(ModelXml.Named(key)), at));
+                    break;
                 case ModelXml.SqlForeignKeyConstraint when Cascades(part) && ModelXml.References(part, ModelXml.ForeignTable).FirstOrDefault() is { } referenced:
                     cascading.Add(new CascadingKey(name, ElementName.Object(ModelXml.Named(referenced)), at));
                     break;
@@ -104,6 +110,7 @@ internal sealed class TableReader(string package, PackageOrigin origin, bool key
 
             // Written only when on, as for a module (ModuleTextReader).
             AnsiNullsOff = !ModelXml.IsTrue(element, ModelXml.IsAnsiNullsOn),
+            FullTextKeys = [.. fullText],
         };
         return (table, cascading);
     }

@@ -38,8 +38,8 @@ dotnet run --project src/Haruspex.Cli -- generate tests/fixtures/orders/database
   (`sales.get_order.jsonschema.verified.json`), named for the procedure and what they hold; `FixtureSnapshotTests` fails on a
   procedure without all three, a snapshot without a procedure or any other file there. It has a seed and
   runs, and the differential tests deploy it, call every procedure and check every value against the IR.
-- **A project for the CLI**: a fixture whose `haruspex.json` names a `source` folder (`Fixture.IsProject`; today `shop` and
-  `market`). Its config chooses the procedures and names them, so what it must produce is the command's files, each as a
+- **A project for the CLI**: a fixture whose `haruspex.json` names a `source` folder (`Fixture.IsProject`; today `shop`,
+  `market` and `glossary`). Its config chooses the procedures and names them, so what it must produce is the command's files, each as a
   snapshot named for it: the IR (`haruspex.ir.verified.json`), one file for each emitter its config names
   (`haruspex.zod.verified.ts` and the rest) and the list of what the command wrote (`haruspex.files.verified.json`). A config
   that splits the output (`market`, `"split": "schema"`) writes a file for each module and emitter instead

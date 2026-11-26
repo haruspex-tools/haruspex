@@ -5,8 +5,8 @@ DacFx: linters, diff tools, documentation generators, code generators.
 [Haruspex.SqlServer.Sources](https://github.com/haruspex-tools/haruspex/blob/main/src/Haruspex.SqlServer.Sources/README.md)
 fills it from a folder of `.sql` scripts or from a DACPAC.
 
-It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys and
-CHECK constraints; alias, CLR and table types (`CREATE TYPE`), a table type with its columns, keys and CHECK constraints as a
+It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys,
+CHECK constraints and the key index of their full-text index (`FullTextKey`); alias, CLR and table types (`CREATE TYPE`), a table type with its columns, keys and CHECK constraints as a
 table has them; stored procedures, functions of each kind, views and DML triggers,
 with their parameters, return types and options as data and their bodies as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) statements and expressions; synonyms
@@ -25,7 +25,7 @@ A `DatabaseModel` is built once and only read after that. Everything in it is a 
 ```mermaid
 flowchart LR
     sources["Sources reads scripts"] --> model["DatabaseModel"]
-    model --> tables["Table: Column, UniqueKey, CheckConstraint, CascadingKey"]
+    model --> tables["Table: Column, UniqueKey, CheckConstraint, FullTextKey, CascadingKey"]
     model --> code["Module: Procedure, Function, View, Trigger"]
     model --> types["UserType: AliasType, ClrType, TableType"]
     model --> named["Synonym: the name it stands for"]

@@ -21,7 +21,7 @@ haruspex does it, and name it as the literature does.
 - **Plain and precise.** Short sentences, common words, one idea per sentence where possible. Say exactly what
   is true and stop.
 - **No claim stronger than the evidence.** The documentation is held to haruspex's own rule: never claim more
-  than is guaranteed. "Typed 32 of 38 fields in AdventureWorks", not "types almost everything". A figure in public text
+  than is guaranteed. "Typed 32 of 34 fields in AdventureWorks", not "types almost everything". A figure in public text
   comes from [the corpus figures](corpus-figures.md), which a test writes
   ([decision 0020](decisions/0020-public-figures-come-from-public-corpora.md)).
 - **No marketing words**: *powerful*, *seamless*, *blazing*, *robust*, *cutting-edge*, *best-in-class*,

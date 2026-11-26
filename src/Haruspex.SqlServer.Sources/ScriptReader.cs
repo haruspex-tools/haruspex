@@ -107,6 +107,9 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 // As a key ALTER TABLE adds (AddedKey), and passed over in the same places.
                 into.AddedKeys.Add(new AddedKey(SyntaxReader.Name(index.OnName), SyntaxReader.Key(index, SyntaxReader.Span(file, index))));
                 break;
+            case CreateFullTextIndexStatement { KeyIndexName: { } key } fullText when NamesThisDatabasesTable(fullText.OnName):
+                into.FullTextKeys.Add((SyntaxReader.Name(fullText.OnName), new FullTextKey(key.Value, At(fullText))));
+                break;
             case CreateTypeUddtStatement alias when SyntaxReader.Type(alias.DataType) is { } baseType:
                 ReadAliasType(alias, baseType);
                 break;

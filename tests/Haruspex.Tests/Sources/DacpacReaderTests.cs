@@ -17,7 +17,7 @@ namespace Haruspex.Tests.Sources;
 /// model, how a built package and an extracted one differ, and how references are found, composed and reported. That a package
 /// reads as its project's folder does is proved in <c>DacpacEquivalenceTests</c>.
 /// </summary>
-public class DacpacReaderTests
+public partial class DacpacReaderTests
 {
     private static string Packages => Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
 

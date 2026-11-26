@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 207 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 165 |
+| Modelled, wholly or in part | 166 |
 | Read, changing no result | 29 |
-| Unknown | 311 |
+| Unknown | 310 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -819,8 +819,8 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `OPENQUERY` | `OpenQueryTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `OPENDATASOURCE(…).db.schema.table` | `AdHocTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `OPENXML` | `OpenXmlTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
-| `CONTAINSTABLE, FREETEXTTABLE` | `FullTextTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
-| `SEMANTICKEYPHRASETABLE, …` | `SemanticTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
+| `CONTAINSTABLE, FREETEXTTABLE` | `FullTextTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#full-text-table-functions) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | RANK is an int that may be null; KEY is of the full-text key column's type, and unknown where the project creates no full-text index on the table. |
+| `SEMANTICKEYPHRASETABLE, …` | `SemanticTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | A semantic search function, not modelled. |
 | `CHANGETABLE (CHANGES …)` | `ChangeTableChangesTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `CHANGETABLE (VERSION …)` | `ChangeTableVersionTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `PREDICT` | `PredictTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |

@@ -56,6 +56,7 @@ public class QueryOnlyScriptsTests
         { "TableChanges", "ALTER TABLE garden.plant ADD note nvarchar(20) NULL;" },
         { "PeriodDrops", "ALTER TABLE garden.plant DROP PERIOD FOR SYSTEM_TIME;" },
         { "AddedKeys", "ALTER TABLE garden.plant ADD CONSTRAINT pk_plant PRIMARY KEY (id);" },
+        { "FullTextKeys", "CREATE FULLTEXT INDEX ON garden.plant (name) KEY INDEX pk_plant;" },
         { "UserTypes", "CREATE TYPE garden.height FROM decimal(5, 2) NOT NULL;" },
         { "Procedures", "CREATE PROCEDURE garden.p AS SELECT 1 AS one;" },
         { "ProcedureChanges", "ALTER PROCEDURE garden.p AS SELECT 2 AS two;" },
@@ -126,7 +127,7 @@ public class QueryOnlyScriptsTests
 
         Assert.Equal(
             [
-                "AddedKeys", "CascadingKeys", "ConditionalSynonyms", "Deployed", "Diagnostics", "Enforcement", "ExtendedProperties", "FunctionChanges", "Functions",
+                "AddedKeys", "CascadingKeys", "ConditionalSynonyms", "Deployed", "Diagnostics", "Enforcement", "ExtendedProperties", "FullTextKeys", "FunctionChanges", "Functions",
                 "KeyDisables", "MaskChanges", "PeriodDrops", "ProcedureChanges", "Procedures", "Synonyms", "TableChanges", "Tables", "Triggers",
                 "UnreadDeployments", "UserTypes", "Views",
             ],

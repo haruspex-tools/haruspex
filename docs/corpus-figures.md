@@ -23,7 +23,7 @@ corpus shows haruspex missing.
 
 ## AdventureWorks
 
-**Typed 32 of 38 fields in AdventureWorks.** 2 of the 5 procedures that return fields are fully typed.
+**Typed 32 of 34 fields in AdventureWorks.** 3 of the 5 procedures that return fields are fully typed.
 
 One install script, `instawdb.sql`, written for sqlcmd: it names the database with `:setvar` and `$(DatabaseName)`, creates it, and creates the schema in `GO` batches. The sqlcmd variables are replaced as sqlcmd replaces them, and the definitions are read. The other statements define nothing and are passed over: `USE`, `CREATE DATABASE`, settings, and the `BULK INSERT` of the CSV data beside the script, which is not vendored.
 
@@ -37,8 +37,8 @@ One install script, `instawdb.sql`, written for sqlcmd: it names the database wi
 | Procedures whose result sets can't be listed | 0 |
 | Procedures that return no result set | 5 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 2 |
-| Fields | 38 |
+| Procedures that return fields, fully typed | 3 |
+| Fields | 34 |
 | Fields typed | 32 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 5 |
@@ -49,7 +49,6 @@ One install script, `instawdb.sql`, written for sqlcmd: it names the database wi
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `unsupported-expression` | 2 | 0 | 0 | 0 |
-| `unsupported-source` | 4 | 0 | 0 | 0 |
 | `unsupported-sql-type` | 0 | 0 | 0 | 1 |
 
 ### Scripts left out

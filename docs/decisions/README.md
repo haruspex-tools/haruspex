@@ -3,8 +3,8 @@
 The decisions haruspex's design rests on, one short record each: when it was made, what was decided, the context, the
 alternatives, and why they lost. The code and the guide link here rather than repeat the argument. A record describes the
 decision as it stands; when one is reversed, the record says so and links its successor, and is not deleted. A number is
-set aside when work that may need a record starts, so a number whose work needed none is never used: the log has 24
-gaps today, from 0049 to 0126, and no record was deleted to make them.
+set aside when work that may need a record starts, so a number whose work needed none is never used: the log has 30
+gaps today, from 0049 to 0134, and no record was deleted to make them.
 
 | Record | Date | Decision |
 |---|---|---|
@@ -112,6 +112,7 @@ gaps today, from 0049 to 0126, and no record was deleted to make them.
 | [0122](0122-the-ir-records-the-packages-declared-builds.md) | 25 Nov 2026 | The IR records the packages declared builds |
 | [0127](0127-a-source-may-be-several-folders.md) | 26 Nov 2026 | A source may be several folders |
 | [0128](0128-a-column-s-description-reaches-the-fields-that-are-that-column.md) | 26 Nov 2026 | A column's description reaches the fields that are that column |
+| [0135](0135-a-full-text-search-s-key-is-its-key-column-s-type-and-its-rank-is-nullable.md) | 26 Nov 2026 | A full-text search's key is its key column's type, and its rank is nullable |
 
 ## Writing a record
 

@@ -11,6 +11,7 @@ charindex
 checkident
 clob
 collationproperty
+containstable
 cume
 databasepropertyex
 datalength
@@ -36,7 +37,10 @@ filetable
 fixeddrives
 fmtonly
 formatmessage
+formsof
+freetexttable
 fromparts
+fulltext
 getapplock
 getdate
 getutcdate
@@ -46,6 +50,7 @@ hierarchyid
 holdlock
 infomsgs
 instr
+isabout
 isdate
 isjson
 isnull
@@ -65,6 +70,7 @@ ntext
 ntile
 nvarchar
 objectagg
+objectpropertyex
 opendatasource
 openjson
 openquery
@@ -95,6 +101,9 @@ rowstat
 rowversion
 rtrim
 schemabinding
+semantickeyphrasetable
+semanticsimilaritydetailstable
+semanticsimilaritytable
 serverproperty
 sessionproperty
 smalldatetime

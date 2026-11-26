@@ -33,6 +33,13 @@ internal sealed class SchemaDeclarations
     /// <summary>The primary keys and unique constraints <c>ALTER TABLE … ADD CONSTRAINT</c> adds, in the order read.</summary>
     public List<AddedKey> AddedKeys { get; } = [];
 
+    /// <summary>
+    /// The key index each <c>CREATE FULLTEXT INDEX</c> names, by table, in the order read. A drop is passed over: a table has one
+    /// full-text index at most, so a source that drops one and creates another creates it twice, and both are kept
+    /// (<see cref="Table.FullTextKeys"/>); one dropped and never created again leaves the search an error (7601), not a value.
+    /// </summary>
+    public List<(ObjectName Table, FullTextKey Key)> FullTextKeys { get; } = [];
+
     /// <summary>The alias and CLR types.</summary>
     public Dictionary<ObjectName, UserType> UserTypes { get; } = [];
 
@@ -97,7 +104,7 @@ internal sealed class SchemaDeclarations
     /// </summary>
     public bool IsEmpty =>
         !Diagnostics.Any(d => d.IsError)
-        && Tables.Count == 0 && TableChanges.Count == 0 && PeriodDrops.Count == 0 && AddedKeys.Count == 0 && UserTypes.Count == 0
+        && Tables.Count == 0 && TableChanges.Count == 0 && PeriodDrops.Count == 0 && AddedKeys.Count == 0 && FullTextKeys.Count == 0 && UserTypes.Count == 0
         && Procedures.Count == 0 && ProcedureChanges.Count == 0 && Functions.Count == 0 && FunctionChanges.Count == 0
         && Views.Count == 0 && Synonyms.Count == 0 && ConditionalSynonyms.Count == 0 && Triggers.Count == 0
         && CascadingKeys.Count == 0 && Enforcement.Count == 0 && MaskChanges.Count == 0 && KeyDisables.Count == 0
@@ -241,6 +248,11 @@ internal sealed class SchemaDeclarations
         return list;
     }
 
+    /// <summary>The table with the key of each full-text index read for it (<see cref="FullTextKeys"/>).</summary>
+    private Table WithFullTextKeys(Table table) => FullTextKeys.Any(k => k.Table == table.Name)
+        ? table with { FullTextKeys = [.. table.FullTextKeys, .. FullTextKeys.Where(k => k.Table == table.Name).Select(k => k.Key)] }
+        : table;
+
     /// <summary>The model: each object's definition in effect, as the passes settle it, in the model's own order.</summary>
     /// <param name="settings">The database's settings, when the source records them (<see cref="DatabaseModel.Settings"/>).</param>
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
@@ -249,7 +261,7 @@ internal sealed class SchemaDeclarations
     {
         var deployed = DefinitionsInEffect.Deployed(Deployed, UnreadDeployments);
         return new(
-            [.. Tables.Values.Select(t => ConstraintTrust.Trusted(AddedKey.Into(MaskChange.Applied(t, MaskChanges), AddedKeys), Enforcement, KeyDisables))],
+            [.. Tables.Values.Select(t => WithFullTextKeys(ConstraintTrust.Trusted(AddedKey.Into(MaskChange.Applied(t, MaskChanges), AddedKeys), Enforcement, KeyDisables)))],
             UserTypes.Values,
             DefinitionsInEffect.Modules(Procedures, ProcedureChanges, (procedure, why) => procedure with { Redefinition = why }, alterAloneStands: true)
                 .Select(p => p.Redefinition is null && deployed(p.Name) is { } why ? p with { Redefinition = why } : p),

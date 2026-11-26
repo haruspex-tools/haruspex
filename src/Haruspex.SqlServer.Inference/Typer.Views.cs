@@ -54,6 +54,7 @@ internal sealed partial class Typer
         TableFunctionCall call => MaskedByArguments(call.Syntax.Parameters, scope.In(call.Arguments), TableFunction(call, scope.In(call.Arguments)), call.Syntax),
         OpenJsonCall openJson => MaskedByArguments([openJson.Syntax.Variable, openJson.Syntax.RowPattern], scope.In(openJson.Arguments), OpenJsonRelation(openJson, scope.In(openJson.Arguments)), openJson.Syntax),
         SeriesCall series => MaskedByArguments(series.Syntax.Parameters, scope.In(series.Arguments), GenerateSeries(series, scope.In(series.Arguments)), series.Syntax),
+        FullTextCall fullText => FullText(fullText),
         SplitCall split => MaskedByArguments(split.Syntax.Parameters, scope.In(split.Arguments), StringSplit(split, scope.In(split.Arguments)), split.Syntax),
         TemporaryTable temporary => Temporary(temporary.Local, scope.State),
         TableVariable variable => AsWritten(variable.Local, TableVariableValues(variable.Declaration), scope.State),

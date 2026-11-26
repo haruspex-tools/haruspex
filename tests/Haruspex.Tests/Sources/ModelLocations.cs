@@ -7,7 +7,7 @@ namespace Haruspex.Tests.Sources;
 
 /// <summary>
 /// Everything a read put in the model, one line for each object with what it is, its name and where it is: tables and their
-/// columns, constraints and keys; types; procedures and functions with their parameters; views, synonyms and triggers;
+/// columns, constraints, keys and full-text indexes; types; procedures and functions with their parameters; views, synonyms and triggers;
 /// foreign keys with actions; statements that change an object after its definition; and the diagnostics. Each location is
 /// written as <c>file:line:column</c>, as every diagnostic and the IR write it.
 /// </summary>
@@ -39,6 +39,8 @@ internal static class ModelLocations
                 lines.Add($"check {table.Name} {check.Name ?? "unnamed"} at {check.At}{Disabled(check.DisabledAt)}");
             foreach (var key in table.UniqueKeys)
                 lines.Add($"key {table.Name} {key.Name ?? "unnamed"} ({string.Join(", ", key.Columns)}) at {key.At}{Disabled(key.DisabledAt)}");
+            foreach (var fullText in table.FullTextKeys)
+                lines.Add($"full-text index {table.Name} keyed by {fullText.Index} at {fullText.At}");
         }
 
         foreach (var type in model.UserTypes)

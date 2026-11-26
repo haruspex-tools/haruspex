@@ -458,8 +458,8 @@ InternalOpenRowset | OPENROWSET of an internal table | not-parsed | | SQL Server
 OpenQueryTableReference | OPENQUERY | unknown unsupported-source | | Not modelled. | SELECT q.a FROM OPENQUERY(elsewhere, 'SELECT 1 AS a') AS q;
 AdHocTableReference | OPENDATASOURCE(…).db.schema.table | unknown unsupported-source | | Not modelled. | SELECT a.id FROM OPENDATASOURCE('MSOLEDBSQL', 'Server=elsewhere;').shop.dbo.toy AS a;
 OpenXmlTableReference | OPENXML | unknown unsupported-source | | Not modelled. | DECLARE @h int; SELECT x.a FROM OPENXML(@h, '/r') WITH (a int) AS x;
-FullTextTableReference | CONTAINSTABLE, FREETEXTTABLE | unknown unsupported-source | | Not modelled. | SELECT f.[KEY] FROM CONTAINSTABLE(dbo.toy, name, 'bear') AS f;
-SemanticTableReference | SEMANTICKEYPHRASETABLE, … | unknown unsupported-source | | Not modelled. | SELECT s.keyphrase FROM SEMANTICKEYPHRASETABLE(dbo.toy, name) AS s;
+FullTextTableReference | CONTAINSTABLE, FREETEXTTABLE | partly unsupported-source | Full-text table functions | RANK is an int that may be null; KEY is of the full-text key column's type, and unknown where the project creates no full-text index on the table. | SELECT f.[RANK] FROM CONTAINSTABLE(dbo.toy, name, 'bear') AS f; && SELECT f.[KEY] FROM CONTAINSTABLE(dbo.toy, name, 'bear') AS f;
+SemanticTableReference | SEMANTICKEYPHRASETABLE, … | unknown unsupported-source | Full-text table functions | A semantic search function, not modelled. | SELECT s.keyphrase FROM SEMANTICKEYPHRASETABLE(dbo.toy, name) AS s;
 ChangeTableChangesTableReference | CHANGETABLE (CHANGES …) | unknown unsupported-source | | Not modelled. | SELECT c.id FROM CHANGETABLE(CHANGES dbo.toy, 0) AS c;
 ChangeTableVersionTableReference | CHANGETABLE (VERSION …) | unknown unsupported-source | | Not modelled. | SELECT c.id FROM CHANGETABLE(VERSION dbo.toy, (id), (1)) AS c;
 PredictTableReference | PREDICT | unknown unsupported-source | | Not modelled. | DECLARE @m varbinary(max); SELECT p.score FROM PREDICT(MODEL = @m, DATA = dbo.toy AS d) WITH (score float) AS p;
