@@ -209,7 +209,8 @@ after it. Data that breaks a claim fails at the boundary, loudly, rather than so
   runs, and [the example application](../examples/greenhouse/README.md) calls its procedures through the functions,
   compiled in CI.
 - **Your own database:** `haruspex init` writes a starter `haruspex.json` beside its project ([the command
-  line](command-line.md#init)), and `generate` writes the module from that folder. The essentials of [the configuration
+  line](command-line.md#init)), and `generate` writes the module from that folder. From there, run it through this clone,
+  `dotnet run --project <clone>/src/Haruspex.Cli -- init`, as [the command line](command-line.md) says. The essentials of [the configuration
   reference](configuration.md) say what each setting in it does, and which most projects add next.
 - **What some projects need:** [the advanced features](README.md#advanced-features), each with the situation it is for.
 - **A `FOR JSON` procedure:** the README's [examples](../README.md#examples-on-microsofts-sample-databases) show nested objects,

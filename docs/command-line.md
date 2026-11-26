@@ -6,7 +6,13 @@ and `explain` says why a field is what it is. The command is run many
 times a day, so by default it says what it did and what needs attention, and counts the rest. Everything else is a flag away.
 This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. The
 essentials come first, from [what a run prints](#what-a-run-prints) to [colour](#colour-links-and-progress); the
-[advanced features](#advanced-features) follow: the formats for tools and CI, `explain`, and a baseline. How
+[advanced features](#advanced-features) follow: the formats for tools and CI, `explain`, and a baseline.
+
+No package is published yet, so a build from source puts no `haruspex` on the `PATH`. Run it from your project's folder
+through the clone you built ([Install](../README.md#install)), as `dotnet run --project <clone>/src/Haruspex.Cli -- init`, and
+the same with `generate` or `check`; or, with the npm preview installed, as `npx haruspex init`. For CI,
+[the CLI's README](../src/Haruspex.Cli/README.md) has a GitHub Actions job to copy: it runs `check --all`, which checks one
+module as it checks several. How
 a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the output is designed so is
 [decision 0064](decisions/0064-the-command-line-s-output-is-designed.md).
 

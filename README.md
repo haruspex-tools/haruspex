@@ -88,7 +88,7 @@ exclusion in Biome's `files.includes` (`"includes": ["**", "!src/db"]` for `src/
 an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with
 what haruspex writes.
 
-With haruspex built ([Install](#install)), the essentials, read in order, give a working setup:
+With haruspex built ([Install](#install)) and run as [the command line](docs/command-line.md) says, the essentials, read in order, give a working setup:
 [five minutes with AdventureWorks](docs/quick-start.md), from a fresh clone to the schemas and the function for one of the
 sample's procedures; [the database module](docs/database-module.md), how an application calls them;
 [the application's own types](docs/layers.md); [the example application](examples/greenhouse/README.md), which calls its
@@ -386,18 +386,15 @@ to three.
 What some projects need, each a line here; [the documentation's index](docs/README.md#advanced-features) says which situation
 each is for.
 
-- **Separate deployments:** types that work before and after a change, and a check that fails what the running application
-  would fail on ([a baseline](docs/command-line.md#checking-against-a-baseline)).
-- **The callers' session:** more claims when the connections set `ANSI_WARNINGS` or hold `UNMASK`
-  ([`session`](docs/configuration.md#the-callers-session-session)).
+- **Separate deployments:** types that work against both databases, and a check of the running application ([a baseline](docs/command-line.md#checking-against-a-baseline)).
+- **The callers' session:** more claims when connections set `ANSI_WARNINGS` or hold `UNMASK` ([`session`](docs/configuration.md#the-callers-session-session)).
 - **Dynamic SQL:** results declared where the project can't show them ([declared results](docs/configuration.md#declared-results-results)).
 - **JSON columns:** JSON stored in a column, typed by a JSON Schema ([`columns`](docs/configuration.md#json-stored-in-a-column-columns)).
 - **Overrides:** what the team knows and the database can't prove, and other names ([overrides](docs/configuration.md#overrides)).
 - **Descriptions:** the database's descriptions under a name of its own ([`descriptions`](docs/configuration.md#descriptions-descriptions)).
 - **A DACPAC built by another tool:** its key constraints, on your word ([`builds`](docs/configuration.md#a-package-built-by-another-tool-builds)).
 - **Several source folders:** a database kept beside folders that aren't its own ([`source` as a list](docs/configuration.md#several-folders-source-as-a-list)).
-- **Several modules:** a module per schema ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)), or per plugin,
-  checked together by `check --all` ([the CLI](src/Haruspex.Cli/README.md)).
+- **Several modules:** a module per schema ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)), or per plugin ([`check --all`](src/Haruspex.Cli/README.md)).
 - **Why a type is what it is:** a field's derivation from the committed IR ([`explain`](docs/command-line.md#explain)).
 - **Tools and CI:** the report as JSON, SARIF or GitHub annotations ([the formats](docs/command-line.md#formats)).
 - **Other languages:** the same claims as one JSON Schema document ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).

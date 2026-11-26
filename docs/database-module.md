@@ -3,7 +3,7 @@
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
 parameters are checked, how it fails, where it runs, and the functions of the application's own query files. Those are the
 essentials. The [advanced features](#advanced-features) follow, for some applications: table-valued parameters, a module
-that works against two databases, a test double, and calling the [mssql](https://www.npmjs.com/package/mssql) driver itself,
+that works against two databases, several modules, a test double, and calling the [mssql](https://www.npmjs.com/package/mssql) driver itself,
 with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
 says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI. What a
 function returns is the database's shape; [the application's own types](layers.md) shows the step that makes it the
@@ -129,8 +129,8 @@ try {
 
 On the server. They take a connection, and a connection holds the database's credentials. In a Next.js application they are
 for route handlers, server actions and server components; the types and schemas, in their own file, may go anywhere.
-`"serverOnly": true` in `haruspex.json` starts the functions' file with `import 'server-only'`, so that a build fails where
-browser code imports it. It is off by default, since haruspex assumes no framework.
+[`serverOnly`](configuration.md#what-is-written-emit), in the configuration, makes a build fail where browser code imports
+the functions' file.
 
 **In tests.** With `"serverOnly": true`, a test that imports the functions' file, itself or through the code under test,
 imports `server-only` too, and a test runner resolves it as Node does: `Cannot find package 'server-only'` when it isn't
@@ -160,11 +160,6 @@ it is empty only under the `react-server` condition, which Next.js sets for serv
 
   export default defineConfig({ resolve: { alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) } } })
   ```
-
-An application whose plugins or sub-applications each need their own interface to the database gives each its own
-`haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
-another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
-[The command line](../src/Haruspex.Cli/README.md) says how `generate` and `check` run several at once.
 
 ## Query files
 
@@ -265,6 +260,13 @@ What changes for the code that calls the functions:
   two, so the function never sends what one of them refuses.
 - **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
   doesn't compile, which the run's error explains (HAR6033).
+
+## Several modules in one application
+
+**For an application whose plugins or sub-applications each need their own interface to the database.** Such an
+application gives each its own `haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
+another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
+[The command line](../src/Haruspex.Cli/README.md) says how `generate` and `check` run several at once.
 
 ## Testing with a double
 

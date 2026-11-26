@@ -26,7 +26,7 @@ with the situation it is for. A file of the essentials alone:
   "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
-  "queries": "sql",                         // the application's query files: a folder, files or patterns
+  "queries": "sql",                         // the application's query files; leave it out when there are none
   "emit": ["zod", "mssql"],                 // the schemas and types, and a function for each procedure and query file
   "check": { "unknowns": "report" },        // or "fail", to fail the check on any unknown
   "schemas": {                              // keyed by the schema's name as it is
@@ -347,18 +347,13 @@ don't have. `generate` and `check` report each with its line.
 callers and the build are. Most projects meet one or more of these situations, where a setting lets it claim more, or read what
 it otherwise can't. Each is a statement about your project that haruspex can't see for itself, so it is yours to make.
 
-- **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session).
-  Without it, every value an overflow, a division by zero or a loss of precision could make NULL is nullable, since some
-  sessions make them NULL. The `mssql` package's driver, tedious, sets
-  `{ "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false }`, and the page's
-  section says what other drivers set.
-- **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`. Without it, a
-  masked column and every value computed from one claim only their type, whether they may be null and their greatest
-  length, since a caller without the permission reads the mask.
+- **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session),
+  whose section says what each driver sets, and haruspex claims what the declared options allow.
+- **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`
+  ([the callers' session](#the-callers-session-session)), and masked columns claim more than their type.
 - **The source is a DACPAC built by MSBuild.Sdk.SqlProj**, or by any tool that builds through DacFx's API rather than its
-  build task: name it in [`builds`](#a-package-built-by-another-tool-builds). Such a package can't be told from one extracted
-  from a database, so without it no primary key or unique constraint of it is claimed, and a query that fixes a key's columns
-  isn't claimed to return at most one row.
+  build task: name it in [`builds`](#a-package-built-by-another-tool-builds), and its key
+  constraints are claimed.
 - **The source is a folder of `.sql` files** and a table has a `CHECK` that lists its values: declare the database's
   [`collation`](#the-databases-collation-collation). A folder doesn't record it, and without it such a set of strings is a
   comment, not an enum.
@@ -475,7 +470,7 @@ from it, even where no type changes, since what the database is made of is what 
 ## A package built by another tool: `builds`
 
 **For a DACPAC built by MSBuild.Sdk.SqlProj**, or by any other tool that builds through DacFx's API rather than its build
-task. Without `builds`, such a package claims no primary key or unique constraint, as an extract from a database claims none.
+task.
 
 A package extracted from a database (SqlPackage's `/Action:Extract`) differs from a built one in its keys too: an extract
 doesn't record whether a primary key's or unique constraint's index is disabled, which lets the table hold duplicates, so no
