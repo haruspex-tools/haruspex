@@ -20,7 +20,8 @@ internal static class ExtendedPropertyCalls
 
     /// <summary>
     /// The property <paramref name="statement"/> sets, updates or drops; null when it calls no such procedure. A procedure of
-    /// that name in another schema than <c>sys</c> (or none) is the database's own, and isn't one.
+    /// that name in another schema than <c>sys</c> (or none) is the database's own, and isn't one. A call through a database
+    /// (<c>master.sys.…</c>) is read unread, saying why.
     /// </summary>
     /// <param name="statement">The statement.</param>
     /// <param name="file">The script's path, which its location names.</param>
@@ -28,7 +29,6 @@ internal static class ExtendedPropertyCalls
     {
         ArgumentNullException.ThrowIfNull(statement);
         if (statement.ExecuteSpecification?.ExecutableEntity is not ExecutableProcedureReference { ProcedureReference.ProcedureReference.Name: { } name } call
-            || (name.DatabaseIdentifier is not null && !name.DatabaseIdentifier.Value.Equals("master", StringComparison.OrdinalIgnoreCase))
             || (name.SchemaIdentifier is not null && !name.SchemaIdentifier.Value.Equals("sys", StringComparison.OrdinalIgnoreCase)))
         {
             return null;
@@ -45,6 +45,11 @@ internal static class ExtendedPropertyCalls
             return null;
 
         var at = SyntaxReader.Span(file, statement).Start;
+
+        // A call through a database runs in that database (observed: master.sys.sp_addextendedproperty from inside another
+        // database fails with 15135, finding none of its tables), and a script doesn't say which database it is deployed as, so
+        // the call isn't known to set anything here.
+        var through = name.DatabaseIdentifier?.Value;
         var names = act == PropertyAction.Drop ? Dropping : Setting;
         var given = new Dictionary<string, ScalarExpression>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < call.Parameters.Count; i++)
@@ -55,7 +60,7 @@ internal static class ExtendedPropertyCalls
                 return new ExtendedProperty(null, null, [], at) { Action = act, Unread = $"Its argument {i + 1} isn't one the procedure takes." };
         }
 
-        string? unread = null;
+        var unread = through is null ? null : $"Its call names the database {through}, which isn't known to be this one: a call through master runs there.";
         string? Argument(string parameter)
         {
             if (!given.TryGetValue(parameter, out var value))

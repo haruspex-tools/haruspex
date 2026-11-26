@@ -84,6 +84,14 @@ public class ExtendedPropertyCallsTests
         Assert.All(properties, p => Assert.Equal([new("SCHEMA", "kennel"), new("TABLE", "dog")], p.Levels));
     }
 
+    [Theory]
+    [InlineData("master")]
+    [InlineData("Kennel")]
+    public void A_call_through_a_database_is_unread_since_it_may_run_in_another(string database) =>
+        Assert.Equal(
+            $"Its call names the database {database}, which isn't known to be this one: a call through master runs there.",
+            Read($"EXEC {database}.sys.sp_addextendedproperty 'MS_Description', 'x', 'SCHEMA', 'kennel', 'TABLE', 'dog';").Unread);
+
     [Fact]
     public void A_procedure_of_that_name_in_the_database_s_own_schema_is_not_the_system_s()
     {

@@ -697,7 +697,8 @@ applied. The comments leave the places out, so that they change only when a reas
 - `"surprises"`, the default: a comment on each surprise. A key left out when null for a reason other than its column's (or
   parameter's, or the config file's) declaration is one, and its comment says why it may be null.
 - `"all"`: a comment on every field, with the columns it is read from.
-- `"none"`: none of these comments.
+- `"none"`: none of these comments. A description the database keeps ([`descriptions`](#descriptions-descriptions)) is still
+  written under `"none"`: it is the database's documentation of the field, not a reason haruspex gives.
 
 The Zod module writes them above each property, and, for a type whose shape another type shares, above its export, so that
 comments never stop a shape being shared. The functions file says why a result set may be missing, or can't be listed; under

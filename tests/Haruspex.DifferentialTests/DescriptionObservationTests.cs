@@ -102,6 +102,14 @@ public class DescriptionObservationTests(SqlServerFixture server)
     }
 
     [Fact]
+    public async Task A_call_through_master_runs_there_and_finds_none_of_this_database_s_tables()
+    {
+        var e = await Assert.ThrowsAsync<SqlException>(() => Run(Table, "EXEC master.sys.sp_addextendedproperty 'MS_Description', 'A dog.', 'SCHEMA', 'dbo', 'TABLE', 'obs_dog';", OnTheDog));
+
+        Assert.Equal(15135, e.Number);
+    }
+
+    [Fact]
     public async Task A_parameter_named_with_its_at_sign_takes_a_property()
     {
         var rows = await Run(

@@ -25,7 +25,9 @@ Its parameters are never sent by a caller, so theirs reach nothing either. When 
 their descriptions are read the same way as a procedure's. The level types are compared ignoring case, as the server compares them (observed), and the level names are found as
 the model finds any name.
 
-*What is passed over, with a note (HAR1024).* A description whose name, value or level arguments aren't literals, whose value
+*What is passed over, with a note (HAR1024).* A call through a database (`master.sys.sp_addextendedproperty`), which runs in
+that database (observed: through `master`, from inside another database, it fails with 15135), and a script doesn't say which
+database it is deployed as; a description whose name, value or level arguments aren't literals, whose value
 isn't text (the server takes `42`, an `int`), or whose level names name nothing the source defines (the server refuses it,
 15135: observed); and a target given a description twice, by two calls, two names that differ only in case or two packages
 (the server refuses the second call, 15233: observed), since which one stands isn't known. A call whose name is a literal
