@@ -140,6 +140,17 @@ public class RecordEqualityTests
             Failures([typeof(Planted)]).Order(StringComparer.Ordinal));
     }
 
+    [Fact]
+    public void The_check_reads_the_command_lines_types_as_haruspex_types_though_its_assembly_is_named_in_lower_case()
+    {
+        // The command's assembly is "haruspex", so a check by the name's case would take its types for ones from outside and
+        // report a field of any of them: its records must be read for their fields, and its classes reported, as any layer's.
+        Assert.Equal("haruspex", typeof(Haruspex.Cli.EmittedFile).Assembly.GetName().Name);
+        Assert.True(ComparesByValue(typeof(Haruspex.Cli.EmittedFile)));
+        Assert.True(ComparesByValue(typeof(EquatableArray<Haruspex.Cli.NotedUnknown>)));
+        Assert.False(ComparesByValue(typeof(Haruspex.Cli.EmittedModule)));
+    }
+
     /// <summary>
     /// A record with a field of each kind that compares by reference, or may: a list, a map, a set, an array, a tuple holding a
     /// list, an object, and a type from outside haruspex with an equality of its own that nothing here vouches for; and three
@@ -165,6 +176,12 @@ public class RecordEqualityTests
             .Select(file => XDocument.Load(file).Descendants("AssemblyName").Select(e => e.Value.Trim()).FirstOrDefault() ?? Path.GetFileNameWithoutExtension(file))
             .Order(StringComparer.Ordinal)
             .Select(Assembly.Load);
+
+    /// <summary>
+    /// The layers' assemblies, which are haruspex's: by assembly rather than by name, because the command's is named
+    /// <c>haruspex</c> in lower case.
+    /// </summary>
+    private static readonly HashSet<Assembly> Inside = [.. Layers()];
 
     private static IEnumerable<Type> Types(Assembly assembly) => assembly.GetTypes().Where(t => !t.IsDefined(typeof(CompilerGeneratedAttribute)));
 
@@ -205,7 +222,7 @@ public class RecordEqualityTests
             return type.GetGenericArguments().All(ComparesByValue);
         if (ComparedByIdentity.Keys.Any(t => t.IsAssignableFrom(type)) || OutsideByValue.ContainsKey(type))
             return true;
-        if (!type.Assembly.GetName().Name!.StartsWith("Haruspex", StringComparison.Ordinal))
+        if (!Inside.Contains(type.Assembly))
             return false;
 
         // An interface of haruspex compares by value when every type of the layers that implements it does.
