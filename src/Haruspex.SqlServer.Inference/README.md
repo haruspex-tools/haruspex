@@ -2249,6 +2249,10 @@ it, and the mssql emitter refuses the procedure's function (HAR5206). Observed i
   (`Xml_value_of_json_or_vector_is_typed_by_what_the_client_supports_and_other_types_are_refused`).
 - **`x.exist('path')`** is a `bit`, NULL exactly when `x` is: an empty instance, and a NULL `sql:variable` or `sql:column` in the
   path, give 0 (`Xml_exist_is_a_bit_null_exactly_when_the_xml_is`).
+- **`FOR XML`.** A result set a procedure or query file returns as `FOR XML` stays unknown, with a note, HAR2026: the mssql
+  driver joins its rows into one string and never parses it (`For_xml_is_joined_into_one_row_and_never_parsed`), and `FOR JSON`
+  builds the same data, which is typed (`XmlResultNotes`). A `FOR XML` subquery is a value, not a result set, and stays unknown
+  without the note.
 - **`x.query(…)`**, and **`x.nodes(…)`** as a source, are unknown: what they give is XML its path shapes, which a schema
   collection may later type.
 - **Schema collections.** A typed `xml` is bound to its collection by the rules that find an alias type: by its schema, or

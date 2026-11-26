@@ -272,6 +272,7 @@ public class DiagnosticMessagesTests
         (2023, () => Cli(["CREATE PROCEDURE lib.p AS SELECT '$(Region)' AS region;"])),
         (2024, () => Query("SELECT @label AS label;")),
         (2025, () => Cli(["CREATE PROCEDURE lib.p AS SELECT N'[' + string_agg(convert(nvarchar(max), b.id), N',') + N']' AS ids FROM lib.book AS b;"])),
+        (2026, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b FOR XML PATH('book'), ROOT('books');"])),
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
         (2102, () => Cli(["CREATE PROCEDURE lib.p AS SELECT json_value(N'{\"shelf\": 3}', '$.room') AS room;"])),
         (2103, () => Cli(["CREATE PROCEDURE lib.p WITH EXECUTE AS OWNER AS SELECT 1 AS one;"], $"{{ {Plain}, \"session\": {{ \"unmask\": true }} }}")),

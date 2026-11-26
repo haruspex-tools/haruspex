@@ -88,6 +88,9 @@ public static class IrInference
         // JSON built as text, wherever the project writes it, whether or not anything reads it as JSON
         // (docs/decisions/0085-json-built-as-text-is-a-note-wherever-it-is-written.md).
         warnings.AddRange(JsonTextNotes.In(model, queries, summaries.JsonText));
+
+        // A result set returned as FOR XML, which FOR JSON would build typed (docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md).
+        warnings.AddRange(XmlResultNotes.In(model, queries));
         return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds, Columns = [.. columns.Select(c => c.Record)] }, [.. warnings]);
     }
 

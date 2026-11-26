@@ -416,7 +416,7 @@ OutputClause | OUTPUT | modelled | OUTPUT | Returns the rows written, typed from
 OutputIntoClause | OUTPUT … INTO | modelled | OUTPUT | Writes the rows written into a table, returning nothing. | DECLARE @t TABLE (id int); DELETE FROM dbo.box OUTPUT deleted.id INTO @t WHERE id = 1; SELECT id FROM @t;
 JsonForClause | FOR JSON | modelled | JSON built here, traced | One column of JSON text whose shape is the query's. | SELECT id, name FROM dbo.toy FOR JSON PATH;
 JsonForClauseOption | ROOT, INCLUDE_NULL_VALUES, … | within JsonForClause | | |
-XmlForClause | FOR XML | unknown unsupported-query | | Not modelled. | SELECT id FROM dbo.toy FOR XML PATH;
+XmlForClause | FOR XML | unknown unsupported-query | XML values | Not modelled; a result set returned as FOR XML has a note, HAR2026, since FOR JSON builds the same data typed. | SELECT id FROM dbo.toy FOR XML PATH;
 XmlForClauseOption | RAW, AUTO, PATH, … | within XmlForClause | | |
 BrowseForClause | FOR BROWSE | unknown unsupported-query | | Not modelled. | SELECT id FROM dbo.toy FOR BROWSE;
 ReadOnlyForClause | FOR READ ONLY | within DeclareCursorStatement | | |

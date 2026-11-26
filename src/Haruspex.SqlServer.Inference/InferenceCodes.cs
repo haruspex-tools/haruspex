@@ -106,6 +106,12 @@ public static class InferenceCodes
     public static DiagnosticCode JsonBuiltAsText { get; } = new(2025, DiagnosticSeverity.Note, "JSON built as text");
 
     /// <summary>
+    /// A result set a procedure or query file returns as <c>FOR XML</c> (<see cref="XmlResultNotes"/>): text the application must parse
+    /// itself, which <c>FOR JSON</c> would build as JSON that haruspex types. A note beside the result's unknown.
+    /// </summary>
+    public static DiagnosticCode ForXmlResult { get; } = new(2026, DiagnosticSeverity.Note, "A result set returned as FOR XML");
+
+    /// <summary>
     /// The code of the note an unknown with <paramref name="reason"/> is reported with; null for a reason only a declaration
     /// can resolve (code outside the project, an encrypted definition, dynamic SQL, a procedure chosen when it runs, a system procedure, one outside
     /// the project or one more than one schema has), whose unknowns the config layer reports instead, each once, with what to

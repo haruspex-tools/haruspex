@@ -121,6 +121,9 @@ sql/q.sql:1:8: note HAR2024: sql/q.sql parameters.@label: No use of @label decid
 HAR2025
 db/p1.sql:1:34: note HAR2025: N'[' + string_agg(convert(nvarchar(max), b.id), N',') + N']' builds a JSON array as text; build it with json_arrayagg(…) (SQL Server 2025, Azure SQL), which escapes each value and which haruspex types exactly. Like string_agg, it is NULL over no rows.
 
+HAR2026
+db/p1.sql:1:58: note HAR2026: FOR XML PATH('book'), ROOT('books') returns its rows as XML, which the mssql driver joins into one string it doesn't parse, so the application must parse it itself and haruspex doesn't type it; FOR JSON PATH builds the same data as JSON, which haruspex types exactly.
+
 HAR2101
 db/p1.sql:1:27: warning HAR2101: audit.trail is written here but is not defined in the project, so a trigger on it, which could return result sets of its own, cannot be seen. SQL Server allows results from triggers unless the server's 'disallow results from triggers' option is on, which it is not by default.
 

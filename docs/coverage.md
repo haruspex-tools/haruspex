@@ -771,7 +771,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `OUTPUT … INTO` | `OutputIntoClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#output) | Writes the rows written into a table, returning nothing. |
 | `FOR JSON` | `JsonForClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#json-built-here-traced) | One column of JSON text whose shape is the query's. |
 | `ROOT, INCLUDE_NULL_VALUES, …` | `JsonForClauseOption` | part of `JsonForClause` |  |
-| `FOR XML` | `XmlForClause` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled. |
+| `FOR XML` | `XmlForClause` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled; a result set returned as FOR XML has a note, HAR2026, since FOR JSON builds the same data typed. |
 | `RAW, AUTO, PATH, …` | `XmlForClauseOption` | part of `XmlForClause` |  |
 | `FOR BROWSE` | `BrowseForClause` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | Not modelled. |
 | `FOR READ ONLY` | `ReadOnlyForClause` | part of `DeclareCursorStatement` |  |

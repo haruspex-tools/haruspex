@@ -68,6 +68,7 @@ reason.
 | [HAR2023](HAR2023.md) | note | A SQLCMD variable a deployment replaces |
 | [HAR2024](HAR2024.md) | note | A query file's parameter its uses don't decide |
 | [HAR2025](HAR2025.md) | note | JSON built as text |
+| [HAR2026](HAR2026.md) | note | A result set returned as FOR XML |
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
 | [HAR2102](HAR2102.md) | warning | A JSON path that never finds a value |
 | [HAR2103](HAR2103.md) | warning | The callers' UNMASK isn't applied |

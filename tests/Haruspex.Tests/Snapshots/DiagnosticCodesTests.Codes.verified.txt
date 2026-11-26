@@ -46,6 +46,7 @@ HAR2022 N A result set with a hidden column [Haruspex.SqlServer.Inference.Infere
 HAR2023 N A SQLCMD variable a deployment replaces [Haruspex.SqlServer.Inference.InferenceCodes.SqlcmdVariable]
 HAR2024 N A query file's parameter its uses don't decide [Haruspex.SqlServer.Inference.InferenceCodes.UndecidedParameter]
 HAR2025 N JSON built as text [Haruspex.SqlServer.Inference.InferenceCodes.JsonBuiltAsText]
+HAR2026 N A result set returned as FOR XML [Haruspex.SqlServer.Inference.InferenceCodes.ForXmlResult]
 HAR2101 W A write to an object the project doesn't define [Haruspex.SqlServer.Inference.InferenceCodes.UndefinedWriteTarget]
 HAR2102 W A JSON path that never finds a value [Haruspex.SqlServer.Inference.InferenceCodes.PathFindsNothing]
 HAR2103 W The callers' UNMASK isn't applied [Haruspex.SqlServer.Inference.InferenceCodes.UnmaskNotApplied]

@@ -281,4 +281,35 @@ public class XmlTests
         Assert.Equal("number int", Typed(doc, "weight"));
         Assert.Equal([IrNullRule.XmlValue], Rules(doc, "weight"));
     }
+
+    // ---- FOR XML ---------------------------------------------------------------------------------------------------------
+
+    /// <summary>Where inferring <c>shop.p</c> notes a result set returned as FOR XML (HAR2026), and the clause each note starts with.</summary>
+    private static List<string> ForXmlNotes(string body) =>
+        [.. InferProcedure.Inferred("shop.p", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE shop.p AS\n{body}"))
+            .Diagnostics
+            .Where(d => d.Code == InferenceCodes.ForXmlResult)
+            .Select(d => $"{d.At}: {d.Message[..d.Message.IndexOf(" returns", StringComparison.Ordinal)]}")];
+
+    [Fact]
+    public void A_result_set_returned_as_for_xml_is_noted_where_its_clause_is_and_stays_unknown()
+    {
+        // For_xml_is_joined_into_one_row_and_never_parsed: the driver hands over one string, so FOR JSON is suggested.
+        const string Body = """
+            SELECT p.product_id FROM shop.product AS p FOR XML PATH('product'), ROOT('products');
+            IF 1 = 1
+                SELECT p.product_id FROM shop.product AS p UNION ALL SELECT p.product_id FROM shop.product AS p FOR XML RAW;
+            """;
+
+        Assert.Equal(["p.sql:2:44: FOR XML PATH('product'), ROOT('products')", "p.sql:4:101: FOR XML RAW"], ForXmlNotes(Body));
+        var result = InferProcedure.Infer("shop.p", ("tables.sql", Tables), ("p.sql", $"CREATE PROCEDURE shop.p AS\n{Body}")).Objects[0].Results![0];
+        Assert.IsType<IrUnknownType>(result.Type);
+    }
+
+    [Fact]
+    public void A_for_xml_subquery_and_a_for_json_result_are_not_noted() =>
+        Assert.Empty(ForXmlNotes("""
+            SELECT (SELECT p.name AS [text()] FROM shop.product AS p FOR XML PATH('')) AS names;
+            SELECT p.product_id FROM shop.product AS p FOR JSON PATH;
+            """));
 }

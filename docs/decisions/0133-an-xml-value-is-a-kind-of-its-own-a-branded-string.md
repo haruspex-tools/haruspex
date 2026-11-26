@@ -50,9 +50,10 @@ bound collections. A typed column whose collection the source doesn't define is 
 a typed `xml` parameter, since a collection that narrows an element fails the old call under the same name (6926), and takes
 an untyped one, which accepts any well-formed XML.
 
-*`FOR XML`.* A top-level `FOR XML` result stays unknown, and a note, HAR2026, says where one is sent to an application: the
-driver joins its rows into one string and never parses it (observed), so the application receives XML it must parse itself,
-and `FOR JSON` builds the same data, which haruspex types.
+*`FOR XML`.* A result set a procedure or a query file returns as `FOR XML` stays unknown, and a note, HAR2026, says where each
+is: the driver joins its rows into one string and never parses it (observed), so the application receives XML it must parse
+itself, and `FOR JSON` builds the same data, which haruspex types. A `FOR XML` subquery builds a value, not a result set, so it
+has no note.
 
 *An `xml` `OUTPUT` parameter.* The mssql driver can't receive one: bound as `sql.Xml()` or as `sql.NVarChar(sql.MAX)`, the call fails with
 error 257 ("Implicit conversion from data type xml to nvarchar is not allowed", observed), typed by a collection or not. The IR
