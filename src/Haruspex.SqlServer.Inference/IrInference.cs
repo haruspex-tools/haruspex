@@ -67,7 +67,7 @@ public static class IrInference
             .ToList();
         var files = new QueryFiles(model, summaries);
         var queried = queries.Select(query => (query, files.Analyse(query))).ToList();
-        var document = new IrBuilder(summaries.Nodes).Build(analysed, queried, session);
+        var document = new IrBuilder(summaries.Nodes, model.Descriptions).Build(analysed, queried, session);
 
         // A caller's results that include a callee's declared results rest on that declaration, so the claim is listed.
         var claims = analysed.Select(a => (Object: a.procedure.Name.ToString(), Analysis: a.Item2))

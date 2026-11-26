@@ -108,6 +108,10 @@ and the `haruspex explain` command; under `MssqlOptions.Comments` of `IrComments
 the Zod module's comments
 ([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
+A procedure's description from the database (0.33, the IR's `description`) heads its function's comment, a line of the comment
+for each of its lines, with `*/` and `@` escaped as the Zod module's comments escape them
+([decision 0128](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
+
 ## Testing with a double
 
 A double that stands in for the connection gives `request()`, whose object has `input()`, `output()` and `execute()`. The

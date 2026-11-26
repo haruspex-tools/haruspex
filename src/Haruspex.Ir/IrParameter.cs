@@ -14,4 +14,10 @@ public sealed record IrParameter(string Name, IrType Type, bool HasDefault, bool
     /// <see cref="IrDocument.TableTypes"/>; null for every other parameter.
     /// </summary>
     public string? TableType { get; init; }
+
+    /// <summary>
+    /// The database's description of the parameter (0.33), from an extended property the config file names; null when it has none. Documentation, not a claim, so
+    /// <see cref="IrComparison"/> reports no change in it. Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    public string? Description { get; init; }
 }

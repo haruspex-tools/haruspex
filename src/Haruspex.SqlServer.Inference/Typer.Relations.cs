@@ -196,6 +196,9 @@ internal sealed partial class Typer
         if (Holds(symbol, anchorRow) is not { Names: { } columns, Values: { } anchor } current)
             return Unlisted(name, anchorRow, at);
         LocalRelationValues? failed = null;
+
+        // A recursive member's row is a value of the CTE too, so a column keeps a description only where every member's gives the same.
+        var described = current.Descriptions?.ToList() ?? [];
         var iteration = FixedPoint.Iterate(
             anchor,
             values =>
@@ -212,7 +215,11 @@ internal sealed partial class Typer
                     }
 
                     for (var i = 0; i < next.Count; i++)
+                    {
                         next[i] = Value.JoinConverted(next[i], row.Columns[i].Value, row.Columns[i].At, $"{name}.{columns[i]}");
+                        if (i < described.Count)
+                            described[i] = CommonDescriptions.Same(described[i], row.Columns[i].Description);
+                    }
                 }
 
                 return Pass<EquatableArray<Value>>.To([.. next]);
@@ -220,7 +227,7 @@ internal sealed partial class Typer
 
         return iteration.End switch
         {
-            IterationEnd.Settled => current with { Values = iteration.Last },
+            IterationEnd.Settled => current with { Values = iteration.Last, Descriptions = current.Descriptions is null ? null : [.. described] },
             IterationEnd.Stopped => failed!, // Never null: the step stops only after setting it.
             _ => Fails(IrUnknownReason.UnresolvedRecursion, $"its columns reached no fixed point in {FixedPoint.MostPasses} passes."),
         };
@@ -242,7 +249,11 @@ internal sealed partial class Typer
             return null;
         if (row.Unlisted is not null || row.Columns.Count != names.Count)
             throw new InvalidOperationException($"Binding listed {names.Count} columns where the query reads {row.Columns.Count}.");
-        return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null) { From = [.. row.Columns.Select(c => c.From)] };
+        return new LocalRelationValues([.. names], [.. row.Columns.Select(c => c.Value)], null)
+        {
+            From = [.. row.Columns.Select(c => c.From)],
+            Descriptions = [.. row.Columns.Select(c => c.Description)],
+        };
     }
 
     /// <summary>A chain of set operations' queries in order, and the operators between them; parentheses group a query of their own.</summary>

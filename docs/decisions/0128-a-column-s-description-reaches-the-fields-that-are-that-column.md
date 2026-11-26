@@ -33,8 +33,10 @@ is no description.
 *Where it is written.* A result's field takes the description of the column it is, unchanged: a bare reference to a table's
 column (no `COLLATE`, no expression around it), or that column through `*`, or a column of a view, derived table or CTE that
 is itself such a column, where the view's own column description, if it has one, replaces the table's. A field read from
-two columns, from an expression over one, or from a set operation's branches takes none; where two shapes merge (a union's
-variants, a combined document), a description is kept only where both give the same. A procedure's parameter takes its
+two columns or from an expression over one takes none. A column of a set operation or of a recursive CTE, and a field where
+two equal shapes merge (two paths' rows alike, a combined document), keeps a description only where every branch gives the
+same, since its value is any branch's; and a union that joining makes
+keeps none in any variant, since a value of one variant may match another (an owner's name short enough to pass as a dog's). A procedure's parameter takes its
 own. A procedure takes its own, written in the comment above each of its declarations. A table's and a view's own description
 reach no output, since no output is a table; the model holds them for a later use.
 

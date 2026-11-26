@@ -26,6 +26,13 @@ internal abstract record ZodExpression
     public ZodExpression Then(string method, params ZodExpression[] arguments) => new Call(this, method, [.. arguments]);
 
     /// <summary>
+    /// This schema with the database's description, <c>.describe("…")</c>, last, so that it describes the whole value, null and
+    /// optional included, as <c>z.toJSONSchema</c> and an editor read it; this schema as it is for none.
+    /// Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    public ZodExpression Described(string? description) => description is null ? this : Then("describe", new Text(description));
+
+    /// <summary>
     /// A name in scope, or a property path from one, written as it is: <c>z</c>, <c>z.iso</c>, <c>OrderSchema</c>, or a schema
     /// the config file imports. A reference to a schema defined elsewhere is one.
     /// </summary>

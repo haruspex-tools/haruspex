@@ -251,10 +251,11 @@ internal static class MssqlPrinter
         var name = procedure.Name;
         var fields = Fields(function).ToList();
 
-        var what = (function.Batch is null ? "Calls " : "Runs the query file ") + Comment(procedure.Id) + ".";
-        output.Append('\n').Append(explanation.Count == 0
-            ? "/** " + what + " */\n"
-            : "/**\n * " + what + "\n" + string.Concat(explanation.Select(line => " * " + Comment(line) + "\n")) + " */\n");
+        var what = (function.Batch is null ? "Calls " : "Runs the query file ") + procedure.Id + ".";
+        string[] lines = [.. DescriptionLines(procedure.Description), what, .. explanation];
+        output.Append('\n').Append(lines is [var one]
+            ? "/** " + Comment(one) + " */\n"
+            : "/**\n" + string.Concat(lines.Select(line => " * " + Comment(line) + "\n")) + " */\n");
         output
             .Append("export async function ").Append(function.Name).Append("(db: Queryable")
             .Append(function.Bindings.Count > 0 ? ", params: types." + SchemaModuleNames.Parameters(name) + (function.Bindings.All(b => b.OnlyWhenGiven) ? " = {}" : "") : "")
@@ -416,5 +417,16 @@ internal static class MssqlPrinter
 
     /// <summary>Text made safe inside a comment: a procedure's id may hold anything a bracketed identifier may.</summary>
     private static string Comment(string text) =>
-        text.Replace("*/", "*\\/", StringComparison.Ordinal).Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
+        text.Replace("*/", "*\\/", StringComparison.Ordinal).Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal)
+            .Replace("\u2028", " ", StringComparison.Ordinal).Replace("\u2029", " ", StringComparison.Ordinal);
+
+    /// <summary>
+    /// The database's description of a procedure (<see cref="IrObject.Description"/>) as the first lines of its function's comment: a
+    /// line each, blank ones and trailing space left out, and each <c>@</c> written <c>\@</c>, since TypeScript reads one after a
+    /// space as a tag (observed: <c>@deprecated</c> would strike the function out in an editor). <see cref="Comment"/> makes the
+    /// rest safe. Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    private static IEnumerable<string> DescriptionLines(string? description) => description is null
+        ? []
+        : description.Split('\n').Select(line => line.TrimEnd().Replace("@", "\\@", StringComparison.Ordinal)).Where(line => line.Length > 0);
 }

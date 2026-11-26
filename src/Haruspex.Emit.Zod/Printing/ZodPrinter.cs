@@ -123,6 +123,7 @@ internal static class ZodPrinter
             // A declaration's own schema may carry notes too (a result that is unknown, or JSON text): they follow its summary.
             output.Append(Documentation(
                 [
+                    .. DescriptionLines(declaration.Description),
                     .. declaration.Summary is { } summary ? [summary] : Array.Empty<string>(),
                     .. ZodNotes.Of(declaration.Schema).Select(n => n.Text),
                     .. declaration.Explanation,
@@ -186,7 +187,7 @@ internal static class ZodPrinter
         var text = new StringBuilder(ZodModule.ZodName).Append(obj.Strict ? ".strictObject({\n" : obj.Loose ? ".looseObject({\n" : ".object({\n");
         foreach (var property in obj.Properties)
         {
-            text.Append(Documentation([.. ZodNotes.Of(property.Value).Select(n => n.Text), .. property.Explanation], "  "));
+            text.Append(Documentation([.. DescriptionLines(property.Description), .. ZodNotes.Of(property.Value).Select(n => n.Text), .. property.Explanation], "  "));
 
             if (property.Getter)
                 text.Append("  get ").Append(Key(property.Key)).Append("() { return ").Append(Expression(property.Value)).Append(" },\n");
@@ -204,6 +205,15 @@ internal static class ZodPrinter
         [var line] => indent + "/** " + Comment(line) + " */\n",
         _ => indent + "/**\n" + string.Concat(lines.Select(line => indent + " * " + Comment(line) + "\n")) + indent + " */\n",
     };
+
+    /// <summary>
+    /// A description from the database as lines of a documentation comment: a line each of its own, blank ones and trailing space
+    /// left out, and each <c>@</c> written <c>\@</c>, since TypeScript reads one after a space as a tag (observed: <c>@deprecated</c>
+    /// in a description would strike the field out in an editor). <see cref="Comment"/> makes the rest safe. None for none.
+    /// </summary>
+    private static IEnumerable<string> DescriptionLines(string? description) => description is null
+        ? []
+        : description.Split('\n').Select(line => line.TrimEnd().Replace("@", "\\@", StringComparison.Ordinal)).Where(line => line.Length > 0);
 
     /// <summary>
     /// A header line broken between words to fit 120 columns with its <c>// </c>; a list item's continuation lines are

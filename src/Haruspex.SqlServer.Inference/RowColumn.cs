@@ -21,6 +21,12 @@ internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, T
     public EquatableArray<IrSourceColumn> From { get; init; } = [];
 
     /// <summary>
+    /// The database's description of the one column it is, unchanged (<c>Typer.Descriptions.cs</c>); null when it has none or is
+    /// anything else, which the IR writes as the field's <c>description</c>.
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
     /// Whether its value is JSON the server never folds to a constant (<c>Typer.Folding.cs</c>), which makes a UNION over it
     /// text in every row.
     /// </summary>

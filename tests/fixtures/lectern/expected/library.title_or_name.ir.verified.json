@@ -1,0 +1,124 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/title_or_name.sql": "e307b45b7cf73e34616af4d0cf76ae130d98f7e4ee7ee0ef972eee4ae59f834c",
+      "tables/book.sql": "10a9f8202650ab9af218a447081f2df5dc7b727753a21b610f23f0a9d77b081d",
+      "tables/reader.sql": "942a6e4cca4f0f8e58f466d13894f847108c8c2bae28451f80b96a199b067b2a"
+    }
+  },
+  "objects": [
+    {
+      "id": "library.title_or_name",
+      "name": "TitleOrName",
+      "kind": "procedure",
+      "at": "procedures/title_or_name.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@reader",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "union",
+            "variants": [
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "TitleOrNameRow"
+                }
+              },
+              {
+                "kind": "array",
+                "items": {
+                  "ref": "TitleOrNameRow2"
+                }
+              }
+            ]
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "TitleOrNameRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "library.title_or_name",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(60)",
+            "maxLength": {
+              "value": 60,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(60)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "library.reader.name",
+              "sql": "nvarchar(60)",
+              "at": "tables/reader.sql:3:5"
+            }
+          ]
+        }
+      ]
+    },
+    "TitleOrNameRow2": {
+      "kind": "object",
+      "identity": {
+        "procedure": "library.title_or_name",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "label",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "library.book.title",
+              "sql": "nvarchar(200)",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

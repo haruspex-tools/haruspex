@@ -336,6 +336,27 @@ internal static class IrSamples
         Source = Built.Source with { Baseline = Built.Source.Baseline with { Path = null, Paths = ["release/tables", "release/procedures"] } },
     };
 
+    /// <summary>
+    /// <see cref="Folders"/> with a description on its first object, that object's first parameter and the first field of
+    /// <c>FindOrdersRow</c> (0.33), so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Described { get; } = Folders with
+    {
+        Objects =
+        [
+            Folders.Objects[0] with
+            {
+                Description = "One order, with its lines.",
+                Parameters = [Folders.Objects[0].Parameters[0] with { Description = "The order to read." }, .. Folders.Objects[0].Parameters.Skip(1)],
+            },
+            .. Folders.Objects.Skip(1),
+        ],
+        Types = Folders.Types.ToDictionary(
+            t => t.Key,
+            t => t.Key == "FindOrdersRow" ? t.Value with { Fields = [t.Value.Fields[0] with { Description = "The order's own number." }, .. t.Value.Fields.Skip(1)] } : t.Value,
+            StringComparer.Ordinal),
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

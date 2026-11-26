@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Folders"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Described"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here. And they agree on values and
 /// labels: each way of breaking a file in <see cref="Breakages"/> says which side refuses it, and a rule only the reader checks is
 /// one the IR README lists, so a disagreement in either direction fails here.
@@ -24,7 +24,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Folders);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Described);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
@@ -110,14 +110,6 @@ public class IrReaderSchemaAgreementTests
         {
             Assert.NotEmpty(schemaErrors);
             Assert.Equal("$.types.FindOrdersRow.fields[0].sides", refusal?.Path);
-            return;
-        }
-
-        // The only source read from several folders (0.32) no longer says so: the label is refused, as one that says too much.
-        if (location == "/source/baseline" && key == "paths")
-        {
-            Assert.NotEmpty(schemaErrors);
-            Assert.Equal("$.irVersion", refusal?.Path);
             return;
         }
 
@@ -282,6 +274,15 @@ public class IrReaderSchemaAgreementTests
         ["a folder that is no name"] = (Folders, json => json["source"]!["baseline"]!["paths"] = new JsonArray("release/tables", 3), null),
         ["a path beside folders"] = (Folders, json => json["source"]!["baseline"]!["path"] = "release", null),
         ["the source's folders beside its path"] = (Folders, json => json["source"]!["paths"] = new JsonArray("tables", "procedures"), null),
+        // A description (0.33): only in 0.33, where a document records one, and never empty or other than text.
+        ["0.33: no description recorded"] = (Folders, json => json["irVersion"] = "0.33", Label),
+        ["0.32: a description recorded"] = (Folders, json => json["objects"]![0]!["description"] = "One order.", null),
+        ["0.32: a parameter's description recorded"] = (Folders, json => json["objects"]![0]!["parameters"]![0]!["description"] = "The order.", null),
+        ["0.32: a field's description recorded"] = (Folders, json => json["types"]!["FindOrdersRow"]!["fields"]![0]!["description"] = "The number.", null),
+        ["0.31: a description recorded"] = (Built, json => json["objects"]![0]!["description"] = "One order.", null),
+        ["an empty description"] = (Described, json => json["objects"]![0]!["description"] = "", null),
+        ["an empty field description"] = (Described, json => json["types"]!["FindOrdersRow"]!["fields"]![0]!["description"] = "", null),
+        ["a description that is no text"] = (Described, json => json["objects"]![0]!["parameters"]![0]!["description"] = 7, null),
         ["a baseline writer's commit cut short"] = (Stamped, json => json["source"]!["baseline"]!["writtenBy"]!["commit"] = "4567cdef", null),
 
         // A binary value says only its length, in bytes.
@@ -401,6 +402,8 @@ public class IrReaderSchemaAgreementTests
     private static string Built() => IrJsonWriter.Write(IrSamples.Built);
 
     private static string Folders() => IrJsonWriter.Write(IrSamples.Folders);
+
+    private static string Described() => IrJsonWriter.Write(IrSamples.Described);
 
     private static string VersionFile(string version) => System.IO.File.ReadAllText(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json"));
 

@@ -1,0 +1,220 @@
+{
+  "irVersion": "0.33",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/find_book.sql": "5084f965b895d7b2d36b1e4b05e6198ba5e961fc1a3cae3dff1bc70fb8e1d975",
+      "tables/book.sql": "10a9f8202650ab9af218a447081f2df5dc7b727753a21b610f23f0a9d77b081d"
+    }
+  },
+  "objects": [
+    {
+      "id": "library.find_book",
+      "name": "FindBook",
+      "description": "Finds a book by its exact title.",
+      "kind": "procedure",
+      "at": "procedures/find_book.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@title",
+          "description": "The title to find, as printed.",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FindBookRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "FindBookRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "library.find_book",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "book_id",
+          "description": "@deprecated is not a tag here: the catalogue's own number, as on the spine.",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "library.book.book_id",
+              "sql": "int",
+              "at": "tables/book.sql:2:5"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "description": "The title as printed, which may hold */ or \"quotes\" or a \\ backslash.",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "library.book.title",
+              "sql": "nvarchar(200)",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "loud",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "library.book.title",
+              "sql": "nvarchar(200)",
+              "at": "tables/book.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "shelf_mark",
+          "description": "Where the book is shelved.\nA case and a shelf, such as B-12.",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(12)",
+            "maxLength": {
+              "value": 12,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(12)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "library.book.shelf_mark"
+            }
+          ],
+          "from": [
+            {
+              "column": "library.book.shelf_mark",
+              "sql": "nvarchar(12)",
+              "at": "tables/book.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "pages",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "library.book.pages"
+            },
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/find_book.sql:4:66"
+            }
+          ],
+          "from": [
+            {
+              "column": "library.book.pages",
+              "sql": "int",
+              "at": "tables/book.sql:5:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

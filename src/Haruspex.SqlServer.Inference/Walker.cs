@@ -585,8 +585,12 @@ internal sealed partial class Walker
             var shapes = new List<Shape>();
             foreach (var shape in produced.Select(p => p.Result.Shape))
             {
-                if (!shapes.Contains(shape))
+                // A shape another path returns too keeps only the descriptions both give: its fields may hold either's values.
+                var same = shapes.IndexOf(shape);
+                if (same < 0)
                     shapes.Add(shape);
+                else
+                    shapes[same] = CommonDescriptions.Of(shapes[same], shape);
             }
 
             var encoding = produced[0].Result.Encoding;
@@ -610,7 +614,8 @@ internal sealed partial class Walker
     {
         if (shapes.Count == 1)
             return shapes[0];
-        return shapes.FirstOrDefault(s => s is UnknownShape) ?? new UnionShape([.. shapes]);
+        // A value of one path's shape may match another's, so no variant's field says for certain which column it holds.
+        return shapes.FirstOrDefault(s => s is UnknownShape) ?? new UnionShape([.. shapes.Select(CommonDescriptions.None)]);
     }
 
     /// <summary>

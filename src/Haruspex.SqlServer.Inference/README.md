@@ -447,6 +447,19 @@ successful path does not reach may be missing: its `absentBecause` has `not-run`
 there. Only trailing positions can be, so the sets that arrive are the first ones listed. Results of different
 encodings at one position, or a result inside a loop, make the results unknown (`varying-results`).
 
+## Descriptions
+
+A field takes the database's description of a column (IR 0.33, `description`) only when it is that column, unchanged: a bare
+reference without `COLLATE` to a table's column, or the column through `*`, or a column of a view, derived table or CTE that is
+itself one, where a view's own description of its column replaces the table's (`Typer.Descriptions.cs`). `from` is not enough:
+it lists every column a value is read from, through `UPPER` or `+`, and `UPPER(name)` isn't the name. A field computed from a
+column, or read from several (`COALESCE`, `CASE`), has none. A column of a set operation or a recursive CTE keeps one only
+where every query's column gives the same, and so does a field where equal shapes merge (`CommonDescriptions`), since it
+may hold any of their values; and a union
+that joining makes, of two paths' rows or two JSON objects, keeps none in any variant, since a value of one may match another
+(an owner's short name passes as a dog's). A procedure and its parameters take their own. Why:
+[decision 0128](../../docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+
 ## CTEs
 
 A CTE is part of its statement's query: its columns' values pass through unchanged, live JSON included

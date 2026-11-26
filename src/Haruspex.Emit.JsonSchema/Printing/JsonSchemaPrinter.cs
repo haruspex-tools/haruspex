@@ -56,8 +56,10 @@ internal static class JsonSchemaPrinter
         {
             if (keyword == Keyword.Description)
             {
-                if (schema.Notes.Count > 0)
-                    json.WriteString(Keyword.Description, string.Join(" ", schema.Notes.Select(n => n.Text)));
+                // The database's own description first, as it is, a paragraph of its own; then haruspex's notes.
+                string?[] paragraphs = [schema.Described, schema.Notes.Count > 0 ? string.Join(" ", schema.Notes.Select(n => n.Text)) : null];
+                if (paragraphs.Any(p => p is not null))
+                    json.WriteString(Keyword.Description, string.Join("\n\n", paragraphs.OfType<string>()));
                 continue;
             }
 

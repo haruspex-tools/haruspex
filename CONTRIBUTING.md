@@ -252,6 +252,7 @@ split into parts along the constructs it covers. The families today:
 | SQLCMD variables | `SqlcmdVariableTests` | `SqlcmdVariableObservationTests` | `tests/fixtures/kiosk` | [decision 0046](docs/decisions/0046-a-sqlcmd-variable-in-a-body-is-unknown.md) |
 | `SELECT *` | `SelectStarTests` | `SelectStarObservationTests` | `tests/fixtures/haberdashery` | "`SELECT *`", [decision 0047](docs/decisions/0047-a-star-is-bound-against-the-tables-the-project-defines.md) |
 | Parameters | `ParameterTests` | `ParameterObservationTests` | `tests/fixtures/till` | "Parameters" |
+| Descriptions | `DescriptionTests`, with `DescriptionFinderTests` and `ExtendedPropertyCallsTests` in `tests/Haruspex.Tests/Sources` | `DescriptionObservationTests` | `tests/fixtures/lectern` | "Descriptions", [decision 0128](docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md) |
 | Binding | `BinderTests`, in `tests/Haruspex.Tests/Semantics` | `BindingObservationTests` | `tests/fixtures/scopes` | the Semantics README's "How data flows through it" |
 | Query files | `QueryFileTests` | `QueryParameterObservationTests`, `QueryTextObservationTests` | the invented shop in `InferQuery.Shop` (`tests/Shared`) | "Query files", [decision 0059](docs/decisions/0059-a-query-file-s-parameters-are-typed-from-their-uses.md) |
 

@@ -164,7 +164,8 @@ internal static class JsonSchemaLowering
                 .. type.Fields.Select(f => new SchemaProperty(
                     f.Name,
                     (row && f.Type is IrScalar scalar ? TypeLowering.Nullable(SentScalars.Of(scalar), f.NullableBecause) : types.Field(f, place))
-                        .Noted(IrFieldText.Of(plan.Document, name, f, options.Comments).Select(line => new SchemaNote(line))))),
+                        .Noted(IrFieldText.Of(plan.Document, name, f, options.Comments).Select(line => new SchemaNote(line)))
+                        .DescribedAs(f.Description))),
             ]));
         var required = type.Fields.Where(TypeLowering.IsRequired).Select(f => (SchemaValue)new SchemaValue.Text(f.Name)).ToList();
         if (required.Count > 0)
@@ -214,7 +215,7 @@ internal static class JsonSchemaLowering
             [var single] => new SchemaNote($"Returns {IrResultText.Describe(single)}."),
             var many => new SchemaNote($"Returns {many.Count} result sets: {string.Join("; ", many.Select(r => (r.Name is { } name ? name + ": " : "") + IrResultText.Describe(r)))}."),
         };
-        return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. types.Declared(results), .. schema.Notes] };
+        return schema.With(Keyword.Title, new SchemaValue.Text(obj.Id)) with { Notes = [summary, .. types.Declared(results), .. schema.Notes], Described = obj.Description };
     }
 
     /// <summary>

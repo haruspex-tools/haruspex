@@ -40,6 +40,12 @@ public sealed record IrObject(
     public bool ReturnsCode { get; init; }
 
     /// <summary>
+    /// The database's description of the procedure; null for a query file (0.33), from an extended property the config file names; null when it has none. Documentation, not a claim, so
+    /// <see cref="IrComparison"/> reports no change in it. Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
     /// The names of its result sets, in order, when the config file named them (<see cref="IrResult.Name"/>); null when they are
     /// unnamed or can't be listed. An object's sets are named all or none, so one name means every set has one.
     /// </summary>

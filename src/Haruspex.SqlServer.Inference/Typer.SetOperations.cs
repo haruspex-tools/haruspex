@@ -97,7 +97,7 @@ internal sealed partial class Typer
         {
             // SQL Server refuses it (205), so the procedure is never created; nothing to describe.
             var refused = Value.Unknown(Unsupported(IrUnknownReason.UnsupportedQuery, "The queries of this set operation list different numbers of columns, which SQL Server refuses.", at));
-            return new Row([.. rows[0].Columns.Select(c => c with { Value = refused, Origin = null })], null);
+            return new Row([.. rows[0].Columns.Select(c => c with { Value = refused, Origin = null, Description = null })], null);
         }
 
         // Regroup: INTERSECT first, then UNION and EXCEPT left to right. Each node says which queries' values come out of it.
@@ -129,6 +129,9 @@ internal sealed partial class Typer
             {
                 // Every query's columns, since a value of the set may come from any of them.
                 From = [.. rows.SelectMany(r => r.Columns[c].From).Distinct()],
+
+                // So it describes a value of the set only where every query's column gives the same description.
+                Description = rows.Select(r => r.Columns[c].Description).Aggregate(CommonDescriptions.Same),
             });
         }
 

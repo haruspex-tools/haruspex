@@ -25,4 +25,7 @@ internal sealed record ZodDeclaration(string Name, string? Summary, ZodExpressio
     /// above the export, since the shared schema's own properties can't say it for each type that shares it.
     /// </summary>
     public EquatableArray<string> Explanation { get; init; } = [];
+
+    /// <summary>The database's description of the procedure the declaration is of (<see cref="Ir.IrObject.Description"/>), the comment's first lines; null for none.</summary>
+    public string? Description { get; init; }
 }

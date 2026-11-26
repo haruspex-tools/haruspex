@@ -1,0 +1,17 @@
+// The runs of the lectern fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what
+// each key means.
+{
+  // The fixture is about which fields take a column's description, not about scalar facts, so the seed is not held to every edge.
+  "seedReachesEveryEdge": false,
+
+  "runs": [
+    { "name": "find_book, a shelved book", "procedure": "library.find_book", "parameters": { "@title": "A Field Guide to Moths" } },
+    { "name": "find_book, an unshelved book", "procedure": "library.find_book", "parameters": { "@title": "Knots for Sailors" } },
+    { "name": "find_book, no such book", "procedure": "library.find_book", "parameters": { "@title": "Nothing" } },
+    { "name": "all_books", "procedure": "library.all_books" },
+    { "name": "on_shelf", "procedure": "library.on_shelf" },
+    { "name": "books_json", "procedure": "library.books_json" },
+    { "name": "title_or_name, readers", "procedure": "library.title_or_name", "parameters": { "@reader": true } },
+    { "name": "title_or_name, books", "procedure": "library.title_or_name", "parameters": { "@reader": false } }
+  ]
+}

@@ -200,7 +200,7 @@ internal sealed record Value(Shape Shape, EquatableArray<IrNullReason> NullableB
     private static (Shape Shape, bool IsLiveJson, UnknownShape? NotJson) JoinShapes(Value a, Value b, SourceLocation at, string what)
     {
         if (a.Shape == b.Shape && a.IsLiveJson == b.IsLiveJson)
-            return (a.Shape, a.IsLiveJson, null);
+            return (CommonDescriptions.Of(a.Shape, b.Shape), a.IsLiveJson, null);
         if (a.Shape is UnknownShape known)
             return (known, false, null);
         if (b.Shape is UnknownShape other)

@@ -90,7 +90,7 @@ public partial class IrJsonReaderTests
         var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
 
         Assert.Equal(at + ".paths", e.Path);
-        Assert.Contains("is given in a document of IR 0.31: a source read from several folders is IR 0.32.", e.Message, StringComparison.Ordinal);
+        Assert.Contains("is given in a document of IR 0.31: a source read from several folders is IR 0.32 or later.", e.Message, StringComparison.Ordinal);
     }
 
     [Theory]

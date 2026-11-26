@@ -30,6 +30,12 @@ internal sealed record LocalRelationValues(EquatableArray<string>? Names, Equata
     public EquatableArray<EquatableArray<IrSourceColumn>>? From { get; init; }
 
     /// <summary>
+    /// For each column, the database's description of the one column it is, unchanged, or null (<c>Typer.Descriptions.cs</c>), so
+    /// that a query reading it unchanged keeps it; null where the relation keeps none.
+    /// </summary>
+    public EquatableArray<string?>? Descriptions { get; init; }
+
+    /// <summary>
     /// Its unique keys, which only a view (see <see cref="Typer"/>'s <c>ViewKeys</c>), a table variable (its <c>TableVariableValues</c>),
     /// a temporary table (<c>TemporaryKeys</c>) and a multi-statement function's return table have here.
     /// </summary>

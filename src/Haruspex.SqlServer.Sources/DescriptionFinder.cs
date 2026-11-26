@@ -84,6 +84,8 @@ public static class DescriptionFinder
 
             if (doubted.Contains(target) || adds[0].Value is not { } text || string.IsNullOrWhiteSpace(text))
                 continue;
+            // With LF line endings, as a query's text is kept: a checkout may give a script CRLF, and the output must not differ.
+            text = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
             if (target.Part is { } part)
                 parts.Add(new((target.Object, part), text));
             else

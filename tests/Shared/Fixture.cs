@@ -175,8 +175,25 @@ internal sealed class Fixture
             throw new InvalidOperationException($"The fixture {Name} has diagnostics: {string.Join("; ", Project.Diagnostics)}");
 
         if (configRead is null)
-            return Project.Infer(Project.Procedures).Expected();
+            return Stamped(Project.Infer(Project.Procedures).Expected());
         var applied = Project.Infer(Project.Procedures, configRead.Expected());
-        return applied.Expected();
+        return Stamped(applied.Expected());
+    }
+
+    /// <summary>The build a fixture's document names when it must name one: a test's, which never moves, so its snapshot doesn't.</summary>
+    public static IrBuild FixedBuild { get; } = new("0.0.0-test") { Commit = new string('0', 40) };
+
+    /// <summary>
+    /// <paramref name="document"/> as the command writes it when its label is 0.30 or later by what it says (a description, 0.33):
+    /// naming the build that wrote it (<see cref="FixedBuild"/>), since such a document must name one. Every other is left
+    /// unstamped, as inference writes it, so that its snapshot is labelled by what it says alone.
+    /// </summary>
+    public static IrDocument Stamped(IrDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var versions = IrDocument.ReadableVersions.ToList();
+        return versions.IndexOf(document.Version) <= versions.IndexOf(IrDocument.StampedVersion)
+            ? document with { Source = document.Source with { WrittenBy = FixedBuild } }
+            : document;
     }
 }

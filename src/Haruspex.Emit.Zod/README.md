@@ -130,6 +130,19 @@ and the `haruspex explain` command, in the lines `IrFieldText` gives every emitt
 them, so comments never stop it being shared; each type exported as the shape says its own fields' reasons above its export
 ([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
+## Descriptions
+
+A field, a parameter or a procedure the IR gives a `description` (0.33, the database's own text from an extended property) has
+it twice. A property's schema ends with `.describe("…")`, last, after `.nullable()` and `.optional()`, so that `z.toJSONSchema`
+and an editor read it for the whole value; `.describe()` rather than `.meta({ description })`, because it states the one thing
+written and its type is the schema's own. And the comment above the property or declaration starts with it, a line of the
+comment for each of its lines. A description is text from the database: in the string it is escaped as JSON escapes it, and
+in the comment a `*/` is written `*\/`, a line break ends a line and each `@` is written `\@`, since TypeScript reads one after
+a space as a tag, and `@deprecated` would strike the field out in an editor (observed with TypeScript 6.0.3). A procedure's
+description heads the comments of its parameters' and results' declarations. A shape several types share is shared only
+where their descriptions agree too, since `.describe()` is part of the schema
+([decision 0128](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
+
 ## A module split into files
 
 `ZodEmitter.Emit(document, options, modules)` writes the module split into a file per module of an `IrModules`, the

@@ -1,7 +1,7 @@
 -- Production.BillOfMaterials, from AdventureWorks' instawdb.sql (Microsoft, MIT licence: license.txt in this fixture's
--- folder): the table, its primary key and its foreign keys to products as Microsoft defines them. The foreign key to units of
--- measure, which this fixture doesn't define, its other indexes and its descriptions are left out; they don't change what a
--- query returns.
+-- folder): the table, its primary key and its foreign keys to products as Microsoft defines them, and its descriptions of the
+-- table and its columns, as the sample sets them, which reach the fields that are those columns. The foreign key to units of
+-- measure, which this fixture doesn't define, and its other indexes are left out; they don't change what a query returns.
 CREATE TABLE [Production].[BillOfMaterials](
     [BillOfMaterialsID] [int] IDENTITY (1, 1) NOT NULL,
     [ProductAssemblyID] [int] NULL,
@@ -41,4 +41,15 @@ ALTER TABLE [Production].[BillOfMaterials] ADD
     ) REFERENCES [Production].[Product](
         [ProductID]
     );
+GO
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Items required to make bicycles and bicycle subassemblies. It identifies the heirarchical relationship between a parent product and its components.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], NULL, NULL;
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Primary key for BillOfMaterials records.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [BillOfMaterialsID];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Parent product identification number. Foreign key to Product.ProductID.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [ProductAssemblyID];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Component identification number. Foreign key to Product.ProductID.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [ComponentID];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Date the component started being used in the assembly item.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [StartDate];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Date the component stopped being used in the assembly item.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [EndDate];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Standard code identifying the unit of measure for the quantity.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [UnitMeasureCode];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Indicates the depth the component is from its parent (AssemblyID).', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [BOMLevel];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Quantity of the component needed to create the assembly.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [PerAssemblyQty];
+EXECUTE [sys].[sp_addextendedproperty] N'MS_Description', N'Date and time the record was last updated.', N'SCHEMA', [Production], N'TABLE', [BillOfMaterials], N'COLUMN', [ModifiedDate];
 GO

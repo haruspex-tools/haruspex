@@ -30,8 +30,11 @@ internal static class ParameterLowering
     {
         if (obj.Parameters.Count == 0)
             return null;
-        var properties = obj.Parameters.Select(p => new ZodProperty(Key(p), Property(p, types)));
-        return new ZodDeclaration(ZodModule.ParametersOf(obj.Name), $"{obj.Id}: its parameters, checked before anything is sent.", new ObjectSchema([.. properties], Strict: true));
+        var properties = obj.Parameters.Select(p => new ZodProperty(Key(p), Property(p, types).Described(p.Description)) { Description = p.Description });
+        return new ZodDeclaration(ZodModule.ParametersOf(obj.Name), $"{obj.Id}: its parameters, checked before anything is sent.", new ObjectSchema([.. properties], Strict: true))
+        {
+            Description = obj.Description,
+        };
     }
 
     /// <summary>
@@ -50,7 +53,7 @@ internal static class ParameterLowering
         {
             var value = types.Type(p.Type, IrEncoding.Rowset);
             value = p.Type is IrUnknownType ? value : value.Then("nullable");
-            return new ZodProperty(Key(p), p.HasDefault ? value.Then("optional") : value);
+            return new ZodProperty(Key(p), (p.HasDefault ? value.Then("optional") : value).Described(p.Description)) { Description = p.Description };
         });
         return new ZodDeclaration(ZodModule.OutputOf(obj.Name), $"{obj.Id}: what its OUTPUT parameters hold when it ends.", new ObjectSchema([.. properties], Strict: false));
     }

@@ -1,7 +1,7 @@
 # IR files, one per version
 
 One IR file from each version of the format, kept so that the reader is tested against what each version really wrote. The
-current version's file must be read, and round trip to the same bytes; so must 0.31's, 0.30's, 0.29's, 0.28's, 0.27's, 0.26's, 0.25's, 0.24's and 0.23's, the
+current version's file must be read, and round trip to the same bytes; so must 0.32's, 0.31's, 0.30's, 0.29's, 0.28's, 0.27's, 0.26's, 0.25's, 0.24's and 0.23's, the
 older versions the reader still reads, since a document that says less is still labelled with the oldest version that says all it says
 ([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md),
 [decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)); every other must be refused, naming its version and the versions the reader
@@ -45,6 +45,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.30 | `bab09d28`; every document is 0.30, so this file is `sales.get_order` again, written by `haruspex generate database --include sales.get_order` in the `orders` fixture with the build of `75164c64`, which its `source.writtenBy` names (one written before its commit was made would name the commit it was made on) |
 | 0.31 | `5e684c55`; a document that declares no build is still written as 0.30, so this file is `sales.get_order` read from the package `tests/dacpacs/versions/orders-extract.dacpac` with the config file's `"builds": ["orders-extract.dacpac"]`, written by `haruspex generate` with the build of that change before it was committed, so its `source.writtenBy` names `be03b34a`, the commit it was made on |
 | 0.32 | `4114a3b7`; a document read from one folder is still written as before, so this file is `sales.get_order` read from the `orders` fixture's `database/tables` and `database/procedures` as two folders, written by `haruspex generate database/tables database/procedures --include sales.get_order` with the build of that change before it was committed, so its `source.writtenBy` names `a45b32f9`, the commit it was made on |
+| 0.33 | the commit that set it; a document that records no description is still written as before, so this file is `sales.get_order` read from a copy of the `orders` fixture's `database` with one more script, which sets three descriptions (`sales.get_order`'s, its `@order_id`'s and the column `sales.order.reference`'s) by `sp_addextendedproperty`, written by `haruspex generate database --include sales.get_order` with the build of that change before it was committed, so its `source.writtenBy` names `9b5b678b`, the commit it was made on |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

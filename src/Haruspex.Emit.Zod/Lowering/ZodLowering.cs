@@ -258,10 +258,11 @@ internal static class ZodLowering
         // such reference is one, whichever type of the cycle is declared first.
         var properties = named.Type.Fields.Select(field => new ZodProperty(
             field.Name,
-            types.Field(field, named.Encoding),
+            types.Field(field, named.Encoding).Described(field.Description),
             Getter: IrTypeTree.References(field.Type).Any(reference => plan.Graph.OnOneCycle(named.Name, reference)))
         {
             Explanation = explained ? [.. IrFieldText.Of(plan.Document, named.Name, field, plan.Options.Comments)] : [],
+            Description = field.Description,
         });
         return new ZodDeclaration(named.Name, null, new ObjectSchema([.. properties], plan.Options.Objects == ZodObjects.Strict && !named.Type.Open) { Loose = named.Type.Open });
     }
@@ -299,7 +300,7 @@ internal static class ZodLowering
             [var single] => Result(single, types),
             var many => Z("tuple", new ArrayLiteral([.. many.Select(r => Result(r, types))])),
         };
-        return new ZodDeclaration(obj.Name, $"{obj.Id}: {summary}.", schema);
+        return new ZodDeclaration(obj.Name, $"{obj.Id}: {summary}.", schema) { Description = obj.Description };
     }
 
     /// <summary>

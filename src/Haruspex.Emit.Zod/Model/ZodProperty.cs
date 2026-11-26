@@ -18,4 +18,11 @@ internal sealed record ZodProperty(string Key, ZodExpression Value, bool Getter 
     /// the comment above the property; none when the setting asks for none.
     /// </summary>
     public EquatableArray<string> Explanation { get; init; } = [];
+
+    /// <summary>
+    /// The database's description of what the property is (<see cref="IrField.Description"/>, <see cref="IrParameter.Description"/>),
+    /// written as the first lines of the comment above it; its value already ends <c>.describe(…)</c> with it (<see cref="ZodExpression.Described"/>).
+    /// Null for none.
+    /// </summary>
+    public string? Description { get; init; }
 }

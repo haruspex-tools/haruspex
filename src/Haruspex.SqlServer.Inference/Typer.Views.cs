@@ -256,7 +256,17 @@ internal sealed partial class Typer
                 var bound = binder.Bind(query, null, scope.Names);
                 var row = Query(bound, scope);
                 return Holds(bound.Listed(view.Columns), row) is { } relation
-                    ? relation with { Rows = row.Rows, AtLeastOne = row.Rows == IrCardinality.One, Keys = Keys(query, row, scope) }
+                    ? relation with
+                    {
+                        Rows = row.Rows,
+                        AtLeastOne = row.Rows == IrCardinality.One,
+                        Keys = Keys(query, row, scope),
+
+                        // The view's own description of a column replaces the one it keeps from the table underneath.
+                        Descriptions = relation.Names is { } names
+                            ? [.. names.Select((name, i) => model.Descriptions.Of(view.Name, name) ?? relation.Descriptions?[i])]
+                            : relation.Descriptions,
+                    }
                     : Unlisted(view.Name.ToString(), row, at);
             },
             LocalRelationValues.Unknown);

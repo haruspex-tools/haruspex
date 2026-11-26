@@ -35,7 +35,7 @@ internal static class JsonShapes
     public static Shape Join(Shape a, Shape b)
     {
         if (a == b)
-            return a;
+            return CommonDescriptions.Of(a, b);
         if (a is UnknownShape)
             return a;
         if (b is UnknownShape)
@@ -76,7 +76,7 @@ internal static class JsonShapes
                 variants[i] = Join(variants[i], variant);
         }
 
-        return variants.Count == 1 ? variants[0] : new UnionShape([.. variants]);
+        return variants.Count == 1 ? variants[0] : new UnionShape([.. variants.Select(CommonDescriptions.None)]);
 
         static IEnumerable<Shape> Variants(Shape s) => s is UnionShape u ? u.Variants : [s];
     }
@@ -186,7 +186,7 @@ internal static class JsonShapes
         {
             if (f.Presence != g.Presence)
                 return null;
-            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)) { From = f.From });
+            fields.Add(new FieldShape(f.Name, Join(f.Type, g.Type), f.Presence, NullReasons.Join(f.NullableBecause, g.NullableBecause)) { From = f.From, Description = CommonDescriptions.Same(f.Description, g.Description) });
         }
 
         return new ObjectShape([.. fields]) { Open = x.Open || y.Open };

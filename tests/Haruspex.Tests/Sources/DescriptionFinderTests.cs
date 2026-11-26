@@ -150,6 +150,14 @@ public class DescriptionFinderTests
     }
 
     [Fact]
+    public void A_description_s_line_endings_are_LF_whatever_the_script_s()
+    {
+        var (descriptions, _) = Find("EXEC sp_addextendedproperty 'MS_Description', 'A dog.\r\nA good one.\rReally.', 'SCHEMA', 'kennel', 'TABLE', 'dog';");
+
+        Assert.Equal("A dog.\nA good one.\nReally.", descriptions.Of(Dog));
+    }
+
+    [Fact]
     public void A_dropped_description_has_none()
     {
         var (descriptions, notes) = Find("""
@@ -164,26 +172,29 @@ public class DescriptionFinderTests
     [Fact]
     public void A_package_gives_the_descriptions_its_project_s_scripts_give()
     {
-        var dacpacs = Path.Combine(RepositoryPaths.Root, "tests", "dacpacs");
-        using var dir = new TempDirectory();
-        File.Copy(Path.Combine(dacpacs, "projects", "lectern", "lectern.sql"), Path.Combine(dir.Path, "lectern.sql"));
-        var folder = DescriptionFinder.Find(SqlScriptFolder.Read(dir.Path).Model, DescriptionFinder.DefaultNames);
-        var package = DescriptionFinder.Find(DacpacReader.Read(Path.Combine(dacpacs, "lectern", "lectern.dacpac")).Model, DescriptionFinder.DefaultNames);
+        // The lectern fixture, read as its folder and as the package its project builds (tests/dacpacs/fixtures/lectern.dacpac).
+        var folder = DescriptionFinder.Find(SqlScriptFolder.Read(Path.Combine(RepositoryPaths.Fixtures, "lectern", "database")).Model, DescriptionFinder.DefaultNames);
+        var package = DescriptionFinder.Find(
+            DacpacReader.Read(Path.Combine(RepositoryPaths.Root, "tests", "dacpacs", "fixtures", "lectern.dacpac")).Model,
+            DescriptionFinder.DefaultNames);
 
         var book = new ObjectName("library", "book");
         var shelf = new ObjectName("library", "shelf");
+        var reader = new ObjectName("library", "reader");
         var find = new ObjectName("library", "find_book");
         foreach (var (model, notes) in new[] { folder, package })
         {
             Assert.Empty(notes);
-            Assert.Equal(7, model.Descriptions.Count);
-            Assert.Equal("A book the library holds.", model.Descriptions.Of(book));
-            Assert.Equal("The book's title, as printed. It may hold */ and \"quotes\".", model.Descriptions.Of(book, "title"));
-            Assert.Equal("Where the book is shelved.\nTwo lines.", model.Descriptions.Of(book, "shelf_mark")?.ReplaceLineEndings("\n"));
-            Assert.Equal("The books on the shelves.", model.Descriptions.Of(shelf));
-            Assert.Equal("The shelf mark, as the view names it.", model.Descriptions.Of(shelf, "mark"));
-            Assert.Equal("Finds a book by its title.", model.Descriptions.Of(find));
-            Assert.Equal("The title to find.", model.Descriptions.Of(find, "@title"));
+            Assert.Equal(8, model.Descriptions.Count);
+            Assert.Equal("A book the reading room holds.", model.Descriptions.Of(book));
+            Assert.Equal("@deprecated is not a tag here: the catalogue's own number, as on the spine.", model.Descriptions.Of(book, "book_id"));
+            Assert.Equal("The title as printed, which may hold */ or \"quotes\" or a \\ backslash.", model.Descriptions.Of(book, "title"));
+            Assert.Equal("Where the book is shelved.\nA case and a shelf, such as B-12.", model.Descriptions.Of(book, "shelf_mark"));
+            Assert.Equal("The reader's name, as on their card.", model.Descriptions.Of(reader, "name"));
+            Assert.Equal("The shelf mark, as the shelf list names it.", model.Descriptions.Of(shelf, "mark"));
+            Assert.Equal("Finds a book by its exact title.", model.Descriptions.Of(find));
+            Assert.Equal("The title to find, as printed.", model.Descriptions.Of(find, "@title"));
+            Assert.Null(model.Descriptions.Of(book, "pages"));
         }
     }
 }

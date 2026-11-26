@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Cli;
 using Haruspex.Ir;
 using Haruspex.Tests.Snapshotting;
@@ -237,6 +238,27 @@ public class CheckTests
         Assert.DoesNotContain("HAR6014", error, StringComparison.Ordinal);
         Assert.Contains("error HAR6015: line ", error, StringComparison.Ordinal);
         Assert.DoesNotContain("another version of haruspex wrote it", error, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A description is no claim, so a changed one is no change of contract (no HAR6014), but the module's text changes, so the
+    /// check still fails, at the line (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// </summary>
+    [Theory]
+    [InlineData("'The name the order is for.'")]
+    [InlineData(null)]
+    public void A_description_changed_or_dropped_fails_the_check_at_the_module_s_line_and_is_no_change_of_claim(string? now)
+    {
+        const string Described = "EXEC sp_addextendedproperty 'MS_Description', {0}, 'SCHEMA', 'shop', 'TABLE', 'orders', 'COLUMN', 'customer';";
+        using var folder = Generated(tables: Tables + "\nGO\n" + string.Format(CultureInfo.InvariantCulture, Described, "'Who placed the order.'"));
+        Assert.Contains(".describe(\"Who placed the order.\")", File.ReadAllText(Path.Combine(folder.Path, "generated", HaruspexCli.ZodFileName)), StringComparison.Ordinal);
+        folder.File("db/tables.sql", now is null ? Tables : Tables + "\nGO\n" + string.Format(CultureInfo.InvariantCulture, Described, now));
+
+        var (exitCode, _, error) = Run(folder, "check");
+
+        Assert.Equal(1, exitCode);
+        Assert.DoesNotContain("HAR6014", error, StringComparison.Ordinal);
+        Assert.Contains("error HAR6015: line ", error, StringComparison.Ordinal);
     }
 
     [Fact]

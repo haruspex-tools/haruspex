@@ -69,10 +69,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.BuildsVersion}, {IrDocument.StampedVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, (0.31) the packages the config file declared builds, and (0.32) the folders of a source read from several. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.FoldersVersion}, {IrDocument.BuildsVersion}, {IrDocument.StampedVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, (0.31) the packages the config file declared builds, (0.32) the folders of a source read from several, and (0.33) the database's descriptions of objects, parameters and fields. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document whose source was read from several folders (source.paths, or its baseline's), else {IrDocument.BuildsVersion} for one that records packages declared builds (source.builds, or its baseline's), else {IrDocument.StampedVersion} for one that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.BuildsVersion, IrDocument.StampedVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that records a description (of an object, a parameter or a field, which this schema can't require), else {IrDocument.FoldersVersion} for one whose source was read from several folders (source.paths, or its baseline's), else {IrDocument.BuildsVersion} for one that records packages declared builds (source.builds, or its baseline's), else {IrDocument.StampedVersion} for one that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.FoldersVersion, IrDocument.BuildsVersion, IrDocument.StampedVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -115,7 +115,7 @@ public static class IrJsonSchema
     [
         Label(IrDocument.OneDatabaseVersion, combined: false),
         Label(IrDocument.CombinedVersion, combined: true),
-        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.StampedVersion, IrDocument.BuildsVersion, IrDocument.CurrentVersion])
+        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.StampedVersion, IrDocument.BuildsVersion, IrDocument.FoldersVersion, IrDocument.CurrentVersion])
             .SelectMany(version => (JsonNode[])[Label(version, combined: false), Label(version, combined: true)]),
     ];
 
@@ -134,17 +134,19 @@ public static class IrJsonSchema
         var writer = IrDocument.IsSince(version, IrDocument.StampedVersion);
         var mayDeclareBuilds = IrDocument.IsSince(version, IrDocument.BuildsVersion);
         var builds = version == IrDocument.BuildsVersion;
-        var folders = version == IrDocument.CurrentVersion;
+        var mayReadFolders = IrDocument.IsSince(version, IrDocument.FoldersVersion);
+        var folders = version == IrDocument.FoldersVersion;
+        var describes = version == IrDocument.CurrentVersion;
         var notInBoth = Node(("not", Node(("const", IrWireNames.Of(IrNullRule.NotInBoth)))));
         JsonObject Reasons() => Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("rule", notInBoth.DeepClone()))))));
 
         // A source of this document, its own or its baseline: before 0.25, without the path and files it was read from; before 0.30,
         // without the build that wrote it, which from 0.30 the document's own source always names; before 0.31, without packages
         // declared builds, which in 0.31 the document's own source or its baseline records; before 0.32, without several folders,
-        // which in 0.32 the document's own source or its baseline records.
+        // which in 0.32 the document's own source or its baseline records, and from 0.33 may.
         JsonObject Source(bool baseline)
         {
-            string[] lacking = [.. sources ? [] : (string[])["path", "files"], .. writer ? [] : (string[])["writtenBy"], .. mayDeclareBuilds ? [] : (string[])["builds"], .. folders ? [] : (string[])["paths"]];
+            string[] lacking = [.. sources ? [] : (string[])["path", "files"], .. writer ? [] : (string[])["writtenBy"], .. mayDeclareBuilds ? [] : (string[])["builds"], .. mayReadFolders ? [] : (string[])["paths"]];
             string[] absent = [.. baseline ? [] : (string[])["baseline"], .. lacking];
             var source = Node(("type", "object"));
             if (absent.Length > 0)
@@ -192,7 +194,7 @@ public static class IrJsonSchema
             return source;
         }
 
-        string[] notInField = [.. combined ? [] : (string[])["sides"], .. sources ? [] : (string[])["from", "sides"]];
+        string[] notInField = [.. combined ? [] : (string[])["sides"], .. sources ? [] : (string[])["from", "sides"], .. describes ? [] : (string[])["description"]];
         var field = notInField.Length > 0 ? Lacking([.. notInField.Distinct()]) : Node(("type", "object"));
         if (!combined)
         {
@@ -207,12 +209,22 @@ public static class IrJsonSchema
             ("irVersion", Node(("const", version))),
             ("source", Source(combined)),
             ("types", Node(("type", "object"), ("additionalProperties", objectType))));
+        // Before 0.33 no object or parameter has a description.
+        var obj = describes ? Node(("type", "object")) : Lacking("description");
+        var objectProperties = Node();
+        if (!describes)
+            objectProperties.Add("parameters", Node(("type", "array"), ("items", Lacking("description"))));
         if (!combined)
         {
             // Results are null when they can't be listed, so the rule holds of them only where they are an array.
             var result = Node(("type", "object"), ("properties", Node(("absentBecause", Reasons()))));
-            var results = Node(("anyOf", new JsonArray(Node(("type", "null")), Node(("type", "array"), ("items", result)))));
-            properties.Add("objects", Node(("type", "array"), ("items", Node(("type", "object"), ("properties", Node(("results", results)))))));
+            objectProperties.Add("results", Node(("anyOf", new JsonArray(Node(("type", "null")), Node(("type", "array"), ("items", result))))));
+        }
+
+        if (objectProperties.Count > 0)
+        {
+            obj["properties"] = objectProperties;
+            properties.Add("objects", Node(("type", "array"), ("items", obj)));
         }
 
         if (!declares)
@@ -293,6 +305,7 @@ public static class IrJsonSchema
             ("name", Text("The name settled for generated code.")),
             ("kind", Vocabulary<IrObjectKind>(IrWireNames.Of)),
             ("at", Text("Where it is defined, as path:line:column.")),
+            ("description", Description("The database's description of the procedure (0.33), from an extended property; left out when it has none.")),
             ("text", Text("What a query runs, as one batch, with LF line endings; only a query has it, and a query always does.")),
             ("returnsCode", Flag("Whether a call may end with a return code other than 0.")),
             ("parameters", ArrayOf(Ref("parameter"))),
@@ -306,6 +319,7 @@ public static class IrJsonSchema
             "A declared parameter.",
             ["name", "type", "hasDefault", "output"],
             ("name", Text("Its name as declared, with its sigil.")),
+            ("description", Description("The database's description of the parameter (0.33), from an extended property; left out when it has none.")),
             ("type", Ref("type")),
             ("tableType", Text("For a table-valued parameter (0.26), the key of its type's definition in tableTypes; left out for any other.")),
             ("hasDefault", Flag("Whether the caller may omit it.")),
@@ -368,6 +382,7 @@ public static class IrJsonSchema
                 "A field of an object type.",
                 ["name", "type", "presence", "nullable"],
                 ("name", Text("The key or column name.")),
+                ("description", Description("The database's description of the one column the field is, unchanged (0.33), from an extended property; left out when it has none, and for a field derived from several columns or an expression.")),
                 ("type", Ref("type")),
                 ("presence", Vocabulary<IrPresence>(IrWireNames.Of)),
                 ("nullable", Flag("Whether the value can be null.")),
@@ -741,6 +756,9 @@ public static class IrJsonSchema
     }
 
     private static JsonObject Text(string description) => Node(("description", description), ("type", "string"));
+
+    /// <summary>A description from the database (0.33): text, never empty, since a thing with none leaves it out.</summary>
+    private static JsonObject Description(string description) => Node(("description", description), ("type", "string"), ("minLength", 1));
 
     /// <summary>A set's name: an identifier, as <see cref="IrIdentifiers.IsIdentifier"/> reads one, and none of <see cref="IrResult.KeysBesideSets"/>.</summary>
     private static JsonObject SetName(string description) =>

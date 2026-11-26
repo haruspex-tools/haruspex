@@ -339,6 +339,7 @@ public static class IrJsonWriter
         json.WriteStartObject();
         json.WriteString("id", obj.Id);
         json.WriteString("name", obj.Name);
+        WriteDescription(json, obj.Description);
         json.WriteString("kind", IrWireNames.Of(obj.Kind));
         json.WriteString("at", obj.At);
         if (obj.Text is { } text)
@@ -350,6 +351,7 @@ public static class IrJsonWriter
         {
             json.WriteStartObject();
             json.WriteString("name", parameter.Name);
+            WriteDescription(json, parameter.Description);
             json.WritePropertyName("type");
             WriteType(json, parameter.Type);
             if (parameter.TableType is { } tableType)
@@ -419,6 +421,7 @@ public static class IrJsonWriter
         {
             json.WriteStartObject();
             json.WriteString("name", field.Name);
+            WriteDescription(json, field.Description);
             json.WritePropertyName("type");
             WriteType(json, field.Type);
             json.WriteString("presence", IrWireNames.Of(field.Presence));
@@ -439,6 +442,13 @@ public static class IrJsonWriter
 
         json.WriteEndArray();
         json.WriteEndObject();
+    }
+
+    /// <summary>A description (0.33), left out when there is none, so that a document without one reads as before.</summary>
+    private static void WriteDescription(Utf8JsonWriter json, string? description)
+    {
+        if (description is not null)
+            json.WriteString("description", description);
     }
 
     /// <summary>A field's source columns (0.25), left out when it has none, so that a document without them reads as before.</summary>

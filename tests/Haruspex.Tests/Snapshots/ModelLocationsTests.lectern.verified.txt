@@ -1,0 +1,18 @@
+column library.book.book_id int at tables/book.sql:2:5
+column library.book.pages int at tables/book.sql:5:5
+column library.book.shelf_mark nvarchar(12) at tables/book.sql:4:5
+column library.book.title nvarchar(200) at tables/book.sql:3:5
+column library.reader.name nvarchar(60) at tables/reader.sql:3:5
+column library.reader.reader_id int at tables/reader.sql:2:5
+key library.book pk_book (book_id) at tables/book.sql:2:26
+key library.reader pk_reader (reader_id) at tables/reader.sql:2:28
+parameter library.find_book @title at procedures/find_book.sql:2:5
+parameter library.title_or_name @reader at procedures/title_or_name.sql:2:5
+procedure library.all_books at procedures/all_books.sql:1:1
+procedure library.books_json at procedures/books_json.sql:1:1
+procedure library.find_book at procedures/find_book.sql:1:1
+procedure library.on_shelf at procedures/on_shelf.sql:1:1
+procedure library.title_or_name at procedures/title_or_name.sql:1:1
+table library.book at tables/book.sql:1:1
+table library.reader at tables/reader.sql:1:1
+view library.shelf at views/shelf.sql:1:1

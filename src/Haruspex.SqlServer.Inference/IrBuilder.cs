@@ -15,7 +15,8 @@ namespace Haruspex.SqlServer.Inference;
 /// break a clash, would let adding one procedure rename another's types.
 /// </remarks>
 /// <param name="nodes">The object each recursive function the procedures call stands for, for the named type of its node.</param>
-internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nodes)
+/// <param name="descriptions">The database's descriptions, of each procedure and its parameters.</param>
+internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nodes, Descriptions descriptions)
 {
     private readonly Dictionary<string, IrObjectType> types = new(StringComparer.Ordinal);
 
@@ -43,17 +44,21 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
     /// <summary>The document of the procedures and query files analysed, under the callers' session.</summary>
     public IrDocument Build(IReadOnlyList<(Procedure Source, ProcedureAnalysis Analysis)> procedures, IReadOnlyList<(QueryFile Source, ProcedureAnalysis Analysis)> queries, SessionOptions session)
     {
-        var analysed = procedures.Select(p => (Id: p.Source.Name.ToString(), Kind: IrObjectKind.Procedure, Owner: IrTypeOwner.Procedure, p.Source.Span, Text: (string?)null, p.Analysis))
-            .Concat(queries.Select(q => (Id: q.Source.Path, Kind: IrObjectKind.Query, Owner: IrTypeOwner.Query, q.Source.Span, Text: (string?)q.Source.Text, q.Analysis)));
+        var analysed = procedures.Select(p => (Id: p.Source.Name.ToString(), Kind: IrObjectKind.Procedure, Owner: IrTypeOwner.Procedure, p.Source.Span, Text: (string?)null, p.Analysis, Name: (ObjectName?)p.Source.Name))
+            .Concat(queries.Select(q => (Id: q.Source.Path, Kind: IrObjectKind.Query, Owner: IrTypeOwner.Query, q.Source.Span, Text: (string?)q.Source.Text, q.Analysis, Name: (ObjectName?)null)));
         var ordered = analysed.OrderBy(o => o.Id, StringComparer.Ordinal).ToList();
 
         var objects = new List<IrObject>();
-        foreach (var (id, kind, ownerKind, at, text, analysis) in ordered)
+        foreach (var (id, kind, ownerKind, at, text, analysis, name) in ordered)
         {
             var owner = new Owner(ownerKind, id);
 
             var parameters = analysis.Parameters
-                .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput) { TableType = p.TableType?.Key })
+                .Select(p => new IrParameter(p.Name, Convert(p.Type, owner, id, $"parameters.{p.Name}"), p.HasDefault, p.IsOutput)
+                {
+                    TableType = p.TableType?.Key,
+                    Description = name is { } procedure ? descriptions.Of(procedure, p.Name) : null,
+                })
                 .ToList();
             foreach (var (key, definition) in analysis.Parameters.Select(p => p.TableType).OfType<(string, IrTableType)>())
                 tableTypes.TryAdd(key, definition);
@@ -72,7 +77,12 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
                 unknowns.Add(new IrUnknown(id, "results", why.Reason, why.Detail, why.At.ToString()));
             }
 
-            objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results]) { Text = text, ReturnsCode = analysis.ReturnsCode });
+            objects.Add(new IrObject(id, id, kind, at.ToString(), [.. parameters], results is null ? null : [.. results])
+            {
+                Text = text,
+                ReturnsCode = analysis.ReturnsCode,
+                Description = name is { } procedure ? descriptions.Of(procedure) : null,
+            });
         }
 
         return MarkRecursive(new IrDocument(new IrSource("tsql") { Session = Session(session) }, [.. objects], types, [.. unknowns])
@@ -227,7 +237,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
         key ??= Key(owner, path);
         var fields = new List<IrField>();
         foreach (var field in obj.Fields)
-            fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause) { From = field.From });
+            fields.Add(new IrField(field.Name, Convert(field.Type, owner, id, path + IrPath.Key(field.Name)), field.Presence, field.NullableBecause) { From = field.From, Description = field.Description });
 
         types[key] = new IrObjectType([.. fields]) { Identity = new IrTypeIdentity(owner.Kind, owner.Object, path), Open = obj.Open };
         return new IrRef(key);

@@ -154,6 +154,10 @@ A property's `description` ends with the lines that explain its field when it is
 comments give (`IrFieldText`), as `JsonSchemaOptions.Comments` asks
 ([decision 0079](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
+A field's or a procedure's description from the database (0.33, the IR's `description`) is the first paragraph of its
+`description`, as the database gives it, then a blank line and the notes above
+([decision 0128](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
+
 ## A document split into modules
 
 `JsonSchemaEmitter.Emit(document, options, modules)` writes a document per module of an `IrModules`: a module's procedures, and

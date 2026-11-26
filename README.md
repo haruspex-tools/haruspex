@@ -281,18 +281,28 @@ FOR JSON PATH, WITHOUT_ARRAY_WRAPPER;
 
 ```ts haruspex-zod
 export const GetComponentsNodeProductSchema = z.object({
-  id: z.int32(),
-  name: z.string().max(50),
-  number: z.string().max(25),
-  /** money runs from 0 to 922337203685477.5807, which JavaScript reads as the nearest doubles. */
-  standardCost: z.number().min(0).max(922337203685477.6).multipleOf(1e-4),
+  /** Primary key for Product records. */
+  id: z.int32().describe("Primary key for Product records."),
+  /** Name of the product. */
+  name: z.string().max(50).describe("Name of the product."),
+  /** Unique product identification number. */
+  number: z.string().max(25).describe("Unique product identification number."),
+  /**
+   * Standard cost of the product.
+   * money runs from 0 to 922337203685477.5807, which JavaScript reads as the nearest doubles.
+   */
+  standardCost: z.number().min(0).max(922337203685477.6).multipleOf(1e-4).describe("Standard cost of the product."),
 })
 export type GetComponentsNodeProduct = z.infer<typeof GetComponentsNodeProductSchema>
 
 export const GetComponentsNodeSchema = z.object({
-  quantity: z.number().min(1).max(999999.99).multipleOf(1e-2),
-  /** nchar(3) is exactly 3 UTF-16 code units, which is 2 to 3 code points. */
-  unit: z.string().min(2).max(3),
+  /** Quantity of the component needed to create the assembly. */
+  quantity: z.number().min(1).max(999999.99).multipleOf(1e-2).describe("Quantity of the component needed to create the assembly."),
+  /**
+   * Standard code identifying the unit of measure for the quantity.
+   * nchar(3) is exactly 3 UTF-16 code units, which is 2 to 3 code points.
+   */
+  unit: z.string().min(2).max(3).describe("Standard code identifying the unit of measure for the quantity."),
   product: GetComponentsNodeProductSchema,
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
@@ -305,9 +315,12 @@ export const GetComponentsNodeSchema = z.object({
 export type GetComponentsNode = z.infer<typeof GetComponentsNodeSchema>
 
 export const GetProductTreeRowSchema = z.object({
-  id: z.int32(),
-  name: z.string().max(50),
-  number: z.string().max(25),
+  /** Primary key for Product records. */
+  id: z.int32().describe("Primary key for Product records."),
+  /** Name of the product. */
+  name: z.string().max(50).describe("Name of the product."),
+  /** Unique product identification number. */
+  number: z.string().max(25).describe("Unique product identification number."),
   /**
    * May be null: it is a subquery, which is null when it returns no rows (empty-subquery).
    * Left out when null, as FOR JSON, and JSON_OBJECT with ABSENT ON NULL, leave out a key whose value is null.

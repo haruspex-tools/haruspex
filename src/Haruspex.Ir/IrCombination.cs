@@ -82,6 +82,9 @@ public static partial class IrCombination
     /// </summary>
     private sealed partial class Combiner(IrDocument baseline, IrDocument candidate, IrFitOptions options, IReadOnlyList<IrCombinationFinding> unproven)
     {
+        /// <summary>A description both databases give alike; null where they differ or either has none.</summary>
+        private static string? Same(string? was, string? now) => string.Equals(was, now, StringComparison.Ordinal) ? now : null;
+
         private readonly List<IrCombinationFinding> findings = [];
 
         /// <summary>The combined document and its findings.</summary>
@@ -156,7 +159,7 @@ public static partial class IrCombination
             var (bridged, results) = Results(now.Id, was, now);
             if (parameters is null || !bridged)
                 return null;
-            return now with { Parameters = [.. parameters], Results = results, ReturnsCode = was.ReturnsCode || now.ReturnsCode };
+            return now with { Parameters = [.. parameters], Results = results, ReturnsCode = was.ReturnsCode || now.ReturnsCode, Description = Same(was.Description, now.Description) };
         }
 
         /// <summary>
@@ -206,7 +209,7 @@ public static partial class IrCombination
                 if (old.TableType is not null || parameter.TableType is not null)
                 {
                     if (TableValued(id, path, old, parameter) is { } tableValued)
-                        combined.Add(tableValued with { HasDefault = old.HasDefault && parameter.HasDefault });
+                        combined.Add(tableValued with { HasDefault = old.HasDefault && parameter.HasDefault, Description = Same(old.Description, parameter.Description) });
                     else
                         bridged = false;
                     continue;
@@ -229,7 +232,7 @@ public static partial class IrCombination
                 }
 
                 // Sent as OUTPUT, a parameter not declared so fails the call (error 8162); sent plain, an OUTPUT one takes the value.
-                combined.Add(parameter with { Type = type, HasDefault = old.HasDefault && parameter.HasDefault, IsOutput = old.IsOutput && parameter.IsOutput });
+                combined.Add(parameter with { Type = type, HasDefault = old.HasDefault && parameter.HasDefault, IsOutput = old.IsOutput && parameter.IsOutput, Description = Same(old.Description, parameter.Description) });
             }
 
             foreach (var gone in was.Where(p => !after.Contains(p.Name) && !p.HasDefault))

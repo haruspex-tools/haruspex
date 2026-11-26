@@ -249,7 +249,9 @@ public static partial class IrCombination
         private IrField Field(string id, IrPathSegment[] path, IrField was, IrField now)
         {
             var type = Join(id, path, was.Type, now.Type);
-            var joined = Joined(was, now) with { From = [.. was.From.Concat(now.From).Distinct()], Sides = null };
+            // A description is the database's text for one column; kept only where both give the same, so that it never describes
+            // a value one database reads from elsewhere (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+            var joined = Joined(was, now) with { From = [.. was.From.Concat(now.From).Distinct()], Sides = null, Description = Same(was.Description, now.Description) };
 
             // Where both databases give the field exactly as combined, the sides would only repeat it, so they are left out.
             var (before, after) = (IrFieldSide.Of(was), IrFieldSide.Of(now));

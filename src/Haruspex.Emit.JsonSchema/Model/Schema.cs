@@ -35,6 +35,16 @@ internal sealed record Schema(EquatableMap<string, SchemaValue> Keywords, Equata
     /// <summary>This schema with <paramref name="keyword"/> set when <paramref name="value"/> is given, and as it is otherwise.</summary>
     public Schema With(string keyword, int? value) => value is { } count ? With(keyword, new SchemaValue.Count(count)) : this;
 
+    /// <summary>
+    /// The database's description of what the schema is (a field's column, a procedure), the first paragraph of its
+    /// <c>description</c>, before the notes; null for none.
+    /// Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    public string? Described { get; init; }
+
+    /// <summary>This schema with the database's description of it (<see cref="Described"/>); as it is for none.</summary>
+    public Schema DescribedAs(string? description) => description is null ? this : this with { Described = description };
+
     /// <summary>This schema with a note added after the others.</summary>
     public Schema Noted(SchemaNote note) => this with { Notes = [.. Notes, note] };
 

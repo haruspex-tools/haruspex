@@ -205,6 +205,7 @@ public static class IrJsonReader
         NamesItsWriterAsLabelled(document, version);
         DeclaresBuildsAsLabelled(document, version);
         ReadsFoldersAsLabelled(document, version);
+        DescribesAsLabelled(document, version);
         return document;
     }
 
@@ -430,15 +431,35 @@ public static class IrJsonReader
     /// </summary>
     private static void ReadsFoldersAsLabelled(IrDocument document, string version)
     {
-        if (version == IrDocument.CurrentVersion && !document.ReadsFolders)
+        if (version == IrDocument.FoldersVersion && !document.ReadsFolders)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document whose source was read from several folders, and this one records no such source. One that records none is labelled {IrDocument.BuildsVersion} or earlier, by what else it says.");
-        if (version == IrDocument.CurrentVersion)
+        if (IrDocument.IsSince(version, IrDocument.FoldersVersion))
             return;
         if (document.Source.Paths.Count > 0)
-            throw new IrFormatException("$.source.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.FoldersVersion} or later.");
         if (document.Source.Baseline?.Paths.Count > 0)
-            throw new IrFormatException("$.source.baseline.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException("$.source.baseline.paths", $"is given in a document of IR {version}: a source read from several folders is IR {IrDocument.FoldersVersion} or later.");
     }
+
+    /// <summary>
+    /// Refuses a description (0.33) in a document labelled earlier, by its path, and a document labelled 0.33 that records none,
+    /// which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void DescribesAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentDescribed.First(document);
+        if (version == IrDocument.CurrentVersion && first is null)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that records a description, and this one records none. One that records none is labelled {IrDocument.FoldersVersion} or earlier, by what else it says.");
+        if (version != IrDocument.CurrentVersion && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a description is IR {IrDocument.CurrentVersion}.");
+    }
+
+    /// <summary>A description (0.33): left out when there is none, and never empty.</summary>
+    private static string? Description(IrJsonObject json) => json.OptionalString("description") switch
+    {
+        { Length: 0 } => throw new IrFormatException(json.PathOf("description"), "is empty: a thing with no description leaves it out."),
+        var text => text,
+    };
 
     /// <summary>The source of the other database a combined document describes, which has nothing more.</summary>
     private static IrSource Baseline(IrJsonObject json)
@@ -549,6 +570,7 @@ public static class IrJsonReader
         {
             Text = text,
             ReturnsCode = json.Boolean("returnsCode"),
+            Description = Description(json),
         };
         SetNames(obj, json);
         json.End();
@@ -574,6 +596,7 @@ public static class IrJsonReader
         var parameter = new IrParameter(json.String("name"), Type(json.Object("type")), json.Boolean("hasDefault"), json.Boolean("output"))
         {
             TableType = json.OptionalString("tableType"),
+            Description = Description(json),
         };
         json.End();
         return parameter;
@@ -695,6 +718,7 @@ public static class IrJsonReader
         {
             From = From(json),
             Sides = json.OptionalObject("sides") is { } sides ? Sides(sides) : null,
+            Description = Description(json),
         };
         json.End();
         return field;
