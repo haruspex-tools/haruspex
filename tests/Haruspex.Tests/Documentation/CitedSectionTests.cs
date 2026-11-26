@@ -8,7 +8,8 @@ namespace Haruspex.Tests.Documentation;
 /// section's title after naming the page (the Inference README, "Guards"; the guide's chapter 6, "What a guard proves"), and
 /// a link's anchor is checked (<c>MarkdownLinkTests</c>), but a quoted title is prose, and a
 /// section renamed leaves it pointing at nothing. Each quoted title after a named page must be a heading of that page, or
-/// the bold label that starts one of its paragraphs or list items.
+/// the bold label that starts one of its paragraphs or list items, and only one: a title two sections share can't say which
+/// is meant, and renaming either would leave the citation green.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -42,6 +43,35 @@ public partial class CitedSectionTests
         Assert.True(count > 100, $"Only {count.ToString(CultureInfo.InvariantCulture)} cited titles found.");
     }
 
+    /// <summary>
+    /// Cited titles that more than one section of the page has, so that a citation can't say which it means and renaming either
+    /// section leaves it green. These were there when the check came in; each is to be given distinct titles, and none is to be
+    /// added.
+    /// </summary>
+    private static readonly HashSet<(string Page, string Title)> SharedTitles =
+    [
+        ("docs/configuration.md", "Query files"),
+        ("docs/configuration.md", "What is written"),
+        (Inference, "Binary values"),
+        (Inference, "Conversions"),
+        (Inference, "JSON built here, traced"),
+        (Inference, "Literals"),
+        (Inference, "Names"),
+        (Inference, "OPENJSON"),
+        (Inference, "Precision lost"),
+        (Inference, "Strings"),
+    ];
+
+    [Fact]
+    public void Every_title_listed_as_shared_is_still_cited_and_shared()
+    {
+        var cited = Read().SelectMany(Citations).Select(c => (c.Page, c.Title)).ToHashSet();
+
+        var stale = SharedTitles.Where(t => !cited.Contains(t) || Sections(t.Page).Count(s => Cites(t.Title, s)) < 2).ToList();
+
+        Assert.True(stale.Count == 0, "Listed as shared, but no longer cited or shared:\n" + string.Join("\n", stale));
+    }
+
     [Theory]
     [MemberData(nameof(Files))]
     public void Every_title_cited_after_a_page_is_a_section_of_that_page(string path)
@@ -53,8 +83,10 @@ public partial class CitedSectionTests
             var at = $"{path}:{line.ToString(CultureInfo.InvariantCulture)}";
             if (page is null || !File.Exists(Path.Combine(RepositoryPaths.Root, page)))
                 problems.Add($"{at}: \"{title}\" is cited after a page that isn't there ({page ?? "no such chapter"}).");
-            else if (!Sections(page).Any(s => Cites(title, s)))
+            else if (Sections(page).Count(s => Cites(title, s)) is var count && count == 0)
                 problems.Add($"{at}: {page} has no section \"{title}\"; cite one of its headings, or the bold label of a paragraph.");
+            else if (count > 1 && !SharedTitles.Contains((page, title)))
+                problems.Add($"{at}: {page} has {count.ToString(CultureInfo.InvariantCulture)} sections \"{title}\", so the citation can't say which; give them distinct titles.");
         }
 
         Assert.True(problems.Count == 0, string.Join("\n", problems));

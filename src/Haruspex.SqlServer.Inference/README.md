@@ -2864,7 +2864,7 @@ FULL OUTER JOIN", "OPENJSON"). For the IR:
 
 - A set operation's column is named by its first query and has the SQL type SQL Server gives it, the one of highest
   precedence over every query's. Its facets are those every query whose values come out shares when each is already of
-  that type, and otherwise the type's ("Combining types" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
+  that type, and otherwise the type's ("Types combined by precedence" below); its `values` are the union of those queries' sets (a `CHECK`'s, or the literal a
   query gives, `from` `{ "expression": "<location>" }` as for `CASE`), left out when any has none or they are of different
   `match`. `INTERSECT` and `EXCEPT` give the left side's values only.
 - Its nullability: `UNION` and `UNION ALL` give every query's reasons (a `NULL` literal as `null-literal`), `INTERSECT` none
@@ -2920,7 +2920,7 @@ read; the engine rules, each observed, are above ("Decimal arithmetic",
   and every conversion that rounds ("Precision lost" above). With nothing declared, a value 0.17 claimed never null for these
   is nullable.
 
-### Combining types
+### Types combined by precedence
 
 A set operation's column, a `VALUES` list's, `COALESCE`, and `CASE`, `IIF` and `CHOOSE` over values of different types are
 typed by one rule, data type precedence over every value, for every pair of the types the expressions model; the engine
