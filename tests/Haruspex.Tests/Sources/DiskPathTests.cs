@@ -116,10 +116,6 @@ public class DiskPathTests
             Assert.StartsWith("/private/var/", real, StringComparison.Ordinal);
     }
 
-    /// <summary>The number of folders on the full path <paramref name="full"/> of a file, from its root: each one a walk lists.</summary>
-    private static int FoldersAbove(string full) =>
-        full[Path.GetPathRoot(full)!.Length..].Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).Length;
-
     [Fact]
     public void Locating_every_script_of_a_folder_through_one_read_s_listings_lists_each_folder_on_the_path_once()
     {
@@ -132,7 +128,7 @@ public class DiskPathTests
         var found = scripts.Select(s => DiskPath.Locate(s, s, listings, out _)).ToList();
 
         Assert.Equal(scripts.Cast<string?>(), found);
-        Assert.Equal(FoldersAbove(scripts[0]), listings.Listed);
+        FolderWalk.Listed(FolderWalk.To(scripts[0]), listings);
     }
 
     [Fact]
