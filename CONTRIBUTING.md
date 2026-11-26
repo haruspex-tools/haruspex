@@ -308,11 +308,12 @@ Nested types stay in the type they belong to, and a partial type's parts are nam
 | `packaging/npm` | The npm packages: the launcher of the `haruspex` command, and the script that packs it and each platform's binary into tarballs ([its README](packaging/npm/README.md)). |
 | `site` | The script that builds haruspex.tools, which serves every address haruspex writes, and its tests ([its README](site/README.md)). |
 
-Only `Model` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics` and
-`Collections` because their types are in those layers' public API; every other project is not. Nothing is published yet: that is a later decision, so don't push packages anywhere. Their public API
-must be documented, which the build enforces: a public member without a comment is an error (`CS1591`) in
-them and in the layers reusable enough to follow them (`Semantics` and `Ir`). A comment says what the member is
-for, not its name again.
+Only `Model`, `Syntax` and `Sources` are packable (`IsPackable`, with package metadata and a readme), with `Diagnostics`
+and `Collections` because their types are in those layers' public API; every other project is not. Nothing is published
+yet: that is a later decision, so don't push packages anywhere. Their public API must be documented, which the build
+enforces: a public member without a comment is an error (`CS1591`) in all five and in the layers reusable enough to follow
+them (`Semantics` and `Ir`), and `PackableDocumentationTests` fails on a packable project that `.editorconfig` leaves out.
+A comment says what the member is for, not its name again.
 
 ## Dependencies
 
