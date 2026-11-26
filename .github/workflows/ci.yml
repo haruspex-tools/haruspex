@@ -11,7 +11,8 @@ on:
   # Weekly, on main, so that what moves without a commit fails the maintainer's run first, not a contributor's pull request:
   # a NuGet advisory (fatal, CONTRIBUTING.md says why), the SDK's patch, a runner image, a fetched corpus. Mondays at 05:17
   # UTC: off the hour, since GitHub delays or drops scheduled runs at busy times, the start of an hour above all. GitHub
-  # turns a public repository's schedule off after 60 days without activity in it.
+  # turns a public repository's schedule off after 60 days without activity in it; it is then turned on again by hand (the
+  # Actions page, or `gh workflow enable CI`).
   schedule:
     - cron: "17 5 * * 1"
 

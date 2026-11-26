@@ -12,12 +12,14 @@ public partial class CiRecipeTests
 {
     private static string Workflow => File.ReadAllText(Path.Combine(RepositoryPaths.Root, ".github", "workflows", "ci.yml"));
 
-    /// <summary>Every <c>uses:</c> line in a fenced YAML block of the documentation, with its page and line.</summary>
+    /// <summary>
+    /// Every <c>uses:</c> line in a fenced block of the documentation, with its page and line. Every block, not only those
+    /// labelled YAML, so that a recipe whose fence loses its label is still read.
+    /// </summary>
     private static readonly List<(string Page, int Line, string Text)> Uses =
     [
         .. MarkdownText.Documentation.SelectMany(page =>
             MarkdownText.FencedBlocks(File.ReadAllText(Path.Combine(RepositoryPaths.Root, page)))
-                .Where(b => b.Words is ["yaml", ..] or ["yml", ..])
                 .SelectMany(b => b.Text.Split('\n').Select((text, i) => (page, b.Line + 1 + i, text)))
                 .Where(u => UsesLine().IsMatch(u.text))),
     ];

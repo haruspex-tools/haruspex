@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { floors, glibcVersions, isaNeeded, problems } from "../floors.mjs";
+import { check, floors, glibcVersions, isaNeeded, problems } from "../floors.mjs";
 
 const require = createRequire(import.meta.url);
 const { platforms } = require("../haruspex/lib/launcher.js");
@@ -70,4 +70,18 @@ test("output that can't be read fails rather than passes", () => {
 test("every Linux platform the packages ship has its floors, and no other platform has any", () => {
   const linux = platforms.filter((p) => p.os === "linux").map((p) => p.rid);
   assert.deepEqual(Object.keys(floors).sort(), linux.sort());
+});
+
+test("the check the native job runs refuses a binary above its floors, naming why, and passes one within them", () => {
+  const above = () => ({ symbols: symbols("2.34", "2.38"), notes: notes("x86-64-baseline, x86-64-v2, x86-64-v3") });
+  assert.throws(() => check("publish/haruspex", "linux-x64", above), {
+    message:
+      "publish/haruspex needs more than packaging/npm/README.md says: needs glibc 2.38, above the documented 2.34; " +
+      "needs x86-64-v2, above the documented x86-64-baseline; needs x86-64-v3, above the documented x86-64-baseline",
+  });
+  const within = () => ({ symbols: symbols("2.2.5", "2.34"), notes: notes("x86-64-baseline") });
+  assert.equal(
+    check("publish/haruspex", "linux-x64", within),
+    "publish/haruspex needs glibc 2.34 at most and x86-64-baseline: within its floors.",
+  );
 });

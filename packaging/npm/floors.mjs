@@ -76,19 +76,32 @@ export function problems(rid, symbols, notes) {
   return found;
 }
 
-/** Checks one binary, as the native job does before its upload: exit code 1, naming each problem, if there is one. */
+/** What `objdump -T` and `readelf -n` print for a binary, as the native job's runner has them. */
+function readBinary(binary) {
+  return {
+    symbols: execFileSync("objdump", ["-T", binary], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }),
+    notes: execFileSync("readelf", ["-n", binary], { encoding: "utf8" }),
+  };
+}
+
+/**
+ * Checks one binary, as the native job does before its upload: throws, naming each problem, if there is one, and otherwise
+ * returns the line to print. `read` gives what objdump and readelf print for it; the tests pass their own.
+ */
+export function check(binary, rid, read = readBinary) {
+  const { symbols, notes } = read(binary);
+  const found = problems(rid, symbols, notes);
+  if (found.length > 0) throw new Error(`${binary} needs more than packaging/npm/README.md says: ${found.join("; ")}`);
+  const isa = isaNeeded(notes);
+  return `${binary} needs glibc ${glibcVersions(symbols).at(-1)} at most and ${isa.length > 0 ? isa.join(", ") : "no x86 ISA level"}: within its floors.`;
+}
+
+/** The command: exit code 1 when the binary needs more than its floors. */
 function main() {
   const { positionals } = parseArgs({ allowPositionals: true });
   if (positionals.length !== 2) throw new Error("give the binary and its runtime identifier");
   const [binary, rid] = positionals;
-  const symbols = execFileSync("objdump", ["-T", binary], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  const notes = execFileSync("readelf", ["-n", binary], { encoding: "utf8" });
-  const found = problems(rid, symbols, notes);
-  if (found.length > 0) throw new Error(`${binary} needs more than packaging/npm/README.md says: ${found.join("; ")}`);
-  const isa = isaNeeded(notes);
-  console.log(
-    `${binary} needs glibc ${glibcVersions(symbols).at(-1)} at most and ${isa.length > 0 ? isa.join(", ") : "no x86 ISA level"}: within its floors.`,
-  );
+  console.log(check(binary, rid));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
