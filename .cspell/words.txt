@@ -111,6 +111,7 @@ sysdatetimeoffset
 syslanguages
 sysname
 sysutcdatetime
+tablesample
 tablock
 tempdb
 timefromparts

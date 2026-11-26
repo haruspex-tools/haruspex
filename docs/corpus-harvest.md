@@ -22,7 +22,7 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | `dynamic-sql` | 5 | 0 | 96 | 0 | 101 | 6 |
 | `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
 | `unsupported-sql-type` | 20 | 0 | 0 | 39 | 59 | 5 |
-| `unsupported-statement` | 14 | 0 | 22 | 0 | 36 | 4 |
+| `unsupported-statement` | 4 | 0 | 22 | 0 | 26 | 4 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |
 | `procedure-variable` | 0 | 0 | 12 | 0 | 12 | 3 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
@@ -273,7 +273,7 @@ From [its repository](https://github.com/Ed-Fi-Alliance-OSS/edfi-oneroster) at c
 
 ### Bitwarden
 
-**Typed 5,149 of 5,163 fields in Bitwarden; the results of 38 of its 625 procedures can't be described, so they have no fields to count.** 320 of the 323 procedures that return fields are fully typed.
+**Typed 5,159 of 5,163 fields in Bitwarden; the results of 38 of its 625 procedures can't be described, so they have no fields to count.** 321 of the 323 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/bitwarden/server) at commit `341acc9d3d8988cec8fe05debfa6d557cf5ab749`, under `AGPL-3.0-only` (`LICENSE_AGPL.txt` and `LICENSE.txt`, fetched with it). The database project of Bitwarden's server, a password manager: an SDK-style project and the largest real application here, with user-defined table types as parameters and JSON functions. Under the AGPL, so it is only ever fetched, never vendored.
 
@@ -289,9 +289,9 @@ From [its repository](https://github.com/bitwarden/server) at commit `341acc9d3d
 | Procedures whose result sets can't be listed | 1 |
 | Procedures that return no result set | 264 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 320 |
+| Procedures that return fields, fully typed | 321 |
 | Fields | 5,163 |
-| Fields typed | 5,149 |
+| Fields typed | 5,159 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 390 |
 | Results of unknown shape | 40 |
@@ -301,7 +301,7 @@ From [its repository](https://github.com/bitwarden/server) at commit `341acc9d3d
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `unnamed-column` | 0 | 40 | 0 | 0 |
-| `unsupported-statement` | 14 | 0 | 1 | 0 |
+| `unsupported-statement` | 4 | 0 | 1 | 0 |
 
 ## Tools
 

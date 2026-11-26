@@ -99,14 +99,6 @@ public partial class DmlTests
     }
 
     [Fact]
-    public void Output_of_a_write_through_a_cte_is_unknown()
-    {
-        var doc = Doc(("p", "CREATE PROCEDURE dbo.p AS WITH c AS (SELECT i.id, i.label FROM dbo.item AS i) UPDATE c SET label = N'x' OUTPUT inserted.label;"));
-
-        Assert.IsType<IrUnknownType>(Field(doc, "label").Type);
-    }
-
-    [Fact]
     public void Output_of_the_from_sources_is_refined_by_the_where()
     {
         var doc = Doc(("p", "CREATE PROCEDURE dbo.p AS UPDATE i SET qty = 0 OUTPUT n.text FROM dbo.item AS i JOIN dbo.note AS n ON n.id = i.id WHERE n.text IS NOT NULL;"));

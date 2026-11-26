@@ -8,7 +8,7 @@ namespace Haruspex.DifferentialTests;
 /// "Cursors"). Each test creates what it needs in a write session, rolled back, alone in the test database while it lasts.
 /// Observed on SQL Server 2025 RTM-CU10.
 /// </summary>
-public class DmlObservationTests(SqlServerFixture server)
+public partial class DmlObservationTests(SqlServerFixture server)
 {
     private Task<CallOutcome> Run(string[] setup, string call, bool errorsAsMessages = false) =>
         ObservedCall.Run(server, setup, call, errorsAsMessages);
