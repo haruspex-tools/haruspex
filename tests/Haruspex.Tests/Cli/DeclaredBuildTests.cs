@@ -87,6 +87,30 @@ public class DeclaredBuildTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void Each_file_s_header_names_the_packages_declared_builds_only_when_there_are_some(bool declared)
+    {
+        // What the claims rest on is said where they are read, as a declared session is; with no build declared, nothing is said,
+        // so every module written before is unchanged.
+        const string Sentence = "Its types assume that atelier-extract.dacpac was built from a project, as the config file declares, so its primary keys and unique constraints hold.";
+        using var folder = new TempDirectory();
+        File.Copy(ExtractPath, Path.Combine(folder.Path, Extract));
+        folder.File("haruspex.json", $$"""{ "source": "{{Extract}}",{{(declared ? Declared : "")}} "out": "out", "emit": ["zod", "json-schema", "mssql"], "schemas": { "studio": { "include": ["shelf_by_id"] } } }""");
+
+        var (exitCode, _, error) = Run(folder, "generate");
+
+        Assert.True(exitCode == 0, error);
+        foreach (var file in new[] { HaruspexCli.ZodFileName, HaruspexCli.MssqlFileName, HaruspexCli.JsonSchemaFileName })
+        {
+            // A module's comment wraps a long line, which joined again reads as written.
+            var text = File.ReadAllText(Path.Combine(folder.Path, "out", file)).ReplaceLineEndings("\n").Replace("\n// ", " ", StringComparison.Ordinal);
+            Assert.True(declared == text.Contains(Sentence, StringComparison.Ordinal), $"{file}: {text[..Math.Min(text.Length, 1500)]}");
+            Assert.True(declared == text.Contains("built from a project", StringComparison.Ordinal), file);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void A_project_s_reference_to_a_package_declared_a_build_keeps_its_keys_and_is_recorded(bool declared)
     {
         // The .sqlproj route end to end: builds passes from the config file through the project's read to the referenced package.

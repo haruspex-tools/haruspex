@@ -68,9 +68,9 @@ internal static class ZodLowering
             && type.Fields.Any(f => f.Presence == IrPresence.OmittedWhenNull && f.Nullable));
 
     /// <summary>
-    /// The header: what made the module, what the callers' sessions were declared to set, that <c>FOR JSON</c> leaves out a null
-    /// key when the module has such a key, and once each, the shared facts its properties' notes rest on (<see cref="ZodCaveat"/>),
-    /// so that a note can say what is particular to its property in one sentence.
+    /// The header: what made the module, what the callers' sessions were declared to set, which packages were declared builds, that
+    /// <c>FOR JSON</c> leaves out a null key when the module has such a key, and once each, the shared facts its properties' notes
+    /// rest on (<see cref="ZodCaveat"/>), so that a note can say what is particular to its property in one sentence.
     /// </summary>
     /// <remarks>
     /// The rule for null keys is said here rather than on each key, so that a key left out only because its column is nullable
@@ -90,6 +90,9 @@ internal static class ZodLowering
             var options = source.Session.Select(o => $"{o.Name} {(o.On ? "on" : "off")}");
             yield return $"Its types assume that callers' sessions set {Listed([.. options])}, as the config file declares.";
         }
+
+        if (IrSourceText.Builds(source) is { } builds)
+            yield return builds;
 
         if (leavesOutNullKeys)
             yield return IrFieldText.KeyLeftOutWhenNull + ", so a key they may leave out is optional rather than nullable.";
