@@ -183,8 +183,10 @@ So the typer holds readonly fields only, all fixed when it is built, and reads n
 test reads both from their compiled code (`TyperAndWalkerTests`): every field of `Typer` and `Cardinality` is readonly; none
 holds a walker; none holds what can change, since a readonly list can still be added to, unless it is listed with why it is
 no state of a read (the memo tables of `Binder` and `Summaries`, whose answer to a question never depends on the questions
-before it, and the model); and no method of theirs, lambdas and nested types included, uses a field, property, method or
-constructor of `Walker` or a type nested in it. Types planted to break each rule show the test sees each break.
+before it; the model; `ParameterUses`, where a query file's first walk keeps what its parameters' uses say, which the typer
+only adds to and never reads; `MaskTally`, a count of masked values that no read depends on; and the rows of the function
+table, `FunctionTyping`, made once from values that can't change); and no method of theirs, lambdas and nested types
+included, uses a field, property, method or constructor of `Walker` or a type nested in it. Types planted to break each rule show the test sees each break.
 
 ## Alternatives
 

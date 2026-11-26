@@ -2,7 +2,9 @@
 
 The decisions haruspex's design rests on, one short record each: when it was made, what was decided, the context, the
 alternatives, and why they lost. The code and the guide link here rather than repeat the argument. A record describes the
-decision as it stands; when one is reversed, the record says so and links its successor, and is not deleted.
+decision as it stands; when one is reversed, the record says so and links its successor, and is not deleted. A number is
+set aside when work that may need a record starts, so a number whose work needed none is never used: the log has gaps
+(0049, 0089 and 0090 are the first), and no record was deleted to make them.
 
 | Record | Date | Decision |
 |---|---|---|

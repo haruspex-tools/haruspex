@@ -73,7 +73,7 @@ A few words have a fixed meaning everywhere in the documentation.
 | [Five minutes with AdventureWorks](quick-start.md) | A first run, from a fresh clone, that a test runs as written. |
 | [The database module](database-module.md) | The generated functions: calling a procedure, what comes back, the parameters' checks, the three failures and where they run; and reading results with the schemas alone. |
 | [The application's own types](layers.md) | The three layers: the generated function calls, the generated schema checks, and a thin step written by hand makes the application's types; and the mapping helper, with which that step accounts for every key of a row. |
-| [The command line](../src/Haruspex.Cli/README.md) | `haruspex generate` and `haruspex check`: their arguments and options, several modules at once, what they print, and their exit codes. |
+| [The command line](command-line.md) | `init`, `generate`, `check` and `explain`: what each prints, their options, the formats for tools and CI, the environment variables they read and their exit codes. How a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md). |
 | [The generated code](../src/Haruspex.Emit.Zod/README.md) | What the Zod module holds, and how each SQL type arrives: in JSON, and in a row as the mssql driver delivers it. |
 | [Configuration](configuration.md) | Every setting of `haruspex.json`, held to its [JSON Schema](../schemas/haruspex.schema.json) by a test. |
 | [Diagnostics](diagnostics/README.md) | Every code haruspex reports, with a page each: what it means, why, and what to do. |
