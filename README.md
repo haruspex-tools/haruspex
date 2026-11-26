@@ -64,6 +64,38 @@ file, may go to the browser. [The database module](docs/database-module.md) has 
 The generated types are the database's, not the application's: [the application's own types](docs/layers.md) shows the thin
 step, written by hand on them, where an absent list becomes empty, a figure gets its unit and the database's names stop.
 
+## Quick start
+
+`haruspex init` finds the database's files and writes a starter `haruspex.json`; `haruspex generate` writes the module. Run
+again after a change to the database, it says what changed, and nothing else (an invented kennel database, after a column
+was made nullable and a procedure added):
+
+```text
+$ haruspex generate
+haruspex: 3 procedures, 1 unknown. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
+4 changes since the last run:
+  + kennel.count_dogs: added
+  ~ kennel.get_dog results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: became nullable
+  ~ kennel.list_dogs results[0][].name: presence changed from always to omittedWhenNull
+1 unknown, as before (--verbose lists them).
+```
+
+When nothing changed, that is one line: `haruspex: nothing changed since the last run: 3 procedures, 1 unknown`. In CI,
+`haruspex check` fails when the module in the output folder, the one committed, would change, with annotations in GitHub Actions; [the command
+line](docs/command-line.md) has the rest. Keep the output folder out of your formatter: in `.prettierignore`, or as an
+exclusion in Biome's `files.includes` (`"includes": ["**", "!src/db"]` for `src/db`). Otherwise a formatter (Prettier, Biome,
+an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with
+what haruspex writes.
+
+With haruspex built ([Install](#install)) and run as [the command line](docs/command-line.md) says, the essentials, read in order, give a working setup:
+[five minutes with AdventureWorks](docs/quick-start.md), from a fresh clone to the schemas and the function for one of the
+sample's procedures; [the database module](docs/database-module.md), how an application calls them;
+[the application's own types](docs/layers.md); [the example application](examples/greenhouse/README.md), which calls its
+procedures through the functions haruspex wrote for it; and the essentials of [the configuration](docs/configuration.md) and
+[the command line](docs/command-line.md), for your own database. [The documentation's index](docs/README.md) lists them, and
+says what every other page is for.
+
 ## Examples on Microsoft's sample databases
 
 Each example is written for this page over the real tables of a Microsoft sample kept in
@@ -347,26 +379,27 @@ from its alias type `Name`, and `unit` is exactly three UTF-16 code units becaus
 points, of which a character outside the Basic Multilingual Plane (an emoji) is one but takes two code units, so it checks two
 to three.
 
-## Other ways to use it
+[The harvest](docs/corpus-harvest.md) measures more databases; [what haruspex models](docs/coverage.md) lists every construct.
 
-- **The types and parsers alone**, for a team that calls the driver itself: leave `"mssql"` out of `emit`, and parse each
-  result with its schema, `GetOrderSchema.parse(response.recordset?.[0] ?? null)` with the driver's `parseJSON` on
-  ([how to read each kind of result](docs/database-module.md#calling-the-driver-yourself)).
-- **Other languages**: `"json-schema"` in `emit` writes the same claims as one JSON Schema document, for any language with a
-  validator ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
-- **Drift caught in CI**: `haruspex check` fails a build when a change to the SQL would change what the module in the output folder (in CI,
-  the committed one) says,
-  naming each change (`shop.list_orders results[0][].note: became nullable`).
-- **Safe to deploy**: `haruspex check --baseline` fails a change that the application already running, built against the last
-  release, would fail on, and passes one it can take, such as a new column
-  ([checking against a baseline](docs/command-line.md#checking-against-a-baseline), with recipes for both sides' CI).
-- **Several modules**: plugins or sub-applications each have a `haruspex.json` of their own, sharing nothing, and
-  `check --all` checks them all in one step ([the command line](src/Haruspex.Cli/README.md), with a CI job to copy). One
-  application's output can be split too, into a module per schema with a shared file for what they share, so that code imports
-  only what it uses ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)).
-- **Why a type is what it is**: `haruspex explain shop.list_orders note` prints a field's derivation, the columns it is read
-  from and each rule that acted on it, with where in the SQL, from the committed IR alone
-  ([`explain`](docs/command-line.md#explain)). The generated code's comments name the command for each field.
+## Advanced features
+
+What some projects need, each a line here; [the documentation's index](docs/README.md#advanced-features) says which situation
+each is for.
+
+- **Separate deployments:** types that work against both databases, and a check of the running application ([a baseline](docs/command-line.md#checking-against-a-baseline)).
+- **The callers' session:** more claims when connections set `ANSI_WARNINGS` or hold `UNMASK` ([`session`](docs/configuration.md#the-callers-session-session)).
+- **Dynamic SQL:** results declared where the project can't show them ([declared results](docs/configuration.md#declared-results-results)).
+- **JSON columns:** JSON stored in a column, typed by a JSON Schema ([`columns`](docs/configuration.md#json-stored-in-a-column-columns)).
+- **Overrides:** what the team knows and the database can't prove, and other names ([overrides](docs/configuration.md#overrides)).
+- **Descriptions:** the database's descriptions under a name of its own ([`descriptions`](docs/configuration.md#descriptions-descriptions)).
+- **A DACPAC built by another tool:** its key constraints, on your word ([`builds`](docs/configuration.md#a-package-built-by-another-tool-builds)).
+- **Several source folders:** a database kept beside folders that aren't its own ([`source` as a list](docs/configuration.md#several-folders-source-as-a-list)).
+- **Several modules:** a module per schema ([`split`](docs/configuration.md#splitting-the-output-into-modules-split)), or per plugin ([`check --all`](src/Haruspex.Cli/README.md)).
+- **Why a type is what it is:** a field's derivation from the committed IR ([`explain`](docs/command-line.md#explain)).
+- **Tools and CI:** the report as JSON, SARIF or GitHub annotations ([the formats](docs/command-line.md#formats)).
+- **Other languages:** the same claims as one JSON Schema document ([the JSON Schema emitter](src/Haruspex.Emit.JsonSchema/README.md)).
+- **The schemas alone:** for an application that calls the driver itself ([reading each result](docs/database-module.md#calling-the-driver-yourself)).
+- **Every key accounted for:** a mapper the compiler stops when a row gains a key ([the mapping helper](docs/layers.md#a-mapper-that-accounts-for-every-key)).
 
 ## What it guarantees, and what it can't see
 
@@ -528,35 +561,6 @@ itself; the package declares that range of zod as an optional peer dependency. 4
 4.4.3 is known not to be enough: it counts a string's length in UTF-16 code units, so it refuses values a length declared in
 code points allows. The tests compile
 every generated module in strict mode with zod 4.6.7, mssql 12.7.14 and TypeScript 7.0.2.
-
-## Quick start
-
-`haruspex init` finds the database's files and writes a starter `haruspex.json`; `haruspex generate` writes the module. Run
-again after a change to the database, it says what changed, and nothing else (an invented kennel database, after a column
-was made nullable and a procedure added):
-
-```text
-$ haruspex generate
-haruspex: 3 procedures, 1 unknown. Wrote src/db/haruspex.ir.json and src/db/haruspex.zod.ts.
-4 changes since the last run:
-  + kennel.count_dogs: added
-  ~ kennel.get_dog results[0][].name: became nullable
-  ~ kennel.list_dogs results[0][].name: became nullable
-  ~ kennel.list_dogs results[0][].name: presence changed from always to omittedWhenNull
-1 unknown, as before (--verbose lists them).
-```
-
-When nothing changed, that is one line: `haruspex: nothing changed since the last run: 3 procedures, 1 unknown`. In CI,
-`haruspex check` fails when the module in the output folder, the one committed, would change, with annotations in GitHub Actions; [the command
-line](docs/command-line.md) has the rest. Keep the output folder out of your formatter: in `.prettierignore`, or as an
-exclusion in Biome's `files.includes` (`"includes": ["**", "!src/db"]` for `src/db`). Otherwise a formatter (Prettier, Biome,
-an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with
-what haruspex writes.
-
-[Five minutes with AdventureWorks](docs/quick-start.md) goes from a fresh clone to the schemas and the function for one of
-the sample's procedures. [The example application](examples/greenhouse/README.md) calls its procedures through the
-functions haruspex wrote for it, and [the configuration](docs/configuration.md) shows a `haruspex.json` for your own
-database. [The documentation's index](docs/README.md) says what every other page is for.
 
 ## How it is built
 

@@ -1,8 +1,10 @@
 # The database module
 
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
-parameters are checked, how it fails, where it runs, and the functions of the application's own query files. The last section is for an application that calls the
-[mssql](https://www.npmjs.com/package/mssql) driver itself, with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
+parameters are checked, how it fails, where it runs, and the functions of the application's own query files. Those are the
+essentials. The [advanced features](#advanced-features) follow, for some applications: table-valued parameters, a module
+that works against two databases, several modules, a test double, and calling the [mssql](https://www.npmjs.com/package/mssql) driver itself,
+with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
 says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI. What a
 function returns is the database's shape; [the application's own types](layers.md) shows the step that makes it the
 application's.
@@ -69,30 +71,6 @@ procedure always returns that doesn't arrive fails the call either way
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
 
-## Working against two databases
-
-Generated with a baseline (`haruspex generate --baseline`, or `"baseline"` in the config file), the module works against the
-database before a change is deployed and after it, so a release of the application can go out before the database's change, or
-after it ([Generating against a baseline](command-line.md#generating-against-a-baseline)). Each file's header says so:
-
-```ts
-// Combined with a baseline (Shop.dacpac): results accept what either database returns, and parameters take only what both accept.
-```
-
-What changes for the code that calls the functions:
-
-- **A key one database doesn't return is optional** (`row.channel` is `string | null | undefined`), and so is a key one leaves
-  out when null where the other sends the null. Read it with a default, `row.channel ?? 'web'`, in the step that makes the row
-  the application's own ([the application's own types](layers.md)); once the baseline moves on, the key is required again, and
-  the compiler shows the defaults no longer needed.
-- **A value set, a length or a range is the wider of the two**, and a value of another kind in each database is a union of both.
-- **A result set only one database returns may be missing**: `[]` for rows, `null` for a `FOR JSON` result, as a set whose
-  statement didn't run is.
-- **A parameter only one procedure has is left out** while it has a default there, and a parameter's type is the narrower of the
-  two, so the function never sends what one of them refuses.
-- **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
-  doesn't compile, which the run's error explains (HAR6033).
-
 ## How the parameters are checked
 
 Before it asks the connection for a request, a function checks its parameters with a strict schema of each one's declared
@@ -119,8 +97,103 @@ Each value is then sent with the driver's type for the declared one: `nvarchar(4
 precision and scale, `binary(32)` as `sql.VarBinary(32)`, which the server pads to its length. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be
 left out, and it is then not sent at all, so that its default applies.
 
+## When a call fails
+
+A function fails in one of three ways, each thrown
+([decision 0056](decisions/0056-a-function-throws-three-kinds-of-failure.md)):
+
+- **The parameters were wrong.** A `ParameterError`, whose `name` is `'HaruspexParameterError'` and `kind` is `'parameters'`, thrown
+  before the connection is touched. Its message names the procedure and each failing parameter, and `issues` lists them.
+  Nothing was sent, so the fault is in the calling code.
+- **The database raised an error.** mssql's own `RequestError`, passed through unchanged, with its `number`, `state`,
+  `class`, `procName` and `lineNumber`, so existing handling of the driver's errors keeps working.
+- **What came back broke the contract.** A `ResultError`, whose `name` is `'HaruspexResultError'` and `kind` is `'result'`, naming
+  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. In a procedure of several result
+  sets the path starts with the set, counted from 1, and a set's count of rows is said in rows:
+  `sales.order_sheet, the results: result set 2: Expected exactly one row`. The database and the application are deployed out
+  of step, which no retry fixes: it calls for a deployment, not a second attempt.
+
+Connection failures and timeouts are the driver's, untouched. Each module writes its own error classes, so an application
+with several modules tells the errors apart by `name` or `kind`, not `instanceof`:
+
+```ts
+try {
+  return await getOrder(pool, { OrderID: id })
+} catch (error) {
+  if (error instanceof Error && error.name === 'HaruspexParameterError') return null   // an id the procedure can't take
+  throw error
+}
+```
+
+## Where the functions run
+
+On the server. They take a connection, and a connection holds the database's credentials. In a Next.js application they are
+for route handlers, server actions and server components; the types and schemas, in their own file, may go anywhere.
+[`serverOnly`](configuration.md#what-is-written-emit), in the configuration, makes a build fail where browser code imports
+the functions' file.
+
+**In tests.** With `"serverOnly": true`, a test that imports the functions' file, itself or through the code under test,
+imports `server-only` too, and a test runner resolves it as Node does: `Cannot find package 'server-only'` when it isn't
+installed, and when it is, the package's own error, `This module cannot be imported from a Client Component module`, since
+it is empty only under the `react-server` condition, which Next.js sets for server code. So the tests need one of these
+(both checked with Vitest 5.1):
+
+- `server-only` installed (`npm install --save-dev server-only`) and resolved under the `react-server` condition, beside
+  Vite's own conditions for server code. The condition then applies to every package the tests import, so a package with a
+  `react-server` build, React among them, resolves to that build:
+
+  ```ts
+  // vitest.config.ts
+  import { defaultServerConditions } from 'vite'
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ ssr: { resolve: { conditions: [...defaultServerConditions, 'react-server'] } } })
+  ```
+
+- or `server-only`, installed or not, resolved to an empty module of the application's own (`export {}`), which changes
+  nothing else:
+
+  ```ts
+  // vitest.config.ts
+  import { fileURLToPath } from 'node:url'
+  import { defineConfig } from 'vitest/config'
+
+  export default defineConfig({ resolve: { alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) } } })
+  ```
+
+## Query files
+
+A query file the config file names in `queries` ([the configuration](configuration.md#query-files-queries)) has a function as a
+procedure has, named for the file by the same rules: `sql/get_order_card.sql` is `getOrderCard`. Procedures and query files share
+the module's names, so one that would take another's is an error naming both ([HAR4303](diagnostics/HAR4303.md),
+[HAR5201](diagnostics/HAR5201.md)). It is called the same way, and returns as a procedure's does:
+
+```ts
+import { getOrderCard } from './db/haruspex.mssql'
+
+const card = await getOrderCard(pool, { order_id: 42 })
+```
+
+The function sends the file's text, as it is written, through `sp_executesql`, declaring each parameter with the type haruspex
+inferred for it, or the one a comment in the file declares (`-- @param @label nvarchar(40)`), so the query runs with the types
+it was typed with. Each value is checked and sent as a procedure's is, and the server converts it to that declared type, so a date
+sent as its ISO 8601 string is a `date` in the query, not text. A parameter whose type nothing decides can't be declared, and
+stops the run until the file declares it ([HAR5202](diagnostics/HAR5202.md)). Every parameter accepts `null`.
+
+What can fail is what a procedure's call can, with a query file's path where a procedure's name would be: a `ParameterError`'s
+and a `ResultError`'s `procedure`, and their messages, name the file (`sql/get_order_card.sql: @order_id: …`). The database's
+error is mssql's `RequestError`. A query file has no `OUTPUT` parameters and no return code: a batch run through `sp_executesql` may
+`RETURN`, but SQL Server refuses `RETURN` with a value there (error 178), so haruspex refuses such a file when it reads it
+([HAR1017](diagnostics/HAR1017.md)), the code is always 0, and a query file of one result set returns that result itself. The text is part of the module, so
+`haruspex check` fails when a query file has changed since the module was generated.
+
+## Advanced features
+
+The sections from here on are for some applications, not every one, and each opens with the situation it is for.
+
 ## Table-valued parameters
 
+**For a procedure that takes a table-valued parameter.**
 A `READONLY` parameter of a table type is an array of the type's rows. For this type and procedure:
 
 ```sql
@@ -163,36 +236,41 @@ all, not even with no rows, so its parameter is unknown and can only be left out
 type's definition in the two IR files: a type changed so that a row the running application sends may be refused, or land in
 another column, fails the check.
 
-## When a call fails
+## Working against two databases
 
-A function fails in one of three ways, each thrown
-([decision 0056](decisions/0056-a-function-throws-three-kinds-of-failure.md)):
-
-- **The parameters were wrong.** A `ParameterError`, whose `name` is `'HaruspexParameterError'` and `kind` is `'parameters'`, thrown
-  before the connection is touched. Its message names the procedure and each failing parameter, and `issues` lists them.
-  Nothing was sent, so the fault is in the calling code.
-- **The database raised an error.** mssql's own `RequestError`, passed through unchanged, with its `number`, `state`,
-  `class`, `procName` and `lineNumber`, so existing handling of the driver's errors keeps working.
-- **What came back broke the contract.** A `ResultError`, whose `name` is `'HaruspexResultError'` and `kind` is `'result'`, naming
-  the procedure, the part (`the results` or `the OUTPUT parameters`) and each issue's path. In a procedure of several result
-  sets the path starts with the set, counted from 1, and a set's count of rows is said in rows:
-  `sales.order_sheet, the results: result set 2: Expected exactly one row`. The database and the application are deployed out
-  of step, which no retry fixes: it calls for a deployment, not a second attempt.
-
-Connection failures and timeouts are the driver's, untouched. Each module writes its own error classes, so an application
-with several modules tells the errors apart by `name` or `kind`, not `instanceof`:
+**For an application and a database that deploy separately.**
+Generated with a baseline (`haruspex generate --baseline`, or `"baseline"` in the config file), the module works against the
+database before a change is deployed and after it, so a release of the application can go out before the database's change, or
+after it ([Generating against a baseline](command-line.md#generating-against-a-baseline)). Each file's header says so:
 
 ```ts
-try {
-  return await getOrder(pool, { OrderID: id })
-} catch (error) {
-  if (error instanceof Error && error.name === 'HaruspexParameterError') return null   // an id the procedure can't take
-  throw error
-}
+// Combined with a baseline (Shop.dacpac): results accept what either database returns, and parameters take only what both accept.
 ```
+
+What changes for the code that calls the functions:
+
+- **A key one database doesn't return is optional** (`row.channel` is `string | null | undefined`), and so is a key one leaves
+  out when null where the other sends the null. Read it with a default, `row.channel ?? 'web'`, in the step that makes the row
+  the application's own ([the application's own types](layers.md)); once the baseline moves on, the key is required again, and
+  the compiler shows the defaults no longer needed.
+- **A value set, a length or a range is the wider of the two**, and a value of another kind in each database is a union of both.
+- **A result set only one database returns may be missing**: `[]` for rows, `null` for a `FOR JSON` result, as a set whose
+  statement didn't run is.
+- **A parameter only one procedure has is left out** while it has a default there, and a parameter's type is the narrower of the
+  two, so the function never sends what one of them refuses.
+- **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
+  doesn't compile, which the run's error explains (HAR6033).
+
+## Several modules in one application
+
+**For an application whose plugins or sub-applications each need their own interface to the database.** Such an
+application gives each its own `haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
+another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
+[The command line](../src/Haruspex.Cli/README.md) says how `generate` and `check` run several at once.
 
 ## Testing with a double
 
+**For a test that runs a function without a database.**
 A function takes anything with `request()`, so a test can hand it a double rather than a pool. The double's `request()`
 returns an object with `input()` and `output()`, whose results the function ignores, and `execute()`, which the function
 calls for a procedure and for a query file alike (a query file runs through `sp_executesql`). What `execute()` resolves to
@@ -235,76 +313,10 @@ const sale = await ringUp(returning([[{ basket_id: '7', discount: 0, gift: false
 What the double returns is still checked by the procedure's schemas, so a double that drifts from the database fails the
 way the database would, with a `ResultError`.
 
-## Where the functions run
-
-On the server. They take a connection, and a connection holds the database's credentials. In a Next.js application they are
-for route handlers, server actions and server components; the types and schemas, in their own file, may go anywhere.
-`"serverOnly": true` in `haruspex.json` starts the functions' file with `import 'server-only'`, so that a build fails where
-browser code imports it. It is off by default, since haruspex assumes no framework.
-
-**In tests.** With `"serverOnly": true`, a test that imports the functions' file, itself or through the code under test,
-imports `server-only` too, and a test runner resolves it as Node does: `Cannot find package 'server-only'` when it isn't
-installed, and when it is, the package's own error, `This module cannot be imported from a Client Component module`, since
-it is empty only under the `react-server` condition, which Next.js sets for server code. So the tests need one of these
-(both checked with Vitest 5.1):
-
-- `server-only` installed (`npm install --save-dev server-only`) and resolved under the `react-server` condition, beside
-  Vite's own conditions for server code. The condition then applies to every package the tests import, so a package with a
-  `react-server` build, React among them, resolves to that build:
-
-  ```ts
-  // vitest.config.ts
-  import { defaultServerConditions } from 'vite'
-  import { defineConfig } from 'vitest/config'
-
-  export default defineConfig({ ssr: { resolve: { conditions: [...defaultServerConditions, 'react-server'] } } })
-  ```
-
-- or `server-only`, installed or not, resolved to an empty module of the application's own (`export {}`), which changes
-  nothing else:
-
-  ```ts
-  // vitest.config.ts
-  import { fileURLToPath } from 'node:url'
-  import { defineConfig } from 'vitest/config'
-
-  export default defineConfig({ resolve: { alias: { 'server-only': fileURLToPath(new URL('./test/empty.ts', import.meta.url)) } } })
-  ```
-
-An application whose plugins or sub-applications each need their own interface to the database gives each its own
-`haruspex.json`. Each is a module of its own, with its own procedures, names, files and committed contract. No module imports
-another, so a procedure two modules select is typed in each, and two modules may each have a `getOrder`.
-[The command line](../src/Haruspex.Cli/README.md) says how `generate` and `check` run several at once.
-
-## Query files
-
-A query file the config file names in `queries` ([the configuration](configuration.md#query-files-queries)) has a function as a
-procedure has, named for the file by the same rules: `sql/get_order_card.sql` is `getOrderCard`. Procedures and query files share
-the module's names, so one that would take another's is an error naming both ([HAR4303](diagnostics/HAR4303.md),
-[HAR5201](diagnostics/HAR5201.md)). It is called the same way, and returns as a procedure's does:
-
-```ts
-import { getOrderCard } from './db/haruspex.mssql'
-
-const card = await getOrderCard(pool, { order_id: 42 })
-```
-
-The function sends the file's text, as it is written, through `sp_executesql`, declaring each parameter with the type haruspex
-inferred for it, or the one a comment in the file declares (`-- @param @label nvarchar(40)`), so the query runs with the types
-it was typed with. Each value is checked and sent as a procedure's is, and the server converts it to that declared type, so a date
-sent as its ISO 8601 string is a `date` in the query, not text. A parameter whose type nothing decides can't be declared, and
-stops the run until the file declares it ([HAR5202](diagnostics/HAR5202.md)). Every parameter accepts `null`.
-
-What can fail is what a procedure's call can, with a query file's path where a procedure's name would be: a `ParameterError`'s
-and a `ResultError`'s `procedure`, and their messages, name the file (`sql/get_order_card.sql: @order_id: …`). The database's
-error is mssql's `RequestError`. A query file has no `OUTPUT` parameters and no return code: a batch run through `sp_executesql` may
-`RETURN`, but SQL Server refuses `RETURN` with a value there (error 178), so haruspex refuses such a file when it reads it
-([HAR1017](diagnostics/HAR1017.md)), the code is always 0, and a query file of one result set returns that result itself. The text is part of the module, so
-`haruspex check` fails when a query file has changed since the module was generated.
-
 ## Calling the driver yourself
 
-An application that calls the driver itself, or through code of its own, uses the schemas alone (`"emit": ["zod"]`). It parses
+**For an application that calls the driver itself**, or through code of its own.
+Such an application uses the schemas alone (`"emit": ["zod"]`). It parses
 each result with the procedure's schema before using it, so that data which breaks a claim fails at the boundary, loudly,
 rather than deep in the code. The parameters' schema (`GetOrderParamsSchema`) checks what it sends, as the functions do.
 

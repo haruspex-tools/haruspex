@@ -15,58 +15,22 @@ schema file's own `$id` is its address on `main`.
 **An unknown key is an error**, with its path and line. It is never ignored, because a misspelt setting would
 otherwise silently do nothing.
 
+The page is in two parts. The **essentials**, from [reading a folder of scripts](#reading-a-folder-of-scripts-source) to
+[the settings you probably want](#the-settings-you-probably-want), are what every project sets: where the database is, which
+procedures are typed, the application's query files, what is written and what `check` fails on. Read alone and in order, they
+give a working file. The [advanced settings](#advanced-settings) are what some projects need, and each of their sections opens
+with the situation it is for. A file of the essentials alone:
+
 ```jsonc
 {
   "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
-  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac; or a list of folders
-  "baseline": "release/database",           // the database before the change being made; see "The baseline"
-  "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
-  "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "The database's collation"
-  "descriptions": ["MS_Description"],       // the extended properties that describe; see "Descriptions"
-  "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
+  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
-  "split": "schema",                        // a module per schema; see "Splitting the output into modules"
-
-  "emit": ["zod", "mssql"],                 // and "json-schema", "mapping"; see "What is written"
-  "serverOnly": false,                      // with "mssql", true: the functions import 'server-only'; see "What is written"
-  "objects": "strip",                       // or "strict"
-  "comments": "surprises",                  // or "none", "all"; see "Comments"
-
-  "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
-
-  "check": { "unknowns": "report" },        // or "fail"; see "What check fails on"
-
-  "acknowledge": [                          // warnings read and lived with; see "Warnings acknowledged"
-    { "code": "HAR1008", "subject": "StampBuildInfo", "why": "it stamps the build's number and adds no scripts" }
-  ],
-
-  "naming": {                               // for every schema
-    "replace": [{ "pattern": "#$", "with": "Row" }],
-    "case": "pascal"                        // or "camel", "preserve"
-  },
-
+  "queries": "sql",                         // the application's query files; leave it out when there are none
+  "emit": ["zod", "mssql"],                 // the schemas and types, and a function for each procedure and query file
+  "check": { "unknowns": "report" },        // or "fail", to fail the check on any unknown
   "schemas": {                              // keyed by the schema's name as it is
-    "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
-    "audit": { "include": ["*"], "prefix": "Audit" },                          // AuditGetOrder
-    "Ledger.": { "include": ["GetEntryList"], "naming": { "case": "preserve" } }
-  },
-
-  "procedures": {
-    "sales.get_order": {
-      "name": "OrderDetail",
-      "paths": {
-        "lines[]": { "name": "OrderLine" },
-        "customer.email": { "nullable": false, "why": "checkout requires an email" },
-        "status": { "values": "exact", "why": "the application writes lower case only" },
-        "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }   // see "type" below
-      }
-    },
-    "sales.get_order_with_lines": { "sets": ["order", "lines"] },   // returns { order, lines }; see "sets" below
-    "sales.search_orders": {                // dynamic SQL: see "Declared results" below
-      "results": { "rowset": "schemas/order-search-row.schema.json" },
-      "why": "the filter is built as dynamic SQL"
-    },
-    "audit.write_log": { "results": "none", "why": "it only writes the log" }
+    "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] }
   }
 }
 ```
@@ -78,44 +42,6 @@ procedures the run leaves out are skipped). Without a file, the source argument,
 Keep `out` out of every formatter: add it to `.prettierignore`, or to Biome's `files.includes` as an exclusion after `**` (`!src/db`, for an `out` of `src/db`). Otherwise a formatter (Prettier, Biome, an editor's format on save) restyles the generated files, and `haruspex check` then fails, since it compares each file with what haruspex writes
 ([HAR6015](diagnostics/HAR6015.md)).
 
-## The settings you probably want
-
-`haruspex init` writes `source`, `out` and `schemas`, and with those alone haruspex claims only what holds whatever the
-callers and the build are. Most projects meet one or more of these situations, where a setting lets it claim more, or read what
-it otherwise can't. Each is a statement about your project that haruspex can't see for itself, so it is yours to make.
-
-- **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session).
-  Without it, every value an overflow, a division by zero or a loss of precision could make NULL is nullable, since some
-  sessions make them NULL. The `mssql` package's driver, tedious, sets
-  `{ "ansiWarnings": true, "arithAbort": true, "concatNullYieldsNull": true, "numericRoundAbort": false }`, and the page's
-  section says what other drivers set.
-- **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`. Without it, a
-  masked column and every value computed from one claim only their type, whether they may be null and their greatest
-  length, since a caller without the permission reads the mask.
-- **The source is a DACPAC built by MSBuild.Sdk.SqlProj**, or by any tool that builds through DacFx's API rather than its
-  build task: name it in [`builds`](#reading-a-dacpac-source-and-references). Such a package can't be told from one extracted
-  from a database, so without it no primary key or unique constraint of it is claimed, and a query that fixes a key's columns
-  isn't claimed to return at most one row.
-- **The source is a folder of `.sql` files** and a table has a `CHECK` that lists its values: declare the database's
-  [`collation`](#the-databases-collation-collation). A folder doesn't record it, and without it such a set of strings is a
-  comment, not an enum.
-- **The database is kept as folders side by side** (`tables`, `procedures`) beside folders that aren't its own, such as the
-  application's query files: list them as [`source`](#several-folders-source-as-a-list). A folder that holds them all would
-  read the others as the database's scripts too.
-- **The database keeps its descriptions under a name of its own**, such as `Description` rather than SQL Server's
-  `MS_Description`: name it in [`descriptions`](#descriptions-descriptions), and each column's description reaches the fields
-  that are that column.
-- **The source refers to other DACPACs** that its build doesn't leave beside it: list their folders in
-  [`references`](#reading-a-dacpac-source-and-references). One found nowhere is a warning, and what would have come from it is
-  unknown.
-- **The application keeps SQL in files of its own**: name them in [`queries`](#query-files-queries), and each is typed
-  with the procedures, against the same project.
-- **The application calls the database through the `mssql` package**: add `"mssql"` to [`emit`](#what-is-written-emit), and
-  each procedure and query file gets a function that checks its parameters, runs it and checks what comes back.
-- **The application and the database deploy separately**: name the database as last released in
-  [`baseline`](#the-baseline-baseline), so the types work against both while one is ahead of the other, and `check` fails on
-  a change the running application would fail on.
-
 ## Reading a folder of scripts: `source`
 
 `source` as a folder reads every `.sql` file below it, by the pattern a database project's build lists its default items with
@@ -126,38 +52,7 @@ out, so name the database's own folder rather than the application's: a folder h
 query files, its installed packages and a copy of the repository kept inside it as the database's scripts, and an object
 defined twice is an error ([HAR1002](diagnostics/HAR1002.md)). [`haruspex init`](command-line.md#init) chooses such a folder
 for you. To leave scripts out of a folder, read it as a [project file](#reading-a-project-file-source-as-a-sqlproj), whose
-build says which scripts it reads, or list the folders that hold the database's scripts (below).
-
-### Several folders: `source` as a list
-
-A database kept as folders side by side, beside folders that aren't the database's, is read by listing its folders:
-
-```jsonc
-{
-  "source": ["tables", "procedures"],            // read together as one database; "queries" beside them is not read
-  "queries": "queries",
-}
-```
-
-Every `.sql` file below each folder listed is read, as for one folder, and the folders together are one database: a procedure
-in `procedures` reads a table in `tables`. Use a list when the folder that holds all the database's scripts would hold others too,
-such as the application's query files; when one folder holds the database alone, name it as one path. The order of the list
-doesn't matter, and a list of one folder is that folder.
-
-A list names folders only: a `.sqlproj` or a `.dacpac` in it is an error ([HAR3005](diagnostics/HAR3005.md)), since each is a
-whole database of its own. Each script is read once, so the same folder listed twice, in any spelling the file system takes for
-the same (`db` and `./db`, or `Tables/` and `tables/` where the file system ignores case), one folder inside another, or two
-folders that reach one folder through a link, is an error naming both ([HAR1023](diagnostics/HAR1023.md)). Case is
-judged by the folders' own listings, so a Windows drive read from Linux, which ignores case, is judged as Windows would.
-A drive that is another folder under a second name (`subst`, a mapped drive) isn't known to be that folder: listed under both
-names, its scripts are read twice, and haruspex may not say so, so list each folder by one name.
-
-The IR records the folders read, each by its name on disk relative to this file's folder, in `source.paths` (so writing the list
-in another case, where the file system ignores case, changes nothing), and a location in it, such as an
-object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).
-A document of a list is IR 0.32 (0.33 when it records a description too, 0.34 when it holds an XML value); one of one folder is written as before. `check` reports a folder added to the list or removed
-from it, even where no type changes, since what the database is made of is what every claim rests on
-([decision 0127](decisions/0127-a-source-may-be-several-folders.md)).
+build says which scripts it reads, or [list the folders](#several-folders-source-as-a-list) that hold the database's scripts.
 
 ## Reading a DACPAC: `source` and `references`
 
@@ -175,16 +70,8 @@ path names a share or a device (`\\server\share\…`), which is never looked in.
 nowhere is a warning ([HAR1003](diagnostics/HAR1003.md)) that lists every place looked, and the run goes on: whatever would
 have come from it is unknown, and each such unknown says the package it may be in.
 
-A package extracted from a database (SqlPackage's `/Action:Extract`) differs from a built one in its keys too: an extract
-doesn't record whether a primary key's or unique constraint's index is disabled, which lets the table hold duplicates, so no
-key constraint of an extract is claimed, and a query that fixes its columns isn't claimed to return at most one row
-([decision 0120](decisions/0120-an-extract-s-key-constraints-are-no-key.md)). A unique index created apart is claimed unless the
-extract marks it disabled. A package is taken for a build only when its `Origin.xml` says DacFx's build task
-(`Microsoft.Build.Sql`'s or SSDT's) made it, so one written by DacFx's API, as community SDKs build, claims no key constraint
-either. `builds` lists the packages, by file name (`"builds": ["sales.dacpac"]`), that you declare built from a project:
-their key constraints are then claimed, on your word that every one is enforced. The IR records each package read as one
-(`source.builds`), so a generated file says what it assumed, and `check` fails when the declaration changes, naming the package
-([decision 0122](decisions/0122-the-ir-records-the-packages-declared-builds.md)).
+A package that DacFx's build task did not make claims no key constraint, unless
+[`builds`](#a-package-built-by-another-tool-builds) declares it built from a project; an extract from a database claims none.
 
 Locations in what is read from a package name the package and the object, with a line in the object's own text:
 `sales.dacpac/[sales].[get_order]:3:5` ([decision 0039](decisions/0039-a-location-in-a-dacpac-names-the-package-and-the-object.md)).
@@ -238,40 +125,6 @@ function, a property defined nowhere, `Choose`, an import it can't find) is neve
 setting, that script or setting isn't read, and a warning ([HAR1008](diagnostics/HAR1008.md)) says what, where and why.
 Locations are relative to the project's folder (`../shared/audit.sql:3:5` for a script beside it); an object read from a DACPAC
 is located in it, as when the DACPAC is the source.
-
-## The database's collation: `collation`
-
-A column without `COLLATE` takes the database's default collation. A `.dacpac` records it, and a `.sqlproj` gives it; a folder
-of scripts doesn't, so `collation` declares it. A package's or a project's own wins, and one that disagrees with `collation` is
-a warning ([HAR6010](diagnostics/HAR6010.md)). The name must be one SQL Server 2025 has, as `sys.fn_helpcollations()` lists
-them, in any case, and not one of Unicode only (such as `Indic_General_100_CI_AS`), which no database can have; any other is
-an error at the setting ([HAR3005](diagnostics/HAR3005.md)). A name haruspex can't place
-is never read as some other collation's, which a misspelt `_UTF8` would otherwise be: the lengths of `char` and `varchar`
-depend on the collation's encoding.
-
-The collation decides how a `CHECK` constraint's set of strings is typed. For a `char` or `varchar` column under a collation
-haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `Latin1_General_100_CI_AS`,
-`Latin1_General_100_CS_AS`, `Latin1_General_100_CI_AI`), a set of plain strings (ASCII letters and digits, space, `_`, `-`,
-`.`), written without `N`, is an enum: a value is first mapped to the string it equals under the collation, so `'PAID'` and `'paid '` both arrive as
-`"paid"` ([decision 0043](decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). Any other set, and
-every set of an `nchar` or `nvarchar` column, is a comment saying the values match as the database compares strings; an
-override can still declare it exact (`"values": "exact"`).
-
-## Descriptions: `descriptions`
-
-A database may describe its tables, views, procedures, columns and parameters in extended properties
-(`sp_addextendedproperty`, which SQL Server Management Studio and SSDT's table designer write, and which a DACPAC holds).
-`descriptions` names the properties that hold descriptions: `["MS_Description"]` when it is left out, compared ignoring case.
-A project that writes another name lists it, `["MS_Description", "Description"]`; an empty array reads none.
-
-A description reaches only what is exactly the thing described: a result's field that is one column unchanged (`d.name`, or the
-column through `*`, a view or a derived table, where a view's own column description replaces the table's), a procedure's
-parameter, and the procedure itself. A field computed from a column, such as `UPPER(d.name)`, or read from several, has none. In
-the Zod module a description is the property's `.describe("…")`, so `z.toJSONSchema` and an editor show it, and the first
-lines of its comment; in JSON Schema it starts the `description`. A description whose arguments aren't literals, that names
-nothing the source defines, or that is set twice or updated is passed over with a note ([HAR1024](diagnostics/HAR1024.md)).
-A changed description changes no claim, but `check` still fails until the module is generated again, since its text changed
-([decision 0128](decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
 
 ## Which procedures are typed: `schemas`
 
@@ -351,7 +204,328 @@ same as for `sets`: every set or none, each name in camel case, given once, not 
 another is declared once, as a procedure's is
 ([decision 0071](decisions/0071-a-shared-shape-is-named-by-declaration-or-by-its-structure.md)).
 
+## What is written: `emit`
+
+`generate` writes the IR, `haruspex.ir.json`, to the output folder, and beside it what `emit` names, each made from the IR
+alone:
+
+- `"zod"`, the default: `haruspex.zod.ts`, a TypeScript module of Zod schemas and their types
+  ([the Zod emitter](../src/Haruspex.Emit.Zod/README.md)).
+- `"json-schema"`: `haruspex.jsonschema.json`, one JSON Schema document (draft 2020-12), for any language with a JSON Schema
+  validator. Each procedure's results are the definition under its name in `$defs`, `#/$defs/GetOrder`, the same name the Zod
+  module exports; every value is described as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
+  `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them
+  ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
+  [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
+
+- `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure and query file, which check its
+  parameters, run it through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
+  the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
+- `"mapping"`: `haruspex.mapping.ts`, TypeScript types with which the application's own mapper accounts for every key of a
+  generated row, using it or ignoring it with a reason, so that once the module is regenerated, a key the row gains, at any
+  depth, is a compile error in the mapper ([the layers](layers.md#a-mapper-that-accounts-for-every-key),
+  [decision 0066](decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)). It is types only, the same for every
+  module, and works on the types `haruspex.zod.ts` declares, so `"mapping"` needs `"zod"` beside it.
+
+```jsonc
+"emit": ["zod", "json-schema"]   // both, each from the same IR
+```
+
+```jsonc
+"emit": ["zod", "mssql"]   // the schemas, and the functions that use them
+```
+
+**The functions belong on the server.** They take a connection, and a connection holds the database's credentials; and the
+database module is two files so that the schemas and types, which a browser may use, stay apart from the functions, which it
+must not. In a Next.js application they are for route handlers, server actions and server components. `"serverOnly": true`
+starts `haruspex.mssql.ts` with `import 'server-only'`, so that a build fails where client code imports it (install the
+`server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework. Tests that
+import the functions then need `server-only` resolved as Next.js resolves it, or replaced by an empty module: the database
+module's page has [the Vitest configuration for each](database-module.md#where-the-functions-run).
+
+`emit` lists at least one, each once. `check` compares each file it names with the one in the output folder, and fails when one is
+missing. The file of an emitter taken off the list is removed by the next `generate`
+([below](#the-files-generate-removes)).
+
+## The files generate removes
+
+`generate` writes the list of the files it wrote, `haruspex.files.json`, beside them in the output folder, and removes each file
+the last run's list names that this run doesn't write: a module taken out of `split`, or one a baseline leaves with no
+procedures, loses its files, and so does an emitter taken off `emit`. Taking the module `admin` out of the split removes
+`admin.zod.ts`, `admin.jsonschema.json` and `admin.mssql.ts` on the next run, and nothing else; the run says which files it
+removed. Commit the list with the other files: it is generated, and `check` compares it as it compares them
+([decision 0091](decisions/0091-generate-removes-only-the-files-its-list-names.md)).
+
+```json
+{
+  "about": "The files haruspex generate wrote to this folder, which a later run removes when it no longer writes them. Generated: do not edit.",
+  "files": [
+    "admin.jsonschema.json",
+    "admin.mssql.ts",
+    "admin.zod.ts",
+    "haruspex.ir.json",
+    "sales.jsonschema.json",
+    "sales.mssql.ts",
+    "sales.zod.ts"
+  ]
+}
+```
+
+- **Only what the list names is removed.** The output folder may hold files of your own: `generate` never looks for files to
+  remove, so a file it didn't write is never removed, whatever its name.
+- **A file edited by hand is removed** when the list names it and the run no longer writes it. Each generated file says it is
+  generated: a comment at the top of the TypeScript files, the JSON Schema's `description`, the list's `about`.
+- **Nothing is removed** by a run that fails before writing, by the first run that writes a list (after upgrading, a module
+  removed before then leaves its files: remove them yourself), or when the list can't be read ([HAR6039](diagnostics/HAR6039.md)).
+- **A run narrowed by `--include` removes nothing.** It is a look at part of the module, so the files it doesn't write stay, and
+  stay on the list, for the next full run to write again or remove. `check` reports them meanwhile, since the IR it wrote is the
+  narrowed one.
+- **Nothing outside the folder.** An entry that is absolute, climbs out with `..`, has a character no name `generate` writes has
+  (it writes ASCII letters, digits, `.`, `-` and `_`), or is reached through a symbolic link is never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
+  folder is ever removed, even one a removed file leaves empty.
+- **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
+  file the run wrote, under the module's new name: the old file is renamed as it is replaced, so the names on disk are the
+  ones the imports and the list say. Git there (`core.ignoreCase`, its default on such a file system) still stages each file
+  under its old name, so commit the rename with `git mv` (to another name and then to the new one), or a checkout on a file
+  system that tells case apart fails `check` ([HAR6011](diagnostics/HAR6011.md)).
+- **`check`** fails at each file the next `generate` would remove ([HAR6042](diagnostics/HAR6042.md)), and when the list is
+  missing, as for any other file.
+
+## What check fails on: `check`
+
+`haruspex check` fails when what the module claims would change, when the output folder holds nothing to compare with, and when a selected
+procedure's result sets are unknown and not declared (the CLI's README says each). An unknown value is a note, as in `generate`,
+and doesn't fail it, since the module still checks it at runtime as a value of any shape. For a module that must be typed
+throughout:
+
+```jsonc
+"check": { "unknowns": "fail" }   // any unknown fails the check (HAR6017); "report", the default, notes each
+```
+
+`unknowns` is `"report"`, the default, or `"fail"`.
+
+## Errors
+
+Every error and warning is written to standard error as a compiler writes one, so editors and CI can jump to it, with its
+code, whose page in [the list of diagnostics](diagnostics/README.md) says what it means and what to do. (Notes, one for each
+unknown, are counted rather than listed unless `--verbose` asks; [the command line](command-line.md) says what each run prints,
+and how to have the same as JSON, SARIF or GitHub annotations.)
+
+```text
+haruspex.json:14:9: error HAR4104: procedures["sales.get_order"].paths["lines[].skew"]: the path results[0].lines[].skew does not exist: the object at results[0].lines[] has no key "skew". Its keys are "sku", "quantity".
+haruspex.json:22:7: warning HAR4110: procedures["sales.get_order"].paths.id: "nullable": false agrees with the inference, which already proves the value at results[0].id is never null. Remove it.
+haruspex.json: error HAR4303: "GetOrder" would name both the procedure audit.get_order and the procedure sales.get_order. Generated names must not clash: give one of their schemas a "prefix" in "schemas", …
+```
+
+Errors in the config file exit with code 2, as command line mistakes do, and nothing is written; [the command
+line](../src/Haruspex.Cli/README.md#what-it-guarantees) lists every exit code.
+
+## What an editor can't check
+
+The schema an editor checks the file with refuses every setting of the wrong form, but some rules can't be written in a JSON
+Schema, or depend on the files beside the config file, so an editor shows these as valid and `haruspex generate` refuses them:
+
+- **A key written twice in one object**, which a JSON parser keeps the last of.
+- **A procedure named in other than two parts**, `schema.name`, in `procedures`.
+- **A pattern, a path or a regular expression that is not well formed**: a pattern or a path with a bracket left open, a
+  naming rule's expression that doesn't compile.
+- **A name that is a reserved word** in the generated code: a type's, or a set's.
+- **Two names that differ only in case**: two schemas' blocks, or two modules, since a file system that ignores case would
+  hold one file for both.
+- **A schema in two modules**, compared ignoring case, as SQL Server compares schema names.
+- **A warning acknowledged twice**: one code and subject with two reasons.
+- **A collation SQL Server does not have**, or one no database can have.
+- **A file or folder that is not there**: a folder of `references`, a JSON Schema file, or a `$ref` in one.
+- **A declared JSON Schema haruspex can't type** ([what a declaration reads](#the-json-schemas-a-declaration-reads)).
+
+Nor can an editor check what depends on the database: a pattern that matches no procedure, an override's path that its results
+don't have. `generate` and `check` report each with its line.
+
+## The settings you probably want
+
+`haruspex init` writes `source`, `out` and `schemas`, and with those alone haruspex claims only what holds whatever the
+callers and the build are. Most projects meet one or more of these situations, where a setting lets it claim more, or read what
+it otherwise can't. Each is a statement about your project that haruspex can't see for itself, so it is yours to make.
+
+- **The application calls through a driver that sets its session**: declare [`session`](#the-callers-session-session),
+  whose section says what each driver sets, and haruspex claims what the declared options allow.
+- **The callers hold `UNMASK`**, and the database masks columns: declare `"session": { "unmask": true }`
+  ([the callers' session](#the-callers-session-session)), and masked columns claim more than their type.
+- **The source is a DACPAC built by MSBuild.Sdk.SqlProj**, or by any tool that builds through DacFx's API rather than its
+  build task: name it in [`builds`](#a-package-built-by-another-tool-builds), and its key
+  constraints are claimed.
+- **The source is a folder of `.sql` files** and a table has a `CHECK` that lists its values: declare the database's
+  [`collation`](#the-databases-collation-collation). A folder doesn't record it, and without it such a set of strings is a
+  comment, not an enum.
+- **The database is kept as folders side by side** (`tables`, `procedures`) beside folders that aren't its own, such as the
+  application's query files: list them as [`source`](#several-folders-source-as-a-list). A folder that holds them all would
+  read the others as the database's scripts too.
+- **The database keeps its descriptions under a name of its own**, such as `Description` rather than SQL Server's
+  `MS_Description`: name it in [`descriptions`](#descriptions-descriptions), and each column's description reaches the fields
+  that are that column.
+- **The source refers to other DACPACs** that its build doesn't leave beside it: list their folders in
+  [`references`](#reading-a-dacpac-source-and-references). One found nowhere is a warning, and what would have come from it is
+  unknown.
+- **The application keeps SQL in files of its own**: name them in [`queries`](#query-files-queries), and each is typed
+  with the procedures, against the same project.
+- **The application calls the database through the `mssql` package**: add `"mssql"` to [`emit`](#what-is-written-emit), and
+  each procedure and query file gets a function that checks its parameters, runs it and checks what comes back.
+- **The application and the database deploy separately**: name the database as last released in
+  [`baseline`](#the-baseline-baseline), so the types work against both while one is ahead of the other, and `check` fails on
+  a change the running application would fail on.
+
+## Advanced settings
+
+The sections from here on are for some projects, not every one. Each opens with the situation it is for, so that a reader
+can tell from its first lines whether it applies. A file that uses every setting, the essentials included:
+
+```jsonc
+{
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
+  "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac; or a list of folders
+  "baseline": "release/database",           // the database before the change being made; see "The baseline"
+  "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
+  "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "The database's collation"
+  "descriptions": ["MS_Description"],       // the extended properties that describe; see "Descriptions"
+  "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
+  "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
+  "split": "schema",                        // a module per schema; see "Splitting the output into modules"
+
+  "emit": ["zod", "mssql"],                 // and "json-schema", "mapping"; see "What is written"
+  "serverOnly": false,                      // with "mssql", true: the functions import 'server-only'; see "What is written"
+  "objects": "strip",                       // or "strict"
+  "comments": "surprises",                  // or "none", "all"; see "Comments"
+
+  "session": { "ansiWarnings": true },      // what the callers' connections set; see "The callers' session"
+
+  "check": { "unknowns": "report" },        // or "fail"; see "What check fails on"
+
+  "acknowledge": [                          // warnings read and lived with; see "Warnings acknowledged"
+    { "code": "HAR1008", "subject": "StampBuildInfo", "why": "it stamps the build's number and adds no scripts" }
+  ],
+
+  "naming": {                               // for every schema
+    "replace": [{ "pattern": "#$", "with": "Row" }],
+    "case": "pascal"                        // or "camel", "preserve"
+  },
+
+  "schemas": {                              // keyed by the schema's name as it is
+    "sales": { "include": ["get_*", "list_*"], "exclude": ["*_internal"] },
+    "audit": { "include": ["*"], "prefix": "Audit" },                          // AuditGetOrder
+    "Ledger.": { "include": ["GetEntryList"], "naming": { "case": "preserve" } }
+  },
+
+  "procedures": {
+    "sales.get_order": {
+      "name": "OrderDetail",
+      "paths": {
+        "lines[]": { "name": "OrderLine" },
+        "customer.email": { "nullable": false, "why": "checkout requires an email" },
+        "status": { "values": "exact", "why": "the application writes lower case only" },
+        "settings": { "type": "OrderSettingsSchema", "import": "@app/orders/settings" }   // see "type" below
+      }
+    },
+    "sales.get_order_with_lines": { "sets": ["order", "lines"] },   // returns { order, lines }; see "sets" below
+    "sales.search_orders": {                // dynamic SQL: see "Declared results" below
+      "results": { "rowset": "schemas/order-search-row.schema.json" },
+      "why": "the filter is built as dynamic SQL"
+    },
+    "audit.write_log": { "results": "none", "why": "it only writes the log" }
+  }
+}
+```
+
+## Several folders: `source` as a list
+
+**For a database kept as folders side by side**, beside folders that are not its own, such as the application's query
+files. Such a database is read by listing its folders:
+
+```jsonc
+{
+  "source": ["tables", "procedures"],            // read together as one database; "queries" beside them is not read
+  "queries": "queries",
+}
+```
+
+Every `.sql` file below each folder listed is read, as for one folder, and the folders together are one database: a procedure
+in `procedures` reads a table in `tables`. Use a list when the folder that holds all the database's scripts would hold others too,
+such as the application's query files; when one folder holds the database alone, name it as one path. The order of the list
+doesn't matter, and a list of one folder is that folder.
+
+A list names folders only: a `.sqlproj` or a `.dacpac` in it is an error ([HAR3005](diagnostics/HAR3005.md)), since each is a
+whole database of its own. Each script is read once, so the same folder listed twice, in any spelling the file system takes for
+the same (`db` and `./db`, or `Tables/` and `tables/` where the file system ignores case), one folder inside another, or two
+folders that reach one folder through a link, is an error naming both ([HAR1023](diagnostics/HAR1023.md)). Case is
+judged by the folders' own listings, so a Windows drive read from Linux, which ignores case, is judged as Windows would.
+A drive that is another folder under a second name (`subst`, a mapped drive) isn't known to be that folder: listed under both
+names, its scripts are read twice, and haruspex may not say so, so list each folder by one name.
+
+The IR records the folders read, each by its name on disk relative to this file's folder, in `source.paths` (so writing the list
+in another case, where the file system ignores case, changes nothing), and a location in it, such as an
+object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).
+A document of a list is IR 0.32 (0.33 when it records a description too, 0.34 when it holds an XML value); one of one folder is written as before. `check` reports a folder added to the list or removed
+from it, even where no type changes, since what the database is made of is what every claim rests on
+([decision 0127](decisions/0127-a-source-may-be-several-folders.md)).
+
+## A package built by another tool: `builds`
+
+**For a DACPAC built by MSBuild.Sdk.SqlProj**, or by any other tool that builds through DacFx's API rather than its build
+task.
+
+A package extracted from a database (SqlPackage's `/Action:Extract`) differs from a built one in its keys too: an extract
+doesn't record whether a primary key's or unique constraint's index is disabled, which lets the table hold duplicates, so no
+key constraint of an extract is claimed, and a query that fixes its columns isn't claimed to return at most one row
+([decision 0120](decisions/0120-an-extract-s-key-constraints-are-no-key.md)). A unique index created apart is claimed unless the
+extract marks it disabled. A package is taken for a build only when its `Origin.xml` says DacFx's build task
+(`Microsoft.Build.Sql`'s or SSDT's) made it, so one written by DacFx's API, as community SDKs build, claims no key constraint
+either. `builds` lists the packages, by file name (`"builds": ["sales.dacpac"]`), that you declare built from a project:
+their key constraints are then claimed, on your word that every one is enforced. The IR records each package read as one
+(`source.builds`), so a generated file says what it assumed, and `check` fails when the declaration changes, naming the package
+([decision 0122](decisions/0122-the-ir-records-the-packages-declared-builds.md)).
+
+## The database's collation: `collation`
+
+**For a folder of `.sql` files** whose tables have a `CHECK` constraint that lists their values.
+
+A column without `COLLATE` takes the database's default collation. A `.dacpac` records it, and a `.sqlproj` gives it; a folder
+of scripts doesn't, so `collation` declares it. A package's or a project's own wins, and one that disagrees with `collation` is
+a warning ([HAR6010](diagnostics/HAR6010.md)). The name must be one SQL Server 2025 has, as `sys.fn_helpcollations()` lists
+them, in any case, and not one of Unicode only (such as `Indic_General_100_CI_AS`), which no database can have; any other is
+an error at the setting ([HAR3005](diagnostics/HAR3005.md)). A name haruspex can't place
+is never read as some other collation's, which a misspelt `_UTF8` would otherwise be: the lengths of `char` and `varchar`
+depend on the collation's encoding.
+
+The collation decides how a `CHECK` constraint's set of strings is typed. For a `char` or `varchar` column under a collation
+haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `Latin1_General_100_CI_AS`,
+`Latin1_General_100_CS_AS`, `Latin1_General_100_CI_AI`), a set of plain strings (ASCII letters and digits, space, `_`, `-`,
+`.`), written without `N`, is an enum: a value is first mapped to the string it equals under the collation, so `'PAID'` and `'paid '` both arrive as
+`"paid"` ([decision 0043](decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). Any other set, and
+every set of an `nchar` or `nvarchar` column, is a comment saying the values match as the database compares strings; an
+override can still declare it exact (`"values": "exact"`).
+
+## Descriptions: `descriptions`
+
+**For a database that keeps its descriptions under a name of its own**, rather than SQL Server's `MS_Description`, or
+whose descriptions are not to be read.
+
+A database may describe its tables, views, procedures, columns and parameters in extended properties
+(`sp_addextendedproperty`, which SQL Server Management Studio and SSDT's table designer write, and which a DACPAC holds).
+`descriptions` names the properties that hold descriptions: `["MS_Description"]` when it is left out, compared ignoring case.
+A project that writes another name lists it, `["MS_Description", "Description"]`; an empty array reads none.
+
+A description reaches only what is exactly the thing described: a result's field that is one column unchanged (`d.name`, or the
+column through `*`, a view or a derived table, where a view's own column description replaces the table's), a procedure's
+parameter, and the procedure itself. A field computed from a column, such as `UPPER(d.name)`, or read from several, has none. In
+the Zod module a description is the property's `.describe("…")`, so `z.toJSONSchema` and an editor show it, and the first
+lines of its comment; in JSON Schema it starts the `description`. A description whose arguments aren't literals, that names
+nothing the source defines, or that is set twice or updated is passed over with a note ([HAR1024](diagnostics/HAR1024.md)).
+A changed description changes no claim, but `check` still fails until the module is generated again, since its text changed
+([decision 0128](decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
+
 ## Overrides
+
+**For what the database cannot prove and the team knows**: a value never null, a value set that holds exactly its items, the
+application's own schema for a value; and for a procedure's names and the names of its result sets.
 
 An override corrects or completes what was inferred, for one procedure. Overrides live in `procedures`, keyed by the
 procedure's two-part name (`sales.get_order`, with T-SQL brackets around a part that holds a dot), which must be selected;
@@ -393,6 +567,8 @@ a silent cast. The IR lists every claim an override made under `overrides`, with
 with is a warning**, so the file shrinks as the SQL improves. Generation goes ahead after a warning.
 
 ## Declared results: `results`
+
+**For a procedure whose results the project cannot show**, such as one that runs dynamic SQL.
 
 Some procedures' result sets can't be known from the project: dynamic SQL (`EXEC (@sql)`, `sp_executesql`), a procedure named
 in a variable, a system procedure, a CLR procedure, one in another database or not in the project, a call without a schema
@@ -447,6 +623,8 @@ exits as before (the `check` command will fail it).
 
 ## JSON stored in a column: `columns`
 
+**For a column that stores JSON**, which the application is to receive typed.
+
 A column that stores JSON holds whatever its writers wrote, and nothing in the project shows every writer there ever was, so
 haruspex types it only when it is declared ([decision 0017](decisions/0017-stored-json-is-typed-only-by-declaration.md)).
 `columns` declares it, once for the column, with a JSON Schema file:
@@ -491,6 +669,8 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
 
 ## The JSON Schemas a declaration reads
 
+**For whoever writes the JSON Schema** of declared results or of a column's JSON.
+
 Declared results and declared columns read a JSON Schema (draft 2020-12), and translate it into haruspex's own types. The subset
 read:
 
@@ -510,50 +690,10 @@ read:
 Annotations (`title`, `description`, `$schema`, `$comment`, `examples`, …) are ignored. **Any other keyword is a warning**,
 HAR3151, and is not checked, so the generated type is wider than the schema, never narrower. `pattern` is one, until a row carries
 it over exactly.
-## What is written: `emit`
-
-`generate` writes the IR, `haruspex.ir.json`, to the output folder, and beside it what `emit` names, each made from the IR
-alone:
-
-- `"zod"`, the default: `haruspex.zod.ts`, a TypeScript module of Zod schemas and their types
-  ([the Zod emitter](../src/Haruspex.Emit.Zod/README.md)).
-- `"json-schema"`: `haruspex.jsonschema.json`, one JSON Schema document (draft 2020-12), for any language with a JSON Schema
-  validator. Each procedure's results are the definition under its name in `$defs`, `#/$defs/GetOrder`, the same name the Zod
-  module exports; every value is described as SQL Server's `FOR JSON` writes it, a rowset's rows as an array of objects as
-  `FOR JSON PATH, INCLUDE_NULL_VALUES` writes them
-  ([the JSON Schema emitter](../src/Haruspex.Emit.JsonSchema/README.md),
-  [decision 0051](decisions/0051-one-json-schema-document-per-module-every-value-as-json.md)).
-
-- `"mssql"`: `haruspex.mssql.ts`, the database module's functions, one for each procedure and query file, which check its
-  parameters, run it through the mssql driver and check what comes back ([the mssql emitter](../src/Haruspex.Emit.Mssql/README.md)). They import
-  the schemas and types from `haruspex.zod.ts`, so `"mssql"` needs `"zod"` beside it.
-- `"mapping"`: `haruspex.mapping.ts`, TypeScript types with which the application's own mapper accounts for every key of a
-  generated row, using it or ignoring it with a reason, so that once the module is regenerated, a key the row gains, at any
-  depth, is a compile error in the mapper ([the layers](layers.md#a-mapper-that-accounts-for-every-key),
-  [decision 0066](decisions/0066-a-mapper-accounts-for-every-key-of-a-generated-row.md)). It is types only, the same for every
-  module, and works on the types `haruspex.zod.ts` declares, so `"mapping"` needs `"zod"` beside it.
-
-```jsonc
-"emit": ["zod", "json-schema"]   // both, each from the same IR
-```
-
-```jsonc
-"emit": ["zod", "mssql"]   // the schemas, and the functions that use them
-```
-
-**The functions belong on the server.** They take a connection, and a connection holds the database's credentials; and the
-database module is two files so that the schemas and types, which a browser may use, stay apart from the functions, which it
-must not. In a Next.js application they are for route handlers, server actions and server components. `"serverOnly": true`
-starts `haruspex.mssql.ts` with `import 'server-only'`, so that a build fails where client code imports it (install the
-`server-only` package); it needs `"mssql"` in `emit`, and is off by default, since haruspex assumes no framework. Tests that
-import the functions then need `server-only` resolved as Next.js resolves it, or replaced by an empty module: the database
-module's page has [the Vitest configuration for each](database-module.md#where-the-functions-run).
-
-`emit` lists at least one, each once. `check` compares each file it names with the one in the output folder, and fails when one is
-missing. The file of an emitter taken off the list is removed by the next `generate`
-([below](#the-files-generate-removes)).
 
 ## Splitting the output into modules: `split`
+
+**For a module large enough** that code should import only the part it uses.
 
 Without `split`, `generate` writes one module: one file per emitter, which every reader imports whole. `split` writes a module
 per group of schemas instead, each the files one config writes, named after the module, so that code imports only the part it
@@ -605,57 +745,16 @@ modules import from or refer to; a shared file is written only when something is
 - **Each module's functions are self-contained**, with their own error classes, as the functions of several config files are:
   tell a failure apart by its `name` and `kind` ([when a call fails](database-module.md#when-a-call-fails)).
 - **A module that is gone loses its files**: taken out of the list, or left with no procedures, its files are removed by the next
-  `generate`, as an emitter's are when it is taken off `emit` ([below](#the-files-generate-removes)).
+  `generate`, as an emitter's are when it is taken off `emit` ([the files generate removes](#the-files-generate-removes)).
 
 `check` compares every file as it compares one module's, and fails when one is missing. A procedure added to one schema changes
 the IR and its module's files, and the shared file only when it shares a definition with another module; that module's file then
 imports the shape it shares, its own types keeping their names.
 
-## The files generate removes
-
-`generate` writes the list of the files it wrote, `haruspex.files.json`, beside them in the output folder, and removes each file
-the last run's list names that this run doesn't write: a module taken out of `split`, or one a baseline leaves with no
-procedures, loses its files, and so does an emitter taken off `emit`. Taking the module `admin` out of the split removes
-`admin.zod.ts`, `admin.jsonschema.json` and `admin.mssql.ts` on the next run, and nothing else; the run says which files it
-removed. Commit the list with the other files: it is generated, and `check` compares it as it compares them
-([decision 0091](decisions/0091-generate-removes-only-the-files-its-list-names.md)).
-
-```json
-{
-  "about": "The files haruspex generate wrote to this folder, which a later run removes when it no longer writes them. Generated: do not edit.",
-  "files": [
-    "admin.jsonschema.json",
-    "admin.mssql.ts",
-    "admin.zod.ts",
-    "haruspex.ir.json",
-    "sales.jsonschema.json",
-    "sales.mssql.ts",
-    "sales.zod.ts"
-  ]
-}
-```
-
-- **Only what the list names is removed.** The output folder may hold files of your own: `generate` never looks for files to
-  remove, so a file it didn't write is never removed, whatever its name.
-- **A file edited by hand is removed** when the list names it and the run no longer writes it. Each generated file says it is
-  generated: a comment at the top of the TypeScript files, the JSON Schema's `description`, the list's `about`.
-- **Nothing is removed** by a run that fails before writing, by the first run that writes a list (after upgrading, a module
-  removed before then leaves its files: remove them yourself), or when the list can't be read ([HAR6039](diagnostics/HAR6039.md)).
-- **A run narrowed by `--include` removes nothing.** It is a look at part of the module, so the files it doesn't write stay, and
-  stay on the list, for the next full run to write again or remove. `check` reports them meanwhile, since the IR it wrote is the
-  narrowed one.
-- **Nothing outside the folder.** An entry that is absolute, climbs out with `..`, has a character no name `generate` writes has
-  (it writes ASCII letters, digits, `.`, `-` and `_`), or is reached through a symbolic link is never removed, with a warning ([HAR6040](diagnostics/HAR6040.md)); `generate` writes no such entry, so the list was edited. No
-  folder is ever removed, even one a removed file leaves empty.
-- **Case.** On a file system that ignores case, as macOS's and Windows' do by default, a module renamed only by case keeps the
-  file the run wrote, under the module's new name: the old file is renamed as it is replaced, so the names on disk are the
-  ones the imports and the list say. Git there (`core.ignoreCase`, its default on such a file system) still stages each file
-  under its old name, so commit the rename with `git mv` (to another name and then to the new one), or a checkout on a file
-  system that tells case apart fails `check` ([HAR6011](diagnostics/HAR6011.md)).
-- **`check`** fails at each file the next `generate` would remove ([HAR6042](diagnostics/HAR6042.md)), and when the list is
-  missing, as for any other file.
-
 ## Results policy: `objects`
+
+**For a project that deploys the application first, or with the database**, and wants a key or result set it does not
+expect to fail the call.
 
 - `"strip"`, the default: `z.object`, and JSON Schema objects that allow other keys. Types are still exact, but keys a type
   doesn't list are removed when parsing, or allowed when validating, so a column the database gains before the application
@@ -674,6 +773,8 @@ This is the one deliberate exception to haruspex's rule that the generated code 
 keys, so strict is the accurate schema, and strip is the default for deployment safety. It applies to results only.
 
 ## Comments: `comments`
+
+**For a team that wants more or fewer** of the generated code's comments.
 
 Generated code says why a field is what it is where that would surprise its reader: a field whose nullability, presence or
 type differs from what its source column declares, and every unknown. A `COUNT` is nullable, a key is left out because an outer
@@ -706,20 +807,38 @@ comments never stop a shape being shared. The functions file says why a result s
 that state a fact a check rests on (`varchar(n)` counts bytes, a bound JavaScript reads as the nearest double) are written
 whatever this says ([decision 0079](decisions/0079-a-surprise-is-explained-where-it-is-written.md)).
 
-## What check fails on: `check`
+## Naming
 
-`haruspex check` fails when what the module claims would change, when the output folder holds nothing to compare with, and when a selected
-procedure's result sets are unknown and not declared (the CLI's README says each). An unknown value is a note, as in `generate`,
-and doesn't fail it, since the module still checks it at runtime as a value of any shape. For a module that must be typed
-throughout:
+**For generated names other than the default**, which is Pascal case from each object's own name.
 
-```jsonc
-"check": { "unknowns": "fail" }   // any unknown fails the check (HAR6017); "report", the default, notes each
-```
+Generated names come from each object's own name, **never its schema**, by declarative rules applied in this order:
 
-`unknowns` is `"report"`, the default, or `"fail"`.
+1. `replace`: rules of the form `{ "pattern": "…", "with": "…" }`, run over the name in order, each replacing every match
+   of the regular expression `pattern` with `with` (`$1` names a group, and `""` removes the match); the top-level rules
+   first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
+   backreferences and lookarounds are not available.
+2. `prefix`: the schema's prefix, if any, goes in front as words of its own: `"prefix": "Audit"` makes
+   `audit.get_order` `AuditGetOrder`.
+3. `case` (the schema's, or else the top level's): `pascal` (the default) breaks words at every character that isn't a
+   letter or digit (`$`, `#`, `_`), so `stock$level$history` gives `StockLevelHistory`. `camel` gives
+   `stockLevelHistory`. `preserve` keeps the prefix and the name as they are, `$` included; anything that is still
+   not a valid identifier is an error naming the object.
+
+Nested types build on their procedure's name: `GetOrderRow` for its rows, `GetOrderLine` for the items of `lines`,
+`GetOrderLinesRow` for the rows of a set named `lines` (`sets`, under "Overrides"), `GetOrderResult2Row` for a second unnamed
+result set's rows, and `PartTreeNode` for the recursive type of a function `bom.part_tree` (named by its own schema's
+settings).
+
+**Names don't shift.** When two objects' names come out the same (two schemas with a `get_order` each, say), it is an
+error naming both, which asks for a `prefix` on one of the schemas or a `name` override; haruspex never adds a number
+between objects, because that renumbered names whenever an object was added and broke code that used them. Inside one
+procedure two types can still meet (a nested key `row` beside the row type, or the variants of a union, which share a
+path); there a number is added in the order the procedure's results are written (`GetOrderRow2`), because it depends
+on nothing but that procedure.
 
 ## The baseline: `baseline`
+
+**For an application and a database that deploy separately.**
 
 An application and its database deploy separately, so for a while the application meets the database before its latest
 change or after it. `baseline` names the database before: usually the one as of the application's last release. With it,
@@ -777,6 +896,8 @@ is combined, not refused.
 
 ## Warnings acknowledged: `acknowledge`
 
+**For a warning the team has read and decided to live with.**
+
 Some warnings say something about the source that a team has read and decided to live with: a build target that only stamps
 a version, a reference to a package a build machine doesn't have. Said on every run, they teach the team to skip warnings,
 and the next one, which matters, is skipped with them. `acknowledge` names each such warning by its `code` and its `subject`
@@ -808,6 +929,9 @@ hide the next warning of that subject; a run whose `--include` narrows the selec
 about a procedure the run left out.
 
 ## The callers' session: `session`
+
+**For callers whose connections set `ANSI_WARNINGS` or `ARITHABORT`**, as the `mssql` package's driver does, or who hold
+`UNMASK`.
 
 Whether some values can be null depends on `SET` options of the session that calls the procedure, not on the procedure:
 with `ANSI_WARNINGS` and `ARITHABORT` both off, an overflow, a division by zero or a `COUNT` past `int` is NULL; with either
@@ -863,67 +987,3 @@ null can be NULL. The IR records it (`source.session`) and the generated module'
 assumed. A procedure that sets one of these options otherwise in its body overrides the declaration until it
 returns; haruspex then leaves its results unknown. Other options that change no claim haruspex makes (`DATEFIRST`,
 `LANGUAGE`, `DATEFORMAT`) are not settings; writing one is an unknown setting.
-
-## Naming
-
-Generated names come from each object's own name, **never its schema**, by declarative rules applied in this order:
-
-1. `replace`: rules of the form `{ "pattern": "…", "with": "…" }`, run over the name in order, each replacing every match
-   of the regular expression `pattern` with `with` (`$1` names a group, and `""` removes the match); the top-level rules
-   first, then the schema's own. `#$` is the end of the name. Expressions run without backtracking, so
-   backreferences and lookarounds are not available.
-2. `prefix`: the schema's prefix, if any, goes in front as words of its own: `"prefix": "Audit"` makes
-   `audit.get_order` `AuditGetOrder`.
-3. `case` (the schema's, or else the top level's): `pascal` (the default) breaks words at every character that isn't a
-   letter or digit (`$`, `#`, `_`), so `stock$level$history` gives `StockLevelHistory`. `camel` gives
-   `stockLevelHistory`. `preserve` keeps the prefix and the name as they are, `$` included; anything that is still
-   not a valid identifier is an error naming the object.
-
-Nested types build on their procedure's name: `GetOrderRow` for its rows, `GetOrderLine` for the items of `lines`,
-`GetOrderLinesRow` for the rows of a set named `lines` (`sets`, under "Overrides"), `GetOrderResult2Row` for a second unnamed
-result set's rows, and `PartTreeNode` for the recursive type of a function `bom.part_tree` (named by its own schema's
-settings).
-
-**Names don't shift.** When two objects' names come out the same (two schemas with a `get_order` each, say), it is an
-error naming both, which asks for a `prefix` on one of the schemas or a `name` override; haruspex never adds a number
-between objects, because that renumbered names whenever an object was added and broke code that used them. Inside one
-procedure two types can still meet (a nested key `row` beside the row type, or the variants of a union, which share a
-path); there a number is added in the order the procedure's results are written (`GetOrderRow2`), because it depends
-on nothing but that procedure.
-
-## What an editor can't check
-
-The schema an editor checks the file with refuses every setting of the wrong form, but some rules can't be written in a JSON
-Schema, or depend on the files beside the config file, so an editor shows these as valid and `haruspex generate` refuses them:
-
-- **A key written twice in one object**, which a JSON parser keeps the last of.
-- **A procedure named in other than two parts**, `schema.name`, in `procedures`.
-- **A pattern, a path or a regular expression that is not well formed**: a pattern or a path with a bracket left open, a
-  naming rule's expression that doesn't compile.
-- **A name that is a reserved word** in the generated code: a type's, or a set's.
-- **Two names that differ only in case**: two schemas' blocks, or two modules, since a file system that ignores case would
-  hold one file for both.
-- **A schema in two modules**, compared ignoring case, as SQL Server compares schema names.
-- **A warning acknowledged twice**: one code and subject with two reasons.
-- **A collation SQL Server does not have**, or one no database can have.
-- **A file or folder that is not there**: a folder of `references`, a JSON Schema file, or a `$ref` in one.
-- **A declared JSON Schema haruspex can't type** ([what a declaration reads](#the-json-schemas-a-declaration-reads)).
-
-Nor can an editor check what depends on the database: a pattern that matches no procedure, an override's path that its results
-don't have. `generate` and `check` report each with its line.
-
-## Errors
-
-Every error and warning is written to standard error as a compiler writes one, so editors and CI can jump to it, with its
-code, whose page in [the list of diagnostics](diagnostics/README.md) says what it means and what to do. (Notes, one for each
-unknown, are counted rather than listed unless `--verbose` asks; [the command line](command-line.md) says what each run prints,
-and how to have the same as JSON, SARIF or GitHub annotations.)
-
-```text
-haruspex.json:14:9: error HAR4104: procedures["sales.get_order"].paths["lines[].skew"]: the path results[0].lines[].skew does not exist: the object at results[0].lines[] has no key "skew". Its keys are "sku", "quantity".
-haruspex.json:22:7: warning HAR4110: procedures["sales.get_order"].paths.id: "nullable": false agrees with the inference, which already proves the value at results[0].id is never null. Remove it.
-haruspex.json: error HAR4303: "GetOrder" would name both the procedure audit.get_order and the procedure sales.get_order. Generated names must not clash: give one of their schemas a "prefix" in "schemas", …
-```
-
-Errors in the config file exit with code 2, as command line mistakes do, and nothing is written; [the command
-line](../src/Haruspex.Cli/README.md#what-it-guarantees) lists every exit code.
