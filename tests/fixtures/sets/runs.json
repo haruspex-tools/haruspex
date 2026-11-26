@@ -1,6 +1,11 @@
 // The runs of the sets fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
 // what each key means.
 {
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "rink.overlaps results[1][].kind: value lesson": "The INTERSECT keeps only what its right side, 'PUBLIC' and 'HOCKEY', also gives, so lesson never comes out; the IR claims the column's whole CHECK set, which is only wider."
+  },
+
   "setups": {
     "an empty rink": "DELETE FROM rink.booking; DELETE FROM rink.locker; DELETE FROM rink.session; DELETE FROM rink.guest; DELETE FROM rink.member;"
   },

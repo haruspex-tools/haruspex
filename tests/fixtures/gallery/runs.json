@@ -1,6 +1,8 @@
 // The runs of the gallery fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
 // key means. A binary argument is written as SQL writes one, 0x and two hex digits a byte.
 {
+  // Not held to every edge: its point is how each binary type is read, written and sent, and the lengths it claims are its
+  // types' (an expression's, such as HASHBYTES', is the engine's, and reached); BinaryObservationTests holds the types' rules.
   "seedReachesEveryEdge": false,
 
   "setups": {

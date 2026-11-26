@@ -26,7 +26,7 @@ public class CanonicalValueSetObservationTests(SqlServerFixture server)
     [MemberData(nameof(Cells))]
     public async Task A_value_equals_a_member_exactly_when_their_folds_are_equal(string collation)
     {
-        server.Require();
+        await server.RequireAsync();
         var fold = CollationFold.For(collation, StringKind.CodePage)!;
         var byFold = Members.ToDictionary(fold.Fold, m => m, StringComparer.Ordinal);
         Assert.Equal(Members.Length, byFold.Count);

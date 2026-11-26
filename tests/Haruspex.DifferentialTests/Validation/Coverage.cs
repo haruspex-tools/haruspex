@@ -128,8 +128,11 @@ public static class Coverage
     /// minimum length met and each value of a set seen. Under an exact set the bounds are not required, since the
     /// set already rules most of the range out (a smallint limited to 1, 2 and 4 never reaches -32768).
     /// </summary>
+    /// <param name="document">The fixture's IR.</param>
+    /// <param name="reached">The edges the runs reached, by procedure.</param>
+    /// <param name="scope">Every edge, or only those of facts the type alone doesn't give (<see cref="EdgeScope"/>).</param>
     /// <returns>Each edge not reached, as <c>procedure path: edge</c>, sorted.</returns>
-    public static IReadOnlyList<string> MissingEdges(IrDocument document, IReadOnlyDictionary<string, IReadOnlySet<(string Path, string Edge)>> reached)
+    public static IReadOnlyList<string> MissingEdges(IrDocument document, IReadOnlyDictionary<string, IReadOnlySet<(string Path, string Edge)>> reached, EdgeScope scope = EdgeScope.Every)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(reached);
@@ -143,12 +146,12 @@ public static class Coverage
             for (var i = 0; i < results.Count; i++)
             {
                 // A result of at most one row is tested at its bound only by a run that returns one (IR 0.8).
-                if (results[i].Cardinality != IrCardinality.Many && !saw.Contains(($"results[{i}]", "one row")))
+                if (scope == EdgeScope.Every && results[i].Cardinality != IrCardinality.Many && !saw.Contains(($"results[{i}]", "one row")))
                     missing.Add($"{procedure.Id} results[{i}]: one row");
 
                 WalkScalars(document, results[i].Type, $"results[{i}]", [], (path, scalar) =>
                 {
-                    foreach (var edge in Edges(scalar))
+                    foreach (var edge in Edges(scalar, scope))
                     {
                         if (!saw.Contains((path, edge)))
                             missing.Add($"{procedure.Id} {path}: {edge}");
@@ -156,6 +159,8 @@ public static class Coverage
                 }, (path, array) =>
                 {
                     // An array's length is an edge like a string's: json_array's bounds are only tested by data at them.
+                    if (scope != EdgeScope.Every)
+                        return;
                     foreach (var edge in new[] { array.MinItems is { } min ? $"min items {min}" : null, array.MaxItems is { } max ? $"max items {max}" : null })
                     {
                         if (edge is not null && !saw.Contains((path, edge)))
@@ -169,19 +174,20 @@ public static class Coverage
         return missing;
     }
 
-    private static IEnumerable<string> Edges(IrScalar scalar)
+    private static IEnumerable<string> Edges(IrScalar scalar, EdgeScope scope)
     {
         if (scalar.Facets is not { } facets)
             yield break;
         var exactSet = facets.Values is { Match: IrValueMatch.Exact };
         var stepKnown = facets.Digits is not null || scalar.Format is IrFormat.Uint8 or IrFormat.Int16 or IrFormat.Int32 or IrFormat.Int64;
-        if (!exactSet && facets.Min is { } min && (min.Inclusive || stepKnown))
+        bool Held(IrFactSource from) => scope == EdgeScope.Every || from.Kind != IrFactSourceKind.Type;
+        if (!exactSet && facets.Min is { } min && (min.Inclusive || stepKnown) && Held(min.From))
             yield return "min";
-        if (!exactSet && facets.Max is { } max && (max.Inclusive || stepKnown))
+        if (!exactSet && facets.Max is { } max && (max.Inclusive || stepKnown) && Held(max.From))
             yield return "max";
-        if (facets.Length is { } length)
+        if (facets.Length is { } length && Held(length.From))
             yield return $"length {length.Value}";
-        if (facets.MinLength is { } minLength)
+        if (facets.MinLength is { } minLength && Held(minLength.From))
             yield return $"min length {minLength.Value}";
         foreach (var item in facets.Values?.Items ?? [])
             yield return "value " + item.Text;

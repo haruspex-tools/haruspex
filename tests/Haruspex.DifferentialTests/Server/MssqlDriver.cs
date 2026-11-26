@@ -23,7 +23,7 @@ internal static class MssqlDriver
     public static async Task<IReadOnlyList<Response>> RunAsync(
         SqlServerFixture server, string? module, IReadOnlyList<string> setup, IReadOnlyList<Call> calls, CancellationToken token, ScratchDatabase? committed = null)
     {
-        server.Require();
+        await server.RequireAsync();
         EmitCheckPackage.RequireNode(RepositoryPaths.EmitCheck, "the mssql driver was not run");
         EmitCheckPackage.EnsureInstalled(RepositoryPaths.EmitCheck);
 

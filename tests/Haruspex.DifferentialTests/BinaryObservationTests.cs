@@ -158,7 +158,7 @@ public class BinaryObservationTests(SqlServerFixture server)
     {
         // QueryParameterObservationTests observes a varbinary(16) beside haruspex's answer; these are the other kinds: a fixed
         // length and a rowversion under equality, and ordering over a fixed length and over max, which stays max.
-        server.Require();
+        await server.RequireAsync();
         var token = TestContext.Current.CancellationToken;
         await using var session = await server.WriteAsync(token);
         // A table of the session's own transaction, rolled back: the procedure can't see a temporary one.

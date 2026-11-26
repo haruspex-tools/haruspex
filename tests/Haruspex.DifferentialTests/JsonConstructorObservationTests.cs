@@ -18,7 +18,7 @@ public class JsonConstructorObservationTests(SqlServerFixture server)
     /// <summary>Runs one query and returns the first column of each row of its only result set.</summary>
     private async Task<IReadOnlyList<string?>> Rows(string sql)
     {
-        server.Require();
+        await server.RequireAsync();
         await using var session = await server.ReadAsync(TestContext.Current.CancellationToken);
         await using var command = session.Command(sql);
         await using var reader = await command.ExecuteReaderAsync(TestContext.Current.CancellationToken);

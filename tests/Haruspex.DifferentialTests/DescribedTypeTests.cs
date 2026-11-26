@@ -18,7 +18,7 @@ public class DescribedTypeTests(SqlServerFixture server)
     [MemberData(nameof(Fixtures))]
     public async Task Each_typed_rowset_column_has_the_type_sql_server_describes(string fixture)
     {
-        server.Require();
+        await server.RequireAsync();
         var cancel = TestContext.Current.CancellationToken;
         var document = Fixture.Named(fixture).Ir;
         var differences = new List<string>();

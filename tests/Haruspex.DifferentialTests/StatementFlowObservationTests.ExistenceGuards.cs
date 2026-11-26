@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Haruspex.DifferentialTests.Server;
 using Microsoft.Data.SqlClient;
 
@@ -11,6 +10,9 @@ public partial class StatementFlowObservationTests
     // Each case runs a procedure that tests the row exists, waits, and reads it again, while a second session deletes the
     // row during the wait and commits. Both sessions need committed rows, so each test has a database of its own
     // (SqlServerFixture.ScratchAsync).
+
+    /// <summary>The error a statement raises when a lock it needs isn't granted within <c>SET LOCK_TIMEOUT</c>.</summary>
+    private const int LockTimeout = 1222;
 
     /// <summary>
     /// Runs the guard and the read with <paramref name="before"/> first, <paramref name="hint"/> on the guard's table,
@@ -43,10 +45,36 @@ public partial class StatementFlowObservationTests
         var reading = call.ExecuteScalarAsync(token);
         await ScratchDatabase.InItsWaitforAsync(deleter, session, reading, token);
 
-        var clock = Stopwatch.StartNew();
-        await using (var delete = new SqlCommand("DELETE FROM dbo.obs_order WHERE order_id = 1;", deleter))
+        // Whether the delete must wait is the server's answer, not a clock's, so a loaded runner can't flip it: with a lock
+        // timeout of 0 a delete that would wait on the guard's lock fails at once with 1222 and deletes nothing. It is then
+        // sent again with no timeout, and waits for the lock as an application's delete would, so the read sees what it would.
+        var waited = false;
+        await using (var attempt = new SqlCommand("SET LOCK_TIMEOUT 0; DELETE FROM dbo.obs_order WHERE order_id = 1;", deleter))
+        {
+            try
+            {
+                await attempt.ExecuteNonQueryAsync(token);
+            }
+            catch (SqlException e) when (e.Number == LockTimeout)
+            {
+                waited = true;
+            }
+        }
+
+        // The answer is about the guard's lock during its wait only if the guard was still waiting after the attempt (it was
+        // before it: InItsWaitforAsync). A runner that stalled past the wait raced nothing, which is no claim about the engine.
+        await using (var still = new SqlCommand("SELECT wait_type FROM sys.dm_exec_requests WHERE session_id = @session;", deleter))
+        {
+            still.Parameters.Add(new SqlParameter("@session", System.Data.SqlDbType.SmallInt) { Value = session });
+            if (await still.ExecuteScalarAsync(token) is not "WAITFOR")
+                throw new InvalidOperationException($"Session {session} had left its WAITFOR by the time the delete was tried, so nothing was raced: run the test again.");
+        }
+
+        if (waited)
+        {
+            await using var delete = new SqlCommand("SET LOCK_TIMEOUT -1; DELETE FROM dbo.obs_order WHERE order_id = 1;", deleter);
             await delete.ExecuteNonQueryAsync(token);
-        var waited = clock.Elapsed > TimeSpan.FromMilliseconds(700);
+        }
 
         var found = await reading;
         return $"{(found is DateTime d ? d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) : "null")}, delete {(waited ? "waited" : "did not wait")}";

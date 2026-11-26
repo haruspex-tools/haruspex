@@ -44,12 +44,15 @@ public static class SqlProjectReader
     public static SqlProjectReadResult Read(string path, IReadOnlyList<string>? searchFolders = null, IReadOnlyCollection<string>? builds = null) =>
         Read(path, searchFolders ?? [], PackageCache.Default, builds ?? []);
 
-    /// <summary>Reads the project at <paramref name="path"/>, finding the packages it refers to in <paramref name="cache"/>.</summary>
-    internal static SqlProjectReadResult Read(string path, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string>? builds = null)
+    /// <summary>
+    /// Reads the project at <paramref name="path"/>, finding the packages it refers to in <paramref name="cache"/>, and each path on
+    /// disk through <paramref name="listings"/> when given.
+    /// </summary>
+    internal static SqlProjectReadResult Read(string path, IReadOnlyList<string> searchFolders, PackageCache cache, IReadOnlyCollection<string>? builds = null, FolderListings? listings = null)
     {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(searchFolders);
         var root = Path.GetFullPath(path);
-        return new ProjectReading(Path.GetDirectoryName(root) ?? ".", [.. searchFolders.Select(Path.GetFullPath)], cache, builds ?? []).Read(root);
+        return new ProjectReading(Path.GetDirectoryName(root) ?? ".", [.. searchFolders.Select(Path.GetFullPath)], cache, builds ?? [], listings).Read(root);
     }
 }

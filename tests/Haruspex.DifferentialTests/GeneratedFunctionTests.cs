@@ -83,12 +83,12 @@ public class GeneratedFunctionTests(SqlServerFixture server)
         new(
             run.Name,
             MssqlEmitter.FunctionName(procedure.Name),
-            procedure.Parameters.Count == 0 ? null : run.Parameters.ToDictionary(p => p.Key.TrimStart('@'), p => Argument(procedure.Parameters.Single(d => d.Name.Equals(p.Key, StringComparison.OrdinalIgnoreCase)).Type, p.Value)));
+            procedure.Parameters.Count == 0 ? null : run.Parameters.ToDictionary(p => p.Key.TrimStart('@'), p => Argument(procedure.Parameters.Single(d => d.Name.Equals(p.Key, StringComparison.OrdinalIgnoreCase)).Type, p.Value.Value)));
 
     /// <summary>A run's argument in the form the parameters' schema takes for <paramref name="type"/>.</summary>
     private static object? Argument(IrType type, object? value) => value switch
     {
-        null or System.Data.SqlTypes.SqlBinary { IsNull: true } => null,
+        null => null,
         DateTime at when type is IrScalar { Kind: IrScalarKind.Date } => at.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         DateTime at => at.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFF", CultureInfo.InvariantCulture).TrimEnd('.'),
         TimeSpan time => time.ToString(@"hh\:mm\:ss\.FFFFFFF", CultureInfo.InvariantCulture).TrimEnd('.'),

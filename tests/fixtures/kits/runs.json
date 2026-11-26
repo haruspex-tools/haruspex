@@ -1,6 +1,12 @@
 // The runs of the kits fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
 // what each key means.
 {
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "kit.kit_sheets results[0][].copied[].sku: value SPARE": "The SPARE row goes into #sheets only, under kit -1, which the join to @sheets never matches; the IR claims it among copied's values from the literal, which is only wider.",
+    "kit.part_rows results[3][].boxed: value true": "JSON_VALUE of a JSON boolean gives 'true' or 'false', but @style is a literal whose boxed is false."
+  },
+
   "setups": {
     "no kits": "DELETE FROM kit.kit_part; DELETE FROM kit.kit;"
   },

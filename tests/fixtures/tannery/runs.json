@@ -1,10 +1,17 @@
 // The runs of the tannery fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says
 // what each key means.
 {
+  // Not held to every edge: its point is how a string set matches under each collation, which the seed's spellings show.
   "seedReachesEveryEdge": false,
+
+  // Edges of facts the types alone don't give that no run can reach, each with the reason.
+  "edgesNotReached": {
+    "dye.list_vats results[0][].finish: value MATT": "Under the column's case-insensitive collation 'MATT' is 'matt', the set's first member, which the seed reaches (vats 1 and 3); a value counts for the first member it matches."
+  },
 
   "runs": [
     { "name": "list_vats", "procedure": "dye.list_vats" },
+    { "name": "vat_card, hot", "procedure": "dye.vat_card", "parameters": { "@vat_id": 1 } },
     { "name": "vat_card, shouted", "procedure": "dye.vat_card", "parameters": { "@vat_id": 2 } },
     { "name": "vat_card, padded and accented", "procedure": "dye.vat_card", "parameters": { "@vat_id": 3 } },
     { "name": "vat_card, no mode", "procedure": "dye.vat_card", "parameters": { "@vat_id": 4 } },

@@ -14,7 +14,7 @@ public static class ObservedCall
     /// Runs each of <paramref name="setup"/> as a batch of its own (CREATE PROCEDURE must be alone in one), then
     /// <paramref name="call"/>, reading every result set as a client does; rolled back.
     /// </summary>
-    /// <param name="server">The fixture, whose write session the whole run holds (it is alone in the database while it lasts).</param>
+    /// <param name="server">The fixture, whose write session the whole run holds (it is alone in a database of its own while it lasts).</param>
     /// <param name="setup">Batches run first.</param>
     /// <param name="call">The batch whose results are read.</param>
     /// <param name="errorsAsMessages">
@@ -25,10 +25,9 @@ public static class ObservedCall
     {
         ArgumentNullException.ThrowIfNull(server);
         ArgumentNullException.ThrowIfNull(setup);
-        server.Require();
         var cancel = TestContext.Current.CancellationToken;
 
-        // It creates procedures and tables, so it is alone in the database while it does (README.md).
+        // It creates procedures and tables, so it is alone in a database of its own while it does (README.md).
         await using var session = await server.WriteAsync(cancel);
         foreach (var batch in setup)
         {

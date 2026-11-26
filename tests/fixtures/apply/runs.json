@@ -3,7 +3,10 @@
 {
   "setups": {
     "an empty market": "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase; DELETE FROM mart.price; DELETE FROM mart.product; DELETE FROM mart.customer;",
-    "no purchases": "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;"
+    "no purchases": "DELETE FROM mart.purchase_line; DELETE FROM mart.purchase;",
+    // Each status of the CHECK where only some reach: customer 3's sent purchase made the latest, a line on the paid one.
+    "a sent purchase last": "UPDATE mart.purchase SET placed_on = '2026-10-10' WHERE purchase_id = 13;",
+    "a line on a paid purchase": "INSERT INTO mart.purchase_line (purchase_id, line_no, product_id, quantity, unit_price, discount) VALUES (11, 1, 100, 1, 9.50, NULL);"
   },
 
   "runs": [
@@ -16,9 +19,11 @@
     { "name": "customer_tree, no customers", "procedure": "mart.customer_tree", "setup": "an empty market" },
     { "name": "get_purchase, two lines", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 10 } },
     { "name": "get_purchase, no lines", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 11 } },
+    { "name": "get_purchase, sent", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 13 } },
     { "name": "get_purchase, no such purchase", "procedure": "mart.get_purchase", "parameters": { "@purchase_id": 99 } },
     { "name": "customer_purchases", "procedure": "mart.customer_purchases" },
     { "name": "last_purchase", "procedure": "mart.last_purchase" },
+    { "name": "last_purchase, a sent one last", "procedure": "mart.last_purchase", "setup": "a sent purchase last" },
     { "name": "last_purchase, no purchases", "procedure": "mart.last_purchase", "setup": "no purchases" },
     { "name": "customer_activity", "procedure": "mart.customer_activity" },
     { "name": "customer_activity, no purchases", "procedure": "mart.customer_activity", "setup": "no purchases" },
@@ -31,6 +36,8 @@
     { "name": "purchase_overview", "procedure": "mart.purchase_overview" },
     { "name": "purchase_overview, none", "procedure": "mart.purchase_overview", "setup": "an empty market" },
     { "name": "purchase_lines, two lines", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 10 } },
+    { "name": "purchase_lines, sent", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 13 } },
+    { "name": "purchase_lines, paid", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 11 }, "setup": "a line on a paid purchase" },
     { "name": "purchase_lines, none", "procedure": "mart.purchase_lines", "parameters": { "@purchase_id": 11 } },
     { "name": "price_versions, changed once", "procedure": "mart.price_versions", "parameters": { "@product_id": 101 } },
     { "name": "price_versions, never changed", "procedure": "mart.price_versions", "parameters": { "@product_id": 100 } }
