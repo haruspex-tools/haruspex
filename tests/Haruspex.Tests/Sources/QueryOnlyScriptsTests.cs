@@ -1,3 +1,4 @@
+using Haruspex.Diagnostics;
 using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.Tests.Sources;
@@ -43,6 +44,74 @@ public class QueryOnlyScriptsTests
     [InlineData("SELECT p.id FROM garden.plant AS p;\nGO\nDROP TABLE garden.plant;")]
     [InlineData("SELECT p.id FROM garden.plant AS p WHERE")]
     public void A_script_the_folder_reader_records_is_the_database_s(string sql) => Assert.False(QueryOnly(sql));
+
+    /// <summary>
+    /// One script for each record a folder's script can make, which makes that record alone: so each record is counted by
+    /// <see cref="SchemaDeclarations.IsEmpty"/>, since leaving one out there lets its script through as adding nothing.
+    /// </summary>
+    public static TheoryData<string, string> OneRecordEach => new()
+    {
+        { "Diagnostics", "SELECT p.id FROM garden.plant AS p WHERE" },
+        { "Tables", "CREATE TABLE garden.plant (id int NOT NULL);" },
+        { "TableChanges", "ALTER TABLE garden.plant ADD note nvarchar(20) NULL;" },
+        { "PeriodDrops", "ALTER TABLE garden.plant DROP PERIOD FOR SYSTEM_TIME;" },
+        { "AddedKeys", "ALTER TABLE garden.plant ADD CONSTRAINT pk_plant PRIMARY KEY (id);" },
+        { "UserTypes", "CREATE TYPE garden.height FROM decimal(5, 2) NOT NULL;" },
+        { "Procedures", "CREATE PROCEDURE garden.p AS SELECT 1 AS one;" },
+        { "ProcedureChanges", "ALTER PROCEDURE garden.p AS SELECT 2 AS two;" },
+        { "Functions", "CREATE FUNCTION garden.f() RETURNS int AS BEGIN RETURN 1; END;" },
+        { "FunctionChanges", "ALTER FUNCTION garden.f() RETURNS int AS BEGIN RETURN 2; END;" },
+        { "Views", "CREATE VIEW garden.v AS SELECT 1 AS one;" },
+        { "Synonyms", "CREATE SYNONYM garden.s FOR garden.plant;" },
+        { "ConditionalSynonyms", "IF 1 = 1 CREATE SYNONYM garden.s FOR garden.plant;" },
+        { "Triggers", "CREATE TRIGGER garden.t ON garden.plant AFTER INSERT AS SELECT 1 AS one;" },
+        { "CascadingKeys", "ALTER TABLE garden.water_log ADD CONSTRAINT fk_plant FOREIGN KEY (plant_id) REFERENCES garden.plant (id) ON DELETE CASCADE;" },
+        { "Enforcement", "ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;" },
+        { "MaskChanges", "ALTER TABLE garden.plant ALTER COLUMN name ADD MASKED WITH (FUNCTION = 'default()');" },
+        { "KeyDisables", "ALTER INDEX ix_plant ON garden.plant DISABLE;" },
+    };
+
+    /// <summary>The records only a project's pre- or post-deployment script makes, which a folder's script never is.</summary>
+    private static readonly string[] DeploymentOnly = ["Deployed", "UnreadDeployments"];
+
+    [Theory]
+    [MemberData(nameof(OneRecordEach))]
+    public void A_script_that_makes_one_record_alone_is_the_database_s(string record, string sql)
+    {
+        using var folder = new TempDirectory();
+        folder.File("s.sql", sql);
+        var declarations = new SchemaDeclarations();
+        SqlScriptFolder.ReadInto(declarations, ScriptFile.InOrder(folder.Path, ["s.sql"], listed: true));
+
+        Assert.Equal([record], Records(declarations));
+        Assert.False(QueryOnlyScripts.Is(Path.Combine(folder.Path, "s.sql")));
+    }
+
+    /// <summary>
+    /// The scripts above cover every record of <c>SchemaDeclarations</c> but the deployment scripts' own, so a record added there
+    /// needs a script here.
+    /// </summary>
+    [Fact]
+    public void Every_record_a_folder_s_script_can_make_has_a_script_that_makes_it()
+    {
+        var covered = OneRecordEach.Select(row => row.Data.Item1).Concat(DeploymentOnly).Order(StringComparer.Ordinal);
+
+        Assert.Equal(RecordNames().Order(StringComparer.Ordinal), covered);
+    }
+
+    /// <summary>The records the declarations hold something in; for <c>Diagnostics</c>, an error.</summary>
+    private static List<string> Records(SchemaDeclarations declarations) =>
+    [
+        .. RecordNames().Where(name => typeof(SchemaDeclarations).GetProperty(name)!.GetValue(declarations) switch
+        {
+            List<Diagnostic> diagnostics => diagnostics.Any(d => d.IsError),
+            System.Collections.ICollection collection => collection.Count > 0,
+            _ => throw new InvalidOperationException($"{name} is not a collection."),
+        }),
+    ];
+
+    private static IEnumerable<string> RecordNames() =>
+        typeof(SchemaDeclarations).GetProperties().Where(p => p.Name != nameof(SchemaDeclarations.IsEmpty)).Select(p => p.Name);
 
     /// <summary>
     /// Every record of <c>SchemaDeclarations</c> is one <see cref="SchemaDeclarations.IsEmpty"/> counts. A record added there
