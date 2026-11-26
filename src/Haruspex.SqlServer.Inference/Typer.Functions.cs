@@ -228,6 +228,8 @@ internal sealed partial class Typer
         // for the other binary values.
         if (from.IsBinary || from.Family == TypeFamily.RowVersion || from.Type == BuiltInType.Image)
             return NotModelled(call, "SQL Server refuses STRING_AGG of a binary value.");
+        if (from.Type == BuiltInType.Xml)
+            return NotModelled(call, "SQL Server refuses STRING_AGG of xml (8116; observed over the catalogue sweep, CatalogueSweepGridTests).");
         var type = from.IsString
             ? ScalarType.CharacterString(from.IsNational, varying: true, from.IsMax ? -1 : BuiltInType.MostBytes)
             : ScalarType.CharacterString(national: true, varying: true, BuiltInType.MostBytes);

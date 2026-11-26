@@ -37,7 +37,9 @@ direction:
   `varbinary` of a length. A type the database defines may change under its name, and the IR doesn't hold its definition: a
   table type that gains a column fails the old call (error 500), and an `xml` schema collection that narrows an element fails
   it (6926). So a table type, a CLR type and `xml` are refused even when named alike (`xml` too because the IR spells it alike
-  with a collection and without). That fails a module with such a parameter on every check, for a change it may not have
+  with a collection and without). From IR 0.34 `xml` is a kind of its own, no longer unknown
+  ([decision 0133](0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)), and an `xml` parameter is still refused, for the
+  same reason (`IrFit`). That fails a module with such a parameter on every check, for a change it may not have
   made; it is sound, and carrying the definition in the IR is what would let it fit. A user's type is named with its schema,
   so one named as a built-in type is not taken for it.
 - **Result sets are matched by place**, as the server sends them. A set's name (decision 0070) is the key the application's

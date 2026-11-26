@@ -27,7 +27,6 @@ EOMONTH('ab'): 241
 EOMONTH(N'ab'): 241
 EOMONTH(dt, i): 517
 EOMONTH(dt, d52): 517
-EOMONTH(dt, x): refused 206
 EOMONTH(dt, sv): refused 260
 EOMONTH(dt, j): refused 206
 EOMONTH(dt, 'ab'): 245
@@ -71,7 +70,6 @@ JSON_VALUE(vx, '$.a'): 13609
 JSON_VALUE(nc3, '$.a'): 13609
 JSON_VALUE(nv10, '$.a'): 13609
 JSON_VALUE(nvx, '$.a'): 13609
-JSON_VALUE(x, '$.a'): refused 8116
 JSON_VALUE(sv, '$.a'): refused 8116
 DECOMPRESS(bin4): 9826
 CONVERT(varchar(30), tm3, 1): 8114

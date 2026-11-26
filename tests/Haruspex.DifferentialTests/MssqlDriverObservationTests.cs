@@ -179,6 +179,75 @@ public partial class MssqlDriverObservationTests(SqlServerFixture server)
         Assert.Equal(8016, calls[6].Error?.Number);
     }
 
+    private static readonly string[] XmlColumns = ["u", "t"];
+
+    [Fact]
+    public async Task The_driver_hands_over_xml_as_its_text_and_sends_text_as_xml()
+    {
+        // An xml column, typed by a schema collection or not, arrives as a string of the text the server serialises it to, "" for
+        // an empty instance and null for NULL, in either parseJSON mode; through FOR JSON it is a JSON string of the same text.
+        // Sent as the driver's Xml, or as a string the driver types itself, the text is parsed by the server; text that isn't
+        // XML fails the call with error 9400, last here, since that error ends the transaction the calls share (decision 0133).
+        var token = TestContext.Current.CancellationToken;
+        string[] setup =
+        [
+            """CREATE XML SCHEMA COLLECTION dbo.obs_driver_draft AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="a"><xs:complexType><xs:attribute name="b" type="xs:int"/></xs:complexType></xs:element></xs:schema>';""",
+            "CREATE TABLE dbo.obs_driver_xml (id int NOT NULL, u xml NULL, t xml(dbo.obs_driver_draft) NULL);",
+            """INSERT dbo.obs_driver_xml VALUES (1, N'<a b="1">x &amp; y</a><!--c-->', N'<a b="1"/>'), (2, N'', NULL), (3, NULL, NULL);""",
+            "CREATE PROCEDURE dbo.obs_driver_xml_in @v xml AS SELECT @v AS v;",
+        ];
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            setup,
+            [
+                new("on", ParseJson: true, Batch: "SELECT u, t FROM dbo.obs_driver_xml ORDER BY id;"),
+                new("off", ParseJson: false, Batch: "SELECT u, t FROM dbo.obs_driver_xml ORDER BY id;"),
+                new("json", ParseJson: true, Batch: "SELECT u, t FROM dbo.obs_driver_xml WHERE id = 1 FOR JSON PATH;"),
+                new("as xml", ParseJson: false, Procedure: "dbo.obs_driver_xml_in", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("Xml", "<q  r='1'/>") }),
+                new("as a string", ParseJson: false, Procedure: "dbo.obs_driver_xml_in", Parameters: new Dictionary<string, object?> { ["v"] = "<q  r='1'/>" }),
+                new("null", ParseJson: false, Procedure: "dbo.obs_driver_xml_in", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("Xml", null) }),
+                new("not xml", ParseJson: false, Procedure: "dbo.obs_driver_xml_in", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.Typed("Xml", "<q") }),
+            ],
+            token);
+
+        // Each row's u and t as the driver handed them over: text, or "(null)" for null.
+        static string Texts(MssqlDriver.Response response) => string.Join(" | ", Assert.Single(response.Recordsets).Rows.Select(r =>
+            string.Join(" ; ", XmlColumns.Select(c => r.GetProperty(c) is { ValueKind: JsonValueKind.String } text ? $"'{text.GetString()}'" : "(null)"))));
+        const string Expected = """'<a b="1">x &amp; y</a><!--c-->' ; '<a b="1"/>' | '' ; (null) | (null) ; (null)""";
+        Assert.Equal((Expected, Expected), (Texts(calls[0]), Texts(calls[1])));
+        var json = OnlyRow(calls[2]).Row[0];
+        Assert.Equal(("""<a b="1">x &amp; y</a><!--c-->""", """<a b="1"/>"""), (json.GetProperty("u").GetString(), json.GetProperty("t").GetString()));
+        Assert.Equal("""<q r="1"/>""", OnlyRow(calls[3]).Row.GetProperty("v").GetString());
+        Assert.Equal("""<q r="1"/>""", OnlyRow(calls[4]).Row.GetProperty("v").GetString());
+        Assert.Equal(JsonValueKind.Null, OnlyRow(calls[5]).Row.GetProperty("v").ValueKind);
+        Assert.Equal(9400, calls[6].Error?.Number);
+    }
+
+    [Fact]
+    public async Task An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as()
+    {
+        // Bound as the driver's Xml or as NVarChar(MAX), typed by a schema collection or not, the server refuses the call with
+        // error 257, an implicit conversion from xml to nvarchar, so the mssql module writes no function for such a procedure
+        // (HAR5206).
+        var calls = await MssqlDriver.RunAsync(
+            server,
+            null,
+            [
+                """CREATE XML SCHEMA COLLECTION dbo.obs_driver_out AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="z"/></xs:schema>';""",
+                "CREATE PROCEDURE dbo.obs_driver_xml_out @v xml OUTPUT AS SET @v = N'<z/>';",
+                "CREATE PROCEDURE dbo.obs_driver_typed_out @v xml(dbo.obs_driver_out) OUTPUT AS SET @v = N'<z/>';",
+            ],
+            [
+                new("xml", ParseJson: false, Procedure: "dbo.obs_driver_xml_out", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.OutputValue(new("Xml")) }),
+                new("text", ParseJson: false, Procedure: "dbo.obs_driver_xml_out", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.OutputValue(new("NVarChar", ["MAX"])) }),
+                new("typed", ParseJson: false, Procedure: "dbo.obs_driver_typed_out", Parameters: new Dictionary<string, object?> { ["v"] = new MssqlDriver.OutputValue(new("Xml")) }),
+            ],
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal([257, 257, 257], calls.Select(c => c.Error?.Number));
+    }
+
     [Fact]
     public async Task A_rowset_bigint_arrives_as_the_text_of_its_digits()
     {

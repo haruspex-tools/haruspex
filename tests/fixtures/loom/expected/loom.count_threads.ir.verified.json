@@ -1,0 +1,94 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/count_threads.sql": "f7aa75d3f4c38a8c2f86f5379cd5f007a450537ac5ff22d11d2a6168271458b0"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.count_threads",
+      "name": "CountThreads",
+      "kind": "procedure",
+      "at": "procedures/count_threads.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CountThreadsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CountThreadsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.count_threads",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "colour",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-source"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/count_threads.sql:2:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "loom.count_threads",
+      "path": "results[0][].colour",
+      "reason": "unsupported-source",
+      "detail": "p.draft.nodes('/draft/threading/end') AS t(c): a table-valued function cannot have a column alias (317), and XML's nodes(), which takes one, is not modelled yet.",
+      "at": "procedures/count_threads.sql:2:8"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

@@ -2216,6 +2216,47 @@ over either they stay unknown):
 
 `NEWSEQUENTIALID`, which a `DEFAULT` alone may call, makes a `uniqueidentifier`, not a binary value.
 
+## XML values
+
+A value of `xml`, typed by a schema collection or not, is a scalar of kind `xml`, with no facets: its type declares no length, and
+text that becomes XML is parsed and written again, so what was known of the text isn't known of it
+([decision 0133](../../docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md); `SqlTypes`). Everything a
+client is handed is the text the server writes the instance as: the mssql driver hands over a rowset's `xml` column as a string,
+`""` for an empty instance, which is not NULL, and `FOR JSON` and the JSON constructors write it as a JSON string of the same text
+(`An_xml_column_is_null_only_where_it_is_and_an_empty_instance_is_not`,
+`The_driver_hands_over_xml_as_its_text_and_sends_text_as_xml`). The driver can't receive an `xml` `OUTPUT` parameter, which fails
+the call with error 257 however it is bound (`An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as`); the IR still types
+it, and the mssql emitter refuses the procedure's function (HAR5206). Observed in `XmlObservationTests`; the unit tests are
+`XmlTests`, and the fixture `tests/fixtures/loom`.
+
+- **Conversions.** `CAST(… AS xml)` and `CONVERT(xml, …)`, with or without a style, are `xml`, NULL only when the operand is; text
+  that isn't well formed is an error (9400), and so is an instance converted into text or a binary type too short for it (6354),
+  under the callers' `ANSI_WARNINGS` and `ARITHABORT` off too, where an overflow would be NULL
+  (`A_conversion_to_xml_is_null_only_for_null_and_try_forms_also_for_text_that_is_not_xml`,
+  `A_conversion_to_or_from_xml_fails_rather_than_giving_null_even_under_the_callers_options`, `Conversions.FailsRatherThanNull`).
+  `TRY_CAST` and `TRY_CONVERT` make either NULL (`failed-conversion`).
+- **Beside text, and compared.** `CASE`, `IIF`, `COALESCE`, `ISNULL` and `UNION ALL` of `xml` and text are `xml`, the text parsed as XML,
+  by type precedence (`Text_beside_xml_takes_xml_by_precedence`). `xml` can't be compared, so `MIN`, `MAX`, `NULLIF`, a percentile
+  ordered by it and `STRING_AGG` of it are refused (8117, 305, 8116), and unknown
+  (`Xml_can_t_be_compared_so_min_max_nullif_and_string_agg_of_it_are_refused`).
+- **`x.value('path', 'type')`** is the type its literal second argument names, read as a declaration reads a type
+  (`nvarchar` is `nvarchar(1)`, `decimal` `decimal(18,0)`, in any case, bracketed or in `sys`), with that type's facets: a longer
+  value is cut to the type's length. It is always nullable, `xml-value`: NULL where the path finds no node or `x` is NULL, and no
+  proof that a path always finds one is modelled
+  (`Xml_value_is_its_type_arguments_type_and_null_where_the_path_finds_no_node`). `json` and `vector(n)` are given as those types
+  to a client that supports them and as `varchar(max)` to one that doesn't, and the server refuses `xml`, `text`, `ntext`,
+  `image`, `sql_variant`, the CLR types and a type not built in, so each is unknown
+  (`Xml_value_of_json_or_vector_is_typed_by_what_the_client_supports_and_other_types_are_refused`).
+- **`x.exist('path')`** is a `bit`, NULL exactly when `x` is: an empty instance, and a NULL `sql:variable` or `sql:column` in the
+  path, give 0 (`Xml_exist_is_a_bit_null_exactly_when_the_xml_is`).
+- **`x.query(…)`**, and **`x.nodes(…)`** as a source, are unknown: what they give is XML its path shapes, which a schema
+  collection may later type.
+- **The target** of a method is any expression (`@x.value(…)`, `CAST(… AS xml).exist(…)`) or a column of the query
+  (`p.spec.value(…)`); `spec.value(…)` is the column's method when `spec` is a column in scope, and the server refuses it as
+  ambiguous (327) when a function `spec.value` exists too
+  (`A_method_of_a_column_named_as_a_schema_with_a_function_of_that_name_is_refused_as_ambiguous`, `Typer.XmlMethodCall`). Both
+  arguments must be literals (`Xml_methods_take_only_literal_arguments`); a method's name is read through `XmlMethods`.
+
 ## Built-in functions
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the

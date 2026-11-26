@@ -57,6 +57,9 @@ public partial class ZodEmitterTests
     // A binary value is base64 text in JSON and the driver's Buffer in a rowset.
     [InlineData(IrEncoding.Json, IrScalarKind.Bytes, null, "varbinary(max)", "z.base64()")]
     [InlineData(IrEncoding.Rowset, IrScalarKind.Bytes, null, "varbinary(max)", "z.instanceof(Buffer)")]
+    // XML is its text in both, a string branded Xml (decision 0133).
+    [InlineData(IrEncoding.Json, IrScalarKind.Xml, null, "xml", "z.string().brand<\"Xml\">()")]
+    [InlineData(IrEncoding.Rowset, IrScalarKind.Xml, null, "xml(shop.spec_schema)", "z.string().brand<\"Xml\">()")]
     public void Maps_each_scalar_as_its_encoding_delivers_it(IrEncoding encoding, IrScalarKind kind, IrFormat? format, string sql, string zod)
     {
         var ts = ZodEmitter.Emit(OneResult(encoding, Field("v", new IrScalar(kind, format, sql)))).Expected();

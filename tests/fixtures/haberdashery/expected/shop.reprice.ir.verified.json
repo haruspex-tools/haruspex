@@ -1,10 +1,13 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.34",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "files": {
-      "procedures/reprice.sql": "2907c3197f3f7a803598239436a15d68211e172e0cd79129f5d9258eec377773",
-      "tables/parcel.sql": "1f2e14684c85bf665489917f5c8ab79a5338c3de1c883952621f18155c1e9f06"
+      "procedures/reprice.sql": "2907c3197f3f7a803598239436a15d68211e172e0cd79129f5d9258eec377773"
     }
   },
   "objects": [
@@ -202,8 +205,8 @@
         {
           "name": "extras",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-sql-type"
+            "kind": "xml",
+            "sql": "xml"
           },
           "presence": "always",
           "nullable": true,
@@ -217,15 +220,7 @@
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "shop.reprice",
-      "path": "results[1][].extras",
-      "reason": "unsupported-sql-type",
-      "detail": "The type xml is not modelled yet.",
-      "at": "tables/parcel.sql:7:5"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

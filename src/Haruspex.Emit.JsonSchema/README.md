@@ -193,6 +193,7 @@ Each fact becomes the most precise keyword JSON Schema has:
 | a time, a date and time without an offset | a `pattern`, since no RFC 3339 format fits |
 | the SQL type of a time or a date and time (`sql`) | in the `pattern`, a fraction of a second of exactly as many digits as the type's scale, or none, as `FOR JSON` writes it (three ending in 0, 3 or 7 for `datetime`, none for `smalldatetime`) |
 | a binary value, in a rowset or in JSON | the base64 text `FOR JSON` writes: `contentEncoding` `base64`, the `pattern` of padded base64, and its length in characters, four for every three bytes or part of three ([decision 0082](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)) |
+| an XML value, in a rowset or in JSON | its text: `type` `string` with `contentMediaType` `application/xml`, an annotation that validates nothing more ([decision 0133](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)) |
 | an array, its items' nullability and length | `items`, `minItems`, `maxItems` |
 | a tuple (`json_array`) | `prefixItems`, `"items": false` and `minItems` |
 | a record (`json_objectagg`) | `additionalProperties` of its values' schema |

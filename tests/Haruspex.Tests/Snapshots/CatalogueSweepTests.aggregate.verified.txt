@@ -300,14 +300,14 @@ VAR(vb10) -> unknown unsupported-expression: VAR(vb10): VAR of a value of this t
 VARP(vb10) -> unknown unsupported-expression: VARP(vb10): VARP of a value of this type is not modelled.
 COUNT(x) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(x) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
-SUM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-AVG(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MAX(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-STDEV(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-STDEVP(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-VAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-VARP(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUM(x) -> unknown unsupported-expression: SUM(x): SUM of a value of this type is not modelled yet.
+AVG(x) -> unknown unsupported-expression: AVG(x): AVG of a value of this type is not modelled.
+MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MAX(x) -> unknown unsupported-expression: MAX(x): SQL Server refuses MAX of xml.
+STDEV(x) -> unknown unsupported-expression: STDEV(x): STDEV of a value of this type is not modelled.
+STDEVP(x) -> unknown unsupported-expression: STDEVP(x): STDEVP of a value of this type is not modelled.
+VAR(x) -> unknown unsupported-expression: VAR(x): VAR of a value of this type is not modelled.
+VARP(x) -> unknown unsupported-expression: VARP(x): VARP of a value of this type is not modelled.
 COUNT(sv) -> int number/int32 null:count-overflow {[-2147483648 2147483647]}
 COUNT_BIG(sv) -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 SUM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -388,8 +388,8 @@ COUNT(*) + MIN(bin4) -> unknown unsupported-expression: COUNT(*) + MIN(bin4): ar
 MIN(bin4) + COUNT(*) -> unknown unsupported-expression: MIN(bin4) + COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) + MIN(vb10) -> unknown unsupported-expression: COUNT(*) + MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) + COUNT(*) -> unknown unsupported-expression: MIN(vb10) + COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) + COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) + MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) + COUNT(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) + COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(*) + MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -468,8 +468,8 @@ COUNT(*) - MIN(bin4) -> unknown unsupported-expression: COUNT(*) - MIN(bin4): ar
 MIN(bin4) - COUNT(*) -> unknown unsupported-expression: MIN(bin4) - COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) - MIN(vb10) -> unknown unsupported-expression: COUNT(*) - MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) - COUNT(*) -> unknown unsupported-expression: MIN(vb10) - COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) - COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) - MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) - COUNT(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) - COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(*) - MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -548,8 +548,8 @@ COUNT(*) * MIN(bin4) -> unknown unsupported-expression: COUNT(*) * MIN(bin4): ar
 MIN(bin4) * COUNT(*) -> unknown unsupported-expression: MIN(bin4) * COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) * MIN(vb10) -> unknown unsupported-expression: COUNT(*) * MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) * COUNT(*) -> unknown unsupported-expression: MIN(vb10) * COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) * COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) * MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) * COUNT(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) * COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(*) * MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -628,8 +628,8 @@ COUNT(*) / MIN(bin4) -> unknown unsupported-expression: COUNT(*) / MIN(bin4): ar
 MIN(bin4) / COUNT(*) -> unknown unsupported-expression: MIN(bin4) / COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) / MIN(vb10) -> unknown unsupported-expression: COUNT(*) / MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) / COUNT(*) -> unknown unsupported-expression: MIN(vb10) / COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) / COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) / MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) / COUNT(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) / COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(*) / MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -708,8 +708,8 @@ COUNT(*) % MIN(bin4) -> unknown unsupported-expression: COUNT(*) % MIN(bin4): ar
 MIN(bin4) % COUNT(*) -> unknown unsupported-expression: MIN(bin4) % COUNT(*): arithmetic on these types is not modelled yet.
 COUNT(*) % MIN(vb10) -> unknown unsupported-expression: COUNT(*) % MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) % COUNT(*) -> unknown unsupported-expression: MIN(vb10) % COUNT(*): arithmetic on these types is not modelled yet.
-COUNT(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) % COUNT(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT(*) % MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) % COUNT(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) % COUNT(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT(*) % MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -788,8 +788,8 @@ COUNT_BIG(*) + MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(b
 MIN(bin4) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) + MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) + MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) + COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) + MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) + MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) + COUNT_BIG(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT_BIG(*) + MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) + COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT_BIG(*) + MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -868,8 +868,8 @@ COUNT_BIG(*) - MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(b
 MIN(bin4) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) - MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) - MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) - COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) - MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) - MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) - COUNT_BIG(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT_BIG(*) - MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) - COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT_BIG(*) - MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -948,8 +948,8 @@ COUNT_BIG(*) * MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(b
 MIN(bin4) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) * MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) * MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) * COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) * MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) * MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) * COUNT_BIG(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT_BIG(*) * MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) * COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT_BIG(*) * MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -1028,8 +1028,8 @@ COUNT_BIG(*) / MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(b
 MIN(bin4) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) / MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) / MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) / COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) / MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) / MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) / COUNT_BIG(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT_BIG(*) / MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) / COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT_BIG(*) / MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
@@ -1108,8 +1108,8 @@ COUNT_BIG(*) % MIN(bin4) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(b
 MIN(bin4) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(bin4) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
 COUNT_BIG(*) % MIN(vb10) -> unknown unsupported-expression: COUNT_BIG(*) % MIN(vb10): arithmetic on these types is not modelled yet.
 MIN(vb10) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(vb10) % COUNT_BIG(*): arithmetic on these types is not modelled yet.
-COUNT_BIG(*) % MIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-MIN(x) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COUNT_BIG(*) % MIN(x) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
+MIN(x) % COUNT_BIG(*) -> unknown unsupported-expression: MIN(x): SQL Server refuses MIN of xml.
 COUNT_BIG(*) % MIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(sv) % COUNT_BIG(*) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COUNT_BIG(*) % MIN(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.

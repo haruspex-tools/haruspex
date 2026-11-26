@@ -101,6 +101,7 @@ public partial class JsonSchemaEmitterTests
     [InlineData(IrScalarKind.Number, IrFormat.Int64, """{ "type": "integer", "minimum": -9223372036854775808, "maximum": 9223372036854775807 }""")]
     [InlineData(IrScalarKind.Number, IrFormat.Float, """{ "type": "number" }""")]
     [InlineData(IrScalarKind.Bytes, null, """{ "type": "string", "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", "contentEncoding": "base64" }""")]
+    [InlineData(IrScalarKind.Xml, null, """{ "type": "string", "contentMediaType": "application/xml" }""")]
     public void Describes_each_scalar_as_json_writes_it_in_a_rowset_and_in_json_alike(IrScalarKind kind, IrFormat? format, string expected)
     {
         AssertSchema(expected, Value(new IrScalar(kind, format, null), IrEncoding.Rowset));

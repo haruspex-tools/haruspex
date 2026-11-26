@@ -230,9 +230,17 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
             },
             IrScalarKind.Number => Facets.Number(scalar, json),
             IrScalarKind.Bytes => Facets.Bytes(scalar, json),
+            IrScalarKind.Xml => Xml,
             _ => throw new ArgumentOutOfRangeException(nameof(scalar), scalar.Kind, "A scalar kind outside the IR's closed set."),
         };
     }
+
+    /// <summary>
+    /// An XML value, as every encoding hands it over: the text the server serialises it to, branded <c>Xml</c> so that plain text
+    /// isn't taken for it. It isn't parsed again: the server guarantees it is well formed, and a parser would be a dependency.
+    /// Why: docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+    /// </summary>
+    internal static ZodExpression Xml { get; } = new Branded(Z("string"), "Xml");
 
     /// <summary>One of Zod's ISO 8601 string formats: <c>z.iso.date()</c>.</summary>
     private static Call Iso(string format, params ZodExpression[] arguments) => new(new Name(ZodModule.ZodName + ".iso"), format, [.. arguments]);

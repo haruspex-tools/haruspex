@@ -24,6 +24,7 @@ public static class IrWireNames
         IrScalarKind.Datetime => "datetime",
         IrScalarKind.Uuid => "uuid",
         IrScalarKind.Bytes => "bytes",
+        IrScalarKind.Xml => "xml",
     };
 
     /// <summary>A scalar's format (<c>format</c>).</summary>
@@ -112,6 +113,7 @@ public static class IrWireNames
         IrNullRule.Unknown => "unknown",
         IrNullRule.Declared => "declared",
         IrNullRule.NotInBoth => "not-in-both",
+        IrNullRule.XmlValue => "xml-value",
     };
 
     /// <summary>Why a value or a result is unknown (<c>reason</c>).</summary>

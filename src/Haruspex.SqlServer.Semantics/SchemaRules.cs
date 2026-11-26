@@ -57,7 +57,7 @@ public static class SchemaRules
         ArgumentNullException.ThrowIfNull(model);
         switch (type)
         {
-            case { Kind: SqlTypeKind.BuiltIn }:
+            case { Kind: SqlTypeKind.BuiltIn or SqlTypeKind.Xml }:
                 return new ResolvedType(type, null, DeclaredNullability.NotDeclared);
             case { Kind: SqlTypeKind.Named }:
                 if (BuiltInType.SystemAlias(type) is { } system)

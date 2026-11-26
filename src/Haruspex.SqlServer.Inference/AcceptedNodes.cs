@@ -121,7 +121,7 @@ internal static class AcceptedNodes
         ],
         [typeof(FunctionCall)] =
         [
-            Read(nameof(FunctionCall.CallTarget), "A schema names a user's function; a built-in has none."),
+            Read(nameof(FunctionCall.CallTarget), "A schema names a user's function, and an xml value or column an XML method's receiver; a built-in has none."),
             Read(nameof(FunctionCall.FunctionName), "The function, by which its row is found."),
             Parameters,
             .. Clauses(typeof(FunctionCall)),

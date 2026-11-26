@@ -28,7 +28,7 @@
 -u -> unknown unsupported-expression: -u: negating a value of this type is not modelled yet.
 -bin4 -> unknown unsupported-expression: -bin4: negating a value of this type is not modelled yet.
 -vb10 -> unknown unsupported-expression: -vb10: negating a value of this type is not modelled yet.
--x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+-x -> unknown unsupported-expression: -x: negating a value of this type is not modelled yet.
 -sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 -j -> unknown (no unknown recorded)
 -1 -> int number/int32 {[-2147483648 2147483647]}

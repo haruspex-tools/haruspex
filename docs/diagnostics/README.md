@@ -175,6 +175,7 @@ reason.
 | [HAR5203](HAR5203.md) | error | A result set's name can't be a key of the function's object |
 | [HAR5204](HAR5204.md) | error | A table type's column can't be declared to the driver |
 | [HAR5205](HAR5205.md) | error | A parameter the driver can't send |
+| [HAR5206](HAR5206.md) | error | An xml OUTPUT parameter the driver can't receive |
 
 ## The command line and files
 

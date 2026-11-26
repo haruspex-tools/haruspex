@@ -117,12 +117,27 @@ public partial class MssqlEmitterTests
     [InlineData("sql.VarBinary(16)", IrScalarKind.Bytes, null, 16, IrLengthUnit.Bytes, false)]
     [InlineData("sql.VarBinary(32)", IrScalarKind.Bytes, null, 32, IrLengthUnit.Bytes, true)]
     [InlineData("sql.VarBinary(sql.MAX)", IrScalarKind.Bytes, null, 0, IrLengthUnit.Bytes, false)]
+    // XML is sent as the driver's Xml, text the server parses (decision 0133).
+    [InlineData("sql.Xml", IrScalarKind.Xml, null, 0, IrLengthUnit.Utf16, false)]
     public void Each_parameter_is_sent_with_the_driver_s_type_for_its_declared_one(string driver, IrScalarKind kind, IrFormat? format, int length, IrLengthUnit unit, bool isFixed)
     {
         var facets = length > 0 ? new IrFacets(Length: new IrLength(length, isFixed, unit, IrByteEncoding.Unknown, Type)) : null;
         var ts = Emitted(Procedure("P", [Parameter("@v", new IrScalar(kind, format, "t", facets))], Rows));
 
         Assert.Contains($"  request.input('v', {driver}, p.v)\n", ts, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_procedure_with_an_xml_output_parameter_is_refused_since_the_driver_can_t_receive_one()
+    {
+        // An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as: error 257 however it is bound. One that only takes xml is
+        // written.
+        var xml = new IrScalar(IrScalarKind.Xml, null, "xml");
+        var refused = MssqlEmitter.Emit(Document(Procedure("P", [Parameter("@spec", xml, output: true)], Rows)), new MssqlOptions());
+        var taken = MssqlEmitter.Emit(Document(Procedure("P", [Parameter("@spec", xml)], Rows)), new MssqlOptions());
+
+        Assert.Equal(["HAR5206"], refused.Diagnostics.Select(d => d.Code.ToString()));
+        Assert.Empty(taken.Diagnostics);
     }
 
     [Fact]

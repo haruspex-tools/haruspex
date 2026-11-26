@@ -138,6 +138,7 @@ HAR5202 E A query file's parameter can't be declared [Haruspex.Emit.Mssql.MssqlC
 HAR5203 E A result set's name can't be a key of the function's object [Haruspex.Emit.Mssql.MssqlCodes.SetNameUnusable]
 HAR5204 E A table type's column can't be declared to the driver [Haruspex.Emit.Mssql.MssqlCodes.TableColumnCannotBeDeclared]
 HAR5205 E A parameter the driver can't send [Haruspex.Emit.Mssql.MssqlCodes.ParameterUnusable]
+HAR5206 E An xml OUTPUT parameter the driver can't receive [Haruspex.Emit.Mssql.MssqlCodes.XmlOutputCannotBeReceived]
 HAR6001 E The command line doesn't parse [Haruspex.Cli.CliCodes.BadCommandLine]
 HAR6002 E The config file isn't there [Haruspex.Cli.CliCodes.ConfigNotFound]
 HAR6003 E No source is given [Haruspex.Cli.CliCodes.NoSource]

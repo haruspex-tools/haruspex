@@ -22,9 +22,11 @@ internal sealed partial class Typer
         var at = At(call);
         LocalRelationValues Fails(IrUnknownReason reason, string detail) => LocalRelationValues.Unknown(Unsupported(reason, $"{Text(call)}: {detail}", at));
 
-        // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error).
+        // A column list at the call is refused for a function (observed: 317), and so are table hints (a syntax error). XML's
+        // x.nodes('path') AS t(c) parses as a function of the parts before it, with the column list it needs; what it returns is
+        // XML its path shapes, so it stays unknown too.
         if (call.Columns.Count > 0)
-            return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317).");
+            return Fails(IrUnknownReason.UnsupportedSource, "a table-valued function cannot have a column alias (317), and XML's nodes(), which takes one, is not modelled yet.");
         // Which function the call names, binding resolved; why none, it says, and the words for it are said here.
         return symbol.Callee switch
         {

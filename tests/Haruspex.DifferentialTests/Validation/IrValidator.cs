@@ -677,6 +677,9 @@ public static partial class IrValidator
 
             // Padded, on one line, of the standard alphabet: what FOR JSON writes (BinaryObservationTests).
             IrScalarKind.Bytes => Base64Format().IsMatch(text),
+
+            // The text of the instance, which parses as XML content: an empty instance, several elements, comments (decision 0133).
+            IrScalarKind.Xml => IsXmlContent(text),
             _ => throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}."),
         };
     }
@@ -694,6 +697,24 @@ public static partial class IrValidator
         m.Groups["oh"].Value.Length == 0
         || (int.Parse(m.Groups["om"].Value, CultureInfo.InvariantCulture) < 60
             && (int.Parse(m.Groups["oh"].Value, CultureInfo.InvariantCulture) * 60) + int.Parse(m.Groups["om"].Value, CultureInfo.InvariantCulture) <= 14 * 60);
+
+    /// <summary>Whether <paramref name="text"/> is well-formed XML content, as an <c>xml</c> instance is: any number of elements and text.</summary>
+    private static bool IsXmlContent(string text)
+    {
+        try
+        {
+            using var reader = System.Xml.XmlReader.Create(new StringReader(text), new System.Xml.XmlReaderSettings { ConformanceLevel = System.Xml.ConformanceLevel.Fragment, DtdProcessing = System.Xml.DtdProcessing.Prohibit });
+            while (reader.Read())
+            {
+            }
+
+            return true;
+        }
+        catch (System.Xml.XmlException)
+        {
+            return false;
+        }
+    }
 
     [GeneratedRegex(@"^-?(0|[1-9][0-9]*)$")]
     private static partial Regex IntegerLiteral();
@@ -751,6 +772,7 @@ public static partial class IrValidator
                     },
                     IrScalarKind.Uuid => value is Guid,
                     IrScalarKind.Bytes => value is byte[],
+                    IrScalarKind.Xml => value is string xml && IsXmlContent(xml),
                     _ => throw new InvalidOperationException($"Unknown scalar kind {scalar.Kind}."),
                 };
                 return ok ? null : $"{Name(scalar)} ({scalar.Sql})";

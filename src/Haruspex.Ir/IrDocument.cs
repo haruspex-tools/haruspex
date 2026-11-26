@@ -19,12 +19,18 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that records a description is written in (0.33, a field's, a parameter's
-    /// or an object's <c>Description</c>). The IR is versioned separately from the tool, because it is a file that other programs
-    /// read: a change that would break a reader changes this.
-    /// Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// The newest IR format version, the one a document that holds an XML value is written in (0.34, a scalar of kind
+    /// <see cref="IrScalarKind.Xml"/>, or the null rule <see cref="IrNullRule.XmlValue"/>). The IR is versioned separately from the
+    /// tool, because it is a file that other programs read: a change that would break a reader changes this.
+    /// Why: docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
     /// </summary>
-    public const string CurrentVersion = "0.33";
+    public const string CurrentVersion = "0.34";
+
+    /// <summary>
+    /// The version a document that holds no XML value but records a description is written in (0.33, a field's, a parameter's
+    /// or an object's <c>Description</c>). Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
+    /// </summary>
+    public const string DescribedVersion = "0.33";
 
     /// <summary>
     /// The version a document that records no description but whose source was read from several folders is written in (0.32,
@@ -101,7 +107,7 @@ public sealed record IrDocument(
     /// that means the same (0.30 back to 0.23, each a document that says nothing a later version added). Any other is refused.
     /// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md, which says why 0.22 is not one.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, FoldersVersion, BuildsVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, DescribedVersion, FoldersVersion, BuildsVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// Whether <paramref name="version"/> is <paramref name="since"/> or later, both of <see cref="ReadableVersions"/>: by their order
@@ -114,7 +120,8 @@ public sealed record IrDocument(
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it records a description (<see cref="Describes"/>); else
+    /// <see cref="CurrentVersion"/> when it holds an XML value (<see cref="HoldsXml"/>); else
+    /// <see cref="DescribedVersion"/> when it records a description (<see cref="Describes"/>); else
     /// <see cref="FoldersVersion"/> when a source was read from several folders (<see cref="ReadsFolders"/>); else
     /// <see cref="BuildsVersion"/> when it records a package declared a build (<see cref="DeclaresBuilds"/>); else
     /// <see cref="StampedVersion"/> when it names the build that wrote it (<see cref="NamesItsWriter"/>); else
@@ -128,7 +135,8 @@ public sealed record IrDocument(
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        Describes ? CurrentVersion
+        HoldsXml ? CurrentVersion
+        : Describes ? DescribedVersion
         : ReadsFolders ? FoldersVersion
         : DeclaresBuilds ? BuildsVersion
         : NamesItsWriter ? StampedVersion
@@ -169,6 +177,12 @@ public sealed record IrDocument(
 
     /// <summary>Whether its source, or its baseline, was read from several folders (0.32, <see cref="IrSource.Paths"/>).</summary>
     internal bool ReadsFolders => Source.Paths.Count > 0 || Source.Baseline?.Paths.Count > 0;
+
+    /// <summary>
+    /// Whether it holds an XML value (0.34): a scalar of kind <see cref="IrScalarKind.Xml"/> anywhere, or a value that is NULL by
+    /// the rule <see cref="IrNullRule.XmlValue"/>, which a document may hold without any XML value (a variable's <c>.value()</c>).
+    /// </summary>
+    internal bool HoldsXml => IrDocumentXml.First(this) is not null;
 
     /// <summary>Whether it records a description (0.33): an object's, a parameter's or a field's.</summary>
     internal bool Describes => IrDocumentDescribed.First(this) is not null;

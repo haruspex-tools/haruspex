@@ -383,7 +383,7 @@ internal sealed partial class Typer
         if (second.Shape is UnknownShape)
             return second;
         var fits = (LiteralOf(b) is ({ } literal, var negative) ? Conversions.Fits(literal, type, negative) : null)
-            ?? (OperandOf(second, b) is { } from && Conversions.Converts(from, type));
+            ?? (OperandOf(second, b) is { } from && (Conversions.Converts(from, type) || Conversions.FailsRatherThanNull(from, type)));
         // An overflow converting the second, or a rounding to a's fewer places, is NULL, or an error that fails the call when
         // the callers' sessions make it one (or silent, for the rounding); then ISNULL of a second never null is never null.
         var converting = ConversionReasons(summaries.Session, second, b, type, fits, At(call));
@@ -455,7 +455,7 @@ internal sealed partial class Typer
         // Into a binary type a style says only how text is read as hex, and text that isn't is an error (8114), never NULL, but under
         // TRY_CONVERT (observed: Text_read_as_hex_into_binary_is_an_error_when_it_is_not_hex_and_null_under_try_convert).
         var fits = (!styled && LiteralOf(operand) is ({ } literal, var negative) ? Conversions.Fits(literal, to, negative) : null)
-            ?? (from is not null && Conversions.Converts(from, to, styled && (attempt || !to.IsBinary)));
+            ?? (from is not null && (Conversions.Converts(from, to, styled && (attempt || !to.IsBinary)) || (!attempt && Conversions.FailsRatherThanNull(from, to))));
         // A NULL cast to int and cast again stays that constant; CAST(1 AS int) counts an int's 10 digits (same observation).
         if (fits && from?.Type.Text == to.Text && !styled)
             return value.Digits == IntDigits.Literal(1) && IsNullCast(operand) ? value : value with { Digits = IntDigits.OfType, Pieces = value.Pieces };

@@ -146,7 +146,7 @@ public class DescriptionTests
         var procedure = Assert.Single(document.Objects);
         Assert.Equal("Finds one dog.", procedure.Description);
         Assert.Equal(["The dog to find.", null], procedure.Parameters.Select(p => p.Description));
-        Assert.Equal(IrDocument.CurrentVersion, document.Version);
+        Assert.Equal(IrDocument.DescribedVersion, document.Version);
     }
 
     [Fact]
@@ -155,8 +155,8 @@ public class DescriptionTests
         var document = Infer("SELECT UPPER(d.name) AS name FROM kennel.dog AS d;");
 
         Assert.Null(IrDocumentDescribed(document));
-        Assert.Equal(IrDocument.FoldersVersion, IrDocument.ReadableVersions[1]);
-        Assert.NotEqual(IrDocument.CurrentVersion, document.Version);
+        Assert.Equal(IrDocument.FoldersVersion, IrDocument.ReadableVersions[2]);
+        Assert.NotEqual(IrDocument.DescribedVersion, document.Version);
     }
 
     private static string? IrDocumentDescribed(IrDocument document) =>

@@ -436,6 +436,7 @@ internal sealed partial class Typer(
 
         // Every built-in function, by the function table (Typer.FunctionTable.cs): the one path a call is typed by.
         _ when Function(expression, scope) is { } called => called,
+        FunctionCall { CallTarget: not null } call when XmlMethodCall(call, scope) is { } method => method,
         FunctionCall call when FunctionSummaries.Callee(call) is { } callee => CallFunction(call, callee, scope),
         VariableReference variable => Branched(variable, Variable(variable, scope), scope),
         IntegerLiteral literal => Integer(literal),

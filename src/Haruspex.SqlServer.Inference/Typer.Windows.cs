@@ -93,6 +93,10 @@ internal sealed partial class Typer
                 // Refused when the procedure is created (8117; observed: Min_and_max_of_a_bit_are_refused_with_or_without_a_window).
                 if (rule.RefusesBit && TypeOf(argument) is { IsBit: true })
                     return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of bit.");
+
+                // And of xml, which can't be compared (8117; observed over the catalogue sweep, CatalogueSweepGridTests).
+                if (rule.RefusesBit && TypeOf(argument) is { } xml && xml.Type == BuiltInType.Xml)
+                    return NotModelled(call, $"SQL Server refuses {name.ToUpperInvariant()} of xml.");
                 return argument.WithNullableBecause([.. argument.NullableBecause, .. Framed()]);
             }
 
@@ -113,6 +117,10 @@ internal sealed partial class Typer
                     return argument;
                 if (argument.IsLiveJson || argument.Shape is not ScalarShape)
                     return NotModelled(call, "a percentile of a value that is not a scalar is not modelled.");
+
+                // Ordering needs values that compare, which xml's don't (305; observed over the catalogue sweep, CatalogueSweepGridTests).
+                if (TypeOf(argument) is { } xml && xml.Type == BuiltInType.Xml)
+                    return NotModelled(call, "SQL Server refuses a percentile ordered by xml, which can't be compared.");
                 if (rule.Result == WindowResult.PercentileOfValues)
                     return argument;
                 return TypeOf(argument) is { IsNumber: true } or { IsBit: true }

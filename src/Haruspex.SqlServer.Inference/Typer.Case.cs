@@ -289,6 +289,10 @@ internal sealed partial class Typer
         if (value.IsLiveJson)
             return NotModelled(nullIf, "over JSON, NULLIF nests as text in FOR JSON but as JSON in json_object (observed), which one shape can't say.");
 
+        // NULLIF compares its arguments, and xml can't be compared (305; observed over the catalogue sweep, CatalogueSweepGridTests).
+        if (TypeOf(value) is { } xml && xml.Type == BuiltInType.Xml)
+            return NotModelled(nullIf, "SQL Server refuses NULLIF of xml, which can't be compared.");
+
         // Over JSON text it is that text or NULL, text wherever it nests (observed: Nullif_over_json_text_is_text_or_null_in_every_context).
         var because = NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.NullWhenEqual, At(nullIf).ToString())]);
         if (value.Shape is JsonTextShape)

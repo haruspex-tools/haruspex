@@ -179,4 +179,10 @@ public enum IrNullRule
     /// Of a result in a document combining two databases (0.24): only one of them returns it, so against the other it is missing.
     /// </summary>
     NotInBoth,
+
+    /// <summary>
+    /// It is read from XML by <c>.value()</c> (0.34), which is NULL where its path finds no node, or the XML is NULL. Why:
+    /// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+    /// </summary>
+    XmlValue,
 }

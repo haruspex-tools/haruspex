@@ -28,7 +28,7 @@ bt * dto3 -> unknown unsupported-expression: bt * dto3: arithmetic on these type
 bt * u -> unknown unsupported-expression: bt * u: arithmetic on these types is not modelled yet.
 bt * bin4 -> unknown unsupported-expression: bt * bin4: arithmetic on these types is not modelled yet.
 bt * vb10 -> unknown unsupported-expression: bt * vb10: arithmetic on these types is not modelled yet.
-bt * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+bt * x -> unknown unsupported-expression: bt * x: arithmetic on these types is not modelled yet.
 bt * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 bt * j -> unknown (no unknown recorded)
 bt * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -68,7 +68,7 @@ ti * dto3 -> unknown unsupported-expression: ti * dto3: arithmetic on these type
 ti * u -> unknown unsupported-expression: ti * u: arithmetic on these types is not modelled yet.
 ti * bin4 -> unknown unsupported-expression: ti * bin4: arithmetic on these types is not modelled yet.
 ti * vb10 -> unknown unsupported-expression: ti * vb10: arithmetic on these types is not modelled yet.
-ti * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ti * x -> unknown unsupported-expression: ti * x: arithmetic on these types is not modelled yet.
 ti * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ti * j -> unknown (no unknown recorded)
 ti * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -108,7 +108,7 @@ si * dto3 -> unknown unsupported-expression: si * dto3: arithmetic on these type
 si * u -> unknown unsupported-expression: si * u: arithmetic on these types is not modelled yet.
 si * bin4 -> unknown unsupported-expression: si * bin4: arithmetic on these types is not modelled yet.
 si * vb10 -> unknown unsupported-expression: si * vb10: arithmetic on these types is not modelled yet.
-si * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+si * x -> unknown unsupported-expression: si * x: arithmetic on these types is not modelled yet.
 si * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 si * j -> unknown (no unknown recorded)
 si * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -148,7 +148,7 @@ i * dto3 -> unknown unsupported-expression: i * dto3: arithmetic on these types 
 i * u -> unknown unsupported-expression: i * u: arithmetic on these types is not modelled yet.
 i * bin4 -> unknown unsupported-expression: i * bin4: arithmetic on these types is not modelled yet.
 i * vb10 -> unknown unsupported-expression: i * vb10: arithmetic on these types is not modelled yet.
-i * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+i * x -> unknown unsupported-expression: i * x: arithmetic on these types is not modelled yet.
 i * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 i * j -> unknown (no unknown recorded)
 i * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -188,7 +188,7 @@ bi * dto3 -> unknown unsupported-expression: bi * dto3: arithmetic on these type
 bi * u -> unknown unsupported-expression: bi * u: arithmetic on these types is not modelled yet.
 bi * bin4 -> unknown unsupported-expression: bi * bin4: arithmetic on these types is not modelled yet.
 bi * vb10 -> unknown unsupported-expression: bi * vb10: arithmetic on these types is not modelled yet.
-bi * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+bi * x -> unknown unsupported-expression: bi * x: arithmetic on these types is not modelled yet.
 bi * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 bi * j -> unknown (no unknown recorded)
 bi * 1 -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -228,7 +228,7 @@ d52 * dto3 -> unknown unsupported-expression: d52 * dto3: arithmetic on these ty
 d52 * u -> unknown unsupported-expression: d52 * u: arithmetic on these types is not modelled yet.
 d52 * bin4 -> unknown unsupported-expression: d52 * bin4: arithmetic on these types is not modelled yet.
 d52 * vb10 -> unknown unsupported-expression: d52 * vb10: arithmetic on these types is not modelled yet.
-d52 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+d52 * x -> unknown unsupported-expression: d52 * x: arithmetic on these types is not modelled yet.
 d52 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 d52 * j -> unknown (no unknown recorded)
 d52 * 1 -> decimal(7,2) number/decimal {digits=7,2 [-99999.99 99999.99]}
@@ -268,7 +268,7 @@ d380 * dto3 -> unknown unsupported-expression: d380 * dto3: arithmetic on these 
 d380 * u -> unknown unsupported-expression: d380 * u: arithmetic on these types is not modelled yet.
 d380 * bin4 -> unknown unsupported-expression: d380 * bin4: arithmetic on these types is not modelled yet.
 d380 * vb10 -> unknown unsupported-expression: d380 * vb10: arithmetic on these types is not modelled yet.
-d380 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+d380 * x -> unknown unsupported-expression: d380 * x: arithmetic on these types is not modelled yet.
 d380 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 d380 * j -> unknown (no unknown recorded)
 d380 * 1 -> decimal(38,0) number/decimal null:arithmetic-overflow {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
@@ -308,7 +308,7 @@ d3838 * dto3 -> unknown unsupported-expression: d3838 * dto3: arithmetic on thes
 d3838 * u -> unknown unsupported-expression: d3838 * u: arithmetic on these types is not modelled yet.
 d3838 * bin4 -> unknown unsupported-expression: d3838 * bin4: arithmetic on these types is not modelled yet.
 d3838 * vb10 -> unknown unsupported-expression: d3838 * vb10: arithmetic on these types is not modelled yet.
-d3838 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+d3838 * x -> unknown unsupported-expression: d3838 * x: arithmetic on these types is not modelled yet.
 d3838 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 d3838 * j -> unknown (no unknown recorded)
 d3838 * 1 -> decimal(38,36) number/decimal null:precision-loss {digits=38,36 [-99.999999999999999999999999999999999999 99.999999999999999999999999999999999999]}
@@ -348,7 +348,7 @@ n102 * dto3 -> unknown unsupported-expression: n102 * dto3: arithmetic on these 
 n102 * u -> unknown unsupported-expression: n102 * u: arithmetic on these types is not modelled yet.
 n102 * bin4 -> unknown unsupported-expression: n102 * bin4: arithmetic on these types is not modelled yet.
 n102 * vb10 -> unknown unsupported-expression: n102 * vb10: arithmetic on these types is not modelled yet.
-n102 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+n102 * x -> unknown unsupported-expression: n102 * x: arithmetic on these types is not modelled yet.
 n102 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 n102 * j -> unknown (no unknown recorded)
 n102 * 1 -> numeric(12,2) number/decimal {digits=12,2 [-9999999999.99 9999999999.99]}
@@ -388,7 +388,7 @@ m * dto3 -> unknown unsupported-expression: m * dto3: arithmetic on these types 
 m * u -> unknown unsupported-expression: m * u: arithmetic on these types is not modelled yet.
 m * bin4 -> unknown unsupported-expression: m * bin4: arithmetic on these types is not modelled yet.
 m * vb10 -> unknown unsupported-expression: m * vb10: arithmetic on these types is not modelled yet.
-m * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+m * x -> unknown unsupported-expression: m * x: arithmetic on these types is not modelled yet.
 m * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 m * j -> unknown (no unknown recorded)
 m * 1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}
@@ -428,7 +428,7 @@ sm * dto3 -> unknown unsupported-expression: sm * dto3: arithmetic on these type
 sm * u -> unknown unsupported-expression: sm * u: arithmetic on these types is not modelled yet.
 sm * bin4 -> unknown unsupported-expression: sm * bin4: arithmetic on these types is not modelled yet.
 sm * vb10 -> unknown unsupported-expression: sm * vb10: arithmetic on these types is not modelled yet.
-sm * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+sm * x -> unknown unsupported-expression: sm * x: arithmetic on these types is not modelled yet.
 sm * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sm * j -> unknown (no unknown recorded)
 sm * 1 -> smallmoney number/decimal null:arithmetic-overflow {digits=10,4 [-214748.3648 214748.3647]}
@@ -468,7 +468,7 @@ f * dto3 -> unknown unsupported-expression: f * dto3: arithmetic on these types 
 f * u -> unknown unsupported-expression: f * u: arithmetic on these types is not modelled yet.
 f * bin4 -> unknown unsupported-expression: f * bin4: arithmetic on these types is not modelled yet.
 f * vb10 -> unknown unsupported-expression: f * vb10: arithmetic on these types is not modelled yet.
-f * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+f * x -> unknown unsupported-expression: f * x: arithmetic on these types is not modelled yet.
 f * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 f * j -> unknown (no unknown recorded)
 f * 1 -> float number/float null:arithmetic-overflow
@@ -508,7 +508,7 @@ r * dto3 -> unknown unsupported-expression: r * dto3: arithmetic on these types 
 r * u -> unknown unsupported-expression: r * u: arithmetic on these types is not modelled yet.
 r * bin4 -> unknown unsupported-expression: r * bin4: arithmetic on these types is not modelled yet.
 r * vb10 -> unknown unsupported-expression: r * vb10: arithmetic on these types is not modelled yet.
-r * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+r * x -> unknown unsupported-expression: r * x: arithmetic on these types is not modelled yet.
 r * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 r * j -> unknown (no unknown recorded)
 r * 1 -> real number/float null:arithmetic-overflow
@@ -548,7 +548,7 @@ f24 * dto3 -> unknown unsupported-expression: f24 * dto3: arithmetic on these ty
 f24 * u -> unknown unsupported-expression: f24 * u: arithmetic on these types is not modelled yet.
 f24 * bin4 -> unknown unsupported-expression: f24 * bin4: arithmetic on these types is not modelled yet.
 f24 * vb10 -> unknown unsupported-expression: f24 * vb10: arithmetic on these types is not modelled yet.
-f24 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+f24 * x -> unknown unsupported-expression: f24 * x: arithmetic on these types is not modelled yet.
 f24 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 f24 * j -> unknown (no unknown recorded)
 f24 * 1 -> real number/float null:arithmetic-overflow
@@ -588,7 +588,7 @@ f25 * dto3 -> unknown unsupported-expression: f25 * dto3: arithmetic on these ty
 f25 * u -> unknown unsupported-expression: f25 * u: arithmetic on these types is not modelled yet.
 f25 * bin4 -> unknown unsupported-expression: f25 * bin4: arithmetic on these types is not modelled yet.
 f25 * vb10 -> unknown unsupported-expression: f25 * vb10: arithmetic on these types is not modelled yet.
-f25 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+f25 * x -> unknown unsupported-expression: f25 * x: arithmetic on these types is not modelled yet.
 f25 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 f25 * j -> unknown (no unknown recorded)
 f25 * 1 -> float number/float null:arithmetic-overflow
@@ -628,7 +628,7 @@ c3 * dto3 -> unknown unsupported-expression: c3 * dto3: arithmetic on these type
 c3 * u -> unknown unsupported-expression: c3 * u: arithmetic on these types is not modelled yet.
 c3 * bin4 -> unknown unsupported-expression: c3 * bin4: arithmetic on these types is not modelled yet.
 c3 * vb10 -> unknown unsupported-expression: c3 * vb10: arithmetic on these types is not modelled yet.
-c3 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+c3 * x -> unknown unsupported-expression: c3 * x: arithmetic on these types is not modelled yet.
 c3 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 c3 * j -> unknown (no unknown recorded)
 c3 * 1 -> unknown unsupported-expression: c3 * 1: arithmetic on these types is not modelled yet.
@@ -668,7 +668,7 @@ v10 * dto3 -> unknown unsupported-expression: v10 * dto3: arithmetic on these ty
 v10 * u -> unknown unsupported-expression: v10 * u: arithmetic on these types is not modelled yet.
 v10 * bin4 -> unknown unsupported-expression: v10 * bin4: arithmetic on these types is not modelled yet.
 v10 * vb10 -> unknown unsupported-expression: v10 * vb10: arithmetic on these types is not modelled yet.
-v10 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+v10 * x -> unknown unsupported-expression: v10 * x: arithmetic on these types is not modelled yet.
 v10 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 v10 * j -> unknown (no unknown recorded)
 v10 * 1 -> unknown unsupported-expression: v10 * 1: arithmetic on these types is not modelled yet.
@@ -708,7 +708,7 @@ vx * dto3 -> unknown unsupported-expression: vx * dto3: arithmetic on these type
 vx * u -> unknown unsupported-expression: vx * u: arithmetic on these types is not modelled yet.
 vx * bin4 -> unknown unsupported-expression: vx * bin4: arithmetic on these types is not modelled yet.
 vx * vb10 -> unknown unsupported-expression: vx * vb10: arithmetic on these types is not modelled yet.
-vx * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+vx * x -> unknown unsupported-expression: vx * x: arithmetic on these types is not modelled yet.
 vx * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 vx * j -> unknown (no unknown recorded)
 vx * 1 -> unknown unsupported-expression: vx * 1: arithmetic on these types is not modelled yet.
@@ -748,7 +748,7 @@ nc3 * dto3 -> unknown unsupported-expression: nc3 * dto3: arithmetic on these ty
 nc3 * u -> unknown unsupported-expression: nc3 * u: arithmetic on these types is not modelled yet.
 nc3 * bin4 -> unknown unsupported-expression: nc3 * bin4: arithmetic on these types is not modelled yet.
 nc3 * vb10 -> unknown unsupported-expression: nc3 * vb10: arithmetic on these types is not modelled yet.
-nc3 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+nc3 * x -> unknown unsupported-expression: nc3 * x: arithmetic on these types is not modelled yet.
 nc3 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 nc3 * j -> unknown (no unknown recorded)
 nc3 * 1 -> unknown unsupported-expression: nc3 * 1: arithmetic on these types is not modelled yet.
@@ -788,7 +788,7 @@ nv10 * dto3 -> unknown unsupported-expression: nv10 * dto3: arithmetic on these 
 nv10 * u -> unknown unsupported-expression: nv10 * u: arithmetic on these types is not modelled yet.
 nv10 * bin4 -> unknown unsupported-expression: nv10 * bin4: arithmetic on these types is not modelled yet.
 nv10 * vb10 -> unknown unsupported-expression: nv10 * vb10: arithmetic on these types is not modelled yet.
-nv10 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+nv10 * x -> unknown unsupported-expression: nv10 * x: arithmetic on these types is not modelled yet.
 nv10 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 nv10 * j -> unknown (no unknown recorded)
 nv10 * 1 -> unknown unsupported-expression: nv10 * 1: arithmetic on these types is not modelled yet.
@@ -828,7 +828,7 @@ nvx * dto3 -> unknown unsupported-expression: nvx * dto3: arithmetic on these ty
 nvx * u -> unknown unsupported-expression: nvx * u: arithmetic on these types is not modelled yet.
 nvx * bin4 -> unknown unsupported-expression: nvx * bin4: arithmetic on these types is not modelled yet.
 nvx * vb10 -> unknown unsupported-expression: nvx * vb10: arithmetic on these types is not modelled yet.
-nvx * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+nvx * x -> unknown unsupported-expression: nvx * x: arithmetic on these types is not modelled yet.
 nvx * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 nvx * j -> unknown (no unknown recorded)
 nvx * 1 -> unknown unsupported-expression: nvx * 1: arithmetic on these types is not modelled yet.
@@ -868,7 +868,7 @@ dt * dto3 -> unknown unsupported-expression: dt * dto3: arithmetic on these type
 dt * u -> unknown unsupported-expression: dt * u: arithmetic on these types is not modelled yet.
 dt * bin4 -> unknown unsupported-expression: dt * bin4: arithmetic on these types is not modelled yet.
 dt * vb10 -> unknown unsupported-expression: dt * vb10: arithmetic on these types is not modelled yet.
-dt * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dt * x -> unknown unsupported-expression: dt * x: arithmetic on these types is not modelled yet.
 dt * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 dt * j -> unknown (no unknown recorded)
 dt * 1 -> unknown unsupported-expression: dt * 1: arithmetic on these types is not modelled yet.
@@ -908,7 +908,7 @@ tm3 * dto3 -> unknown unsupported-expression: tm3 * dto3: arithmetic on these ty
 tm3 * u -> unknown unsupported-expression: tm3 * u: arithmetic on these types is not modelled yet.
 tm3 * bin4 -> unknown unsupported-expression: tm3 * bin4: arithmetic on these types is not modelled yet.
 tm3 * vb10 -> unknown unsupported-expression: tm3 * vb10: arithmetic on these types is not modelled yet.
-tm3 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+tm3 * x -> unknown unsupported-expression: tm3 * x: arithmetic on these types is not modelled yet.
 tm3 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 tm3 * j -> unknown (no unknown recorded)
 tm3 * 1 -> unknown unsupported-expression: tm3 * 1: arithmetic on these types is not modelled yet.
@@ -948,7 +948,7 @@ dtm * dto3 -> unknown unsupported-expression: dtm * dto3: arithmetic on these ty
 dtm * u -> unknown unsupported-expression: dtm * u: arithmetic on these types is not modelled yet.
 dtm * bin4 -> unknown unsupported-expression: dtm * bin4: arithmetic on these types is not modelled yet.
 dtm * vb10 -> unknown unsupported-expression: dtm * vb10: arithmetic on these types is not modelled yet.
-dtm * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dtm * x -> unknown unsupported-expression: dtm * x: arithmetic on these types is not modelled yet.
 dtm * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 dtm * j -> unknown (no unknown recorded)
 dtm * 1 -> unknown unsupported-expression: dtm * 1: arithmetic on these types is not modelled yet.
@@ -988,7 +988,7 @@ dt23 * dto3 -> unknown unsupported-expression: dt23 * dto3: arithmetic on these 
 dt23 * u -> unknown unsupported-expression: dt23 * u: arithmetic on these types is not modelled yet.
 dt23 * bin4 -> unknown unsupported-expression: dt23 * bin4: arithmetic on these types is not modelled yet.
 dt23 * vb10 -> unknown unsupported-expression: dt23 * vb10: arithmetic on these types is not modelled yet.
-dt23 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dt23 * x -> unknown unsupported-expression: dt23 * x: arithmetic on these types is not modelled yet.
 dt23 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 dt23 * j -> unknown (no unknown recorded)
 dt23 * 1 -> unknown unsupported-expression: dt23 * 1: arithmetic on these types is not modelled yet.
@@ -1028,7 +1028,7 @@ sdt * dto3 -> unknown unsupported-expression: sdt * dto3: arithmetic on these ty
 sdt * u -> unknown unsupported-expression: sdt * u: arithmetic on these types is not modelled yet.
 sdt * bin4 -> unknown unsupported-expression: sdt * bin4: arithmetic on these types is not modelled yet.
 sdt * vb10 -> unknown unsupported-expression: sdt * vb10: arithmetic on these types is not modelled yet.
-sdt * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+sdt * x -> unknown unsupported-expression: sdt * x: arithmetic on these types is not modelled yet.
 sdt * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sdt * j -> unknown (no unknown recorded)
 sdt * 1 -> unknown unsupported-expression: sdt * 1: arithmetic on these types is not modelled yet.
@@ -1068,7 +1068,7 @@ dto3 * dto3 -> unknown unsupported-expression: dto3 * dto3: arithmetic on these 
 dto3 * u -> unknown unsupported-expression: dto3 * u: arithmetic on these types is not modelled yet.
 dto3 * bin4 -> unknown unsupported-expression: dto3 * bin4: arithmetic on these types is not modelled yet.
 dto3 * vb10 -> unknown unsupported-expression: dto3 * vb10: arithmetic on these types is not modelled yet.
-dto3 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dto3 * x -> unknown unsupported-expression: dto3 * x: arithmetic on these types is not modelled yet.
 dto3 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 dto3 * j -> unknown (no unknown recorded)
 dto3 * 1 -> unknown unsupported-expression: dto3 * 1: arithmetic on these types is not modelled yet.
@@ -1108,7 +1108,7 @@ u * dto3 -> unknown unsupported-expression: u * dto3: arithmetic on these types 
 u * u -> unknown unsupported-expression: u * u: arithmetic on these types is not modelled yet.
 u * bin4 -> unknown unsupported-expression: u * bin4: arithmetic on these types is not modelled yet.
 u * vb10 -> unknown unsupported-expression: u * vb10: arithmetic on these types is not modelled yet.
-u * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+u * x -> unknown unsupported-expression: u * x: arithmetic on these types is not modelled yet.
 u * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 u * j -> unknown (no unknown recorded)
 u * 1 -> unknown unsupported-expression: u * 1: arithmetic on these types is not modelled yet.
@@ -1148,7 +1148,7 @@ bin4 * dto3 -> unknown unsupported-expression: bin4 * dto3: arithmetic on these 
 bin4 * u -> unknown unsupported-expression: bin4 * u: arithmetic on these types is not modelled yet.
 bin4 * bin4 -> unknown unsupported-expression: bin4 * bin4: arithmetic on these types is not modelled yet.
 bin4 * vb10 -> unknown unsupported-expression: bin4 * vb10: arithmetic on these types is not modelled yet.
-bin4 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+bin4 * x -> unknown unsupported-expression: bin4 * x: arithmetic on these types is not modelled yet.
 bin4 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 bin4 * j -> unknown (no unknown recorded)
 bin4 * 1 -> unknown unsupported-expression: bin4 * 1: arithmetic on these types is not modelled yet.
@@ -1188,7 +1188,7 @@ vb10 * dto3 -> unknown unsupported-expression: vb10 * dto3: arithmetic on these 
 vb10 * u -> unknown unsupported-expression: vb10 * u: arithmetic on these types is not modelled yet.
 vb10 * bin4 -> unknown unsupported-expression: vb10 * bin4: arithmetic on these types is not modelled yet.
 vb10 * vb10 -> unknown unsupported-expression: vb10 * vb10: arithmetic on these types is not modelled yet.
-vb10 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+vb10 * x -> unknown unsupported-expression: vb10 * x: arithmetic on these types is not modelled yet.
 vb10 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 vb10 * j -> unknown (no unknown recorded)
 vb10 * 1 -> unknown unsupported-expression: vb10 * 1: arithmetic on these types is not modelled yet.
@@ -1198,46 +1198,46 @@ vb10 * 'ab' -> unknown unsupported-expression: vb10 * 'ab': arithmetic on these 
 vb10 * N'ab' -> unknown unsupported-expression: vb10 * N'ab': arithmetic on these types is not modelled yet.
 vb10 * 1e0 -> unknown unsupported-expression: vb10 * 1e0: arithmetic on these types is not modelled yet.
 vb10 * $1 -> unknown unsupported-expression: vb10 * $1: arithmetic on these types is not modelled yet.
-x * bt -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * ti -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * si -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * i -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * bi -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * d52 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * d380 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * d3838 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * n102 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * m -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * sm -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * f -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * r -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * f24 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * f25 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * c3 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * v10 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * vx -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * nc3 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * nv10 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * nvx -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * dt -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * tm3 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * dtm -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * dt23 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * sdt -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * dto3 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * u -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * bin4 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * vb10 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * sv -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * j -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * 1 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * 12345 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * 2.50 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * 'ab' -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * N'ab' -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * 1e0 -> unknown unsupported-sql-type: The type xml is not modelled yet.
-x * $1 -> unknown unsupported-sql-type: The type xml is not modelled yet.
+x * bt -> unknown unsupported-expression: x * bt: arithmetic on these types is not modelled yet.
+x * ti -> unknown unsupported-expression: x * ti: arithmetic on these types is not modelled yet.
+x * si -> unknown unsupported-expression: x * si: arithmetic on these types is not modelled yet.
+x * i -> unknown unsupported-expression: x * i: arithmetic on these types is not modelled yet.
+x * bi -> unknown unsupported-expression: x * bi: arithmetic on these types is not modelled yet.
+x * d52 -> unknown unsupported-expression: x * d52: arithmetic on these types is not modelled yet.
+x * d380 -> unknown unsupported-expression: x * d380: arithmetic on these types is not modelled yet.
+x * d3838 -> unknown unsupported-expression: x * d3838: arithmetic on these types is not modelled yet.
+x * n102 -> unknown unsupported-expression: x * n102: arithmetic on these types is not modelled yet.
+x * m -> unknown unsupported-expression: x * m: arithmetic on these types is not modelled yet.
+x * sm -> unknown unsupported-expression: x * sm: arithmetic on these types is not modelled yet.
+x * f -> unknown unsupported-expression: x * f: arithmetic on these types is not modelled yet.
+x * r -> unknown unsupported-expression: x * r: arithmetic on these types is not modelled yet.
+x * f24 -> unknown unsupported-expression: x * f24: arithmetic on these types is not modelled yet.
+x * f25 -> unknown unsupported-expression: x * f25: arithmetic on these types is not modelled yet.
+x * c3 -> unknown unsupported-expression: x * c3: arithmetic on these types is not modelled yet.
+x * v10 -> unknown unsupported-expression: x * v10: arithmetic on these types is not modelled yet.
+x * vx -> unknown unsupported-expression: x * vx: arithmetic on these types is not modelled yet.
+x * nc3 -> unknown unsupported-expression: x * nc3: arithmetic on these types is not modelled yet.
+x * nv10 -> unknown unsupported-expression: x * nv10: arithmetic on these types is not modelled yet.
+x * nvx -> unknown unsupported-expression: x * nvx: arithmetic on these types is not modelled yet.
+x * dt -> unknown unsupported-expression: x * dt: arithmetic on these types is not modelled yet.
+x * tm3 -> unknown unsupported-expression: x * tm3: arithmetic on these types is not modelled yet.
+x * dtm -> unknown unsupported-expression: x * dtm: arithmetic on these types is not modelled yet.
+x * dt23 -> unknown unsupported-expression: x * dt23: arithmetic on these types is not modelled yet.
+x * sdt -> unknown unsupported-expression: x * sdt: arithmetic on these types is not modelled yet.
+x * dto3 -> unknown unsupported-expression: x * dto3: arithmetic on these types is not modelled yet.
+x * u -> unknown unsupported-expression: x * u: arithmetic on these types is not modelled yet.
+x * bin4 -> unknown unsupported-expression: x * bin4: arithmetic on these types is not modelled yet.
+x * vb10 -> unknown unsupported-expression: x * vb10: arithmetic on these types is not modelled yet.
+x * x -> unknown unsupported-expression: x * x: arithmetic on these types is not modelled yet.
+x * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+x * j -> unknown (no unknown recorded)
+x * 1 -> unknown unsupported-expression: x * 1: arithmetic on these types is not modelled yet.
+x * 12345 -> unknown unsupported-expression: x * 12345: arithmetic on these types is not modelled yet.
+x * 2.50 -> unknown unsupported-expression: x * 2.50: arithmetic on these types is not modelled yet.
+x * 'ab' -> unknown unsupported-expression: x * 'ab': arithmetic on these types is not modelled yet.
+x * N'ab' -> unknown unsupported-expression: x * N'ab': arithmetic on these types is not modelled yet.
+x * 1e0 -> unknown unsupported-expression: x * 1e0: arithmetic on these types is not modelled yet.
+x * $1 -> unknown unsupported-expression: x * $1: arithmetic on these types is not modelled yet.
 sv * bt -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv * ti -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 sv * si -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1348,7 +1348,7 @@ j * $1 -> unknown (no unknown recorded)
 1 * u -> unknown unsupported-expression: 1 * u: arithmetic on these types is not modelled yet.
 1 * bin4 -> unknown unsupported-expression: 1 * bin4: arithmetic on these types is not modelled yet.
 1 * vb10 -> unknown unsupported-expression: 1 * vb10: arithmetic on these types is not modelled yet.
-1 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+1 * x -> unknown unsupported-expression: 1 * x: arithmetic on these types is not modelled yet.
 1 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 1 * j -> unknown (no unknown recorded)
 1 * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -1388,7 +1388,7 @@ j * $1 -> unknown (no unknown recorded)
 12345 * u -> unknown unsupported-expression: 12345 * u: arithmetic on these types is not modelled yet.
 12345 * bin4 -> unknown unsupported-expression: 12345 * bin4: arithmetic on these types is not modelled yet.
 12345 * vb10 -> unknown unsupported-expression: 12345 * vb10: arithmetic on these types is not modelled yet.
-12345 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+12345 * x -> unknown unsupported-expression: 12345 * x: arithmetic on these types is not modelled yet.
 12345 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 12345 * j -> unknown (no unknown recorded)
 12345 * 1 -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -1428,7 +1428,7 @@ j * $1 -> unknown (no unknown recorded)
 2.50 * u -> unknown unsupported-expression: 2.50 * u: arithmetic on these types is not modelled yet.
 2.50 * bin4 -> unknown unsupported-expression: 2.50 * bin4: arithmetic on these types is not modelled yet.
 2.50 * vb10 -> unknown unsupported-expression: 2.50 * vb10: arithmetic on these types is not modelled yet.
-2.50 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+2.50 * x -> unknown unsupported-expression: 2.50 * x: arithmetic on these types is not modelled yet.
 2.50 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 2.50 * j -> unknown (no unknown recorded)
 2.50 * 1 -> numeric(5,2) number/decimal {digits=5,2 [-999.99 999.99]}
@@ -1468,7 +1468,7 @@ j * $1 -> unknown (no unknown recorded)
 'ab' * u -> unknown unsupported-expression: 'ab' * u: arithmetic on these types is not modelled yet.
 'ab' * bin4 -> unknown unsupported-expression: 'ab' * bin4: arithmetic on these types is not modelled yet.
 'ab' * vb10 -> unknown unsupported-expression: 'ab' * vb10: arithmetic on these types is not modelled yet.
-'ab' * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+'ab' * x -> unknown unsupported-expression: 'ab' * x: arithmetic on these types is not modelled yet.
 'ab' * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 'ab' * j -> unknown (no unknown recorded)
 'ab' * 1 -> unknown unsupported-expression: 'ab' * 1: arithmetic on these types is not modelled yet.
@@ -1508,7 +1508,7 @@ N'ab' * dto3 -> unknown unsupported-expression: N'ab' * dto3: arithmetic on thes
 N'ab' * u -> unknown unsupported-expression: N'ab' * u: arithmetic on these types is not modelled yet.
 N'ab' * bin4 -> unknown unsupported-expression: N'ab' * bin4: arithmetic on these types is not modelled yet.
 N'ab' * vb10 -> unknown unsupported-expression: N'ab' * vb10: arithmetic on these types is not modelled yet.
-N'ab' * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+N'ab' * x -> unknown unsupported-expression: N'ab' * x: arithmetic on these types is not modelled yet.
 N'ab' * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 N'ab' * j -> unknown (no unknown recorded)
 N'ab' * 1 -> unknown unsupported-expression: N'ab' * 1: arithmetic on these types is not modelled yet.
@@ -1548,7 +1548,7 @@ N'ab' * $1 -> unknown unsupported-expression: N'ab' * $1: arithmetic on these ty
 1e0 * u -> unknown unsupported-expression: 1e0 * u: arithmetic on these types is not modelled yet.
 1e0 * bin4 -> unknown unsupported-expression: 1e0 * bin4: arithmetic on these types is not modelled yet.
 1e0 * vb10 -> unknown unsupported-expression: 1e0 * vb10: arithmetic on these types is not modelled yet.
-1e0 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+1e0 * x -> unknown unsupported-expression: 1e0 * x: arithmetic on these types is not modelled yet.
 1e0 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 1e0 * j -> unknown (no unknown recorded)
 1e0 * 1 -> float number/float null:arithmetic-overflow
@@ -1588,7 +1588,7 @@ $1 * dto3 -> unknown unsupported-expression: $1 * dto3: arithmetic on these type
 $1 * u -> unknown unsupported-expression: $1 * u: arithmetic on these types is not modelled yet.
 $1 * bin4 -> unknown unsupported-expression: $1 * bin4: arithmetic on these types is not modelled yet.
 $1 * vb10 -> unknown unsupported-expression: $1 * vb10: arithmetic on these types is not modelled yet.
-$1 * x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+$1 * x -> unknown unsupported-expression: $1 * x: arithmetic on these types is not modelled yet.
 $1 * sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 $1 * j -> unknown (no unknown recorded)
 $1 * 1 -> money number/decimal null:arithmetic-overflow {digits=19,4 [-922337203685477.5808 922337203685477.5807]}

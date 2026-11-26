@@ -392,6 +392,10 @@ internal sealed partial class Typer
             return NotModelled(call, $"SQL Server refuses {name} of bit.");
         if (TypeOf(argument) is { } image && image.Type == BuiltInType.Image)
             return NotModelled(call, $"SQL Server refuses {name} of image.");
+
+        // xml can't be compared, so it has no least or greatest (8117; observed over the catalogue sweep, CatalogueSweepGridTests).
+        if (TypeOf(argument) is { } xml && xml.Type == BuiltInType.Xml)
+            return NotModelled(call, $"SQL Server refuses {name} of xml.");
         return ProvedAggregate(call, scope)
             ? argument.WithNullableBecause([])
             : argument.WithNullableBecause([.. argument.NullableBecause, .. Aggregate(call, scope)]);

@@ -75,6 +75,7 @@ Why a value may be null, or a result missing: the IR's `nullableBecause` and `ab
 | [`unknown`](unknown.md) | its type is unknown, so nothing is proved of it |
 | [`declared`](declared.md) | the config file declares it may be |
 | [`not-in-both`](not-in-both.md) | only one of the two databases returns it |
+| [`xml-value`](xml-value.md) | XML's value() is null where its path finds no node, or the XML is null |
 
 ## Unknown reasons
 

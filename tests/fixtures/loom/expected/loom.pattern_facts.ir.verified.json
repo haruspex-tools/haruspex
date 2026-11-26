@@ -1,0 +1,438 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/pattern_facts.sql": "db26fbb17a5bc2b350f190cc3ad454b78047a359344198c6ca2b9e4aaf6a587d",
+      "tables/pattern.sql": "ca4a97367b2cb22d13d1caf258d39a6008db31f3a7b509cf9c4bcd13aab9a3a4"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.pattern_facts",
+      "name": "PatternFacts",
+      "kind": "procedure",
+      "at": "procedures/pattern_facts.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PatternFactsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "PatternFactsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.pattern_facts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.pattern_id",
+              "sql": "int",
+              "at": "tables/pattern.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "shafts",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/pattern_facts.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "sett",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(5,1)",
+            "digits": {
+              "precision": 5,
+              "scale": 1,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            },
+            "min": {
+              "value": -9999.9,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            },
+            "max": {
+              "value": 9999.9,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(5,1)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/pattern_facts.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(10)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/pattern_facts.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "initial",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(1)",
+            "maxLength": {
+              "value": 1,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(1)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/pattern_facts.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "noted_by",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/pattern_facts.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "has_treadling",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "has_notes",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "loom.pattern.notes"
+            }
+          ]
+        },
+        {
+          "name": "threading",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-expression"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/pattern_facts.sql:11:5"
+            }
+          ]
+        },
+        {
+          "name": "id_as_xml",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.pattern_id",
+              "sql": "int",
+              "at": "tables/pattern.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "literal_xml",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "kept_space",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tried",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "failed-conversion",
+              "at": "procedures/pattern_facts.sql:15:5"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.name",
+              "sql": "nvarchar(40)",
+              "at": "tables/pattern.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "draft_head",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "failed-conversion",
+              "at": "procedures/pattern_facts.sql:16:5"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.draft",
+              "sql": "xml",
+              "at": "tables/pattern.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "draft_text",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.draft",
+              "sql": "xml",
+              "at": "tables/pattern.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "notes_text",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "loom.pattern.notes"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.notes",
+              "sql": "xml",
+              "at": "tables/pattern.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "notes_or_draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.notes",
+              "sql": "xml",
+              "at": "tables/pattern.sql:7:5"
+            },
+            {
+              "column": "loom.pattern.draft",
+              "sql": "xml",
+              "at": "tables/pattern.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "notes_or_none",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.notes",
+              "sql": "xml",
+              "at": "tables/pattern.sql:7:5"
+            }
+          ]
+        },
+        {
+          "name": "chosen",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.draft",
+              "sql": "xml",
+              "at": "tables/pattern.sql:6:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "loom.pattern_facts",
+      "path": "results[0][].threading",
+      "reason": "unsupported-expression",
+      "detail": "p.draft.query('/draft/threading'): XML's query() is not modelled yet: what it returns is XML its path shapes, which a schema collection may later type.",
+      "at": "procedures/pattern_facts.sql:11:5"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

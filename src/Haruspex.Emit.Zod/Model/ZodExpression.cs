@@ -64,6 +64,15 @@ internal abstract record ZodExpression
         public bool Loose { get; init; }
     }
 
+    /// <summary>
+    /// A schema whose output type is branded (<c>.brand&lt;"Xml"&gt;()</c>): the value is checked as <paramref name="Target"/> checks
+    /// it, and its type is no longer interchangeable with the plain type, since TypeScript reads the brand as a property no plain
+    /// value has.
+    /// </summary>
+    /// <param name="Target">The schema that checks the value.</param>
+    /// <param name="Brand">The brand's name.</param>
+    public sealed record Branded(ZodExpression Target, string Brand) : ZodExpression;
+
     /// <summary>A string that must parse as JSON to a value of <paramref name="Content"/>, through the module's helper.</summary>
     /// <param name="Content">The schema of what the text holds.</param>
     public sealed record JsonText(ZodExpression Content) : ZodExpression;

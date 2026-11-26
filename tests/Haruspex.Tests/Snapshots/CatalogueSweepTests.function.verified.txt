@@ -28,7 +28,7 @@ DATEDIFF(day, dto3, dt) -> int number/int32 {[-2147483648 2147483647]}
 DATEDIFF(day, u, dt) -> unknown unsupported-expression: DATEDIFF(day, u, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, bin4, dt) -> unknown unsupported-expression: DATEDIFF(day, bin4, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, vb10, dt) -> unknown unsupported-expression: DATEDIFF(day, vb10, dt): an argument of this type is not modelled as a date.
-DATEDIFF(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEDIFF(day, x, dt) -> unknown unsupported-expression: DATEDIFF(day, x, dt): an argument of this type is not modelled as a date.
 DATEDIFF(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEDIFF(day, j, dt) -> unknown (no unknown recorded)
 DATEDIFF(day, 1, dt) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -68,7 +68,7 @@ DATEDIFF_BIG(day, dto3, dt) -> bigint number/int64 {[-9223372036854775808 922337
 DATEDIFF_BIG(day, u, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, u, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, bin4, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, bin4, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, vb10, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, vb10, dt): an argument of this type is not modelled as a date.
-DATEDIFF_BIG(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEDIFF_BIG(day, x, dt) -> unknown unsupported-expression: DATEDIFF_BIG(day, x, dt): an argument of this type is not modelled as a date.
 DATEDIFF_BIG(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEDIFF_BIG(day, j, dt) -> unknown (no unknown recorded)
 DATEDIFF_BIG(day, 1, dt) -> bigint number/int64 null:arithmetic-overflow {[-9223372036854775808 9223372036854775807]}
@@ -108,7 +108,7 @@ DATEADD(day, 1, dto3) -> datetimeoffset(3) datetime/offset
 DATEADD(day, 1, u) -> unknown unsupported-expression: DATEADD(day, 1, u): a date of this type is not modelled.
 DATEADD(day, 1, bin4) -> unknown unsupported-expression: DATEADD(day, 1, bin4): a date of this type is not modelled.
 DATEADD(day, 1, vb10) -> unknown unsupported-expression: DATEADD(day, 1, vb10): a date of this type is not modelled.
-DATEADD(day, 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEADD(day, 1, x) -> unknown unsupported-expression: DATEADD(day, 1, x): a date of this type is not modelled.
 DATEADD(day, 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEADD(day, 1, j) -> unknown (no unknown recorded)
 DATEADD(day, 1, 1) -> datetime datetime/local
@@ -148,7 +148,7 @@ DATEADD(day, dto3, dt) -> unknown unsupported-expression: DATEADD(day, dto3, dt)
 DATEADD(day, u, dt) -> unknown unsupported-expression: DATEADD(day, u, dt): a number of this type is not modelled.
 DATEADD(day, bin4, dt) -> unknown unsupported-expression: DATEADD(day, bin4, dt): a number of this type is not modelled.
 DATEADD(day, vb10, dt) -> unknown unsupported-expression: DATEADD(day, vb10, dt): a number of this type is not modelled.
-DATEADD(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEADD(day, x, dt) -> unknown unsupported-expression: DATEADD(day, x, dt): a number of this type is not modelled.
 DATEADD(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEADD(day, j, dt) -> unknown (no unknown recorded)
 DATEADD(day, 1, dt) -> date date
@@ -188,7 +188,7 @@ DATEPART(year, dto3) -> int number/int32 {[-2147483648 2147483647]}
 DATEPART(year, u) -> unknown unsupported-expression: DATEPART(year, u): a date of this type is not modelled.
 DATEPART(year, bin4) -> unknown unsupported-expression: DATEPART(year, bin4): a date of this type is not modelled.
 DATEPART(year, vb10) -> unknown unsupported-expression: DATEPART(year, vb10): a date of this type is not modelled.
-DATEPART(year, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEPART(year, x) -> unknown unsupported-expression: DATEPART(year, x): a date of this type is not modelled.
 DATEPART(year, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEPART(year, j) -> unknown (no unknown recorded)
 DATEPART(year, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -228,7 +228,7 @@ YEAR(dto3) -> int number/int32 {[-2147483648 2147483647]}
 YEAR(u) -> unknown unsupported-expression: YEAR(u): a date of this type is not modelled.
 YEAR(bin4) -> unknown unsupported-expression: YEAR(bin4): a date of this type is not modelled.
 YEAR(vb10) -> unknown unsupported-expression: YEAR(vb10): a date of this type is not modelled.
-YEAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+YEAR(x) -> unknown unsupported-expression: YEAR(x): a date of this type is not modelled.
 YEAR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 YEAR(j) -> unknown (no unknown recorded)
 YEAR(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -268,7 +268,7 @@ MONTH(dto3) -> int number/int32 {[-2147483648 2147483647]}
 MONTH(u) -> unknown unsupported-expression: MONTH(u): a date of this type is not modelled.
 MONTH(bin4) -> unknown unsupported-expression: MONTH(bin4): a date of this type is not modelled.
 MONTH(vb10) -> unknown unsupported-expression: MONTH(vb10): a date of this type is not modelled.
-MONTH(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MONTH(x) -> unknown unsupported-expression: MONTH(x): a date of this type is not modelled.
 MONTH(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MONTH(j) -> unknown (no unknown recorded)
 MONTH(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -308,7 +308,7 @@ DAY(dto3) -> int number/int32 {[-2147483648 2147483647]}
 DAY(u) -> unknown unsupported-expression: DAY(u): a date of this type is not modelled.
 DAY(bin4) -> unknown unsupported-expression: DAY(bin4): a date of this type is not modelled.
 DAY(vb10) -> unknown unsupported-expression: DAY(vb10): a date of this type is not modelled.
-DAY(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DAY(x) -> unknown unsupported-expression: DAY(x): a date of this type is not modelled.
 DAY(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DAY(j) -> unknown (no unknown recorded)
 DAY(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -348,7 +348,7 @@ DATENAME(month, dto3) -> nvarchar(30) string {length<=30}
 DATENAME(month, u) -> unknown unsupported-expression: DATENAME(month, u): a date of this type is not modelled.
 DATENAME(month, bin4) -> unknown unsupported-expression: DATENAME(month, bin4): a date of this type is not modelled.
 DATENAME(month, vb10) -> unknown unsupported-expression: DATENAME(month, vb10): a date of this type is not modelled.
-DATENAME(month, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATENAME(month, x) -> unknown unsupported-expression: DATENAME(month, x): a date of this type is not modelled.
 DATENAME(month, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATENAME(month, j) -> unknown (no unknown recorded)
 DATENAME(month, 1) -> nvarchar(30) string {length<=30}
@@ -388,7 +388,7 @@ EOMONTH(dto3) -> date date
 EOMONTH(u) -> unknown unsupported-expression: EOMONTH(u): a date of this type is not modelled.
 EOMONTH(bin4) -> unknown unsupported-expression: EOMONTH(bin4): a date of this type is not modelled.
 EOMONTH(vb10) -> unknown unsupported-expression: EOMONTH(vb10): a date of this type is not modelled.
-EOMONTH(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+EOMONTH(x) -> unknown unsupported-expression: EOMONTH(x): a date of this type is not modelled.
 EOMONTH(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 EOMONTH(j) -> unknown (no unknown recorded)
 EOMONTH(1) -> unknown unsupported-expression: EOMONTH(1): a date of this type is not modelled.
@@ -428,7 +428,7 @@ EOMONTH(dt, dto3) -> unknown unsupported-expression: EOMONTH(dt, dto3): SQL Serv
 EOMONTH(dt, u) -> unknown unsupported-expression: EOMONTH(dt, u): SQL Server refuses it: its offset, uniqueidentifier, doesn't convert implicitly to int.
 EOMONTH(dt, bin4) -> date date
 EOMONTH(dt, vb10) -> date date
-EOMONTH(dt, x) -> date date
+EOMONTH(dt, x) -> unknown unsupported-expression: EOMONTH(dt, x): SQL Server refuses it: its offset, xml, doesn't convert implicitly to int.
 EOMONTH(dt, sv) -> date date
 EOMONTH(dt, j) -> date date
 EOMONTH(dt, 1) -> date date
@@ -468,7 +468,7 @@ DATEFROMPARTS(dto3, 1, 1) -> unknown unsupported-expression: DATEFROMPARTS(dto3,
 DATEFROMPARTS(u, 1, 1) -> unknown unsupported-expression: DATEFROMPARTS(u, 1, 1): a part that is not an int is not modelled.
 DATEFROMPARTS(bin4, 1, 1) -> unknown unsupported-expression: DATEFROMPARTS(bin4, 1, 1): a part that is not an int is not modelled.
 DATEFROMPARTS(vb10, 1, 1) -> unknown unsupported-expression: DATEFROMPARTS(vb10, 1, 1): a part that is not an int is not modelled.
-DATEFROMPARTS(x, 1, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATEFROMPARTS(x, 1, 1) -> unknown unsupported-expression: DATEFROMPARTS(x, 1, 1): a part that is not an int is not modelled.
 DATEFROMPARTS(sv, 1, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATEFROMPARTS(j, 1, 1) -> unknown (no unknown recorded)
 DATEFROMPARTS(1, 1, 1) -> date date
@@ -508,7 +508,7 @@ DATETIMEFROMPARTS(dto3, 1, 1, 0, 0, 0, 0) -> unknown unsupported-expression: DAT
 DATETIMEFROMPARTS(u, 1, 1, 0, 0, 0, 0) -> unknown unsupported-expression: DATETIMEFROMPARTS(u, 1, 1, 0, 0, 0, 0): a part that is not an int is not modelled.
 DATETIMEFROMPARTS(bin4, 1, 1, 0, 0, 0, 0) -> unknown unsupported-expression: DATETIMEFROMPARTS(bin4, 1, 1, 0, 0, 0, 0): a part that is not an int is not modelled.
 DATETIMEFROMPARTS(vb10, 1, 1, 0, 0, 0, 0) -> unknown unsupported-expression: DATETIMEFROMPARTS(vb10, 1, 1, 0, 0, 0, 0): a part that is not an int is not modelled.
-DATETIMEFROMPARTS(x, 1, 1, 0, 0, 0, 0) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATETIMEFROMPARTS(x, 1, 1, 0, 0, 0, 0) -> unknown unsupported-expression: DATETIMEFROMPARTS(x, 1, 1, 0, 0, 0, 0): a part that is not an int is not modelled.
 DATETIMEFROMPARTS(sv, 1, 1, 0, 0, 0, 0) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATETIMEFROMPARTS(j, 1, 1, 0, 0, 0, 0) -> unknown (no unknown recorded)
 DATETIMEFROMPARTS(1, 1, 1, 0, 0, 0, 0) -> datetime datetime/local
@@ -548,7 +548,7 @@ SMALLDATETIMEFROMPARTS(dto3, 1, 1, 0, 0) -> unknown unsupported-expression: SMAL
 SMALLDATETIMEFROMPARTS(u, 1, 1, 0, 0) -> unknown unsupported-expression: SMALLDATETIMEFROMPARTS(u, 1, 1, 0, 0): a part that is not an int is not modelled.
 SMALLDATETIMEFROMPARTS(bin4, 1, 1, 0, 0) -> unknown unsupported-expression: SMALLDATETIMEFROMPARTS(bin4, 1, 1, 0, 0): a part that is not an int is not modelled.
 SMALLDATETIMEFROMPARTS(vb10, 1, 1, 0, 0) -> unknown unsupported-expression: SMALLDATETIMEFROMPARTS(vb10, 1, 1, 0, 0): a part that is not an int is not modelled.
-SMALLDATETIMEFROMPARTS(x, 1, 1, 0, 0) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SMALLDATETIMEFROMPARTS(x, 1, 1, 0, 0) -> unknown unsupported-expression: SMALLDATETIMEFROMPARTS(x, 1, 1, 0, 0): a part that is not an int is not modelled.
 SMALLDATETIMEFROMPARTS(sv, 1, 1, 0, 0) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SMALLDATETIMEFROMPARTS(j, 1, 1, 0, 0) -> unknown (no unknown recorded)
 SMALLDATETIMEFROMPARTS(1, 1, 1, 0, 0) -> smalldatetime datetime/local
@@ -588,7 +588,7 @@ DATETIME2FROMPARTS(dto3, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-expression:
 DATETIME2FROMPARTS(u, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIME2FROMPARTS(u, 1, 1, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIME2FROMPARTS(bin4, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIME2FROMPARTS(bin4, 1, 1, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIME2FROMPARTS(vb10, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIME2FROMPARTS(vb10, 1, 1, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
-DATETIME2FROMPARTS(x, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATETIME2FROMPARTS(x, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIME2FROMPARTS(x, 1, 1, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIME2FROMPARTS(sv, 1, 1, 0, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATETIME2FROMPARTS(j, 1, 1, 0, 0, 0, 0, 3) -> unknown (no unknown recorded)
 DATETIME2FROMPARTS(1, 1, 1, 0, 0, 0, 0, 3) -> datetime2(3) datetime/local
@@ -628,7 +628,7 @@ TIMEFROMPARTS(dto3, 0, 0, 0, 3) -> unknown unsupported-expression: TIMEFROMPARTS
 TIMEFROMPARTS(u, 0, 0, 0, 3) -> unknown unsupported-expression: TIMEFROMPARTS(u, 0, 0, 0, 3): a part that is not an int is not modelled.
 TIMEFROMPARTS(bin4, 0, 0, 0, 3) -> unknown unsupported-expression: TIMEFROMPARTS(bin4, 0, 0, 0, 3): a part that is not an int is not modelled.
 TIMEFROMPARTS(vb10, 0, 0, 0, 3) -> unknown unsupported-expression: TIMEFROMPARTS(vb10, 0, 0, 0, 3): a part that is not an int is not modelled.
-TIMEFROMPARTS(x, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TIMEFROMPARTS(x, 0, 0, 0, 3) -> unknown unsupported-expression: TIMEFROMPARTS(x, 0, 0, 0, 3): a part that is not an int is not modelled.
 TIMEFROMPARTS(sv, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TIMEFROMPARTS(j, 0, 0, 0, 3) -> unknown (no unknown recorded)
 TIMEFROMPARTS(1, 0, 0, 0, 3) -> time(3) time
@@ -668,7 +668,7 @@ DATETIMEOFFSETFROMPARTS(dto3, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-
 DATETIMEOFFSETFROMPARTS(u, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(u, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIMEOFFSETFROMPARTS(bin4, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(bin4, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIMEOFFSETFROMPARTS(vb10, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(vb10, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
-DATETIMEOFFSETFROMPARTS(x, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATETIMEOFFSETFROMPARTS(x, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-expression: DATETIMEOFFSETFROMPARTS(x, 1, 1, 0, 0, 0, 0, 0, 0, 3): a part that is not an int is not modelled.
 DATETIMEOFFSETFROMPARTS(sv, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATETIMEOFFSETFROMPARTS(j, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> unknown (no unknown recorded)
 DATETIMEOFFSETFROMPARTS(1, 1, 1, 0, 0, 0, 0, 0, 0, 3) -> datetimeoffset(3) datetime/offset
@@ -708,7 +708,7 @@ DATETRUNC(month, dto3) -> datetimeoffset(3) datetime/offset
 DATETRUNC(month, u) -> unknown unsupported-expression: DATETRUNC(month, u): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATETRUNC(month, bin4) -> unknown unsupported-expression: DATETRUNC(month, bin4): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATETRUNC(month, vb10) -> unknown unsupported-expression: DATETRUNC(month, vb10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
-DATETRUNC(month, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATETRUNC(month, x) -> unknown unsupported-expression: DATETRUNC(month, x): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATETRUNC(month, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATETRUNC(month, j) -> unknown (no unknown recorded)
 DATETRUNC(month, 1) -> unknown unsupported-expression: DATETRUNC(month, 1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
@@ -748,7 +748,7 @@ DATE_BUCKET(week, 2, dto3) -> datetimeoffset(3) datetime/offset
 DATE_BUCKET(week, 2, u) -> unknown unsupported-expression: DATE_BUCKET(week, 2, u): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(week, 2, bin4) -> unknown unsupported-expression: DATE_BUCKET(week, 2, bin4): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(week, 2, vb10) -> unknown unsupported-expression: DATE_BUCKET(week, 2, vb10): a date that is not of a date or time type, or a width that is not a number, is not modelled.
-DATE_BUCKET(week, 2, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATE_BUCKET(week, 2, x) -> unknown unsupported-expression: DATE_BUCKET(week, 2, x): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(week, 2, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATE_BUCKET(week, 2, j) -> unknown (no unknown recorded)
 DATE_BUCKET(week, 2, 1) -> unknown unsupported-expression: DATE_BUCKET(week, 2, 1): a date that is not of a date or time type, or a width that is not a number, is not modelled.
@@ -788,7 +788,7 @@ DATE_BUCKET(day, dto3, dt) -> unknown unsupported-expression: DATE_BUCKET(day, d
 DATE_BUCKET(day, u, dt) -> unknown unsupported-expression: DATE_BUCKET(day, u, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(day, bin4, dt) -> unknown unsupported-expression: DATE_BUCKET(day, bin4, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(day, vb10, dt) -> unknown unsupported-expression: DATE_BUCKET(day, vb10, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
-DATE_BUCKET(day, x, dt) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATE_BUCKET(day, x, dt) -> unknown unsupported-expression: DATE_BUCKET(day, x, dt): a date that is not of a date or time type, or a width that is not a number, is not modelled.
 DATE_BUCKET(day, sv, dt) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATE_BUCKET(day, j, dt) -> unknown (no unknown recorded)
 DATE_BUCKET(day, 1, dt) -> date date
@@ -828,7 +828,7 @@ SWITCHOFFSET(dto3, '+01:00') -> datetimeoffset(3) datetime/offset
 SWITCHOFFSET(u, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(u, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(bin4, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(bin4, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(vb10, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(vb10, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
-SWITCHOFFSET(x, '+01:00') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SWITCHOFFSET(x, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(x, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(sv, '+01:00') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SWITCHOFFSET(j, '+01:00') -> unknown (no unknown recorded)
 SWITCHOFFSET(1, '+01:00') -> unknown unsupported-expression: SWITCHOFFSET(1, '+01:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
@@ -868,7 +868,7 @@ SWITCHOFFSET(dto3, dto3) -> unknown unsupported-expression: SWITCHOFFSET(dto3, d
 SWITCHOFFSET(dto3, u) -> unknown unsupported-expression: SWITCHOFFSET(dto3, u): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(dto3, bin4) -> unknown unsupported-expression: SWITCHOFFSET(dto3, bin4): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(dto3, vb10) -> unknown unsupported-expression: SWITCHOFFSET(dto3, vb10): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
-SWITCHOFFSET(dto3, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SWITCHOFFSET(dto3, x) -> unknown unsupported-expression: SWITCHOFFSET(dto3, x): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 SWITCHOFFSET(dto3, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SWITCHOFFSET(dto3, j) -> unknown (no unknown recorded)
 SWITCHOFFSET(dto3, 1) -> datetimeoffset(3) datetime/offset
@@ -908,7 +908,7 @@ TODATETIMEOFFSET(dto3, '-05:00') -> datetimeoffset(3) datetime/offset
 TODATETIMEOFFSET(u, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(u, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET(bin4, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(bin4, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET(vb10, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(vb10, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
-TODATETIMEOFFSET(x, '-05:00') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TODATETIMEOFFSET(x, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(x, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
 TODATETIMEOFFSET(sv, '-05:00') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TODATETIMEOFFSET(j, '-05:00') -> unknown (no unknown recorded)
 TODATETIMEOFFSET(1, '-05:00') -> unknown unsupported-expression: TODATETIMEOFFSET(1, '-05:00'): a date that is not of a date or time type, or an offset that is neither a string nor a number, is not modelled.
@@ -948,7 +948,7 @@ dto3 AT TIME ZONE 'UTC' -> datetimeoffset(3) datetime/offset
 u AT TIME ZONE 'UTC' -> unknown unsupported-expression: u AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 bin4 AT TIME ZONE 'UTC' -> unknown unsupported-expression: bin4 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 vb10 AT TIME ZONE 'UTC' -> unknown unsupported-expression: vb10 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
-x AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type xml is not modelled yet.
+x AT TIME ZONE 'UTC' -> unknown unsupported-expression: x AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 sv AT TIME ZONE 'UTC' -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 j AT TIME ZONE 'UTC' -> unknown (no unknown recorded)
 1 AT TIME ZONE 'UTC' -> unknown unsupported-expression: 1 AT TIME ZONE 'UTC': AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
@@ -988,7 +988,7 @@ dt23 AT TIME ZONE dto3 -> unknown unsupported-expression: dt23 AT TIME ZONE dto3
 dt23 AT TIME ZONE u -> unknown unsupported-expression: dt23 AT TIME ZONE u: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 dt23 AT TIME ZONE bin4 -> unknown unsupported-expression: dt23 AT TIME ZONE bin4: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 dt23 AT TIME ZONE vb10 -> unknown unsupported-expression: dt23 AT TIME ZONE vb10: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
-dt23 AT TIME ZONE x -> unknown unsupported-sql-type: The type xml is not modelled yet.
+dt23 AT TIME ZONE x -> unknown unsupported-expression: dt23 AT TIME ZONE x: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
 dt23 AT TIME ZONE sv -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 dt23 AT TIME ZONE j -> unknown (no unknown recorded)
 dt23 AT TIME ZONE 1 -> unknown unsupported-expression: dt23 AT TIME ZONE 1: AT TIME ZONE of a value that is not a datetime, smalldatetime, datetime2 or datetimeoffset, or in a zone that is not a string, is refused.
@@ -1028,7 +1028,7 @@ ISDATE(dto3) -> unknown unsupported-expression: ISDATE(dto3): ISDATE of a value 
 ISDATE(u) -> unknown unsupported-expression: ISDATE(u): ISDATE of a value of this type is not modelled.
 ISDATE(bin4) -> unknown unsupported-expression: ISDATE(bin4): ISDATE of a value of this type is not modelled.
 ISDATE(vb10) -> unknown unsupported-expression: ISDATE(vb10): ISDATE of a value of this type is not modelled.
-ISDATE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISDATE(x) -> unknown unsupported-expression: ISDATE(x): ISDATE of a value of this type is not modelled.
 ISDATE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISDATE(j) -> unknown (no unknown recorded)
 ISDATE(1) -> int number/int32 {[0 1]}
@@ -1074,7 +1074,7 @@ LTRIM(dto3) -> unknown unsupported-expression: LTRIM(dto3): an argument that is 
 LTRIM(u) -> unknown unsupported-expression: LTRIM(u): an argument that is not a string is not modelled.
 LTRIM(bin4) -> unknown unsupported-expression: LTRIM(bin4): an argument that is not a string is not modelled.
 LTRIM(vb10) -> unknown unsupported-expression: LTRIM(vb10): an argument that is not a string is not modelled.
-LTRIM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LTRIM(x) -> unknown unsupported-expression: LTRIM(x): an argument that is not a string is not modelled.
 LTRIM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LTRIM(j) -> unknown (no unknown recorded)
 LTRIM(1) -> unknown unsupported-expression: LTRIM(1): an argument that is not a string is not modelled.
@@ -1114,7 +1114,7 @@ RTRIM(dto3) -> unknown unsupported-expression: RTRIM(dto3): an argument that is 
 RTRIM(u) -> unknown unsupported-expression: RTRIM(u): an argument that is not a string is not modelled.
 RTRIM(bin4) -> unknown unsupported-expression: RTRIM(bin4): an argument that is not a string is not modelled.
 RTRIM(vb10) -> unknown unsupported-expression: RTRIM(vb10): an argument that is not a string is not modelled.
-RTRIM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RTRIM(x) -> unknown unsupported-expression: RTRIM(x): an argument that is not a string is not modelled.
 RTRIM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 RTRIM(j) -> unknown (no unknown recorded)
 RTRIM(1) -> unknown unsupported-expression: RTRIM(1): an argument that is not a string is not modelled.
@@ -1154,7 +1154,7 @@ TRIM(dto3) -> unknown unsupported-expression: TRIM(dto3): an argument that is no
 TRIM(u) -> unknown unsupported-expression: TRIM(u): an argument that is not a string is not modelled.
 TRIM(bin4) -> unknown unsupported-expression: TRIM(bin4): an argument that is not a string is not modelled.
 TRIM(vb10) -> unknown unsupported-expression: TRIM(vb10): an argument that is not a string is not modelled.
-TRIM(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRIM(x) -> unknown unsupported-expression: TRIM(x): an argument that is not a string is not modelled.
 TRIM(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRIM(j) -> unknown (no unknown recorded)
 TRIM(1) -> unknown unsupported-expression: TRIM(1): an argument that is not a string is not modelled.
@@ -1194,7 +1194,7 @@ LTRIM(dto3, 'x') -> unknown unsupported-expression: LTRIM(dto3, 'x'): an argumen
 LTRIM(u, 'x') -> unknown unsupported-expression: LTRIM(u, 'x'): an argument that is not a string is not modelled.
 LTRIM(bin4, 'x') -> unknown unsupported-expression: LTRIM(bin4, 'x'): an argument that is not a string is not modelled.
 LTRIM(vb10, 'x') -> unknown unsupported-expression: LTRIM(vb10, 'x'): an argument that is not a string is not modelled.
-LTRIM(x, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LTRIM(x, 'x') -> unknown unsupported-expression: LTRIM(x, 'x'): an argument that is not a string is not modelled.
 LTRIM(sv, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LTRIM(j, 'x') -> unknown (no unknown recorded)
 LTRIM(1, 'x') -> unknown unsupported-expression: LTRIM(1, 'x'): an argument that is not a string is not modelled.
@@ -1234,7 +1234,7 @@ RTRIM(dto3, N'x') -> unknown unsupported-expression: RTRIM(dto3, N'x'): an argum
 RTRIM(u, N'x') -> unknown unsupported-expression: RTRIM(u, N'x'): an argument that is not a string is not modelled.
 RTRIM(bin4, N'x') -> unknown unsupported-expression: RTRIM(bin4, N'x'): an argument that is not a string is not modelled.
 RTRIM(vb10, N'x') -> unknown unsupported-expression: RTRIM(vb10, N'x'): an argument that is not a string is not modelled.
-RTRIM(x, N'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RTRIM(x, N'x') -> unknown unsupported-expression: RTRIM(x, N'x'): an argument that is not a string is not modelled.
 RTRIM(sv, N'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 RTRIM(j, N'x') -> unknown (no unknown recorded)
 RTRIM(1, N'x') -> unknown unsupported-expression: RTRIM(1, N'x'): an argument that is not a string is not modelled.
@@ -1274,7 +1274,7 @@ TRIM('x' FROM dto3) -> unknown unsupported-expression: TRIM('x' FROM dto3): an a
 TRIM('x' FROM u) -> unknown unsupported-expression: TRIM('x' FROM u): an argument that is not a string is not modelled.
 TRIM('x' FROM bin4) -> unknown unsupported-expression: TRIM('x' FROM bin4): an argument that is not a string is not modelled.
 TRIM('x' FROM vb10) -> unknown unsupported-expression: TRIM('x' FROM vb10): an argument that is not a string is not modelled.
-TRIM('x' FROM x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRIM('x' FROM x) -> unknown unsupported-expression: TRIM('x' FROM x): an argument that is not a string is not modelled.
 TRIM('x' FROM sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRIM('x' FROM j) -> unknown (no unknown recorded)
 TRIM('x' FROM 1) -> unknown unsupported-expression: TRIM('x' FROM 1): an argument that is not a string is not modelled.
@@ -1314,7 +1314,7 @@ UPPER(dto3) -> unknown unsupported-expression: UPPER(dto3): an argument that is 
 UPPER(u) -> unknown unsupported-expression: UPPER(u): an argument that is not a string is not modelled.
 UPPER(bin4) -> unknown unsupported-expression: UPPER(bin4): an argument that is not a string is not modelled.
 UPPER(vb10) -> unknown unsupported-expression: UPPER(vb10): an argument that is not a string is not modelled.
-UPPER(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+UPPER(x) -> unknown unsupported-expression: UPPER(x): an argument that is not a string is not modelled.
 UPPER(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 UPPER(j) -> unknown (no unknown recorded)
 UPPER(1) -> unknown unsupported-expression: UPPER(1): an argument that is not a string is not modelled.
@@ -1354,7 +1354,7 @@ LOWER(dto3) -> unknown unsupported-expression: LOWER(dto3): an argument that is 
 LOWER(u) -> unknown unsupported-expression: LOWER(u): an argument that is not a string is not modelled.
 LOWER(bin4) -> unknown unsupported-expression: LOWER(bin4): an argument that is not a string is not modelled.
 LOWER(vb10) -> unknown unsupported-expression: LOWER(vb10): an argument that is not a string is not modelled.
-LOWER(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LOWER(x) -> unknown unsupported-expression: LOWER(x): an argument that is not a string is not modelled.
 LOWER(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LOWER(j) -> unknown (no unknown recorded)
 LOWER(1) -> unknown unsupported-expression: LOWER(1): an argument that is not a string is not modelled.
@@ -1394,7 +1394,7 @@ SUBSTRING(dto3, 1, 2) -> unknown unsupported-expression: SUBSTRING(dto3, 1, 2): 
 SUBSTRING(u, 1, 2) -> unknown unsupported-expression: SUBSTRING(u, 1, 2): a string function of a value that is not a string or binary is not modelled.
 SUBSTRING(bin4, 1, 2) -> varbinary(2) bytes {length<=2}
 SUBSTRING(vb10, 1, 2) -> varbinary(2) bytes {length<=2}
-SUBSTRING(x, 1, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUBSTRING(x, 1, 2) -> unknown unsupported-expression: SUBSTRING(x, 1, 2): a string function of a value that is not a string or binary is not modelled.
 SUBSTRING(sv, 1, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SUBSTRING(j, 1, 2) -> unknown (no unknown recorded)
 SUBSTRING(1, 1, 2) -> unknown unsupported-expression: SUBSTRING(1, 1, 2): a string function of a value that is not a string or binary is not modelled.
@@ -1434,7 +1434,7 @@ LEFT(dto3, 2) -> unknown unsupported-expression: LEFT(dto3, 2): a string functio
 LEFT(u, 2) -> unknown unsupported-expression: LEFT(u, 2): a string function of a value that is not a string or binary is not modelled.
 LEFT(bin4, 2) -> varchar(2) string {length<=2}
 LEFT(vb10, 2) -> varchar(2) string {length<=2}
-LEFT(x, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEFT(x, 2) -> unknown unsupported-expression: LEFT(x, 2): a string function of a value that is not a string or binary is not modelled.
 LEFT(sv, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LEFT(j, 2) -> unknown (no unknown recorded)
 LEFT(1, 2) -> unknown unsupported-expression: LEFT(1, 2): a string function of a value that is not a string or binary is not modelled.
@@ -1474,7 +1474,7 @@ RIGHT(dto3, 2) -> unknown unsupported-expression: RIGHT(dto3, 2): a string funct
 RIGHT(u, 2) -> unknown unsupported-expression: RIGHT(u, 2): a string function of a value that is not a string or binary is not modelled.
 RIGHT(bin4, 2) -> varchar(2) string {length<=2}
 RIGHT(vb10, 2) -> varchar(2) string {length<=2}
-RIGHT(x, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RIGHT(x, 2) -> unknown unsupported-expression: RIGHT(x, 2): a string function of a value that is not a string or binary is not modelled.
 RIGHT(sv, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 RIGHT(j, 2) -> unknown (no unknown recorded)
 RIGHT(1, 2) -> unknown unsupported-expression: RIGHT(1, 2): a string function of a value that is not a string or binary is not modelled.
@@ -1514,7 +1514,7 @@ LEN(dto3) -> unknown unsupported-expression: LEN(dto3): a length of a value of t
 LEN(u) -> unknown unsupported-expression: LEN(u): a length of a value of this type is not modelled.
 LEN(bin4) -> unknown unsupported-expression: LEN(bin4): a length of a value of this type is not modelled.
 LEN(vb10) -> unknown unsupported-expression: LEN(vb10): a length of a value of this type is not modelled.
-LEN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEN(x) -> unknown unsupported-expression: LEN(x): a length of a value of this type is not modelled.
 LEN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LEN(j) -> unknown (no unknown recorded)
 LEN(1) -> unknown unsupported-expression: LEN(1): a length of a value of this type is not modelled.
@@ -1554,7 +1554,7 @@ DATALENGTH(dto3) -> int number/int32 {[-2147483648 2147483647]}
 DATALENGTH(u) -> int number/int32 {[-2147483648 2147483647]}
 DATALENGTH(bin4) -> int number/int32 {[-2147483648 2147483647]}
 DATALENGTH(vb10) -> int number/int32 {[-2147483648 2147483647]}
-DATALENGTH(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DATALENGTH(x) -> int number/int32 {[-2147483648 2147483647]}
 DATALENGTH(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DATALENGTH(j) -> unknown (no unknown recorded)
 DATALENGTH(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -1594,7 +1594,7 @@ REPLACE(dto3, 'a', 'b') -> unknown unsupported-expression: REPLACE(dto3, 'a', 'b
 REPLACE(u, 'a', 'b') -> unknown unsupported-expression: REPLACE(u, 'a', 'b'): REPLACE of a value that is not a string is not modelled.
 REPLACE(bin4, 'a', 'b') -> unknown unsupported-expression: REPLACE(bin4, 'a', 'b'): REPLACE of a value that is not a string is not modelled.
 REPLACE(vb10, 'a', 'b') -> unknown unsupported-expression: REPLACE(vb10, 'a', 'b'): REPLACE of a value that is not a string is not modelled.
-REPLACE(x, 'a', 'b') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REPLACE(x, 'a', 'b') -> unknown unsupported-expression: REPLACE(x, 'a', 'b'): REPLACE of a value that is not a string is not modelled.
 REPLACE(sv, 'a', 'b') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REPLACE(j, 'a', 'b') -> unknown (no unknown recorded)
 REPLACE(1, 'a', 'b') -> unknown unsupported-expression: REPLACE(1, 'a', 'b'): REPLACE of a value that is not a string is not modelled.
@@ -1634,7 +1634,7 @@ STRING_ESCAPE(dto3, 'json') -> unknown unsupported-expression: STRING_ESCAPE(dto
 STRING_ESCAPE(u, 'json') -> unknown unsupported-expression: STRING_ESCAPE(u, 'json'): STRING_ESCAPE of a value that is not a string is not modelled.
 STRING_ESCAPE(bin4, 'json') -> unknown unsupported-expression: STRING_ESCAPE(bin4, 'json'): STRING_ESCAPE of a value that is not a string is not modelled.
 STRING_ESCAPE(vb10, 'json') -> unknown unsupported-expression: STRING_ESCAPE(vb10, 'json'): STRING_ESCAPE of a value that is not a string is not modelled.
-STRING_ESCAPE(x, 'json') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STRING_ESCAPE(x, 'json') -> unknown unsupported-expression: STRING_ESCAPE(x, 'json'): STRING_ESCAPE of a value that is not a string is not modelled.
 STRING_ESCAPE(sv, 'json') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STRING_ESCAPE(j, 'json') -> unknown (no unknown recorded)
 STRING_ESCAPE(1, 'json') -> unknown unsupported-expression: STRING_ESCAPE(1, 'json'): STRING_ESCAPE of a value that is not a string is not modelled.
@@ -1674,7 +1674,7 @@ FORMATMESSAGE(dto3, 1) -> unknown unsupported-expression: FORMATMESSAGE(dto3, 1)
 FORMATMESSAGE(u, 1) -> unknown unsupported-expression: FORMATMESSAGE(u, 1): FORMATMESSAGE of a message number is not modelled.
 FORMATMESSAGE(bin4, 1) -> unknown unsupported-expression: FORMATMESSAGE(bin4, 1): FORMATMESSAGE of a message number is not modelled.
 FORMATMESSAGE(vb10, 1) -> unknown unsupported-expression: FORMATMESSAGE(vb10, 1): FORMATMESSAGE of a message number is not modelled.
-FORMATMESSAGE(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+FORMATMESSAGE(x, 1) -> unknown unsupported-expression: FORMATMESSAGE(x, 1): FORMATMESSAGE of a message number is not modelled.
 FORMATMESSAGE(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 FORMATMESSAGE(j, 1) -> unknown (no unknown recorded)
 FORMATMESSAGE(1, 1) -> unknown unsupported-expression: FORMATMESSAGE(1, 1): FORMATMESSAGE of a message number is not modelled.
@@ -1714,7 +1714,7 @@ JSON_VALUE(dto3, '$.a') -> unknown unsupported-expression: JSON_VALUE(dto3, '$.a
 JSON_VALUE(u, '$.a') -> unknown unsupported-expression: JSON_VALUE(u, '$.a'): SQL Server refuses JSON_VALUE of uniqueidentifier.
 JSON_VALUE(bin4, '$.a') -> unknown unsupported-expression: JSON_VALUE(bin4, '$.a'): SQL Server refuses JSON_VALUE of binary(4).
 JSON_VALUE(vb10, '$.a') -> unknown unsupported-expression: JSON_VALUE(vb10, '$.a'): SQL Server refuses JSON_VALUE of varbinary(10).
-JSON_VALUE(x, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
+JSON_VALUE(x, '$.a') -> unknown unsupported-expression: JSON_VALUE(x, '$.a'): SQL Server refuses JSON_VALUE of xml.
 JSON_VALUE(sv, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(j, '$.a') -> nvarchar(4000) string null:json-null-or-absent {length<=4000}
 JSON_VALUE(1, '$.a') -> unknown unsupported-expression: JSON_VALUE(1, '$.a'): SQL Server refuses JSON_VALUE of int.
@@ -1754,7 +1754,7 @@ JSON_QUERY(dto3) -> unknown json-shape-unknown: JSON_QUERY(dto3) reads JSON that
 JSON_QUERY(u) -> unknown json-shape-unknown: JSON_QUERY(u) reads JSON that is not built here, so its shape is unknown.
 JSON_QUERY(bin4) -> unknown json-shape-unknown: JSON_QUERY(bin4) reads JSON that is not built here, so its shape is unknown.
 JSON_QUERY(vb10) -> unknown json-shape-unknown: JSON_QUERY(vb10) reads JSON that is not built here, so its shape is unknown.
-JSON_QUERY(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+JSON_QUERY(x) -> unknown json-shape-unknown: JSON_QUERY(x) reads JSON that is not built here, so its shape is unknown.
 JSON_QUERY(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 JSON_QUERY(j) -> unknown (no unknown recorded)
 JSON_QUERY(1) -> unknown json-shape-unknown: JSON_QUERY(1) reads JSON that is not built here, so its shape is unknown.
@@ -1794,7 +1794,7 @@ ROUND(dto3, 1) -> unknown unsupported-expression: ROUND(dto3, 1): an argument of
 ROUND(u, 1) -> unknown unsupported-expression: ROUND(u, 1): an argument of this type is not modelled.
 ROUND(bin4, 1) -> unknown unsupported-expression: ROUND(bin4, 1): an argument of this type is not modelled.
 ROUND(vb10, 1) -> unknown unsupported-expression: ROUND(vb10, 1): an argument of this type is not modelled.
-ROUND(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ROUND(x, 1) -> unknown unsupported-expression: ROUND(x, 1): an argument of this type is not modelled.
 ROUND(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ROUND(j, 1) -> unknown (no unknown recorded)
 ROUND(1, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -1834,7 +1834,7 @@ ROUND(dto3, 0, 1) -> unknown unsupported-expression: ROUND(dto3, 0, 1): an argum
 ROUND(u, 0, 1) -> unknown unsupported-expression: ROUND(u, 0, 1): an argument of this type is not modelled.
 ROUND(bin4, 0, 1) -> unknown unsupported-expression: ROUND(bin4, 0, 1): an argument of this type is not modelled.
 ROUND(vb10, 0, 1) -> unknown unsupported-expression: ROUND(vb10, 0, 1): an argument of this type is not modelled.
-ROUND(x, 0, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ROUND(x, 0, 1) -> unknown unsupported-expression: ROUND(x, 0, 1): an argument of this type is not modelled.
 ROUND(sv, 0, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ROUND(j, 0, 1) -> unknown (no unknown recorded)
 ROUND(1, 0, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -1874,7 +1874,7 @@ FLOOR(dto3) -> unknown unsupported-expression: FLOOR(dto3): an argument of this 
 FLOOR(u) -> unknown unsupported-expression: FLOOR(u): an argument of this type is not modelled.
 FLOOR(bin4) -> unknown unsupported-expression: FLOOR(bin4): an argument of this type is not modelled.
 FLOOR(vb10) -> unknown unsupported-expression: FLOOR(vb10): an argument of this type is not modelled.
-FLOOR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+FLOOR(x) -> unknown unsupported-expression: FLOOR(x): an argument of this type is not modelled.
 FLOOR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 FLOOR(j) -> unknown (no unknown recorded)
 FLOOR(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -1914,7 +1914,7 @@ CEILING(dto3) -> unknown unsupported-expression: CEILING(dto3): an argument of t
 CEILING(u) -> unknown unsupported-expression: CEILING(u): an argument of this type is not modelled.
 CEILING(bin4) -> unknown unsupported-expression: CEILING(bin4): an argument of this type is not modelled.
 CEILING(vb10) -> unknown unsupported-expression: CEILING(vb10): an argument of this type is not modelled.
-CEILING(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CEILING(x) -> unknown unsupported-expression: CEILING(x): an argument of this type is not modelled.
 CEILING(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CEILING(j) -> unknown (no unknown recorded)
 CEILING(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -1954,7 +1954,7 @@ ABS(dto3) -> unknown unsupported-expression: ABS(dto3): an argument of this type
 ABS(u) -> unknown unsupported-expression: ABS(u): an argument of this type is not modelled.
 ABS(bin4) -> unknown unsupported-expression: ABS(bin4): an argument of this type is not modelled.
 ABS(vb10) -> unknown unsupported-expression: ABS(vb10): an argument of this type is not modelled.
-ABS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ABS(x) -> unknown unsupported-expression: ABS(x): an argument of this type is not modelled.
 ABS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ABS(j) -> unknown (no unknown recorded)
 ABS(1) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -1994,7 +1994,7 @@ SIGN(dto3) -> unknown unsupported-expression: SIGN(dto3): an argument of this ty
 SIGN(u) -> unknown unsupported-expression: SIGN(u): an argument of this type is not modelled.
 SIGN(bin4) -> unknown unsupported-expression: SIGN(bin4): an argument of this type is not modelled.
 SIGN(vb10) -> unknown unsupported-expression: SIGN(vb10): an argument of this type is not modelled.
-SIGN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SIGN(x) -> unknown unsupported-expression: SIGN(x): an argument of this type is not modelled.
 SIGN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SIGN(j) -> unknown (no unknown recorded)
 SIGN(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -2034,7 +2034,7 @@ POWER(dto3, 2) -> unknown unsupported-expression: POWER(dto3, 2): an argument of
 POWER(u, 2) -> unknown unsupported-expression: POWER(u, 2): an argument of this type is not modelled.
 POWER(bin4, 2) -> unknown unsupported-expression: POWER(bin4, 2): an argument of this type is not modelled.
 POWER(vb10, 2) -> unknown unsupported-expression: POWER(vb10, 2): an argument of this type is not modelled.
-POWER(x, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+POWER(x, 2) -> unknown unsupported-expression: POWER(x, 2): an argument of this type is not modelled.
 POWER(sv, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 POWER(j, 2) -> unknown (no unknown recorded)
 POWER(1, 2) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -2074,7 +2074,7 @@ SQUARE(dto3) -> unknown unsupported-expression: SQUARE(dto3): an argument of thi
 SQUARE(u) -> unknown unsupported-expression: SQUARE(u): an argument of this type is not modelled.
 SQUARE(bin4) -> unknown unsupported-expression: SQUARE(bin4): an argument of this type is not modelled.
 SQUARE(vb10) -> unknown unsupported-expression: SQUARE(vb10): an argument of this type is not modelled.
-SQUARE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SQUARE(x) -> unknown unsupported-expression: SQUARE(x): an argument of this type is not modelled.
 SQUARE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SQUARE(j) -> unknown (no unknown recorded)
 SQUARE(1) -> float number/float
@@ -2114,7 +2114,7 @@ SQRT(dto3) -> unknown unsupported-expression: SQRT(dto3): an argument of this ty
 SQRT(u) -> unknown unsupported-expression: SQRT(u): an argument of this type is not modelled.
 SQRT(bin4) -> unknown unsupported-expression: SQRT(bin4): an argument of this type is not modelled.
 SQRT(vb10) -> unknown unsupported-expression: SQRT(vb10): an argument of this type is not modelled.
-SQRT(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SQRT(x) -> unknown unsupported-expression: SQRT(x): an argument of this type is not modelled.
 SQRT(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SQRT(j) -> unknown (no unknown recorded)
 SQRT(1) -> float number/float null:domain-error
@@ -2154,7 +2154,7 @@ EXP(dto3) -> unknown unsupported-expression: EXP(dto3): an argument of this type
 EXP(u) -> unknown unsupported-expression: EXP(u): an argument of this type is not modelled.
 EXP(bin4) -> unknown unsupported-expression: EXP(bin4): an argument of this type is not modelled.
 EXP(vb10) -> unknown unsupported-expression: EXP(vb10): an argument of this type is not modelled.
-EXP(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+EXP(x) -> unknown unsupported-expression: EXP(x): an argument of this type is not modelled.
 EXP(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 EXP(j) -> unknown (no unknown recorded)
 EXP(1) -> float number/float null:arithmetic-overflow
@@ -2194,7 +2194,7 @@ LOG(dto3) -> unknown unsupported-expression: LOG(dto3): an argument of this type
 LOG(u) -> unknown unsupported-expression: LOG(u): an argument of this type is not modelled.
 LOG(bin4) -> unknown unsupported-expression: LOG(bin4): an argument of this type is not modelled.
 LOG(vb10) -> unknown unsupported-expression: LOG(vb10): an argument of this type is not modelled.
-LOG(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LOG(x) -> unknown unsupported-expression: LOG(x): an argument of this type is not modelled.
 LOG(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LOG(j) -> unknown (no unknown recorded)
 LOG(1) -> float number/float null:domain-error
@@ -2234,7 +2234,7 @@ LOG(dto3, 2) -> unknown unsupported-expression: LOG(dto3, 2): an argument of thi
 LOG(u, 2) -> unknown unsupported-expression: LOG(u, 2): an argument of this type is not modelled.
 LOG(bin4, 2) -> unknown unsupported-expression: LOG(bin4, 2): an argument of this type is not modelled.
 LOG(vb10, 2) -> unknown unsupported-expression: LOG(vb10, 2): an argument of this type is not modelled.
-LOG(x, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LOG(x, 2) -> unknown unsupported-expression: LOG(x, 2): an argument of this type is not modelled.
 LOG(sv, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LOG(j, 2) -> unknown (no unknown recorded)
 LOG(1, 2) -> float number/float null:domain-error
@@ -2274,7 +2274,7 @@ LOG10(dto3) -> unknown unsupported-expression: LOG10(dto3): an argument of this 
 LOG10(u) -> unknown unsupported-expression: LOG10(u): an argument of this type is not modelled.
 LOG10(bin4) -> unknown unsupported-expression: LOG10(bin4): an argument of this type is not modelled.
 LOG10(vb10) -> unknown unsupported-expression: LOG10(vb10): an argument of this type is not modelled.
-LOG10(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LOG10(x) -> unknown unsupported-expression: LOG10(x): an argument of this type is not modelled.
 LOG10(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LOG10(j) -> unknown (no unknown recorded)
 LOG10(1) -> float number/float null:domain-error
@@ -2314,7 +2314,7 @@ SIN(dto3) -> unknown unsupported-expression: SIN(dto3): an argument of this type
 SIN(u) -> unknown unsupported-expression: SIN(u): an argument of this type is not modelled.
 SIN(bin4) -> unknown unsupported-expression: SIN(bin4): an argument of this type is not modelled.
 SIN(vb10) -> unknown unsupported-expression: SIN(vb10): an argument of this type is not modelled.
-SIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SIN(x) -> unknown unsupported-expression: SIN(x): an argument of this type is not modelled.
 SIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SIN(j) -> unknown (no unknown recorded)
 SIN(1) -> float number/float
@@ -2354,7 +2354,7 @@ COS(dto3) -> unknown unsupported-expression: COS(dto3): an argument of this type
 COS(u) -> unknown unsupported-expression: COS(u): an argument of this type is not modelled.
 COS(bin4) -> unknown unsupported-expression: COS(bin4): an argument of this type is not modelled.
 COS(vb10) -> unknown unsupported-expression: COS(vb10): an argument of this type is not modelled.
-COS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COS(x) -> unknown unsupported-expression: COS(x): an argument of this type is not modelled.
 COS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COS(j) -> unknown (no unknown recorded)
 COS(1) -> float number/float
@@ -2394,7 +2394,7 @@ TAN(dto3) -> unknown unsupported-expression: TAN(dto3): an argument of this type
 TAN(u) -> unknown unsupported-expression: TAN(u): an argument of this type is not modelled.
 TAN(bin4) -> unknown unsupported-expression: TAN(bin4): an argument of this type is not modelled.
 TAN(vb10) -> unknown unsupported-expression: TAN(vb10): an argument of this type is not modelled.
-TAN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TAN(x) -> unknown unsupported-expression: TAN(x): an argument of this type is not modelled.
 TAN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TAN(j) -> unknown (no unknown recorded)
 TAN(1) -> float number/float
@@ -2434,7 +2434,7 @@ COT(dto3) -> unknown unsupported-expression: COT(dto3): an argument of this type
 COT(u) -> unknown unsupported-expression: COT(u): an argument of this type is not modelled.
 COT(bin4) -> unknown unsupported-expression: COT(bin4): an argument of this type is not modelled.
 COT(vb10) -> unknown unsupported-expression: COT(vb10): an argument of this type is not modelled.
-COT(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COT(x) -> unknown unsupported-expression: COT(x): an argument of this type is not modelled.
 COT(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COT(j) -> unknown (no unknown recorded)
 COT(1) -> float number/float null:domain-error
@@ -2474,7 +2474,7 @@ ASIN(dto3) -> unknown unsupported-expression: ASIN(dto3): an argument of this ty
 ASIN(u) -> unknown unsupported-expression: ASIN(u): an argument of this type is not modelled.
 ASIN(bin4) -> unknown unsupported-expression: ASIN(bin4): an argument of this type is not modelled.
 ASIN(vb10) -> unknown unsupported-expression: ASIN(vb10): an argument of this type is not modelled.
-ASIN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ASIN(x) -> unknown unsupported-expression: ASIN(x): an argument of this type is not modelled.
 ASIN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ASIN(j) -> unknown (no unknown recorded)
 ASIN(1) -> float number/float null:domain-error
@@ -2514,7 +2514,7 @@ ACOS(dto3) -> unknown unsupported-expression: ACOS(dto3): an argument of this ty
 ACOS(u) -> unknown unsupported-expression: ACOS(u): an argument of this type is not modelled.
 ACOS(bin4) -> unknown unsupported-expression: ACOS(bin4): an argument of this type is not modelled.
 ACOS(vb10) -> unknown unsupported-expression: ACOS(vb10): an argument of this type is not modelled.
-ACOS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ACOS(x) -> unknown unsupported-expression: ACOS(x): an argument of this type is not modelled.
 ACOS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ACOS(j) -> unknown (no unknown recorded)
 ACOS(1) -> float number/float null:domain-error
@@ -2554,7 +2554,7 @@ ATAN(dto3) -> unknown unsupported-expression: ATAN(dto3): an argument of this ty
 ATAN(u) -> unknown unsupported-expression: ATAN(u): an argument of this type is not modelled.
 ATAN(bin4) -> unknown unsupported-expression: ATAN(bin4): an argument of this type is not modelled.
 ATAN(vb10) -> unknown unsupported-expression: ATAN(vb10): an argument of this type is not modelled.
-ATAN(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ATAN(x) -> unknown unsupported-expression: ATAN(x): an argument of this type is not modelled.
 ATAN(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ATAN(j) -> unknown (no unknown recorded)
 ATAN(1) -> float number/float
@@ -2594,7 +2594,7 @@ ATN2(dto3, 1) -> unknown unsupported-expression: ATN2(dto3, 1): an argument of t
 ATN2(u, 1) -> unknown unsupported-expression: ATN2(u, 1): an argument of this type is not modelled.
 ATN2(bin4, 1) -> unknown unsupported-expression: ATN2(bin4, 1): an argument of this type is not modelled.
 ATN2(vb10, 1) -> unknown unsupported-expression: ATN2(vb10, 1): an argument of this type is not modelled.
-ATN2(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ATN2(x, 1) -> unknown unsupported-expression: ATN2(x, 1): an argument of this type is not modelled.
 ATN2(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ATN2(j, 1) -> unknown (no unknown recorded)
 ATN2(1, 1) -> float number/float null:domain-error
@@ -2634,7 +2634,7 @@ DEGREES(dto3) -> unknown unsupported-expression: DEGREES(dto3): an argument of t
 DEGREES(u) -> unknown unsupported-expression: DEGREES(u): an argument of this type is not modelled.
 DEGREES(bin4) -> unknown unsupported-expression: DEGREES(bin4): an argument of this type is not modelled.
 DEGREES(vb10) -> unknown unsupported-expression: DEGREES(vb10): an argument of this type is not modelled.
-DEGREES(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DEGREES(x) -> unknown unsupported-expression: DEGREES(x): an argument of this type is not modelled.
 DEGREES(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DEGREES(j) -> unknown (no unknown recorded)
 DEGREES(1) -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -2674,7 +2674,7 @@ RADIANS(dto3) -> unknown unsupported-expression: RADIANS(dto3): an argument of t
 RADIANS(u) -> unknown unsupported-expression: RADIANS(u): an argument of this type is not modelled.
 RADIANS(bin4) -> unknown unsupported-expression: RADIANS(bin4): an argument of this type is not modelled.
 RADIANS(vb10) -> unknown unsupported-expression: RADIANS(vb10): an argument of this type is not modelled.
-RADIANS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RADIANS(x) -> unknown unsupported-expression: RADIANS(x): an argument of this type is not modelled.
 RADIANS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 RADIANS(j) -> unknown (no unknown recorded)
 RADIANS(1) -> int number/int32 {[-2147483648 2147483647]}
@@ -2715,7 +2715,7 @@ GREATEST(dto3, dto3) -> datetimeoffset(3) datetime/offset
 GREATEST(u, u) -> uniqueidentifier uuid
 GREATEST(bin4, bin4) -> unknown unsupported-expression: GREATEST(bin4, bin4): GREATEST or LEAST of values of different kinds is not modelled.
 GREATEST(vb10, vb10) -> unknown unsupported-expression: GREATEST(vb10, vb10): GREATEST or LEAST of values of different kinds is not modelled.
-GREATEST(x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+GREATEST(x, x) -> unknown unsupported-expression: GREATEST(x, x): GREATEST or LEAST of values of different kinds is not modelled.
 GREATEST(sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 GREATEST(j, j) -> unknown (no unknown recorded)
 GREATEST(1, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -2755,7 +2755,7 @@ LEAST(dto3, 1) -> unknown unsupported-expression: LEAST(dto3, 1): GREATEST or LE
 LEAST(u, 1) -> unknown unsupported-expression: LEAST(u, 1): GREATEST or LEAST of values of different kinds is not modelled.
 LEAST(bin4, 1) -> unknown unsupported-expression: LEAST(bin4, 1): GREATEST or LEAST of values of different kinds is not modelled.
 LEAST(vb10, 1) -> unknown unsupported-expression: LEAST(vb10, 1): GREATEST or LEAST of values of different kinds is not modelled.
-LEAST(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEAST(x, 1) -> unknown unsupported-expression: LEAST(x, 1): GREATEST or LEAST of values of different kinds is not modelled.
 LEAST(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LEAST(j, 1) -> unknown (no unknown recorded)
 LEAST(1, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -2795,7 +2795,7 @@ GREATEST(dto3, v10) -> unknown unsupported-expression: GREATEST(dto3, v10): GREA
 GREATEST(u, v10) -> unknown unsupported-expression: GREATEST(u, v10): GREATEST or LEAST of values of different kinds is not modelled.
 GREATEST(bin4, v10) -> unknown unsupported-expression: GREATEST(bin4, v10): GREATEST or LEAST of values of different kinds is not modelled.
 GREATEST(vb10, v10) -> unknown unsupported-expression: GREATEST(vb10, v10): GREATEST or LEAST of values of different kinds is not modelled.
-GREATEST(x, v10) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+GREATEST(x, v10) -> unknown unsupported-expression: GREATEST(x, v10): GREATEST or LEAST of values of different kinds is not modelled.
 GREATEST(sv, v10) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 GREATEST(j, v10) -> unknown (no unknown recorded)
 GREATEST(1, v10) -> unknown unsupported-expression: GREATEST(1, v10): GREATEST or LEAST of values of different kinds is not modelled.
@@ -2835,7 +2835,7 @@ ISJSON(dto3) -> unknown unsupported-expression: ISJSON(dto3): ISJSON of a value 
 ISJSON(u) -> unknown unsupported-expression: ISJSON(u): ISJSON of a value that is not a string is not modelled.
 ISJSON(bin4) -> unknown unsupported-expression: ISJSON(bin4): ISJSON of a value that is not a string is not modelled.
 ISJSON(vb10) -> unknown unsupported-expression: ISJSON(vb10): ISJSON of a value that is not a string is not modelled.
-ISJSON(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ISJSON(x) -> unknown unsupported-expression: ISJSON(x): ISJSON of a value that is not a string is not modelled.
 ISJSON(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ISJSON(j) -> int number/int32 {[0 1]}
 ISJSON(1) -> unknown unsupported-expression: ISJSON(1): ISJSON of a value that is not a string is not modelled.
@@ -2876,7 +2876,7 @@ ASCII(dto3) -> unknown unsupported-expression: ASCII(dto3): a code of a value th
 ASCII(u) -> unknown unsupported-expression: ASCII(u): a code of a value that is not a string is not modelled.
 ASCII(bin4) -> unknown unsupported-expression: ASCII(bin4): a code of a value that is not a string is not modelled.
 ASCII(vb10) -> unknown unsupported-expression: ASCII(vb10): a code of a value that is not a string is not modelled.
-ASCII(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+ASCII(x) -> unknown unsupported-expression: ASCII(x): a code of a value that is not a string is not modelled.
 ASCII(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 ASCII(j) -> unknown (no unknown recorded)
 ASCII(1) -> unknown unsupported-expression: ASCII(1): a code of a value that is not a string is not modelled.
@@ -2916,7 +2916,7 @@ UNICODE(dto3) -> unknown unsupported-expression: UNICODE(dto3): a code of a valu
 UNICODE(u) -> unknown unsupported-expression: UNICODE(u): a code of a value that is not a string is not modelled.
 UNICODE(bin4) -> unknown unsupported-expression: UNICODE(bin4): a code of a value that is not a string is not modelled.
 UNICODE(vb10) -> unknown unsupported-expression: UNICODE(vb10): a code of a value that is not a string is not modelled.
-UNICODE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+UNICODE(x) -> unknown unsupported-expression: UNICODE(x): a code of a value that is not a string is not modelled.
 UNICODE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 UNICODE(j) -> unknown (no unknown recorded)
 UNICODE(1) -> unknown unsupported-expression: UNICODE(1): a code of a value that is not a string is not modelled.
@@ -2956,7 +2956,7 @@ CHAR(dto3) -> unknown unsupported-expression: CHAR(dto3): CHAR of a value that i
 CHAR(u) -> unknown unsupported-expression: CHAR(u): CHAR of a value that is not an integer is not modelled.
 CHAR(bin4) -> unknown unsupported-expression: CHAR(bin4): CHAR of a value that is not an integer is not modelled.
 CHAR(vb10) -> unknown unsupported-expression: CHAR(vb10): CHAR of a value that is not an integer is not modelled.
-CHAR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHAR(x) -> unknown unsupported-expression: CHAR(x): CHAR of a value that is not an integer is not modelled.
 CHAR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CHAR(j) -> unknown (no unknown recorded)
 CHAR(1) -> char(1) string {length=1}
@@ -2996,7 +2996,7 @@ CHARINDEX('a', dto3) -> unknown unsupported-expression: CHARINDEX('a', dto3): a 
 CHARINDEX('a', u) -> unknown unsupported-expression: CHARINDEX('a', u): a position in a value that is not a string is not modelled.
 CHARINDEX('a', bin4) -> unknown unsupported-expression: CHARINDEX('a', bin4): a position in a value that is not a string is not modelled.
 CHARINDEX('a', vb10) -> unknown unsupported-expression: CHARINDEX('a', vb10): a position in a value that is not a string is not modelled.
-CHARINDEX('a', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX('a', x) -> unknown unsupported-expression: CHARINDEX('a', x): a position in a value that is not a string is not modelled.
 CHARINDEX('a', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CHARINDEX('a', j) -> unknown (no unknown recorded)
 CHARINDEX('a', 1) -> unknown unsupported-expression: CHARINDEX('a', 1): a position in a value that is not a string is not modelled.
@@ -3036,7 +3036,7 @@ CHARINDEX(dto3, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(dto3, 'ab
 CHARINDEX(u, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(u, 'abc', 2): a position in a value that is not a string is not modelled.
 CHARINDEX(bin4, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(bin4, 'abc', 2): a position in a value that is not a string is not modelled.
 CHARINDEX(vb10, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(vb10, 'abc', 2): a position in a value that is not a string is not modelled.
-CHARINDEX(x, 'abc', 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX(x, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(x, 'abc', 2): a position in a value that is not a string is not modelled.
 CHARINDEX(sv, 'abc', 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CHARINDEX(j, 'abc', 2) -> unknown (no unknown recorded)
 CHARINDEX(1, 'abc', 2) -> unknown unsupported-expression: CHARINDEX(1, 'abc', 2): a position in a value that is not a string is not modelled.
@@ -3076,7 +3076,7 @@ PATINDEX('%a%', dto3) -> unknown unsupported-expression: PATINDEX('%a%', dto3): 
 PATINDEX('%a%', u) -> unknown unsupported-expression: PATINDEX('%a%', u): a position in a value that is not a string is not modelled.
 PATINDEX('%a%', bin4) -> unknown unsupported-expression: PATINDEX('%a%', bin4): a position in a value that is not a string is not modelled.
 PATINDEX('%a%', vb10) -> unknown unsupported-expression: PATINDEX('%a%', vb10): a position in a value that is not a string is not modelled.
-PATINDEX('%a%', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PATINDEX('%a%', x) -> unknown unsupported-expression: PATINDEX('%a%', x): a position in a value that is not a string is not modelled.
 PATINDEX('%a%', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PATINDEX('%a%', j) -> unknown (no unknown recorded)
 PATINDEX('%a%', 1) -> unknown unsupported-expression: PATINDEX('%a%', 1): a position in a value that is not a string is not modelled.
@@ -3116,7 +3116,7 @@ REPLICATE(dto3, 3) -> unknown unsupported-expression: REPLICATE(dto3, 3): REPLIC
 REPLICATE(u, 3) -> unknown unsupported-expression: REPLICATE(u, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE(bin4, 3) -> unknown unsupported-expression: REPLICATE(bin4, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE(vb10, 3) -> unknown unsupported-expression: REPLICATE(vb10, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
-REPLICATE(x, 3) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REPLICATE(x, 3) -> unknown unsupported-expression: REPLICATE(x, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE(sv, 3) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REPLICATE(j, 3) -> unknown (no unknown recorded)
 REPLICATE(1, 3) -> unknown unsupported-expression: REPLICATE(1, 3): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
@@ -3156,7 +3156,7 @@ REPLICATE('ab', dto3) -> unknown unsupported-expression: REPLICATE('ab', dto3): 
 REPLICATE('ab', u) -> unknown unsupported-expression: REPLICATE('ab', u): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE('ab', bin4) -> unknown unsupported-expression: REPLICATE('ab', bin4): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE('ab', vb10) -> unknown unsupported-expression: REPLICATE('ab', vb10): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
-REPLICATE('ab', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REPLICATE('ab', x) -> unknown unsupported-expression: REPLICATE('ab', x): REPLICATE of a value that is not a string, or by a count that is not an integer, is not modelled.
 REPLICATE('ab', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REPLICATE('ab', j) -> unknown (no unknown recorded)
 REPLICATE('ab', 1) -> varchar(2) string {length<=2}
@@ -3196,7 +3196,7 @@ SPACE(dto3) -> unknown unsupported-expression: SPACE(dto3): SPACE of a value tha
 SPACE(u) -> unknown unsupported-expression: SPACE(u): SPACE of a value that is not an int is not modelled.
 SPACE(bin4) -> unknown unsupported-expression: SPACE(bin4): SPACE of a value that is not an int is not modelled.
 SPACE(vb10) -> unknown unsupported-expression: SPACE(vb10): SPACE of a value that is not an int is not modelled.
-SPACE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SPACE(x) -> unknown unsupported-expression: SPACE(x): SPACE of a value that is not an int is not modelled.
 SPACE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SPACE(j) -> unknown (no unknown recorded)
 SPACE(1) -> varchar(1) string {length<=1}
@@ -3236,7 +3236,7 @@ REVERSE(dto3) -> unknown unsupported-expression: REVERSE(dto3): an argument that
 REVERSE(u) -> unknown unsupported-expression: REVERSE(u): an argument that is not a string is not modelled.
 REVERSE(bin4) -> unknown unsupported-expression: REVERSE(bin4): an argument that is not a string is not modelled.
 REVERSE(vb10) -> unknown unsupported-expression: REVERSE(vb10): an argument that is not a string is not modelled.
-REVERSE(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REVERSE(x) -> unknown unsupported-expression: REVERSE(x): an argument that is not a string is not modelled.
 REVERSE(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REVERSE(j) -> unknown (no unknown recorded)
 REVERSE(1) -> unknown unsupported-expression: REVERSE(1): an argument that is not a string is not modelled.
@@ -3276,7 +3276,7 @@ STUFF(dto3, 1, 1, 'x') -> unknown unsupported-expression: STUFF(dto3, 1, 1, 'x')
 STUFF(u, 1, 1, 'x') -> unknown unsupported-expression: STUFF(u, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(bin4, 1, 1, 'x') -> unknown unsupported-expression: STUFF(bin4, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(vb10, 1, 1, 'x') -> unknown unsupported-expression: STUFF(vb10, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
-STUFF(x, 1, 1, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(x, 1, 1, 'x') -> unknown unsupported-expression: STUFF(x, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(sv, 1, 1, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STUFF(j, 1, 1, 'x') -> unknown (no unknown recorded)
 STUFF(1, 1, 1, 'x') -> unknown unsupported-expression: STUFF(1, 1, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
@@ -3316,7 +3316,7 @@ STUFF('abc', 2, 1, dto3) -> unknown unsupported-expression: STUFF('abc', 2, 1, d
 STUFF('abc', 2, 1, u) -> unknown unsupported-expression: STUFF('abc', 2, 1, u): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF('abc', 2, 1, bin4) -> unknown unsupported-expression: STUFF('abc', 2, 1, bin4): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF('abc', 2, 1, vb10) -> unknown unsupported-expression: STUFF('abc', 2, 1, vb10): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
-STUFF('abc', 2, 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF('abc', 2, 1, x) -> unknown unsupported-expression: STUFF('abc', 2, 1, x): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF('abc', 2, 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STUFF('abc', 2, 1, j) -> unknown (no unknown recorded)
 STUFF('abc', 2, 1, 1) -> unknown unsupported-expression: STUFF('abc', 2, 1, 1): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
@@ -3356,7 +3356,7 @@ STUFF(dto3, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(dto3, 2, 5, N
 STUFF(u, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(u, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(bin4, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(bin4, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(vb10, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(vb10, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
-STUFF(x, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(x, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(x, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(sv, 2, 5, N'xyz') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STUFF(j, 2, 5, N'xyz') -> unknown (no unknown recorded)
 STUFF(1, 2, 5, N'xyz') -> unknown unsupported-expression: STUFF(1, 2, 5, N'xyz'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
@@ -3396,7 +3396,7 @@ STUFF(dto3, id, 1, 'x') -> unknown unsupported-expression: STUFF(dto3, id, 1, 'x
 STUFF(u, id, 1, 'x') -> unknown unsupported-expression: STUFF(u, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(bin4, id, 1, 'x') -> unknown unsupported-expression: STUFF(bin4, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(vb10, id, 1, 'x') -> unknown unsupported-expression: STUFF(vb10, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
-STUFF(x, id, 1, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STUFF(x, id, 1, 'x') -> unknown unsupported-expression: STUFF(x, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
 STUFF(sv, id, 1, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STUFF(j, id, 1, 'x') -> unknown (no unknown recorded)
 STUFF(1, id, 1, 'x') -> unknown unsupported-expression: STUFF(1, id, 1, 'x'): STUFF of a value that is not a string, or at a position that is not an integer, is not modelled.
@@ -3436,7 +3436,7 @@ QUOTENAME(dto3) -> unknown unsupported-expression: QUOTENAME(dto3): QUOTENAME of
 QUOTENAME(u) -> unknown unsupported-expression: QUOTENAME(u): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(bin4) -> unknown unsupported-expression: QUOTENAME(bin4): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(vb10) -> unknown unsupported-expression: QUOTENAME(vb10): QUOTENAME of a value that is not a string is not modelled.
-QUOTENAME(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+QUOTENAME(x) -> unknown unsupported-expression: QUOTENAME(x): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 QUOTENAME(j) -> unknown (no unknown recorded)
 QUOTENAME(1) -> unknown unsupported-expression: QUOTENAME(1): QUOTENAME of a value that is not a string is not modelled.
@@ -3476,7 +3476,7 @@ QUOTENAME(dto3, '`') -> unknown unsupported-expression: QUOTENAME(dto3, '`'): QU
 QUOTENAME(u, '`') -> unknown unsupported-expression: QUOTENAME(u, '`'): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(bin4, '`') -> unknown unsupported-expression: QUOTENAME(bin4, '`'): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(vb10, '`') -> unknown unsupported-expression: QUOTENAME(vb10, '`'): QUOTENAME of a value that is not a string is not modelled.
-QUOTENAME(x, '`') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+QUOTENAME(x, '`') -> unknown unsupported-expression: QUOTENAME(x, '`'): QUOTENAME of a value that is not a string is not modelled.
 QUOTENAME(sv, '`') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 QUOTENAME(j, '`') -> unknown (no unknown recorded)
 QUOTENAME(1, '`') -> unknown unsupported-expression: QUOTENAME(1, '`'): QUOTENAME of a value that is not a string is not modelled.
@@ -3516,7 +3516,7 @@ CHARINDEX('a', 'abc', dto3) -> unknown unsupported-expression: CHARINDEX('a', 'a
 CHARINDEX('a', 'abc', u) -> unknown unsupported-expression: CHARINDEX('a', 'abc', u): a position in a value that is not a string is not modelled.
 CHARINDEX('a', 'abc', bin4) -> unknown unsupported-expression: CHARINDEX('a', 'abc', bin4): a position in a value that is not a string is not modelled.
 CHARINDEX('a', 'abc', vb10) -> unknown unsupported-expression: CHARINDEX('a', 'abc', vb10): a position in a value that is not a string is not modelled.
-CHARINDEX('a', 'abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHARINDEX('a', 'abc', x) -> unknown unsupported-expression: CHARINDEX('a', 'abc', x): a position in a value that is not a string is not modelled.
 CHARINDEX('a', 'abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CHARINDEX('a', 'abc', j) -> unknown (no unknown recorded)
 CHARINDEX('a', 'abc', 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -3556,7 +3556,7 @@ SUBSTRING('abc', dto3, 1) -> unknown unsupported-expression: SUBSTRING('abc', dt
 SUBSTRING('abc', u, 1) -> unknown unsupported-expression: SUBSTRING('abc', u, 1): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', bin4, 1) -> unknown unsupported-expression: SUBSTRING('abc', bin4, 1): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', vb10, 1) -> unknown unsupported-expression: SUBSTRING('abc', vb10, 1): SQL Server refuses a start or a length of this type.
-SUBSTRING('abc', x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUBSTRING('abc', x, 1) -> unknown unsupported-expression: SUBSTRING('abc', x, 1): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SUBSTRING('abc', j, 1) -> unknown (no unknown recorded)
 SUBSTRING('abc', 1, 1) -> varchar(1) string {length<=1}
@@ -3596,7 +3596,7 @@ SUBSTRING('abc', 1, dto3) -> unknown unsupported-expression: SUBSTRING('abc', 1,
 SUBSTRING('abc', 1, u) -> unknown unsupported-expression: SUBSTRING('abc', 1, u): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', 1, bin4) -> unknown unsupported-expression: SUBSTRING('abc', 1, bin4): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', 1, vb10) -> unknown unsupported-expression: SUBSTRING('abc', 1, vb10): SQL Server refuses a start or a length of this type.
-SUBSTRING('abc', 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUBSTRING('abc', 1, x) -> unknown unsupported-expression: SUBSTRING('abc', 1, x): SQL Server refuses a start or a length of this type.
 SUBSTRING('abc', 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SUBSTRING('abc', 1, j) -> unknown (no unknown recorded)
 SUBSTRING('abc', 1, 1) -> varchar(1) string {length<=1}
@@ -3636,7 +3636,7 @@ LEFT('abc', dto3) -> unknown unsupported-expression: LEFT('abc', dto3): SQL Serv
 LEFT('abc', u) -> unknown unsupported-expression: LEFT('abc', u): SQL Server refuses a start or a length of this type.
 LEFT('abc', bin4) -> varchar(3) string null:arithmetic-overflow {length<=3}
 LEFT('abc', vb10) -> varchar(3) string null:arithmetic-overflow {length<=3}
-LEFT('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEFT('abc', x) -> unknown unsupported-expression: LEFT('abc', x): SQL Server refuses a start or a length of this type.
 LEFT('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LEFT('abc', j) -> unknown (no unknown recorded)
 LEFT('abc', 1) -> varchar(1) string {length<=1}
@@ -3676,7 +3676,7 @@ RIGHT('abc', dto3) -> unknown unsupported-expression: RIGHT('abc', dto3): SQL Se
 RIGHT('abc', u) -> unknown unsupported-expression: RIGHT('abc', u): SQL Server refuses a start or a length of this type.
 RIGHT('abc', bin4) -> varchar(3) string null:arithmetic-overflow {length<=3}
 RIGHT('abc', vb10) -> varchar(3) string null:arithmetic-overflow {length<=3}
-RIGHT('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+RIGHT('abc', x) -> unknown unsupported-expression: RIGHT('abc', x): SQL Server refuses a start or a length of this type.
 RIGHT('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 RIGHT('abc', j) -> unknown (no unknown recorded)
 RIGHT('abc', 1) -> varchar(1) string {length<=1}
@@ -3716,7 +3716,7 @@ STR(dto3) -> unknown unsupported-expression: STR(dto3): STR of a value that is n
 STR(u) -> unknown unsupported-expression: STR(u): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(bin4) -> unknown unsupported-expression: STR(bin4): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(vb10) -> unknown unsupported-expression: STR(vb10): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
-STR(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STR(x) -> unknown unsupported-expression: STR(x): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STR(j) -> unknown (no unknown recorded)
 STR(1) -> varchar(10) string {length<=10}
@@ -3756,7 +3756,7 @@ STR(dto3, 5, 2) -> unknown unsupported-expression: STR(dto3, 5, 2): STR of a val
 STR(u, 5, 2) -> unknown unsupported-expression: STR(u, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(bin4, 5, 2) -> unknown unsupported-expression: STR(bin4, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(vb10, 5, 2) -> unknown unsupported-expression: STR(vb10, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
-STR(x, 5, 2) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STR(x, 5, 2) -> unknown unsupported-expression: STR(x, 5, 2): STR of a value that is not a number, or with a length that is not an integer, is not modelled.
 STR(sv, 5, 2) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STR(j, 5, 2) -> unknown (no unknown recorded)
 STR(1, 5, 2) -> varchar(5) string {length<=5}
@@ -3796,7 +3796,7 @@ TRANSLATE(dto3, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(dto3, 'a'
 TRANSLATE(u, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(u, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
 TRANSLATE(bin4, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(bin4, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
 TRANSLATE(vb10, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(vb10, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
-TRANSLATE(x, 'a', 'b') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRANSLATE(x, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(x, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
 TRANSLATE(sv, 'a', 'b') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRANSLATE(j, 'a', 'b') -> unknown (no unknown recorded)
 TRANSLATE(1, 'a', 'b') -> unknown unsupported-expression: TRANSLATE(1, 'a', 'b'): TRANSLATE of a value that is not a string is not modelled.
@@ -3836,7 +3836,7 @@ SOUNDEX(dto3) -> unknown unsupported-expression: SOUNDEX(dto3): SOUNDEX or DIFFE
 SOUNDEX(u) -> unknown unsupported-expression: SOUNDEX(u): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 SOUNDEX(bin4) -> unknown unsupported-expression: SOUNDEX(bin4): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 SOUNDEX(vb10) -> unknown unsupported-expression: SOUNDEX(vb10): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
-SOUNDEX(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SOUNDEX(x) -> unknown unsupported-expression: SOUNDEX(x): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 SOUNDEX(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SOUNDEX(j) -> unknown (no unknown recorded)
 SOUNDEX(1) -> unknown unsupported-expression: SOUNDEX(1): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
@@ -3876,7 +3876,7 @@ DIFFERENCE(dto3, 'a') -> unknown unsupported-expression: DIFFERENCE(dto3, 'a'): 
 DIFFERENCE(u, 'a') -> unknown unsupported-expression: DIFFERENCE(u, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 DIFFERENCE(bin4, 'a') -> unknown unsupported-expression: DIFFERENCE(bin4, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 DIFFERENCE(vb10, 'a') -> unknown unsupported-expression: DIFFERENCE(vb10, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
-DIFFERENCE(x, 'a') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DIFFERENCE(x, 'a') -> unknown unsupported-expression: DIFFERENCE(x, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
 DIFFERENCE(sv, 'a') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DIFFERENCE(j, 'a') -> unknown (no unknown recorded)
 DIFFERENCE(1, 'a') -> unknown unsupported-expression: DIFFERENCE(1, 'a'): SOUNDEX or DIFFERENCE of a value that is not a string is not modelled.
@@ -3916,7 +3916,7 @@ PARSENAME(dto3, 1) -> unknown unsupported-expression: PARSENAME(dto3, 1): PARSEN
 PARSENAME(u, 1) -> unknown unsupported-expression: PARSENAME(u, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME(bin4, 1) -> unknown unsupported-expression: PARSENAME(bin4, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME(vb10, 1) -> unknown unsupported-expression: PARSENAME(vb10, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
-PARSENAME(x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PARSENAME(x, 1) -> unknown unsupported-expression: PARSENAME(x, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME(sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PARSENAME(j, 1) -> unknown (no unknown recorded)
 PARSENAME(1, 1) -> unknown unsupported-expression: PARSENAME(1, 1): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
@@ -3956,7 +3956,7 @@ PARSENAME('a.b', dto3) -> unknown unsupported-expression: PARSENAME('a.b', dto3)
 PARSENAME('a.b', u) -> unknown unsupported-expression: PARSENAME('a.b', u): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME('a.b', bin4) -> unknown unsupported-expression: PARSENAME('a.b', bin4): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME('a.b', vb10) -> unknown unsupported-expression: PARSENAME('a.b', vb10): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
-PARSENAME('a.b', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PARSENAME('a.b', x) -> unknown unsupported-expression: PARSENAME('a.b', x): PARSENAME of a value that is not a string, or of a part that is not an integer, is not modelled.
 PARSENAME('a.b', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PARSENAME('a.b', j) -> unknown (no unknown recorded)
 PARSENAME('a.b', 1) -> nvarchar(128) string null:out-of-range {length<=128}
@@ -3997,7 +3997,7 @@ DB_NAME(dto3) -> unknown unsupported-expression: DB_NAME(dto3): DB_NAME of a val
 DB_NAME(u) -> unknown unsupported-expression: DB_NAME(u): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME(bin4) -> unknown unsupported-expression: DB_NAME(bin4): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME(vb10) -> unknown unsupported-expression: DB_NAME(vb10): DB_NAME of a value that is not an integer is not modelled.
-DB_NAME(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DB_NAME(x) -> unknown unsupported-expression: DB_NAME(x): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DB_NAME(j) -> unknown (no unknown recorded)
 DB_NAME(1) -> nvarchar(128) string null:out-of-range {length<=128}
@@ -4037,7 +4037,7 @@ HASHBYTES('SHA2_256', dto3) -> unknown unsupported-expression: HASHBYTES('SHA2_2
 HASHBYTES('SHA2_256', u) -> unknown unsupported-expression: HASHBYTES('SHA2_256', u): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', bin4) -> varbinary(8000) bytes {length=32}
 HASHBYTES('SHA2_256', vb10) -> varbinary(8000) bytes {length=32}
-HASHBYTES('SHA2_256', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+HASHBYTES('SHA2_256', x) -> unknown unsupported-expression: HASHBYTES('SHA2_256', x): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 HASHBYTES('SHA2_256', j) -> unknown (no unknown recorded)
 HASHBYTES('SHA2_256', 1) -> unknown unsupported-expression: HASHBYTES('SHA2_256', 1): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
@@ -4077,7 +4077,7 @@ HASHBYTES(dto3, 'a') -> unknown unsupported-expression: HASHBYTES(dto3, 'a'): HA
 HASHBYTES(u, 'a') -> unknown unsupported-expression: HASHBYTES(u, 'a'): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES(bin4, 'a') -> unknown unsupported-expression: HASHBYTES(bin4, 'a'): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES(vb10, 'a') -> unknown unsupported-expression: HASHBYTES(vb10, 'a'): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
-HASHBYTES(x, 'a') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+HASHBYTES(x, 'a') -> unknown unsupported-expression: HASHBYTES(x, 'a'): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES(sv, 'a') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 HASHBYTES(j, 'a') -> unknown (no unknown recorded)
 HASHBYTES(1, 'a') -> unknown unsupported-expression: HASHBYTES(1, 'a'): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
@@ -4117,7 +4117,7 @@ COMPRESS(dto3) -> unknown unsupported-expression: COMPRESS(dto3): COMPRESS of a 
 COMPRESS(u) -> unknown unsupported-expression: COMPRESS(u): COMPRESS of a value that is neither text nor binary is not modelled.
 COMPRESS(bin4) -> varbinary(max) bytes
 COMPRESS(vb10) -> varbinary(max) bytes
-COMPRESS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COMPRESS(x) -> unknown unsupported-expression: COMPRESS(x): COMPRESS of a value that is neither text nor binary is not modelled.
 COMPRESS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COMPRESS(j) -> unknown (no unknown recorded)
 COMPRESS(1) -> unknown unsupported-expression: COMPRESS(1): COMPRESS of a value that is neither text nor binary is not modelled.
@@ -4157,7 +4157,7 @@ DECOMPRESS(dto3) -> unknown unsupported-expression: DECOMPRESS(dto3): DECOMPRESS
 DECOMPRESS(u) -> unknown unsupported-expression: DECOMPRESS(u): DECOMPRESS of a value that is not binary is not modelled.
 DECOMPRESS(bin4) -> varbinary(max) bytes
 DECOMPRESS(vb10) -> varbinary(max) bytes
-DECOMPRESS(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+DECOMPRESS(x) -> unknown unsupported-expression: DECOMPRESS(x): DECOMPRESS of a value that is not binary is not modelled.
 DECOMPRESS(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 DECOMPRESS(j) -> unknown (no unknown recorded)
 DECOMPRESS(1) -> unknown unsupported-expression: DECOMPRESS(1): DECOMPRESS of a value that is not binary is not modelled.
@@ -4197,7 +4197,7 @@ REGEXP_REPLACE(dto3, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLAC
 REGEXP_REPLACE(u, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(u, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_REPLACE(bin4, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(bin4, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_REPLACE(vb10, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(vb10, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
-REGEXP_REPLACE(x, 'a', 'bb') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_REPLACE(x, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(x, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_REPLACE(sv, 'a', 'bb') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_REPLACE(j, 'a', 'bb') -> unknown (no unknown recorded)
 REGEXP_REPLACE(1, 'a', 'bb') -> unknown unsupported-expression: REGEXP_REPLACE(1, 'a', 'bb'): a regular-expression function of a value that is not a string is not modelled.
@@ -4237,7 +4237,7 @@ REGEXP_REPLACE('abc', 'b', 'x', dto3) -> unknown unsupported-expression: REGEXP_
 REGEXP_REPLACE('abc', 'b', 'x', u) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_REPLACE('abc', 'b', 'x', bin4) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', bin4): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_REPLACE('abc', 'b', 'x', vb10) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', vb10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
-REGEXP_REPLACE('abc', 'b', 'x', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_REPLACE('abc', 'b', 'x', x) -> unknown unsupported-expression: REGEXP_REPLACE('abc', 'b', 'x', x): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_REPLACE('abc', 'b', 'x', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_REPLACE('abc', 'b', 'x', j) -> unknown (no unknown recorded)
 REGEXP_REPLACE('abc', 'b', 'x', 1) -> varchar(8000) string {length<=8000}
@@ -4277,7 +4277,7 @@ REGEXP_SUBSTR(dto3, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(dto3, 
 REGEXP_SUBSTR(u, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(u, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_SUBSTR(bin4, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(bin4, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_SUBSTR(vb10, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(vb10, '.'): a regular-expression function of a value that is not a string is not modelled.
-REGEXP_SUBSTR(x, '.') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_SUBSTR(x, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(x, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_SUBSTR(sv, '.') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_SUBSTR(j, '.') -> unknown (no unknown recorded)
 REGEXP_SUBSTR(1, '.') -> unknown unsupported-expression: REGEXP_SUBSTR(1, '.'): a regular-expression function of a value that is not a string is not modelled.
@@ -4317,7 +4317,7 @@ REGEXP_SUBSTR('abc', dto3) -> unknown unsupported-expression: REGEXP_SUBSTR('abc
 REGEXP_SUBSTR('abc', u) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', u): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
 REGEXP_SUBSTR('abc', bin4) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', bin4): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
 REGEXP_SUBSTR('abc', vb10) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', vb10): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
-REGEXP_SUBSTR('abc', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_SUBSTR('abc', x) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', x): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
 REGEXP_SUBSTR('abc', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_SUBSTR('abc', j) -> unknown (no unknown recorded)
 REGEXP_SUBSTR('abc', 1) -> unknown unsupported-expression: REGEXP_SUBSTR('abc', 1): a pattern that is not a string is not modelled, and SQL Server refuses a max one.
@@ -4357,7 +4357,7 @@ REGEXP_INSTR(dto3, 'a') -> unknown unsupported-expression: REGEXP_INSTR(dto3, 'a
 REGEXP_INSTR(u, 'a') -> unknown unsupported-expression: REGEXP_INSTR(u, 'a'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_INSTR(bin4, 'a') -> unknown unsupported-expression: REGEXP_INSTR(bin4, 'a'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_INSTR(vb10, 'a') -> unknown unsupported-expression: REGEXP_INSTR(vb10, 'a'): a regular-expression function of a value that is not a string is not modelled.
-REGEXP_INSTR(x, 'a') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_INSTR(x, 'a') -> unknown unsupported-expression: REGEXP_INSTR(x, 'a'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_INSTR(sv, 'a') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_INSTR(j, 'a') -> unknown (no unknown recorded)
 REGEXP_INSTR(1, 'a') -> unknown unsupported-expression: REGEXP_INSTR(1, 'a'): a regular-expression function of a value that is not a string is not modelled.
@@ -4397,7 +4397,7 @@ REGEXP_INSTR('abc', 'b', 1, 1, dto3) -> unknown unsupported-expression: REGEXP_I
 REGEXP_INSTR('abc', 'b', 1, 1, u) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_INSTR('abc', 'b', 1, 1, bin4) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, bin4): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_INSTR('abc', 'b', 1, 1, vb10) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, vb10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
-REGEXP_INSTR('abc', 'b', 1, 1, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_INSTR('abc', 'b', 1, 1, x) -> unknown unsupported-expression: REGEXP_INSTR('abc', 'b', 1, 1, x): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_INSTR('abc', 'b', 1, 1, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_INSTR('abc', 'b', 1, 1, j) -> unknown (no unknown recorded)
 REGEXP_INSTR('abc', 'b', 1, 1, 1) -> int number/int32 {[0 2147483647]}
@@ -4437,7 +4437,7 @@ REGEXP_COUNT(dto3, '.') -> unknown unsupported-expression: REGEXP_COUNT(dto3, '.
 REGEXP_COUNT(u, '.') -> unknown unsupported-expression: REGEXP_COUNT(u, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_COUNT(bin4, '.') -> unknown unsupported-expression: REGEXP_COUNT(bin4, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_COUNT(vb10, '.') -> unknown unsupported-expression: REGEXP_COUNT(vb10, '.'): a regular-expression function of a value that is not a string is not modelled.
-REGEXP_COUNT(x, '.') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_COUNT(x, '.') -> unknown unsupported-expression: REGEXP_COUNT(x, '.'): a regular-expression function of a value that is not a string is not modelled.
 REGEXP_COUNT(sv, '.') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_COUNT(j, '.') -> unknown (no unknown recorded)
 REGEXP_COUNT(1, '.') -> unknown unsupported-expression: REGEXP_COUNT(1, '.'): a regular-expression function of a value that is not a string is not modelled.
@@ -4477,7 +4477,7 @@ REGEXP_COUNT('abc', 'b', dto3) -> unknown unsupported-expression: REGEXP_COUNT('
 REGEXP_COUNT('abc', 'b', u) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', u): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_COUNT('abc', 'b', bin4) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', bin4): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_COUNT('abc', 'b', vb10) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', vb10): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
-REGEXP_COUNT('abc', 'b', x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+REGEXP_COUNT('abc', 'b', x) -> unknown unsupported-expression: REGEXP_COUNT('abc', 'b', x): a start, occurrence, return option or group that is not a smallint, an int or a bigint is not modelled, and SQL Server refuses a tinyint, a bit or a decimal.
 REGEXP_COUNT('abc', 'b', sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 REGEXP_COUNT('abc', 'b', j) -> unknown (no unknown recorded)
 REGEXP_COUNT('abc', 'b', 1) -> int number/int32 {[0 2147483647]}
@@ -4517,7 +4517,7 @@ CONCAT(dto3, 'x') -> unknown unsupported-expression: CONCAT(dto3, 'x'): an argum
 CONCAT(u, 'x') -> unknown unsupported-expression: CONCAT(u, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(bin4, 'x') -> varchar(5) string {length<=5}
 CONCAT(vb10, 'x') -> varchar(11) string {length<=11}
-CONCAT(x, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONCAT(x, 'x') -> unknown unsupported-expression: CONCAT(x, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(sv, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONCAT(j, 'x') -> unknown unsupported-expression: CONCAT(j, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT(1, 'x') -> varchar(13) string {length<=13}
@@ -4557,7 +4557,7 @@ CONCAT_WS(',', dto3, 'x') -> unknown unsupported-expression: CONCAT_WS(',', dto3
 CONCAT_WS(',', u, 'x') -> unknown unsupported-expression: CONCAT_WS(',', u, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', bin4, 'x') -> varchar(6) string {length<=6}
 CONCAT_WS(',', vb10, 'x') -> varchar(12) string {length<=12}
-CONCAT_WS(',', x, 'x') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONCAT_WS(',', x, 'x') -> unknown unsupported-expression: CONCAT_WS(',', x, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', sv, 'x') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONCAT_WS(',', j, 'x') -> unknown unsupported-expression: CONCAT_WS(',', j, 'x'): an argument whose length as a string is not modelled yet.
 CONCAT_WS(',', 1, 'x') -> varchar(14) string {length<=14}
@@ -4597,7 +4597,7 @@ CHOOSE(id, dto3, dto3) -> datetimeoffset(3) datetime/offset null:out-of-range
 CHOOSE(id, u, u) -> uniqueidentifier uuid null:out-of-range
 CHOOSE(id, bin4, bin4) -> binary(4) bytes null:out-of-range {length=4}
 CHOOSE(id, vb10, vb10) -> varbinary(10) bytes null:out-of-range {length<=10}
-CHOOSE(id, x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CHOOSE(id, x, x) -> xml xml null:out-of-range
 CHOOSE(id, sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CHOOSE(id, j, j) -> unknown (no unknown recorded)
 CHOOSE(id, 1, 1) -> int number/int32 null:out-of-range {[-2147483648 2147483647]}
@@ -4637,7 +4637,7 @@ IIF(id > 1, dto3, dto3) -> datetimeoffset(3) datetime/offset
 IIF(id > 1, u, u) -> uniqueidentifier uuid
 IIF(id > 1, bin4, bin4) -> binary(4) bytes {length=4}
 IIF(id > 1, vb10, vb10) -> varbinary(10) bytes {length<=10}
-IIF(id > 1, x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+IIF(id > 1, x, x) -> xml xml
 IIF(id > 1, sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 IIF(id > 1, j, j) -> unknown (no unknown recorded)
 IIF(id > 1, 1, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -4677,7 +4677,7 @@ NULLIF(dto3, dto3) -> datetimeoffset(3) datetime/offset null:null-when-equal
 NULLIF(u, u) -> uniqueidentifier uuid null:null-when-equal
 NULLIF(bin4, bin4) -> binary(4) bytes null:null-when-equal {length=4}
 NULLIF(vb10, vb10) -> varbinary(10) bytes null:null-when-equal {length<=10}
-NULLIF(x, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+NULLIF(x, x) -> unknown unsupported-expression: NULLIF(x, x): SQL Server refuses NULLIF of xml, which can't be compared.
 NULLIF(sv, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 NULLIF(j, j) -> unknown (no unknown recorded)
 NULLIF(1, 1) -> tinyint number/uint8 null:null-when-equal {[0 255]}
@@ -4717,7 +4717,7 @@ COALESCE(dto3, NULL) -> datetimeoffset(3) datetime/offset
 COALESCE(u, NULL) -> uniqueidentifier uuid
 COALESCE(bin4, NULL) -> binary(4) bytes {length=4}
 COALESCE(vb10, NULL) -> varbinary(10) bytes {length<=10}
-COALESCE(x, NULL) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+COALESCE(x, NULL) -> xml xml
 COALESCE(sv, NULL) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 COALESCE(j, NULL) -> unknown (no unknown recorded)
 COALESCE(1, NULL) -> int number/int32 {[-2147483648 2147483647]}
@@ -4757,7 +4757,7 @@ TRY_CAST(dto3 AS int) -> unknown unsupported-expression: TRY_CAST(dto3 AS int): 
 TRY_CAST(u AS int) -> unknown unsupported-expression: TRY_CAST(u AS int): SQL Server refuses to convert uniqueidentifier to int.
 TRY_CAST(bin4 AS int) -> int number/int32 {[-2147483648 2147483647]}
 TRY_CAST(vb10 AS int) -> int number/int32 {[-2147483648 2147483647]}
-TRY_CAST(x AS int) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRY_CAST(x AS int) -> unknown unsupported-expression: TRY_CAST(x AS int): SQL Server refuses to convert xml to int.
 TRY_CAST(sv AS int) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRY_CAST(j AS int) -> unknown (no unknown recorded)
 TRY_CAST(1 AS int) -> int number/int32 {[-2147483648 2147483647]}
@@ -4797,7 +4797,7 @@ CONVERT(varchar(30), dto3, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), u, 1) -> varchar(30) string null:arithmetic-overflow {length<=30}
 CONVERT(varchar(30), bin4, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), vb10, 1) -> varchar(30) string {length<=30}
-CONVERT(varchar(30), x, 1) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONVERT(varchar(30), x, 1) -> varchar(30) string {length<=30}
 CONVERT(varchar(30), sv, 1) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONVERT(varchar(30), j, 1) -> unknown (no unknown recorded)
 CONVERT(varchar(30), 1, 1) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -4837,7 +4837,7 @@ TRY_CONVERT(int, dto3) -> unknown unsupported-expression: TRY_CONVERT(int, dto3)
 TRY_CONVERT(int, u) -> unknown unsupported-expression: TRY_CONVERT(int, u): SQL Server refuses to convert uniqueidentifier to int.
 TRY_CONVERT(int, bin4) -> int number/int32 {[-2147483648 2147483647]}
 TRY_CONVERT(int, vb10) -> int number/int32 {[-2147483648 2147483647]}
-TRY_CONVERT(int, x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+TRY_CONVERT(int, x) -> unknown unsupported-expression: TRY_CONVERT(int, x): SQL Server refuses to convert xml to int.
 TRY_CONVERT(int, sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 TRY_CONVERT(int, j) -> unknown (no unknown recorded)
 TRY_CONVERT(int, 1) -> int number/int32 {[-2147483648 2147483647]}
@@ -4877,7 +4877,7 @@ CONVERT(varchar(30), dto3, CAST(NULL AS int)) -> varchar(30) string null:null-li
 CONVERT(varchar(30), u, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
 CONVERT(varchar(30), bin4, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
 CONVERT(varchar(30), vb10, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
-CONVERT(varchar(30), x, CAST(NULL AS int)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CONVERT(varchar(30), x, CAST(NULL AS int)) -> varchar(30) string null:null-literal {length<=30}
 CONVERT(varchar(30), sv, CAST(NULL AS int)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CONVERT(varchar(30), j, CAST(NULL AS int)) -> unknown (no unknown recorded)
 CONVERT(varchar(30), 1, CAST(NULL AS int)) -> varchar(30) string null:arithmetic-overflow,null-literal {length<=30}
@@ -4917,7 +4917,7 @@ JSON_OBJECT('k': dto3) -> unknown (no unknown recorded)
 JSON_OBJECT('k': u) -> unknown (no unknown recorded)
 JSON_OBJECT('k': bin4) -> unknown (no unknown recorded)
 JSON_OBJECT('k': vb10) -> unknown (no unknown recorded)
-JSON_OBJECT('k': x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+JSON_OBJECT('k': x) -> unknown (no unknown recorded)
 JSON_OBJECT('k': sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 JSON_OBJECT('k': j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 JSON_OBJECT('k': 1) -> unknown (no unknown recorded)
@@ -4957,7 +4957,7 @@ JSON_ARRAY(dto3) -> unknown (no unknown recorded)
 JSON_ARRAY(u) -> unknown (no unknown recorded)
 JSON_ARRAY(bin4) -> unknown (no unknown recorded)
 JSON_ARRAY(vb10) -> unknown (no unknown recorded)
-JSON_ARRAY(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+JSON_ARRAY(x) -> unknown (no unknown recorded)
 JSON_ARRAY(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 JSON_ARRAY(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 JSON_ARRAY(1) -> unknown (no unknown recorded)
@@ -4997,7 +4997,7 @@ STRING_AGG(dto3, ',') -> nvarchar(4000) string null:empty-aggregate {length<=400
 STRING_AGG(u, ',') -> unknown unsupported-expression: STRING_AGG(u, ','): SQL Server refuses STRING_AGG of uniqueidentifier.
 STRING_AGG(bin4, ',') -> unknown unsupported-expression: STRING_AGG(bin4, ','): SQL Server refuses STRING_AGG of a binary value.
 STRING_AGG(vb10, ',') -> unknown unsupported-expression: STRING_AGG(vb10, ','): SQL Server refuses STRING_AGG of a binary value.
-STRING_AGG(x, ',') -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STRING_AGG(x, ',') -> unknown unsupported-expression: STRING_AGG(x, ','): SQL Server refuses STRING_AGG of xml (8116; observed over the catalogue sweep, CatalogueSweepGridTests).
 STRING_AGG(sv, ',') -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STRING_AGG(j, ',') -> unknown (no unknown recorded)
 STRING_AGG(1, ',') -> nvarchar(4000) string null:empty-aggregate {length<=4000}
@@ -5037,7 +5037,7 @@ JSON_ARRAYAGG(dto3) -> unknown (no unknown recorded)
 JSON_ARRAYAGG(u) -> unknown (no unknown recorded)
 JSON_ARRAYAGG(bin4) -> unknown (no unknown recorded)
 JSON_ARRAYAGG(vb10) -> unknown (no unknown recorded)
-JSON_ARRAYAGG(x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+JSON_ARRAYAGG(x) -> unknown (no unknown recorded)
 JSON_ARRAYAGG(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 JSON_ARRAYAGG(j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 JSON_ARRAYAGG(1) -> unknown (no unknown recorded)
@@ -5077,7 +5077,7 @@ JSON_OBJECTAGG('k': dto3) -> unknown (no unknown recorded)
 JSON_OBJECTAGG('k': u) -> unknown (no unknown recorded)
 JSON_OBJECTAGG('k': bin4) -> unknown (no unknown recorded)
 JSON_OBJECTAGG('k': vb10) -> unknown (no unknown recorded)
-JSON_OBJECTAGG('k': x) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+JSON_OBJECTAGG('k': x) -> unknown (no unknown recorded)
 JSON_OBJECTAGG('k': sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 JSON_OBJECTAGG('k': j) -> unknown json-shape-unknown: dbo.g.j is a json column: its shape is in the data, not the schema.
 JSON_OBJECTAGG('k': 1) -> unknown (no unknown recorded)

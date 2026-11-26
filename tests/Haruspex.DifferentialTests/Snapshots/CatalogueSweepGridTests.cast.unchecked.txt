@@ -13,6 +13,10 @@ CAST(bin4 AS decimal(5,2)): 8114
 CAST(bin4 AS decimal(38,0)): 8114
 CAST(bin4 AS decimal(38,38)): 8114
 CAST(bin4 AS numeric(10,2)): 8114
+CAST(bin4 AS xml): 9403
+CAST(x AS char(3)): 6354
+CAST(x AS nchar(3)): 6354
+CAST(x AS binary(4)): 6354
 CAST('ab' AS tinyint): 245
 CAST('ab' AS smallint): 245
 CAST('ab' AS int): 245

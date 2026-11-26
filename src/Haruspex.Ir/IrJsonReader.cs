@@ -206,6 +206,7 @@ public static class IrJsonReader
         DeclaresBuildsAsLabelled(document, version);
         ReadsFoldersAsLabelled(document, version);
         DescribesAsLabelled(document, version);
+        HoldsXmlAsLabelled(document, version);
         return document;
     }
 
@@ -448,10 +449,23 @@ public static class IrJsonReader
     private static void DescribesAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentDescribed.First(document);
-        if (version == IrDocument.CurrentVersion && first is null)
+        if (version == IrDocument.DescribedVersion && first is null)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that records a description, and this one records none. One that records none is labelled {IrDocument.FoldersVersion} or earlier, by what else it says.");
+        if (!IrDocument.IsSince(version, IrDocument.DescribedVersion) && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a description is IR {IrDocument.DescribedVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses an XML value (0.34) in a document labelled earlier, by its path, and a document labelled 0.34 that holds none, which
+    /// is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void HoldsXmlAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentXml.First(document);
+        if (version == IrDocument.CurrentVersion && first is null)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds an XML value, and this one holds none. One that holds none is labelled {IrDocument.DescribedVersion} or earlier, by what else it says.");
         if (version != IrDocument.CurrentVersion && first is { } path)
-            throw new IrFormatException(path, $"is given in a document of IR {version}: a description is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(path, $"is given in a document of IR {version}: an XML value (kind \"xml\", or a value read from XML by the rule \"xml-value\") is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>A description (0.33): left out when there is none, and never empty.</summary>
@@ -854,7 +868,24 @@ public static class IrJsonReader
             Facets(json));
         if (kind == IrScalarKind.Bytes)
             Bytes(json, scalar);
+        if (kind == IrScalarKind.Xml)
+            Xml(json, scalar);
         return scalar;
+    }
+
+    /// <summary>
+    /// What an XML value may say (0.34): no format and no facets, since its type declares no length, digits, bounds or values. Why:
+    /// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+    /// </summary>
+    private static void Xml(IrJsonObject json, IrScalar scalar)
+    {
+        if (scalar.Format is not null)
+            throw new IrFormatException(json.PathOf("format"), "is given on an XML value (kind \"xml\"), which has no format.");
+        foreach (var facet in (string[])["length", "maxLength", "minLength", "digits", "min", "max", "values"])
+        {
+            if (json.Has(facet))
+                throw new IrFormatException(json.PathOf(facet), "is given on an XML value (kind \"xml\"), which has no facets: its type declares no length, digits, bounds or values.");
+        }
     }
 
     /// <summary>

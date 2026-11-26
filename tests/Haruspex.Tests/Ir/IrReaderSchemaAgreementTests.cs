@@ -9,7 +9,7 @@ namespace Haruspex.Tests.Ir;
 /// <summary>
 /// The reader and the published schema agree on every property of every object of the format: removing a property is
 /// refused by the reader exactly when the schema refuses it, and adding one the format doesn't have is refused by both. Each
-/// case is one edit to the file of <see cref="IrSamples.Described"/>, which holds every property at least once, so a reader
+/// case is one edit to the file of <see cref="IrSamples.Xml"/>, which holds every property at least once, so a reader
 /// that read a required property with a default, or an object the schema left open, fails here. And they agree on values and
 /// labels: each way of breaking a file in <see cref="Breakages"/> says which side refuses it, and a rule only the reader checks is
 /// one the IR README lists, so a disagreement in either direction fails here.
@@ -24,7 +24,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Described);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Xml);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
@@ -285,6 +285,14 @@ public class IrReaderSchemaAgreementTests
         ["a description that is no text"] = (Described, json => json["objects"]![0]!["parameters"]![0]!["description"] = 7, null),
         ["a baseline writer's commit cut short"] = (Stamped, json => json["source"]!["baseline"]!["writtenBy"]!["commit"] = "4567cdef", null),
 
+        // An XML value (0.34): only in 0.34, where a document holds one, and with no format and no facets.
+        ["0.34: no XML value held"] = (Described, json => json["irVersion"] = "0.34", Label),
+        ["0.33, said of a document that holds an XML value"] = (Xml, json => json["irVersion"] = "0.33", Label),
+        ["an XML value's format"] = (Xml, json => Spec(json)["format"] = "int32", null),
+        ["an XML value's length"] = (Xml, json => Spec(json)["maxLength"] = JsonNode.Parse("""{ "value": 10, "unit": "utf16", "from": { "type": "xml" } }"""), null),
+        ["an XML value's length in bytes"] = (Xml, json => Spec(json)["length"] = JsonNode.Parse("""{ "value": 10, "unit": "bytes", "from": { "type": "xml" } }"""), null),
+        ["an XML value's value set"] = (Xml, json => Spec(json)["values"] = JsonNode.Parse("""{ "items": ["<a/>"], "match": "exact", "from": [{ "type": "xml" }] }"""), null),
+
         // A binary value says only its length, in bytes.
         ["a binary value's length in code units"] = (Binary, json => Signature(json)["length"]!["unit"] = "utf16", null),
         ["a binary value's length with an encoding"] = (Binary, json => Signature(json)["length"]!["encoding"] = "single-byte", null),
@@ -404,6 +412,11 @@ public class IrReaderSchemaAgreementTests
     private static string Folders() => IrJsonWriter.Write(IrSamples.Folders);
 
     private static string Described() => IrJsonWriter.Write(IrSamples.Described);
+
+    private static string Xml() => IrJsonWriter.Write(IrSamples.Xml);
+
+    /// <summary>The type of the XML sample's field <c>spec</c>, an <c>xml(sales.spec_schema)</c>.</summary>
+    private static JsonObject Spec(JsonObject json) => json["types"]!["FindOrdersRow"]!["fields"]!.AsArray().Single(f => (string?)f!["name"] == "spec")!["type"]!.AsObject();
 
     private static string VersionFile(string version) => System.IO.File.ReadAllText(Path.Combine(RepositoryPaths.Root, "tests", "ir-versions", $"{version}.ir.json"));
 

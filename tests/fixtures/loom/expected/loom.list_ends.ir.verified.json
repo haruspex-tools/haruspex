@@ -1,0 +1,83 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/list_ends.sql": "107179525cc800a8492cb4342674b542596bf3f402f4b0dcf491e28d6684f28b"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.list_ends",
+      "name": "ListEnds",
+      "kind": "procedure",
+      "at": "procedures/list_ends.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListEndsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ListEndsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.list_ends",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "colour",
+          "type": {
+            "kind": "unknown",
+            "reason": "unsupported-source"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/list_ends.sql:2:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [
+    {
+      "object": "loom.list_ends",
+      "path": "results[0][].colour",
+      "reason": "unsupported-source",
+      "detail": "The table source @draft.nodes('/draft/threading/end') AS e(c) is not modelled yet.",
+      "at": "procedures/list_ends.sql:2:8"
+    }
+  ],
+  "overrides": [],
+  "folds": {}
+}

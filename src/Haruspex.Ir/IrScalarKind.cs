@@ -34,4 +34,11 @@ public enum IrScalarKind
     /// docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md.
     /// </summary>
     Bytes,
+
+    /// <summary>
+    /// XML text, such as SQL Server's <c>xml</c> gives, typed by a schema collection or not (0.34): the text the server
+    /// serialises the instance to, in every encoding. It has no format and no facets. Why:
+    /// docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+    /// </summary>
+    Xml,
 }

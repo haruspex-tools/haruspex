@@ -112,7 +112,7 @@ SUM(dto3) OVER () -> unknown unsupported-expression: SUM(dto3) OVER (): SUM of a
 SUM(u) OVER () -> unknown unsupported-expression: SUM(u) OVER (): SUM of a value of this type is not modelled yet.
 SUM(bin4) OVER () -> unknown unsupported-expression: SUM(bin4) OVER (): SUM of a value of this type is not modelled yet.
 SUM(vb10) OVER () -> unknown unsupported-expression: SUM(vb10) OVER (): SUM of a value of this type is not modelled yet.
-SUM(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+SUM(x) OVER () -> unknown unsupported-expression: SUM(x) OVER (): SUM of a value of this type is not modelled yet.
 SUM(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 SUM(j) OVER () -> unknown (no unknown recorded)
 SUM(1) OVER () -> int number/int32 null:arithmetic-overflow {[-2147483648 2147483647]}
@@ -152,7 +152,7 @@ AVG(dto3) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown
 AVG(u) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(u) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
 AVG(bin4) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(bin4) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
 AVG(vb10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(vb10) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
-AVG(x) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+AVG(x) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-expression: AVG(x) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING): AVG of a value of this type is not modelled.
 AVG(sv) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 AVG(j) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> unknown (no unknown recorded)
 AVG(1) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) -> int number/int32 null:arithmetic-overflow,empty-frame {[-2147483648 2147483647]}
@@ -192,7 +192,7 @@ STDEV(dto3) OVER () -> unknown unsupported-expression: STDEV(dto3) OVER (): STDE
 STDEV(u) OVER () -> unknown unsupported-expression: STDEV(u) OVER (): STDEV of a value of this type is not modelled.
 STDEV(bin4) OVER () -> unknown unsupported-expression: STDEV(bin4) OVER (): STDEV of a value of this type is not modelled.
 STDEV(vb10) OVER () -> unknown unsupported-expression: STDEV(vb10) OVER (): STDEV of a value of this type is not modelled.
-STDEV(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEV(x) OVER () -> unknown unsupported-expression: STDEV(x) OVER (): STDEV of a value of this type is not modelled.
 STDEV(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STDEV(j) OVER () -> unknown (no unknown recorded)
 STDEV(1) OVER () -> float number/float null:too-few-values
@@ -232,7 +232,7 @@ STDEVP(dto3) OVER () -> unknown unsupported-expression: STDEVP(dto3) OVER (): ST
 STDEVP(u) OVER () -> unknown unsupported-expression: STDEVP(u) OVER (): STDEVP of a value of this type is not modelled.
 STDEVP(bin4) OVER () -> unknown unsupported-expression: STDEVP(bin4) OVER (): STDEVP of a value of this type is not modelled.
 STDEVP(vb10) OVER () -> unknown unsupported-expression: STDEVP(vb10) OVER (): STDEVP of a value of this type is not modelled.
-STDEVP(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+STDEVP(x) OVER () -> unknown unsupported-expression: STDEVP(x) OVER (): STDEVP of a value of this type is not modelled.
 STDEVP(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 STDEVP(j) OVER () -> unknown (no unknown recorded)
 STDEVP(1) OVER () -> float number/float
@@ -272,7 +272,7 @@ VAR(dto3) OVER () -> unknown unsupported-expression: VAR(dto3) OVER (): VAR of a
 VAR(u) OVER () -> unknown unsupported-expression: VAR(u) OVER (): VAR of a value of this type is not modelled.
 VAR(bin4) OVER () -> unknown unsupported-expression: VAR(bin4) OVER (): VAR of a value of this type is not modelled.
 VAR(vb10) OVER () -> unknown unsupported-expression: VAR(vb10) OVER (): VAR of a value of this type is not modelled.
-VAR(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VAR(x) OVER () -> unknown unsupported-expression: VAR(x) OVER (): VAR of a value of this type is not modelled.
 VAR(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 VAR(j) OVER () -> unknown (no unknown recorded)
 VAR(1) OVER () -> float number/float null:too-few-values
@@ -312,7 +312,7 @@ VARP(dto3) OVER () -> unknown unsupported-expression: VARP(dto3) OVER (): VARP o
 VARP(u) OVER () -> unknown unsupported-expression: VARP(u) OVER (): VARP of a value of this type is not modelled.
 VARP(bin4) OVER () -> unknown unsupported-expression: VARP(bin4) OVER (): VARP of a value of this type is not modelled.
 VARP(vb10) OVER () -> unknown unsupported-expression: VARP(vb10) OVER (): VARP of a value of this type is not modelled.
-VARP(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+VARP(x) OVER () -> unknown unsupported-expression: VARP(x) OVER (): VARP of a value of this type is not modelled.
 VARP(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 VARP(j) OVER () -> unknown (no unknown recorded)
 VARP(1) OVER () -> float number/float
@@ -352,7 +352,7 @@ MIN(dto3) OVER () -> datetimeoffset(3) datetime/offset
 MIN(u) OVER () -> uniqueidentifier uuid
 MIN(bin4) OVER () -> binary(4) bytes {length=4}
 MIN(vb10) OVER () -> varbinary(10) bytes {length<=10}
-MIN(x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MIN(x) OVER () -> unknown unsupported-expression: MIN(x) OVER (): SQL Server refuses MIN of xml.
 MIN(sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MIN(j) OVER () -> unknown (no unknown recorded)
 MIN(1) OVER () -> int number/int32 {[-2147483648 2147483647]}
@@ -392,7 +392,7 @@ MAX(dto3) OVER (PARTITION BY id) -> datetimeoffset(3) datetime/offset
 MAX(u) OVER (PARTITION BY id) -> uniqueidentifier uuid
 MAX(bin4) OVER (PARTITION BY id) -> binary(4) bytes {length=4}
 MAX(vb10) OVER (PARTITION BY id) -> varbinary(10) bytes {length<=10}
-MAX(x) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+MAX(x) OVER (PARTITION BY id) -> unknown unsupported-expression: MAX(x) OVER (PARTITION BY id): SQL Server refuses MAX of xml.
 MAX(sv) OVER (PARTITION BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 MAX(j) OVER (PARTITION BY id) -> unknown (no unknown recorded)
 MAX(1) OVER (PARTITION BY id) -> int number/int32 {[-2147483648 2147483647]}
@@ -432,7 +432,7 @@ FIRST_VALUE(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
 FIRST_VALUE(u) OVER (ORDER BY id) -> uniqueidentifier uuid
 FIRST_VALUE(bin4) OVER (ORDER BY id) -> binary(4) bytes {length=4}
 FIRST_VALUE(vb10) OVER (ORDER BY id) -> varbinary(10) bytes {length<=10}
-FIRST_VALUE(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+FIRST_VALUE(x) OVER (ORDER BY id) -> xml xml
 FIRST_VALUE(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 FIRST_VALUE(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
 FIRST_VALUE(1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
@@ -472,7 +472,7 @@ LAST_VALUE(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
 LAST_VALUE(u) OVER (ORDER BY id) -> uniqueidentifier uuid
 LAST_VALUE(bin4) OVER (ORDER BY id) -> binary(4) bytes {length=4}
 LAST_VALUE(vb10) OVER (ORDER BY id) -> varbinary(10) bytes {length<=10}
-LAST_VALUE(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LAST_VALUE(x) OVER (ORDER BY id) -> xml xml
 LAST_VALUE(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LAST_VALUE(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
 LAST_VALUE(1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
@@ -512,7 +512,7 @@ LAG(dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset null:window-ed
 LAG(u) OVER (ORDER BY id) -> uniqueidentifier uuid null:window-edge
 LAG(bin4) OVER (ORDER BY id) -> binary(4) bytes null:window-edge {length=4}
 LAG(vb10) OVER (ORDER BY id) -> varbinary(10) bytes null:window-edge {length<=10}
-LAG(x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LAG(x) OVER (ORDER BY id) -> xml xml null:window-edge
 LAG(sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LAG(j) OVER (ORDER BY id) -> unknown (no unknown recorded)
 LAG(1) OVER (ORDER BY id) -> int number/int32 null:window-edge {[-2147483648 2147483647]}
@@ -552,7 +552,7 @@ LEAD(dto3, 1, dto3) OVER (ORDER BY id) -> datetimeoffset(3) datetime/offset
 LEAD(u, 1, u) OVER (ORDER BY id) -> uniqueidentifier uuid
 LEAD(bin4, 1, bin4) OVER (ORDER BY id) -> binary(4) bytes {length=4}
 LEAD(vb10, 1, vb10) OVER (ORDER BY id) -> varbinary(10) bytes {length<=10}
-LEAD(x, 1, x) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+LEAD(x, 1, x) OVER (ORDER BY id) -> xml xml
 LEAD(sv, 1, sv) OVER (ORDER BY id) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 LEAD(j, 1, j) OVER (ORDER BY id) -> unknown (no unknown recorded)
 LEAD(1, 1, 1) OVER (ORDER BY id) -> int number/int32 {[-2147483648 2147483647]}
@@ -592,7 +592,7 @@ PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY dto3) OVER () -> unknown unsupported
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY u) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY u) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY bin4) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY bin4) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY vb10) OVER (): PERCENTILE_CONT of a value of this type is not modelled.
-PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x) OVER (): SQL Server refuses a percentile ordered by xml, which can't be compared.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> unknown unsupported-expression: PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY 1) OVER (): SQL Server refuses a percentile ordered by a constant.
@@ -632,7 +632,7 @@ PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY dto3) OVER () -> datetimeoffset(3) d
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY u) OVER () -> uniqueidentifier uuid
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY bin4) OVER () -> binary(4) bytes {length=4}
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY vb10) OVER () -> varbinary(10) bytes {length<=10}
-PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-sql-type: The type xml is not modelled yet.
+PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER (): SQL Server refuses a percentile ordered by xml, which can't be compared.
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sv) OVER () -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY j) OVER () -> unknown (no unknown recorded)
 PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER () -> unknown unsupported-expression: PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY 1) OVER (): SQL Server refuses a percentile ordered by a constant.

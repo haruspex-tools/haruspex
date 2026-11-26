@@ -139,6 +139,9 @@ internal sealed record RunFile(bool SeedReachesEveryEdge, IReadOnlyList<Procedur
         // sysname is the built-in alias of nvarchar(128), which is read as a type referred to by name.
         if (type is { Kind: SqlTypeKind.Named, Name: var alias } && alias.Equals("sysname", StringComparison.OrdinalIgnoreCase))
             return new(Read(value, v => v.GetString()), SqlDbType.NVarChar, Length: 128);
+        // XML is sent as its text, which the server parses, as the generated functions send it (sql.Xml).
+        if (type is { Kind: SqlTypeKind.Xml })
+            return new(Read(value, v => v.GetString()), SqlDbType.Xml);
         if (type is not { Kind: SqlTypeKind.BuiltIn })
             return Unsupported();
 

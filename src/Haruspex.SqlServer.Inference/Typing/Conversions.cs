@@ -164,7 +164,15 @@ internal static class Conversions
     /// under any options (observed: A_string_that_is_not_a_value_of_the_type_is_an_error_even_under_the_callers_options). Not
     /// in <see cref="Converts"/>, which also says TRY_CAST cannot fail.
     /// </summary>
-    public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Type == BuiltInType.UniqueIdentifier);
+    public static bool NeverNull(Operand from, ScalarType to) => Converts(from, to) || (from.Type.IsString && to.Type == BuiltInType.UniqueIdentifier) || FailsRatherThanNull(from, to);
+
+    /// <summary>
+    /// Whether a value of <paramref name="from"/> that doesn't convert to <paramref name="to"/> is an error under any options, never
+    /// NULL: a conversion to or from <c>xml</c>, of text that isn't well formed or into text too short for the instance (observed:
+    /// <c>A_conversion_to_or_from_xml_fails_rather_than_giving_null_even_under_the_callers_options</c>). Under TRY_CAST and
+    /// TRY_CONVERT it is NULL, so it is not in <see cref="Converts"/>.
+    /// </summary>
+    public static bool FailsRatherThanNull(Operand from, ScalarType to) => from.Type.Type == BuiltInType.Xml || to.Type == BuiltInType.Xml;
 
     /// <summary>
     /// Whether converting a value of <paramref name="from"/> to <paramref name="to"/> may round it to fewer places, which with

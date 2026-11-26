@@ -20,7 +20,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Scalar_kinds_keep_their_names() => Assert.Equal(
-        ["string", "number", "boolean", "date", "time", "datetime", "uuid", "bytes"],
+        ["string", "number", "boolean", "date", "time", "datetime", "uuid", "bytes", "xml"],
         Names<IrScalarKind>(IrWireNames.Of));
 
     [Fact]
@@ -60,7 +60,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Null_rules_keep_their_names() => Assert.Equal(
-        ["nullable-column", "unmatched-row", "unmatched-lateral-row", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "precision-loss", "failed-conversion", "subtotal-row", "missing-for-action", "no-branch-matched", "null-literal", "out-of-range", "read-twice", "null-when-equal", "json-null-or-absent", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared", "not-in-both"],
+        ["nullable-column", "unmatched-row", "unmatched-lateral-row", "empty-subquery", "all-fields-null", "empty-aggregate", "function-result", "parameter", "null-input", "no-rows", "not-run", "variable", "count-overflow", "arithmetic-overflow", "precision-loss", "failed-conversion", "subtotal-row", "missing-for-action", "no-branch-matched", "null-literal", "out-of-range", "read-twice", "null-when-equal", "json-null-or-absent", "empty-frame", "window-edge", "domain-error", "too-few-values", "unknown", "declared", "not-in-both", "xml-value"],
         Names<IrNullRule>(IrWireNames.Of));
 
     [Fact]

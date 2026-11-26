@@ -13,7 +13,7 @@ operation, a temporary table and a table variable, an inline function, a scalar 
 | `shop.order_lines` | `alias.*` on the optional side of a left join, after a listed column; an order with no lines |
 | `shop.orders_with_lines` | A CTE of `SELECT *` read by `alias.*`, and a `FOR JSON` subquery of `alias.*` |
 | `shop.current_prices` | A temporal table's star, without its `HIDDEN` period columns |
-| `shop.list_parcels` | A star over sparse columns and their column set: the set, `xml` (not modelled, so unknown), in their place |
+| `shop.list_parcels` | A star over sparse columns and their column set: the set, `xml`, in their place |
 | `shop.picking` | `SELECT * INTO #t`, a star over it before and after `ALTER TABLE … ADD`, and a star over a table variable |
 | `shop.order_summary` | A scalar function's `FOR JSON` object of `SELECT *`, and an inline function's `SELECT *` read by `alias.*` |
 | `shop.all_lines` | A star in each query of a `UNION ALL` inside a derived table read by `alias.*` |

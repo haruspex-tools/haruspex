@@ -155,6 +155,14 @@ public static partial class IrFit
                         Refuse(IrChangeKind.MaxChanged, path, Refusal, IrClaimText.Max(was.Max), IrClaimText.Max(now.Max));
                 }
 
+                // An xml parameter may be typed by a schema collection, which the IR doesn't hold: one that narrows an element fails
+                // the old call under the same name (observed: 6926), and the IR doesn't yet say whether the procedure's has one.
+                if (flow == Flow.Parameters && accepting.Kind == IrScalarKind.Xml)
+                {
+                    Refuse(IrChangeKind.TypeUnproven, path, "the IR doesn't hold its definition (an xml schema collection), which may have changed under its name", accepting.Sql, given.Sql);
+                    return;
+                }
+
                 if (flow == Flow.Parameters && accepting.Kind is IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime && accepting.Sql != given.Sql
                     && !IrDateTimes.Takes(accepting.Sql, given.Sql))
                 {

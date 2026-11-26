@@ -118,6 +118,10 @@ internal static class ParameterLowering
         IrScalar { Kind: IrScalarKind.Date or IrScalarKind.Time or IrScalarKind.Datetime } scalar => DateTimes.Of(scalar),
         IrScalar { Kind: IrScalarKind.Bytes } scalar => Facets.SentBytes(scalar),
 
+        // XML is sent as text, which the server parses and refuses (error 9400) when it isn't well formed: plain text is taken,
+        // and a value a result branded is a string too.
+        IrScalar { Kind: IrScalarKind.Xml } => new Noted(Z("string"), new ZodNote("XML text, which the server refuses when it isn't well formed.")),
+
         // A boolean and a GUID are checked as a result in JSON is.
         IrScalar scalar => types.Type(scalar, IrEncoding.Json),
         IrJsonText => new Noted(Z("string"), new ZodNote("JSON text, sent as it is: what it should hold isn't typed yet.")),

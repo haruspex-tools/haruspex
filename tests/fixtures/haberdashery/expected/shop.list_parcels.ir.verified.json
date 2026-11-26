@@ -1,7 +1,11 @@
 {
-  "irVersion": "0.25",
+  "irVersion": "0.34",
   "source": {
     "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
     "files": {
       "procedures/list_parcels.sql": "95e4d14701eb70c493d9c776b1af594b3e877e605dfc596f42f1b4995542fae4",
       "tables/parcel.sql": "1f2e14684c85bf665489917f5c8ab79a5338c3de1c883952621f18155c1e9f06"
@@ -101,8 +105,8 @@
         {
           "name": "extras",
           "type": {
-            "kind": "unknown",
-            "reason": "unsupported-sql-type"
+            "kind": "xml",
+            "sql": "xml"
           },
           "presence": "always",
           "nullable": true,
@@ -115,6 +119,7 @@
           "from": [
             {
               "column": "shop.parcel.extras",
+              "sql": "xml",
               "at": "tables/parcel.sql:7:5"
             }
           ]
@@ -122,15 +127,7 @@
       ]
     }
   },
-  "unknowns": [
-    {
-      "object": "shop.list_parcels",
-      "path": "results[0][].extras",
-      "reason": "unsupported-sql-type",
-      "detail": "The type xml is not modelled yet.",
-      "at": "tables/parcel.sql:7:5"
-    }
-  ],
+  "unknowns": [],
   "overrides": [],
   "folds": {}
 }

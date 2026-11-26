@@ -1,0 +1,153 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/save_draft.sql": "95de6e8f6816327ec3af86b89d266f8410ce1498364dc4d7d49eefcaf467b3da"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.save_draft",
+      "name": "SaveDraft",
+      "kind": "procedure",
+      "at": "procedures/save_draft.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@notes",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SaveDraftRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "SaveDraftRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.save_draft",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@draft"
+            }
+          ]
+        },
+        {
+          "name": "shafts",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/save_draft.sql:4:29"
+            }
+          ]
+        },
+        {
+          "name": "has_notes",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@notes"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

@@ -47,7 +47,7 @@ public partial class IrJsonReaderTests
         var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
 
         Assert.Equal(at, e.Path);
-        Assert.Contains("is given in a document of IR 0.32: a description is IR 0.33.", e.Message, StringComparison.Ordinal);
+        Assert.Contains("is given in a document of IR 0.32: a description is IR 0.33 or later.", e.Message, StringComparison.Ordinal);
     }
 
     [Fact]

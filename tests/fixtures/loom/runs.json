@@ -1,0 +1,26 @@
+// The runs of the loom fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means.
+{
+  // Not held to every edge: its point is how an xml value is read, sent and converted, and what its methods give. Its types
+  // claim no facets, and the facets of what value() gives are its type argument's; XmlObservationTests holds the rules.
+  "seedReachesEveryEdge": false,
+
+  "setups": {
+    "writes": "SET NOCOUNT ON;"
+  },
+
+  "runs": [
+    { "name": "get_pattern, with notes", "procedure": "loom.get_pattern", "parameters": { "@pattern_id": 1 } },
+    { "name": "get_pattern, empty notes", "procedure": "loom.get_pattern", "parameters": { "@pattern_id": 2 } },
+    { "name": "get_pattern, no notes", "procedure": "loom.get_pattern", "parameters": { "@pattern_id": 3 } },
+    { "name": "get_pattern_json, with notes", "procedure": "loom.get_pattern_json", "parameters": { "@pattern_id": 1 } },
+    { "name": "get_pattern_json, no notes", "procedure": "loom.get_pattern_json", "parameters": { "@pattern_id": 3 } },
+    { "name": "get_pattern_json, no such pattern", "procedure": "loom.get_pattern_json", "parameters": { "@pattern_id": 99 } },
+    { "name": "pattern_facts", "procedure": "loom.pattern_facts" },
+    { "name": "save_draft, with notes", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 2, "@draft": "<draft shafts=\"8\"/>", "@notes": "<notes/>" } },
+    { "name": "save_draft, no notes", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 3, "@draft": "<draft/>" } },
+    { "name": "save_draft, no draft", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 1, "@draft": null } },
+    { "name": "count_threads", "procedure": "loom.count_threads", "parameters": { "@pattern_id": 1 } },
+    { "name": "list_ends", "procedure": "loom.list_ends", "parameters": { "@draft": "<draft><threading><end colour=\"red\"/></threading></draft>" } }
+  ]
+}

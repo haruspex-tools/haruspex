@@ -376,6 +376,9 @@ public class DiagnosticMessagesTests
         (5205, () => MssqlEmitter.Emit(
             Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@__proto__", Number, false, false)], [])),
             new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
+        (5206, () => MssqlEmitter.Emit(
+            Document([], new IrObject("shop.describe_product", "DescribeProduct", IrObjectKind.Procedure, "p.sql:1:1", [new IrParameter("@spec", new IrScalar(IrScalarKind.Xml, null, "xml"), false, true)], [])),
+            new MssqlOptions()).Diagnostics.Select(d => d.ToString())),
         (5203, () => MssqlEmitter.Emit(
             Document([], new IrObject("s.p", "P", IrObjectKind.Procedure, "p.sql:1:1", [], [new IrResult(IrEncoding.Rowset, new IrArray(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int")), []) { Name = "__proto__" }])),
             new MssqlOptions()).Diagnostics.Select(d => d.ToString())),

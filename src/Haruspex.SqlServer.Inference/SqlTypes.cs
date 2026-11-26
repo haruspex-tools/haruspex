@@ -118,6 +118,10 @@ internal static class SqlTypes
         [BuiltInType.VarBinary] = (IrScalarKind.Bytes, null),
         [BuiltInType.Timestamp] = (IrScalarKind.Bytes, null),
         [BuiltInType.Image] = (IrScalarKind.Bytes, null),
+
+        // XML text, typed by a schema collection or not, with no facets:
+        // docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+        [BuiltInType.Xml] = (IrScalarKind.Xml, null),
     };
 
     /// <summary>Whether inference gives a value of this type as a scalar.</summary>
@@ -147,7 +151,9 @@ internal static class SqlTypes
             return new JsonTextShape();
         if (type is null || !Scalars.TryGetValue(type, out var scalar))
             return new UnknownShape(IrUnknownReason.UnsupportedSqlType, $"The type {text} is not modelled yet.", at);
-        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets ? Facets(facts) : null), resolved.Scalar);
+        // An xml value has no facets: its type declares no length, and text that becomes xml is parsed and serialised again, so
+        // what was known of the text is not known of it.
+        return new ScalarShape(new IrScalar(scalar.Kind, scalar.Format, text, withFacets && scalar.Kind != IrScalarKind.Xml ? Facets(facts) : null), resolved.Scalar);
     }
 
     /// <remarks>
@@ -155,7 +161,7 @@ internal static class SqlTypes
     /// from it: <c>IrFit</c> takes an unknown built-in type named alike in two documents as the same type.
     /// </remarks>
     private static UnknownShape Unsupported(SqlType? type, SourceLocation at) =>
-        // XML, CLR types, and alias types that cannot be resolved for certain.
+        // CLR types, and alias types that cannot be resolved for certain.
         new(IrUnknownReason.UnsupportedSqlType, $"The type {(type is { Schema: { } schema } ? $"{schema}.{type}" : type?.ToString() ?? "(none)")} is not modelled yet.", at);
 
     private static IrFacets? Facets(ColumnFacts facts)

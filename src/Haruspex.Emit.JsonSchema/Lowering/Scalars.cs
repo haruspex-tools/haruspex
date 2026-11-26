@@ -48,6 +48,10 @@ internal static class Scalars
             },
             IrScalarKind.Uuid => Patterned(UuidPattern, "uuid"),
             IrScalarKind.Bytes => Base64(scalar.Facets?.Length),
+
+            // XML text, as every encoding hands it over; the media type is an annotation, which checks nothing more. Why:
+            // docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md.
+            IrScalarKind.Xml => Schema.OfType("string").With(Keyword.ContentMediaType, new SchemaValue.Text("application/xml")),
         };
         return schema with { Notes = [.. Origins.Of(scalar), .. schema.Notes] };
     }

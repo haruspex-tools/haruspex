@@ -25,7 +25,7 @@ public class SetTypeTests
             fixed char(4) NOT NULL, note varchar(max) NULL,
             sold date NOT NULL CONSTRAINT ck_sold CHECK (sold IN ('2026-05-02', '2026-05-03')), at_time time(3) NOT NULL, stamp datetime NOT NULL, small_stamp smalldatetime NOT NULL,
             moment datetime2(7) NOT NULL, zoned datetimeoffset(3) NOT NULL,
-            ref uniqueidentifier NOT NULL, ref_text varchar(36) NOT NULL, doc xml NULL);
+            ref uniqueidentifier NOT NULL, ref_text varchar(36) NOT NULL, doc xml NULL, anything sql_variant NULL);
         GO
         """;
 
@@ -298,9 +298,17 @@ public class SetTypeTests
         Assert.Contains("decimal(9,2) and datetime2(7)", Union("price", "moment"), StringComparison.Ordinal);
 
         // A value of a type not modelled is unknown by its own reason, which names it.
-        var xml = Union("code", "doc");
-        Assert.StartsWith("unknown: ", xml, StringComparison.Ordinal);
-        Assert.Contains("xml", xml, StringComparison.Ordinal);
+        var variant = Union("code", "anything");
+        Assert.StartsWith("unknown: ", variant, StringComparison.Ordinal);
+        Assert.Contains("sql_variant", variant, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Text_beside_xml_is_converted_to_xml()
+    {
+        // xml is above every string in type precedence, so the text is parsed as XML (observed: Text_beside_xml_takes_xml_by_precedence).
+        Assert.Equal("xml nullable-column", Union("code", "doc"));
+        Assert.Equal("xml nullable-column", Union("doc", "code"));
     }
 
     [Fact]

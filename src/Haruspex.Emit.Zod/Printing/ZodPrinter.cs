@@ -152,6 +152,7 @@ internal static class ZodPrinter
         {
             ZodExpression.Name name => name.Path,
             ZodExpression.Call call => Expression(call.Target) + "." + call.Method + "(" + List(call.Arguments) + ")",
+            ZodExpression.Branded branded => Expression(branded.Target) + ".brand<" + DoubleQuoted(branded.Brand) + ">()",
             ZodExpression.Union union => ZodModule.ZodName + ".union([" + List(union.Variants) + "])",
             ZodExpression.ObjectSchema obj => ObjectSchema(obj),
             ZodExpression.JsonText text => ZodModule.JsonTextHelperName + "(() => " + Expression(text.Content) + ")",

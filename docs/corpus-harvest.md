@@ -18,16 +18,16 @@ the rows at the top are where work types the most. **Places** adds the four colu
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters | Places | Corpora |
 |---|---:|---:|---:|---:|---:|---:|
-| `unsupported-expression` | 108 | 0 | 0 | 0 | 108 | 2 |
 | `dynamic-sql` | 5 | 0 | 91 | 0 | 96 | 6 |
+| `unsupported-source` | 66 | 0 | 0 | 0 | 66 | 2 |
 | `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
-| `unsupported-sql-type` | 20 | 0 | 0 | 39 | 59 | 5 |
 | `unsupported-statement` | 14 | 0 | 30 | 0 | 44 | 7 |
+| `unsupported-expression` | 22 | 0 | 0 | 0 | 22 | 2 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |
+| `unsupported-sql-type` | 3 | 0 | 0 | 9 | 12 | 4 |
 | `procedure-variable` | 0 | 0 | 11 | 0 | 11 | 2 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
 | `unsupported-query` | 0 | 5 | 0 | 0 | 5 | 1 |
-| `unsupported-source` | 4 | 0 | 0 | 0 | 4 | 1 |
 | `varying-results` | 0 | 0 | 4 | 0 | 4 | 1 |
 | `unresolved-table` | 3 | 0 | 0 | 0 | 3 | 1 |
 | `missing-procedure` | 0 | 0 | 1 | 0 | 1 | 1 |
@@ -168,7 +168,7 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 
 ### ProfilesRNS
 
-**Typed 1,376 of 1,510 fields in ProfilesRNS; the results of 46 of its 460 procedures can't be described, so they have no fields to count.** 138 of the 168 procedures that return fields are fully typed.
+**Typed 1,420 of 1,513 fields in ProfilesRNS; the results of 46 of its 460 procedures can't be described, so they have no fields to count.** 154 of the 168 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6a46e4af905ba2073d7e913ea38847a0b3ca12`, under `BSD-3-Clause` (`LICENSE.txt` and `Database/Schema/CopyrightNotice.txt`, fetched with it). ProfilesRNS, a research networking application for universities: one script per object, the largest corpus here, with `FOR JSON PATH`, XML methods, `OPENJSON`, dynamic SQL and schema names that contain dots. The upgrade scripts beside the schema are not taken.
 
@@ -184,9 +184,9 @@ From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6
 | Procedures whose result sets can't be listed | 37 |
 | Procedures that return no result set | 246 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 138 |
-| Fields | 1,510 |
-| Fields typed | 1,376 |
+| Procedures that return fields, fully typed | 154 |
+| Fields | 1,513 |
+| Fields typed | 1,420 |
 | Fields typed as JSON text whose content isn't known | 0 |
 | Results | 213 |
 | Results of unknown shape | 12 |
@@ -200,8 +200,9 @@ From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6
 | `unnamed-column` | 0 | 12 | 0 | 0 |
 | `unresolved-column` | 1 | 0 | 0 | 0 |
 | `unresolved-table` | 3 | 0 | 0 | 0 |
-| `unsupported-expression` | 106 | 0 | 0 | 0 |
-| `unsupported-sql-type` | 19 | 0 | 0 | 30 |
+| `unsupported-expression` | 20 | 0 | 0 | 0 |
+| `unsupported-source` | 62 | 0 | 0 | 0 |
+| `unsupported-sql-type` | 2 | 0 | 0 | 2 |
 | `unsupported-statement` | 0 | 0 | 10 | 0 |
 | `varying-results` | 0 | 0 | 4 | 0 |
 
@@ -335,7 +336,7 @@ From [its repository](https://github.com/tSQLt-org/tSQLt) at commit `4a921d0dacf
 | `procedure-variable` | 0 | 0 | 4 | 0 |
 | `system-procedure` | 0 | 0 | 5 | 0 |
 | `unnamed-column` | 0 | 2 | 0 | 0 |
-| `unsupported-sql-type` | 0 | 0 | 0 | 6 |
+| `unsupported-sql-type` | 0 | 0 | 0 | 5 |
 | `unsupported-statement` | 0 | 0 | 1 | 0 |
 
 #### Scripts left out
@@ -383,5 +384,4 @@ From [its repository](https://github.com/olahallengren/sql-server-maintenance-so
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `dynamic-sql` | 0 | 0 | 3 | 0 |
-| `unsupported-sql-type` | 0 | 0 | 0 | 1 |
 | `unsupported-statement` | 0 | 0 | 1 | 0 |

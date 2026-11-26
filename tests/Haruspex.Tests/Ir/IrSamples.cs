@@ -357,6 +357,30 @@ internal static class IrSamples
             StringComparer.Ordinal),
     };
 
+    /// <summary>
+    /// <see cref="Described"/> with an XML value (0.34) in <c>FindOrdersRow</c>, typed by a schema collection, a number read from
+    /// XML, NULL by the rule <c>xml-value</c>, and an XML parameter, so that it holds every property and kind the format has, and
+    /// still holds an XML value with any one property taken away.
+    /// </summary>
+    public static IrDocument Xml { get; } = Described with
+    {
+        Objects = [Described.Objects[0] with { Parameters = [.. Described.Objects[0].Parameters, new IrParameter("@spec", new IrScalar(IrScalarKind.Xml, null, "xml"), true, false)] }, .. Described.Objects.Skip(1)],
+        Types = Described.Types.ToDictionary(
+            t => t.Key,
+            t => t.Key == "FindOrdersRow"
+                ? t.Value with
+                {
+                    Fields =
+                    [
+                        .. t.Value.Fields,
+                        new IrField("spec", new IrScalar(IrScalarKind.Xml, null, "xml(sales.spec_schema)"), IrPresence.Always, [new IrNullReason(IrNullRule.NullableColumn, "procedures/find_orders.sql:3:12")]),
+                        new IrField("weight", new IrScalar(IrScalarKind.Number, IrFormat.Decimal, "decimal(9,2)"), IrPresence.Always, [new IrNullReason(IrNullRule.XmlValue, "procedures/find_orders.sql:3:20")]),
+                    ],
+                }
+                : t.Value,
+            StringComparer.Ordinal),
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

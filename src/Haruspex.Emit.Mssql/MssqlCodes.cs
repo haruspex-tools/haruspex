@@ -34,4 +34,10 @@ public static class MssqlCodes
     /// where that key sets the object's prototype rather than adding a key.
     /// </summary>
     public static DiagnosticCode ParameterUnusable { get; } = new(5205, DiagnosticSeverity.Error, "A parameter the driver can't send");
+
+    /// <summary>
+    /// An <c>OUTPUT</c> parameter of type <c>xml</c>, which the driver can't receive: bound as <c>Xml</c> or as text, the call fails
+    /// with error 257 (observed).
+    /// </summary>
+    public static DiagnosticCode XmlOutputCannotBeReceived { get; } = new(5206, DiagnosticSeverity.Error, "An xml OUTPUT parameter the driver can't receive");
 }

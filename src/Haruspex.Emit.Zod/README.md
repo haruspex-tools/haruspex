@@ -58,6 +58,10 @@ What a value looks like depends on how it arrives, and the module follows what a
   they are validated strings (`z.iso.date()`, `z.iso.datetime(…)`, `z.guid()`). They are deliberately not converted to
   `Date`: a `date` has no time zone, and `new Date('2026-11-09')` is UTC midnight, the previous day west of Greenwich. A binary
   value is base64 text, padded, of the length its bytes take (`z.base64().length(44)` for `binary(32)`).
+- **XML**, in either encoding, is its text, a string branded Xml (`z.string().brand<"Xml">()`), so that plain text isn't taken
+  for it; it isn't parsed, since the server guarantees it is well formed and a parser would be a dependency. A parameter takes
+  any string, which the server parses
+  ([decision 0133](https://github.com/haruspex-tools/haruspex/blob/main/docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)).
 - **In a rowset**, the types follow the default mapping of the [mssql](https://www.npmjs.com/package/mssql) (tedious)
   driver: dates and times as `Date`, `bigint` as a string, a binary value as a Node `Buffer` of its length
   (`z.instanceof(Buffer).check(z.maxLength(8000))` for `varbinary(8000)`), which is why a module that holds one in a rowset or a

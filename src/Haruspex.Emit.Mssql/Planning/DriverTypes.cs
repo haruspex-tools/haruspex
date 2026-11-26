@@ -34,6 +34,9 @@ internal static class DriverTypes
         IrScalar { Kind: IrScalarKind.Bytes } scalar => Bytes(scalar.Facets?.Length),
         IrJsonText => new DriverType("NVarChar", ["MAX"]),
 
+        // XML is sent as the driver's Xml, text the server parses (observed: MssqlDriverObservationTests).
+        IrScalar { Kind: IrScalarKind.Xml } => Plain("Xml"),
+
         // A number of no known format or digits, a table-valued parameter, or a type not modelled: the driver chooses.
         _ => null,
     };

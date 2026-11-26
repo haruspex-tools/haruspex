@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 207 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 165 |
+| Modelled, wholly or in part | 166 |
 | Read, changing no result | 29 |
-| Unknown | 311 |
+| Unknown | 310 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -824,7 +824,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `CHANGETABLE (CHANGES …)` | `ChangeTableChangesTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `CHANGETABLE (VERSION …)` | `ChangeTableVersionTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `PREDICT` | `PredictTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
-| `@x.nodes(…)` | `VariableMethodCallTableReference` | modelled in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Its rows are read; its column is xml, whose methods aren't modelled. |
+| `@x.nodes(…)` | `VariableMethodCallTableReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Its rows are read; its column, a node, is XML that nodes() shapes, which isn't modelled yet. |
 | `::fn_name( … )` | `BuiltInFunctionTableReference` | unknown, [`unsupported-source`](diagnostics/HAR2006.md) | Not modelled. |
 | `{ OJ … }` | `OdbcQualifiedJoinTableReference` | unknown, [`unresolved-column`](diagnostics/HAR2009.md) | Not modelled: the join inside isn't bound, so a column read through it is unresolved. |
 | `AI_GENERATE_CHUNKS` | `AIGenerateChunksTableReference` | never parsed from a body | The parser makes the fixed-size form, the only one, as AIGenerateFixedChunksTableReference. |
@@ -887,8 +887,8 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `{ fn … }` | `OdbcFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
 | `SQL_ type in { fn CONVERT }` | `OdbcConvertSpecification` | part of `OdbcFunctionCall` |  |
 | `{ d '…' }` | `OdbcLiteral` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled. |
-| `schema.f( … ), t.c.method( … )` | `MultiPartIdentifierCallTarget` | modelled in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the project called by its schema is typed by its body; a method of an xml or CLR column isn't modelled. |
-| `( expression ).method( … )` | `ExpressionCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: a method of a CLR value. |
+| `schema.f( … ), t.c.method( … )` | `MultiPartIdentifierCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | A function of the project called by its schema is typed by its body, and an xml column's value() and exist() as XML values says; its query(), and a method of a CLR column, aren't modelled. |
+| `( expression ).method( … )` | `ExpressionCallTarget` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#xml-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | An xml value's value() and exist() are typed as XML values says; its query(), and a method of a CLR value, aren't modelled. |
 | `type::method( … )` | `UserDefinedTypeCallTarget` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `type::property, value.property` | `UserDefinedTypePropertyAccess` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled: the CLR types aren't. |
 | `key : value in JSON_OBJECT` | `JsonKeyValue` | part of `FunctionCall` |  |

@@ -1,0 +1,148 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/get_pattern_json.sql": "3fd3d8ef9db2cf59e6f227383d96c290beadca2a03655e563fd90d44a7b43622",
+      "tables/pattern.sql": "ca4a97367b2cb22d13d1caf258d39a6008db31f3a7b509cf9c4bcd13aab9a3a4"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.get_pattern_json",
+      "name": "GetPatternJson",
+      "kind": "procedure",
+      "at": "procedures/get_pattern_json.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "GetPatternJsonRow"
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/get_pattern_json.sql:2:1"
+            }
+          ],
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetPatternJsonRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.get_pattern_json",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.pattern_id",
+              "sql": "int",
+              "at": "tables/pattern.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.draft",
+              "sql": "xml",
+              "at": "tables/pattern.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "notes",
+          "type": {
+            "kind": "xml",
+            "sql": "xml"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "loom.pattern.notes"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.notes",
+              "sql": "xml",
+              "at": "tables/pattern.sql:7:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

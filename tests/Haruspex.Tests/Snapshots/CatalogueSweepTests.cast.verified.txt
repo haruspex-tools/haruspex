@@ -28,7 +28,7 @@ CAST(bt AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(bt AS date
 CAST(bt AS uniqueidentifier) -> unknown unsupported-expression: CAST(bt AS uniqueidentifier): SQL Server refuses to convert bit to uniqueidentifier.
 CAST(bt AS binary(4)) -> binary(4) bytes {length=4}
 CAST(bt AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(bt AS xml) -> unknown unsupported-expression: CAST(bt AS xml): a conversion to this type is not modelled yet.
+CAST(bt AS xml) -> unknown unsupported-expression: CAST(bt AS xml): SQL Server refuses to convert bit to xml.
 CAST(bt AS sql_variant) -> unknown unsupported-expression: CAST(bt AS sql_variant): a conversion to this type is not modelled yet.
 CAST(bt AS json) -> unknown unsupported-expression: CAST(bt AS json): a conversion to this type is not modelled yet.
 CAST(bt AS varchar) -> varchar(30) string {length<=30}
@@ -64,7 +64,7 @@ CAST(ti AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(ti AS date
 CAST(ti AS uniqueidentifier) -> unknown unsupported-expression: CAST(ti AS uniqueidentifier): SQL Server refuses to convert tinyint to uniqueidentifier.
 CAST(ti AS binary(4)) -> binary(4) bytes {length=4}
 CAST(ti AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(ti AS xml) -> unknown unsupported-expression: CAST(ti AS xml): a conversion to this type is not modelled yet.
+CAST(ti AS xml) -> unknown unsupported-expression: CAST(ti AS xml): SQL Server refuses to convert tinyint to xml.
 CAST(ti AS sql_variant) -> unknown unsupported-expression: CAST(ti AS sql_variant): a conversion to this type is not modelled yet.
 CAST(ti AS json) -> unknown unsupported-expression: CAST(ti AS json): a conversion to this type is not modelled yet.
 CAST(ti AS varchar) -> varchar(30) string {length<=30}
@@ -100,7 +100,7 @@ CAST(si AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(si AS date
 CAST(si AS uniqueidentifier) -> unknown unsupported-expression: CAST(si AS uniqueidentifier): SQL Server refuses to convert smallint to uniqueidentifier.
 CAST(si AS binary(4)) -> binary(4) bytes {length=4}
 CAST(si AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(si AS xml) -> unknown unsupported-expression: CAST(si AS xml): a conversion to this type is not modelled yet.
+CAST(si AS xml) -> unknown unsupported-expression: CAST(si AS xml): SQL Server refuses to convert smallint to xml.
 CAST(si AS sql_variant) -> unknown unsupported-expression: CAST(si AS sql_variant): a conversion to this type is not modelled yet.
 CAST(si AS json) -> unknown unsupported-expression: CAST(si AS json): a conversion to this type is not modelled yet.
 CAST(si AS varchar) -> varchar(30) string {length<=30}
@@ -136,7 +136,7 @@ CAST(i AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(i AS dateti
 CAST(i AS uniqueidentifier) -> unknown unsupported-expression: CAST(i AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(i AS binary(4)) -> binary(4) bytes {length=4}
 CAST(i AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(i AS xml) -> unknown unsupported-expression: CAST(i AS xml): a conversion to this type is not modelled yet.
+CAST(i AS xml) -> unknown unsupported-expression: CAST(i AS xml): SQL Server refuses to convert int to xml.
 CAST(i AS sql_variant) -> unknown unsupported-expression: CAST(i AS sql_variant): a conversion to this type is not modelled yet.
 CAST(i AS json) -> unknown unsupported-expression: CAST(i AS json): a conversion to this type is not modelled yet.
 CAST(i AS varchar) -> varchar(30) string {length<=30}
@@ -172,7 +172,7 @@ CAST(bi AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(bi AS date
 CAST(bi AS uniqueidentifier) -> unknown unsupported-expression: CAST(bi AS uniqueidentifier): SQL Server refuses to convert bigint to uniqueidentifier.
 CAST(bi AS binary(4)) -> binary(4) bytes {length=4}
 CAST(bi AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(bi AS xml) -> unknown unsupported-expression: CAST(bi AS xml): a conversion to this type is not modelled yet.
+CAST(bi AS xml) -> unknown unsupported-expression: CAST(bi AS xml): SQL Server refuses to convert bigint to xml.
 CAST(bi AS sql_variant) -> unknown unsupported-expression: CAST(bi AS sql_variant): a conversion to this type is not modelled yet.
 CAST(bi AS json) -> unknown unsupported-expression: CAST(bi AS json): a conversion to this type is not modelled yet.
 CAST(bi AS varchar) -> varchar(30) string {length<=30}
@@ -208,7 +208,7 @@ CAST(d52 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d52 AS da
 CAST(d52 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d52 AS uniqueidentifier): SQL Server refuses to convert decimal(5,2) to uniqueidentifier.
 CAST(d52 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(d52 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(d52 AS xml) -> unknown unsupported-expression: CAST(d52 AS xml): a conversion to this type is not modelled yet.
+CAST(d52 AS xml) -> unknown unsupported-expression: CAST(d52 AS xml): SQL Server refuses to convert decimal(5,2) to xml.
 CAST(d52 AS sql_variant) -> unknown unsupported-expression: CAST(d52 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(d52 AS json) -> unknown unsupported-expression: CAST(d52 AS json): a conversion to this type is not modelled yet.
 CAST(d52 AS varchar) -> varchar(30) string {length<=30}
@@ -244,7 +244,7 @@ CAST(d380 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d380 AS 
 CAST(d380 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d380 AS uniqueidentifier): SQL Server refuses to convert decimal(38,0) to uniqueidentifier.
 CAST(d380 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(d380 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(d380 AS xml) -> unknown unsupported-expression: CAST(d380 AS xml): a conversion to this type is not modelled yet.
+CAST(d380 AS xml) -> unknown unsupported-expression: CAST(d380 AS xml): SQL Server refuses to convert decimal(38,0) to xml.
 CAST(d380 AS sql_variant) -> unknown unsupported-expression: CAST(d380 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(d380 AS json) -> unknown unsupported-expression: CAST(d380 AS json): a conversion to this type is not modelled yet.
 CAST(d380 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -280,7 +280,7 @@ CAST(d3838 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(d3838 A
 CAST(d3838 AS uniqueidentifier) -> unknown unsupported-expression: CAST(d3838 AS uniqueidentifier): SQL Server refuses to convert decimal(38,38) to uniqueidentifier.
 CAST(d3838 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(d3838 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(d3838 AS xml) -> unknown unsupported-expression: CAST(d3838 AS xml): a conversion to this type is not modelled yet.
+CAST(d3838 AS xml) -> unknown unsupported-expression: CAST(d3838 AS xml): SQL Server refuses to convert decimal(38,38) to xml.
 CAST(d3838 AS sql_variant) -> unknown unsupported-expression: CAST(d3838 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(d3838 AS json) -> unknown unsupported-expression: CAST(d3838 AS json): a conversion to this type is not modelled yet.
 CAST(d3838 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -316,7 +316,7 @@ CAST(n102 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(n102 AS 
 CAST(n102 AS uniqueidentifier) -> unknown unsupported-expression: CAST(n102 AS uniqueidentifier): SQL Server refuses to convert numeric(10,2) to uniqueidentifier.
 CAST(n102 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(n102 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(n102 AS xml) -> unknown unsupported-expression: CAST(n102 AS xml): a conversion to this type is not modelled yet.
+CAST(n102 AS xml) -> unknown unsupported-expression: CAST(n102 AS xml): SQL Server refuses to convert numeric(10,2) to xml.
 CAST(n102 AS sql_variant) -> unknown unsupported-expression: CAST(n102 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(n102 AS json) -> unknown unsupported-expression: CAST(n102 AS json): a conversion to this type is not modelled yet.
 CAST(n102 AS varchar) -> varchar(30) string {length<=30}
@@ -352,7 +352,7 @@ CAST(m AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(m AS dateti
 CAST(m AS uniqueidentifier) -> unknown unsupported-expression: CAST(m AS uniqueidentifier): SQL Server refuses to convert money to uniqueidentifier.
 CAST(m AS binary(4)) -> binary(4) bytes {length=4}
 CAST(m AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(m AS xml) -> unknown unsupported-expression: CAST(m AS xml): a conversion to this type is not modelled yet.
+CAST(m AS xml) -> unknown unsupported-expression: CAST(m AS xml): SQL Server refuses to convert money to xml.
 CAST(m AS sql_variant) -> unknown unsupported-expression: CAST(m AS sql_variant): a conversion to this type is not modelled yet.
 CAST(m AS json) -> unknown unsupported-expression: CAST(m AS json): a conversion to this type is not modelled yet.
 CAST(m AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -388,7 +388,7 @@ CAST(sm AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(sm AS date
 CAST(sm AS uniqueidentifier) -> unknown unsupported-expression: CAST(sm AS uniqueidentifier): SQL Server refuses to convert smallmoney to uniqueidentifier.
 CAST(sm AS binary(4)) -> binary(4) bytes {length=4}
 CAST(sm AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(sm AS xml) -> unknown unsupported-expression: CAST(sm AS xml): a conversion to this type is not modelled yet.
+CAST(sm AS xml) -> unknown unsupported-expression: CAST(sm AS xml): SQL Server refuses to convert smallmoney to xml.
 CAST(sm AS sql_variant) -> unknown unsupported-expression: CAST(sm AS sql_variant): a conversion to this type is not modelled yet.
 CAST(sm AS json) -> unknown unsupported-expression: CAST(sm AS json): a conversion to this type is not modelled yet.
 CAST(sm AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -424,7 +424,7 @@ CAST(f AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f AS dateti
 CAST(f AS uniqueidentifier) -> unknown unsupported-expression: CAST(f AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
 CAST(f AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(f AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(f AS xml) -> unknown unsupported-expression: CAST(f AS xml): a conversion to this type is not modelled yet.
+CAST(f AS xml) -> unknown unsupported-expression: CAST(f AS xml): SQL Server refuses to convert float to xml.
 CAST(f AS sql_variant) -> unknown unsupported-expression: CAST(f AS sql_variant): a conversion to this type is not modelled yet.
 CAST(f AS json) -> unknown unsupported-expression: CAST(f AS json): a conversion to this type is not modelled yet.
 CAST(f AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -460,7 +460,7 @@ CAST(r AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(r AS dateti
 CAST(r AS uniqueidentifier) -> unknown unsupported-expression: CAST(r AS uniqueidentifier): SQL Server refuses to convert real to uniqueidentifier.
 CAST(r AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(r AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(r AS xml) -> unknown unsupported-expression: CAST(r AS xml): a conversion to this type is not modelled yet.
+CAST(r AS xml) -> unknown unsupported-expression: CAST(r AS xml): SQL Server refuses to convert real to xml.
 CAST(r AS sql_variant) -> unknown unsupported-expression: CAST(r AS sql_variant): a conversion to this type is not modelled yet.
 CAST(r AS json) -> unknown unsupported-expression: CAST(r AS json): a conversion to this type is not modelled yet.
 CAST(r AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -496,7 +496,7 @@ CAST(f24 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f24 AS da
 CAST(f24 AS uniqueidentifier) -> unknown unsupported-expression: CAST(f24 AS uniqueidentifier): SQL Server refuses to convert real to uniqueidentifier.
 CAST(f24 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(f24 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(f24 AS xml) -> unknown unsupported-expression: CAST(f24 AS xml): a conversion to this type is not modelled yet.
+CAST(f24 AS xml) -> unknown unsupported-expression: CAST(f24 AS xml): SQL Server refuses to convert real to xml.
 CAST(f24 AS sql_variant) -> unknown unsupported-expression: CAST(f24 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(f24 AS json) -> unknown unsupported-expression: CAST(f24 AS json): a conversion to this type is not modelled yet.
 CAST(f24 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -532,7 +532,7 @@ CAST(f25 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(f25 AS da
 CAST(f25 AS uniqueidentifier) -> unknown unsupported-expression: CAST(f25 AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
 CAST(f25 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(f25 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(f25 AS xml) -> unknown unsupported-expression: CAST(f25 AS xml): a conversion to this type is not modelled yet.
+CAST(f25 AS xml) -> unknown unsupported-expression: CAST(f25 AS xml): SQL Server refuses to convert float to xml.
 CAST(f25 AS sql_variant) -> unknown unsupported-expression: CAST(f25 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(f25 AS json) -> unknown unsupported-expression: CAST(f25 AS json): a conversion to this type is not modelled yet.
 CAST(f25 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -568,7 +568,7 @@ CAST(c3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmet
 CAST(c3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(c3 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(c3 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(c3 AS xml) -> unknown unsupported-expression: CAST(c3 AS xml): a conversion to this type is not modelled yet.
+CAST(c3 AS xml) -> xml xml
 CAST(c3 AS sql_variant) -> unknown unsupported-expression: CAST(c3 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(c3 AS json) -> unknown unsupported-expression: CAST(c3 AS json): a conversion to this type is not modelled yet.
 CAST(c3 AS varchar) -> varchar(30) string {length<=30}
@@ -604,7 +604,7 @@ CAST(v10 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithme
 CAST(v10 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(v10 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(v10 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(v10 AS xml) -> unknown unsupported-expression: CAST(v10 AS xml): a conversion to this type is not modelled yet.
+CAST(v10 AS xml) -> xml xml
 CAST(v10 AS sql_variant) -> unknown unsupported-expression: CAST(v10 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(v10 AS json) -> unknown unsupported-expression: CAST(v10 AS json): a conversion to this type is not modelled yet.
 CAST(v10 AS varchar) -> varchar(30) string {length<=30}
@@ -640,7 +640,7 @@ CAST(vx AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithmet
 CAST(vx AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(vx AS binary(4)) -> binary(4) bytes {length=4}
 CAST(vx AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(vx AS xml) -> unknown unsupported-expression: CAST(vx AS xml): a conversion to this type is not modelled yet.
+CAST(vx AS xml) -> xml xml
 CAST(vx AS sql_variant) -> unknown unsupported-expression: CAST(vx AS sql_variant): a conversion to this type is not modelled yet.
 CAST(vx AS json) -> unknown unsupported-expression: CAST(vx AS json): a conversion to this type is not modelled yet.
 CAST(vx AS varchar) -> varchar(30) string {length<=30}
@@ -676,7 +676,7 @@ CAST(nc3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithme
 CAST(nc3 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(nc3 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(nc3 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(nc3 AS xml) -> unknown unsupported-expression: CAST(nc3 AS xml): a conversion to this type is not modelled yet.
+CAST(nc3 AS xml) -> xml xml
 CAST(nc3 AS sql_variant) -> unknown unsupported-expression: CAST(nc3 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(nc3 AS json) -> unknown unsupported-expression: CAST(nc3 AS json): a conversion to this type is not modelled yet.
 CAST(nc3 AS varchar) -> varchar(30) string {length<=30}
@@ -712,7 +712,7 @@ CAST(nv10 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithm
 CAST(nv10 AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(nv10 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(nv10 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(nv10 AS xml) -> unknown unsupported-expression: CAST(nv10 AS xml): a conversion to this type is not modelled yet.
+CAST(nv10 AS xml) -> xml xml
 CAST(nv10 AS sql_variant) -> unknown unsupported-expression: CAST(nv10 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(nv10 AS json) -> unknown unsupported-expression: CAST(nv10 AS json): a conversion to this type is not modelled yet.
 CAST(nv10 AS varchar) -> varchar(30) string {length<=30}
@@ -748,7 +748,7 @@ CAST(nvx AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithme
 CAST(nvx AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(nvx AS binary(4)) -> binary(4) bytes {length=4}
 CAST(nvx AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(nvx AS xml) -> unknown unsupported-expression: CAST(nvx AS xml): a conversion to this type is not modelled yet.
+CAST(nvx AS xml) -> xml xml
 CAST(nvx AS sql_variant) -> unknown unsupported-expression: CAST(nvx AS sql_variant): a conversion to this type is not modelled yet.
 CAST(nvx AS json) -> unknown unsupported-expression: CAST(nvx AS json): a conversion to this type is not modelled yet.
 CAST(nvx AS varchar) -> varchar(30) string {length<=30}
@@ -784,7 +784,7 @@ CAST(dt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(dt AS uniqueidentifier) -> unknown unsupported-expression: CAST(dt AS uniqueidentifier): SQL Server refuses to convert date to uniqueidentifier.
 CAST(dt AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(dt AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(dt AS xml) -> unknown unsupported-expression: CAST(dt AS xml): a conversion to this type is not modelled yet.
+CAST(dt AS xml) -> unknown unsupported-expression: CAST(dt AS xml): SQL Server refuses to convert date to xml.
 CAST(dt AS sql_variant) -> unknown unsupported-expression: CAST(dt AS sql_variant): a conversion to this type is not modelled yet.
 CAST(dt AS json) -> unknown unsupported-expression: CAST(dt AS json): a conversion to this type is not modelled yet.
 CAST(dt AS varchar) -> varchar(30) string {length<=30}
@@ -820,7 +820,7 @@ CAST(tm3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(tm3 AS uniqueidentifier) -> unknown unsupported-expression: CAST(tm3 AS uniqueidentifier): SQL Server refuses to convert time(3) to uniqueidentifier.
 CAST(tm3 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(tm3 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(tm3 AS xml) -> unknown unsupported-expression: CAST(tm3 AS xml): a conversion to this type is not modelled yet.
+CAST(tm3 AS xml) -> unknown unsupported-expression: CAST(tm3 AS xml): SQL Server refuses to convert time(3) to xml.
 CAST(tm3 AS sql_variant) -> unknown unsupported-expression: CAST(tm3 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(tm3 AS json) -> unknown unsupported-expression: CAST(tm3 AS json): a conversion to this type is not modelled yet.
 CAST(tm3 AS varchar) -> varchar(30) string {length<=30}
@@ -856,7 +856,7 @@ CAST(dtm AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(dtm AS uniqueidentifier) -> unknown unsupported-expression: CAST(dtm AS uniqueidentifier): SQL Server refuses to convert datetime to uniqueidentifier.
 CAST(dtm AS binary(4)) -> binary(4) bytes {length=4}
 CAST(dtm AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(dtm AS xml) -> unknown unsupported-expression: CAST(dtm AS xml): a conversion to this type is not modelled yet.
+CAST(dtm AS xml) -> unknown unsupported-expression: CAST(dtm AS xml): SQL Server refuses to convert datetime to xml.
 CAST(dtm AS sql_variant) -> unknown unsupported-expression: CAST(dtm AS sql_variant): a conversion to this type is not modelled yet.
 CAST(dtm AS json) -> unknown unsupported-expression: CAST(dtm AS json): a conversion to this type is not modelled yet.
 CAST(dtm AS varchar) -> varchar(30) string {length<=30}
@@ -892,7 +892,7 @@ CAST(dt23 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(dt23 AS uniqueidentifier) -> unknown unsupported-expression: CAST(dt23 AS uniqueidentifier): SQL Server refuses to convert datetime2(3) to uniqueidentifier.
 CAST(dt23 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(dt23 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(dt23 AS xml) -> unknown unsupported-expression: CAST(dt23 AS xml): a conversion to this type is not modelled yet.
+CAST(dt23 AS xml) -> unknown unsupported-expression: CAST(dt23 AS xml): SQL Server refuses to convert datetime2(3) to xml.
 CAST(dt23 AS sql_variant) -> unknown unsupported-expression: CAST(dt23 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(dt23 AS json) -> unknown unsupported-expression: CAST(dt23 AS json): a conversion to this type is not modelled yet.
 CAST(dt23 AS varchar) -> varchar(30) string {length<=30}
@@ -928,7 +928,7 @@ CAST(sdt AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(sdt AS uniqueidentifier) -> unknown unsupported-expression: CAST(sdt AS uniqueidentifier): SQL Server refuses to convert smalldatetime to uniqueidentifier.
 CAST(sdt AS binary(4)) -> binary(4) bytes {length=4}
 CAST(sdt AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(sdt AS xml) -> unknown unsupported-expression: CAST(sdt AS xml): a conversion to this type is not modelled yet.
+CAST(sdt AS xml) -> unknown unsupported-expression: CAST(sdt AS xml): SQL Server refuses to convert smalldatetime to xml.
 CAST(sdt AS sql_variant) -> unknown unsupported-expression: CAST(sdt AS sql_variant): a conversion to this type is not modelled yet.
 CAST(sdt AS json) -> unknown unsupported-expression: CAST(sdt AS json): a conversion to this type is not modelled yet.
 CAST(sdt AS varchar) -> varchar(30) string {length<=30}
@@ -964,7 +964,7 @@ CAST(dto3 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset
 CAST(dto3 AS uniqueidentifier) -> unknown unsupported-expression: CAST(dto3 AS uniqueidentifier): SQL Server refuses to convert datetimeoffset(3) to uniqueidentifier.
 CAST(dto3 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(dto3 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(dto3 AS xml) -> unknown unsupported-expression: CAST(dto3 AS xml): a conversion to this type is not modelled yet.
+CAST(dto3 AS xml) -> unknown unsupported-expression: CAST(dto3 AS xml): SQL Server refuses to convert datetimeoffset(3) to xml.
 CAST(dto3 AS sql_variant) -> unknown unsupported-expression: CAST(dto3 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(dto3 AS json) -> unknown unsupported-expression: CAST(dto3 AS json): a conversion to this type is not modelled yet.
 CAST(dto3 AS varchar) -> varchar(30) string {length<=30}
@@ -1000,7 +1000,7 @@ CAST(u AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(u AS dateti
 CAST(u AS uniqueidentifier) -> uniqueidentifier uuid
 CAST(u AS binary(4)) -> binary(4) bytes {length=4}
 CAST(u AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(u AS xml) -> unknown unsupported-expression: CAST(u AS xml): a conversion to this type is not modelled yet.
+CAST(u AS xml) -> unknown unsupported-expression: CAST(u AS xml): SQL Server refuses to convert uniqueidentifier to xml.
 CAST(u AS sql_variant) -> unknown unsupported-expression: CAST(u AS sql_variant): a conversion to this type is not modelled yet.
 CAST(u AS json) -> unknown unsupported-expression: CAST(u AS json): a conversion to this type is not modelled yet.
 CAST(u AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -1036,7 +1036,7 @@ CAST(bin4 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithm
 CAST(bin4 AS uniqueidentifier) -> uniqueidentifier uuid
 CAST(bin4 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(bin4 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(bin4 AS xml) -> unknown unsupported-expression: CAST(bin4 AS xml): a conversion to this type is not modelled yet.
+CAST(bin4 AS xml) -> xml xml
 CAST(bin4 AS sql_variant) -> unknown unsupported-expression: CAST(bin4 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(bin4 AS json) -> unknown unsupported-expression: CAST(bin4 AS json): a conversion to this type is not modelled yet.
 CAST(bin4 AS varchar) -> varchar(30) string {length<=30}
@@ -1072,48 +1072,48 @@ CAST(vb10 AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithm
 CAST(vb10 AS uniqueidentifier) -> uniqueidentifier uuid
 CAST(vb10 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(vb10 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(vb10 AS xml) -> unknown unsupported-expression: CAST(vb10 AS xml): a conversion to this type is not modelled yet.
+CAST(vb10 AS xml) -> xml xml
 CAST(vb10 AS sql_variant) -> unknown unsupported-expression: CAST(vb10 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(vb10 AS json) -> unknown unsupported-expression: CAST(vb10 AS json): a conversion to this type is not modelled yet.
 CAST(vb10 AS varchar) -> varchar(30) string {length<=30}
 CAST(vb10 AS nvarchar) -> nvarchar(30) string {length<=30}
 CAST(vb10 AS varbinary) -> varbinary(30) bytes {length<=30}
-CAST(x AS bit) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS tinyint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS smallint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS int) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS bigint) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS decimal(5,2)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS decimal(38,0)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS decimal(38,38)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS numeric(10,2)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS money) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS smallmoney) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS float) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS real) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS float(24)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS float(25)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS char(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS varchar(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS varchar(max)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS nchar(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS nvarchar(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS nvarchar(max)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS date) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS time(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS datetime) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS datetime2(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS smalldatetime) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS uniqueidentifier) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS binary(4)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS varbinary(10)) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS xml) -> unknown unsupported-expression: CAST(x AS xml): a conversion to this type is not modelled yet.
+CAST(x AS bit) -> unknown unsupported-expression: CAST(x AS bit): SQL Server refuses to convert xml to bit.
+CAST(x AS tinyint) -> unknown unsupported-expression: CAST(x AS tinyint): SQL Server refuses to convert xml to tinyint.
+CAST(x AS smallint) -> unknown unsupported-expression: CAST(x AS smallint): SQL Server refuses to convert xml to smallint.
+CAST(x AS int) -> unknown unsupported-expression: CAST(x AS int): SQL Server refuses to convert xml to int.
+CAST(x AS bigint) -> unknown unsupported-expression: CAST(x AS bigint): SQL Server refuses to convert xml to bigint.
+CAST(x AS decimal(5,2)) -> unknown unsupported-expression: CAST(x AS decimal(5,2)): SQL Server refuses to convert xml to decimal(5,2).
+CAST(x AS decimal(38,0)) -> unknown unsupported-expression: CAST(x AS decimal(38,0)): SQL Server refuses to convert xml to decimal(38,0).
+CAST(x AS decimal(38,38)) -> unknown unsupported-expression: CAST(x AS decimal(38,38)): SQL Server refuses to convert xml to decimal(38,38).
+CAST(x AS numeric(10,2)) -> unknown unsupported-expression: CAST(x AS numeric(10,2)): SQL Server refuses to convert xml to numeric(10,2).
+CAST(x AS money) -> unknown unsupported-expression: CAST(x AS money): SQL Server refuses to convert xml to money.
+CAST(x AS smallmoney) -> unknown unsupported-expression: CAST(x AS smallmoney): SQL Server refuses to convert xml to smallmoney.
+CAST(x AS float) -> unknown unsupported-expression: CAST(x AS float): SQL Server refuses to convert xml to float.
+CAST(x AS real) -> unknown unsupported-expression: CAST(x AS real): SQL Server refuses to convert xml to real.
+CAST(x AS float(24)) -> unknown unsupported-expression: CAST(x AS float(24)): SQL Server refuses to convert xml to real.
+CAST(x AS float(25)) -> unknown unsupported-expression: CAST(x AS float(25)): SQL Server refuses to convert xml to float.
+CAST(x AS char(3)) -> char(3) string {length=3}
+CAST(x AS varchar(10)) -> varchar(10) string {length<=10}
+CAST(x AS varchar(max)) -> varchar(max) string
+CAST(x AS nchar(3)) -> nchar(3) string {length<=3}
+CAST(x AS nvarchar(10)) -> nvarchar(10) string {length<=10}
+CAST(x AS nvarchar(max)) -> nvarchar(max) string
+CAST(x AS date) -> unknown unsupported-expression: CAST(x AS date): SQL Server refuses to convert xml to date.
+CAST(x AS time(3)) -> unknown unsupported-expression: CAST(x AS time(3)): SQL Server refuses to convert xml to time(3).
+CAST(x AS datetime) -> unknown unsupported-expression: CAST(x AS datetime): SQL Server refuses to convert xml to datetime.
+CAST(x AS datetime2(3)) -> unknown unsupported-expression: CAST(x AS datetime2(3)): SQL Server refuses to convert xml to datetime2(3).
+CAST(x AS smalldatetime) -> unknown unsupported-expression: CAST(x AS smalldatetime): SQL Server refuses to convert xml to smalldatetime.
+CAST(x AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(x AS datetimeoffset(3)): SQL Server refuses to convert xml to datetimeoffset(3).
+CAST(x AS uniqueidentifier) -> unknown unsupported-expression: CAST(x AS uniqueidentifier): SQL Server refuses to convert xml to uniqueidentifier.
+CAST(x AS binary(4)) -> binary(4) bytes {length=4}
+CAST(x AS varbinary(10)) -> varbinary(10) bytes {length<=10}
+CAST(x AS xml) -> xml xml
 CAST(x AS sql_variant) -> unknown unsupported-expression: CAST(x AS sql_variant): a conversion to this type is not modelled yet.
-CAST(x AS json) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS varchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS nvarchar) -> unknown unsupported-sql-type: The type xml is not modelled yet.
-CAST(x AS varbinary) -> unknown unsupported-sql-type: The type xml is not modelled yet.
+CAST(x AS json) -> unknown unsupported-expression: CAST(x AS json): a conversion to this type is not modelled yet.
+CAST(x AS varchar) -> varchar(30) string {length<=30}
+CAST(x AS nvarchar) -> nvarchar(30) string {length<=30}
+CAST(x AS varbinary) -> varbinary(30) bytes {length<=30}
 CAST(sv AS bit) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS tinyint) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS smallint) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1144,7 +1144,7 @@ CAST(sv AS datetimeoffset(3)) -> unknown unsupported-sql-type: The type sql_vari
 CAST(sv AS uniqueidentifier) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS binary(4)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS varbinary(10)) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
-CAST(sv AS xml) -> unknown unsupported-expression: CAST(sv AS xml): a conversion to this type is not modelled yet.
+CAST(sv AS xml) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS sql_variant) -> unknown unsupported-expression: CAST(sv AS sql_variant): a conversion to this type is not modelled yet.
 CAST(sv AS json) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
 CAST(sv AS varchar) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
@@ -1180,7 +1180,7 @@ CAST(j AS datetimeoffset(3)) -> unknown (no unknown recorded)
 CAST(j AS uniqueidentifier) -> unknown (no unknown recorded)
 CAST(j AS binary(4)) -> unknown (no unknown recorded)
 CAST(j AS varbinary(10)) -> unknown (no unknown recorded)
-CAST(j AS xml) -> unknown unsupported-expression: CAST(j AS xml): a conversion to this type is not modelled yet.
+CAST(j AS xml) -> unknown (no unknown recorded)
 CAST(j AS sql_variant) -> unknown unsupported-expression: CAST(j AS sql_variant): a conversion to this type is not modelled yet.
 CAST(j AS json) -> unknown (no unknown recorded)
 CAST(j AS varchar) -> unknown (no unknown recorded)
@@ -1216,7 +1216,7 @@ CAST(1 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(1 AS dateti
 CAST(1 AS uniqueidentifier) -> unknown unsupported-expression: CAST(1 AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(1 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(1 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(1 AS xml) -> unknown unsupported-expression: CAST(1 AS xml): a conversion to this type is not modelled yet.
+CAST(1 AS xml) -> unknown unsupported-expression: CAST(1 AS xml): SQL Server refuses to convert int to xml.
 CAST(1 AS sql_variant) -> unknown unsupported-expression: CAST(1 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(1 AS json) -> unknown unsupported-expression: CAST(1 AS json): a conversion to this type is not modelled yet.
 CAST(1 AS varchar) -> varchar(30) string {length<=30}
@@ -1252,7 +1252,7 @@ CAST(12345 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(12345 A
 CAST(12345 AS uniqueidentifier) -> unknown unsupported-expression: CAST(12345 AS uniqueidentifier): SQL Server refuses to convert int to uniqueidentifier.
 CAST(12345 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(12345 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(12345 AS xml) -> unknown unsupported-expression: CAST(12345 AS xml): a conversion to this type is not modelled yet.
+CAST(12345 AS xml) -> unknown unsupported-expression: CAST(12345 AS xml): SQL Server refuses to convert int to xml.
 CAST(12345 AS sql_variant) -> unknown unsupported-expression: CAST(12345 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(12345 AS json) -> unknown unsupported-expression: CAST(12345 AS json): a conversion to this type is not modelled yet.
 CAST(12345 AS varchar) -> varchar(30) string {length<=30}
@@ -1288,7 +1288,7 @@ CAST(2.50 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(2.50 AS 
 CAST(2.50 AS uniqueidentifier) -> unknown unsupported-expression: CAST(2.50 AS uniqueidentifier): SQL Server refuses to convert numeric(3,2) to uniqueidentifier.
 CAST(2.50 AS binary(4)) -> binary(4) bytes {length=4}
 CAST(2.50 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(2.50 AS xml) -> unknown unsupported-expression: CAST(2.50 AS xml): a conversion to this type is not modelled yet.
+CAST(2.50 AS xml) -> unknown unsupported-expression: CAST(2.50 AS xml): SQL Server refuses to convert numeric(3,2) to xml.
 CAST(2.50 AS sql_variant) -> unknown unsupported-expression: CAST(2.50 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(2.50 AS json) -> unknown unsupported-expression: CAST(2.50 AS json): a conversion to this type is not modelled yet.
 CAST(2.50 AS varchar) -> varchar(30) string {length<=30}
@@ -1324,7 +1324,7 @@ CAST('ab' AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arithm
 CAST('ab' AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST('ab' AS binary(4)) -> binary(4) bytes {length=4}
 CAST('ab' AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST('ab' AS xml) -> unknown unsupported-expression: CAST('ab' AS xml): a conversion to this type is not modelled yet.
+CAST('ab' AS xml) -> xml xml
 CAST('ab' AS sql_variant) -> unknown unsupported-expression: CAST('ab' AS sql_variant): a conversion to this type is not modelled yet.
 CAST('ab' AS json) -> unknown unsupported-expression: CAST('ab' AS json): a conversion to this type is not modelled yet.
 CAST('ab' AS varchar) -> varchar(30) string {length<=30}
@@ -1360,7 +1360,7 @@ CAST(N'ab' AS datetimeoffset(3)) -> datetimeoffset(3) datetime/offset null:arith
 CAST(N'ab' AS uniqueidentifier) -> uniqueidentifier uuid null:arithmetic-overflow
 CAST(N'ab' AS binary(4)) -> binary(4) bytes {length=4}
 CAST(N'ab' AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST(N'ab' AS xml) -> unknown unsupported-expression: CAST(N'ab' AS xml): a conversion to this type is not modelled yet.
+CAST(N'ab' AS xml) -> xml xml
 CAST(N'ab' AS sql_variant) -> unknown unsupported-expression: CAST(N'ab' AS sql_variant): a conversion to this type is not modelled yet.
 CAST(N'ab' AS json) -> unknown unsupported-expression: CAST(N'ab' AS json): a conversion to this type is not modelled yet.
 CAST(N'ab' AS varchar) -> varchar(30) string {length<=30}
@@ -1396,7 +1396,7 @@ CAST(1e0 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST(1e0 AS da
 CAST(1e0 AS uniqueidentifier) -> unknown unsupported-expression: CAST(1e0 AS uniqueidentifier): SQL Server refuses to convert float to uniqueidentifier.
 CAST(1e0 AS binary(4)) -> binary(4) bytes null:arithmetic-overflow {length=4}
 CAST(1e0 AS varbinary(10)) -> varbinary(10) bytes null:arithmetic-overflow {length<=10}
-CAST(1e0 AS xml) -> unknown unsupported-expression: CAST(1e0 AS xml): a conversion to this type is not modelled yet.
+CAST(1e0 AS xml) -> unknown unsupported-expression: CAST(1e0 AS xml): SQL Server refuses to convert float to xml.
 CAST(1e0 AS sql_variant) -> unknown unsupported-expression: CAST(1e0 AS sql_variant): a conversion to this type is not modelled yet.
 CAST(1e0 AS json) -> unknown unsupported-expression: CAST(1e0 AS json): a conversion to this type is not modelled yet.
 CAST(1e0 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
@@ -1432,7 +1432,7 @@ CAST($1 AS datetimeoffset(3)) -> unknown unsupported-expression: CAST($1 AS date
 CAST($1 AS uniqueidentifier) -> unknown unsupported-expression: CAST($1 AS uniqueidentifier): SQL Server refuses to convert money to uniqueidentifier.
 CAST($1 AS binary(4)) -> binary(4) bytes {length=4}
 CAST($1 AS varbinary(10)) -> varbinary(10) bytes {length<=10}
-CAST($1 AS xml) -> unknown unsupported-expression: CAST($1 AS xml): a conversion to this type is not modelled yet.
+CAST($1 AS xml) -> unknown unsupported-expression: CAST($1 AS xml): SQL Server refuses to convert money to xml.
 CAST($1 AS sql_variant) -> unknown unsupported-expression: CAST($1 AS sql_variant): a conversion to this type is not modelled yet.
 CAST($1 AS json) -> unknown unsupported-expression: CAST($1 AS json): a conversion to this type is not modelled yet.
 CAST($1 AS varchar) -> varchar(30) string null:arithmetic-overflow {length<=30}
