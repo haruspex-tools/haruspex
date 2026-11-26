@@ -261,6 +261,79 @@ public class InitTests
             StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A query script outside the source, in a folder that can't be named since the database's own scripts are below it, is named as
+    /// itself: left out, as a folder of queries is, with the <c>queries</c> entry that would type it.
+    /// </summary>
+    [Fact]
+    public void A_query_script_left_out_whose_folder_holds_the_database_is_named_as_itself()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("db/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("q.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("r.sql", "SELECT p.id FROM garden.plant AS p WHERE p.id = @id;");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": \"db\",", Config(folder), StringComparison.Ordinal);
+        Assert.Equal(
+            """
+            haruspex: wrote haruspex.json, which reads db and types every procedure in garden, written to generated.
+            Next, run haruspex generate. Then narrow each schema's "include" to the procedures the application calls.
+            Keep generated out of your formatter (in .prettierignore, or as "!generated" after "**" in Biome's files.includes): haruspex check fails on a file a formatter restyled.
+            q.sql and r.sql add nothing to the database, so the source leaves them out. If they are the application's query files, add "queries": ["q.sql", "r.sql"] to type them.
+
+            """,
+            output.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// A query script whose folder holds a database script further down is read as the database's, since the folder can't be left
+    /// out: it is named, with the script below that holds it in, so that it isn't passed over without a word.
+    /// </summary>
+    [Fact]
+    public void A_query_script_read_as_the_database_s_names_the_database_script_below_its_folder()
+    {
+        using var folder = new TempDirectory();
+        folder.File("db/t.sql", "CREATE TABLE garden.plant (id int NOT NULL, height int NOT NULL CONSTRAINT ck_height CHECK (height > 0));");
+        folder.File("db/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/q.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/legacy/fix.sql", "ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
+        Assert.EndsWith(
+            "queries/q.sql adds nothing to the database, but . holds it, so it is read as the database's script and not typed. Its folder can't be left out, since queries/legacy/fix.sql, below it, adds to the database.\n",
+            output.ReplaceLineEndings("\n"),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>When the source is a list of folders, such scripts are named with the listed folder that holds them.</summary>
+    [Fact]
+    public void Query_scripts_read_as_the_database_s_in_a_listed_folder_are_named_with_it()
+    {
+        using var folder = new TempDirectory();
+        folder.File("tables/t.sql", "CREATE TABLE garden.plant (id int NOT NULL, height int NOT NULL CONSTRAINT ck_height CHECK (height > 0));");
+        folder.File("tables/reports/r.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("procedures/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/a.sql", "SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/b.sql", "SELECT p.height FROM garden.plant AS p;");
+        folder.File("queries/legacy/fix.sql", "ALTER TABLE garden.plant NOCHECK CONSTRAINT ck_height;");
+
+        var (exitCode, output, error) = Run(folder);
+
+        Assert.Equal((0, ""), (exitCode, error));
+        Assert.Contains("\"source\": [\"procedures\", \"queries\", \"tables\"],", Config(folder), StringComparison.Ordinal);
+        Assert.EndsWith(
+            "queries/a.sql and queries/b.sql add nothing to the database, but queries holds them, so they are read as the database's scripts and not typed. Their folder can't be left out, since queries/legacy/fix.sql, below it, adds to the database.\n",
+            output.ReplaceLineEndings("\n"),
+            StringComparison.Ordinal);
+    }
+
     /// <summary>A script that doesn't parse stays in the source too, so that its error is said, not passed over.</summary>
     [Fact]
     public void A_script_that_does_not_parse_stays_in_the_source_and_its_error_is_said()
