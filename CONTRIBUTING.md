@@ -365,10 +365,20 @@ BlueOak, WTFPL, MPL-2.0 or Apache-2.0 for DOMPurify), except two that are not or
 dictionary of common misspellings is CC BY-SA 4.0, and `elkjs`, a layout engine Mermaid includes but the check
 never calls, is EPL-2.0. Both would matter only to someone redistributing them, which this repository does not.
 
-The corpora are data, not dependencies. The vendored ones in `tests/corpus` are Microsoft's sample databases under the MIT
-licence, whose `license.txt` is kept beside them. The fetched ones are never in the repository: each is under its own
-licence, named in `tests/corpus/fetched.json`, and only counts made from it are committed. Nothing builds or ships any of
-them.
+The corpora are data, not dependencies. The fetched ones are never in the repository: each is under its own licence, named
+in `tests/corpus/fetched.json`, and only counts made from it are committed. Every file in the repository that isn't
+haruspex's own is in this list, with its licence beside it and a record of where it came from. A new one is added to the list
+with both.
+
+| Where | What | Licence | Where it came from |
+|---|---|---|---|
+| `tests/corpus/sql-server-samples` | Two of Microsoft's sample databases, the vendored corpora | MIT, `license.txt` beside them | `tests/corpus/manifest.json`: the commit and each file's hash ([its README](tests/corpus/README.md)) |
+| `tests/fixtures/adventure-works`, `tests/fixtures/wide-world-importers` | A few tables of those samples, which the fixtures deploy | MIT, `license.txt` in each | each table's script names the sample's file and what was left out |
+| `tests/dacpacs/corpus` | Two DACPACs built from WideWorldImporters, which hold its scripts | MIT, `license.txt` beside them | `build.sh corpus` and `build.sh ssdt` ([its README](tests/dacpacs/README.md)) |
+| `tests/sarif` | The SARIF 2.1.0 schema the SARIF output is tested against | MIT, `LICENSE` beside it | [its README](tests/sarif/README.md): the commit, the path and the hash |
+| `packaging/licenses` | The licence texts of the libraries the binary ships | each its own | [its README](packaging/licenses/README.md): the commit of each |
+
+Nothing builds or ships any of them, except the licence texts, which go with the binary.
 
 ScriptDom (MIT) is the only SQL dependency. **DacFx must not be added**: its licence requires anyone who
 redistributes it to indemnify Microsoft, which no maintainer of a free tool should take on. DACPACs will

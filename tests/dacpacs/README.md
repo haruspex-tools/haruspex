@@ -27,6 +27,10 @@ your applications"), and they are rebuilt only when a test needs a new one.
 | `versions/kiln-clr-extract.dacpac` | A CLR scalar function and procedure (`projects/kiln-clr`, compiled for .NET Framework 4.8), and a procedure that calls the function, deployed by the script `build.sh clr` writes and extracted, since a project's build on Linux refused a .NET Framework assembly (SQL70557) | SqlPackage 170.2.70, `/a:Extract` |
 | `versions/options-off.dacpac` | `projects/options-off`: every database option off, compatibility level 150 and a collation of its own, which is what a package writes when each differs from DacFx's default | `Microsoft.Build.Sql` 2.3.0, SQL Server 2022's provider |
 
+The two packages in `corpus/` are built from Microsoft's WideWorldImporters sample, vendored in
+[`tests/corpus`](../corpus/README.md), and hold its scripts: they are under its MIT licence, whose notice is in
+`corpus/license.txt`, a copy of `tests/corpus/sql-server-samples/license.txt`.
+
 `harbour`, `winery` and `cooperage` also reference `master.dacpac`, from the `Microsoft.SqlServer.Dacpacs.Master` package or
 SSDT's own, but it is not here: its
 licence lets it be used to develop and test, and distributed only under terms a public repository can't meet. Its absence

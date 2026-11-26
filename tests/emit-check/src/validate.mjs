@@ -4,8 +4,9 @@
 // document doesn't validate or the schema doesn't compile.
 //
 // Ajv runs on draft 2020-12, the draft both schemas name, with ajv-formats asserting each format. Strict mode is on for
-// haruspex's own schema, so a keyword it doesn't know fails; the SARIF schema is OASIS's, written for a laxer reader (it gives
-// "type" beside keywords for another type), so it is compiled without strict mode, which changes nothing it accepts.
+// haruspex's own schema, so a keyword it doesn't know fails; the SARIF schema is the SARIF SDK's copy of OASIS's, moved to
+// draft 2020-12 (OASIS publishes it in older drafts; tests/sarif/README.md says which commit), and written for a laxer reader (it
+// gives "type" beside keywords for another type), so it is compiled without strict mode, which changes nothing it accepts.
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import Ajv2020 from 'ajv/dist/2020.js'
