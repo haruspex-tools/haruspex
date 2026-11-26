@@ -659,7 +659,7 @@ public static partial class IrValidator
         && n >= range.Min && n <= range.Max;
 
     /// <summary>
-    /// The string forms the IR's kinds claim in JSON (src/Haruspex.Ir/README.md, "Scalars in JSON"). Any number of
+    /// The string forms the IR's kinds claim in JSON (src/Haruspex.SqlServer.Inference/README.md, "Scalars in JSON"). Any number of
     /// fractional digits is accepted, because the IR does not claim a precision; the exact strings SQL Server writes
     /// are pinned by ForJsonObservationTests.
     /// </summary>

@@ -187,6 +187,8 @@ internal static class MssqlPrinter
             .Append("// checking what goes in and what comes back. They belong on the server, which holds the connection and its credentials.\n");
         if (IrSourceText.Baseline(document.Source) is { } combined)
             output.Append("// ").Append(combined).Append('\n');
+        if (IrSourceText.Builds(document.Source) is { } builds)
+            output.Append("// ").Append(builds).Append('\n');
         if (options.ServerOnly)
             output.Append("import 'server-only'\n");
         output.Append("import sql from 'mssql'\n");

@@ -6,7 +6,7 @@ namespace Haruspex.Emit.JsonSchema.Lowering;
 /// <summary>
 /// A scalar as JSON writes it, with its origins first in its description. Every value is described in its JSON form, as SQL
 /// Server's <c>FOR JSON</c> writes it, in a rowset as much as in a JSON result (decision 0051): what a value looks like is the
-/// front end's to say (the IR's README, "Logical kinds"), and the SQL Server front end's README lists it ("Scalars in JSON").
+/// front end's to say (the IR's README, "Logical kinds"), and the SQL Server front end's README ("Scalars in JSON") lists it.
 /// </summary>
 /// <remarks>
 /// Dates, times and GUIDs are strings in fixed formats. Each has a <c>pattern</c>, which every validator checks, and where an

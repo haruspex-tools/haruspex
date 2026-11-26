@@ -9,8 +9,8 @@ have names: *result types* against exceptions, *railway-oriented programming* an
 
 ## A run is a pipeline of steps
 
-`haruspex generate` is eight steps, each a method short enough to read at once, each taking what the one before it gave.
-The first six are `ModuleRun`'s, shared with `haruspex check`, and end with the module in memory; the last two are
+`haruspex generate` is nine steps, each a method short enough to read at once, each taking what the one before it gave.
+The first seven are `ModuleRun`'s, shared with `haruspex check`, and end with the module in memory; the last two are
 `Generate`'s. Then a report prints what the run found:
 
 ```mermaid
@@ -19,7 +19,8 @@ flowchart LR
     settle --> project["read the project"]
     project --> select["select"]
     select --> infer["infer"]
-    infer --> emit["emit"]
+    infer --> combine["combine with a baseline"]
+    combine --> emit["emit"]
     emit --> write["write"]
     write --> noted["note the unknowns"]
     noted --> report["report"]
@@ -31,12 +32,16 @@ flowchart LR
 - **Settle** works out what the run is asked: it reads the config file (named, or `haruspex.json` in the working folder
   or the nearest above it), then settles the folder to read, the folder to write and the `--include` patterns, the
   command line over the config file.
-- **ReadProject** reads every `.sql` file into the model.
+- **ReadProject** reads the source into the model: a folder of `.sql` files or several, a `.sqlproj`, evaluated in part as
+  its build reads it (the rest reported), or a DACPAC, with the packages each refers to.
 - **Select** picks the procedures to type, and finds and reads the query files `queries` names (`QuerySelection`,
   `QueryFileReader`), reporting what is wrong with both at once.
 - **Infer** infers their results, the query files' too, and applies the config file: overrides, declared results, names.
-- **Emit** writes what the config file's `emit` names, in memory: the Zod module, a JSON Schema document, or both. When the
-  config file has `split`, it first puts each object in its module (`ModuleAssignment`), and each emitter writes a file per
+- **Combined**, when the run names a baseline (`--baseline`, or `baseline` in the config file), reads it and combines the
+  document with it, so that the module's types work against both databases ("Generating against a baseline", below).
+  Without one, it hands the document on as it is.
+- **Emit** writes what the config file's `emit` names, in memory: any of the Zod module, a JSON Schema document and the
+  functions over the mssql driver, which import the Zod module's schemas. When the config file has `split`, it first puts each object in its module (`ModuleAssignment`), and each emitter writes a file per
   module and a shared one (`SplitModules`); the IR is still one document, and the steps after it see only more files.
 - **Write** puts the IR and each emitted file in place.
 - **Noted** lists each unknown in what was written, with its note.
@@ -85,16 +90,20 @@ Composing such functions by hand means testing each result before calling the ne
 on the success track the value goes on to the next step, and once on the failure track a value never comes back. In
 haruspex the switch is `Outcome.Then`: on a success it runs the next step on the value and puts what both found
 together; on a failure it doesn't run the next step, and carries the failure, with everything found so far, to the end.
-The functional literature calls it *monadic bind*. `ModuleRun.Emitted` and `Generate.Run` are the railway written down:
+The functional literature calls it *monadic bind*. `ModuleRun.Emitted` and `Generate.Run` are the railway written down,
+quoted from their files:
 
-```csharp
+```csharp src/Haruspex.Cli/ModuleRun.cs
 public static Outcome<EmittedModule> Emitted(RunRequest request, Progress progress) =>
     Settle(request)
-        .Then(plan => Said(progress, $"reading {DisplayPath.From(request.WorkingDirectory, plan.Source)}", plan).Then(ReadProject))
+        .Then(plan => Said(progress, Reading(request, plan), plan).Then(ReadProject))
         .Then(Select)
         .Then(selection => Said(progress, Inferring(selection), selection).Then(Infer))
+        .Then(inferred => Combined(request, progress, inferred))
         .Then(Emit);
+```
 
+```csharp src/Haruspex.Cli/Generate.cs
 var emitted = ModuleRun.Emitted(request, progress);
 var run = emitted.Then(module =>
 {
@@ -102,7 +111,7 @@ var run = emitted.Then(module =>
     progress.Step($"writing {DisplayPath.From(request.WorkingDirectory, module.Out)}");
     var earlier = EarlierOutput.Read(module);
     return Write(module)
-        .Select(paths => Tidied(module, paths, earlier.List))
+        .Select(paths => Tidied(module, paths, earlier.List, narrowed: request.Include.Count > 0))
         .Select(written => (Written: written, Since: SinceLastRun.Of(earlier, module, written.Unknowns)));
 });
 ```
@@ -251,11 +260,13 @@ list's entries: those this run writes again, compared as the file system compare
 is the same file), those that could reach outside the folder or name a file this run wrote (absolute, with `..`, with a character
 no name it writes has, or through a symbolic link), which are never removed, and the plain files left, which are. The new list is written last, so a run stopped before then leaves the old list,
 which still names every file to remove
-([decision 0091](../decisions/0091-generate-removes-only-the-files-its-list-names.md)).
+([decision 0091](../decisions/0091-generate-removes-only-the-files-its-list-names.md)). A run narrowed by `--include` is a
+look at part of the module, so it removes nothing: what it didn't write is carried onto the new list, for the next full run
+to remove or write again.
 
 ## Checking without writing
 
-`haruspex check` runs the same six steps and, where `generate` writes, compares: `Check.Run` is `ModuleRun.Emitted`, then
+`haruspex check` runs the same seven steps and, where `generate` writes, compares: `Check.Run` is `ModuleRun.Emitted`, then
 `ModuleRun.Notes`, then `Check.Compared`. Reuse is why the steps stop at a value, the module in memory, rather than at a file:
 a check that read the project differently from `generate` would compare two things that were never alike.
 

@@ -5,7 +5,7 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// What SQL Server does when a procedure calls another, observed and kept as tests: the rules that following
-/// <c>EXEC</c> in Haruspex.SqlServer.Inference rests on (its README.md, "Calls"). Where a callee's result sets arrive,
+/// <c>EXEC</c> rests on (Haruspex.SqlServer.Inference's README.md, "Calls"). Where a callee's result sets arrive,
 /// what a callee can do to its caller's temporary tables, what <c>INSERT … EXEC</c> accepts, how deep calls nest, and
 /// which procedure a name runs. Each test creates what it needs in a write session, rolled back, alone in the test
 /// database while it lasts. Observed on SQL Server 2025 RTM-CU10.

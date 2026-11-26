@@ -41,9 +41,9 @@ namespace Haruspex.SqlServer.Inference;
 /// reached, and the least one when the steps are monotone. A call
 /// of a function in the component gives a reference to its node rather than the node itself: its object, or the object
 /// items of its array (what FOR JSON PATH and <c>json_object</c> build), so that each step's shape is finite and the
-/// steps can settle. Any other result (a tuple, a record) is not named and so grows at each step. Nullability only
-/// grows (reasons are added, never removed), and a result goes from no information to a shape once, so a component of n
-/// functions settles within a few steps per function; at most <see cref="FixedPoint.MostPasses"/> are taken
+/// steps can settle. Any other result (a tuple, a record) is not named and so grows at each step. With monotone
+/// steps nullability only grows (reasons are added, never removed), and a result goes from no information to a shape once,
+/// so a component of n functions settles within a few steps per function; at most <see cref="FixedPoint.MostPasses"/> are taken
 /// (<see cref="FixedPoint.Iterate"/>). A component that has not settled by then, and a function whose result is still no
 /// information when it settles (every return calls itself again, so it never returns), is unknown
 /// (<c>unresolved-recursion</c>). The type does not say how deep a tree goes: SQL Server stops at 32 nested calls with

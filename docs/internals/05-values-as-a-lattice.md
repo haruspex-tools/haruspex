@@ -4,7 +4,7 @@ The inference never computes with values. It computes with descriptions of them,
 array of these objects, at least one", "unknown, because the shape depends on dynamic SQL". Each description says what the
 value's shape is, why it may be null, and what is known beyond its type (its facets). This chapter is about what can be
 done with such descriptions: telling whether two are the same, ordering them by how much they allow, and joining two into
-one that allows both. [Summaries and recursion](07-summaries-and-recursion.md) introduced the order and the join in a few
+one that allows both. [Summaries and recursion](07-summaries-and-recursion.md) uses the order and the join in a few
 lines; this chapter treats them properly.
 
 It has three parts: equality; the order and the join, built one lattice per fact; and why SQL Server's type rule for
@@ -213,9 +213,13 @@ still allows every real value.
 The **join** of two descriptions, a ⊔ b, is a description that allows everything either allows: what is known of a value
 that may come from either side. It is what holds where two paths of a body meet, where a column of a temporary table is
 written by two statements, and where a recursive CTE's members add rows to its anchor's. An ordered set in which any two
-elements have a join is a **join-semilattice**, and that is all the analysis needs; a **lattice** also has a meet,
-which nothing here uses. At the top is the description that allows anything, unknown, which claims nothing and so is
-always sound.
+elements have a join is a **join-semilattice**, and every fact the analysis tracks is one. A **lattice** also has a
+**meet**, a ⊓ b, the least precise description allowing only what both allow, and a few places take one where two things
+hold at once: a guard narrows a variable by what its condition proves ([chapter 6](06-flow-joins-and-fixed-points.md),
+"What a guard proves"), two bounds on one value give the tighter (`Bounds.Tighter`), and a module generated against a
+baseline accepts as a parameter only what both databases accept ([chapter 12](12-from-input-to-output.md), "Generating
+against a baseline"). At the top is the description that allows anything, unknown, which claims nothing and so is always
+sound.
 
 The literature asks the join to be the *least* upper bound, the most precise description that allows both. The joins
 here are upper bounds, and least where that is cheap, but not always: two JSON objects of the same keys are merged key

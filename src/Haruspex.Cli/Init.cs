@@ -44,7 +44,8 @@ internal static class Init
         var found = source is null ? Find(workingDirectory) : Given(source, workingDirectory);
         if (found is Failed<Chosen> failed)
             return Refused(error, [.. failed.Diagnostics]);
-        var (chosen, leftOut, readAsDatabase, parts, listed) = ((Succeeded<Chosen>)found).Value;
+        var picked = ((Succeeded<Chosen>)found).Value;
+        var (chosen, leftOut, readAsDatabase, parts, listed) = picked;
 
         // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
         // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
@@ -123,7 +124,46 @@ internal static class Init
 
             output.WriteLine(line);
         }
+
+        Stray(output, picked, workingDirectory, listed.Count > 0 ? null : shown, listed);
         return HaruspexCli.ExitCodes.Success;
+    }
+
+    /// <summary>
+    /// Names the query scripts no folder named takes in (<see cref="Chosen.StraysLeftOut"/>, <see cref="Chosen.StraysHeld"/>): those left out, with the <c>queries</c> entry that would
+    /// type them, and those read as the database's, by folder, with the database scripts below it that keep the folder in the source.
+    /// </summary>
+    /// <param name="output">Where it is said.</param>
+    /// <param name="strays">The choice, which holds them.</param>
+    /// <param name="workingDirectory">What the paths are shown relative to.</param>
+    /// <param name="shown">The source as shown, when it is one folder; null when it is a list.</param>
+    /// <param name="listed">The folders listed as the source, when it is a list.</param>
+    private static void Stray(TextWriter output, Chosen strays, string workingDirectory, string? shown, IReadOnlyList<string> listed)
+    {
+        string Shown(string path) => Visible.Of(DisplayPath.From(workingDirectory, path));
+
+        if (strays.StraysLeftOut.Count > 0)
+        {
+            var files = strays.StraysLeftOut.Select(Shown).ToList();
+            var one = files.Count == 1;
+            var queries = one ? Quoted(files[0]) : $"[{string.Join(", ", files.Select(Quoted))}]";
+            output.WriteLine(one
+                ? $"{files[0]} adds nothing to the database, so the source leaves it out. If it is the application's query file, add \"queries\": {queries} to type it."
+                : $"{EnglishList.Of(files)} add nothing to the database, so the source leaves them out. If they are the application's query files, add \"queries\": {queries} to type them.");
+        }
+
+        foreach (var held in strays.StraysHeld.GroupBy(FolderOf, StringComparer.Ordinal))
+        {
+            var files = held.Select(Shown).ToList();
+            var adding = strays.StraysHolding.Where(d => Below(d, held.Key)).Select(Shown).ToList();
+            var one = files.Count == 1;
+            var holder = shown ?? Shown(listed.First(l => Below(held.Key, l)));
+            output.WriteLine(
+                (one
+                    ? $"{files[0]} adds nothing to the database, but {holder} holds it, so it is read as the database's script and not typed. Its folder"
+                    : $"{EnglishList.Of(files)} add nothing to the database, but {holder} holds them, so they are read as the database's scripts and not typed. Their folder")
+                + $" can't be left out, since {EnglishList.Of(adding)}, below it, {(adding.Count == 1 ? "adds" : "add")} to the database.");
+        }
     }
 
     private static int Refused(TextWriter error, params Diagnostic[] diagnostics)
@@ -148,7 +188,20 @@ internal static class Init
     /// When the source would hold some and the database's scripts are all in folders directly below it, those folders: the source is
     /// then the list of them, which leaves the others out (docs/decisions/0127-a-source-may-be-several-folders.md).
     /// </param>
-    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, EquatableArray<string> Parts, EquatableArray<string> Folders);
+    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, EquatableArray<string> Parts, EquatableArray<string> Folders)
+    {
+        /// <summary>
+        /// The query scripts whose folder holds no database script but has one below it, which no folder of <see cref="LeftOut"/> or
+        /// <see cref="ReadAsDatabase"/> names, so each is named as itself: here those outside what the source reads, in ordinal order.
+        /// </summary>
+        public EquatableArray<string> StraysLeftOut { get; init; } = [];
+
+        /// <summary>Such query scripts that the source reads as the database's, in ordinal order.</summary>
+        public EquatableArray<string> StraysHeld { get; init; } = [];
+
+        /// <summary>The database scripts below the folders of <see cref="StraysHeld"/>, which keep them in the source, in ordinal order.</summary>
+        public EquatableArray<string> StraysHolding { get; init; } = [];
+    }
 
     /// <summary>The source the command line names, which must be there.</summary>
     private static Outcome<Chosen> Given(string source, string workingDirectory)
@@ -214,6 +267,25 @@ internal static class Init
 
         var source = Common([.. database.Select(Path.GetDirectoryName).OfType<string>()]);
 
+        // A query script whose folder holds no database script but has one below it: the folder can't be named, as below, so the
+        // script is named as itself, left out or held by what the source reads.
+        var stray = queries
+            .Where(q => FolderOf(q) is var f
+                && !database.Any(d => FolderOf(d) == f)
+                && database.Any(d => Below(d, f)))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        Chosen With(Chosen chosen, IReadOnlyList<string> read)
+        {
+            var held = stray.Where(q => read.Any(r => Below(q, r))).ToList();
+            return chosen with
+            {
+                StraysLeftOut = [.. stray.Where(q => !held.Contains(q, StringComparer.Ordinal))],
+                StraysHeld = [.. held],
+                StraysHolding = [.. database.Where(d => held.Any(q => Below(d, FolderOf(q)))).Order(StringComparer.Ordinal)],
+            };
+        }
+
         // Each query script's folder that holds no database script, at it or below, widened to the highest that holds none, below
         // the working directory and, for one inside the source, below the source; so queries/ is named once for every file in it
         // and its folders. A script beside the database's own, as a CREATE SCHEMA is beside its tables, is part of that folder.
@@ -226,7 +298,7 @@ internal static class Init
             .ToList();
         var inside = folders.Where(f => Below(f, source)).ToList();
         if (inside.Count == 0)
-            return new Chosen(source, [.. folders], [], [], []);
+            return With(new Chosen(source, [.. folders], [], [], []), [source]);
 
         // Where the database's scripts are, which made the source hold them: each folder directly below the source that holds some,
         // and each script directly in it. None of them is taken as the database's own, since which it is isn't known.
@@ -241,10 +313,10 @@ internal static class Init
         if (parts.All(p => !database.Contains(p, StringComparer.Ordinal)))
         {
             var within = inside.Where(f => parts.Any(p => Below(f, p))).ToList();
-            return new Chosen(source, [.. folders.Where(f => !within.Contains(f, StringComparer.Ordinal))], [.. within], [], [.. parts]);
+            return With(new Chosen(source, [.. folders.Where(f => !within.Contains(f, StringComparer.Ordinal))], [.. within], [], [.. parts]), parts);
         }
 
-        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], [.. parts], []);
+        return With(new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], [.. parts], []), [source]);
 
         static string Top(string path)
         {
@@ -297,6 +369,9 @@ internal static class Init
 
         return common;
     }
+
+    /// <summary>The folder a file found below the working directory is in; a path found there always has one.</summary>
+    private static string FolderOf(string file) => Path.GetDirectoryName(file) ?? file;
 
     /// <summary>Whether <paramref name="folder"/> is <paramref name="root"/> or below it.</summary>
     private static bool Below(string folder, string root) =>

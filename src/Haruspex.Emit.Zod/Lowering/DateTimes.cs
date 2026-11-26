@@ -61,7 +61,7 @@ internal static partial class DateTimes
     /// A date or time as <c>FOR JSON</c> and the JSON constructors write a value of <paramref name="scalar"/>'s type: seconds always,
     /// a fraction of exactly the type's scale or none (none when it is zero), three digits ending in 0, 3 or 7 for <c>datetime</c>,
     /// none for <c>smalldatetime</c>, and an offset only for <c>datetimeoffset</c>, a zero one as <c>Z</c> (observed:
-    /// <c>ForJsonObservationTests.For_json_writes_each_type_exactly_so</c>; the IR's README, "Scalars in JSON"). Null for a type not
+    /// <c>ForJsonObservationTests.For_json_writes_each_type_exactly_so</c>; the Inference README, "Scalars in JSON"). Null for a type not
     /// in the list, such as a declared result's, which has no SQL type and was written by whatever wrote its JSON.
     /// </summary>
     public static ZodExpression? Written(IrScalar scalar)

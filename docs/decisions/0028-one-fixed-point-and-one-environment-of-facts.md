@@ -32,5 +32,11 @@ was reached, a test that is never coarser than equality, a cap that jumps to the
 the least) and is now made once, in one place, and tested there
 (`FixedPointTests`). One environment of facts, with one lookup per question, cannot be read half.
 
+**Amended 26 Nov 2026.** The reason first said the argument was "monotone steps from below", which made a solver's
+soundness depend on monotone steps (audit finding F051); it was rewritten in place on 22 Nov 2026, and this note says so. A
+state the step gives back (or, for a widened loop, no more than it) is sound however it was reached, by induction on the
+number of passes or the depth of nesting; monotone steps make the iteration climb, so it
+can settle before the cap, and make what it settles on the least. The reason above says so.
+
 **See also:** [the guide, "Flow, joins and fixed points"](../internals/06-flow-joins-and-fixed-points.md);
 [decision 0012](0012-recursion-is-solved-as-a-fixed-point.md), on solving recursion as a fixed point.

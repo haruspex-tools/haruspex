@@ -36,8 +36,8 @@ flowchart LR
     document --> writer["IrJsonWriter"]
     writer --> json["haruspex.ir.json"]
     json --> reader["IrJsonReader"]
-    reader --> emitters["emitters: Zod, JSON Schema"]
-    schema["IrJsonSchema"] --> published["schemas/ir/0.29.schema.json"]
+    reader --> emitters["emitters: Zod, JSON Schema, mssql functions"]
+    schema["IrJsonSchema"] --> published["schemas/ir/0.32.schema.json"]
     document --> typeGraph["IrTypeGraph: references, cycles, order"]
     typeGraph --> emitters
 ```
@@ -45,7 +45,7 @@ flowchart LR
 ## Example
 
 ```csharp
-var document = IrInference.Infer(model, [new ObjectName("sales", "get_order")]);
+var document = IrInference.Infer(model, [new ObjectName("sales", "get_order")]).Value;
 File.WriteAllText("haruspex.ir.json", IrJsonWriter.Write(document));
 
 // Elsewhere, perhaps in another program: the same document, or an IrFormatException that names the path at fault.

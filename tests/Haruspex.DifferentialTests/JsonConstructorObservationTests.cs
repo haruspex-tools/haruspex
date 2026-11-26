@@ -252,7 +252,7 @@ public class JsonConstructorObservationTests(SqlServerFixture server)
     private const string ScalarList = "@d, @t3, @t7, @dt2, @dt2z, @dt20, @dto, @dto0, @dt, @dtz, @sdt, @g, @b1, @b0, @dec, @dec0, @m, @sm, @bi, @c, @nc";
 
     /// <summary>
-    /// The same strings FOR JSON writes (ForJsonObservationTests, the IR's README "Scalars in JSON"): a fraction of the
+    /// The same strings FOR JSON writes (ForJsonObservationTests, the Inference README, "Scalars in JSON"): a fraction of the
     /// type's scale, left out when zero; a zero offset as Z; a GUID in upper case; bit as true or false; decimals with
     /// their scale; bigint in full; char(n) padded.
     /// </summary>

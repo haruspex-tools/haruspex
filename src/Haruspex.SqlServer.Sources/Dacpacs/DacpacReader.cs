@@ -35,10 +35,10 @@ public static class DacpacReader
     {
         ArgumentNullException.ThrowIfNull(path);
         var diagnostics = new List<Diagnostic>();
-        if (DacPackage.Open(path, diagnostics) is not { } root)
-            return new DacpacReadResult(new SchemaDeclarations().ToModel(), null, [], [.. diagnostics]);
-
         var packages = new PackageSet([.. (searchFolders ?? []).Select(Path.GetFullPath)], diagnostics, builds ?? []);
+        if (packages.OpenRoot(path) is not { } root)
+            return new DacpacReadResult(new SchemaDeclarations().ToModel(), null, [], [.. diagnostics]) { Opened = [.. packages.Opened] };
+
         var own = new SchemaDeclarations();
         var others = new Dictionary<string, DacPackage>(StringComparer.OrdinalIgnoreCase);
         var unread = packages.ReadInto(own, [root], others);
@@ -53,6 +53,7 @@ public static class DacpacReader
         return new DacpacReadResult(model, new LoadedPackage(root.Name, root.Path, root.Sha256), [.. packages.References], [.. diagnostics])
         {
             ReadAsBuilds = [.. packages.ReadAsBuilds],
+            Opened = [.. packages.Opened],
         };
     }
 

@@ -54,7 +54,9 @@ Then, in about ten minutes:
 | 12 | [From input to output (the CLI)](12-from-input-to-output.md) | A run as a pipeline of named steps; results against exceptions, and the railway that composes them; why independent problems are all reported (the applicative side) while a step that needs a missing value isn't run (no cascades), as a compiler's error recovery does; stable codes; and writing two files without half an output. |
 
 Each project's README is its layer's chapter in brief: what the layer is for, its main types, an example, what it
-guarantees and what it deliberately doesn't do. They are listed in [docs/architecture.md](../architecture.md).
+guarantees and what it deliberately doesn't do. They are listed in [docs/architecture.md](../architecture.md), which says
+why two of them are longer: the Inference README is also the construct reference, and the IR README the format's
+specification and changelog.
 
 ## Reading further
 

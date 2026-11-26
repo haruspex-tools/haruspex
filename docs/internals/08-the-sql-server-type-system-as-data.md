@@ -83,7 +83,7 @@ rules that read it, in their own observation tests.
 When two values of different types meet (both sides of an `=`, the arguments of `COALESCE`, the branches of `CASE`, the
 queries of a `UNION`), SQL Server converts the one of lower precedence to the other's type. Microsoft lists the order, and
 `BuiltInType.Precedence` is a type's place in it. `BuiltInType.RanksAtLeast` compares two, and the server's type rule for a
-chain of values (`TypeChain.Of`, in [Values as a lattice](05-values-as-a-lattice.md), "Why the server's rule is not a join")
+chain of values (`TypeChain.Of`, in [Values as a lattice](05-values-as-a-lattice.md), "A knowledge join is not a type rule")
 reads it.
 
 The list is observed rather than trusted: `Of_two_types_that_convert_coalesce_gives_the_one_of_higher_precedence` asks the

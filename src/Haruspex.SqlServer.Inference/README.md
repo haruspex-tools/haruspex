@@ -38,8 +38,10 @@ flowchart LR
 
 ```csharp
 var model = SqlScriptFolder.Read("path/to/database").Model;
-var warnings = new List<Diagnostic>();
-var document = IrInference.Infer(model, [new ObjectName("shop", "get_category")], warnings: warnings);
+var inferred = IrInference.Infer(model, [new ObjectName("shop", "get_category")]);
+foreach (var warning in inferred.Diagnostics)
+    Console.Error.WriteLine(warning);   // what could not be checked, such as a write to a table the project doesn't define
+var document = inferred.Value;
 ```
 
 The guide's [first chapter](../../docs/internals/01-the-shape-of-the-problem.md) shows a procedure and what this gives for

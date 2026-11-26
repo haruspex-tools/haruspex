@@ -17,4 +17,9 @@ declaration from the writers it sees, but never assume one. Declarations of a co
 JSON would be a claim about every writer there ever was, which the source can't show. A declaration states it once, as a
 claim a person makes, checked at runtime like any other.
 
+**Amended** (21 Nov 2026, [decision 0093](0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)). The
+declarations are built: the config file's `columns` declares a column's JSON by a JSON Schema, and the declaration is part
+of the column's type, read wherever the column is. The decision stands; its last sentence, that declarations were not built
+yet, held until then.
+
 **In the code:** the Inference README, "JSON built here, traced"; the IR README, "Live JSON versus JSON text".

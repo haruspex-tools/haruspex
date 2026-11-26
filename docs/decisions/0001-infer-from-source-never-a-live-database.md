@@ -21,4 +21,10 @@ result itself, and a tool could also run each procedure and record what comes ba
 Server applies to both. Reading it gives claims that hold for every execution, not only for those seen. Reading schema and
 never data is also easy for a security or governance owner to approve, and works in CI with nothing but the repository.
 
+**Amended** (15 Nov 2026, decisions [0040](0040-a-dacpac-is-read-with-the-packages-of-its-database.md) and
+[0044](0044-a-project-file-is-evaluated-in-part-and-the-rest-reported.md)). "A folder of `.sql` files today" was the one
+source then. The source may also be a DACPAC, read with the packages of its database, or a database project's `.sqlproj`,
+evaluated in part (the part of MSBuild a database project's build reads, the rest reported), and since [decision 0127](0127-a-source-may-be-several-folders.md) several folders read as
+one database. Each is a file or a folder of the project, never a server.
+
 **See also:** [the guide, "The shape of the problem"](../internals/01-the-shape-of-the-problem.md).

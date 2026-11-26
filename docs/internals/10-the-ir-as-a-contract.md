@@ -17,8 +17,9 @@ end. The price is that the IR must be able to say everything every front end kno
 that belongs to only one of them.
 
 The same shape, on a smaller scale, is haruspex's. A front end reads one SQL dialect (SQL Server's, today) and infers what
-each procedure returns; an emitter writes one target (Zod, today). The IR between them is small and closed: a node per idea
-(a scalar, an array, a tuple, a record, a union, JSON held as text, a reference to a named type, a type the application
+each procedure returns; an emitter writes one target, and there are three: Zod, JSON Schema, and the database module's
+functions over the mssql driver ([Emitting code](11-emitting-code.md)). The IR between them is small and closed: a node
+per idea (a scalar, an array, a tuple, a record, a union, JSON held as text, a reference to a named type, a type the application
 already has, and an unknown), each fact with where it came from, and every unknown with its reason. It is not JSON
 Schema, which is an open validation language with no notion of a procedure, a result set or an unknown
 ([decision 0003](../decisions/0003-an-ir-of-its-own.md)).
@@ -29,7 +30,9 @@ flowchart LR
     pg["front end: another dialect"] -.-> file
     file --> reader["IrJsonReader"]
     reader --> zod["emitter: Zod"]
-    reader -.-> other["emitter: JSON Schema, a lint, a CI check"]
+    reader --> jsonSchema["emitter: JSON Schema"]
+    reader --> mssql["emitter: mssql functions"]
+    reader -.-> other["emitter: a lint, a CI check"]
     schema["schemas/ir/0.33.schema.json"] -.->|checks| file
 ```
 

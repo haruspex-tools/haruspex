@@ -75,8 +75,8 @@ internal static class JsonSchemaLowering
 
     /// <summary>
     /// The document's description: what made it, how to find a procedure's schema (<paramref name="what"/>), what every value is
-    /// described as, what the callers' sessions were declared to set, and once each, the shared facts its notes rest on
-    /// (<see cref="JsonSchemaCaveat"/>).
+    /// described as, what the callers' sessions were declared to set, which packages were declared builds, and once each, the shared
+    /// facts its notes rest on (<see cref="JsonSchemaCaveat"/>).
     /// </summary>
     private static IEnumerable<string> Description(IrSource source, string version, string what, IEnumerable<SchemaProperty> definitions)
     {
@@ -93,6 +93,9 @@ internal static class JsonSchemaLowering
             var options = source.Session.Select(o => $"{o.Name} {(o.On ? "on" : "off")}");
             yield return $"Its types assume that callers' sessions set {Origins.Listed([.. options])}, as the config file declares.";
         }
+
+        if (IrSourceText.Builds(source) is { } builds)
+            yield return builds;
 
         var schemas = definitions.SelectMany(d => Within(d.Schema)).ToList();
         var caveats = schemas.SelectMany(s => s.Notes).Select(n => n.Caveat).OfType<JsonSchemaCaveat>();

@@ -38,7 +38,7 @@ This table is the one copy: `ArchitectureTests` reads it (below), and every othe
 that handle SQL syntax; the IR and the emitters never see SQL; Model, Syntax, Semantics and Inference never read files,
 zips or XML; and Semantics never sees the IR.
 
-Why these lines:
+**Why these lines:**
 - **Model, Syntax and Sources are the "read a SQL Server project without DacFx" library** the SQL Server world lacks,
   useful to linters, diff tools and documentation generators. Nothing in them may lean on inference. They are the
   packable layers, with Diagnostics because `SourceLocation` is in their public API (and Collections, because the model's
@@ -78,12 +78,21 @@ Why these lines:
   branches and loops; that can't be done to a finished document. So Config reads the declaration into IR results, the CLI
   hands them to `IrInference.Infer` as `DeclaredResults`, as it hands it the model, and Inference never reads the config
   file. A procedure's own declaration is applied by Config to the document, like any override, and checked there against
-  what is inferred. A referenced DACPAC, later, is the same kind of input: facts about objects outside the project.
+  what is inferred.
+- **Referenced packages and projects are read by Sources, into the model.** A package or project of the same database adds
+  its objects to the one model, and one of another database is kept beside it as that database (`DatabaseModel.Databases`),
+  which a three-part name reads as its package declares it
+  ([decision 0040](decisions/0040-a-dacpac-is-read-with-the-packages-of-its-database.md),
+  [decision 0042](decisions/0042-a-table-of-another-database-is-read-as-its-package-declares-it.md)). So binding and
+  inference see one model whatever the source was, and never read a reference themselves.
 
 ## Each layer's README
 
 Each project has a README that is its layer's chapter in brief: what it is for, its main types, an example, what it
-guarantees and what it deliberately doesn't do.
+guarantees and what it deliberately doesn't do. Two are also more than that. The Inference README goes on, after its brief,
+to be the construct reference: a section per SQL construct, with each rule and the test that observed it, which
+[CONTRIBUTING.md](../CONTRIBUTING.md) ("Where a construct's tests are") and [the coverage page](coverage.md) point into. The
+IR README is also the format's specification, with what a reader and writer must do, and its changelog.
 
 - [`Haruspex.Collections`](../src/Haruspex.Collections/README.md)
 - [`Haruspex.Diagnostics`](../src/Haruspex.Diagnostics/README.md)
@@ -91,8 +100,8 @@ guarantees and what it deliberately doesn't do.
 - [`Haruspex.SqlServer.Syntax`](../src/Haruspex.SqlServer.Syntax/README.md)
 - [`Haruspex.SqlServer.Sources`](../src/Haruspex.SqlServer.Sources/README.md)
 - [`Haruspex.SqlServer.Semantics`](../src/Haruspex.SqlServer.Semantics/README.md)
-- [`Haruspex.SqlServer.Inference`](../src/Haruspex.SqlServer.Inference/README.md)
-- [`Haruspex.Ir`](../src/Haruspex.Ir/README.md), which also describes the IR's format
+- [`Haruspex.SqlServer.Inference`](../src/Haruspex.SqlServer.Inference/README.md), also the construct reference
+- [`Haruspex.Ir`](../src/Haruspex.Ir/README.md), also the IR format's specification and changelog
 - [`Haruspex.Config`](../src/Haruspex.Config/README.md)
 - [`Haruspex.Emit.Zod`](../src/Haruspex.Emit.Zod/README.md)
 - [`Haruspex.Emit.JsonSchema`](../src/Haruspex.Emit.JsonSchema/README.md)

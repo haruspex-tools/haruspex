@@ -271,8 +271,9 @@ columns at a statement depend on the path, so an eager binder would need its own
 ## What it deliberately doesn't do
 
 - **No values.** What a column holds is Inference's; binding needs only names.
-- **No guesses.** A name in another database, a synonym in FROM and a dynamic SQL string are unknowns with reasons, never
-  bound to whatever they might mean.
+- **No guesses.** A synonym reads what it stands for, and a three-part name through a database the project references
+  reads that database's table, as its package declares it. A name in a database the project doesn't hold, a four-part name
+  and a dynamic SQL string are unknowns with reasons, never bound to whatever they might mean.
 - **No catalogue lookups at run time.** Everything comes from the project's scripts, as everywhere in haruspex.
 
 ## Reading further
