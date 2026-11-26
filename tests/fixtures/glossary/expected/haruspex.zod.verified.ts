@@ -39,6 +39,23 @@ export type EntriesWithNotesParams = z.infer<typeof EntriesWithNotesParamsSchema
 export const EntriesWithNotesSchema = z.array(EntriesWithNotesRowSchema)
 export type EntriesWithNotes = z.infer<typeof EntriesWithNotesSchema>
 
+export const SearchArchiveRowSchema = z.object({
+  /** char(8) pads to 8 bytes and UTF-8 takes up to four a character, so the length is 2 to 8 code points. */
+  code: z.string().min(2).max(8),
+  rank: z.int32().nullable(),
+})
+export type SearchArchiveRow = z.infer<typeof SearchArchiveRowSchema>
+
+/** lex.search_archive: its parameters, checked before anything is sent. */
+export const SearchArchiveParamsSchema = z.strictObject({
+  query: z.string().refine((value) => value.length <= 400, { error: "More than 400 UTF-16 code units, which nvarchar(400) would cut short" }).nullable(),
+})
+export type SearchArchiveParams = z.infer<typeof SearchArchiveParamsSchema>
+
+/** lex.search_archive: returns rows. */
+export const SearchArchiveSchema = z.array(SearchArchiveRowSchema)
+export type SearchArchive = z.infer<typeof SearchArchiveSchema>
+
 export const SearchEntriesRowSchema = z.object({
   id: z.int32(),
   headword: z.string().max(100),

@@ -10,14 +10,15 @@ public partial class DacpacReaderTests
     private static readonly Lazy<DacpacReadResult> Glossary = new(() => DacpacReader.Read(Path.Combine(Packages, "fixtures", "glossary.dacpac")));
 
     [Theory]
-    [InlineData("entry", "pk_entry")]
-    [InlineData("note", "ux_note_code")]
-    [InlineData("label", "uq_label_ref")]
-    public void A_full_text_index_s_key_is_read_from_a_package_as_from_its_folder(string table, string key)
+    [InlineData("lex", "entry", "pk_entry")]
+    [InlineData("lex", "note", "ux_note_code")]
+    [InlineData("lex", "label", "uq_label_ref")]
+    [InlineData("archive", "entry", "pk_archive_entry")]
+    public void A_full_text_index_s_key_is_read_from_a_package_as_from_its_folder(string schema, string table, string key)
     {
         // KeyName names a constraint by its schema and name ([lex].[pk_entry]) and an index by its table's too
         // ([lex].[note].[ux_note_code]); either is the index's name.
-        var name = new ObjectName("lex", table);
+        var name = new ObjectName(schema, table);
         var folder = SqlScriptFolder.Read(Path.Combine(RepositoryPaths.Fixtures, "glossary", "database")).Model;
 
         Assert.Empty(Glossary.Value.Diagnostics);

@@ -17,6 +17,10 @@ public sealed partial class Binder
         var name = call.TableName;
         var at = At(call);
         UnresolvedTarget Unresolved(BindingProblemKind kind, string detail) => new(Problem(kind, detail, at));
+        // A temporary table can't have a full-text index (208, observed in
+        // A_full_text_key_is_a_unique_index_of_one_column_never_null_unfiltered_and_never_masked), so a search of one is an error.
+        if (name.BaseIdentifier.Value.StartsWith('#'))
+            return Unresolved(BindingProblemKind.UnsupportedSource, $"{name.BaseIdentifier.Value} is a temporary table, which can't have a full-text index (208), so searching it is an error (7601).");
         if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
             return Unresolved(BindingProblemKind.UnsupportedSource, $"The reference {FragmentText.OneLine(name)} to another database is not modelled yet.");
         if (name.SchemaIdentifier is not null)

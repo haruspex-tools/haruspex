@@ -53,6 +53,39 @@
         "rank"
       ]
     },
+    "SearchArchive": {
+      "title": "lex.search_archive",
+      "description": "Returns rows.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SearchArchiveRow"
+      }
+    },
+    "SearchArchiveRow": {
+      "description": "The type at results[0][] in lex.search_archive.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "SQL type char(8). char(8) pads to 8 bytes and UTF-8 takes up to four a character, so the length is 2 to 8 code points.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 8
+        },
+        "rank": {
+          "description": "SQL type int. May be null: nullable-column (CONTAINSTABLE.RANK).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "code",
+        "rank"
+      ]
+    },
     "SearchEntries": {
       "title": "lex.search_entries",
       "description": "Returns rows.",

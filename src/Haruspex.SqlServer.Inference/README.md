@@ -1661,7 +1661,9 @@ gives the reasons.
   are not, and its value isn't traced to the column.
 - **`KEY` unknown** (`unsupported-source`), with `RANK` still typed: a table the project creates no full-text index on, or creates
   it on more than once with different keys; a key it doesn't define, of more than one column, that a statement may drop or
-  rebuild, or on a computed or masked column; a view, a table of another database, or a name that resolves to no table.
+  rebuild, or on a computed or masked column; a view, a temporary table (which can't have a full-text index), a table of
+  another database, or a name that resolves to no table. A schema-qualified name is that schema's table, a one-part name the
+  procedure's schema's first, as in `FROM`.
 - **`RANK`** is an `int`, `nullable-column` at `CONTAINSTABLE.RANK` or `FREETEXTTABLE.RANK`: the server describes it as nullable,
   and a `SELECT INTO` makes it a nullable column, though no search tried gave a NULL (the same test).
 - **Without an alias** the call is known by its table's name, `note.[KEY]`, and not by its schema-qualified name

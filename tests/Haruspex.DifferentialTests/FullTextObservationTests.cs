@@ -13,11 +13,15 @@ namespace Haruspex.DifferentialTests;
 /// </summary>
 public class FullTextObservationTests
 {
-    /// <summary>The glossary's rows: entries a search finds and one it doesn't, a note with no entry, a label.</summary>
+    /// <summary>
+    /// The glossary's rows: entries a search finds and one it doesn't, a note with no entry, labels, and an archived entry whose
+    /// key is two accented letters, four bytes of UTF-8 in its char(8), so 6 characters with its padding.
+    /// </summary>
     private const string Seed = """
         INSERT lex.entry (id, headword, definition) VALUES (1, N'oak', N'a wooden tree'), (2, N'ash', N'a wooden tree too'), (3, N'iron', NULL);
         INSERT lex.note (code, entry_id, body) VALUES (N'N1', 1, N'wooden furniture'), (N'N2', NULL, N'wooden boxes'), (N'N3', 2, N'metal');
         INSERT lex.label (ref, words) VALUES ('L1', N'wooden label'), ('L2', N'paper label');
+        INSERT archive.entry (code, headword) VALUES (N'éé', N'wooden chest'), ('A2', N'iron chest');
         """;
 
     /// <summary>The glossary, deployed and seeded in a database of the test's own, once its full-text indexes hold every row.</summary>
@@ -134,6 +138,13 @@ public class FullTextObservationTests
             await DescribedAsync(database, "SELECT * FROM FREETEXTTABLE(lex.note, *, N'wooden')", token));
         Assert.Equal("KEY|char(8)|SQL_Latin1_General_CP1_CI_AS|False; RANK|int|-|True", await DescribedAsync(database, "SELECT * FROM CONTAINSTABLE(lex.label, words, N'wooden')", token));
         Assert.Equal(
+            "KEY|char(8)|Latin1_General_100_CI_AS_SC_UTF8|False; RANK|int|-|True",
+            await DescribedAsync(database, "SELECT * FROM CONTAINSTABLE(archive.entry, headword, N'chest')", token));
+
+        // A key of a char(8) in UTF-8 is 8 bytes, which a client reads as fewer characters when any isn't ASCII: KEY keeps the
+        // column's collation. (Converted to nvarchar on the server it would be padded to 8 characters, so the value is read as is.)
+        Assert.Equal("éé    |8", await RowsAsync(database, "SELECT [KEY], DATALENGTH([KEY]) FROM CONTAINSTABLE(archive.entry, headword, N'wooden');", token));
+        Assert.Equal(
             "KEY|False; RANK|True",
             await RowsAsync(database, "SELECT * INTO #found FROM CONTAINSTABLE(lex.entry, *, N'wooden'); SELECT c.name, c.is_nullable FROM tempdb.sys.columns AS c WHERE c.object_id = OBJECT_ID('tempdb..#found') ORDER BY c.column_id;", token));
 
@@ -198,8 +209,8 @@ public class FullTextObservationTests
             CREATE TABLE dbo.masked (a int MASKED WITH (FUNCTION = 'default()') NOT NULL CONSTRAINT pk_masked PRIMARY KEY, w nvarchar(50));
             """, token);
 
-        // Any other index is refused (7653), as is a key column with a mask (16014), a mask added to one (16013), and the drop of
-        // the key index while the full-text index stands (7613).
+        // Any other index is refused (7653), as is a key column with a mask (16014), a mask added to one (16013), the drop of
+        // the key index while the full-text index stands (7613), and a full-text index on a temporary table (208).
         Assert.Equal(7653, await ErrorAsync(database, "CREATE FULLTEXT INDEX ON dbo.nullable (w) KEY INDEX ux_nullable;", token));
         Assert.Equal(7653, await ErrorAsync(database, "CREATE FULLTEXT INDEX ON dbo.pair (w) KEY INDEX ux_pair;", token));
         Assert.Equal(7653, await ErrorAsync(database, "CREATE FULLTEXT INDEX ON dbo.filtered (w) KEY INDEX ux_filtered;", token));
@@ -207,6 +218,7 @@ public class FullTextObservationTests
         Assert.Equal(16014, await ErrorAsync(database, "CREATE FULLTEXT INDEX ON dbo.masked (w) KEY INDEX pk_masked;", token));
         Assert.Equal(16013, await ErrorAsync(database, "ALTER TABLE lex.entry ALTER COLUMN id ADD MASKED WITH (FUNCTION = 'default()');", token));
         Assert.Equal(7613, await ErrorAsync(database, "DROP INDEX ux_note_code ON lex.note;", token));
+        Assert.Equal(208, await ErrorAsync(database, "CREATE TABLE #t (a int NOT NULL CONSTRAINT pk_t PRIMARY KEY, w nvarchar(50)); CREATE FULLTEXT INDEX ON #t (w) KEY INDEX pk_t;", token));
     }
 
     public static TheoryData<string, string> Searches { get; } = new()
@@ -215,6 +227,7 @@ public class FullTextObservationTests
         { "lex.search_notes", "@words" },
         { "lex.entries_with_notes", "@words" },
         { "lex.search_labels", "@query" },
+        { "lex.search_archive", "@query" },
     };
 
     [Theory]

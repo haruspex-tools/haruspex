@@ -9,6 +9,7 @@
     "path": "database",
     "files": {
       "procedures/entries_with_notes.sql": "41b8d0ed99395f6d958d5983d70fa671a8763b4ab39db4a9f85a7472ae9f35a9",
+      "procedures/search_archive.sql": "b57649294c67dc66529deec4109addfa5a3cfa9bb7226b41858f3c1ee3e0a4b1",
       "procedures/search_entries.sql": "cba8d9b80caf521309e7ba6ebf0751a26d0901b96d07f04c6f8307f68d2cb85d",
       "procedures/search_labels.sql": "47c97ca8f4ae15ce21538d8207db829f2ce8b69b3de28abb87df7b4b30e7ddb2",
       "procedures/search_notes.sql": "b95d6d01422c2b0096a6d6acbe39fe5472390f14545c0df0851e30f3ac324217",
@@ -48,6 +49,44 @@
             "kind": "array",
             "items": {
               "ref": "EntriesWithNotesRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    },
+    {
+      "id": "lex.search_archive",
+      "name": "SearchArchive",
+      "kind": "procedure",
+      "at": "procedures/search_archive.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@query",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(400)",
+            "maxLength": {
+              "value": 400,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(400)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "SearchArchiveRow"
             }
           },
           "mayBeAbsent": false,
@@ -291,6 +330,62 @@
             {
               "rule": "unmatched-row",
               "at": "procedures/entries_with_notes.sql:6:11"
+            }
+          ]
+        }
+      ]
+    },
+    "SearchArchiveRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "lex.search_archive",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "code",
+          "type": {
+            "kind": "string",
+            "sql": "char(8)",
+            "length": {
+              "value": 8,
+              "unit": "bytes",
+              "encoding": "utf-8",
+              "from": {
+                "type": "char(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "rank",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "CONTAINSTABLE.RANK"
             }
           ]
         }

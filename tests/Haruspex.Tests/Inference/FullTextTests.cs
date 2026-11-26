@@ -72,6 +72,12 @@ public class FullTextTests
         GO
         CREATE VIEW dbo.entry_view AS SELECT e.id, e.headword FROM dbo.entry AS e;
         GO
+        CREATE SCHEMA other;
+        GO
+        CREATE TABLE other.entry (code char(8) COLLATE Latin1_General_100_CI_AS_SC_UTF8 NOT NULL CONSTRAINT pk_other_entry PRIMARY KEY, words nvarchar(10) NULL);
+        GO
+        CREATE FULLTEXT INDEX ON other.entry (words) KEY INDEX pk_other_entry;
+        GO
         """;
 
     private static IrDocument Procedure(string body) =>
@@ -134,6 +140,32 @@ public class FullTextTests
 
         Assert.Equal("char(8)", Typed(doc, "k"));
         Assert.True(((IrScalar)Field(doc, "k").Type).Facets?.Length?.IsFixed);
+    }
+
+    [Fact]
+    public void A_schema_qualified_search_reads_that_schema_s_table_not_one_of_the_same_name_in_the_procedure_s_schema()
+    {
+        // dbo.p's schema has dbo.entry, keyed by an int; other.entry is keyed by a char(8). Observed in the glossary's
+        // lex.search_archive (FullTextObservationTests), whose KEY the server returns as archive.entry's.
+        var doc = Procedure("SELECT ft.[KEY] AS k FROM CONTAINSTABLE(other.entry, words, @q) AS ft;");
+
+        Assert.Equal("char(8)", Typed(doc, "k"));
+    }
+
+    [Fact]
+    public void Key_keeps_its_column_s_own_collation_not_the_database_s()
+    {
+        // A char(8) in a UTF-8 collation is 8 bytes of UTF-8, which are fewer characters when any isn't ASCII: in the database's
+        // collation, or a single-byte one, it would be 8 characters (observed: the glossary's archive.entry holding éé comes
+        // back as 6 characters). KEY's length facet is the column's own.
+        var doc = InferProcedure.Infer(
+            "dbo.p",
+            ("schema.sql", Schema),
+            ("p.sql", "CREATE PROCEDURE dbo.p @q nvarchar(400) AS\nSELECT ft.[KEY] AS k, e.code FROM CONTAINSTABLE(other.entry, words, @q) AS ft JOIN other.entry AS e ON e.code = ft.[KEY];"));
+
+        var key = (IrScalar)Field(doc, "k").Type;
+        Assert.Equal(((IrScalar)Field(doc, "code").Type).Facets, key.Facets);
+        Assert.Equal(IrByteEncoding.Utf8, key.Facets?.Length?.Encoding);
     }
 
     [Fact]
@@ -200,6 +232,7 @@ public class FullTextTests
     [InlineData("dbo.entry_view", "is not a table of this database")]
     [InlineData("dbo.nowhere", "There is no table dbo.nowhere")]
     [InlineData("other.dbo.entry", "to another database is not modelled yet")]
+    [InlineData("#entry", "is a temporary table, which can't have a full-text index")]
     public void Key_without_a_key_column_to_follow_is_unknown_and_rank_is_still_typed(string table, string why)
     {
         var doc = Procedure($"SELECT ft.[KEY] AS k, ft.[RANK] AS r FROM CONTAINSTABLE({table}, *, @q) AS ft;");
