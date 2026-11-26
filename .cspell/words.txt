@@ -108,6 +108,7 @@ stdevp
 switchoffset
 sysdatetime
 sysdatetimeoffset
+syslanguages
 sysname
 sysutcdatetime
 tablock

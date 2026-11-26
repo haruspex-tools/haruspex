@@ -19,12 +19,12 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters | Places | Corpora |
 |---|---:|---:|---:|---:|---:|---:|
 | `unsupported-expression` | 108 | 0 | 0 | 0 | 108 | 2 |
-| `dynamic-sql` | 5 | 0 | 91 | 0 | 96 | 6 |
+| `dynamic-sql` | 5 | 0 | 96 | 0 | 101 | 6 |
 | `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
 | `unsupported-sql-type` | 20 | 0 | 0 | 39 | 59 | 5 |
-| `unsupported-statement` | 14 | 0 | 30 | 0 | 44 | 7 |
+| `unsupported-statement` | 14 | 0 | 22 | 0 | 36 | 4 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |
-| `procedure-variable` | 0 | 0 | 11 | 0 | 11 | 2 |
+| `procedure-variable` | 0 | 0 | 12 | 0 | 12 | 3 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
 | `unsupported-query` | 0 | 5 | 0 | 0 | 5 | 1 |
 | `unsupported-source` | 4 | 0 | 0 | 0 | 4 | 1 |
@@ -77,7 +77,7 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 
 ### Northwind
 
-**Typed 23 of 23 fields in Northwind; the results of 1 of its 7 procedures can't be described, so they have no fields to count.** 6 of the 6 procedures that return fields are fully typed.
+**Typed 25 of 25 fields in Northwind.** 7 of the 7 procedures that return fields are fully typed.
 
 From [its repository](https://github.com/microsoft/sql-server-samples) at commit `8fe3fd0c9a825fef3ae6d601e97537b612d7b214`, under `MIT` (`license.txt`, fetched with it). Microsoft's Northwind sample, as its install script: a small order-processing database with a few reporting procedures.
 
@@ -88,23 +88,21 @@ From [its repository](https://github.com/microsoft/sql-server-samples) at commit
 | Errors reading them | 0 |
 | Warnings reading them | 0 |
 | Procedures | 7 |
-| Procedures that return fields | 6 |
+| Procedures that return fields | 7 |
 | Procedures whose results have no fields, because a result's shape is unknown | 0 |
-| Procedures whose result sets can't be listed | 1 |
+| Procedures whose result sets can't be listed | 0 |
 | Procedures that return no result set | 0 |
 | Procedures whose known results have no fields | 0 |
-| Procedures that return fields, fully typed | 6 |
-| Fields | 23 |
-| Fields typed | 23 |
+| Procedures that return fields, fully typed | 7 |
+| Fields | 25 |
+| Fields typed | 25 |
 | Fields typed as JSON text whose content isn't known | 0 |
-| Results | 6 |
+| Results | 7 |
 | Results of unknown shape | 0 |
 
 #### Unknowns by reason
 
-| Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
-|---|---:|---:|---:|---:|
-| `unsupported-statement` | 0 | 0 | 1 | 0 |
+Nothing is unknown.
 
 ### pubs
 
@@ -195,14 +193,14 @@ From [its repository](https://github.com/ProfilesRNS/ProfilesRNS) at commit `5f6
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
-| `dynamic-sql` | 5 | 0 | 16 | 0 |
+| `dynamic-sql` | 5 | 0 | 17 | 0 |
 | `procedure-variable` | 0 | 0 | 7 | 0 |
 | `unnamed-column` | 0 | 12 | 0 | 0 |
 | `unresolved-column` | 1 | 0 | 0 | 0 |
 | `unresolved-table` | 3 | 0 | 0 | 0 |
 | `unsupported-expression` | 106 | 0 | 0 | 0 |
 | `unsupported-sql-type` | 19 | 0 | 0 | 30 |
-| `unsupported-statement` | 0 | 0 | 10 | 0 |
+| `unsupported-statement` | 0 | 0 | 9 | 0 |
 | `varying-results` | 0 | 0 | 4 | 0 |
 
 #### Scripts left out
@@ -383,5 +381,5 @@ From [its repository](https://github.com/olahallengren/sql-server-maintenance-so
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
 | `dynamic-sql` | 0 | 0 | 3 | 0 |
+| `procedure-variable` | 0 | 0 | 1 | 0 |
 | `unsupported-sql-type` | 0 | 0 | 0 | 1 |
-| `unsupported-statement` | 0 | 0 | 1 | 0 |

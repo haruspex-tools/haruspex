@@ -159,6 +159,33 @@ public partial class MaskingTests
         Assert.Empty(lifted.Diagnostics);
     }
 
+    [Theory]
+    [InlineData("EXECUTE AS USER = 'clerk'; SELECT 1 AS one; REVERT;", true)]
+    [InlineData("EXECUTE AS LOGIN = 'clerk'; SELECT 1 AS one;", true)]
+    [InlineData("EXECUTE AS CALLER; SELECT 1 AS one;", false)]
+    public void A_module_whose_body_impersonates_another_user_keeps_every_mask(string body, bool kept)
+    {
+        // Observed: Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns. The masks are
+        // kept everywhere, as for WITH EXECUTE AS, since which procedures reach the module is not followed.
+        var other = ("other.sql", $"CREATE PROCEDURE clinic.other AS {body}");
+        var read = InferProcedure.Inferred("clinic.p", new SessionOptions(Unmask: true), ("tables.sql", Tables), other, ("p.sql", "CREATE PROCEDURE clinic.p AS SELECT band FROM clinic.patient;"));
+
+        Assert.Equal(kept, Facets(read.Expected(), "band")!.Values is null);
+        Assert.Equal(kept ? [2103] : [], read.Diagnostics.Select(d => d.Code.Number));
+    }
+
+    [Fact]
+    public void A_query_file_that_impersonates_another_user_where_the_callers_hold_unmask_has_unknown_results()
+    {
+        // No module of the project keeps the masks, so the query's own EXECUTE AS can't be left to them.
+        var query = "EXECUTE AS USER = 'clerk';\nSELECT band FROM clinic.patient;\nREVERT;";
+        var doc = InferQuery.Inferred(Tables, query, session: new SessionOptions(Unmask: true)).Expected();
+
+        var unknown = Assert.Single(doc.Unknowns);
+        Assert.Equal((IrUnknownReason.UnsupportedStatement, "results"), (unknown.Reason, unknown.Path));
+        Assert.Equal("The session declares that the callers hold UNMASK, but the EXECUTE AS at queries/q.sql:1:1 reads with another user's permissions, which may not, so the result sets cannot be listed.", unknown.Detail);
+    }
+
     /// <summary>The facts of <paramref name="facets"/> with their sources' references left out, which name the column they are of.</summary>
     private static IrFacets? Claims(IrFacets? facets) => facets is null ? null : new IrFacets(
         facets.Length is { } l ? l with { From = Bare(l.From) } : null,

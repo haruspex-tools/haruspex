@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 207 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 165 |
-| Read, changing no result | 29 |
-| Unknown | 311 |
+| Modelled, wholly or in part | 171 |
+| Read, changing no result | 30 |
+| Unknown | 304 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -652,9 +652,9 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `THROW` | `ThrowStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | Ends the call, or reaches CATCH. |
 | `RAISERROR` | `RaiseErrorStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | Of severity 11 or more it ends the call, or reaches CATCH; below that it is a message. |
 | `RAISERROR number 'text'` | `RaiseErrorLegacyStatement` | not in a procedure's body | The form SQL Server 2000 had, which the parser for compatibility level 170 refuses. |
-| `GOTO` | `GoToStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled: a jump the walker doesn't follow, so the result sets after it can't be listed. |
-| `label:` | `LabelStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled, as GOTO isn't. |
-| `WAITFOR` | `WaitForStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
+| `GOTO` | `GoToStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | A jump forward, to a label in its own block or one around it, skips what lies between and joins its state there; a jump back or into a block isn't followed, so the results after it can't be listed. |
+| `label:` | `LabelStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) | Joins the state each GOTO to it jumps with and the one from the statement before it. |
+| `WAITFOR` | `WaitForStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | DELAY and TIME return nothing; RECEIVE returns a result set of a queue's columns and GET CONVERSATION GROUP sets a variable, Service Broker's reads, which aren't modelled. |
 
 ### Statements that hold state
 
@@ -691,15 +691,15 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `SAVE TRANSACTION` | `SaveTransactionStatement` | read, changing no result | Changes nothing here. |
 | `ROLLBACK` | `RollbackTransactionStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#the-state) | Undoes what the procedure did to its temporary tables, which become unknown after it. |
 | `PRINT` | `PrintStatement` | read, changing no result | A message, not a result set. |
-| `SET ROWCOUNT` | `SetRowCountStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
+| `SET ROWCOUNT` | `SetRowCountStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) | A limit of 1 leaves each query after it at most one row, until another SET ROWCOUNT or until the procedure returns; any other limit claims nothing more. |
 | `SET IDENTITY_INSERT` | `SetIdentityInsertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `SET TEXTSIZE` | `SetTextSizeStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
-| `SET DATEFORMAT, LANGUAGE, …` | `SetCommandStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
+| `SET DATEFORMAT, LANGUAGE, …` | `SetCommandStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | LANGUAGE, DATEFIRST and DATEFORMAT change values, never a type or a fact claimed of one; the others (LOCK_TIMEOUT, DEADLOCK_PRIORITY, CONTEXT_INFO, …) aren't modelled. |
 | `SET STATISTICS` | `SetStatisticsStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `SET OFFSETS` | `SetOffsetsStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `SET ERRLVL` | `SetErrorLevelStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
-| `EXECUTE AS` | `ExecuteAsStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled: it changes whose schema a one-part name resolves in. |
-| `REVERT` | `RevertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled, as EXECUTE AS isn't. |
+| `EXECUTE AS` | `ExecuteAsStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#flow-statements) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Changes permissions, not how a name binds, so a module that runs it keeps every mask; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. |
+| `REVERT` | `RevertStatement` | read, changing no result | Ends EXECUTE AS, and returns nothing. |
 | `SETUSER` | `SetUserStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `USE` | `UseStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `DBCC` | `DbccStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |

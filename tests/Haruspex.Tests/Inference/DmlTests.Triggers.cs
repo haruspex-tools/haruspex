@@ -214,7 +214,7 @@ public partial class DmlTests
     [InlineData("EXEC sp_who;")]
     [InlineData("DECLARE c CURSOR LOCAL FOR SELECT id FROM inserted; OPEN c; FETCH NEXT FROM c;")]
     [InlineData("UPDATE dbo.note SET text = N'x' OUTPUT inserted.id;")]
-    [InlineData("WAITFOR DELAY '00:00:01';")]
+    [InlineData("WAITFOR (RECEIVE TOP (1) message_body FROM dbo.q), TIMEOUT 10;")]
     [InlineData("DBCC CHECKIDENT ('dbo.note');")]
     public void A_trigger_statement_that_may_return_results_counts(string statement)
     {
@@ -224,6 +224,22 @@ public partial class DmlTests
             ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item (id) VALUES (1); SELECT 1 AS a;"));
 
         Assert.Equal(IrUnknownReason.TriggerResults, ResultsUnknown(doc).Reason);
+    }
+
+    [Theory]
+    [InlineData("WAITFOR DELAY '00:00:01';")]
+    [InlineData("WAITFOR TIME '23:59:59';")]
+    [InlineData("EXECUTE AS USER = 'clerk'; REVERT;")]
+    [InlineData("IF 1 = 1 GOTO done; SET ROWCOUNT 1; done:")]
+    public void A_trigger_statement_known_to_return_nothing_adds_nothing(string statement)
+    {
+        // Observed: Waitfor_delay_and_time_return_nothing_and_waitfor_receive_returns_a_result_set and
+        // Execute_as_changes_permissions_and_masks_but_not_names_and_ends_when_the_procedure_returns.
+        var doc = Doc(
+            ("trigger", $"CREATE TRIGGER dbo.item_quiet ON dbo.item AFTER INSERT AS {statement}"),
+            ("p", "CREATE PROCEDURE dbo.p AS INSERT INTO dbo.item (id) VALUES (1); SELECT 1 AS a;"));
+
+        Assert.Single(Results(doc));
     }
 
     [Fact]
