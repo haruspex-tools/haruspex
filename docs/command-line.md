@@ -4,7 +4,9 @@ The command `haruspex` has four subcommands. `init` writes a starter config file
 what changed since the last run, `check` fails in CI when the module in the output folder (in CI, the committed one) would change,
 and `explain` says why a field is what it is. The command is run many
 times a day, so by default it says what it did and what needs attention, and counts the rest. Everything else is a flag away.
-This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. How
+This page says what each prints, the options, the machine formats, the environment variables it reads and its exit codes. The
+essentials come first, from [what a run prints](#what-a-run-prints) to [colour](#colour-links-and-progress); the
+[advanced features](#advanced-features) follow: the formats for tools and CI, `explain`, and a baseline. How
 a run works inside is [the CLI's README](../src/Haruspex.Cli/README.md); why the output is designed so is
 [decision 0064](decisions/0064-the-command-line-s-output-is-designed.md).
 
@@ -133,9 +135,213 @@ said (`2 warnings acknowledged (--verbose lists them).`); `--verbose` lists each
 `init` takes one argument, the `.sqlproj`, `.dacpac` or folder of `.sql` files to read, when it shouldn't look for one.
 `haruspex --help` and `haruspex <command> --help` list the same, and `haruspex --version` prints the version.
 
+## `init`
+
+`haruspex init` looks below the working directory, four folders deep, for the database: one `.sqlproj` first, then one
+`.dacpac` (in `bin` too, where a build writes one, leaving out the packages of SQL Server's system databases a build copies
+beside it), then a folder of `.sql` files. Hidden folders, `node_modules`, and `bin` and `obj` for anything but a DACPAC, are
+passed over. The folder is the deepest that holds every script a folder source takes something from: a script the folder reader
+passes over whole (queries, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `EXEC`, `SET NOCOUNT`) changes nothing about the database, and
+any other (a definition, an `ALTER`, a `NOCHECK`, a bulk load, one that doesn't parse) may, so it is read. So the application's
+query files in a folder of their own, beside the database's, are not read as the database's scripts; init names such a folder,
+for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. A query script in a folder that
+holds none of the database's scripts but has one further down, so that the folder can't be named, is named as itself: left out,
+with the `queries` entry that would type it, or read as the database's and not typed, with the database's scripts below its
+folder, which keep the folder in the source. When the folder that holds every
+database script would hold one too, the source is instead [the list](configuration.md#several-folders-source-as-a-list) of the
+folders directly below it that hold the database's scripts (`"source": ["procedures", "tables"]`), which leaves the others out.
+Where one of those scripts is directly in that folder, which a list of folders can't name, init reads the folder, says it holds
+the query files, and names the folders and scripts of the database, for you to put together in one folder of their own. A
+folder of query files inside one of the listed folders is read as that folder's, and named with it. A folder source reads every `.sql` file below it
+([the configuration](configuration.md#reading-a-folder-of-scripts-source)), so this
+keeps the application's own folder, with its installed packages, out of the source. It writes a `haruspex.json` that reads it,
+types every procedure of each schema that has one, and writes to `src/db`, or `generated` when there is no `src` folder:
+
+```jsonc
+// haruspex's settings, written by haruspex init. Each is described in
+// https://haruspex.tools/docs/configuration
+// where "The settings you probably want" says which most projects need next: the callers' session,
+// a DACPAC's build, the collation of a folder of scripts.
+{
+  "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
+  "source": "database",
+  "out": "src/db",
+  // Which procedures to type, by schema: every one, to start. Narrow each "include" to those the application calls.
+  "schemas": {
+    "audit": { "include": ["*"] },
+    "sales": { "include": ["*"] },
+  },
+}
+```
+
+It prints what it chose and the next command. When reading the source finds errors (a script that doesn't parse, a project
+file that isn't one), it prints them, keeps the file it wrote, and fails (exit code 1). It never writes over a config file (HAR6021). When it finds nothing it says so
+(HAR6022), and when it finds two project files, or two DACPACs and no project file, it names them and asks for one (HAR6023):
+`haruspex init Sales/Sales.sqlproj`. [The configuration](configuration.md) describes every setting the file can have.
+
+## Exit codes
+
+Fixed, so scripts and CI can rely on them. A run over several modules exits with the highest of theirs.
+
+| Code | Meaning |
+|---|---|
+| 0 | Success, with or without warnings and notes; `init` wrote its file |
+| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed (a baseline's included); or `init` wrote its file, but reading the source found errors |
+| 2 | The command line or the config file is wrong; or `init` wrote nothing: a config file is already there, or it found no database or more than one |
+| 3 | A fault in haruspex itself |
+
+## Environment variables
+
+| Variable | What it does |
+|---|---|
+| `NO_COLOR` | Set to anything: no colour, unless `--color always` or `FORCE_COLOR` says otherwise. |
+| `FORCE_COLOR` | Set to anything but `0` or `false`: colour even off a terminal. `0` or `false`: no colour. |
+| `FORCE_HYPERLINK` | Set to anything but `0` or `false`: codes are links whenever there is colour. `0` or `false`: never. |
+| `CI` | Set to anything: no progress, and no links unless `FORCE_HYPERLINK` asks. |
+| `TERM` | `dumb`: no colour and no progress. |
+| `GITHUB_ACTIONS` | `true`: `--format github` by default. |
+| `GITHUB_WORKSPACE` | The folder SARIF and annotations name files from. |
+| `WT_SESSION`, `TERM_PROGRAM`, `KITTY_WINDOW_ID`, `KONSOLE_VERSION`, `DOMTERM`, `VTE_VERSION` | Read to tell whether the terminal shows links. |
+
+## Colour, links and progress
+
+Only on a terminal, and only where the terminal is known to show them; output to a file, a pipe or a CI log is plain text,
+the same bytes on every machine. It is UTF-8, without a byte order mark, whatever the console's code page on Windows, and
+haruspex leaves the console's code page as it was.
+
+- **Colour.** `--color always` or `never` decides. Otherwise `FORCE_COLOR`, set to anything but `0` or `false`, colours, and
+  set to one of those doesn't; `NO_COLOR`, set to anything, doesn't, as [its convention](https://no-color.org) asks; `TERM=dumb`
+  doesn't; and otherwise a stream is coloured when it is a terminal. Standard output and standard error are decided apart.
+- **Links.** On a coloured terminal, each diagnostic code is a hyperlink (OSC 8) to its page. A terminal that doesn't support
+  them shows the escape as text, and none says whether it does, so links are made only in one that names itself as one that
+  does (Windows Terminal, iTerm2, WezTerm, Visual Studio Code, Ghostty, kitty, Konsole, DomTerm, and those built on VTE 0.50
+  or later, such as GNOME Terminal), never in CI. `FORCE_HYPERLINK` decides instead, as colour's variables do. Without links,
+  a line under a list of codes points to the index of the pages.
+- **Progress.** When a run takes more than half a second, a line on standard error says what it is doing
+  (`haruspex: inferring 120 procedures (3s)`), redrawn in place and cleared before the report. Only when standard error is a
+  terminal, never when `CI` is set, and not with `--quiet`.
+
+## Advanced features
+
+The sections from here on are for some projects, not every one, and each opens with the situation it is for.
+
+## Formats
+
+**For a tool or a CI system that reads the report**, rather than a person. `--format` says who reads the report. The detail
+options shape the text alone: the machine formats hold everything.
+
+| Format | For | What it writes |
+|---|---|---|
+| `text` | a person | The report [a run prints](#what-a-run-prints). The default, except in GitHub Actions. |
+| `json` | a tool | One JSON document on standard output for the whole run (below). |
+| `sarif` | code scanning | A [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log on standard output. |
+| `github` | GitHub Actions | The text, then each error and warning as a workflow command, which GitHub shows as an annotation at its line. The default when `GITHUB_ACTIONS` is `true`. |
+
+**JSON.** The document is specified by [`schemas/haruspex.output.schema.json`](../schemas/haruspex.output.schema.json), which
+it names in `$schema`: a release at its own tag (`https://haruspex.tools/schemas/v<its version>/...`), any other build on `main`, as
+[the configuration](configuration.md) says of the config file's schema. Its `version` is 1: a field may be added without a new version, but one is removed, renamed or given
+another meaning only with a new one, so a tool checks it. At the top are the `command`, the run's `exitCode`, `refused` (why
+no module ran, when none did) and `modules`, one for each module in the order they ran. Each module has:
+
+| Field | What it is |
+|---|---|
+| `config` | The config file `--config` named or `--all` found; null when the run looked for one. |
+| `out` | The output folder, once settled. |
+| `exitCode` | The module's exit code. |
+| `typed` | How many `procedures` and `queryFiles` it types; null when the run failed before inferring. |
+| `written` | The files `generate` wrote, the IR first. |
+| `removed` | The files `generate` removed: those the last run's list of files named that this run didn't write ([the files generate removes](configuration.md#the-files-generate-removes)). Empty for `check`. |
+| `unknowns` | Their `count`, and `byReason`: each reason as the IR names it, the code of its note, and how many. |
+| `sinceLastRun` | For `generate`: `compared` false with `why`, or true with the `changes` (each with its `kind`, such as `became-nullable`, `object`, `path`, `before`, `after` and the `text` the report prints), `newUnknowns`, `resolvedUnknowns`, `unchangedUnknowns` and `rewritten`. Null for `check`. |
+| `acknowledged` | The warnings the config file's `acknowledge` names, each as a diagnostic with its `subject` and `why`. |
+| `diagnostics` | Everything else the run found, notes included: each `code`, `severity`, `message`, `file`, `line`, `column` (null where there is none) and `help`, the code's page. |
+
+**SARIF.** One run of the tool `haruspex`, with its version; a rule for each code the run reported, with its title, its page
+as `helpUri` and its severity as the default level; and a result for each diagnostic, at its file, line and column. A file is
+a URI relative to the repository's root in GitHub Actions (`GITHUB_WORKSPACE`), otherwise to the working directory. Upload it
+with GitHub's `upload-sarif` action, or read it with any SARIF viewer.
+
+**GitHub annotations.** Each error and warning becomes `::error` or `::warning`, with its file, line, column and its code and
+title as the annotation's title; notes become `::notice` only with `--verbose`, since a module's unknowns would bury its one
+error, and GitHub shows only the first few of each kind for a step. Files are named from `GITHUB_WORKSPACE`. Since it is the
+default there, a workflow's `haruspex check --all` annotates the pull request with nothing more said.
+
+## `explain`
+
+**For a field whose type, nullability or presence surprises its reader.**
+`haruspex explain` says why a field is what it is, from the committed IR alone: an application's repository keeps the IR beside
+the generated code, and often not the database's SQL ([decision 0078](decisions/0078-the-ir-says-where-each-field-came-from.md)).
+With a field, it prints the field's derivation: the table columns it is read from, then each rule that acted on it, each with
+its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it) and is the
+file the IR was written from (its hash is the one the IR records), the line is printed under the reference; a package's line
+only when its SHA-256 is the one the IR recorded, since a package keeps no file names and the line is in its module's own text.
+Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. So the IR
+records each script's hash, and an edit that changes no type (a comment, a blank line) still changes the IR: `check` passes,
+since it compares claims, and `generate` says "No claim changed since the last run; the IR records the new text of 1 file".
+Run `generate` after such an edit to keep `explain`'s lines. A location is
+never followed outside the folder it is looked in, and a control character in a line or a name is printed as an escape.
+
+```text
+$ haruspex explain shop.order_summary last_shipped
+shop.order_summary last_shipped: datetime (local), datetime2(0), nullable
+  from shop.order_line.shipped_at (datetime2(0)), declared at tables/order_line.sql:12:5
+    | shipped_at  datetime2(0)  NULL,
+  null nullable-column at shop.order_line.shipped_at: the column it reads is declared nullable
+    | shipped_at  datetime2(0)  NULL,
+  null unmatched-row at procedures/order_summary.sql:13:11: it comes from the optional side of an outer join, which has no row when nothing matches
+    | LEFT JOIN shop.order_line AS l ON l.order_id = o.order_id
+  null empty-aggregate at procedures/order_summary.sql:11:8: it is an aggregate without GROUP BY, which is null over no rows
+    | max(l.shipped_at) AS last_shipped
+  to change it: if the data rules it out, declare it in the config file with "nullable": false and why
+  page nullable-column: https://haruspex.tools/reasons/nullable-column
+  …
+```
+
+Without a field it lists, a line each, every field of the object whose nullability, presence or type differs from what its
+source column declares, and the object's unknowns:
+
+```text
+$ haruspex explain shop.order_summary
+shop.order_summary: 3 fields differ from what their columns declare.
+  line_count    may be null: count-overflow
+  total         decimal(38,2), not its column's type; may be null: unmatched-row, empty-aggregate
+  last_shipped  may be null: unmatched-row, empty-aggregate
+Run haruspex explain shop.order_summary <field> for a field in full.
+```
+
+| Argument or option | What it is |
+|---|---|
+| `object` | The procedure, as `schema.name`, its parts in brackets or not and in any case (`[shop].[Order_Summary]`), two that differ only in case being refused; a query file, by its path; its generated name; or a generated type, by its name (a type a function owns, which several objects reach). |
+| `field` | The field's path in the object's results, as the config file's paths are written (`lines[].qty`; the `[]` may be left out). With several result sets, the set first: by its name (`summary.total`) or, when they have none, its place from 1 (`#2.total`). A parameter with its `@` (`@order_id`). Without it, the object's surprises. |
+| `--ir` | The IR file. By default, `haruspex.ir.json` in the config file's output folder. |
+| `--config`, `-c` | The config file, which says where the IR and the SQL are. By default, found as `generate` finds it. |
+| `--json` | One JSON document for tools, below. |
+
+For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source as the IR
+records it (as the config file named it, relative to its folder: `release/Shop.dacpac`, `database`), with its own derivation, and how the two were combined;
+a field both give exactly as it is says so. A baseline given as an IR file older than 0.25, or an IR older than 0.25 itself,
+says nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
+[the reasons](reasons/README.md). Asking about something the IR doesn't have is HAR6038, which lists what it has; no IR to read is
+HAR6037.
+
+**`--json`** writes one document: `version`, now 1, which a tool checks, and which is provisional until haruspex 1.0;
+`derived`, false for an IR older than 0.25; `object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
+has one, `nullable`, `presence`, whether it is a `surprise`, whether its type differs from its columns' (`typeDiffers`), `from`
+(each `column`, `sql`, `at`, and `line` when the SQL is at hand), `nullableBecause` (each `rule`, its `text` and `page`, `at`,
+`detail` when the reason says what made it so there, such as a JSON path's steps, `line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
+`text`, `page`), and the `explain` command. A field named in full adds the config file's `override` when there is one, `sides`
+for a combined field (`baseline` and `candidate`, each with its `source`, or `null` where that database doesn't return the
+key, and for the baseline whether it says where its fields came from, `derived`) or `sameInBoth` where both give it alike, and
+its `waysOut`. Without a field, `fields`
+lists the surprises and `unknowns` the object's (`path`, `reason`, `detail`, `at`); a parameter gives `parameter` (`name`,
+`value`, `sql`, `hasDefault`, `output`) instead. The vocabulary is the IR's: its codes, its paths and its locations.
+
+`check` points here: a change of a field's claim ends with the `explain` command for it, once `generate` has written the new
+IR, and with a baseline given as an IR file, the command that explains the field there too (`--ir`).
+
 ## Generating against a baseline
 
-An application and its database deploy separately, so a new release of the application may meet the database before its
+**An application and its database deploy separately**, so a new release of the application may meet the database before its
 latest change or after it. With a baseline, the database before, `generate` writes types that work against both: each result
 accepts what either database returns, and each function sends only what both procedures take. The types loosen while the two
 differ and tighten again when the baseline moves on.
@@ -162,7 +368,7 @@ an application, so it is a baseline for `check --fit-only` only (HAR6036).
 
 ## Checking against a baseline
 
-An application and its database deploy separately, so for a while the application already running meets the database being
+**An application and its database deploy separately**, so for a while the application already running meets the database being
 deployed. With a baseline, the database the running application was built against, `check` also fails on each change that
 application would fail on, and warns of each it sets aside:
 
@@ -258,201 +464,3 @@ jobs:
 Here `src/db` is the application's `out`, and `../database/Shop.sqlproj` replaces its `source` for the run. An application
 generated with a baseline commits the combined IR, which says what the application accepts against either database, and is
 the right baseline here.
-
-## `explain`
-
-`haruspex explain` says why a field is what it is, from the committed IR alone: an application's repository keeps the IR beside
-the generated code, and often not the database's SQL ([decision 0078](decisions/0078-the-ir-says-where-each-field-came-from.md)).
-With a field, it prints the field's derivation: the table columns it is read from, then each rule that acted on it, each with
-its code and where in the SQL it applied. When that SQL is at hand (the config file's source, a query file beside it) and is the
-file the IR was written from (its hash is the one the IR records), the line is printed under the reference; a package's line
-only when its SHA-256 is the one the IR recorded, since a package keeps no file names and the line is in its module's own text.
-Otherwise the reference stands alone, which is no error: an edited file shows no line rather than the wrong one. So the IR
-records each script's hash, and an edit that changes no type (a comment, a blank line) still changes the IR: `check` passes,
-since it compares claims, and `generate` says "No claim changed since the last run; the IR records the new text of 1 file".
-Run `generate` after such an edit to keep `explain`'s lines. A location is
-never followed outside the folder it is looked in, and a control character in a line or a name is printed as an escape.
-
-```text
-$ haruspex explain shop.order_summary last_shipped
-shop.order_summary last_shipped: datetime (local), datetime2(0), nullable
-  from shop.order_line.shipped_at (datetime2(0)), declared at tables/order_line.sql:12:5
-    | shipped_at  datetime2(0)  NULL,
-  null nullable-column at shop.order_line.shipped_at: the column it reads is declared nullable
-    | shipped_at  datetime2(0)  NULL,
-  null unmatched-row at procedures/order_summary.sql:13:11: it comes from the optional side of an outer join, which has no row when nothing matches
-    | LEFT JOIN shop.order_line AS l ON l.order_id = o.order_id
-  null empty-aggregate at procedures/order_summary.sql:11:8: it is an aggregate without GROUP BY, which is null over no rows
-    | max(l.shipped_at) AS last_shipped
-  to change it: if the data rules it out, declare it in the config file with "nullable": false and why
-  page nullable-column: https://haruspex.tools/reasons/nullable-column
-  …
-```
-
-Without a field it lists, a line each, every field of the object whose nullability, presence or type differs from what its
-source column declares, and the object's unknowns:
-
-```text
-$ haruspex explain shop.order_summary
-shop.order_summary: 3 fields differ from what their columns declare.
-  line_count    may be null: count-overflow
-  total         decimal(38,2), not its column's type; may be null: unmatched-row, empty-aggregate
-  last_shipped  may be null: unmatched-row, empty-aggregate
-Run haruspex explain shop.order_summary <field> for a field in full.
-```
-
-| Argument or option | What it is |
-|---|---|
-| `object` | The procedure, as `schema.name`, its parts in brackets or not and in any case (`[shop].[Order_Summary]`), two that differ only in case being refused; a query file, by its path; its generated name; or a generated type, by its name (a type a function owns, which several objects reach). |
-| `field` | The field's path in the object's results, as the config file's paths are written (`lines[].qty`; the `[]` may be left out). With several result sets, the set first: by its name (`summary.total`) or, when they have none, its place from 1 (`#2.total`). A parameter with its `@` (`@order_id`). Without it, the object's surprises. |
-| `--ir` | The IR file. By default, `haruspex.ir.json` in the config file's output folder. |
-| `--config`, `-c` | The config file, which says where the IR and the SQL are. By default, found as `generate` finds it. |
-| `--json` | One JSON document for tools, below. |
-
-For a field of a combined IR, written with a baseline, it prints each database's side, labelled with its source as the IR
-records it (as the config file named it, relative to its folder: `release/Shop.dacpac`, `database`), with its own derivation, and how the two were combined;
-a field both give exactly as it is says so. A baseline given as an IR file older than 0.25, or an IR older than 0.25 itself,
-says nothing of where its fields came from, and `explain` says so. The codes are the IR's own, each with a page in
-[the reasons](reasons/README.md). Asking about something the IR doesn't have is HAR6038, which lists what it has; no IR to read is
-HAR6037.
-
-**`--json`** writes one document: `version`, now 1, which a tool checks, and which is provisional until haruspex 1.0;
-`derived`, false for an IR older than 0.25; `object`; and `fields`, each with its `path`, the named `type` it is a field of, its `value` in words, its `sql` type when it
-has one, `nullable`, `presence`, whether it is a `surprise`, whether its type differs from its columns' (`typeDiffers`), `from`
-(each `column`, `sql`, `at`, and `line` when the SQL is at hand), `nullableBecause` (each `rule`, its `text` and `page`, `at`,
-`detail` when the reason says what made it so there, such as a JSON path's steps, `line` when at hand, and whether the rule is one a declaration gives, `declared`), `unknown` when its type is one (`code`,
-`text`, `page`), and the `explain` command. A field named in full adds the config file's `override` when there is one, `sides`
-for a combined field (`baseline` and `candidate`, each with its `source`, or `null` where that database doesn't return the
-key, and for the baseline whether it says where its fields came from, `derived`) or `sameInBoth` where both give it alike, and
-its `waysOut`. Without a field, `fields`
-lists the surprises and `unknowns` the object's (`path`, `reason`, `detail`, `at`); a parameter gives `parameter` (`name`,
-`value`, `sql`, `hasDefault`, `output`) instead. The vocabulary is the IR's: its codes, its paths and its locations.
-
-`check` points here: a change of a field's claim ends with the `explain` command for it, once `generate` has written the new
-IR, and with a baseline given as an IR file, the command that explains the field there too (`--ir`).
-
-## `init`
-
-`haruspex init` looks below the working directory, four folders deep, for the database: one `.sqlproj` first, then one
-`.dacpac` (in `bin` too, where a build writes one, leaving out the packages of SQL Server's system databases a build copies
-beside it), then a folder of `.sql` files. Hidden folders, `node_modules`, and `bin` and `obj` for anything but a DACPAC, are
-passed over. The folder is the deepest that holds every script a folder source takes something from: a script the folder reader
-passes over whole (queries, `INSERT`, `UPDATE`, `DELETE`, `MERGE`, `EXEC`, `SET NOCOUNT`) changes nothing about the database, and
-any other (a definition, an `ALTER`, a `NOCHECK`, a bulk load, one that doesn't parse) may, so it is read. So the application's
-query files in a folder of their own, beside the database's, are not read as the database's scripts; init names such a folder,
-for you to add as [`queries`](configuration.md#query-files-queries) if that is what it holds. A query script in a folder that
-holds none of the database's scripts but has one further down, so that the folder can't be named, is named as itself: left out,
-with the `queries` entry that would type it, or read as the database's and not typed, with the database's scripts below its
-folder, which keep the folder in the source. When the folder that holds every
-database script would hold one too, the source is instead [the list](configuration.md#several-folders-source-as-a-list) of the
-folders directly below it that hold the database's scripts (`"source": ["procedures", "tables"]`), which leaves the others out.
-Where one of those scripts is directly in that folder, which a list of folders can't name, init reads the folder, says it holds
-the query files, and names the folders and scripts of the database, for you to put together in one folder of their own. A
-folder of query files inside one of the listed folders is read as that folder's, and named with it. A folder source reads every `.sql` file below it
-([the configuration](configuration.md#reading-a-folder-of-scripts-source)), so this
-keeps the application's own folder, with its installed packages, out of the source. It writes a `haruspex.json` that reads it,
-types every procedure of each schema that has one, and writes to `src/db`, or `generated` when there is no `src` folder:
-
-```jsonc
-// haruspex's settings, written by haruspex init. Each is described in
-// https://haruspex.tools/docs/configuration
-// where "The settings you probably want" says which most projects need next: the callers' session,
-// a DACPAC's build, the collation of a folder of scripts.
-{
-  "$schema": "https://haruspex.tools/schemas/main/haruspex.schema.json",
-  "source": "database",
-  "out": "src/db",
-  // Which procedures to type, by schema: every one, to start. Narrow each "include" to those the application calls.
-  "schemas": {
-    "audit": { "include": ["*"] },
-    "sales": { "include": ["*"] },
-  },
-}
-```
-
-It prints what it chose and the next command. When reading the source finds errors (a script that doesn't parse, a project
-file that isn't one), it prints them, keeps the file it wrote, and fails (exit code 1). It never writes over a config file (HAR6021). When it finds nothing it says so
-(HAR6022), and when it finds two project files, or two DACPACs and no project file, it names them and asks for one (HAR6023):
-`haruspex init Sales/Sales.sqlproj`. [The configuration](configuration.md) describes every setting the file can have.
-
-## Formats
-
-`--format` says who reads the report. The detail options shape the text alone: the machine formats hold everything.
-
-| Format | For | What it writes |
-|---|---|---|
-| `text` | a person | The report above. The default, except in GitHub Actions. |
-| `json` | a tool | One JSON document on standard output for the whole run (below). |
-| `sarif` | code scanning | A [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log on standard output. |
-| `github` | GitHub Actions | The text, then each error and warning as a workflow command, which GitHub shows as an annotation at its line. The default when `GITHUB_ACTIONS` is `true`. |
-
-**JSON.** The document is specified by [`schemas/haruspex.output.schema.json`](../schemas/haruspex.output.schema.json), which
-it names in `$schema`: a release at its own tag (`https://haruspex.tools/schemas/v<its version>/...`), any other build on `main`, as
-[the configuration](configuration.md) says of the config file's schema. Its `version` is 1: a field may be added without a new version, but one is removed, renamed or given
-another meaning only with a new one, so a tool checks it. At the top are the `command`, the run's `exitCode`, `refused` (why
-no module ran, when none did) and `modules`, one for each module in the order they ran. Each module has:
-
-| Field | What it is |
-|---|---|
-| `config` | The config file `--config` named or `--all` found; null when the run looked for one. |
-| `out` | The output folder, once settled. |
-| `exitCode` | The module's exit code. |
-| `typed` | How many `procedures` and `queryFiles` it types; null when the run failed before inferring. |
-| `written` | The files `generate` wrote, the IR first. |
-| `removed` | The files `generate` removed: those the last run's list of files named that this run didn't write ([the files generate removes](configuration.md#the-files-generate-removes)). Empty for `check`. |
-| `unknowns` | Their `count`, and `byReason`: each reason as the IR names it, the code of its note, and how many. |
-| `sinceLastRun` | For `generate`: `compared` false with `why`, or true with the `changes` (each with its `kind`, such as `became-nullable`, `object`, `path`, `before`, `after` and the `text` the report prints), `newUnknowns`, `resolvedUnknowns`, `unchangedUnknowns` and `rewritten`. Null for `check`. |
-| `acknowledged` | The warnings the config file's `acknowledge` names, each as a diagnostic with its `subject` and `why`. |
-| `diagnostics` | Everything else the run found, notes included: each `code`, `severity`, `message`, `file`, `line`, `column` (null where there is none) and `help`, the code's page. |
-
-**SARIF.** One run of the tool `haruspex`, with its version; a rule for each code the run reported, with its title, its page
-as `helpUri` and its severity as the default level; and a result for each diagnostic, at its file, line and column. A file is
-a URI relative to the repository's root in GitHub Actions (`GITHUB_WORKSPACE`), otherwise to the working directory. Upload it
-with GitHub's `upload-sarif` action, or read it with any SARIF viewer.
-
-**GitHub annotations.** Each error and warning becomes `::error` or `::warning`, with its file, line, column and its code and
-title as the annotation's title; notes become `::notice` only with `--verbose`, since a module's unknowns would bury its one
-error, and GitHub shows only the first few of each kind for a step. Files are named from `GITHUB_WORKSPACE`. Since it is the
-default there, a workflow's `haruspex check --all` annotates the pull request with nothing more said.
-
-## Colour, links and progress
-
-Only on a terminal, and only where the terminal is known to show them; output to a file, a pipe or a CI log is plain text,
-the same bytes on every machine. It is UTF-8, without a byte order mark, whatever the console's code page on Windows, and
-haruspex leaves the console's code page as it was.
-
-- **Colour.** `--color always` or `never` decides. Otherwise `FORCE_COLOR`, set to anything but `0` or `false`, colours, and
-  set to one of those doesn't; `NO_COLOR`, set to anything, doesn't, as [its convention](https://no-color.org) asks; `TERM=dumb`
-  doesn't; and otherwise a stream is coloured when it is a terminal. Standard output and standard error are decided apart.
-- **Links.** On a coloured terminal, each diagnostic code is a hyperlink (OSC 8) to its page. A terminal that doesn't support
-  them shows the escape as text, and none says whether it does, so links are made only in one that names itself as one that
-  does (Windows Terminal, iTerm2, WezTerm, Visual Studio Code, Ghostty, kitty, Konsole, DomTerm, and those built on VTE 0.50
-  or later, such as GNOME Terminal), never in CI. `FORCE_HYPERLINK` decides instead, as colour's variables do. Without links,
-  a line under a list of codes points to the index of the pages.
-- **Progress.** When a run takes more than half a second, a line on standard error says what it is doing
-  (`haruspex: inferring 120 procedures (3s)`), redrawn in place and cleared before the report. Only when standard error is a
-  terminal, never when `CI` is set, and not with `--quiet`.
-
-## Environment variables
-
-| Variable | What it does |
-|---|---|
-| `NO_COLOR` | Set to anything: no colour, unless `--color always` or `FORCE_COLOR` says otherwise. |
-| `FORCE_COLOR` | Set to anything but `0` or `false`: colour even off a terminal. `0` or `false`: no colour. |
-| `FORCE_HYPERLINK` | Set to anything but `0` or `false`: codes are links whenever there is colour. `0` or `false`: never. |
-| `CI` | Set to anything: no progress, and no links unless `FORCE_HYPERLINK` asks. |
-| `TERM` | `dumb`: no colour and no progress. |
-| `GITHUB_ACTIONS` | `true`: `--format github` by default. |
-| `GITHUB_WORKSPACE` | The folder SARIF and annotations name files from. |
-| `WT_SESSION`, `TERM_PROGRAM`, `KITTY_WINDOW_ID`, `KONSOLE_VERSION`, `DOMTERM`, `VTE_VERSION` | Read to tell whether the terminal shows links. |
-
-## Exit codes
-
-Fixed, so scripts and CI can rely on them. A run over several modules exits with the highest of theirs.
-
-| Code | Meaning |
-|---|---|
-| 0 | Success, with or without warnings and notes; `init` wrote its file |
-| 1 | The input has errors (SQL that doesn't parse, an object defined twice, a file that isn't a DACPAC), the output couldn't be written, or a check failed (a baseline's included); or `init` wrote its file, but reading the source found errors |
-| 2 | The command line or the config file is wrong; or `init` wrote nothing: a config file is already there, or it found no database or more than one |
-| 3 | A fault in haruspex itself |

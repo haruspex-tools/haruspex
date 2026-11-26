@@ -1,8 +1,10 @@
 # The database module
 
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
-parameters are checked, how it fails, where it runs, and the functions of the application's own query files. The last section is for an application that calls the
-[mssql](https://www.npmjs.com/package/mssql) driver itself, with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
+parameters are checked, how it fails, where it runs, and the functions of the application's own query files. Those are the
+essentials. The [advanced features](#advanced-features) follow, for some applications: table-valued parameters, a module
+that works against two databases, a test double, and calling the [mssql](https://www.npmjs.com/package/mssql) driver itself,
+with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
 says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI. What a
 function returns is the database's shape; [the application's own types](layers.md) shows the step that makes it the
 application's.
@@ -69,30 +71,6 @@ procedure always returns that doesn't arrive fails the call either way
 the pool was made with the driver's `parseJSON` option or not
 ([decision 0048](decisions/0048-an-absent-json-result-reads-as-null.md)).
 
-## Working against two databases
-
-Generated with a baseline (`haruspex generate --baseline`, or `"baseline"` in the config file), the module works against the
-database before a change is deployed and after it, so a release of the application can go out before the database's change, or
-after it ([Generating against a baseline](command-line.md#generating-against-a-baseline)). Each file's header says so:
-
-```ts
-// Combined with a baseline (Shop.dacpac): results accept what either database returns, and parameters take only what both accept.
-```
-
-What changes for the code that calls the functions:
-
-- **A key one database doesn't return is optional** (`row.channel` is `string | null | undefined`), and so is a key one leaves
-  out when null where the other sends the null. Read it with a default, `row.channel ?? 'web'`, in the step that makes the row
-  the application's own ([the application's own types](layers.md)); once the baseline moves on, the key is required again, and
-  the compiler shows the defaults no longer needed.
-- **A value set, a length or a range is the wider of the two**, and a value of another kind in each database is a union of both.
-- **A result set only one database returns may be missing**: `[]` for rows, `null` for a `FOR JSON` result, as a set whose
-  statement didn't run is.
-- **A parameter only one procedure has is left out** while it has a default there, and a parameter's type is the narrower of the
-  two, so the function never sends what one of them refuses.
-- **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
-  doesn't compile, which the run's error explains (HAR6033).
-
 ## How the parameters are checked
 
 Before it asks the connection for a request, a function checks its parameters with a strict schema of each one's declared
@@ -118,50 +96,6 @@ The schema checks:
 Each value is then sent with the driver's type for the declared one: `nvarchar(40)` as `sql.NVarChar(40)`, a decimal with its
 precision and scale, `binary(32)` as `sql.VarBinary(32)`, which the server pads to its length. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be
 left out, and it is then not sent at all, so that its default applies.
-
-## Table-valued parameters
-
-A `READONLY` parameter of a table type is an array of the type's rows. For this type and procedure:
-
-```sql
-create type shop.line_list as table (
-    product_id int not null,
-    qty smallint not null check (qty > 0),
-    note nvarchar(200) null,
-    primary key (product_id)
-);
-create procedure shop.add_lines @order_id int, @lines shop.line_list readonly as
-    select l.product_id, l.qty from @lines as l join shop.product as p on p.product_id = l.product_id;
-```
-
-the function takes the rows as objects, one key per column:
-
-```ts
-const added = await addLines(pool, {
-  order_id: 42,
-  lines: [{ product_id: 7, qty: 2, note: null }, { product_id: 9, qty: 1, note: 'gift' }],
-})
-```
-
-The row's schema, `LineListRowSchema`, is named after the type and shared by every procedure that takes it (in the shared file
-when two modules do). It checks what a client can, as for any parameter
-([decision 0076](decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)):
-
-- **every column, always**: a row sends every column of the type, so each key is required, even a nullable column's or one with
-  a default, which SQL Server never applies to a row sent; `null` only where the column takes NULL. A key the type doesn't have
-  is an error, as for the parameters;
-- **each value as a parameter of the column's type**: lengths, ranges, places and the forms of dates and times, and the values a
-  CHECK of the type allows where it says so (here `qty` above 0);
-- **the array itself**: it may be left out, and the procedure then reads no rows, or be empty, but not `null`, which the server
-  refuses.
-
-The function sends the rows as the driver's `sql.Table` of the type, named by its schema and name, every column declared in the
-type's order, since SQL Server matches the columns by place, not by name. What a row's schema can't check, such as two rows that
-share a key, is refused by the server: the driver's `RequestError` then has no number of its own, and the server's errors, the
-key's 2627 and then 8061, are in its `precedingErrors`. A type with an identity, computed or `rowversion` column can't be sent at
-all, not even with no rows, so its parameter is unknown and can only be left out. `haruspex check --baseline` compares a table
-type's definition in the two IR files: a type changed so that a row the running application sends may be refused, or land in
-another column, fails the check.
 
 ## When a call fails
 
@@ -190,50 +124,6 @@ try {
   throw error
 }
 ```
-
-## Testing with a double
-
-A function takes anything with `request()`, so a test can hand it a double rather than a pool. The double's `request()`
-returns an object with `input()` and `output()`, whose results the function ignores, and `execute()`, which the function
-calls for a procedure and for a query file alike (a query file runs through `sp_executesql`). What `execute()` resolves to
-is what the function reads, and it must have all three of the driver's fields:
-
-- `recordsets`: every result set, in order, each an array of rows (or, for a `FOR JSON` result, the one row the driver
-  makes of it). The function reads the sets from here, never from `recordset`, the first set alone, which hand-written
-  doubles often give instead: with only `recordset`, every call fails before any schema is applied;
-- `output`: the `OUTPUT` parameters, by their declared names, `{}` when there are none;
-- `returnValue`: the return code, 0 unless the test is about another.
-
-Typing the result as the driver's `IProcedureResult` makes the compiler ask for each. A double for a procedure with an `OUTPUT`
-parameter, as a test in this repository runs it against a generated function:
-
-```ts
-import type sql from 'mssql'
-import type { Queryable } from './db/haruspex.mssql'
-
-/** A connection whose every call returns these result sets, OUTPUT parameters and return code. */
-export function returning(sets: object[][], output: Record<string, unknown> = {}, returnValue = 0): Queryable {
-  const result: sql.IProcedureResult<object> = {
-    recordsets: sets as sql.IRecordSet<object>[],
-    recordset: sets[0] as sql.IRecordSet<object>,
-    output,
-    returnValue,
-    rowsAffected: sets.map((rows) => rows.length),
-  }
-  const request = { input: (): void => undefined, output: (): void => undefined, execute: async () => result }
-  return { request: () => request as unknown as sql.Request }
-}
-
-const sale = await ringUp(returning([[{ basket_id: '7', discount: 0, gift: false, token: null, weight: null, ratio: null }]], { sale_id: 12 }), {
-  product_id: 1,
-  quantity: 2,
-  basket_id: 7,
-})
-// { result: [{ basket_id: '7', … }], output: { sale_id: 12 } }
-```
-
-What the double returns is still checked by the procedure's schemas, so a double that drifts from the database fails the
-way the database would, with a `ResultError`.
 
 ## Where the functions run
 
@@ -302,9 +192,129 @@ error is mssql's `RequestError`. A query file has no `OUTPUT` parameters and no 
 ([HAR1017](diagnostics/HAR1017.md)), the code is always 0, and a query file of one result set returns that result itself. The text is part of the module, so
 `haruspex check` fails when a query file has changed since the module was generated.
 
+## Advanced features
+
+The sections from here on are for some applications, not every one, and each opens with the situation it is for.
+
+## Table-valued parameters
+
+**For a procedure that takes a table-valued parameter.**
+A `READONLY` parameter of a table type is an array of the type's rows. For this type and procedure:
+
+```sql
+create type shop.line_list as table (
+    product_id int not null,
+    qty smallint not null check (qty > 0),
+    note nvarchar(200) null,
+    primary key (product_id)
+);
+create procedure shop.add_lines @order_id int, @lines shop.line_list readonly as
+    select l.product_id, l.qty from @lines as l join shop.product as p on p.product_id = l.product_id;
+```
+
+the function takes the rows as objects, one key per column:
+
+```ts
+const added = await addLines(pool, {
+  order_id: 42,
+  lines: [{ product_id: 7, qty: 2, note: null }, { product_id: 9, qty: 1, note: 'gift' }],
+})
+```
+
+The row's schema, `LineListRowSchema`, is named after the type and shared by every procedure that takes it (in the shared file
+when two modules do). It checks what a client can, as for any parameter
+([decision 0076](decisions/0076-a-table-valued-parameter-is-an-array-of-strict-rows-of-its-type.md)):
+
+- **every column, always**: a row sends every column of the type, so each key is required, even a nullable column's or one with
+  a default, which SQL Server never applies to a row sent; `null` only where the column takes NULL. A key the type doesn't have
+  is an error, as for the parameters;
+- **each value as a parameter of the column's type**: lengths, ranges, places and the forms of dates and times, and the values a
+  CHECK of the type allows where it says so (here `qty` above 0);
+- **the array itself**: it may be left out, and the procedure then reads no rows, or be empty, but not `null`, which the server
+  refuses.
+
+The function sends the rows as the driver's `sql.Table` of the type, named by its schema and name, every column declared in the
+type's order, since SQL Server matches the columns by place, not by name. What a row's schema can't check, such as two rows that
+share a key, is refused by the server: the driver's `RequestError` then has no number of its own, and the server's errors, the
+key's 2627 and then 8061, are in its `precedingErrors`. A type with an identity, computed or `rowversion` column can't be sent at
+all, not even with no rows, so its parameter is unknown and can only be left out. `haruspex check --baseline` compares a table
+type's definition in the two IR files: a type changed so that a row the running application sends may be refused, or land in
+another column, fails the check.
+
+## Working against two databases
+
+**For an application and a database that deploy separately.**
+Generated with a baseline (`haruspex generate --baseline`, or `"baseline"` in the config file), the module works against the
+database before a change is deployed and after it, so a release of the application can go out before the database's change, or
+after it ([Generating against a baseline](command-line.md#generating-against-a-baseline)). Each file's header says so:
+
+```ts
+// Combined with a baseline (Shop.dacpac): results accept what either database returns, and parameters take only what both accept.
+```
+
+What changes for the code that calls the functions:
+
+- **A key one database doesn't return is optional** (`row.channel` is `string | null | undefined`), and so is a key one leaves
+  out when null where the other sends the null. Read it with a default, `row.channel ?? 'web'`, in the step that makes the row
+  the application's own ([the application's own types](layers.md)); once the baseline moves on, the key is required again, and
+  the compiler shows the defaults no longer needed.
+- **A value set, a length or a range is the wider of the two**, and a value of another kind in each database is a union of both.
+- **A result set only one database returns may be missing**: `[]` for rows, `null` for a `FOR JSON` result, as a set whose
+  statement didn't run is.
+- **A parameter only one procedure has is left out** while it has a default there, and a parameter's type is the narrower of the
+  two, so the function never sends what one of them refuses.
+- **A procedure whose change can't be bridged has no function**, until the change is shipped in two releases: a call of it
+  doesn't compile, which the run's error explains (HAR6033).
+
+## Testing with a double
+
+**For a test that runs a function without a database.**
+A function takes anything with `request()`, so a test can hand it a double rather than a pool. The double's `request()`
+returns an object with `input()` and `output()`, whose results the function ignores, and `execute()`, which the function
+calls for a procedure and for a query file alike (a query file runs through `sp_executesql`). What `execute()` resolves to
+is what the function reads, and it must have all three of the driver's fields:
+
+- `recordsets`: every result set, in order, each an array of rows (or, for a `FOR JSON` result, the one row the driver
+  makes of it). The function reads the sets from here, never from `recordset`, the first set alone, which hand-written
+  doubles often give instead: with only `recordset`, every call fails before any schema is applied;
+- `output`: the `OUTPUT` parameters, by their declared names, `{}` when there are none;
+- `returnValue`: the return code, 0 unless the test is about another.
+
+Typing the result as the driver's `IProcedureResult` makes the compiler ask for each. A double for a procedure with an `OUTPUT`
+parameter, as a test in this repository runs it against a generated function:
+
+```ts
+import type sql from 'mssql'
+import type { Queryable } from './db/haruspex.mssql'
+
+/** A connection whose every call returns these result sets, OUTPUT parameters and return code. */
+export function returning(sets: object[][], output: Record<string, unknown> = {}, returnValue = 0): Queryable {
+  const result: sql.IProcedureResult<object> = {
+    recordsets: sets as sql.IRecordSet<object>[],
+    recordset: sets[0] as sql.IRecordSet<object>,
+    output,
+    returnValue,
+    rowsAffected: sets.map((rows) => rows.length),
+  }
+  const request = { input: (): void => undefined, output: (): void => undefined, execute: async () => result }
+  return { request: () => request as unknown as sql.Request }
+}
+
+const sale = await ringUp(returning([[{ basket_id: '7', discount: 0, gift: false, token: null, weight: null, ratio: null }]], { sale_id: 12 }), {
+  product_id: 1,
+  quantity: 2,
+  basket_id: 7,
+})
+// { result: [{ basket_id: '7', … }], output: { sale_id: 12 } }
+```
+
+What the double returns is still checked by the procedure's schemas, so a double that drifts from the database fails the
+way the database would, with a `ResultError`.
+
 ## Calling the driver yourself
 
-An application that calls the driver itself, or through code of its own, uses the schemas alone (`"emit": ["zod"]`). It parses
+**For an application that calls the driver itself**, or through code of its own.
+Such an application uses the schemas alone (`"emit": ["zod"]`). It parses
 each result with the procedure's schema before using it, so that data which breaks a claim fails at the boundary, loudly,
 rather than deep in the code. The parameters' schema (`GetOrderParamsSchema`) checks what it sends, as the functions do.
 

@@ -118,7 +118,7 @@ into the application's types, and pass a column the database gains straight thro
 
 ## A mapper that accounts for every key
 
-A step that names the keys it uses compiles unchanged when the procedure gains a column, and the column is dropped without
+**For an application whose step must decide about every key a row gains.** A step that names the keys it uses compiles unchanged when the procedure gains a column, and the column is dropped without
 anyone choosing to drop it. `"mapping"` in `"emit"` ([the configuration](configuration.md#what-is-written-emit)) writes
 `haruspex.mapping.ts` beside the module, with one type, `Exhaustive`, that makes the compiler stop there instead. It is types
 only, with nothing to run.
