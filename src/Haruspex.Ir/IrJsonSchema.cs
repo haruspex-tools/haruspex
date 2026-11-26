@@ -243,7 +243,7 @@ public static class IrJsonSchema
             ("writtenBy", Ref("build")),
             ("path", Text("Where the source was read from, as the config file names it: relative to its folder, /-separated (0.25). Left out when not known, and for a source read from several folders.")),
             ("paths", Node(
-                ("description", "For a source read from several folders of scripts as one database, the folders, each as path writes one, sorted (0.32). Left out for a source read from one folder, a project or a package, which path names."),
+                ("description", "For a source read from several folders of scripts as one database, the folders, each as path writes one, sorted (0.32). Every location into the source's scripts is then relative to the config file's folder, and so begins with the folder listed, rather than relative to one folder read. Left out for a source read from one folder, a project or a package, which path names."),
                 ("type", "array"),
                 ("minItems", 2),
                 ("uniqueItems", true),
@@ -267,7 +267,7 @@ public static class IrJsonSchema
                 ("minProperties", 1),
                 ("additionalProperties", Node(("type", "boolean"))))),
             ("files", Node(
-                ("description", "The SHA-256 of each script file the document's locations point into, by its path as a location writes it, of its text with LF line endings in UTF-8 (0.25). Left out when there are none."),
+                ("description", "The SHA-256 of each script file the document's locations point into, by its path as a location writes it (relative to the folder read, or to the config file's folder when paths is given), of its text with LF line endings in UTF-8 (0.25). Left out when there are none."),
                 ("type", "object"),
                 ("minProperties", 1),
                 ("additionalProperties", Sha256("The file's SHA-256.")))),

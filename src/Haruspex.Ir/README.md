@@ -302,7 +302,10 @@ refuse.
 `RETURN` whose value isn't the constant 0 or NULL, or when the body can't be read; `false` when every call that succeeds ends with
 0, so the code tells a caller nothing, as for a body with no such `RETURN`, and for every query (SQL Server refuses `RETURN` with a
 value in a batch run through `sp_executesql`). `at` is a source location, `path:line:column`
-relative to the source root, or for a null reason the column it applies to (`schema.table.column`).
+relative to the source root, or for a null reason the column it applies to (`schema.table.column`). What a location's path is
+relative to depends on the document: the folder of a source read from one folder, or the project file's folder; the config
+file's folder for a query file, and for every script of a source that lists `paths` (0.32), so that the path names the folder
+listed (`procedures/get_order.sql`); inside a package, the package's name (`sales.dacpac/[sales].[get_order]`).
 
 `source.package` and `source.sha256` (0.19) name the package the source was read from, such as a DACPAC, by its file name
 without a folder, and the SHA-256 of its bytes as 64 lower-case hexadecimal digits; both are left out, together, for a source

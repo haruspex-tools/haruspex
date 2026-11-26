@@ -67,6 +67,46 @@ public class SourceFoldersTests
     }
 
     [Fact]
+    public void A_list_of_one_folder_gives_the_ir_one_path_gives_byte_for_byte()
+    {
+        using var listed = new TempDirectory();
+        using var single = new TempDirectory();
+        foreach (var (folder, source) in new[] { (listed, "[\"database\"]"), (single, "\"database\"") })
+        {
+            folder.File("database/ingot.sql", Table);
+            folder.File("database/weigh.sql", Procedure);
+            folder.File("haruspex.json", $$"""{ "source": {{source}}, "out": "out", "schemas": { "shop": { "include": ["*"] } } }""");
+            Assert.Equal(0, Run(folder, "generate").ExitCode);
+        }
+
+        Assert.Equal(File.ReadAllText(Path.Combine(single.Path, "out", HaruspexCli.IrFileName)), File.ReadAllText(Path.Combine(listed.Path, "out", HaruspexCli.IrFileName)));
+    }
+
+    [Fact]
+    public void Check_compares_one_folder_with_several_both_ways_naming_the_folder_added_or_removed()
+    {
+        // One folder against two: the folder added is reported; two against one: the folder removed. A folder of no scripts the
+        // procedure reads, so that no type changes and the report is the folders' alone.
+        using var folder = new TempDirectory();
+        folder.File("database/ingot.sql", Table);
+        folder.File("database/weigh.sql", Procedure);
+        folder.File("audit/log.sql", "CREATE TABLE shop.audit_log (id int NOT NULL);");
+        folder.File("haruspex.json", """{ "source": "database", "out": "out", "schemas": { "shop": { "include": ["weigh"] } } }""");
+        Assert.Equal(0, Run(folder, "generate").ExitCode);
+
+        var (widenedExit, _, widened) = Run(folder, "check", "database", "audit");
+        Assert.Equal(0, Run(folder, "generate", "database", "audit").ExitCode);
+        var (narrowedExit, _, narrowed) = Run(folder, "check", "database");
+
+        Assert.Equal(HaruspexCli.ExitCodes.Failed, widenedExit);
+        Assert.Contains("source.paths.audit: now read", widened, StringComparison.Ordinal);
+        Assert.DoesNotContain("source.paths.database", widened, StringComparison.Ordinal);
+        Assert.Equal(HaruspexCli.ExitCodes.Failed, narrowedExit);
+        Assert.Contains("source.paths.audit: no longer read", narrowed, StringComparison.Ordinal);
+        Assert.DoesNotContain("source.paths.database", narrowed, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_list_of_one_folder_is_that_folder_and_its_document_is_labelled_as_before()
     {
         using var folder = new TempDirectory();
