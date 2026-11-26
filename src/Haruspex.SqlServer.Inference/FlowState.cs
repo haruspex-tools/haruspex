@@ -33,18 +33,20 @@ internal sealed record FlowState
         Transactions = session.Transactions;
         Isolation = session.Isolation;
         Found = session.Found;
+        RowLimit = session.RowLimit;
     }
 
     /// <summary>
     /// What the body's own transactions and isolation level are here, and the rows its existence guards found: the facts an
-    /// existence guard's claim rests on (<see cref="FoundRow"/>). Kept as one part, since they change together.
+    /// existence guard's claim rests on (<see cref="FoundRow"/>). Kept as one part, since they change together; the row limit
+    /// <c>SET ROWCOUNT</c> sets is a fact of the session too, kept beside them.
     /// </summary>
-    private sealed record SessionFacts(int Transactions, IsolationLevel? Isolation, EquatableArray<FoundRow> Found)
+    private sealed record SessionFacts(int Transactions, IsolationLevel? Isolation, EquatableArray<FoundRow> Found, int? RowLimit = null)
     {
         public static SessionFacts None { get; } = new(0, null, []);
     }
 
-    private SessionFacts Session => new(Transactions, Isolation, Found);
+    private SessionFacts Session => new(Transactions, Isolation, Found, RowLimit);
 
     /// <summary>
     /// How many transactions the body has begun and not yet ended on every path here (<c>@@TRANCOUNT</c> less the caller's,
@@ -57,6 +59,13 @@ internal sealed record FlowState
 
     /// <summary>The rows existence guards found here (<see cref="FoundRow"/>), kept where paths meet only if every path holds them.</summary>
     public EquatableArray<FoundRow> Found { get; }
+
+    /// <summary>
+    /// The row limit the body's own <c>SET ROWCOUNT</c> set and every path here agrees on: 0 for none. Null when it is the
+    /// caller's, which haruspex doesn't see, or a variable's. A limit caps a query's rows, never adds to them, so only a known
+    /// limit of 1 changes a claim (observed: Set_rowcount_caps_the_rows_of_a_query_and_lasts_until_the_procedure_returns).
+    /// </summary>
+    public int? RowLimit { get; }
 
     /// <summary>
     /// The variables the body declares that no path to here has assigned, so each certainly holds NULL: a must-fact, kept
@@ -126,6 +135,10 @@ internal sealed record FlowState
     public FlowState WithIsolation(IsolationLevel isolation) =>
         new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { Isolation = isolation });
 
+    /// <summary>This state after <c>SET ROWCOUNT</c>: the limit it sets, or null when that is not known.</summary>
+    public FlowState WithRowLimit(int? limit) =>
+        new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { RowLimit = limit });
+
     /// <summary>This state after <c>BEGIN TRANSACTION</c>.</summary>
     public FlowState Begun() =>
         new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { Transactions = Transactions + 1 });
@@ -137,8 +150,11 @@ internal sealed record FlowState
     public FlowState Committed()
     {
         var depth = Math.Max(0, Transactions - 1);
-        return new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(
-            depth, Isolation, depth == 0 ? [.. Found.Select(f => f.Raced)] : Found));
+        return new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with
+        {
+            Transactions = depth,
+            Found = depth == 0 ? [.. Found.Select(f => f.Raced)] : Found,
+        });
     }
 
     /// <summary>
@@ -147,7 +163,7 @@ internal sealed record FlowState
     /// </summary>
     public FlowState Written(bool rolledBack = false) => Found.Count == 0 && !rolledBack
         ? this
-        : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(rolledBack ? 0 : Transactions, Isolation, []));
+        : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { Transactions = rolledBack ? 0 : Transactions, Found = [] });
 
     /// <summary>
     /// The state a CATCH starts from: no row held any more, and none of the body's transactions known to be open. Whether every
@@ -157,7 +173,7 @@ internal sealed record FlowState
     /// </summary>
     public FlowState Caught() => Found.Count == 0 && Transactions == 0
         ? this
-        : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, new SessionFacts(0, Isolation, [.. Found.Select(f => f.Raced)]));
+        : new(Temps, Variables, Results, ReadUncommitted, Json, Unassigned, Possible, Session with { Transactions = 0, Found = [.. Found.Select(f => f.Raced)] });
 
     /// <summary>This state with a row an existence guard found.</summary>
     public FlowState WithFound(FoundRow found) =>
@@ -198,7 +214,7 @@ internal sealed record FlowState
 
         // Uncommitted on either path may be uncommitted here. A variable is certainly NULL here only if it is on both paths, and
         // a SELECT's possible assignment and a guard's found row hold only if both paths hold them. A transaction is open only
-        // as deep as the shallower path's, and an isolation level is known only where both paths set the same.
+        // as deep as the shallower path's, and an isolation level or a row limit is known only where both paths set the same.
         return new FlowState(
             temps,
             variables,
@@ -207,7 +223,7 @@ internal sealed record FlowState
             json,
             [.. a.Unassigned.Where(b.Unassigned.Contains)],
             [.. a.Possible.Where(b.Possible.Contains)],
-            new SessionFacts(Math.Min(a.Transactions, b.Transactions), a.Isolation == b.Isolation ? a.Isolation : null, FoundRows(a.Found, b.Found)));
+            new SessionFacts(Math.Min(a.Transactions, b.Transactions), a.Isolation == b.Isolation ? a.Isolation : null, FoundRows(a.Found, b.Found), a.RowLimit == b.RowLimit ? a.RowLimit : null));
     }
 
     /// <summary>

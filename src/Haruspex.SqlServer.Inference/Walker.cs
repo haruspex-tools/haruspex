@@ -1,3 +1,4 @@
+using System.Globalization;
 using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
@@ -155,6 +156,7 @@ internal sealed partial class Walker
         }
 
         body = statements;
+        labels = BodyLabels.Of(statements);
         foreach (var variable in declarations.Variables)
         {
             var name = variable.Name;
@@ -209,8 +211,14 @@ internal sealed partial class Walker
         FlowState? continues = null;
         foreach (var statement in statements)
         {
-            if (state is null || blocker is not null)
+            if (blocker is not null)
                 break;
+
+            // A label joins the paths that jump to it with the one from the statement before it, if any reaches it.
+            if (statement is LabelStatement label)
+                state = Landed(label, state);
+            if (state is null)
+                continue;
 
             // A call or TRUNCATE may change a permanent table's rows, which ends what every existence guard found (FoundRow): the
             // row may be gone, by the body's own doing rather than another session's. A write does the same in Modify.
@@ -251,6 +259,28 @@ internal sealed partial class Walker
             // procedure returns (observed: A_procedures_isolation_level_holds_in_the_procedures_it_calls_and_ends_when_it_returns).
             case SetTransactionIsolationLevelStatement isolation:
                 return Continue(state.WithReadUncommitted(isolation.Level == IsolationLevel.ReadUncommitted).WithIsolation(isolation.Level));
+
+            // SET ROWCOUNT caps the rows of each query after it, which only a known limit of 1 makes a claim of (FlowState.RowLimit).
+            // A variable's limit is not read: one that is negative or NULL fails the statement and leaves the limit as it was
+            // (observed: Set_rowcount_caps_the_rows_of_a_query_and_lasts_until_the_procedure_returns).
+            case SetRowCountStatement rowCount:
+                return Continue(state.WithRowLimit(rowCount.NumberRows is IntegerLiteral literal && int.TryParse(literal.Value, NumberStyles.None, CultureInfo.InvariantCulture, out var limit) ? limit : null));
+
+            // The language, the first day of the week and the order of a date's parts change what some values are, never a
+            // type or a fact haruspex claims of a value, in every language the server has; each lasts until the procedure
+            // returns (observed: The_language_changes_values_but_no_type_or_claimed_fact_and_lasts_until_the_procedure_returns).
+            case SetCommandStatement { Commands: var commands } when commands.All(c => c is GeneralSetCommand { CommandType: GeneralSetCommandType.Language or GeneralSetCommandType.DateFirst or GeneralSetCommandType.DateFormat }):
+                return Continue(state);
+
+            // WAITFOR DELAY and TIME return nothing. WAITFOR (RECEIVE …) returns a result set of the queue's columns, and
+            // GET CONVERSATION GROUP assigns a variable, Service Broker's reads, which are not modelled (observed:
+            // Waitfor_delay_and_time_return_nothing_and_waitfor_receive_returns_a_result_set).
+            case WaitForStatement { WaitForOption: WaitForOption.Delay or WaitForOption.Time }:
+                return Continue(state);
+            case ExecuteAsStatement impersonate:
+                return Impersonated(impersonate, state);
+            case RevertStatement:
+                return Continue(state);
             case PrintStatement:
             case DeclareTableVariableStatement:
             // A transaction changes what a row an existence guard found is held by (FoundRow), and a rollback undoes what the
@@ -260,6 +290,7 @@ internal sealed partial class Walker
             case CommitTransactionStatement:
                 return Continue(state.Committed());
             case SaveTransactionStatement:
+            case LabelStatement:
                 return Continue(state);
             case RollbackTransactionStatement:
                 return Continue(RolledBack(state, at).Written(rolledBack: true));
@@ -291,6 +322,8 @@ internal sealed partial class Walker
             case ReturnStatement:
                 returns.Add(state);
                 return Outcome.Ends;
+            case GoToStatement jump:
+                return Jump(jump, state);
 
             // An error ends the call, or reaches CATCH from the state before it (recorded by Walk). Observed: THROW ends the
             // procedure; RAISERROR of severity 11 or more goes on but the call fails; 10 and below is a message.
@@ -525,6 +558,11 @@ internal sealed partial class Walker
 
         var result = typer.Result(select, Reading(state))!; // Never null: a SELECT that returns none (INTO, assignments) is read above.
         blocker ??= result.ResultsUnknown;
+
+        // A row limit of 1 leaves at most one row, of a FOR JSON query's too, whose text then holds that one (observed:
+        // Set_rowcount_caps_the_rows_of_a_query_and_lasts_until_the_procedure_returns).
+        if (state.RowLimit == 1 && result.Cardinality == IrCardinality.Many)
+            result = result with { Cardinality = IrCardinality.AtMostOne };
         appended++;
         return state.WithResults(state.Results.Append(result, At(select)));
     }

@@ -58,7 +58,7 @@ None: every script is read.
 
 ## WideWorldImporters
 
-**Typed 174 of 175 fields in WideWorldImporters; the results of 28 of its 129 procedures can't be described, so they have no fields to count.** 29 of the 30 procedures that return fields are fully typed.
+**Typed 174 of 175 fields in WideWorldImporters; the results of 27 of its 129 procedures can't be described, so they have no fields to count.** 29 of the 30 procedures that return fields are fully typed.
 
 An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read the scripts the project lists to build, as a build would, and leave out the others, listed below with the reason. The project builds most of its scripts with `QUOTED_IDENTIFIER` off, and they are parsed here with it on; in these scripts every double quote is inside a string or a comment, where the setting changes nothing. Read through the project file, each script with its own setting, the project gives the IR of the package its build makes (`ProjectEquivalenceTests`).
 
@@ -69,8 +69,8 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read
 | Procedures | 129 |
 | Procedures that return fields | 30 |
 | Procedures whose results have no fields, because a result's shape is unknown | 5 |
-| Procedures whose result sets can't be listed | 23 |
-| Procedures that return no result set | 71 |
+| Procedures whose result sets can't be listed | 22 |
+| Procedures that return no result set | 72 |
 | Procedures whose known results have no fields | 0 |
 | Procedures that return fields, fully typed | 29 |
 | Fields | 175 |
@@ -83,10 +83,9 @@ An SSDT project, `WideWorldImporters.sqlproj`, and its scripts. The figures read
 
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters |
 |---|---:|---:|---:|---:|
-| `dynamic-sql` | 0 | 0 | 18 | 0 |
+| `dynamic-sql` | 0 | 0 | 22 | 0 |
 | `unsupported-query` | 0 | 5 | 0 | 0 |
 | `unsupported-sql-type` | 1 | 0 | 0 | 1 |
-| `unsupported-statement` | 0 | 0 | 5 | 0 |
 
 ### Scripts left out
 

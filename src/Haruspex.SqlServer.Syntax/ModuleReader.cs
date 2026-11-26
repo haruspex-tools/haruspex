@@ -26,7 +26,7 @@ public static class ModuleReader
             Parameters(definition.Parameters, span, name.Schema),
             Body(definition.StatementList, definition.MethodSpecifier))
         {
-            RunsAsAnother = RunsAsAnother(definition.Options),
+            RunsAsAnother = RunsAsAnother(definition.Options, definition.StatementList),
         };
     }
 
@@ -54,7 +54,7 @@ public static class ModuleReader
             // ScriptDom's three kinds of return are all T-SQL has.
             _ => throw new ArgumentException($"{name} returns {definition.ReturnType?.GetType().Name ?? "nothing"}, which is not a kind of function.", nameof(definition)),
         };
-        return function with { RunsAsAnother = RunsAsAnother(definition.Options) };
+        return function with { RunsAsAnother = RunsAsAnother(definition.Options, definition.StatementList) };
     }
 
     /// <summary>A view, from its <c>CREATE</c>, <c>CREATE OR ALTER</c> or <c>ALTER VIEW</c>.</summary>
@@ -99,22 +99,38 @@ public static class ModuleReader
         var name = new ObjectName(parent.Schema, definition.Name.BaseIdentifier.Value);
         return new Trigger(name, SyntaxReader.Span(file, definition), parent, definition.TriggerType == TriggerType.InsteadOf, events, Body(definition.StatementList, definition.MethodSpecifier))
         {
-            RunsAsAnother = RunsAsAnother(definition.Options),
+            RunsAsAnother = RunsAsAnother(definition.Options, definition.StatementList),
         };
     }
 
     /// <summary>
-    /// Whether a module's options include <c>EXECUTE AS</c> anyone but the caller (<see cref="Module.RunsAsAnother"/>). A package
-    /// keeps the clause in the module's header, which is read here too.
+    /// Whether a module's options include <c>EXECUTE AS</c> anyone but the caller, or its body runs an <c>EXECUTE AS</c>
+    /// statement of anyone but the caller (<see cref="Module.RunsAsAnother"/>). A package keeps the clause in the module's
+    /// header, which is read here too.
     /// </summary>
-    private static bool RunsAsAnother(IEnumerable<TSqlFragment>? options) =>
+    private static bool RunsAsAnother(IEnumerable<TSqlFragment>? options, StatementList? body) =>
         options?.Any(o => o switch
         {
             ExecuteAsProcedureOption procedure => procedure.ExecuteAs.ExecuteAsOption != ExecuteAsOption.Caller,
             ExecuteAsFunctionOption function => function.ExecuteAs.ExecuteAsOption != ExecuteAsOption.Caller,
             ExecuteAsTriggerOption trigger => trigger.ExecuteAsClause.ExecuteAsOption != ExecuteAsOption.Caller,
             _ => false,
-        }) == true;
+        }) == true || (body is not null && Impersonations.In(body));
+
+    /// <summary>Finds an <c>EXECUTE AS</c> statement of anyone but the caller in a body.</summary>
+    private sealed class Impersonations : TSqlFragmentVisitor
+    {
+        private bool found;
+
+        public static bool In(StatementList body)
+        {
+            var visitor = new Impersonations();
+            body.Accept(visitor);
+            return visitor.found;
+        }
+
+        public override void Visit(ExecuteAsStatement node) => found |= node.ExecuteContext.Kind != ExecuteAsOption.Caller;
+    }
 
     /// <summary>A synonym, from its <c>CREATE SYNONYM</c>.</summary>
     /// <param name="definition">The definition.</param>

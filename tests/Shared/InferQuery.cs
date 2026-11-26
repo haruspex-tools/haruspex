@@ -3,6 +3,7 @@ using Haruspex.Diagnostics;
 using Haruspex.Emit.Zod;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 
 namespace Haruspex.TestSupport;
@@ -36,15 +37,15 @@ internal static class InferQuery
     /// </summary>
     public static IrDocument Infer(string schema, string query, string path = "queries/q.sql") => Inferred(schema, query, path).Expected();
 
-    /// <summary>As <c>Infer</c>, with what reading the query file and inferring it found.</summary>
-    public static Outcome<IrDocument> Inferred(string schema, string query, string path = "queries/q.sql")
+    /// <summary>As <c>Infer</c>, with what reading the query file and inferring it found, for callers of <paramref name="session"/>.</summary>
+    public static Outcome<IrDocument> Inferred(string schema, string query, string path = "queries/q.sql", SessionOptions? session = null)
     {
         using var dir = new TempDirectory();
         dir.File("schema.sql", schema);
         var read = SqlScriptFolder.Read(dir.Path);
         Assert.True(read.Diagnostics.Count == 0, string.Join("\n", read.Diagnostics));
         return QueryFileReader.Parse(SourceLines.WithLineFeeds(query), path)
-            .Then(file => IrInference.Infer(read.Model, [], queries: [file]));
+            .Then(file => IrInference.Infer(read.Model, [], session: session, queries: [file]));
     }
 
     /// <summary>

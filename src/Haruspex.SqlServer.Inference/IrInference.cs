@@ -57,7 +57,7 @@ public static class IrInference
         {
             warnings.Add(InferenceCodes.UnmaskNotApplied.At(
                 another.Span.Start,
-                $"The session declares that the callers hold UNMASK, but {another.Name} runs WITH EXECUTE AS another user, whose permissions decide what it and whatever it calls read, so masked columns are still read as masked everywhere."));
+                $"The session declares that the callers hold UNMASK, but {another.Name} runs as another user, by WITH EXECUTE AS or an EXECUTE AS statement, whose permissions decide what it and whatever it calls read, so masked columns are still read as masked everywhere."));
         }
         var analysed = procedures
             .Distinct()

@@ -63,9 +63,9 @@ TryCatchStatement | BEGIN TRY … BEGIN CATCH | modelled | The state | CATCH is 
 ThrowStatement | THROW | modelled | The state | Ends the call, or reaches CATCH. | SELECT 1 AS a; THROW 50000, 'stop', 1;
 RaiseErrorStatement | RAISERROR | modelled | The state | Of severity 11 or more it ends the call, or reaches CATCH; below that it is a message. | RAISERROR ('note', 10, 1); SELECT 1 AS a;
 RaiseErrorLegacyStatement | RAISERROR number 'text' | not-in-a-body | | The form SQL Server 2000 had, which the parser for compatibility level 170 refuses. | RAISERROR 50000 'old';
-GoToStatement | GOTO | unknown unsupported-statement | | Not modelled: a jump the walker doesn't follow, so the result sets after it can't be listed. | GOTO done; done: SELECT 1 AS a;
-LabelStatement | label: | unknown unsupported-statement | | Not modelled, as GOTO isn't. | done: SELECT 1 AS a;
-WaitForStatement | WAITFOR | unknown unsupported-statement | | Not modelled. | WAITFOR DELAY '00:00:01'; SELECT 1 AS a;
+GoToStatement | GOTO | partly unsupported-statement | Flow statements | A jump forward, to a label in its own block or one around it, skips what lies between and joins its state there; a jump back or into a block isn't followed, so the results after it can't be listed. | GOTO done; SELECT 1 AS a; done: SELECT 2 AS b; && again: SELECT 1 AS a; GOTO again;
+LabelStatement | label: | modelled | Flow statements | Joins the state each GOTO to it jumps with and the one from the statement before it. | done: SELECT 1 AS a;
+WaitForStatement | WAITFOR | partly unsupported-statement | Flow statements | DELAY and TIME return nothing; RECEIVE returns a result set of a queue's columns and GET CONVERSATION GROUP sets a variable, Service Broker's reads, which aren't modelled. | WAITFOR DELAY '00:00:01'; SELECT 1 AS a; && WAITFOR (RECEIVE message_body FROM dbo.q), TIMEOUT 10; SELECT 1 AS a;
 
 [Statements that hold state]
 DeclareVariableStatement | DECLARE @v | modelled | The state | Declares the variable with its type, holding its initial value or NULL. | DECLARE @n int = 1; SELECT @n AS n;
@@ -96,15 +96,15 @@ CommitTransactionStatement | COMMIT | no-effect | The state | Changes nothing he
 SaveTransactionStatement | SAVE TRANSACTION | no-effect | The state | Changes nothing here. | BEGIN TRANSACTION; SAVE TRANSACTION s; COMMIT;
 RollbackTransactionStatement | ROLLBACK | modelled | The state | Undoes what the procedure did to its temporary tables, which become unknown after it. | BEGIN TRANSACTION; ROLLBACK; SELECT 1 AS a;
 PrintStatement | PRINT | no-effect | The state | A message, not a result set. | PRINT 'x'; SELECT 1 AS a;
-SetRowCountStatement | SET ROWCOUNT | unknown unsupported-statement | | Not modelled. | SET ROWCOUNT 1; SELECT id FROM dbo.toy;
+SetRowCountStatement | SET ROWCOUNT | modelled | Flow statements | A limit of 1 leaves each query after it at most one row, until another SET ROWCOUNT or until the procedure returns; any other limit claims nothing more. | SET ROWCOUNT 1; SELECT id FROM dbo.toy;
 SetIdentityInsertStatement | SET IDENTITY_INSERT | unknown unsupported-statement | | Not modelled. | SET IDENTITY_INSERT dbo.box ON;
 SetTextSizeStatement | SET TEXTSIZE | unknown unsupported-statement | | Not modelled. | SET TEXTSIZE 10; SELECT name FROM dbo.toy;
-SetCommandStatement | SET DATEFORMAT, LANGUAGE, … | unknown unsupported-statement | | Not modelled. | SET LANGUAGE us_english; SELECT 1 AS a;
+SetCommandStatement | SET DATEFORMAT, LANGUAGE, … | partly unsupported-statement | Flow statements | LANGUAGE, DATEFIRST and DATEFORMAT change values, never a type or a fact claimed of one; the others (LOCK_TIMEOUT, DEADLOCK_PRIORITY, CONTEXT_INFO, …) aren't modelled. | SET LANGUAGE us_english; SELECT 1 AS a; && SET LOCK_TIMEOUT 100; SELECT 1 AS a;
 SetStatisticsStatement | SET STATISTICS | unknown unsupported-statement | | Not modelled. | SET STATISTICS IO ON;
 SetOffsetsStatement | SET OFFSETS | unknown unsupported-statement | | Not modelled. | SET OFFSETS SELECT ON;
 SetErrorLevelStatement | SET ERRLVL | unknown unsupported-statement | | Not modelled. | SET ERRLVL 1;
-ExecuteAsStatement | EXECUTE AS | unknown unsupported-statement | | Not modelled: it changes whose schema a one-part name resolves in. | EXECUTE AS USER = 'someone'; REVERT;
-RevertStatement | REVERT | unknown unsupported-statement | | Not modelled, as EXECUTE AS isn't. | REVERT;
+ExecuteAsStatement | EXECUTE AS | partly unsupported-statement | Flow statements | Changes permissions, so a module that runs it keeps every mask, and how a one-part name binds only outside a module, where the name binds only when one schema has it; WITH COOKIE INTO, and one in a query file whose callers are declared to hold UNMASK, aren't modelled. | EXECUTE AS USER = 'someone'; REVERT; && DECLARE @c varbinary(100); EXECUTE AS USER = 'someone' WITH COOKIE INTO @c;
+RevertStatement | REVERT | no-effect | Flow statements | Ends EXECUTE AS, and returns nothing. | REVERT;
 SetUserStatement | SETUSER | unknown unsupported-statement | | Not modelled. | SETUSER;
 UseStatement | USE | unknown unsupported-statement | | Not modelled. | USE elsewhere;
 DbccStatement | DBCC | unknown unsupported-statement | | Not modelled. | DBCC CHECKIDENT ('dbo.box');
