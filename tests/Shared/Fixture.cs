@@ -31,7 +31,7 @@ internal sealed class Fixture
     {
         Folder = folder;
         Name = Path.GetFileName(folder);
-        project = new(() => SqlProject.Load(Database, configRead?.OrDefault()?.Collation));
+        project = new(() => SqlProject.Load(Database, configRead?.OrDefault()?.Collation, configRead?.OrDefault()?.Descriptions));
         ir = new(InferEveryProcedure);
         queryIr = new(() => Queries is null ? null : InferQuery.Module(Folder, Database, QueryFolder));
         configRead = Config is { } config ? ConfigReader.Read(config) : null;

@@ -65,10 +65,14 @@ internal sealed class SqlProject
     /// Reads every <c>*.sql</c> file under <paramref name="directory"/>, whose database's default collation is
     /// <paramref name="collation"/> (the config file's), since a folder doesn't say; null when not known.
     /// </summary>
-    public static SqlProject Load(string directory, string? collation = null)
+    /// <param name="directory">The folder.</param>
+    /// <param name="collation">The config file's <c>collation</c>.</param>
+    /// <param name="descriptions">The config file's <c>descriptions</c>: the extended properties read as descriptions.</param>
+    public static SqlProject Load(string directory, string? collation = null, IReadOnlyCollection<string>? descriptions = null)
     {
         var read = SqlScriptFolder.Read(directory);
-        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory);
+        var (model, diagnostics) = Described(read.Model.WithDeclaredCollation(collation), read.Diagnostics, descriptions);
+        return new SqlProject(model, diagnostics, _ => directory);
     }
 
     /// <summary>
@@ -79,12 +83,24 @@ internal sealed class SqlProject
     /// <param name="folders">The folders, relative to <paramref name="directory"/>.</param>
     /// <param name="collation">The config file's <c>collation</c>, since a folder doesn't say.</param>
     /// <param name="named">Each folder as the user wrote it, for messages; by default as <paramref name="folders"/> gives it.</param>
-    public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null, IReadOnlyList<string>? named = null)
+    /// <param name="descriptions">The config file's <c>descriptions</c>: the extended properties read as descriptions.</param>
+    public static SqlProject LoadFolders(string directory, IReadOnlyList<string> folders, string? collation = null, IReadOnlyList<string>? named = null, IReadOnlyCollection<string>? descriptions = null)
     {
         var read = SqlScriptFolder.ReadFolders(directory, folders, named);
+        var (model, diagnostics) = Described(read.Model.WithDeclaredCollation(collation), read.Diagnostics, descriptions);
 
         // The folders as found on disk, as the locations name them, so that a change of case alone in the list changes nothing.
-        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, _ => directory, source => source with { Paths = read.Folders });
+        return new SqlProject(model, diagnostics, _ => directory, source => source with { Paths = read.Folders });
+    }
+
+    /// <summary>
+    /// The model with its descriptions found under the config file's names (<c>MS_Description</c> unless it gives others), and
+    /// the reading's diagnostics with a note for each passed over (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// </summary>
+    private static (DatabaseModel Model, IReadOnlyList<Diagnostic> Diagnostics) Described(DatabaseModel model, IReadOnlyList<Diagnostic> read, IReadOnlyCollection<string>? names)
+    {
+        var (described, notes) = DescriptionFinder.Find(model, names ?? DescriptionFinder.DefaultNames);
+        return (described, [.. read, .. notes]);
     }
 
     /// <summary>The database's default collation, as the source records it or else as the config file declares it; null when neither does.</summary>
@@ -105,20 +121,23 @@ internal sealed class SqlProject
     /// <param name="references">The config file's <c>references</c> folders.</param>
     /// <param name="collation">The config file's <c>collation</c>, used only when the project's isn't read (it always records one otherwise).</param>
     /// <param name="builds">The config file's <c>builds</c>: referenced packages declared built from a project.</param>
-    public static SqlProject LoadProject(string project, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null) =>
-        LoadProject(project, SqlProjectReader.Read(project, references, builds), collation);
+    /// <param name="descriptions">The config file's <c>descriptions</c>: the extended properties read as descriptions.</param>
+    public static SqlProject LoadProject(string project, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null, IReadOnlyCollection<string>? descriptions = null) =>
+        LoadProject(project, SqlProjectReader.Read(project, references, builds), collation, descriptions);
 
     /// <summary>The project at <paramref name="project"/>, from what reading it found.</summary>
     /// <param name="project">The <c>.sqlproj</c>.</param>
     /// <param name="read">What reading it found.</param>
     /// <param name="collation">The config file's <c>collation</c>.</param>
-    internal static SqlProject LoadProject(string project, SqlProjectReadResult read, string? collation = null)
+    /// <param name="descriptions">The config file's <c>descriptions</c>: the extended properties read as descriptions.</param>
+    internal static SqlProject LoadProject(string project, SqlProjectReadResult read, string? collation = null, IReadOnlyCollection<string>? descriptions = null)
     {
         var folder = Path.GetDirectoryName(Path.GetFullPath(project)) ?? ".";
         var packages = Folders(read.References.Select(r => r.Found).OfType<LoadedPackage>());
+        var (model, diagnostics) = Described(read.Model.WithDeclaredCollation(collation), read.Diagnostics, descriptions);
         return new SqlProject(
-            read.Model.WithDeclaredCollation(collation),
-            read.Diagnostics,
+            model,
+            diagnostics,
             file => packages.GetValueOrDefault(file.Split('/')[0], folder),
             source => source with { References = Recorded(read.References), Builds = Builds(null, read.References, read.ReadAsBuilds) });
     }
@@ -131,12 +150,14 @@ internal sealed class SqlProject
     /// <param name="references">The config file's <c>references</c> folders.</param>
     /// <param name="collation">The config file's <c>collation</c>, used only when the package records none.</param>
     /// <param name="builds">The config file's <c>builds</c>: packages declared built from a project, whose key constraints hold.</param>
-    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null)
+    /// <param name="descriptions">The config file's <c>descriptions</c>: the extended properties read as descriptions.</param>
+    public static SqlProject LoadPackage(string package, IReadOnlyList<string> references, string? collation = null, IReadOnlyCollection<string>? builds = null, IReadOnlyCollection<string>? descriptions = null)
     {
         var read = DacpacReader.Read(package, references, builds);
         var folders = Folders(read.References.Select(r => r.Found).Prepend(read.Package).OfType<LoadedPackage>());
         var beside = Path.GetDirectoryName(Path.GetFullPath(package)) ?? ".";
-        return new SqlProject(read.Model.WithDeclaredCollation(collation), read.Diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
+        var (model, diagnostics) = Described(read.Model.WithDeclaredCollation(collation), read.Diagnostics, descriptions);
+        return new SqlProject(model, diagnostics, file => folders.GetValueOrDefault(file.Split('/')[0], beside), source => Recorded(source, read));
     }
 
     /// <summary>

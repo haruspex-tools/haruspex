@@ -241,10 +241,11 @@ internal static class ModuleRun
         var package = SqlProject.IsPackage(plan.Source);
         var projectFile = SqlProject.IsProjectFile(plan.Source);
         var collation = plan.Config.Collation;
-        var project = plan.Folders ? SqlProject.LoadFolders(plan.Config.Directory, plan.Shown, collation, plan.Named.Count == plan.Sources.Count ? plan.Named : null)
-            : package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation, plan.Config.Builds)
-            : projectFile ? SqlProject.LoadProject(plan.Source, plan.Config.References, collation, plan.Config.Builds)
-            : SqlProject.Load(plan.Source, collation);
+        var descriptions = plan.Config.Descriptions;
+        var project = plan.Folders ? SqlProject.LoadFolders(plan.Config.Directory, plan.Shown, collation, plan.Named.Count == plan.Sources.Count ? plan.Named : null, descriptions)
+            : package ? SqlProject.LoadPackage(plan.Source, plan.Config.References, collation, plan.Config.Builds, descriptions)
+            : projectFile ? SqlProject.LoadProject(plan.Source, plan.Config.References, collation, plan.Config.Builds, descriptions)
+            : SqlProject.Load(plan.Source, collation, descriptions);
         IEnumerable<Diagnostic> unused = package || projectFile || plan.Config.References.Count == 0
             ? []
             : [CliCodes.ReferencesUnused.At(plan.Config.Location, plan.Folders

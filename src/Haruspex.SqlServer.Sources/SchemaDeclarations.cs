@@ -87,6 +87,9 @@ internal sealed class SchemaDeclarations
     /// <summary>The deployment scripts that couldn't be read in full, each with the names in it that are doubted.</summary>
     public List<UnreadDeployment> UnreadDeployments { get; } = [];
 
+    /// <summary>Every extended property the scripts or packages set, update or drop, in the order read (<see cref="DatabaseModel.ExtendedProperties"/>).</summary>
+    public List<ExtendedProperty> ExtendedProperties { get; } = [];
+
     /// <summary>
     /// Whether nothing is declared: no definition, no change to one, nothing that may disable a constraint, and no error. Every
     /// record above counts, so a property added there must be added here too (<c>SchemaDeclarationsTests</c> lists them); a warning
@@ -98,7 +101,7 @@ internal sealed class SchemaDeclarations
         && Procedures.Count == 0 && ProcedureChanges.Count == 0 && Functions.Count == 0 && FunctionChanges.Count == 0
         && Views.Count == 0 && Synonyms.Count == 0 && ConditionalSynonyms.Count == 0 && Triggers.Count == 0
         && CascadingKeys.Count == 0 && Enforcement.Count == 0 && MaskChanges.Count == 0 && KeyDisables.Count == 0
-        && Deployed.Count == 0 && UnreadDeployments.Count == 0;
+        && Deployed.Count == 0 && UnreadDeployments.Count == 0 && ExtendedProperties.Count == 0;
 
     /// <summary>Adds a definition, or reports a second one of the same name, keeping the first.</summary>
     public void Define<T>(Dictionary<ObjectName, T> into, ObjectName name, T definition, SourceLocation at)
@@ -262,6 +265,7 @@ internal sealed class SchemaDeclarations
             DefaultCollation = settings?.Collation,
             Unread = [.. unread ?? []],
             Databases = databases ?? new Dictionary<string, DatabaseModel>(),
+            ExtendedProperties = [.. ExtendedProperties],
         };
     }
 }

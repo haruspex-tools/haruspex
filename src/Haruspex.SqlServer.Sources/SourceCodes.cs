@@ -119,4 +119,11 @@ public static class SourceCodes
     /// (docs/decisions/0127-a-source-may-be-several-folders.md).
     /// </summary>
     public static DiagnosticCode FoldersOverlap { get; } = new(1023, DiagnosticSeverity.Error, "Two of the source's folders hold the same scripts");
+
+    /// <summary>
+    /// A description in an extended property that is passed over: an argument isn't a literal, the value isn't text, what it
+    /// names isn't defined, or it is set twice, updated or dropped, so which text stands isn't known. Nothing is guessed: the
+    /// output has no description there (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// </summary>
+    public static DiagnosticCode DescriptionNotRead { get; } = new(1024, DiagnosticSeverity.Note, "A description that isn't read");
 }

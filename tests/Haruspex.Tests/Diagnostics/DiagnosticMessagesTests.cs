@@ -251,6 +251,7 @@ public class DiagnosticMessagesTests
         (1021, () => Project("<ItemGroup><PostDeploy Include=\"p2.sql\" /></ItemGroup>", sql: [GetBook, ":on error exit\nUPDATE lib.book SET note = NULL;"])),
         (1022, () => Cli(["CREATE PROCEDURE lib.p @Total int AS DECLARE @total varchar(10) = 'x'; SELECT b.id FROM lib.book AS b WHERE b.copies = @Total;"])),
         (1023, () => Cli([GetBook], args: ["db", "db/inner", "--include", "*.*", "--out", "out"], arrange: f => f.File("db/inner/p9.sql", "CREATE PROCEDURE lib.r AS SELECT 1 AS one;"))),
+        (1024, () => Cli([GetBook, "EXEC sp_addextendedproperty 'MS_Description', 'A book.', 'SCHEMA', 'lib', 'TABLE', 'book';\nGO\nEXEC sp_addextendedproperty 'MS_Description', 'A volume.', 'SCHEMA', 'lib', 'TABLE', 'book';"])),
 
         (2001, () => Cli(["CREATE PROCEDURE lib.p AS SET NOCOUNT, NOEXEC ON;\nSELECT b.id FROM lib.book AS b;"])),
         (2003, () => Cli(["CREATE PROCEDURE lib.p AS SELECT b.id FROM lib.book AS b;", "ALTER PROCEDURE lib.p AS SELECT b.title AS id FROM lib.book AS b;"])),

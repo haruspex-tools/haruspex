@@ -37,6 +37,7 @@ reason.
 | [HAR1021](HAR1021.md) | warning | A deployment script can't be read in full |
 | [HAR1022](HAR1022.md) | error | Names that differ only in case |
 | [HAR1023](HAR1023.md) | error | Two of the source's folders hold the same scripts |
+| [HAR1024](HAR1024.md) | note | A description that isn't read |
 
 ## Inference
 

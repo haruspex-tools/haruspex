@@ -52,6 +52,10 @@ internal sealed partial class CodeReferences
         "DbProviderFactories", "SqlClientFactory", "SqlConnection", "SshDockerEndpointNotSupportedException", "DisposeAsync",
         "TrustServerCertificate",
 
+        // The names of extended properties that hold descriptions: SQL Server's tools write the first, and the
+        // WideWorldImporters project the second (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+        "MS_Description", "Description",
+
         // MSBuild's items and properties.
         "AnalysisLevel", "IsPackable", "SQLDBExtensionsRefPath", "NetCoreBuild",
 

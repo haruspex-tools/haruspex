@@ -62,6 +62,11 @@
       "type": "string",
       "pattern": "^[A-Za-z0-9_]+$"
     },
+    "descriptions": {
+      "description": "The names of the extended properties that hold descriptions, compared ignoring case: [\"MS_Description\"] when left out, and none for an empty array. A description of a column reaches each result field that is that column, unchanged; a procedure's and its parameters' reach theirs. They are written as .describe() and comments in Zod and as description in JSON Schema (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).",
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
     "queries": {
       "description": "The application's query files, each typed with the procedures and given a function: a folder (every .sql file below it), a file, or a pattern (* any characters but /, ** any folders, ? one character), relative to this file and inside its folder, or an array of them. A file below a folder with a haruspex.json of its own is that module's.",
       "anyOf": [

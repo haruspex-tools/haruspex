@@ -61,6 +61,9 @@ db/p1.sql:1:46: error HAR1022: lib.p declares the variables @Total (p1.sql:1:24)
 HAR1023
 haruspex: error HAR1023: db/inner is inside db, so its scripts would be read twice. List db alone, or list its folders but not it.
 
+HAR1024
+db/p2.sql:3:1: note HAR1024: The description of lib.book is set more than once, so which stands isn't known, and it has none.
+
 HAR2001
 db/p1.sql:1:27: note HAR2001: lib.p results: SET is not modelled yet, so the procedure's result sets cannot be listed.
 
@@ -137,7 +140,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, builds, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".

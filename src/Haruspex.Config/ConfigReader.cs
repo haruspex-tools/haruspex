@@ -119,6 +119,9 @@ public static class ConfigReader
                     case "builds":
                         config = config with { Builds = [.. Packages(member.Value, path)] };
                         break;
+                    case "descriptions":
+                        config = config with { Descriptions = [.. Descriptions(member.Value, path)] };
+                        break;
                     case "collation":
                         if (NonEmpty(member.Value, path) is { } collation)
                         {
@@ -194,7 +197,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
                         break;
                 }
             }
@@ -614,6 +617,28 @@ public static class ConfigReader
             }
 
             return packages;
+        }
+
+        /// <summary>
+        /// The extended properties' names <c>descriptions</c> gives, read as descriptions: an empty array reads none
+        /// (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+        /// </summary>
+        private List<string> Descriptions(JsonValue value, string path)
+        {
+            var names = new List<string>();
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of the names of the extended properties that hold descriptions, such as [\"MS_Description\"].");
+                return names;
+            }
+
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                if (NonEmpty(array.Items[i], Index(path, i)) is { } name)
+                    names.Add(name);
+            }
+
+            return names;
         }
 
         /// <summary>

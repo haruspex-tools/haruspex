@@ -46,6 +46,7 @@ internal static class ModelXml
     public const string SqlInlineTableValuedFunction = nameof(SqlInlineTableValuedFunction);
     public const string SqlMultiStatementTableValuedFunction = nameof(SqlMultiStatementTableValuedFunction);
     public const string SqlView = nameof(SqlView);
+    public const string SqlExtendedProperty = nameof(SqlExtendedProperty);
     public const string SqlDmlTrigger = nameof(SqlDmlTrigger);
     public const string SqlSynonym = nameof(SqlSynonym);
     public const string SqlDatabaseOptions = nameof(SqlDatabaseOptions);

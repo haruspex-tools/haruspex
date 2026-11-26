@@ -20,6 +20,7 @@ HAR1020 E A script or folder can't be read [Haruspex.SqlServer.Sources.SourceCod
 HAR1021 W A deployment script can't be read in full [Haruspex.SqlServer.Sources.SourceCodes.DeploymentScriptNotRead]
 HAR1022 E Names that differ only in case [Haruspex.SqlServer.Sources.SourceCodes.CaseVariants]
 HAR1023 E Two of the source's folders hold the same scripts [Haruspex.SqlServer.Sources.SourceCodes.FoldersOverlap]
+HAR1024 N A description that isn't read [Haruspex.SqlServer.Sources.SourceCodes.DescriptionNotRead]
 HAR2001 N A statement that isn't modelled yet [Haruspex.SqlServer.Inference.InferenceCodes.UnsupportedStatement]
 HAR2002 N Results from code outside the project (retired) [Haruspex.SqlServer.Inference.InferenceCodes.ExternalCode]
 HAR2003 N An object whose definition depends on the order of scripts [Haruspex.SqlServer.Inference.InferenceCodes.Redefined]

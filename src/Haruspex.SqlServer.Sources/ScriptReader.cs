@@ -94,6 +94,9 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                 // ANSI_DEFAULTS ON sets ANSI_NULLS on, and OFF off, as SET ANSI_NULLS does.
                 ansiNullsOff = !set.IsOn;
                 break;
+            case ExecuteStatement execute when ExtendedPropertyCalls.Read(execute, file) is { } property:
+                into.ExtendedProperties.Add(property);
+                break;
             case CreateTableStatement table when !table.SchemaObjectName.BaseIdentifier.Value.StartsWith('#'):
                 ReadTable(table);
                 break;

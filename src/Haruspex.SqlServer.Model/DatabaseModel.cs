@@ -104,7 +104,21 @@ public sealed class DatabaseModel
             Unread = Unread,
             Databases = Databases,
             DefaultCollation = collation,
+            ExtendedProperties = ExtendedProperties,
+            Descriptions = Descriptions,
         };
+
+    /// <summary>
+    /// Every extended property the source sets, in the order read: what the descriptions are found in, once the config file
+    /// has said which names are descriptions (<see cref="Descriptions"/>).
+    /// </summary>
+    public EquatableArray<ExtendedProperty> ExtendedProperties { get; init; } = [];
+
+    /// <summary>
+    /// The descriptions found in <see cref="ExtendedProperties"/>; none until the reader that knows the config file's names
+    /// finds them (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// </summary>
+    public Descriptions Descriptions { get; init; } = Descriptions.None;
 
     /// <summary>
     /// The parts of the database the source refers to but which weren't read (a referenced package that wasn't found): a name

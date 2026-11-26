@@ -16,7 +16,7 @@ internal static class PackageReader
     /// <summary>
     /// Elements passed over without a word, since none says anything haruspex can claim from: security (users, roles, logins,
     /// permissions, row-level security, which filters rows but never changes a column), storage (filegroups, partitions,
-    /// compression), documentation (extended properties), schemas, statistics and indexes' storage, and defaults (a
+    /// compression), schemas, statistics and indexes' storage, and defaults (a
     /// column's <c>DEFAULT</c> decides what an insert writes when given nothing, not what a column can hold). A permission can
     /// change what a procedure returns: a caller without <c>UNMASK</c> reads a masked column's mask. But a grant of it says nothing
     /// of the callers, whom no package names, so it is passed over too; the config file declares whether they hold it, and the
@@ -26,7 +26,7 @@ internal static class PackageReader
     {
         ModelXml.SqlSchema, "SqlUser", "SqlRole", "SqlRoleMembership", "SqlLogin", "SqlPermissionStatement", "SqlApplicationRole",
         "SqlSecurityPolicy", "SqlFilegroup", "SqlFile", "SqlPartitionFunction", "SqlPartitionScheme", "SqlColumnStoreIndex",
-        "SqlStatistic", "SqlExtendedProperty", "SqlDefaultConstraint", "SqlFullTextCatalog", "SqlFullTextIndex",
+        "SqlStatistic", "SqlDefaultConstraint", "SqlFullTextCatalog", "SqlFullTextIndex",
         "SqlFullTextStopList", "SqlDatabaseCredential", "SqlMasterKey", "SqlCertificate", "SqlSymmetricKey",
         "SqlAsymmetricKey", ModelXml.SqlDatabaseOptions,
     };
@@ -55,6 +55,8 @@ internal static class PackageReader
         var tables = new TableReader(package.Name, package.Origin, declaredBuild || package.Origin == PackageOrigin.Built, into.Diagnostics);
         var modules = new List<XElement>();
         var notModelled = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        var views = Named(elements, ModelXml.SqlView);
+        var procedures = Named(elements, ModelXml.SqlProcedure);
         foreach (var element in elements)
         {
             var type = ModelXml.TypeOf(element);
@@ -75,6 +77,10 @@ internal static class PackageReader
                     break;
                 case ModelXml.SqlSynonym when Synonym(element, package.Name, into.Diagnostics) is { } synonym:
                     into.Synonyms.TryAdd(synonym.Name, synonym);
+                    break;
+                case ModelXml.SqlExtendedProperty:
+                    if (PackageProperties.Read(element, package.Name, views, procedures) is { } property)
+                        into.ExtendedProperties.Add(property);
                     break;
                 case var module when Modules.Contains(module):
                     modules.Add(element);
@@ -181,6 +187,10 @@ internal static class PackageReader
             }
         }
     }
+
+    /// <summary>The names of the package's elements of one type.</summary>
+    private static HashSet<ObjectName> Named(IEnumerable<XElement> elements, string type) =>
+        [.. elements.Where(e => ModelXml.TypeOf(e) == type).Select(e => ElementName.Object(ModelXml.Named(e)))];
 
     /// <summary>The table a part of one names (a constraint's <c>DefiningTable</c>, an index's <c>IndexedObject</c>), as written.</summary>
     private static string Owner(XElement part) =>

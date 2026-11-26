@@ -22,6 +22,7 @@ otherwise silently do nothing.
   "baseline": "release/database",           // the database before the change being made; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
   "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
+  "descriptions": ["MS_Description"],       // the extended properties that describe; see "Descriptions"
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
   "split": "schema",                        // a module per schema; see "Splitting the output into modules"
@@ -101,6 +102,9 @@ it otherwise can't. Each is a statement about your project that haruspex can't s
 - **The database is kept as folders side by side** (`tables`, `procedures`) beside folders that aren't its own, such as the
   application's query files: list them as [`source`](#several-folders-source-as-a-list). A folder that holds them all would
   read the others as the database's scripts too.
+- **The database keeps its descriptions under a name of its own**, such as `Description` rather than SQL Server's
+  `MS_Description`: name it in [`descriptions`](#descriptions-descriptions), and each column's description reaches the fields
+  that are that column.
 - **The source refers to other DACPACs** that its build doesn't leave beside it: list their folders in
   [`references`](#reading-a-dacpac-source-and-references). One found nowhere is a warning, and what would have come from it is
   unknown.
@@ -252,6 +256,22 @@ haruspex has proven (`SQL_Latin1_General_CP1_CI_AS`, `Latin1_General_CI_AS`, `La
 `"paid"` ([decision 0043](decisions/0043-a-value-set-is-canonical-by-a-fold-observed-from-the-server.md)). Any other set, and
 every set of an `nchar` or `nvarchar` column, is a comment saying the values match as the database compares strings; an
 override can still declare it exact (`"values": "exact"`).
+
+## Descriptions: `descriptions`
+
+A database may describe its tables, views, procedures, columns and parameters in extended properties
+(`sp_addextendedproperty`, which SQL Server Management Studio and SSDT's table designer write, and which a DACPAC holds).
+`descriptions` names the properties that hold descriptions: `["MS_Description"]` when it is left out, compared ignoring case.
+A project that writes another name lists it, `["MS_Description", "Description"]`; an empty array reads none.
+
+A description reaches only what is exactly the thing described: a result's field that is one column unchanged (`d.name`, or the
+column through `*`, a view or a derived table, where a view's own column description replaces the table's), a procedure's
+parameter, and the procedure itself. A field computed from a column, such as `UPPER(d.name)`, or read from several, has none. In
+the Zod module a description is the property's `.describe("…")`, so `z.toJSONSchema` and an editor show it, and the first
+lines of its comment; in JSON Schema it starts the `description`. A description whose arguments aren't literals, that names
+nothing the source defines, or that is set twice or updated is passed over with a note ([HAR1024](diagnostics/HAR1024.md)).
+A changed description changes no claim, but `check` still fails until the module is generated again, since its text changed
+([decision 0128](decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md)).
 
 ## Which procedures are typed: `schemas`
 

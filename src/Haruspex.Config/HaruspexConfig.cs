@@ -56,6 +56,13 @@ public sealed record HaruspexConfig
     public EquatableArray<string> Builds { get; init; } = [];
 
     /// <summary>
+    /// The names of the extended properties read as descriptions (<c>descriptions</c>), compared ignoring case:
+    /// <c>MS_Description</c> unless the file says otherwise, and none for an empty array
+    /// (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// </summary>
+    public EquatableArray<string> Descriptions { get; init; } = ["MS_Description"];
+
+    /// <summary>
     /// The database's default collation (<c>collation</c>), for a source that doesn't record one, or null when the file doesn't say:
     /// the collation a column without <c>COLLATE</c> takes (<c>DatabaseModel.WithDeclaredCollation</c>).
     /// </summary>
