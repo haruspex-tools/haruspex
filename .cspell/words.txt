@@ -179,6 +179,7 @@ scriban
 mklink
 chcp
 globalroot
+globalconfig
 realpath
 libc
 readelf
