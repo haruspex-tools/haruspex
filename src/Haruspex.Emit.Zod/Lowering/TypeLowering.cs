@@ -195,7 +195,7 @@ internal sealed class TypeLowering(IReadOnlyDictionary<string, IrObjectType> typ
     /// format, so those are validated strings. They are deliberately not converted to <c>Date</c>: a <c>date</c> or an
     /// offset-less <c>datetime2</c> has no time zone, and <c>new Date('2026-11-09')</c> is UTC midnight, which shows as the
     /// previous day west of Greenwich. Conversion could become an emitter option later. Each is held to the form its type is
-    /// written in (<see cref="DateTimes.Written"/>), which the differential tests pinned (the IR's README, "Scalars in JSON"):
+    /// written in (<see cref="DateTimes.Written"/>), which the differential tests pinned (the Inference README, "Scalars in JSON"):
     /// seconds always, a fraction of exactly the type's scale, left out when zero, and a zero offset as <c>Z</c>. Zod's ISO checks
     /// alone would accept forms the server never writes, a missing second, or an offset on a type that has none. A type the IR
     /// doesn't spell (a declared result's) keeps the kind's ISO check. A uniqueidentifier is <c>z.guid()</c>, not <c>z.uuid()</c>, because its value need not

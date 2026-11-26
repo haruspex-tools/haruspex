@@ -21,7 +21,7 @@ otherwise silently do nothing.
   "source": "database",                     // the folder of .sql files, a .sqlproj, or a .dacpac; or a list of folders
   "baseline": "release/database",           // the database before the change being made; see "The baseline"
   "references": ["../shared/bin/Release"],  // more folders to find the DACPACs a .dacpac or .sqlproj refers to in
-  "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "Value sets"
+  "collation": "Latin1_General_100_CI_AS",  // the database's default, for a folder of .sql files; see "The database's collation"
   "queries": "sql",                         // the application's query files: a folder, files or patterns; see "Query files"
   "out": "src/db",                          // where haruspex.ir.json and what "emit" names go
   "split": "schema",                        // a module per schema; see "Splitting the output into modules"

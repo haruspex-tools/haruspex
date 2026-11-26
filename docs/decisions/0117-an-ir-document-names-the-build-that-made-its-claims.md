@@ -48,4 +48,4 @@ snapshots, `check`'s comparison) stay the same from commit to commit.
 another such build wrote: it warns of both.
 
 **In the code:** `IrBuild`, `IrSource.WrittenBy`, `IrDocument.CurrentVersion`; `Terminal.Build` and `Terminal.BuildOf` in the
-command line, `ModuleRun`'s inference, and `Baseline`, where the baseline is read; the IR README's "Versioning" and its 0.30 changelog.
+command line, `ModuleRun`'s inference, and `Baseline`, where the baseline is read; the IR README's "A document" and its "Changelog", 0.30.

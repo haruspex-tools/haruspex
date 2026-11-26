@@ -60,4 +60,4 @@ check's fact by which it is, and a message about a body's column names its table
 kind added later failed only at run time. Decision [0032](0032-a-switch-over-a-closed-hierarchy-is-exhaustive.md) closes the
 gap with an analyser, and the discard arms are gone.
 
-**See also:** [the guide, "The inputs and the model"](../internals/README.md); `docs/architecture.md`, on the Syntax layer.
+**See also:** [the guide, "The inputs and the model"](../internals/02-the-inputs-and-the-model.md); `docs/architecture.md`, on the Syntax layer.
