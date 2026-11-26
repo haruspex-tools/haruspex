@@ -21,5 +21,7 @@ returns (`tests/fixtures/dml/seed.sql`), and each run that writes runs in a writ
 | `depot.low_floor` | a variable read in a cursor's query: its value at `DECLARE`, not at `FETCH` |
 | `depot.add_note_by_synonym` | a write through a synonym (`depot.legacy_note_alias`) fires its table's trigger: `trigger-results` |
 | `depot.pick_order_lines` | `UPDATE` of an alias in `FROM`, joined: `inserted` and `deleted` typed from the table |
+| `depot.claim_order` | the queue-claim idiom: `UPDATE` through a CTE of `TOP (1)` that renames a column, its `OUTPUT` typed from the table under the CTE's names, at most one row |
+| `depot.reopen_order` | the same through a derived table, with `inserted.*` |
 | `depot.stock_audit` | a trigger that writes another table and returns nothing |
 | `depot.legacy_note_echo` | a trigger that returns a result set, which SQL Server allows by default |

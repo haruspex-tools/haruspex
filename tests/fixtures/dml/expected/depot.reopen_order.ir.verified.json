@@ -1,0 +1,131 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/reopen_order.sql": "4023ff36ff112a6d58991c710c36026c22d666a7661b09dc03f078697fcbc629"
+    }
+  },
+  "objects": [
+    {
+      "id": "depot.reopen_order",
+      "name": "ReopenOrder",
+      "kind": "procedure",
+      "at": "procedures/reopen_order.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ReopenOrderRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "atMostOne"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "ReopenOrderRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "depot.reopen_order",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "placed_at",
+          "type": {
+            "kind": "datetime",
+            "format": "local",
+            "sql": "datetime2(0)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(10)",
+            "maxLength": {
+              "value": 10,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(10)"
+              }
+            },
+            "values": {
+              "match": "collation",
+              "items": [
+                "open",
+                "picked",
+                "cancelled"
+              ],
+              "from": [
+                {
+                  "check": "tables/pick_order.sql:5:33"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "depot.pick_order.note"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

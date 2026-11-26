@@ -119,6 +119,7 @@ sysdatetime
 sysdatetimeoffset
 sysname
 sysutcdatetime
+tablesample
 tablock
 tempdb
 timefromparts

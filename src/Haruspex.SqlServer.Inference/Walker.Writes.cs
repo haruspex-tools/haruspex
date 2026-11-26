@@ -96,8 +96,16 @@ internal sealed partial class Walker
 
         // Observed: Merge_output_has_null_deleted_columns_for_inserted_rows_null_inserted_columns_for_deleted_rows_and_null_source_columns_when_not_matched_by_source.
         var because = new IrNullReason(IrNullRule.MissingForAction, at.ToString());
-        var inserted = spec is DeleteSpecification ? null : typer.Pseudo(spec, target, Reading(after), actions?.Contains("DELETE") == true ? because : null, at);
-        var deleted = spec is InsertSpecification ? null : typer.Pseudo(spec, target, Reading(before), actions?.Contains("INSERT") == true ? because : null, at);
+        var through = target is { Direct: null, Named: null } ? binder.WriteThrough(spec, from, with) : null;
+        var inserted = spec is DeleteSpecification ? null : typer.Pseudo(spec, target, through, Reading(after), actions?.Contains("DELETE") == true ? because : null, at);
+        var deleted = spec is InsertSpecification ? null : typer.Pseudo(spec, target, through, Reading(before), actions?.Contains("INSERT") == true ? because : null, at);
+
+        // A write's own TOP (1) changes at most one row, and an UPDATE's or DELETE's through a source whose TOP (1) or FETCH
+        // NEXT 1 limits it does too; an INSERT or MERGE through such a source writes past it (observed:
+        // Top_1_caps_the_output_of_a_write_and_of_an_update_or_delete_through_a_cte_but_not_an_insert_or_merge_through_it).
+        var rows = Cardinality.Limited(IrCardinality.Many, spec.TopRowFilter);
+        if (spec is UpdateSpecification or DeleteSpecification && through is { Table: not null } limited)
+            rows = limited.Queries.Aggregate(rows, (r, q) => Cardinality.Limited(Cardinality.Limited(r, q.TopRowFilter), q.OffsetClause));
 
         var written = typer.Written(target, Reading(before));
         EquatableArray<string>? mergeActions = actions is null || actions.Contains(null) ? null : [.. actions.OfType<string>().Distinct().Order(StringComparer.Ordinal)];
@@ -107,7 +115,7 @@ internal sealed partial class Walker
         {
             var row = typer.OutputRow(spec, output, output.SelectColumns, from, where, with, inserted, deleted, written, mergeActions, because, Reading(before));
             appended++;
-            after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], IrCardinality.Many), at));
+            after = after.WithResults(after.Results.Append(new ResultShape(IrEncoding.Rowset, Rowset(row), [], rows), at));
         }
 
         if (spec.OutputIntoClause is { } into)
