@@ -7,7 +7,7 @@ fills it from a folder of `.sql` scripts or from a DACPAC.
 
 It holds tables with their columns, declared types, collations, NULL or NOT NULL, identity, primary keys, unique keys,
 CHECK constraints and the key index of their full-text index (`FullTextKey`); alias, CLR and table types (`CREATE TYPE`), a table type with its columns, keys and CHECK constraints as a
-table has them; XML schema collections with the text of each schema, and the collection a typed `xml` names; stored procedures, functions of each kind, views and DML triggers,
+table has them; XML schema collections with the text of each schema and their declarations (`XmlSchemaDeclarations`: global elements, content models, attributes, simple types and their facets), and the collection a typed `xml` names; stored procedures, functions of each kind, views and DML triggers,
 with their parameters, return types and options as data and their bodies as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) statements and expressions; synonyms
 with the name each stands for; and foreign keys whose actions change the referencing table (`CascadingKey`). A column

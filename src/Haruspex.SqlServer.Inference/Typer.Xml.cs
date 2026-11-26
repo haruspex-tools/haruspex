@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Semantics;
+using Haruspex.SqlServer.Semantics.XmlSchemas;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
@@ -50,7 +51,7 @@ internal sealed partial class Typer
 
         return method switch
         {
-            XmlMethod.Value => XmlValue(call),
+            XmlMethod.Value => XmlValue(call, receiver, XmlPathReach(target, [.. call.Parameters], scope)),
             XmlMethod.Exist => XmlExist(call, receiver),
             XmlMethod.Query => XmlQuery(call, receiver),
             _ => NotModelled(call, "XML's nodes() is a source in FROM, not a value."),
@@ -107,7 +108,15 @@ internal sealed partial class Typer
             return LocalRelationValues.Unknown(unknown);
         if (TypeOf(receiver) is not { Type: var type } || type != BuiltInType.Xml)
             return Fails("XML's nodes() is called on a value that is not xml (9506).");
-        return new LocalRelationValues(columns, [Typed(ScalarType.Of(BuiltInType.Xml), [], symbol.Syntax)], null);
+
+        // The instance's schema collection may bound how many nodes the path finds: at least one only where the instance is never
+        // NULL, since a NULL instance gives no row (observed: Nodes_gives_as_many_rows_as_the_schema_allows).
+        var reach = XmlPathReach(symbol.Target, symbol.Path, scope);
+        return new LocalRelationValues(columns, [Typed(ScalarType.Of(BuiltInType.Xml), [], symbol.Syntax)], null)
+        {
+            Rows = reach is { Node: not null, AtMostOne: true } ? (reach.AtLeastOne && receiver.NullableBecause.Count == 0 ? IrCardinality.One : IrCardinality.AtMostOne) : IrCardinality.Many,
+            AtLeastOne = reach is { Required: true } && receiver.NullableBecause.Count == 0,
+        };
     }
 
     /// <summary>
@@ -115,15 +124,21 @@ internal sealed partial class Typer
     /// <c>x</c> is NULL. The server takes only literals for both arguments (observed); a type it takes but turns into another,
     /// <c>json</c> and <c>vector(n)</c> into <c>varchar(max)</c>, and one inference doesn't model, stay unknown.
     /// </summary>
-    private Value XmlValue(FunctionCall call)
+    /// <remarks>
+    /// Where the instance's schema collection requires every node of the path (<see cref="XmlPathReach"/>), it finds one, and the
+    /// value is NULL only where the instance is (observed: A_required_node_s_value_is_never_null_in_a_typed_instance). The server
+    /// requires <c>ANSI_WARNINGS</c> for XML's methods (1934), so a value the type can't hold is an error, never NULL.
+    /// </remarks>
+    private Value XmlValue(FunctionCall call, Value receiver, XmlReach? reach)
     {
         if (call.Parameters is not [StringLiteral, StringLiteral { Value: var written }])
             return NotModelled(call, "XML's value() takes a literal path and a literal type, which the server requires.");
         if (XmlValueType(written) is not { } type)
             return NotModelled(call, $"XML's value() of the type '{written}' is not modelled.");
 
-        // No proof that the path always finds a node is modelled, so it is always nullable.
-        return Typed(type, [new IrNullReason(IrNullRule.XmlValue, At(call).ToString())], call);
+        return reach is { Required: true, Node.HasValue: true }
+            ? Typed(type, receiver.NullableBecause, call)
+            : Typed(type, [new IrNullReason(IrNullRule.XmlValue, At(call).ToString())], call);
     }
 
     /// <summary>

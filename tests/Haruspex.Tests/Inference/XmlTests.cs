@@ -276,7 +276,8 @@ public class XmlTests
     [Fact]
     public void Value_of_a_typed_column_is_typed_by_its_type_argument_alone()
     {
-        // The collection isn't read yet: what value() gives is its type argument's, nullable, as for untyped xml.
+        // A CONTENT instance may have no top-level element, and spec declares no weight, so the collection proves nothing here:
+        // what value() gives is its type argument's, nullable, as for untyped xml (XmlSchemaTests has what it does prove).
         var doc = Typed("", "SELECT t.spec.value('(/spec/@weight)[1]', 'int') AS weight FROM shop.typed AS t;");
 
         Assert.Equal("number int", Typed(doc, "weight"));

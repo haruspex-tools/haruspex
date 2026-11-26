@@ -1,4 +1,5 @@
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Model.XmlSchemas;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
 
@@ -84,9 +85,85 @@ public class XmlSchemaCollectionTests
         var folder = SqlScriptFolder.Read(Path.Combine(RepositoryPaths.Fixtures, "loom", "database")).Model;
 
         Assert.Equal(folder.XmlSchemaCollections.Select(c => (c.Name, c.Schemas)), package.XmlSchemaCollections.Select(c => (c.Name, c.Schemas)));
+        Assert.Equal(folder.XmlSchemaCollections.Select(c => c.Declarations), package.XmlSchemaCollections.Select(c => c.Declarations));
+        Assert.All(package.XmlSchemaCollections, c => Assert.NotNull(c.Declarations));
         var pattern = package.FindTable(new ObjectName("loom", "pattern"))!;
         Assert.Equal(
             ["xml", "xml(loom.draft_schema)", "xml(DOCUMENT dbo.card_schema)"],
             pattern.Columns.Where(c => c.Type is { Kind: SqlTypeKind.Xml }).Skip(1).Select(c => c.Type!.ToString()));
+    }
+
+    // ---- declarations (decision 0139) ------------------------------------------------------------------------------------
+
+    private static XmlSchemaDeclarations? Declarations(string sql) =>
+        Assert.Single(Read(("a.sql", sql)).Model.XmlSchemaCollections).Declarations;
+
+    [Fact]
+    public void A_collection_s_schemas_are_compiled_together_with_those_added_to_it()
+    {
+        var read = Read(
+            ("a.sql", $"CREATE XML SCHEMA COLLECTION shop.draft_schema AS N'{Draft}';"),
+            ("b.sql", $"ALTER XML SCHEMA COLLECTION shop.draft_schema ADD N'{Notes}';"));
+
+        var declarations = Assert.Single(read.Model.XmlSchemaCollections).Declarations!;
+        Assert.Equal([new XmlName("", "draft"), new XmlName("urn:notes", "notes")], declarations.Globals.Select(e => e.Name));
+    }
+
+    [Fact]
+    public void One_text_may_hold_several_schemas_after_an_xml_declaration()
+    {
+        // As a package's one literal does, and as CREATE XML SCHEMA COLLECTION takes.
+        var declarations = Declarations($"CREATE XML SCHEMA COLLECTION shop.s AS N'<?xml version=\"1.0\" encoding=\"UTF-8\"?>{Draft}{Notes}';");
+
+        Assert.Equal(2, declarations!.Globals.Count);
+    }
+
+    [Theory]
+    [InlineData("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"a\" type=\"missing\"/></xs:schema>")]
+    [InlineData("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"><xs:element name=\"a\"></xs:schema>")]
+    [InlineData("<other/>")]
+    public void A_collection_that_does_not_compile_has_no_declarations(string schema) =>
+        Assert.Null(Declarations($"CREATE XML SCHEMA COLLECTION shop.s AS N'{schema}';"));
+
+    [Fact]
+    public void A_type_s_facets_are_its_own_and_its_bases_with_the_built_in_range()
+    {
+        var declarations = Declarations("""
+            CREATE XML SCHEMA COLLECTION shop.s AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+             <xs:simpleType name="code"><xs:restriction base="xs:token"><xs:maxLength value="4"/><xs:enumeration value=" a  b "/><xs:enumeration value="c"/></xs:restriction></xs:simpleType>
+             <xs:simpleType name="small"><xs:restriction base="xs:unsignedByte"><xs:maxExclusive value="100"/></xs:restriction></xs:simpleType>
+             <xs:simpleType name="smaller"><xs:restriction base="small"><xs:minInclusive value="3"/></xs:restriction></xs:simpleType>
+             <xs:element name="r"><xs:complexType><xs:attribute name="c" type="code" use="required"/><xs:attribute name="n" type="smaller" default="5"/></xs:complexType></xs:element>
+            </xs:schema>';
+            """)!;
+
+        var root = Assert.IsType<XmlComplexTypeDeclaration>(declarations.Types[Assert.Single(declarations.Globals).Type]);
+        Assert.Equal([XmlAttributeUse.Required, XmlAttributeUse.Defaulted], root.Attributes.Select(a => a.Use));
+        var code = Assert.IsType<XmlSimpleTypeDeclaration>(declarations.Types[root.Attributes[0].Type]);
+        Assert.Equal(XmlValueKind.NormalisedText, code.Kind);
+        Assert.Equal(new XmlFacets(Enumeration: ["a b", "c"], MaxLength: 4), code.Facets);
+        var smaller = Assert.IsType<XmlSimpleTypeDeclaration>(declarations.Types[root.Attributes[1].Type]);
+        Assert.Equal(XmlValueKind.WholeNumber, smaller.Kind);
+        Assert.Equal(new XmlFacets(MinInclusive: "3", MaxInclusive: "255", MaxExclusive: "100"), smaller.Facets);
+    }
+
+    [Fact]
+    public void A_type_another_derives_from_and_a_substitution_group_s_head_are_marked()
+    {
+        var declarations = Declarations("""
+            CREATE XML SCHEMA COLLECTION shop.s AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+             <xs:complexType name="base"><xs:sequence><xs:element name="p" type="xs:int"/></xs:sequence></xs:complexType>
+             <xs:complexType name="more"><xs:complexContent><xs:extension base="base"><xs:sequence><xs:element name="q" type="xs:int"/></xs:sequence></xs:extension></xs:complexContent></xs:complexType>
+             <xs:element name="head" type="base"/>
+             <xs:element name="member" type="more" substitutionGroup="head"/>
+            </xs:schema>';
+            """)!;
+
+        var head = Assert.Single(declarations.Globals, e => e.Name.Local == "head");
+        Assert.True(head.HeadsGroup);
+        Assert.True(Assert.IsType<XmlComplexTypeDeclaration>(declarations.Types[head.Type]).Replaceable);
+        var member = Assert.Single(declarations.Globals, e => e.Name.Local == "member");
+        Assert.False(member.HeadsGroup);
+        Assert.False(Assert.IsType<XmlComplexTypeDeclaration>(declarations.Types[member.Type]).Replaceable);
     }
 }

@@ -274,6 +274,8 @@ ignoreRegExpList:
   - /\bParameterizedDataTypeReference\b/g
   - /\bProcedureAnalyzer\b/g
   - /\bOptimizerHint\b/g
+  # XML Schema's built-in type xs:normalizedString, and .NET's name for it (XmlTypeCode.NormalizedString).
+  - /\b[Nn]ormalizedString\b/g
   # The compiler's API, which haruspex's own analysers (analysers/) are written against and test with.
   - /\b(?:DiagnosticAnalyzer|CompilationWithAnalyzers(?:Options)?|WithAnalyzers|GetAnalyzers|AnalyzerFileReference|IAnalyzerAssemblyLoader|AnalyzerOptions|EnforceExtendedAnalyzerRules|onAnalyzerException|logAnalyzerExecutionTime)\b/g
   - /\bInitialize\b(?=\(AnalysisContext)/g

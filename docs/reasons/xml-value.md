@@ -5,8 +5,10 @@ A null rule, `IrNullRule.XmlValue` in the IR's model. A value may be null becaus
 ## What it means
 
 It is read from XML by `.value()` (0.34), or as a column of `OPENXML … WITH`, either of which is NULL where its path finds no
-node, or the XML is NULL. Nothing is modelled that proves a path always finds a node, so every `.value()` has it, over a column
-never NULL too, and so does every `OPENXML` column, even one that a table named in `WITH` declares `NOT NULL`.
+node, or the XML is NULL. A `.value()` has it unless the instance's XML schema collection proves its path always finds a node
+([decision 0139](../decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md)), so untyped XML's
+always does, over a column never NULL too; and so does every `OPENXML` column, even one that a table named in `WITH` declares
+`NOT NULL`.
 
 ## What it rests on
 

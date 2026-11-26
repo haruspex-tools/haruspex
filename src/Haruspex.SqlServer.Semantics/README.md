@@ -48,6 +48,12 @@ flowchart LR
   `binary(n)` column of a table created while `ANSI_PADDING` is off keeps its values with their padding cut, and the source
   doesn't say which tables were, so such a column is at most n. `nchar(n)`, a column that is never null, a table type's and a
   table variable's pad whatever the setting (`SchemaRules.ColumnFacts`, observed in `CheckConstraintObservationTests`).
+- **XML schema collections.** `XmlPaths` follows an XML method's path (`XmlPath`, the simple form a schema can follow) through a
+  collection's declarations, from a typed instance's top level or from a node `nodes()` gave, and says which node it reaches,
+  whether one is always there and whether at most one is, or why nothing is proved: SQL Server validates a typed instance on
+  every write, so what the schemas require is there. Its rules, and what stops them (`CONTENT`, a second global element,
+  `xsi:type`, substitution groups, wildcards), are in [decision 0139](../../docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md),
+  observed in `XmlSchemaObservationTests`.
 - **SQL Server's type system, as data.** `BuiltInType` is the catalogue of every built-in type, with its family, its place
   in data type precedence, its digits, range and defaults; `ScalarType` is a type with its arguments (`decimal(19,2)`); and
   `ConversionChart` says which conversions the server allows, implicitly or only explicitly. Each row is observed against a

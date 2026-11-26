@@ -118,7 +118,11 @@ var query = QueryFileReader.Read("app/sql/get_order.sql", "sql/get_order.sql"); 
   have a default. XML schema collections are read from `CREATE XML SCHEMA COLLECTION`, each schema `ALTER XML SCHEMA COLLECTION
   … ADD` adds joined to its own in the order read, and from a package's `SqlXmlSchemaCollection`, whose one literal holds them all;
   a typed `xml` names its collection, in a package through its specifier's `XmlSchemaCollection`, `XmlStyle` 2 for `DOCUMENT`
-  ([decision 0133](../../docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)). In a DACPAC a table type's parts are entries of its own element, and its column says `IsNullable` only when it
+  ([decision 0133](../../docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)). Each collection's schemas,
+  every `xs:schema` of every text, are compiled together by .NET's XML Schema compiler into the model's declarations
+  (`XmlSchemaReader`): the global elements, and each type's content model, attributes and facets; a collection whose text isn't
+  known, or that doesn't compile, has none
+  ([decision 0139](../../docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md)). In a DACPAC a table type's parts are entries of its own element, and its column says `IsNullable` only when it
   is nullable, the reverse of a table's column. An edge table that declares no columns of its own (`CREATE TABLE shop.follows AS EDGE`) is a graph table
   with none listed, as its package reads it. A `CREATE TABLE` whose columns its script doesn't list, a FileTable's or one made
   from a query (`WITH (…) AS SELECT`), is passed over with a note (HAR1013), so a name in it is unresolved, never guessed.

@@ -293,14 +293,16 @@ internal sealed class SchemaDeclarations
     }
 
     /// <summary>
-    /// A collection with the schemas <c>ALTER XML SCHEMA COLLECTION … ADD</c> adds to it after its own; none known when any of its
-    /// schemas is not a literal. An addition to a collection the source doesn't define adds to nothing the model holds.
+    /// A collection with the schemas <c>ALTER XML SCHEMA COLLECTION … ADD</c> adds to it after its own, and the declarations of them
+    /// all, compiled together; none known when any of its schemas is not a literal. An addition to a collection the source doesn't
+    /// define adds to nothing the model holds.
     /// </summary>
     private XmlSchemaCollection WithAdditions(XmlSchemaCollection collection)
     {
         var added = XmlSchemaAdditions.Where(a => a.Collection.Equals(collection.Name)).Select(a => a.Schema).ToList();
-        return added.Count == 0 ? collection
+        var whole = added.Count == 0 ? collection
             : collection.Schemas.Count == 0 || added.Any(a => a is null) ? collection with { Schemas = [] }
             : collection with { Schemas = [.. collection.Schemas, .. added.OfType<string>()] };
+        return whole with { Declarations = XmlSchemaReader.Read(whole.Schemas) };
     }
 }

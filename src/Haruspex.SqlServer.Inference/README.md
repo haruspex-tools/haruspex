@@ -2316,8 +2316,8 @@ client is handed is the text the server writes the instance as: the mssql driver
 (`An_xml_column_is_null_only_where_it_is_and_an_empty_instance_is_not`,
 `The_driver_hands_over_xml_as_its_text_and_sends_text_as_xml`). The driver can't receive an `xml` `OUTPUT` parameter, which fails
 the call with error 257 however it is bound (`An_xml_output_parameter_fails_the_call_whatever_it_is_bound_as`); the IR still types
-it, and the mssql emitter leaves out that procedure's function with a warning (HAR5206), writing the rest. Observed in `XmlObservationTests` and `XmlExpressionObservationTests`; the
-unit tests are `XmlTests` and `XmlExpressionTests`, and the fixture `tests/fixtures/loom`.
+it, and the mssql emitter leaves out that procedure's function with a warning (HAR5206), writing the rest. Observed in `XmlObservationTests`, `XmlExpressionObservationTests` and `XmlSchemaObservationTests`; the
+unit tests are `XmlTests`, `XmlExpressionTests` and `XmlSchemaTests`, and the fixture `tests/fixtures/loom`.
 
 - **Conversions.** `CAST(… AS xml)` and `CONVERT(xml, …)`, with or without a style, are `xml`, NULL only when the operand is; text
   that isn't well formed is an error (9400), and so is an instance converted into text or a binary type too short for it (6354),
@@ -2331,9 +2331,9 @@ unit tests are `XmlTests` and `XmlExpressionTests`, and the fixture `tests/fixtu
   (`Xml_can_t_be_compared_so_min_max_nullif_and_string_agg_of_it_are_refused`).
 - **`x.value('path', 'type')`** is the type its literal second argument names, read as a declaration reads a type
   (`nvarchar` is `nvarchar(1)`, `decimal` `decimal(18,0)`, in any case, bracketed or in `sys`), with that type's facets: a longer
-  value is cut to the type's length. It is always nullable, `xml-value`: NULL where the path finds no node or `x` is NULL, and no
-  proof that a path always finds one is modelled
-  (`Xml_value_is_its_type_arguments_type_and_null_where_the_path_finds_no_node`). `json` and `vector(n)` are given as those types
+  value is cut to the type's length. It is nullable, `xml-value`: NULL where the path finds no node or `x` is NULL
+  (`Xml_value_is_its_type_arguments_type_and_null_where_the_path_finds_no_node`), unless `x`'s schema collection proves the node
+  is there (below). `json` and `vector(n)` are given as those types
   to a client that supports them and as `varchar(max)` to one that doesn't, and the server refuses `xml`, `text`, `ntext`,
   `image`, `sql_variant`, the CLR types and a type not built in, so each is unknown
   (`Xml_value_of_json_or_vector_is_typed_by_what_the_client_supports_and_other_types_are_refused`).
@@ -2350,6 +2350,25 @@ unit tests are `XmlTests` and `XmlExpressionTests`, and the fixture `tests/fixtu
   a conversion, `GROUP BY` or `COUNT` (493, 525), so read there it is unknown
   (`A_nodes_column_is_never_null_and_is_read_only_by_xml_s_methods`). Two columns in its list (8159), a path that isn't a literal
   (8172) and a value that isn't `xml` (9506) are refused, and unknown (`Nodes_takes_one_column_a_literal_path_and_only_xml`).
+- **Typed by a schema collection** ([decision 0139](../../docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md);
+  `Typer.XmlPathReach`, Semantics' `XmlPaths`). SQL Server validates a typed instance against its collection on every write, so a
+  node the schemas require is there. Only a table's column, a variable or a parameter declared `xml(collection)`, and a node that
+  `nodes()` gives over one, are read so, and only a path of named child elements, perhaps ending in an attribute, with or without
+  `[1]`, after a prolog of `declare namespace` and `declare default element namespace`; a batch with `WITH XMLNAMESPACES` proves
+  nothing. Where every step of `value()`'s path is required and its last node is an attribute, or an element of a simple type or
+  simple content that isn't nillable, it is NULL only where `x` is (`A_required_node_s_value_is_never_null_in_a_typed_instance`;
+  `xsi:nil` gives NULL, `A_nil_element_s_value_is_null`; the server refuses `value()` of other content, 9314). A `DOCUMENT`
+  instance's top-level element is required only when the collection declares one global element that isn't abstract, since any
+  of them may be its root (`A_document_s_root_is_any_global_element_of_any_schema_in_the_collection`); a `CONTENT` instance's
+  never is (`A_content_instance_may_be_empty_or_have_several_top_level_elements`); a node `nodes()` gives is there. An attribute
+  with a default or fixed value is always there (`A_default_or_fixed_attribute_is_written_into_the_instance`). `nodes()` gives at
+  least one row for each outer row where its path is required and the instance is never NULL, and at most one where no step may
+  repeat (`Nodes_gives_as_many_rows_as_the_schema_allows`). Nothing is proved through an element that heads a substitution group
+  or is abstract (`A_substitution_group_s_member_stands_where_its_head_is_declared`), an element of a complex type an instance may
+  replace with `xsi:type` (`An_instance_may_name_a_derived_type_in_xsi_type`), or content with an element wildcard
+  (`A_wildcard_may_take_an_element_of_a_declared_name_before_it`); an attribute wildcard doesn't stop a declared attribute
+  (`A_declared_attribute_is_validated_beside_an_attribute_wildcard`). Observed in `XmlSchemaObservationTests`; the unit tests are
+  `XmlSchemaTests`.
 - **`FOR XML`.** A subquery is a value: `xml` with `TYPE` and `nvarchar(max)` without, in every mode and with any other option,
   NULL exactly when its query returns no rows (`empty-subquery`), a `ROOT` included, and never over a row, even one whose every
   column is NULL; so never NULL when its query always returns one row, as an aggregate without `GROUP BY` does

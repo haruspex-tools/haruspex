@@ -326,3 +326,6 @@ Ghostty
 Konsole
 DomTerm
 wezterm
+idref
+nillable
+prolog
