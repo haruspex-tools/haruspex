@@ -333,6 +333,19 @@ public partial class IrComparisonTests
     }
 
     [Fact]
+    public void A_change_of_declared_build_says_both_what_it_was_and_what_it_is()
+    {
+        // The JSON report writes before and after; one of them null would say the package had no state before.
+        var before = Hand(new() { ["Row"] = Row(Field("id", Int)) }, "Row");
+        var after = before with { Source = before.Source with { Builds = ["sales.dacpac"] } };
+
+        var change = Assert.Single(IrComparison.Compare(before, after));
+        Assert.Equal(("false", "true"), (change.Before, change.After));
+        var back = Assert.Single(IrComparison.Compare(after, before));
+        Assert.Equal(("true", "false"), (back.Before, back.After));
+    }
+
+    [Fact]
     public void A_baseline_s_package_declared_a_build_is_a_change_named_at_the_baseline()
     {
         var before = IrSamples.Built;

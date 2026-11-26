@@ -28,9 +28,10 @@ internal sealed class PackageSet(IReadOnlyList<string> folders, List<Diagnostic>
     public IReadOnlyList<ReferenceRead> References => [.. seen.Values];
 
     /// <summary>
-    /// Every package read whose key constraints were taken as enforced because the config file's <c>builds</c> names it, each once,
-    /// in the order read: what the IR's source record says was declared a build. A package <c>builds</c> names that wasn't read,
-    /// found or not, isn't here, since nothing was assumed of it.
+    /// Every package read that the config file's <c>builds</c> names, each once, in the order read: what the IR's source record
+    /// says was declared a build. A package that is a build by its origin is here too when <c>builds</c> names it, since the
+    /// declaration is recorded, needed or not. A package <c>builds</c> names that wasn't read, found or not, isn't here, since
+    /// nothing was assumed of it.
     /// </summary>
     public IReadOnlyList<LoadedPackage> ReadAsBuilds => readAsBuilds;
 

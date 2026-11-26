@@ -4,7 +4,9 @@
 
 **Decision.** From IR 0.31, a source records in `source.builds` the packages the config file's `builds` declared builds that it
 read, by the names its `package` and `references` give them, sorted. A package `builds` names that the source didn't read is
-left out, since nothing was assumed of it. A document that records one is labelled 0.31; one that records none is still 0.30, as
+left out, since nothing was assumed of it. A package that is a build by its origin is recorded too when `builds` names it:
+the record says what the user declared, not whether the declaration was needed, so removing such a name fails `check` though
+no claim changes, which errs towards a check that fails rather than one that passes. A document that records one is labelled 0.31; one that records none is still 0.30, as
 every document that says less keeps the oldest label that says all it says
 ([decision 0072](0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). The reader refuses `builds` in a
 document labelled earlier, a document labelled 0.31 that records none, and a name that is neither the source's package nor a

@@ -50,8 +50,9 @@ public sealed record IrSource(string Dialect)
     /// The packages read for this source that the config file declared builds (<c>builds</c>), by their file names as
     /// <see cref="Package"/> and <see cref="References"/> name them, sorted (0.31): packages whose primary keys and unique constraints
     /// are claimed on the user's word, as a declared session's options are, though nothing in them says what made them. Empty when
-    /// none is declared, or when no package declared one was read, and then the file leaves <c>builds</c> out. An assumption the
-    /// claims rest on, so comparing two documents (<see cref="IrComparison"/>) reports it changing.
+    /// none is declared, or when no package declared one was read, and then the file leaves <c>builds</c> out. A package that is a
+    /// build by its origin is listed too when declared one: the declaration is recorded, whether or not it was needed. An assumption
+    /// the claims rest on, so comparing two documents (<see cref="IrComparison"/>) reports it changing.
     /// Why: docs/decisions/0122-the-ir-records-the-packages-declared-builds.md.
     /// </summary>
     public EquatableArray<string> Builds

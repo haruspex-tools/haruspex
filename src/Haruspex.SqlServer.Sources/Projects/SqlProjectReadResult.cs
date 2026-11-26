@@ -16,8 +16,8 @@ namespace Haruspex.SqlServer.Sources.Projects;
 public sealed record SqlProjectReadResult(DatabaseModel Model, EquatableArray<string> Projects, EquatableArray<ReferenceRead> References, EquatableArray<Diagnostic> Diagnostics)
 {
     /// <summary>
-    /// The packages read whose primary keys and unique constraints were taken as enforced because the config file declared them
-    /// builds (<c>builds</c>), each once, in the order read; empty when none was.
+    /// The packages read that the config file declared builds (<c>builds</c>), each once, in the order read; empty when none was.
+    /// A package that is a build by its origin is here too when <c>builds</c> names it: the declaration is recorded, needed or not.
     /// </summary>
     public EquatableArray<LoadedPackage> ReadAsBuilds { get; init; } = [];
 }

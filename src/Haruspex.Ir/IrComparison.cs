@@ -80,7 +80,7 @@ public static class IrComparison
             var was = before.Builds.Contains(name, StringComparer.Ordinal);
             var now = after.Builds.Contains(name, StringComparer.Ordinal);
             if (was != now)
-                changes.Add(new IrChange(IrChangeKind.BuildsChanged, "", path + IrPath.Key(name), After: now ? "true" : "false"));
+                changes.Add(new IrChange(IrChangeKind.BuildsChanged, "", path + IrPath.Key(name), Flag(was), Flag(now)));
         }
     }
 
@@ -444,7 +444,7 @@ public static class IrComparison
 
         private void Add(IrChangeKind kind, IrPathSegment[] path, string? before = null, string? after = null) =>
             changes.Add(new IrChange(kind, id, IrPath.Render(path), before, after));
-
-        private static string Flag(bool value) => value ? "true" : "false";
     }
+
+    private static string Flag(bool value) => value ? "true" : "false";
 }
