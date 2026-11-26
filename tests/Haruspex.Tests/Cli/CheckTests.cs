@@ -242,22 +242,27 @@ public class CheckTests
 
     /// <summary>
     /// A description is no claim, so a changed one is no change of contract (no HAR6014), but the module's text changes, so the
-    /// check still fails, at the line (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
+    /// check still fails, at the line. A document that gains its first description moves from its label to 0.33, and one that
+    /// loses its last moves back; both versions are read, so the move is no change of version either
+    /// (docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md).
     /// </summary>
     [Theory]
-    [InlineData("'The name the order is for.'")]
-    [InlineData(null)]
-    public void A_description_changed_or_dropped_fails_the_check_at_the_module_s_line_and_is_no_change_of_claim(string? now)
+    [InlineData("'Who placed the order.'", "'The name the order is for.'")]
+    [InlineData("'Who placed the order.'", null)]
+    [InlineData(null, "'Who placed the order.'")]
+    public void A_description_changed_added_or_dropped_fails_the_check_at_the_module_s_line_and_is_no_change_of_claim(string? was, string? now)
     {
         const string Described = "EXEC sp_addextendedproperty 'MS_Description', {0}, 'SCHEMA', 'shop', 'TABLE', 'orders', 'COLUMN', 'customer';";
-        using var folder = Generated(tables: Tables + "\nGO\n" + string.Format(CultureInfo.InvariantCulture, Described, "'Who placed the order.'"));
-        Assert.Contains(".describe(\"Who placed the order.\")", File.ReadAllText(Path.Combine(folder.Path, "generated", HaruspexCli.ZodFileName)), StringComparison.Ordinal);
-        folder.File("db/tables.sql", now is null ? Tables : Tables + "\nGO\n" + string.Format(CultureInfo.InvariantCulture, Described, now));
+        static string With(string? value) => value is null ? Tables : Tables + "\nGO\n" + string.Format(CultureInfo.InvariantCulture, Described, value);
+        using var folder = Generated(tables: With(was));
+        Assert.Equal(was is not null, File.ReadAllText(Path.Combine(folder.Path, "generated", HaruspexCli.IrFileName)).Contains("\"irVersion\": \"0.33\"", StringComparison.Ordinal));
+        folder.File("db/tables.sql", With(now));
 
         var (exitCode, _, error) = Run(folder, "check");
 
         Assert.Equal(1, exitCode);
         Assert.DoesNotContain("HAR6014", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("HAR6012", error, StringComparison.Ordinal);
         Assert.Contains("error HAR6015: line ", error, StringComparison.Ordinal);
     }
 

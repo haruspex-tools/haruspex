@@ -158,6 +158,24 @@ public class DescriptionFinderTests
     }
 
     [Fact]
+    public void A_value_holding_half_of_a_surrogate_pair_alone_is_no_text_and_is_passed_over()
+    {
+        // No source gives one today (a script is decoded with replacement, a package is XML), so the model is made by hand.
+        using var dir = new TempDirectory();
+        dir.File("kennel.sql", Kennel);
+        var read = SqlScriptFolder.Read(dir.Path).Model;
+        var model = new DatabaseModel(read.Tables, read.UserTypes, read.Procedures, read.Functions, read.Views, read.Synonyms, read.Triggers, read.CascadingKeys, read.TableRedefinitions)
+        {
+            ExtendedProperties = [new ExtendedProperty("MS_Description", "A \ud800 dog.", [new("SCHEMA", "kennel"), new("TABLE", "dog")], new SourceLocation("kennel.sql", 9, 1))],
+        };
+
+        var (found, notes) = DescriptionFinder.Find(model, DescriptionFinder.DefaultNames);
+
+        Assert.Equal(0, found.Descriptions.Count);
+        Assert.Equal("The description of kennel.dog is passed over: its value holds half of a UTF-16 surrogate pair alone, which is no text.", Assert.Single(notes).Message);
+    }
+
+    [Fact]
     public void A_dropped_description_has_none()
     {
         var (descriptions, notes) = Find("""

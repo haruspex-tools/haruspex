@@ -74,6 +74,17 @@ public partial class IrJsonReaderTests
     }
 
     [Fact]
+    public void A_description_holding_half_of_a_surrogate_pair_alone_is_refused_as_no_text()
+    {
+        var json = IrJsonWriter.Write(IrSamples.Described).Replace("\"The order to read.\"", "\"The \\ud800 order.\"", StringComparison.Ordinal);
+
+        var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json));
+
+        Assert.Equal("$.objects[0].parameters[0].description", e.Path);
+        Assert.Contains("half of a UTF-16 surrogate pair alone", e.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_changed_description_is_no_change_of_claim()
     {
         var before = IrSamples.Described;

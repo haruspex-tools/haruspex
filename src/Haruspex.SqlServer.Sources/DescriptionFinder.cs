@@ -84,6 +84,16 @@ public static class DescriptionFinder
 
             if (doubted.Contains(target) || adds[0].Value is not { } text || string.IsNullOrWhiteSpace(text))
                 continue;
+
+            // Half of a surrogate pair alone is no text: no output can hold it (UTF-8 can't encode it, and the IR's reader refuses
+            // it), so it is passed over, as a value that isn't text is. A script is decoded with replacement and a package is XML,
+            // so neither gives one today; this keeps it so whatever a source becomes.
+            if (!IsText(text))
+            {
+                diagnostics.Add(SourceCodes.DescriptionNotRead.At(adds[0].At, $"The description of {target} is passed over: its value holds half of a UTF-16 surrogate pair alone, which is no text."));
+                continue;
+            }
+
             // With LF line endings, as a query's text is kept: a checkout may give a script CRLF, and the output must not differ.
             text = text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
             if (target.Part is { } part)
@@ -141,6 +151,20 @@ public static class DescriptionFinder
         _ => model.FindProcedure(target.Object) is { } procedure
             && (target.Part is not { } parameter || procedure.Parameters.Any(p => p.Name.Equals(parameter, StringComparison.OrdinalIgnoreCase))),
     };
+
+    /// <summary>Whether every surrogate in <paramref name="text"/> is half of a pair, so that it is text UTF-8 can hold.</summary>
+    private static bool IsText(string text)
+    {
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                i++;
+            else if (char.IsSurrogate(text[i]))
+                return false;
+        }
+
+        return true;
+    }
 
     private static string Lower(string sentence) => sentence.Length == 0 ? sentence : char.ToLowerInvariant(sentence[0]) + sentence[1..];
 
