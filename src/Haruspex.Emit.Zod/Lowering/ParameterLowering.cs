@@ -120,7 +120,9 @@ internal static class ParameterLowering
 
         // XML is sent as text, which the server parses and refuses (error 9400) when it isn't well formed: plain text is taken,
         // and a value a result branded is a string too.
-        IrScalar { Kind: IrScalarKind.Xml } => new Noted(Z("string"), new ZodNote("XML text, which the server refuses when it isn't well formed.")),
+        IrScalar { Kind: IrScalarKind.Xml } scalar => new Noted(Z("string"), new ZodNote(string.Equals(scalar.Sql, "xml", StringComparison.OrdinalIgnoreCase)
+            ? "XML text, which the server refuses when it isn't well formed."
+            : $"XML text, which the server refuses when it isn't well formed or its type, {scalar.Sql}, doesn't allow it.")),
 
         // A boolean and a GUID are checked as a result in JSON is.
         IrScalar scalar => types.Type(scalar, IrEncoding.Json),

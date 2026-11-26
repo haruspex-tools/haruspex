@@ -54,7 +54,7 @@ public sealed record ResolvedType
     /// (<c>docs/decisions/0041-a-type-is-spelt-with-its-defaults-written-out.md</c>). A type the catalogue can't read the
     /// arguments of is spelt as written.
     /// </summary>
-    public string Spelt => Scalar?.Text ?? Written(BuiltIn);
+    public string Spelt => BuiltIn.Kind == SqlTypeKind.Xml ? BuiltIn.ToString() : Scalar?.Text ?? Written(BuiltIn);
 
     /// <summary>The name facts from the type are attributed to: the alias's, or the built-in type (<see cref="Spelt"/>).</summary>
     public string SourceName => Alias ?? Spelt;

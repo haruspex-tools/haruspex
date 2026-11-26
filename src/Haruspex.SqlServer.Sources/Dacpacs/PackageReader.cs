@@ -78,6 +78,10 @@ internal static class PackageReader
                 case ModelXml.SqlSynonym when Synonym(element, package.Name, into.Diagnostics) is { } synonym:
                     into.Synonyms.TryAdd(synonym.Name, synonym);
                     break;
+                case ModelXml.SqlXmlSchemaCollection:
+                    var collection = XmlSchemaCollection(element, package.Name);
+                    into.Define(into.XmlSchemaCollections, collection.Name, collection, collection.Span.Start);
+                    break;
                 case ModelXml.SqlExtendedProperty:
                     if (PackageProperties.Read(element, package.Name, views, procedures) is { } property)
                         into.ExtendedProperties.Add(property);
@@ -214,6 +218,17 @@ internal static class PackageReader
             _ => DeclaredNullability.NotDeclared,
         };
         return new AliasType(name, span, baseType, nullability);
+    }
+
+    /// <summary>
+    /// An XML schema collection, with its schemas as the package holds them: one literal, every schema <c>ADD</c> gave it joined
+    /// into it, as a build or an extract writes it; none known when it isn't a string literal.
+    /// </summary>
+    private static XmlSchemaCollection XmlSchemaCollection(XElement element, string package)
+    {
+        var name = ElementName.Object(ModelXml.Named(element));
+        var (read, text, _) = PackageProperties.Value(ModelXml.Property(element, ModelXml.SchemaExpression));
+        return new XmlSchemaCollection(name, PackageLocation.Whole(PackageLocation.File(package, name), 1), read && text is not null ? [text] : []);
     }
 
     /// <summary>A synonym, with the name it stands for parsed from its script as written; null, reported, when it doesn't parse.</summary>

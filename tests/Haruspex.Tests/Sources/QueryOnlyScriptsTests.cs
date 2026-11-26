@@ -70,6 +70,8 @@ public class QueryOnlyScriptsTests
         { "MaskChanges", "ALTER TABLE garden.plant ALTER COLUMN name ADD MASKED WITH (FUNCTION = 'default()');" },
         { "KeyDisables", "ALTER INDEX ix_plant ON garden.plant DISABLE;" },
         { "ExtendedProperties", "EXEC sp_addextendedproperty N'MS_Description', N'A plant.', N'SCHEMA', N'garden', N'TABLE', N'plant';" },
+        { "XmlSchemaCollections", "CREATE XML SCHEMA COLLECTION garden.plant_schema AS N'<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>';" },
+        { "XmlSchemaAdditions", "ALTER XML SCHEMA COLLECTION garden.plant_schema ADD N'<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"/>';" },
     };
 
     /// <summary>The records only a project's pre- or post-deployment script makes, which a folder's script never is.</summary>
@@ -128,7 +130,7 @@ public class QueryOnlyScriptsTests
             [
                 "AddedKeys", "CascadingKeys", "ConditionalSynonyms", "Deployed", "Diagnostics", "Enforcement", "ExtendedProperties", "FunctionChanges", "Functions",
                 "KeyDisables", "MaskChanges", "PeriodDrops", "ProcedureChanges", "Procedures", "Synonyms", "TableChanges", "Tables", "Triggers",
-                "UnreadDeployments", "UserTypes", "Views",
+                "UnreadDeployments", "UserTypes", "Views", "XmlSchemaAdditions", "XmlSchemaCollections",
             ],
             records);
     }

@@ -779,7 +779,7 @@ internal sealed partial class Typer
     {
         if (value.Shape is UnknownShape || value.IsLiveJson || declared is not ScalarShape { BuiltIn: { } to })
             return value.NullableBecause;
-        var converts = fits || (TypeOf(value) is { } from && Conversions.Converts(Operand.OfType(from), to));
+        var converts = fits || (TypeOf(value) is { } from && (Conversions.Converts(Operand.OfType(from), to) || Conversions.FailsRatherThanNull(Operand.OfType(from), to)));
         return NullReasons.Join(value.NullableBecause, ConversionReasons(session, value, expression, to, converts, at));
     }
 }

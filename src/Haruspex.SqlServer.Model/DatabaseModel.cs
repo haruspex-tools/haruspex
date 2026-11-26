@@ -106,7 +106,25 @@ public sealed class DatabaseModel
             DefaultCollation = collation,
             ExtendedProperties = ExtendedProperties,
             Descriptions = Descriptions,
+            XmlSchemaCollections = XmlSchemaCollections,
         };
+
+    /// <summary>The XML schema collections, in source order: what a typed <c>xml</c> column, variable or parameter is bound to.</summary>
+    public IReadOnlyList<XmlSchemaCollection> XmlSchemaCollections
+    {
+        get;
+        init
+        {
+            var keyed = new Dictionary<ObjectName, XmlSchemaCollection>();
+            field = Keyed(value ?? throw new ArgumentNullException(nameof(value)), keyed);
+            xmlSchemaCollections = keyed;
+        }
+    } = [];
+
+    private Dictionary<ObjectName, XmlSchemaCollection> xmlSchemaCollections = [];
+
+    /// <summary>The XML schema collection with this name, or null.</summary>
+    public XmlSchemaCollection? FindXmlSchemaCollection(ObjectName name) => xmlSchemaCollections.GetValueOrDefault(name);
 
     /// <summary>
     /// Every extended property the source sets, in the order read: what the descriptions are found in, once the config file

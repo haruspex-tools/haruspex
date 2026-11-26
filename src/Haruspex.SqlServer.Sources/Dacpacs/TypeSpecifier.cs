@@ -47,8 +47,17 @@ internal static class TypeSpecifier
 #pragma warning disable CA1308 // A canonical name, as sys.types gives it, not a comparison.
         var system = parts[0].ToLowerInvariant();
 #pragma warning restore CA1308
+        // Typed by a collection, the specifier names it; XmlStyle 2 is DOCUMENT, and CONTENT, the default, is left out.
         if (system == "xml")
-            return new SqlType(SqlTypeKind.Xml, system, []);
+        {
+            return new SqlType(SqlTypeKind.Xml, system, [])
+            {
+                Collection = ModelXml.References(specifier, ModelXml.XmlSchemaCollection).FirstOrDefault() is { } collection
+                    && ModelXml.NameOf(collection) is { } named && ElementName.Parts(named) is [var schema, var collectionName]
+                    ? new XmlCollectionReference(collectionName, schema, ModelXml.Property(specifier, ModelXml.XmlStyle) == "2")
+                    : null,
+            };
+        }
         return Enum.TryParse<SqlDataTypeOption>(system, ignoreCase: true, out _) && system != "none"
             ? new SqlType(SqlTypeKind.BuiltIn, system, Arguments(specifier, system))
             : new SqlType(SqlTypeKind.Named, system, []);

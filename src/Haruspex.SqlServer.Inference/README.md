@@ -2251,6 +2251,12 @@ it, and the mssql emitter refuses the procedure's function (HAR5206). Observed i
   path, give 0 (`Xml_exist_is_a_bit_null_exactly_when_the_xml_is`).
 - **`x.query(…)`**, and **`x.nodes(…)`** as a source, are unknown: what they give is XML its path shapes, which a schema
   collection may later type.
+- **Schema collections.** A typed `xml` is bound to its collection by the rules that find an alias type: by its schema, or
+  without one in a module's schema and then `dbo`, and outside a module the one collection of that name
+  (`An_unqualified_xml_schema_collection_is_found_as_an_alias_type_is`, `SchemaRules.ResolveXmlCollection`), and its `sql` is
+  spelt with the collection it is bound to, `xml(DOCUMENT dbo.card_schema)`; one bound to none is spelt as written. Nothing is
+  typed from a collection yet: a typed column is `xml` as an untyped one is, and `value()` of one is its type argument's. A fit
+  refuses a typed `xml` parameter, since a collection may narrow under its name, and takes an untyped one.
 - **The target** of a method is any expression (`@x.value(…)`, `CAST(… AS xml).exist(…)`) or a column of the query
   (`p.spec.value(…)`); `spec.value(…)` is the column's method when `spec` is a column in scope, and the server refuses it as
   ambiguous (327) when a function `spec.value` exists too

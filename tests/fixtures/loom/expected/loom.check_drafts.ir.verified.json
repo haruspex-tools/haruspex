@@ -1,0 +1,190 @@
+{
+  "irVersion": "0.34",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "files": {
+      "procedures/check_drafts.sql": "530deccedef1f29225ea42770d3ead27957fa71c963daf756f83e2927458ba4e",
+      "tables/pattern.sql": "1c5b8aeb729e205b326bbc881529f5e8f2f770d783cd18a07156ea809c62a48c"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.check_drafts",
+      "name": "CheckDrafts",
+      "kind": "procedure",
+      "at": "procedures/check_drafts.sql:1:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@card",
+          "type": {
+            "kind": "xml",
+            "sql": "xml(DOCUMENT dbo.card_schema)"
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CheckDraftsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CheckDraftsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.check_drafts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "pattern_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.pattern.pattern_id",
+              "sql": "int",
+              "at": "tables/pattern.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "checked_draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml(loom.draft_schema)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "loom.pattern.checked_draft"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.checked_draft",
+              "sql": "xml(loom.draft_schema)",
+              "at": "tables/pattern.sql:8:5"
+            }
+          ]
+        },
+        {
+          "name": "card",
+          "type": {
+            "kind": "xml",
+            "sql": "xml(DOCUMENT dbo.card_schema)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "loom.pattern.card"
+            }
+          ],
+          "from": [
+            {
+              "column": "loom.pattern.card",
+              "sql": "xml(DOCUMENT dbo.card_schema)",
+              "at": "tables/pattern.sql:9:5"
+            }
+          ]
+        },
+        {
+          "name": "draft",
+          "type": {
+            "kind": "xml",
+            "sql": "xml(loom.draft_schema)"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "given_card",
+          "type": {
+            "kind": "xml",
+            "sql": "xml(DOCUMENT dbo.card_schema)"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@card"
+            }
+          ]
+        },
+        {
+          "name": "shafts",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "xml-value",
+              "at": "procedures/check_drafts.sql:6:9"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

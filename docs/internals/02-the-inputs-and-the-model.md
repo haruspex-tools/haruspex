@@ -22,7 +22,8 @@ with [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.
 never with DacFx, whose licence no free tool should have to take on
 ([decision 0004](../decisions/0004-scriptdom-is-the-only-sql-dependency.md)).
 
-What a script defines is read: `CREATE TABLE` with its columns, keys and CHECK constraints; `CREATE TYPE`; procedures,
+What a script defines is read: `CREATE TABLE` with its columns, keys and CHECK constraints; `CREATE TYPE`; XML schema
+collections; procedures,
 functions, views and DML triggers with their parameters and bodies; synonyms; and foreign keys with an `ON DELETE` or
 `ON UPDATE` action, since those fire the referencing table's triggers. So is anything that changes a definition later (an
 `ALTER` or a `DROP`), and anything that may disable a constraint (`ALTER TABLE … NOCHECK CONSTRAINT`,

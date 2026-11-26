@@ -389,7 +389,7 @@ public partial class BaselineFitTests(SqlServerFixture server)
         const string Procedure = "CREATE PROCEDURE drift.take @v xml(drift.sc) AS SELECT CAST(1 AS int) AS id;";
 
         var findings = IrFit.Of(Take(before, Procedure), Take(after, Procedure), new IrFitOptions());
-        Assert.Equal(["refused: drift.take parameters[\"@v\"]: type xml can't be shown unchanged"], findings.Select(f => f.ToString()));
+        Assert.Equal(["refused: drift.take parameters[\"@v\"]: type xml(drift.sc) can't be shown unchanged"], findings.Select(f => f.ToString()));
 
         await using var database = await server.ScratchAsync();
         await database.ExecuteAsync("CREATE SCHEMA drift;", token);

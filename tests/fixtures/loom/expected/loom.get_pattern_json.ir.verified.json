@@ -8,7 +8,7 @@
     },
     "files": {
       "procedures/get_pattern_json.sql": "3fd3d8ef9db2cf59e6f227383d96c290beadca2a03655e563fd90d44a7b43622",
-      "tables/pattern.sql": "ca4a97367b2cb22d13d1caf258d39a6008db31f3a7b509cf9c4bcd13aab9a3a4"
+      "tables/pattern.sql": "1c5b8aeb729e205b326bbc881529f5e8f2f770d783cd18a07156ea809c62a48c"
     }
   },
   "objects": [

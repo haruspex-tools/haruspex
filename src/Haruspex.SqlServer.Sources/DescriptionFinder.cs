@@ -113,6 +113,7 @@ public static class DescriptionFinder
             Databases = model.Databases,
             DefaultCollation = model.DefaultCollation,
             ExtendedProperties = model.ExtendedProperties,
+            XmlSchemaCollections = model.XmlSchemaCollections,
             Descriptions = descriptions,
         };
 

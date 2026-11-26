@@ -31,7 +31,11 @@ public class DescribedTypeTests(SqlServerFixture server)
                 continue;
 
             var described = new Dictionary<string, string>(StringComparer.Ordinal);
-            await using (var command = session.Command("SELECT name, system_type_name FROM sys.dm_exec_describe_first_result_set_for_object(OBJECT_ID(@name), 0) WHERE name IS NOT NULL;"))
+            // An xml column typed by a schema collection is described as xml beside the collection it is bound to, which the IR
+            // spells in the type, with DOCUMENT where it is one (decision 0133).
+            await using (var command = session.Command(
+                "SELECT name, system_type_name + IIF(xml_collection_name IS NULL, '', '(' + IIF(is_xml_document = 1, 'DOCUMENT ', '') + xml_collection_schema + '.' + xml_collection_name + ')') " +
+                "FROM sys.dm_exec_describe_first_result_set_for_object(OBJECT_ID(@name), 0) WHERE name IS NOT NULL;"))
             {
                 command.Parameters.AddWithValue("@name", procedure.Id);
                 await using var reader = await command.ExecuteReaderAsync(cancel);

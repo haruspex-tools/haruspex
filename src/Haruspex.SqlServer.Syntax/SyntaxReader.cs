@@ -37,8 +37,15 @@ public static class SyntaxReader
 #pragma warning disable CA1308 // A canonical name, as sys.types gives it, not a comparison.
                 return new SqlType(SqlTypeKind.BuiltIn, sql.SqlDataTypeOption.ToString().ToLowerInvariant(), [.. sql.Parameters.Select(p => p.Value)]);
 #pragma warning restore CA1308
-            case XmlDataTypeReference { Name.BaseIdentifier.Value: { } xml }:
-                return new SqlType(SqlTypeKind.Xml, xml, []);
+            case XmlDataTypeReference { Name.BaseIdentifier.Value: { } xml } typed:
+#pragma warning disable CA1308 // A canonical name, as sys.types gives it, not a comparison.
+                return new SqlType(SqlTypeKind.Xml, xml.ToLowerInvariant(), [], ModuleSchema: typed.XmlSchemaCollection is { SchemaIdentifier: null } ? moduleSchema : null)
+#pragma warning restore CA1308
+                {
+                    Collection = typed.XmlSchemaCollection is { BaseIdentifier.Value: { } collection } named
+                        ? new XmlCollectionReference(collection, named.SchemaIdentifier?.Value, typed.XmlDataTypeOption == XmlDataTypeOption.Document)
+                        : null,
+                };
             case XmlDataTypeReference:
                 return null;
             case { Name.BaseIdentifier.Value: { } name }:

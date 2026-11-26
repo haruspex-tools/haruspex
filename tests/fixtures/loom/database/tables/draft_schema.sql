@@ -1,0 +1,2 @@
+-- The schema every typed draft is validated against: a draft element of any attributes and content.
+CREATE XML SCHEMA COLLECTION loom.draft_schema AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="draft"><xs:complexType><xs:sequence><xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/></xs:sequence><xs:anyAttribute processContents="skip"/></xs:complexType></xs:element></xs:schema>';

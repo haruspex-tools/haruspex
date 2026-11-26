@@ -4,8 +4,8 @@
 
 **Decision.** The IR has a scalar kind for XML text, `xml`, which SQL Server's `xml` is, typed by a schema collection or not.
 It has no format and no facets: an `xml` value has no length a type declares (it holds up to 2 GB), no digits, bounds or value
-set, and a reader refuses an `xml` value that says any of them. Its `sql` is the type as written (`xml`,
-`xml(shop.spec_schema)`, `xml(DOCUMENT shop.spec_schema)`), which is informational, as every scalar's is. A document that holds an
+set, and a reader refuses an `xml` value that says any of them. Its `sql` is the type, spelt with the schema collection
+it is bound to (`xml`, `xml(shop.spec_schema)`, `xml(DOCUMENT shop.spec_schema)`). A document that holds an
 `xml` value anywhere is IR 0.34, and one that holds none is labelled as before, by the rest of what it says (decision 0072's
 labelling by content, as [decision 0081](0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md) did for `bytes`); the
 reader refuses an `xml` value before 0.34, and a document labelled 0.34 that holds none.
@@ -41,10 +41,14 @@ annotation that validates nothing more.
   shape. `OPENXML` and `WITH XMLNAMESPACES` stay unknown as before.
 
 *XML schema collections.* `CREATE XML SCHEMA COLLECTION` and `ALTER XML SCHEMA COLLECTION … ADD` are read from scripts, and
-SqlXmlSchemaCollection elements from a package, into the model, and each typed `xml` column, variable and parameter is bound to
-its collection by the rules that find an alias type (observed: in a module, the module's schema then `dbo`; elsewhere, the
-default schema, not the table's). Nothing is typed from a collection yet; that is the follow-up, which needs the bound
-collections. A typed column whose collection the source doesn't define is still `xml`.
+`SqlXmlSchemaCollection` elements from a package, into the model, each with the text of its schemas, and each typed `xml`
+column, variable and parameter is bound to its collection by the rules that find an alias type (observed: in a module, the
+module's schema then `dbo`; elsewhere, the default schema, not the table's). Its `sql` is spelt with the collection it is bound
+to (`xml(DOCUMENT dbo.card_schema)`), as an alias type's column is spelt with its base type, so one database read from its
+scripts or from its package gives one output. Nothing is typed from a collection yet; that is the follow-up, which needs the
+bound collections. A typed column whose collection the source doesn't define is still `xml`, spelt as written. A fit refuses
+a typed `xml` parameter, since a collection that narrows an element fails the old call under the same name (6926), and takes
+an untyped one, which accepts any well-formed XML.
 
 *`FOR XML`.* A top-level `FOR XML` result stays unknown, and a note, HAR2026, says where one is sent to an application: the
 driver joins its rows into one string and never parses it (observed), so the application receives XML it must parse itself,

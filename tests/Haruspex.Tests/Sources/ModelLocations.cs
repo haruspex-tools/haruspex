@@ -53,6 +53,8 @@ internal static class ModelLocations
             foreach (var key in table.UniqueKeys)
                 lines.Add($"key {table.Name} {key.Name ?? "unnamed"} ({string.Join(", ", key.Columns)}){(key.IgnoresDuplicates ? " ignoring duplicates" : "")} at {key.At}");
         }
+        foreach (var collection in model.XmlSchemaCollections)
+            lines.Add($"XML schema collection {collection.Name} of {collection.Schemas.Count} schema{(collection.Schemas.Count == 1 ? "" : "s")} at {collection.Span}");
         foreach (var procedure in model.Procedures)
         {
             lines.Add($"procedure {procedure.Name} at {procedure.Span}{AnsiNullsOff(procedure.AnsiNullsOff)}{Changed(procedure.Redefinition)}");

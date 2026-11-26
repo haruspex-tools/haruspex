@@ -59,5 +59,6 @@ public static class SchemaNames
         Procedure => "procedure",
         Trigger => "trigger",
         UserType => "type",
+        XmlSchemaCollection => "XML schema collection",
     };
 }

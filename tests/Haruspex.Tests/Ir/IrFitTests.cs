@@ -463,8 +463,8 @@ public partial class IrFitTests
     [InlineData("geography", null)]
     [InlineData("geometry", null)]
     [InlineData("sql_variant", null)]
-    [InlineData("xml", "xml")] // the IR doesn't say whether it has a schema collection
-    [InlineData("xml(shop.sc)", "xml")]
+    [InlineData("xml", null)] // untyped xml takes any well-formed XML
+    [InlineData("xml(shop.sc)", "xml(shop.sc)")] // the IR names the collection but doesn't hold it
     public void A_parameter_of_the_same_unknown_type_both_sides_fits_only_when_its_name_is_all_of_its_definition(string type, string? named)
     {
         // Observed: an xml collection that narrows an element fails the old call (6926) under the same name; a built-in type's

@@ -57,8 +57,16 @@ public static class SchemaRules
         ArgumentNullException.ThrowIfNull(model);
         switch (type)
         {
-            case { Kind: SqlTypeKind.BuiltIn or SqlTypeKind.Xml }:
+            case { Kind: SqlTypeKind.BuiltIn }:
                 return new ResolvedType(type, null, DeclaredNullability.NotDeclared);
+            case { Kind: SqlTypeKind.Xml }:
+                // Typed by a collection the model defines, it is spelt with that collection's own name; by one it doesn't, as written.
+                return new ResolvedType(
+                    type.Collection is { } written && ResolveXmlCollection(model, type) is { } bound
+                        ? type with { Collection = written with { Name = bound.Name.Name, Schema = bound.Name.Schema }, ModuleSchema = null }
+                        : type,
+                    null,
+                    DeclaredNullability.NotDeclared);
             case { Kind: SqlTypeKind.Named }:
                 if (BuiltInType.SystemAlias(type) is { } system)
                     return system;
@@ -84,6 +92,22 @@ public static class SchemaRules
     {
         ArgumentNullException.ThrowIfNull(model);
         return type is { Kind: SqlTypeKind.Named } ? FindUserType(model, type) as TableType : null;
+    }
+
+    /// <summary>
+    /// The XML schema collection a typed <c>xml</c> names, found as an alias type is: by its schema when it names one, and otherwise
+    /// from where it is written, in a module's schema then <c>dbo</c> (observed:
+    /// <c>An_unqualified_xml_schema_collection_is_found_as_an_alias_type_is</c>); null for untyped <c>xml</c>, any other type, and
+    /// a name that finds no collection or several.
+    /// </summary>
+    public static XmlSchemaCollection? ResolveXmlCollection(DatabaseModel model, SqlType? type)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        if (type is not { Kind: SqlTypeKind.Xml, Collection: { } named })
+            return null;
+        return named.Schema is { } schema
+            ? model.FindXmlSchemaCollection(new ObjectName(schema, named.Name))
+            : SchemaNames.Resolve(model.XmlSchemaCollections, named.Name, SchemaSearch.Of(type)) is OneObject { Named: XmlSchemaCollection one } ? one : null;
     }
 
     /// <summary>

@@ -1,3 +1,9 @@
+XML schema collection HumanResources.HRResumeSchemaCollection of 1 schema at instawdb.sql:562:1
+XML schema collection Person.AdditionalContactInfoSchemaCollection of 3 schemas at instawdb.sql:396:1
+XML schema collection Person.IndividualSurveySchemaCollection of 1 schema at instawdb.sql:506:1
+XML schema collection Production.ManuInstructionsSchemaCollection of 1 schema at instawdb.sql:837:1
+XML schema collection Production.ProductDescriptionSchemaCollection of 2 schemas at instawdb.sql:709:1
+XML schema collection Sales.StoreSurveySchemaCollection of 1 schema at instawdb.sql:890:1
 cascading key Sales.SalesOrderDetail to Sales.SalesOrderHeader at instawdb.sql:3961:5
 cascading key Sales.SalesOrderHeaderSalesReason to Sales.SalesOrderHeader at instawdb.sql:4035:5
 check HumanResources.Employee CK_Employee_BirthDate at instawdb.sql:1163:5
@@ -123,7 +129,7 @@ column HumanResources.EmployeePayHistory.RateChangeDate datetime at instawdb.sql
 column HumanResources.JobCandidate.BusinessEntityID int at instawdb.sql:1203:5
 column HumanResources.JobCandidate.JobCandidateID int at instawdb.sql:1202:5
 column HumanResources.JobCandidate.ModifiedDate datetime at instawdb.sql:1205:5
-column HumanResources.JobCandidate.Resume XML at instawdb.sql:1204:5
+column HumanResources.JobCandidate.Resume xml(HumanResources.HRResumeSchemaCollection) at instawdb.sql:1204:5
 column HumanResources.Shift.EndTime time at instawdb.sql:1644:5
 column HumanResources.Shift.ModifiedDate datetime at instawdb.sql:1645:5
 column HumanResources.Shift.Name Name at instawdb.sql:1642:5
@@ -171,9 +177,9 @@ column Person.Password.ModifiedDate datetime at instawdb.sql:1225:5
 column Person.Password.PasswordHash varchar(128) at instawdb.sql:1222:5
 column Person.Password.PasswordSalt varchar(10) at instawdb.sql:1223:5
 column Person.Password.rowguid uniqueidentifier at instawdb.sql:1224:5
-column Person.Person.AdditionalContactInfo XML at instawdb.sql:1240:5
+column Person.Person.AdditionalContactInfo xml(Person.AdditionalContactInfoSchemaCollection) at instawdb.sql:1240:5
 column Person.Person.BusinessEntityID int at instawdb.sql:1231:5
-column Person.Person.Demographics XML at instawdb.sql:1241:5
+column Person.Person.Demographics xml(Person.IndividualSurveySchemaCollection) at instawdb.sql:1241:5
 column Person.Person.EmailPromotion int at instawdb.sql:1239:5
 column Person.Person.FirstName Name at instawdb.sql:1235:5
 column Person.Person.LastName Name at instawdb.sql:1237:5
@@ -225,7 +231,7 @@ column Production.Document.Revision nchar(5) at instawdb.sql:1127:5
 column Production.Document.Status tinyint at instawdb.sql:1129:5
 column Production.Document.Title nvarchar(50) at instawdb.sql:1122:5
 column Production.Document.rowguid uniqueidentifier at instawdb.sql:1132:5
-column Production.Illustration.Diagram XML at instawdb.sql:1196:5
+column Production.Illustration.Diagram xml at instawdb.sql:1196:5
 column Production.Illustration.IllustrationID int at instawdb.sql:1195:5
 column Production.Illustration.ModifiedDate datetime at instawdb.sql:1197:5
 column Production.Location.Availability decimal(8,2) at instawdb.sql:1213:5
@@ -286,8 +292,8 @@ column Production.ProductListPriceHistory.ListPrice money at instawdb.sql:1361:5
 column Production.ProductListPriceHistory.ModifiedDate datetime at instawdb.sql:1362:5
 column Production.ProductListPriceHistory.ProductID int at instawdb.sql:1358:5
 column Production.ProductListPriceHistory.StartDate datetime at instawdb.sql:1359:5
-column Production.ProductModel.CatalogDescription XML at instawdb.sql:1371:5
-column Production.ProductModel.Instructions XML at instawdb.sql:1372:5
+column Production.ProductModel.CatalogDescription xml(Production.ProductDescriptionSchemaCollection) at instawdb.sql:1371:5
+column Production.ProductModel.Instructions xml(Production.ManuInstructionsSchemaCollection) at instawdb.sql:1372:5
 column Production.ProductModel.ModifiedDate datetime at instawdb.sql:1374:5
 column Production.ProductModel.Name Name at instawdb.sql:1370:5
 column Production.ProductModel.ProductModelID int at instawdb.sql:1369:5
@@ -549,7 +555,7 @@ column Sales.SpecialOfferProduct.ProductID int at instawdb.sql:1693:5
 column Sales.SpecialOfferProduct.SpecialOfferID int at instawdb.sql:1692:5
 column Sales.SpecialOfferProduct.rowguid uniqueidentifier at instawdb.sql:1694:5
 column Sales.Store.BusinessEntityID int at instawdb.sql:1712:5
-column Sales.Store.Demographics XML at instawdb.sql:1715:5
+column Sales.Store.Demographics xml(Sales.StoreSurveySchemaCollection) at instawdb.sql:1715:5
 column Sales.Store.ModifiedDate datetime at instawdb.sql:1717:5
 column Sales.Store.Name Name at instawdb.sql:1713:5
 column Sales.Store.SalesPersonID int at instawdb.sql:1714:5

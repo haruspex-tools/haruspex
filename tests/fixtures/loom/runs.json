@@ -20,6 +20,8 @@
     { "name": "save_draft, with notes", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 2, "@draft": "<draft shafts=\"8\"/>", "@notes": "<notes/>" } },
     { "name": "save_draft, no notes", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 3, "@draft": "<draft/>" } },
     { "name": "save_draft, no draft", "procedure": "loom.save_draft", "setup": "writes", "parameters": { "@pattern_id": 1, "@draft": null } },
+    { "name": "check_drafts", "procedure": "loom.check_drafts" },
+    { "name": "check_drafts, a card", "procedure": "loom.check_drafts", "parameters": { "@card": "<card weaver=\"Grace\"/>" } },
     { "name": "count_threads", "procedure": "loom.count_threads", "parameters": { "@pattern_id": 1 } },
     { "name": "list_ends", "procedure": "loom.list_ends", "parameters": { "@draft": "<draft><threading><end colour=\"red\"/></threading></draft>" } }
   ]

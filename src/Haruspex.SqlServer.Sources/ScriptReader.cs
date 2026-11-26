@@ -113,6 +113,17 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
             case CreateTypeUdtStatement clr:
                 ReadClrType(clr);
                 break;
+            case CreateXmlSchemaCollectionStatement collection:
+                var collectionName = SyntaxReader.Name(collection.Name);
+                into.Define(
+                    into.XmlSchemaCollections,
+                    collectionName,
+                    new XmlSchemaCollection(collectionName, SyntaxReader.Span(file, collection), collection.Expression is StringLiteral { Value: var schema } ? [schema] : []),
+                    At(collection));
+                break;
+            case AlterXmlSchemaCollectionStatement addition:
+                into.XmlSchemaAdditions.Add((SyntaxReader.Name(addition.Name), addition.Expression is StringLiteral { Value: var added } ? added : null));
+                break;
             case CreateTypeTableStatement table:
                 var tableType = SyntaxReader.TableType(SyntaxReader.Name(table.Name), table.Definition, SyntaxReader.Span(file, table));
                 into.Define(into.UserTypes, tableType.Name, tableType, At(table));

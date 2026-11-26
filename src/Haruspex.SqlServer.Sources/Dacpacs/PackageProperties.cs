@@ -45,8 +45,11 @@ internal static class PackageProperties
         return new ExtendedProperty(name, read ? text : null, [.. levels], at) { Unread = why };
     }
 
-    /// <summary>The value's text, from the literal the package holds; not read, saying why, when it isn't a string or NULL.</summary>
-    private static (bool Read, string? Text, string? Why) Value(string? script)
+    /// <summary>
+    /// The value's text, from the literal the package holds; not read, saying why, when it isn't a string or NULL. An XML schema
+    /// collection's schema is read the same way (<c>PackageReader</c>).
+    /// </summary>
+    internal static (bool Read, string? Text, string? Why) Value(string? script)
     {
         if (script is null)
             return (true, null, null);

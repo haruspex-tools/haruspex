@@ -1,8 +1,13 @@
+XML schema collection dbo.card_schema of 1 schema at tables/card_schema.sql:2:1
+XML schema collection loom.draft_schema of 1 schema at tables/draft_schema.sql:2:1
+column loom.pattern.card xml(DOCUMENT card_schema) at tables/pattern.sql:9:5
+column loom.pattern.checked_draft xml(loom.draft_schema) at tables/pattern.sql:8:5
 column loom.pattern.draft xml at tables/pattern.sql:6:5
 column loom.pattern.name nvarchar(40) at tables/pattern.sql:5:5
 column loom.pattern.notes xml at tables/pattern.sql:7:5
 column loom.pattern.pattern_id int at tables/pattern.sql:4:5
 key loom.pattern pk_pattern (pattern_id) at tables/pattern.sql:4:29
+parameter loom.check_drafts @card at procedures/check_drafts.sql:1:36
 parameter loom.count_threads @pattern_id at procedures/count_threads.sql:1:37
 parameter loom.get_pattern @pattern_id at procedures/get_pattern.sql:1:35
 parameter loom.get_pattern_json @pattern_id at procedures/get_pattern_json.sql:1:40
@@ -10,6 +15,7 @@ parameter loom.list_ends @draft at procedures/list_ends.sql:1:33
 parameter loom.save_draft @draft at procedures/save_draft.sql:1:51
 parameter loom.save_draft @notes at procedures/save_draft.sql:1:63
 parameter loom.save_draft @pattern_id at procedures/save_draft.sql:1:34
+procedure loom.check_drafts at procedures/check_drafts.sql:1:1
 procedure loom.count_threads at procedures/count_threads.sql:1:1
 procedure loom.get_pattern at procedures/get_pattern.sql:1:1
 procedure loom.get_pattern_json at procedures/get_pattern_json.sql:1:1

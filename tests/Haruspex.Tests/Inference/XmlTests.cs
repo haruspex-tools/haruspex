@@ -215,4 +215,70 @@ public class XmlTests
 
         Assert.StartsWith("unknown: ", Typed(doc, "a"), StringComparison.Ordinal);
     }
+
+    // ---- schema collections ----------------------------------------------------------------------------------------------
+
+    private const string Collections = """
+        CREATE XML SCHEMA COLLECTION shop.spec_schema AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="spec"/></xs:schema>';
+        GO
+        CREATE XML SCHEMA COLLECTION dbo.card_schema AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="card"/></xs:schema>';
+        GO
+        CREATE XML SCHEMA COLLECTION shop.card_schema AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="shop_card"/></xs:schema>';
+        GO
+        CREATE TABLE shop.typed (id int NOT NULL PRIMARY KEY, spec xml(shop.spec_schema) NOT NULL, card xml(DOCUMENT dbo.card_schema) NULL, plain xml NULL);
+        GO
+        """;
+
+    private static IrDocument Typed(string parameters, string body) =>
+        InferProcedure.Infer("shop.p", ("tables.sql", Tables + "\n" + Collections), ("p.sql", $"CREATE PROCEDURE shop.p {parameters} AS\n{body}"));
+
+    [Fact]
+    public void Each_typed_column_is_spelt_with_the_collection_it_is_bound_to()
+    {
+        // An_unqualified_xml_schema_collection_is_found_as_an_alias_type_is.
+        var doc = Typed("", "SELECT t.spec, t.card, t.plain FROM shop.typed AS t;");
+
+        Assert.Equal("xml xml(shop.spec_schema)", Typed(doc, "spec"));
+        Assert.Equal("xml xml(DOCUMENT dbo.card_schema)", Typed(doc, "card"));
+        Assert.Equal("xml xml", Typed(doc, "plain"));
+        Assert.Empty(Field(doc, "spec").NullableBecause);
+    }
+
+    [Fact]
+    public void A_name_without_a_schema_is_found_in_the_module_s_schema_then_dbo()
+    {
+        // In shop.p, card_schema is shop's though dbo has one too, and a name only dbo has is dbo's.
+        var doc = Typed("@given xml(card_schema) = NULL", """
+            DECLARE @spec xml(spec_schema) = N'<spec/>';
+            SELECT @given AS given, @spec AS spec;
+            """);
+
+        Assert.Equal("xml(shop.card_schema)", Assert.IsType<IrScalar>(Assert.Single(doc.Objects[0].Parameters).Type).Sql);
+        Assert.Equal("xml xml(shop.card_schema)", Typed(doc, "given"));
+        Assert.Equal("xml xml(shop.spec_schema)", Typed(doc, "spec"));
+        Assert.Empty(Field(doc, "spec").NullableBecause);
+    }
+
+    [Fact]
+    public void A_name_written_without_a_schema_outside_a_module_and_found_twice_is_spelt_as_written()
+    {
+        // A table's column takes its creator's default schema, which a folder doesn't say: card_schema is in dbo and in shop.
+        var doc = InferProcedure.Infer(
+            "shop.p",
+            ("tables.sql", Collections + "\nCREATE TABLE shop.loose (id int NOT NULL PRIMARY KEY, card xml(card_schema) NULL, spec xml(spec_schema) NULL);\nGO\n"),
+            ("p.sql", "CREATE PROCEDURE shop.p AS SELECT l.card, l.spec FROM shop.loose AS l;"));
+
+        Assert.Equal("xml xml(card_schema)", Typed(doc, "card"));
+        Assert.Equal("xml xml(shop.spec_schema)", Typed(doc, "spec"));
+    }
+
+    [Fact]
+    public void Value_of_a_typed_column_is_typed_by_its_type_argument_alone()
+    {
+        // The collection isn't read yet: what value() gives is its type argument's, nullable, as for untyped xml.
+        var doc = Typed("", "SELECT t.spec.value('(/spec/@weight)[1]', 'int') AS weight FROM shop.typed AS t;");
+
+        Assert.Equal("number int", Typed(doc, "weight"));
+        Assert.Equal([IrNullRule.XmlValue], Rules(doc, "weight"));
+    }
 }

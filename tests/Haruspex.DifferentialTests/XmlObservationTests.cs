@@ -63,6 +63,11 @@ public class XmlObservationTests(SqlServerFixture server)
         Assert.Equal(6354, (await Run(Off + "SELECT CAST(CAST(N'<a>hello</a>' AS xml) AS varchar(3)) AS c;")).Error);
         Assert.Equal(6354, (await Run(Off + "SELECT CAST(CAST(N'<a>hello</a>' AS xml) AS varbinary(3)) AS c;")).Error);
         Assert.Equal(9400, (await Run(Off + "SELECT ISNULL(CAST(NULL AS xml), N'<b') AS c;")).Error);
+
+        // An assignment of text to xml converts the same way; xml assigned to text is refused, since no conversion out of xml is
+        // implicit (257).
+        Assert.Equal(9400, (await Run(Off + "DECLARE @x xml = N'<a'; SELECT @x AS c;")).Error);
+        Assert.Equal(257, (await Run(Off + "DECLARE @s nvarchar(30) = CAST(N'<a>hello</a>' AS xml); SELECT @s AS c;")).Error);
     }
 
     [Fact]
@@ -88,6 +93,35 @@ public class XmlObservationTests(SqlServerFixture server)
         Assert.Equal(305, (await Run("SELECT NULLIF(x, x) AS v" + From)).Error);
         Assert.Equal(305, (await Run("SELECT PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY x) OVER () AS v" + From)).Error);
         Assert.Equal(8116, (await Run("SELECT STRING_AGG(x, ',') AS v" + From)).Error);
+    }
+
+    [Fact]
+    public async Task An_unqualified_xml_schema_collection_is_found_as_an_alias_type_is()
+    {
+        // Outside a module, in the creator's default schema (here dbo), not the table's; in a module, its own schema's, then dbo's.
+        string[] collections =
+        [
+            "CREATE SCHEMA obs_shop;",
+            """CREATE XML SCHEMA COLLECTION obs_shop.obs_only_shop AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="a"/></xs:schema>';""",
+            """CREATE XML SCHEMA COLLECTION dbo.obs_only_dbo AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="b"/></xs:schema>';""",
+            """CREATE XML SCHEMA COLLECTION obs_shop.obs_both AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="c"/></xs:schema>';""",
+            """CREATE XML SCHEMA COLLECTION dbo.obs_both AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="d"/></xs:schema>';""",
+        ];
+        const string Bound = "SELECT t.name AS t, x.name AS x, SCHEMA_NAME(x.schema_id) AS s FROM sys.columns AS c JOIN sys.tables AS t ON t.object_id = c.object_id JOIN sys.xml_schema_collections AS x ON x.xml_collection_id = c.xml_collection_id WHERE t.name LIKE 'obs_t%' ORDER BY t.name;";
+        Assert.Equal(
+            "t,x,s: obs_t2,obs_only_dbo,dbo;obs_t3,obs_both,dbo",
+            (await Run(Bound, [.. collections, "CREATE TABLE obs_shop.obs_t2 (v xml(obs_only_dbo));", "CREATE TABLE obs_shop.obs_t3 (v xml(obs_both));"])).ToString());
+        Assert.Equal(6314, (await Run("CREATE TABLE obs_shop.obs_t1 (v xml(obs_only_shop));", collections)).Error);
+
+        // A procedure of obs_shop takes obs_shop's obs_both (an element c) over dbo's, and dbo's obs_only_dbo; one of dbo can't see
+        // obs_shop's obs_only_shop.
+        string[] procedures =
+        [
+            .. collections,
+            "CREATE PROCEDURE obs_shop.obs_p1 AS BEGIN DECLARE @x xml(obs_both) = N'<c/>'; DECLARE @y xml(obs_only_dbo) = N'<b/>'; SELECT @x AS x, @y AS y; END;",
+        ];
+        Assert.Equal("x,y: <c />,<b />", (await Run("EXEC obs_shop.obs_p1;", procedures)).ToString());
+        Assert.Equal(6314, (await Run("CREATE PROCEDURE dbo.obs_p2 AS BEGIN DECLARE @x xml(obs_only_shop) = N'<a/>'; SELECT @x AS x; END;", collections)).Error);
     }
 
     // ---- methods ---------------------------------------------------------------------------------------------------------

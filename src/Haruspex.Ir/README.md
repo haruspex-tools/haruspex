@@ -490,8 +490,9 @@ was written from, as `sha256` tells a package. None of these is a claim: a compa
 `uuid` (8-4-4-4-12 hex digits, not necessarily an RFC 9562 UUID), (0.27) `bytes`, a string of bytes, whose only facet is its
 length in bytes and which has no format
 ([decision 0081](../../docs/decisions/0081-binary-values-are-a-kind-of-their-own-counted-in-bytes.md)), and (0.34) `xml`, XML
-text, as the engine writes the instance in every encoding, with no format and no facets; its `sql` says whether a schema
-collection types it, which no claim rests on
+text, as the engine writes the instance in every encoding, with no format and no facets; its `sql` names the schema collection
+that types it, if any (`xml(DOCUMENT dbo.card_schema)`), whose schemas the IR doesn't hold, so a fit takes an untyped `xml`
+parameter and refuses a typed one
 ([decision 0133](../../docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md)). `format` refines a `number` as `uint8`, `int16`,
 `int32`, `int64`, `decimal` or `float`, and a `datetime` as `local` (no offset) or `offset`. Dates, times, identifiers and bytes
 are kinds, not strings, because in JSON they arrive as strings in a known format and in a rowset as a driver's native

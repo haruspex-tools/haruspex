@@ -21,6 +21,12 @@ namespace Haruspex.SqlServer.Model;
 /// </param>
 public sealed record SqlType(SqlTypeKind Kind, string Name, EquatableArray<string> Arguments, string? Schema = null, string? ModuleSchema = null)
 {
-    /// <summary>The type as written, with the name in canonical case: <c>decimal(19,2)</c>.</summary>
-    public override string ToString() => Arguments.Count == 0 ? Name : Name + "(" + string.Join(",", Arguments) + ")";
+    /// <summary>For <c>xml</c>, the schema collection it is typed by; null for untyped <c>xml</c> and for any other type.</summary>
+    public XmlCollectionReference? Collection { get; init; }
+
+    /// <summary>The type as written, with the name in canonical case: <c>decimal(19,2)</c>, <c>xml(DOCUMENT sales.spec_schema)</c>.</summary>
+    public override string ToString() =>
+        Collection is { } collection ? Name + "(" + collection + ")"
+        : Arguments.Count == 0 ? Name
+        : Name + "(" + string.Join(",", Arguments) + ")";
 }

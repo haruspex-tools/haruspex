@@ -90,6 +90,15 @@ internal sealed class SchemaDeclarations
     /// <summary>Every extended property the scripts or packages set, update or drop, in the order read (<see cref="DatabaseModel.ExtendedProperties"/>).</summary>
     public List<ExtendedProperty> ExtendedProperties { get; } = [];
 
+    /// <summary>The XML schema collections, each as its <c>CREATE XML SCHEMA COLLECTION</c> declares it.</summary>
+    public Dictionary<ObjectName, XmlSchemaCollection> XmlSchemaCollections { get; } = [];
+
+    /// <summary>
+    /// Every <c>ALTER XML SCHEMA COLLECTION … ADD</c>, in the order read: the collection it adds to and the schema's text, null when
+    /// it is not a literal. Each must run after the collection is created, so each adds to it whatever order the scripts run in.
+    /// </summary>
+    public List<(ObjectName Collection, string? Schema)> XmlSchemaAdditions { get; } = [];
+
     /// <summary>
     /// Whether nothing is declared: no definition, no change to one, nothing that may disable a constraint, and no error. Every
     /// record above counts, so a property added there must be added here too (<c>SchemaDeclarationsTests</c> lists them); a warning
@@ -101,7 +110,8 @@ internal sealed class SchemaDeclarations
         && Procedures.Count == 0 && ProcedureChanges.Count == 0 && Functions.Count == 0 && FunctionChanges.Count == 0
         && Views.Count == 0 && Synonyms.Count == 0 && ConditionalSynonyms.Count == 0 && Triggers.Count == 0
         && CascadingKeys.Count == 0 && Enforcement.Count == 0 && MaskChanges.Count == 0 && KeyDisables.Count == 0
-        && Deployed.Count == 0 && UnreadDeployments.Count == 0 && ExtendedProperties.Count == 0;
+        && Deployed.Count == 0 && UnreadDeployments.Count == 0 && ExtendedProperties.Count == 0
+        && XmlSchemaCollections.Count == 0 && XmlSchemaAdditions.Count == 0;
 
     /// <summary>Adds a definition, or reports a second one of the same name, keeping the first.</summary>
     public void Define<T>(Dictionary<ObjectName, T> into, ObjectName name, T definition, SourceLocation at)
@@ -266,6 +276,19 @@ internal sealed class SchemaDeclarations
             Unread = [.. unread ?? []],
             Databases = databases ?? new Dictionary<string, DatabaseModel>(),
             ExtendedProperties = [.. ExtendedProperties],
+            XmlSchemaCollections = [.. XmlSchemaCollections.Values.Select(WithAdditions)],
         };
+    }
+
+    /// <summary>
+    /// A collection with the schemas <c>ALTER XML SCHEMA COLLECTION … ADD</c> adds to it after its own; none known when any of its
+    /// schemas is not a literal. An addition to a collection the source doesn't define adds to nothing the model holds.
+    /// </summary>
+    private XmlSchemaCollection WithAdditions(XmlSchemaCollection collection)
+    {
+        var added = XmlSchemaAdditions.Where(a => a.Collection.Equals(collection.Name)).Select(a => a.Schema).ToList();
+        return added.Count == 0 ? collection
+            : collection.Schemas.Count == 0 || added.Any(a => a is null) ? collection with { Schemas = [] }
+            : collection with { Schemas = [.. collection.Schemas, .. added.OfType<string>()] };
     }
 }
