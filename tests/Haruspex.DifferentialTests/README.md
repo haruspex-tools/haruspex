@@ -213,6 +213,15 @@ Checked on 9 Nov 2026 with Testcontainers 4.16.0 and `DOCKER_HOST=ssh://…`: Do
 does depend on SSH.NET, but for forwarding host ports into containers, not for reaching Docker. Where Docker
 is only reachable over SSH, run a long-lived SQL Server container there and use the first route.
 
+### A server with full-text search
+
+`FullTextObservationTests` needs full-text search, which the image above doesn't have. It runs on a server
+`HARUSPEX_TEST_SQLSERVER_FULLTEXT` names, a connection string to one of your own, such as a container of the image
+[`Server/FullText`](Server/FullText/README.md) builds, and creates a database of its own (`haruspex_test_…`) for each test,
+dropped when the test ends. Without one, or on a server without full-text search, its tests are skipped, saying why;
+`HARUSPEX_REQUIRE_FULLTEXT=1` makes the skip a failure. Testcontainers doesn't start it: the image is built from a Dockerfile in
+the repository, which a run shouldn't do each time.
+
 ## Why the database is dropped in a `finally`
 
 A developer's server is long-running and every run creates databases on it: the test database and its rooms. If a

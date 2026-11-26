@@ -19,8 +19,8 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | Reason | Fields | Results of unknown shape | Procedures whose result sets can't be listed | Parameters | Places | Corpora |
 |---|---:|---:|---:|---:|---:|---:|
 | `dynamic-sql` | 5 | 0 | 96 | 0 | 101 | 6 |
-| `unsupported-source` | 66 | 0 | 0 | 0 | 66 | 2 |
 | `unnamed-column` | 0 | 65 | 0 | 0 | 65 | 5 |
+| `unsupported-source` | 62 | 0 | 0 | 0 | 62 | 1 |
 | `unsupported-statement` | 4 | 0 | 22 | 0 | 26 | 4 |
 | `unsupported-expression` | 22 | 0 | 0 | 0 | 22 | 2 |
 | `external-code` | 0 | 0 | 19 | 0 | 19 | 1 |

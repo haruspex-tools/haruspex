@@ -73,7 +73,7 @@ it, claim by claim.
 The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
 `VALUES` lists and views ("APPLY", "Views"), `SELECT *` ("`SELECT *`"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
-"Built-in functions", "Window functions"), table-valued functions, set operations and the other joins, `OPENJSON`, JSON built in
+"Built-in functions", "Window functions"), table-valued functions, full-text table functions, set operations and the other joins, `OPENJSON`, JSON built in
 the project and traced to where it is read, and JSON assembled as text. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
 query binds holds, the state it is read in, what the conditions around it prove and the construct it is inside), and never
@@ -1698,6 +1698,38 @@ bound like a derived table: its arguments read the enclosing queries' columns, a
   in `FROM` (`unresolved-table`), a CLR function (`external-code`), a function of another database, and one that reads
   itself through others. An inline function's `SELECT *` is expanded as a view's is ("`SELECT *`" above).
 
+## Full-text table functions
+
+`CONTAINSTABLE` and `FREETEXTTABLE` in `FROM`, a join or `APPLY` (`Typer.FullText.cs`, bound in `Binder.FullText.cs`) are a
+relation of two columns, `KEY` and `RANK`, whatever their columns, language and count of rows
+(`A_full_text_search_returns_key_and_rank_whatever_its_columns_language_and_top_n`). Each rule is observed in
+`FullTextObservationTests`, on a server with full-text search (its image is `tests/Haruspex.DifferentialTests/Server/FullText`),
+and the `glossary` fixture shows each; [decision 0135](../../docs/decisions/0135-a-full-text-search-s-key-is-its-key-column-s-type-and-its-rank-is-nullable.md)
+gives the reasons.
+
+- **`KEY`** is of the type of the table's full-text key column, in its collation, an alias type's base type for one of an alias
+  type, and never null (`A_full_text_search_declares_key_as_its_key_column_never_null_and_rank_an_int_it_may_make_null`). The
+  key column is found from the project: `CREATE FULLTEXT INDEX … KEY INDEX ix` in a folder, or the package's `SqlFullTextIndex`
+  and its `KeyName`, read onto the table (`Table.FullTextKeys`), names a unique index, unique constraint or primary key, compared
+  ignoring case, which is followed to its one column. SQL Server takes only a unique index of one column never null, without a
+  filter, unmasked, and refuses its drop while the full-text index stands
+  (`A_full_text_key_is_a_unique_index_of_one_column_never_null_unfiltered_and_never_masked`). Only the type's own facts are
+  claimed: a key comes from the full-text index, which still holds a row deleted and not committed
+  (`A_full_text_search_returns_the_key_of_a_row_deleted_and_not_committed`), so the column's CHECK constraints and value sets
+  are not, and its value isn't traced to the column.
+- **`KEY` unknown** (`unsupported-source`), with `RANK` still typed: a table the project creates no full-text index on, or creates
+  it on more than once with different keys; a key it doesn't define, of more than one column, that a statement may drop or
+  rebuild, or on a computed or masked column; a view, a temporary table (which can't have a full-text index), a table of
+  another database, or a name that resolves to no table. A schema-qualified name is that schema's table, a one-part name the
+  procedure's schema's first, as in `FROM`.
+- **`RANK`** is an `int`, `nullable-column` at `CONTAINSTABLE.RANK` or `FREETEXTTABLE.RANK`: the server describes it as nullable,
+  and a `SELECT INTO` makes it a nullable column, though no search tried gave a NULL (the same test).
+- **Without an alias** the call is known by its table's name, `note.[KEY]`, and not by its schema-qualified name
+  (`A_full_text_search_without_an_alias_is_known_by_its_tables_name`).
+- **On an outer join's optional side**, or an `OUTER APPLY`'s, both columns may have no row, as any source's (`unmatched-row`).
+- **The semantic search functions** (`SEMANTICKEYPHRASETABLE`, `SEMANTICSIMILARITYTABLE`, `SEMANTICSIMILARITYDETAILSTABLE`) are
+  unknown, `unsupported-source`, with a reason of their own.
+
 ## Set operations
 
 `UNION`, `UNION ALL`, `INTERSECT`, `EXCEPT` and parenthesised queries (`Typer.SetOperations.cs`) are read
@@ -2621,7 +2653,7 @@ constructs this front end gives each reason for:
 
 | Reason | SQL Server constructs |
 |---|---|
-| `nullable-column` | a column declared nullable (or not declared `NOT NULL`), read directly or through a view, CTE, temporary table or table-valued function |
+| `nullable-column` | a column declared nullable (or not declared `NOT NULL`), read directly or through a view, CTE, temporary table or table-valued function; `RANK` of `CONTAINSTABLE` and `FREETEXTTABLE`, which the server declares nullable |
 | `unmatched-row` | the optional side of a `LEFT`, `RIGHT` or `FULL OUTER JOIN` |
 | `unmatched-lateral-row` | the right side of an `OUTER APPLY` whose query may return no row |
 | `empty-subquery` | a scalar subquery, NULL when it returns no rows; a `FOR JSON` subquery over no rows |

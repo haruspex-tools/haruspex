@@ -1,0 +1,3 @@
+CREATE SCHEMA lex;
+GO
+CREATE SCHEMA archive;

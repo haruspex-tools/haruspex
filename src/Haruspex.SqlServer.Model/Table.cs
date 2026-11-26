@@ -42,6 +42,13 @@ public sealed record Table(
     public bool AnsiNullsOff { get; init; }
 
     /// <summary>
+    /// Its full-text index's key, as each statement that creates one names it, in the order read: none when it has no full-text
+    /// index. A table has one full-text index at most, so more than one is a source that creates it again, after a drop that may
+    /// or may not run; a reader that needs the key takes it only when they all name the same index.
+    /// </summary>
+    public EquatableArray<FullTextKey> FullTextKeys { get; init; } = [];
+
+    /// <summary>
     /// The column with this name, ignoring case, or null. Ignoring case is an assumption, which a table whose columns differ only in
     /// case would break: reading refuses one (HAR1022, decision 0119), and the binder reads either column of a pair it is given as
     /// unknown (decision 0107).

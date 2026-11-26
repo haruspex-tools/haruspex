@@ -31,6 +31,7 @@ internal static class ModelXml
     public const string SqlPrimaryKeyConstraint = nameof(SqlPrimaryKeyConstraint);
     public const string SqlUniqueConstraint = nameof(SqlUniqueConstraint);
     public const string SqlIndex = nameof(SqlIndex);
+    public const string SqlFullTextIndex = nameof(SqlFullTextIndex);
     public const string SqlForeignKeyConstraint = nameof(SqlForeignKeyConstraint);
     public const string SqlUserDefinedDataType = nameof(SqlUserDefinedDataType);
     public const string SqlUserDefinedType = nameof(SqlUserDefinedType);
@@ -114,6 +115,7 @@ internal static class ModelXml
     public const string Column = nameof(Column);
     public const string DefiningTable = nameof(DefiningTable);
     public const string IndexedObject = nameof(IndexedObject);
+    public const string KeyName = nameof(KeyName);
     public const string ForeignTable = nameof(ForeignTable);
     public const string TypeSpecifier = nameof(TypeSpecifier);
     public const string Type = nameof(Type);

@@ -1,0 +1,33 @@
+column archive.entry.code char(8) at tables/archive_entry.sql:5:5
+column archive.entry.headword nvarchar(100) at tables/archive_entry.sql:6:5
+column lex.entry.definition nvarchar(max) at tables/entry.sql:6:5
+column lex.entry.headword nvarchar(100) at tables/entry.sql:5:5
+column lex.entry.id int at tables/entry.sql:4:5
+column lex.label.ref label_ref at tables/label.sql:4:5
+column lex.label.words nvarchar(200) at tables/label.sql:5:5
+column lex.note.body nvarchar(400) at tables/note.sql:6:5
+column lex.note.code nvarchar(20) at tables/note.sql:4:5
+column lex.note.entry_id int at tables/note.sql:5:5
+full-text index archive.entry keyed by pk_archive_entry at tables/archive_entry.sql:9:1
+full-text index lex.entry keyed by pk_entry at tables/entry.sql:9:1
+full-text index lex.label keyed by uq_label_ref at tables/label.sql:8:1
+full-text index lex.note keyed by ux_note_code at tables/note.sql:11:1
+key archive.entry pk_archive_entry (code) at tables/archive_entry.sql:5:68
+key lex.entry pk_entry (id) at tables/entry.sql:4:21
+key lex.label uq_label_ref (ref) at tables/label.sql:4:23
+key lex.note ux_note_code (code) at tables/note.sql:9:1
+parameter lex.entries_with_notes @words at procedures/entries_with_notes.sql:2:41
+parameter lex.search_archive @query at procedures/search_archive.sql:3:37
+parameter lex.search_entries @query at procedures/search_entries.sql:2:37
+parameter lex.search_labels @query at procedures/search_labels.sql:2:36
+parameter lex.search_notes @words at procedures/search_notes.sql:3:35
+procedure lex.entries_with_notes at procedures/entries_with_notes.sql:2:1
+procedure lex.search_archive at procedures/search_archive.sql:3:1
+procedure lex.search_entries at procedures/search_entries.sql:2:1
+procedure lex.search_labels at procedures/search_labels.sql:2:1
+procedure lex.search_notes at procedures/search_notes.sql:3:1
+table archive.entry at tables/archive_entry.sql:3:1
+table lex.entry at tables/entry.sql:2:1
+table lex.label at tables/label.sql:2:1
+table lex.note at tables/note.sql:2:1
+type lex.label_ref char(8) at types/label_ref.sql:1:1

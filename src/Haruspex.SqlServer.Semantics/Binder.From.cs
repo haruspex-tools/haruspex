@@ -78,6 +78,9 @@ public sealed partial class Binder
                     optional,
                     variable));
                 break;
+            case SemanticTableReference semantic:
+                AddUnresolved(adding.Sources, reference, Problem(BindingProblemKind.UnsupportedSource, SemanticWhy(semantic), At(reference)));
+                break;
             default:
                 if (Relation(adding, reference) is { } bound)
                 {
@@ -169,7 +172,7 @@ public sealed partial class Binder
 
     /// <summary>
     /// The relation a derived table or a rowset in FROM is, with the alias its columns are qualified by: a derived table, a
-    /// table-valued function's call, a VALUES list, OPENJSON, GENERATE_SERIES or STRING_SPLIT. Each reads the enclosing query's scope, or an
+    /// table-valued function's call, a VALUES list, OPENJSON, GENERATE_SERIES, STRING_SPLIT, CONTAINSTABLE or FREETEXTTABLE. Each reads the enclosing query's scope, or an
     /// APPLY's left input's, never the sources beside it. Null for any other reference.
     /// </summary>
     private (string? Alias, RelationSymbol Relation)? Relation(Adding adding, TableReference reference)
@@ -218,6 +221,14 @@ public sealed partial class Binder
             case GlobalFunctionTableReference { Name.Value: var function } split
                 when BuiltInFunctions.Named(function, FunctionForm.Rowset) == RowsetFunctions.StringSplit:
                 return (split.Alias?.Value, new SplitCall(split, QueryScope.Empty(adding.Outer, adding.Names), SplitCall.ColumnsOf(split)));
+
+            case FullTextTableReference fullText:
+            {
+                // Without an alias it is known by its table's name, not the function's (observed:
+                // A_full_text_search_without_an_alias_is_known_by_its_tables_name).
+                var call = new FullTextCall(fullText, Searched(fullText));
+                return (call.Name, call);
+            }
             default:
                 return null;
         }

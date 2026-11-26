@@ -1,0 +1,12 @@
+// The config file of an invented glossary, whose entries, notes and labels are found by full-text search: a project, so that
+// it is not deployed with the fixtures the differential tests share, whose server has no full-text search.
+// FullTextObservationTests deploys it on a server that has, and checks what each procedure returns against its IR.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "generated",
+  "emit": ["zod", "json-schema"],
+  "schemas": {
+    "lex": { "include": ["*"] },
+  },
+}

@@ -33,6 +33,14 @@ internal static class ProcedureRunner
         return await ReadAllAsync(session, run).ConfigureAwait(false);
     }
 
+    /// <summary>Runs a procedure in a database of a test's own, and reads every result set it returns.</summary>
+    public static Task<IReadOnlyList<ObservedResultSet>> RunAsync(ScratchSession session, ProcedureRun run)
+    {
+        if (run.Setup is not null)
+            throw new ArgumentException($"The run {run.Name} has a setup, which a database of a test's own has no need of.", nameof(run));
+        return ReadAllAsync(session, run);
+    }
+
     private static async Task<IReadOnlyList<ObservedResultSet>> ReadAllAsync(DatabaseSession session, ProcedureRun run)
     {
         await using var command = session.Command(run.Procedure);

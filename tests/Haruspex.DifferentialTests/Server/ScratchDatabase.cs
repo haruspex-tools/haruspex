@@ -37,6 +37,12 @@ public sealed class ScratchDatabase : IAsyncDisposable
         }
     }
 
+    /// <summary>Deploys a fixture's scripts into the database (<see cref="Deployer.DeployAsync"/>).</summary>
+    internal Task DeployAsync(string directory) => Deployer.DeployAsync(connectionString, directory);
+
+    /// <summary>A new session in the database, for running a procedure there (<see cref="ProcedureRunner"/>).</summary>
+    public async Task<ScratchSession> SessionAsync(CancellationToken token) => new(await OpenAsync(token).ConfigureAwait(false));
+
     /// <summary>Runs <paramref name="batch"/> in a session of its own, committed.</summary>
     public async Task ExecuteAsync(string batch, CancellationToken token)
     {

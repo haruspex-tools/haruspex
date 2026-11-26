@@ -141,6 +141,10 @@ public class IsolationTests(SqlServerFixture server)
 
             // A database of one test's own, never the shared one, for observations that need two sessions' commits.
             Path.Combine("Server", "ScratchDatabase.cs"),
+            Path.Combine("Server", "ScratchSession.cs"),
+
+            // A server of its own, with full-text search, on which each test has a database of its own.
+            Path.Combine("Server", "FullTextServer.cs"),
         ];
 
         var offenders = Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)

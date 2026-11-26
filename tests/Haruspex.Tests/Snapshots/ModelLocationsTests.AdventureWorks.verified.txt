@@ -581,6 +581,9 @@ column dbo.ErrorLog.ErrorSeverity int at instawdb.sql:228:5
 column dbo.ErrorLog.ErrorState int at instawdb.sql:229:5
 column dbo.ErrorLog.ErrorTime datetime at instawdb.sql:225:5
 column dbo.ErrorLog.UserName sysname at instawdb.sql:226:5
+full-text index HumanResources.JobCandidate keyed by PK_JobCandidate_JobCandidateID at instawdb.sql:3504:1
+full-text index Production.Document keyed by PK_Document_DocumentNode at instawdb.sql:3511:1
+full-text index Production.ProductReview keyed by PK_ProductReview_ProductReviewID at instawdb.sql:3497:1
 function dbo.ufnGetAccountingEndDate at instawdb.sql:5397:1
 function dbo.ufnGetAccountingStartDate at instawdb.sql:5389:1
 function dbo.ufnGetContactInformation at instawdb.sql:5405:1

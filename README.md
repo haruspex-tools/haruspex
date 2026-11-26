@@ -434,7 +434,7 @@ is: a rule of the analysis found wrong is fixed as a bug, in a change of its own
 
 On the two samples above, a test writes [the figures](docs/corpus-figures.md):
 
-- **Typed 32 of 38 fields in AdventureWorks.**
+- **Typed 32 of 34 fields in AdventureWorks.**
 - **Typed 174 of 175 fields in WideWorldImporters; the results of 27 of its 129 procedures can't be described, so they have no fields to count.**
 
 [The harvest](docs/corpus-harvest.md) measures more databases; [what haruspex models](docs/coverage.md) lists every construct.

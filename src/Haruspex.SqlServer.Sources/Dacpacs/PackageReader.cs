@@ -26,7 +26,7 @@ internal static class PackageReader
     {
         ModelXml.SqlSchema, "SqlUser", "SqlRole", "SqlRoleMembership", "SqlLogin", "SqlPermissionStatement", "SqlApplicationRole",
         "SqlSecurityPolicy", "SqlFilegroup", "SqlFile", "SqlPartitionFunction", "SqlPartitionScheme", "SqlColumnStoreIndex",
-        "SqlStatistic", "SqlDefaultConstraint", "SqlFullTextCatalog", "SqlFullTextIndex",
+        "SqlStatistic", "SqlDefaultConstraint", "SqlFullTextCatalog",
         "SqlFullTextStopList", "SqlDatabaseCredential", "SqlMasterKey", "SqlCertificate", "SqlSymmetricKey",
         "SqlAsymmetricKey", ModelXml.SqlDatabaseOptions,
     };
@@ -35,6 +35,7 @@ internal static class PackageReader
     private static readonly HashSet<string> TableParts = new(StringComparer.Ordinal)
     {
         ModelXml.SqlCheckConstraint, ModelXml.SqlPrimaryKeyConstraint, ModelXml.SqlUniqueConstraint, ModelXml.SqlIndex, ModelXml.SqlForeignKeyConstraint,
+        ModelXml.SqlFullTextIndex,
     };
 
     private static readonly HashSet<string> Modules = new(StringComparer.Ordinal)

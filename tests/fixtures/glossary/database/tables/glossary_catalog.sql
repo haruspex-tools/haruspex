@@ -1,0 +1,1 @@
+CREATE FULLTEXT CATALOG glossary_catalog AS DEFAULT;
