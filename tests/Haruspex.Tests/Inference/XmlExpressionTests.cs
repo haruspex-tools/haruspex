@@ -181,6 +181,19 @@ public class XmlExpressionTests
         Assert.Empty(Field(doc, "b").NullableBecause);
     }
 
+    [Theory]
+    [InlineData("SELECT (SELECT TOP (1) p.name FROM shop.product AS p FOR XML PATH('')) AS a;")]
+    [InlineData("SELECT (SELECT COUNT(*) AS n FROM shop.product AS p HAVING COUNT(*) > 5 FOR XML PATH('')) AS a;")]
+    [InlineData("DECLARE @k int = (SELECT COUNT(*) FROM shop.product); SELECT (SELECT 1 AS n WHERE @k = 2 FOR XML PATH('')) AS a;")]
+    public void A_for_xml_subquery_of_at_most_one_row_may_be_null(string body)
+    {
+        // At most one row is not exactly one: over none the subquery is NULL.
+        var doc = Procedure(body);
+
+        Assert.Equal("string nvarchar(max)", Typed(doc, "a"));
+        Assert.Equal([IrNullRule.EmptySubquery], Rules(doc, "a"));
+    }
+
     [Fact]
     public void The_stuff_idiom_over_for_xml_path_is_nvarchar_max_and_nullable()
     {
