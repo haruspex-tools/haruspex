@@ -132,7 +132,7 @@ public class InitTests
         Assert.Equal((0, ""), (exitCode, error));
         Assert.Contains("\"source\": \".\",", Config(folder), StringComparison.Ordinal);
         Assert.Contains(
-            "The .sql files in queries add nothing to the database, but . holds them, so they are read as the database's scripts and not typed. It reads . because deploy, which adds to it, is outside database. If queries holds the application's query files, move it into database, remove haruspex.json and run haruspex init again.",
+            "The .sql files in queries add nothing to the database, but . holds them, so they are read as the database's scripts and not typed. It reads . because what adds to the database is in database and deploy. If queries holds the application's query files, put database and deploy together in one folder of their own, remove haruspex.json and run haruspex init again.",
             output,
             StringComparison.Ordinal);
     }
@@ -170,7 +170,7 @@ public class InitTests
 
     /// <summary>
     /// A script that adds nothing, beside one that adds to the database, is part of the database's folder wherever the source is:
-    /// its folder isn't named, even when the queries folder pulls the source up.
+    /// its folder isn't named, while a folder of such scripts alone inside the source is.
     /// </summary>
     [Fact]
     public void A_script_that_adds_nothing_beside_the_database_s_scripts_is_not_named()
@@ -186,6 +186,45 @@ public class InitTests
         Assert.Equal(0, exitCode);
         Assert.Contains("\"source\": \"database\",", Config(folder), StringComparison.Ordinal);
         Assert.Contains("The .sql files in database/seed add nothing to the database, but database holds them", output, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// With the database's folders beside the queries folder, no one of them is the database's: init names them all and advises
+    /// putting them together, so that the folder holding them leaves the queries out.
+    /// </summary>
+    [Fact]
+    public void Database_folders_beside_the_queries_are_named_together()
+    {
+        using var folder = new TempDirectory();
+        folder.File("tables/t.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("tables/u.sql", "CREATE TABLE garden.water_log (plant_id int NOT NULL);");
+        folder.File("procedures/p.sql", "CREATE PROCEDURE garden.list_plants AS SELECT p.id FROM garden.plant AS p;");
+        folder.File("queries/q.sql", "SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(
+            "It reads . because what adds to the database is in procedures and tables. If queries holds the application's query files, put procedures and tables together in one folder of their own, remove haruspex.json and run haruspex init again.",
+            output,
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>A database script directly in the source is named as itself, since there is no folder of it to name.</summary>
+    [Fact]
+    public void A_database_script_directly_in_the_source_is_named_as_itself()
+    {
+        using var folder = new TempDirectory();
+        folder.File("schema.sql", "CREATE TABLE garden.plant (id int NOT NULL);");
+        folder.File("queries/q.sql", "SELECT p.id FROM garden.plant AS p;");
+
+        var (exitCode, output, _) = Run(folder);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(
+            "It reads . because what adds to the database is in schema.sql. If queries holds the application's query files, put schema.sql in a folder of its own, remove haruspex.json and run haruspex init again.",
+            output,
+            StringComparison.Ordinal);
     }
 
     /// <summary>A script that doesn't parse stays in the source too, so that its error is said, not passed over.</summary>

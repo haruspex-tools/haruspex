@@ -44,7 +44,7 @@ internal static class Init
         var found = source is null ? Find(workingDirectory) : Given(source, workingDirectory);
         if (found is Failed<Chosen> failed)
             return Refused(error, [.. failed.Diagnostics]);
-        var (chosen, leftOut, readAsDatabase, main, pulling) = ((Succeeded<Chosen>)found).Value;
+        var (chosen, leftOut, readAsDatabase, parts) = ((Succeeded<Chosen>)found).Value;
 
         // Relative to the config file's folder, as every path in the file is, even when it climbs out (../db): the file is
         // committed, and an absolute path would hold only on this machine. Only a source on another drive stays absolute.
@@ -106,11 +106,13 @@ internal static class Init
         {
             var folders = readAsDatabase.Select(f => Visible.Of(DisplayPath.From(workingDirectory, f))).ToList();
             var line = $"The .sql files in {EnglishList.Of(folders)} add nothing to the database, but {shown} holds them, so they are read as the database's scripts and not typed.";
-            if (main is not null && pulling.Count > 0)
+            if (parts.Count > 0)
             {
-                var named = pulling.Select(p => Visible.Of(DisplayPath.From(workingDirectory, p))).ToList();
-                var mainShown = Visible.Of(DisplayPath.From(workingDirectory, main));
-                line += $" It reads {shown} because {EnglishList.Of(named)}, which {(named.Count == 1 ? "adds" : "add")} to it, {(named.Count == 1 ? "is" : "are")} outside {mainShown}. If {EnglishList.Of(folders)} {(folders.Count == 1 ? "holds" : "hold")} the application's query files, move {(named.Count == 1 ? "it" : "them")} into {mainShown}, remove {HaruspexConfig.FileName} and run haruspex init again.";
+                // Advice to bring the database's parts together, not to move one into another: which of them is the database's own
+                // folder isn't known.
+                var named = parts.Select(p => Visible.Of(DisplayPath.From(workingDirectory, p))).ToList();
+                var put = named.Count == 1 ? $"put {named[0]} in a folder of its own" : $"put {EnglishList.Of(named)} together in one folder of their own";
+                line += $" It reads {shown} because what adds to the database is in {EnglishList.Of(named)}. If {EnglishList.Of(folders)} {(folders.Count == 1 ? "holds" : "hold")} the application's query files, {put}, remove {HaruspexConfig.FileName} and run haruspex init again.";
             }
 
             output.WriteLine(line);
@@ -132,16 +134,18 @@ internal static class Init
     /// <param name="Source">The source.</param>
     /// <param name="LeftOut">The folders of queries alone that the source leaves out.</param>
     /// <param name="ReadAsDatabase">The folders of queries alone that the source holds.</param>
-    /// <param name="Main">When it holds some, the folder below the source that holds most of the database's scripts.</param>
-    /// <param name="Pulling">The database's scripts outside <paramref name="Main"/>, which made the source the folder above it.</param>
-    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, string? Main, EquatableArray<string> Pulling);
+    /// <param name="Parts">
+    /// When it holds some, where the database's scripts are: each folder directly below the source that holds some, and each script
+    /// directly in it.
+    /// </param>
+    private readonly record struct Chosen(string Source, EquatableArray<string> LeftOut, EquatableArray<string> ReadAsDatabase, EquatableArray<string> Parts);
 
     /// <summary>The source the command line names, which must be there.</summary>
     private static Outcome<Chosen> Given(string source, string workingDirectory)
     {
         var path = Path.GetFullPath(Path.Combine(workingDirectory, source));
         return File.Exists(path) || Directory.Exists(path)
-            ? new Succeeded<Chosen>(new Chosen(path, [], [], null, []))
+            ? new Succeeded<Chosen>(new Chosen(path, [], [], []))
             : ModuleRun.Refused<Chosen>(CliCodes.SourceNotFound, $"not found: {source}");
     }
 
@@ -161,7 +165,7 @@ internal static class Init
         foreach (var (kind, candidates) in new[] { ("project files", projects), ("DACPACs", packages) })
         {
             if (candidates.Count == 1)
-                return new Succeeded<Chosen>(new Chosen(candidates[0], [], [], null, []));
+                return new Succeeded<Chosen>(new Chosen(candidates[0], [], [], []));
             if (candidates.Count > 1)
             {
                 var named = EnglishList.Of([.. candidates.Select(c => DisplayPath.From(workingDirectory, c))]);
@@ -196,7 +200,7 @@ internal static class Init
         var queries = scripts.Where(QueryOnlyScripts.Is).ToHashSet(StringComparer.Ordinal);
         var database = scripts.Where(s => !queries.Contains(s)).ToList();
         if (database.Count == 0)
-            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], [], null, []);
+            return new Chosen(Common([.. scripts.Select(Path.GetDirectoryName).OfType<string>()]), [], [], []);
 
         var source = Common([.. database.Select(Path.GetDirectoryName).OfType<string>()]);
 
@@ -212,18 +216,15 @@ internal static class Init
             .ToList();
         var inside = folders.Where(f => Below(f, source)).ToList();
         if (inside.Count == 0)
-            return new Chosen(source, [.. folders], [], null, []);
+            return new Chosen(source, [.. folders], [], []);
 
-        // What pulled the source up to hold them: the database's scripts outside the folder below the source that holds most of them,
-        // each named as the folder below the source it is in, or as itself when it is directly in the source.
-        var below = database.GroupBy(d => Top(Path.GetRelativePath(source, d)), StringComparer.Ordinal)
-            .OrderByDescending(g => g.Count())
-            .ThenBy(g => g.Key, StringComparer.Ordinal)
-            .ToList();
-        if (below.Count < 2 || below[0].Key.Length == 0)
-            return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], null, []);
-        var pulling = below.Skip(1).SelectMany(g => g.Key.Length == 0 ? g.Select(d => d) : [Path.Join(source, g.Key)]).Order(StringComparer.Ordinal);
-        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], Path.Join(source, below[0].Key), [.. pulling]);
+        // Where the database's scripts are, which made the source hold them: each folder directly below the source that holds some,
+        // and each script directly in it. None of them is taken as the database's own, since which it is isn't known.
+        var parts = database
+            .Select(d => Top(Path.GetRelativePath(source, d)) is { Length: > 0 } top ? Path.Join(source, top) : d)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal);
+        return new Chosen(source, [.. folders.Where(f => !Below(f, source))], [.. inside], [.. parts]);
 
         static string Top(string path)
         {
