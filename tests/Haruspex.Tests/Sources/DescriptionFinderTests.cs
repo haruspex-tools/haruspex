@@ -124,7 +124,7 @@ public class DescriptionFinderTests
         "The description of kennel.get_dog.dog_id is passed over: the source doesn't define kennel.get_dog.dog_id.")]
     [InlineData(
         "EXEC master.sys.sp_addextendedproperty 'MS_Description', 'A dog.', 'SCHEMA', 'kennel', 'TABLE', 'dog';",
-        "The description of kennel.dog is passed over: its call names the database master, which isn't known to be this one: a call through master runs there.")]
+        "The description of kennel.dog is passed over: its call names the database master, which isn't known to be this one: a call through a database runs there.")]
     [InlineData(
         "EXEC sp_updateextendedproperty 'MS_Description', 'A good dog.', 'SCHEMA', 'kennel', 'TABLE', 'dog';",
         "The description of kennel.dog is updated here, and what stands depends on the order the scripts run, so it has none.")]

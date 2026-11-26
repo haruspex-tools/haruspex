@@ -89,7 +89,7 @@ public class ExtendedPropertyCallsTests
     [InlineData("Kennel")]
     public void A_call_through_a_database_is_unread_since_it_may_run_in_another(string database) =>
         Assert.Equal(
-            $"Its call names the database {database}, which isn't known to be this one: a call through master runs there.",
+            $"Its call names the database {database}, which isn't known to be this one: a call through a database runs there.",
             Read($"EXEC {database}.sys.sp_addextendedproperty 'MS_Description', 'x', 'SCHEMA', 'kennel', 'TABLE', 'dog';").Unread);
 
     [Fact]

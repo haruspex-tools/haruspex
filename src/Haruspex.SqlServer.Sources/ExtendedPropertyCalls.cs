@@ -60,7 +60,7 @@ internal static class ExtendedPropertyCalls
                 return new ExtendedProperty(null, null, [], at) { Action = act, Unread = $"Its argument {i + 1} isn't one the procedure takes." };
         }
 
-        var unread = through is null ? null : $"Its call names the database {through}, which isn't known to be this one: a call through master runs there.";
+        var unread = through is null ? null : $"Its call names the database {through}, which isn't known to be this one: a call through a database runs there.";
         string? Argument(string parameter)
         {
             if (!given.TryGetValue(parameter, out var value))
