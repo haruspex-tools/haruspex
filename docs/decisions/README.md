@@ -115,6 +115,7 @@ gaps today, from 0049 to 0136, and no record was deleted to make them.
 | [0135](0135-a-full-text-search-s-key-is-its-key-column-s-type-and-its-rank-is-nullable.md) | 26 Nov 2026 | A full-text search's key is its key column's type, and its rank is nullable |
 | [0137](0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md) | 26 Nov 2026 | XML's `nodes()`, `query()`, `FOR XML` subqueries and `OPENXML` are typed as the server gives them |
 | [0139](0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md) | 26 Nov 2026 | XML is typed from its schema collection where the schema proves it |
+| [0141](0141-a-column-s-json-schema-may-be-named-in-the-sql.md) | 27 Nov 2026 | A column's JSON Schema may be named in the SQL |
 
 ## Writing a record
 

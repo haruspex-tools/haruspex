@@ -196,6 +196,10 @@ public class DiagnosticMessagesTests
         return CliOutput.Shown(error.ToString(), folder.Path).TrimEnd('\n').Split('\n');
     }
 
+    /// <summary>A script naming <paramref name="schema"/> as the JSON Schema of what <paramref name="levels"/> name, under the schema <c>lib</c>.</summary>
+    private static string Annotated(string schema, string levels = "N'TABLE', N'book', N'COLUMN', N'extra'") =>
+        $"EXEC sp_addextendedproperty N'haruspex.jsonSchema', N'{schema}', N'SCHEMA', N'lib', {levels};";
+
     /// <summary>A run with <paramref name="sql"/> and a config file of the standard settings and <paramref name="more"/>.</summary>
     private static string[] Config(string more, params string[] sql) => Cli(sql.Length == 0 ? [GetBook] : sql, $"{{ {Plain}{(more.Length == 0 ? "" : ", " + more)} }}");
 
@@ -316,6 +320,16 @@ public class DiagnosticMessagesTests
         (3114, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/node\", \"$defs\": { \"node\": { \"type\": \"object\", \"properties\": { \"next\": { \"$ref\": \"#/$defs/node\" } } } } } }")),
         (3115, () => DeclaresColumn("{ \"type\": [\"object\", \"null\"], \"properties\": {} }")),
         (4113, () => Cli([GetBook], $"{{ {Plain}, \"columns\": {{ \"lib.book.copies\": {{ \"json\": \"schemas/copies.schema.json\" }} }} }}", arrange: f => f.File("schemas/copies.schema.json", "{}"))),
+        (4114, () => Cli(
+            [GetBook, Annotated("schemas/extra-v2.schema.json")],
+            $"{{ {Plain}, \"columns\": {{ \"lib.book.extra\": {{ \"json\": \"schemas/extra.schema.json\" }} }} }}",
+            arrange: f =>
+            {
+                f.File("schemas/extra.schema.json", "{}");
+                f.File("schemas/extra-v2.schema.json", "{}");
+            })),
+        (4115, () => Cli([GetBook, Annotated("schemas/extra.schema.json", "N'TABLE', N'book', N'COLUMN', N'extras'")], $"{{ {Plain} }}", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
+        (4116, () => Cli([GetBook, Annotated("schemas/extra.schema.json", "N'PROCEDURE', N'save_book', N'PARAMETER', N'@extra'"), "CREATE PROCEDURE lib.save_book @extra nvarchar(max) AS SELECT 1 AS one;"], $"{{ {Plain} }}", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
         (3150, () => Declares("{ \"json\": { \"type\": \"string\", \"format\": \"ipv4\" } }")),
         (3151, () => Declares("{ \"json\": { \"type\": \"string\", \"pattern\": \"^a\" } }")),
         (3152, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/a\", \"type\": \"string\", \"$defs\": { \"a\": { \"type\": \"string\" } } } }")),

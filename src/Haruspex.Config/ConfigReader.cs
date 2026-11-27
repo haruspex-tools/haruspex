@@ -1117,50 +1117,11 @@ public static class ConfigReader
         }
 
         /// <summary>One column's declaration, its schema read and translated; null when it has a problem (reported).</summary>
+        /// <remarks>A problem with the reference is reported at it; the declaration is at its key, <paramref name="at"/>.</remarks>
         private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at) =>
-            Schema(key, json, jsonPath, response: false) is var (content, types, schema, pointer, files)
-                ? new ColumnDeclaration(table, column, content, types, new IrColumnDeclaration(key, schema, pointer, files), at)
+            ColumnSchema.Declare(SchemaFiles, directory, key, table, column, json.Value, At(json, jsonPath), Problems) is { } declared
+                ? declared with { At = at }
                 : null;
-
-        /// <summary>
-        /// The JSON a declaration's schema file describes (<c>"file#pointer"</c>), read and translated as a column's JSON is, whose
-        /// writer is not the database: an object may hold keys it doesn't list, and a key it doesn't require may be left out. A
-        /// response's top may allow <c>null</c>, which never arrives; a column's may not. Null when it has a problem (reported).
-        /// </summary>
-        /// <param name="key">What is declared, which names the object types the schema defines.</param>
-        private (IrType Content, EquatableMap<string, IrObjectType> Types, string Schema, string? Pointer, EquatableMap<string, string> Files)? Schema(string key, JsonStringValue json, string jsonPath, bool response)
-        {
-            var hash = json.Value.IndexOf('#', StringComparison.Ordinal);
-            var schemaPath = hash < 0 ? json.Value : json.Value[..hash];
-            var pointer = hash < 0 ? null : json.Value[(hash + 1)..];
-            var errors = Problems.Count(p => p.IsError);
-            var full = Path.GetFullPath(Path.Combine(directory, schemaPath));
-            if (DeclaredSchema.IsRemote(schemaPath))
-            {
-                Report(ConfigCodes.ForeignReference, json, jsonPath, DeclaredSchema.Remote(schemaPath));
-                return null;
-            }
-
-            if (SchemaFiles.Load(full, At(json, jsonPath), schemaPath) is not { } document)
-                return null;
-            if (JsonPointer.Resolve(document.Root, "", pointer ?? "") is not var (root, rootPath))
-            {
-                Report(ConfigCodes.MissingReference, json, jsonPath, $"points at \"{pointer}\" in {schemaPath}, which names nothing: a pointer is a JSON Pointer, such as #/$defs/person.");
-                return null;
-            }
-
-            var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
-            var translator = DeclaredSchema.ForColumn(document, (root, rootPath), Problems, SchemaFiles, key, types);
-            var content = response ? translator.Response() : translator.Column();
-            if (content is null || Problems.Count(p => p.IsError) != errors)
-                return null;
-            return (
-                content,
-                types.ToEquatableMap(t => t.Key, t => t.Value),
-                SchemaFiles.Relative(full),
-                string.IsNullOrEmpty(pointer) ? null : pointer,
-                translator.Files.ToEquatableMap(SchemaFiles.Relative, SchemaFiles.Sha256));
-        }
 
         /// <summary>
         /// <c>endpoints</c>: each <c>{ "url", "method", "response" }</c>, the response the schema file <c>response</c> describes
@@ -1225,7 +1186,7 @@ public static class ConfigReader
                 }
 
                 var key = $"{method} {url}";
-                if (Schema(key, response, Child(itemPath, "response"), response: true) is var (content, types, schema, pointer, files))
+                if (ColumnSchema.Read(SchemaFiles, directory, key, response.Value, At(response, Child(itemPath, "response")), Problems, response: true) is var (content, types, schema, pointer, files))
                     endpoints.Add(new EndpointDeclaration(content, types, new IrEndpointDeclaration(method, url, schema, pointer, files), at, urlAt));
             }
 

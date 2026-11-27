@@ -263,6 +263,20 @@ internal sealed class SchemaDeclarations
         ? table with { FullTextKeys = [.. table.FullTextKeys, .. FullTextKeys.Where(k => k.Table == table.Name).Select(k => k.Key)] }
         : table;
 
+    /// <summary>
+    /// The level type of what a package's column or index property is on, from everything read: a package may set one on what
+    /// another package of the database defines (<see cref="Dacpacs.PackageProperties.Settle"/>). Null when nothing defines it.
+    /// </summary>
+    private string? ColumnOwner(ObjectName owner) =>
+        Tables.ContainsKey(owner) ? "TABLE"
+        : Views.ContainsKey(owner) ? "VIEW"
+        : Functions.GetValueOrDefault(owner) is InlineFunction or TableFunction ? "FUNCTION"
+        : null;
+
+    /// <summary>The level type of what a package's parameter property is on, from everything read; null when nothing defines it.</summary>
+    private string? ParameterOwner(ObjectName owner) =>
+        Procedures.ContainsKey(owner) ? "PROCEDURE" : Functions.ContainsKey(owner) ? "FUNCTION" : null;
+
     /// <summary>The model: each object's definition in effect, as the passes settle it, in the model's own order.</summary>
     /// <param name="settings">The database's settings, when the source records them (<see cref="DatabaseModel.Settings"/>).</param>
     /// <param name="unread">What the source refers to but couldn't read (<see cref="DatabaseModel.Unread"/>).</param>
@@ -287,7 +301,7 @@ internal sealed class SchemaDeclarations
             DefaultCollation = settings?.Collation,
             Unread = [.. unread ?? []],
             Databases = databases ?? new Dictionary<string, DatabaseModel>(),
-            ExtendedProperties = [.. ExtendedProperties],
+            ExtendedProperties = [.. ExtendedProperties.Select(p => Dacpacs.PackageProperties.Settle(p, ColumnOwner, ParameterOwner))],
             XmlSchemaCollections = [.. XmlSchemaCollections.Values.Select(WithAdditions)],
         };
     }

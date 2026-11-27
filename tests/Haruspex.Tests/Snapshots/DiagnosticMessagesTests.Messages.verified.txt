@@ -319,6 +319,15 @@ haruspex.json:1:119: error HAR4112: procedures["lib.get_book"].sets: names 2 res
 HAR4113
 haruspex.json:1:90: error HAR4113: columns["lib.book.copies"]: lib.book.copies is of the type int, which can't hold JSON text: only a string type (char, varchar, nchar, nvarchar) or json can.
 
+HAR4114
+db/p2.sql:1:1: error HAR4114: lib.book.extra is declared to hold JSON of schemas/extra-v2.schema.json here and of schemas/extra.schema.json in the config file, at columns["lib.book.extra"]: declare it once, or name the same schema in both.
+
+HAR4115
+db/p2.sql:1:1: error HAR4115: The JSON Schema of lib.book.extras is passed over: the table lib.book has no column extras.
+
+HAR4116
+db/p2.sql:1:1: warning HAR4116: The JSON Schema of the parameter lib.save_book.@extra isn't read: haruspex reads one on a table's column only, so it declares nothing here.
+
 HAR4201
 haruspex.json:1:93: error HAR4201: procedures["lib.get_book"]: haruspex infers the results of lib.get_book, and the declaration disagrees at results: the inference says 1 result set, the declaration 0. A declaration is for results that can't be inferred; to correct inferred results, override a path under "paths".
 
