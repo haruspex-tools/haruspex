@@ -141,29 +141,47 @@ public class ColumnAnnotationTests
     }
 
     /// <summary>
-    /// A package <c>app</c> that sets properties on a column a package of the same database it refers to, <c>base</c>, defines:
-    /// <paramref name="annotated"/> is the table the properties name. Inferred with the schema beside the config file.
+    /// A scalar function <c>shop.settings_of(@doc)</c> as a build writes it (Microsoft.Build.Sql 2.3.0, its element copied from a
+    /// package built of an invented script), for a package that defines a function.
     /// </summary>
-    private static Outcome<IrDocument> TwoPackages(string annotated)
+    private const string SettingsOf = """<Element Type="SqlScalarFunction" Name="[shop].[settings_of]"><Property Name="IsAnsiNullsOn" Value="True" /><Relationship Name="BodyDependencies"><Entry><References Name="[shop].[settings_of].[@doc]" /></Entry></Relationship><Relationship Name="FunctionBody"><Entry><Element Type="SqlScriptFunctionImplementation"><Property Name="BodyScript"><Value><![CDATA[ begin return @doc; end;]]></Value></Property><Annotation Type="SysCommentsObjectAnnotation"><Property Name="HeaderContents" Value="create function shop.settings_of (@doc nvarchar(max)) returns nvarchar(max) as" /></Annotation></Element></Entry></Relationship><Relationship Name="Parameters"><Entry><Element Type="SqlSubroutineParameter" Name="[shop].[settings_of].[@doc]"><Relationship Name="Type"><Entry><Element Type="SqlTypeSpecifier"><Property Name="IsMax" Value="True" /><Relationship Name="Type"><Entry><References ExternalSource="BuiltIns" Name="[nvarchar]" /></Entry></Relationship></Element></Entry></Relationship></Element></Entry></Relationship><Relationship Name="Schema"><Entry><References Name="[shop]" /></Entry></Relationship><Relationship Name="Type"><Entry><Element Type="SqlTypeSpecifier"><Property Name="IsMax" Value="True" /><Relationship Name="Type"><Entry><References ExternalSource="BuiltIns" Name="[nvarchar]" /></Entry></Relationship></Element></Entry></Relationship></Element>""";
+
+    /// <summary>A package's element setting the property <paramref name="property"/> to <paramref name="value"/> on what <paramref name="host"/> names.</summary>
+    private static string Property(string host, string property, string value) =>
+        $"""<Element Type="SqlExtendedProperty" Name="{host}.[{property}]"><Property Name="Value"><Value><![CDATA[N'{value}']]></Value></Property></Element>""";
+
+    /// <summary>
+    /// A package <c>app</c> that sets <paramref name="properties"/> on what a package of the same database it refers to,
+    /// <c>base</c>, defines: the table <c>shop.orders</c>, the view <c>shop.order_view</c> over it, and the function
+    /// <c>shop.settings_of</c>. <c>app</c>'s procedure <c>shop.p</c> reads <paramref name="from"/>. Inferred with the schema
+    /// beside the config file.
+    /// </summary>
+    private static Outcome<IrDocument> TwoPackages(string from, params string[] properties)
     {
         using var dir = new TempDirectory();
         dir.File("schemas/settings.schema.json", Settings);
-        TestPackage.Write(Path.Combine(dir.Path, "base.dacpac"), TestPackage.Table("shop", "orders", "order_id int", "settings nvarchar(4000)?"));
+        TestPackage.Write(
+            Path.Combine(dir.Path, "base.dacpac"),
+            TestPackage.Table("shop", "orders", "order_id int", "settings nvarchar(4000)?")
+                + TestPackage.View("shop", "order_view", "SELECT o.order_id, o.settings FROM shop.orders AS o;")
+                + SettingsOf);
         TestPackage.Write(
             Path.Combine(dir.Path, "app.dacpac"),
-            TestPackage.Procedure("shop", "p", "SELECT o.settings FROM shop.orders AS o;")
-                + $"""<Element Type="SqlExtendedProperty" Name="[SqlColumn].[shop].[{annotated}].[settings].[haruspex.jsonSchema]"><Property Name="Value"><Value><![CDATA[N'schemas/settings.schema.json']]></Value></Property></Element>"""
-                + $"""<Element Type="SqlExtendedProperty" Name="[SqlColumn].[shop].[{annotated}].[settings].[MS_Description]"><Property Name="Value"><Value><![CDATA[N'The settings of the order.']]></Value></Property></Element>""",
+            TestPackage.Procedure("shop", "p", $"SELECT o.settings FROM {from} AS o;") + string.Concat(properties),
             references: new TestPackage.Reference("base.dacpac"));
         var package = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []);
         var config = ConfigReader.Read(Encoding.UTF8.GetBytes("{}"), Path.Combine(dir.Path, "haruspex.json"), dir.Path).Expected();
         return Outcome.Combine(new Succeeded<int>(0, [.. package.Diagnostics]), package.Infer([new("shop", "p")], config)).Select(both => both.Second);
     }
 
+    /// <summary>The annotation and the description of <paramref name="host"/>, set by <c>app</c>.</summary>
+    private static string[] Both(string host) =>
+        [Property(host, "haruspex.jsonSchema", "schemas/settings.schema.json"), Property(host, "MS_Description", "The settings of the order.")];
+
     [Fact]
     public void A_package_s_annotation_on_a_column_another_package_of_the_database_defines_is_read_as_a_table_s()
     {
-        var doc = TwoPackages("orders").Expected();
+        var doc = TwoPackages("shop.orders", Both("[SqlColumn].[shop].[orders].[settings]")).Expected();
 
         Assert.Equal("shop.orders.settings", Assert.Single(doc.Columns).Column);
         Assert.IsType<IrJsonText>(Field(doc, "settings").Type);
@@ -171,9 +189,37 @@ public class ColumnAnnotationTests
     }
 
     [Fact]
+    public void A_package_s_description_of_a_view_s_column_another_package_defines_reaches_the_field()
+    {
+        var doc = TwoPackages("shop.order_view", Property("[SqlColumn].[shop].[order_view].[settings]", "MS_Description", "The settings of the order.")).Expected();
+
+        Assert.Equal("The settings of the order.", Field(doc, "settings").Description);
+    }
+
+    [Fact]
+    public void A_package_s_annotation_on_a_view_s_column_another_package_defines_is_the_error_a_view_s_column_gets()
+    {
+        var run = TwoPackages("shop.order_view", Property("[SqlColumn].[shop].[order_view].[settings]", "haruspex.jsonSchema", "schemas/settings.schema.json"));
+
+        var (code, message) = Only(Assert.IsType<Failed<IrDocument>>(run));
+        Assert.Equal("HAR4113", code);
+        Assert.Contains("shop.order_view is a view", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_package_s_annotation_on_a_function_s_parameter_another_package_defines_is_the_warning_a_parameter_gets()
+    {
+        var run = TwoPackages("shop.orders", Property("[SqlSubroutineParameter].[shop].[settings_of].[@doc]", "haruspex.jsonSchema", "schemas/settings.schema.json"));
+
+        var (code, message) = Only(run);
+        Assert.Equal("HAR4116", code);
+        Assert.Contains("the parameter shop.settings_of.@doc isn't read", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_package_s_annotation_on_a_column_no_package_defines_is_an_error_and_its_description_a_note()
     {
-        var run = TwoPackages("nowhere");
+        var run = TwoPackages("shop.orders", Both("[SqlColumn].[shop].[nowhere].[settings]"));
 
         Assert.IsType<Failed<IrDocument>>(run);
         Assert.Contains(run.Diagnostics, d => d.Code.ToString() == "HAR4115" && d.Message.Contains("the source doesn't define shop.nowhere", StringComparison.Ordinal));
