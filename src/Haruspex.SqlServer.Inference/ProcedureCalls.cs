@@ -88,7 +88,10 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
 
     private ProcedureAnalysis Walk(Procedure procedure, Summaries summaries)
     {
-        var parameters = Typer.Parameters(model, procedure);
+        // A parameter declared to hold JSON of a schema says what a caller is to send, whatever the body does with it.
+        var parameters = Typer.Parameters(model, procedure)
+            .Zip(procedure.Parameters, (shape, parameter) => summaries.DeclaredParameters.Content(parameter) is { } content ? shape with { Content = content } : shape)
+            .ToList();
         if (Unwalkable(procedure) is { } why)
             return new ProcedureAnalysis([.. parameters], null, why, []);
 

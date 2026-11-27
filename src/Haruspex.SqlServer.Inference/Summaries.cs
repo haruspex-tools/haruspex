@@ -24,7 +24,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="session">The options the callers' connections are declared to set.</param>
 /// <param name="columns">The columns declared to hold JSON of a schema.</param>
 /// <param name="endpoints">The external REST endpoints declared to send a response of a schema.</param>
-internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session, IReadOnlyList<DeclaredColumn> columns, IReadOnlyList<DeclaredEndpoint> endpoints)
+/// <param name="parameters">The procedures' and functions' parameters declared to hold JSON of a schema.</param>
+internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session, IReadOnlyList<DeclaredColumn> columns, IReadOnlyList<DeclaredEndpoint> endpoints, IReadOnlyList<DeclaredParameter> parameters)
 {
     /// <summary>
     /// The options the callers' connections are declared to set, which every body runs under: a procedure, the procedures it
@@ -67,6 +68,9 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
 
     /// <summary>The responses declared for external REST endpoints.</summary>
     public DeclaredEndpoints DeclaredEndpoints => field ??= new(endpoints, Reads);
+
+    /// <summary>The procedures' and functions' parameters declared to hold JSON of a schema.</summary>
+    public DeclaredParameters DeclaredParameters => field ??= new(model, parameters, Reads);
 
     /// <summary>What every body of the model binds to, shared by every body read, so each query is bound once.</summary>
     public Bindings Bindings { get; } = new(model);

@@ -177,4 +177,10 @@ public enum IrChangeKind
     /// text changed, which may change what every reply read from the endpoint is claimed to hold.
     /// </summary>
     EndpointDeclarationChanged,
+
+    /// <summary>
+    /// A parameter's declared JSON (0.37) was added, removed, or reads another schema: another file or pointer, or a file whose text
+    /// changed, which may change what the body's reads of the parameter are claimed to hold and what a caller may send.
+    /// </summary>
+    ParameterDeclarationChanged,
 }

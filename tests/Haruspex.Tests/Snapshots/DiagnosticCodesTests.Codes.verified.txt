@@ -120,6 +120,7 @@ HAR4113 E A column that can't hold declared JSON [Haruspex.Config.ConfigCodes.Co
 HAR4114 E A JSON Schema named in the SQL that disagrees with the config [Haruspex.Config.ConfigCodes.AnnotationDisagrees]
 HAR4115 E A JSON Schema named in the SQL that can't be read [Haruspex.Config.ConfigCodes.AnnotationNotRead]
 HAR4116 W A JSON Schema named in the SQL where haruspex doesn't read one [Haruspex.Config.ConfigCodes.AnnotationNotDeclarable]
+HAR4117 E A parameter that can't hold declared JSON [Haruspex.Config.ConfigCodes.ParameterNotDeclarable]
 HAR4201 E Declared results disagree with the inference [Haruspex.Config.ConfigCodes.DeclarationDisagrees]
 HAR4202 W Declared results the inference already gives [Haruspex.Config.ConfigCodes.DeclarationAgrees]
 HAR4203 W Declared results nothing uses [Haruspex.Config.ConfigCodes.DeclarationUnused]

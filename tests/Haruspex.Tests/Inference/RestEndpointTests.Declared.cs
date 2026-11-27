@@ -192,7 +192,7 @@ public partial class RestEndpointTests
     {
         var doc = Named("@url = N'https://billing.example/plans/7', @method = N'GET'");
 
-        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+        Assert.Equal(IrDocument.EndpointsVersion, doc.Version);
         var plan = Assert.Single(doc.Endpoints, e => e.Address == "https://billing.example/plans/{id}");
         Assert.Equal(("GET", "schemas/plan.json"), (plan.Method, plan.Schema));
         Assert.Equal(["schemas/plan.json"], plan.Files.Keys);

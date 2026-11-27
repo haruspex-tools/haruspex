@@ -256,14 +256,18 @@ internal sealed class SqlProject
         }
 
         // A column declared to hold JSON is part of the column's type, so inference reads it wherever the column is read; a
-        // declaration the project can't hold stops the run, before anything is inferred from it. The SQL may name a column's
-        // schema too (haruspex.jsonSchema), declaring it as the config file does; where both do, they must agree (decision 0141).
+        // parameter declared to hold JSON is what the body takes it to hold until it is assigned, and what a caller is to send. A
+        // declaration the project can't hold stops the run, before anything is inferred from it. The SQL may name a column's or a
+        // parameter's schema too (haruspex.jsonSchema), declaring it as the config file does; where both do, they must agree
+        // (decisions 0141, 0143).
         IReadOnlyList<string> ViewSources(ObjectName view, string column) => IrInference.ViewColumnSources(model, view, column);
-        var (declaredColumns, annotationProblems) = ColumnAnnotations.Merge(config, model, ViewSources);
+        var (declaredColumns, declaredParameters, annotationProblems) = JsonSchemaAnnotations.Merge(config, model, ViewSources);
         var columnProblems = ColumnDeclarationCheck.Check(config.Columns, model, ViewSources);
-        if (columnProblems.Count > 0 || annotationProblems.Any(d => d.IsError))
-            return new Failed<IrDocument>([.. columnProblems, .. annotationProblems]);
+        var parameterProblems = ParameterDeclarationCheck.Check(config.Parameters, model);
+        if (columnProblems.Count > 0 || parameterProblems.Count > 0 || annotationProblems.Any(d => d.IsError))
+            return new Failed<IrDocument>([.. columnProblems, .. parameterProblems, .. annotationProblems]);
         List<DeclaredColumn> columns = [.. declaredColumns.Select(c => new DeclaredColumn(c.Table, c.Column, c.Content, c.Types, c.Record))];
+        List<DeclaredParameter> parameters = [.. declaredParameters.Select(p => new DeclaredParameter(p.Owner, p.Parameter, p.Content, p.Types, p.Record))];
 
         // An endpoint's URL is a template the inference matches calls against; one it can't read stops the run.
         var endpointProblems = config.Endpoints
@@ -274,7 +278,7 @@ internal sealed class SqlProject
             return new Failed<IrDocument>([.. endpointProblems]);
         List<DeclaredEndpoint> endpoints = [.. config.Endpoints.Select(e => new DeclaredEndpoint(e.Content, e.Types, e.Record))];
 
-        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns, endpoints).Select(d => d with { Source = recorded(d.Source) });
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns, endpoints, parameters).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()
@@ -283,7 +287,7 @@ internal sealed class SqlProject
             .ToList();
 
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
-        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns, endpoints: endpoints).Value;
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns, endpoints: endpoints, parameters: parameters).Value;
         // Each script the locations point into is recorded with its hash, for explain to match a file against before it shows a line.
         var applied = inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries))
             .Select(document => document with { Source = document.Source with { Files = ScriptFiles.Of(document, folderOf) } });

@@ -32,4 +32,11 @@ public enum IrOverrideSetting
     /// rests on the declaration, not on the database (<see cref="IrDocument.Endpoints"/>).
     /// </summary>
     EndpointJson,
+
+    /// <summary>
+    /// The object reads a procedure's or function's parameter declared to hold JSON of a schema (0.37), named by
+    /// <see cref="IrOverride.Via"/> as <see cref="IrParameterDeclaration.Parameter"/> gives it, so what it returns of that JSON rests
+    /// on the declaration, a claim about every caller, not on the database (<see cref="IrDocument.Parameters"/>).
+    /// </summary>
+    ParameterJson,
 }

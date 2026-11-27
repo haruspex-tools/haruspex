@@ -206,6 +206,25 @@ internal sealed class DeclaredSchema
     }
 
     /// <summary>
+    /// The JSON a parameter is declared to hold, read as a column's is (<see cref="Column"/>): its top can't be <c>null</c> but as any
+    /// JSON, since SQL Server's JSON functions refuse the text <c>null</c> (13609, a bare scalar), and a caller that has no value sends
+    /// NULL, which the parameter's own nullability says.
+    /// </summary>
+    public IrType? Parameter()
+    {
+        var (root, rootPath) = top;
+        if (Node(root, rootPath, "<json>") is not var (type, nullable))
+            return null;
+        if (nullable && type is not IrAnyJson)
+        {
+            Report(ConfigCodes.NullColumnJson, root, rootPath, "allows the JSON null at its top, which a parameter's JSON functions refuse (13609, as any bare scalar). A caller with no value sends NULL, which the parameter's own nullability says, so leave \"null\" out here.");
+            return null;
+        }
+
+        return type;
+    }
+
+    /// <summary>
     /// The type of the body of an external REST endpoint's response, read as a column's JSON is (<see cref="Column"/>) but for its
     /// top: a body that is JSON <c>null</c> fails the call (11558), so <c>null</c> allowed there never arrives, and is left out.
     /// </summary>
@@ -328,7 +347,7 @@ internal sealed class DeclaredSchema
 
         IrScalar RfcString()
         {
-            Report(ConfigCodes.UncheckedFormat, (JsonValue?)formatted ?? schema, Child(at, "format"), $"\"{format}\" allows forms an application may write (a time's offset, a lower-case t or z, a leap second) that haruspex's check of it would refuse, so in a column's JSON it is a string and not checked.");
+            Report(ConfigCodes.UncheckedFormat, (JsonValue?)formatted ?? schema, Child(at, "format"), $"\"{format}\" allows forms an application may write (a time's offset, a lower-case t or z, a leap second) that haruspex's check of it would refuse, so in JSON an application writes it is a string and not checked.");
             return Text(new IrScalar(IrScalarKind.String, null, null));
         }
 

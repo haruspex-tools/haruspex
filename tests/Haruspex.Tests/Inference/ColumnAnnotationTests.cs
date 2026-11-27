@@ -207,13 +207,14 @@ public class ColumnAnnotationTests
     }
 
     [Fact]
-    public void A_package_s_annotation_on_a_function_s_parameter_another_package_defines_is_the_warning_a_parameter_gets()
+    public void A_package_s_annotation_on_a_function_s_parameter_another_package_defines_declares_it()
     {
         var run = TwoPackages("shop.orders", Property("[SqlSubroutineParameter].[shop].[settings_of].[@doc]", "haruspex.jsonSchema", "schemas/settings.schema.json"));
 
-        var (code, message) = Only(run);
-        Assert.Equal("HAR4116", code);
-        Assert.Contains("the parameter shop.settings_of.@doc isn't read", message, StringComparison.Ordinal);
+        // Settled against the package that defines the function, it is read as a declaration, which says nothing: no procedure
+        // here takes or reads it, so the document records none (ParameterDeclarationTests).
+        Assert.Empty(run.Diagnostics);
+        Assert.IsType<Succeeded<IrDocument>>(run);
     }
 
     [Fact]
@@ -294,10 +295,9 @@ public class ColumnAnnotationTests
     }
 
     [Theory]
-    [InlineData("N'PROCEDURE', N'save_settings', N'PARAMETER', N'@settings'", "the parameter shop.save_settings.@settings")]
-    [InlineData("N'FUNCTION', N'settings_of', N'PARAMETER', N'@doc'", "the parameter shop.settings_of.@doc")]
     [InlineData("N'TABLE', N'orders'", "shop.orders")]
-    public void An_annotation_on_a_parameter_or_an_object_is_a_warning_naming_it_and_declares_nothing(string levels, string named)
+    [InlineData("N'PROCEDURE', N'save_settings'", "shop.save_settings")]
+    public void An_annotation_on_an_object_is_a_warning_naming_it_and_declares_nothing(string levels, string named)
     {
         var run = Run(
             "CREATE PROCEDURE shop.p AS SELECT 1 AS one;",

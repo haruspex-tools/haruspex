@@ -46,8 +46,9 @@ links to is the one place that describes it.
   [what a declaration reads](configuration.md#the-json-schemas-a-declaration-reads).
 - **A procedure calls a REST service** with `sp_invoke_external_rest_endpoint`:
   [declare each endpoint's response](configuration.md#calls-to-rest-endpoints-endpoints).
-- **The database should carry its JSON columns' schemas**, in its scripts and its DACPAC:
-  [name a column's schema in the SQL](configuration.md#naming-a-columns-schema-in-the-sql).
+- **A procedure or function takes a JSON document:** [declare the parameter's JSON Schema](configuration.md#json-a-parameter-takes-parameters).
+- **The database should carry its JSON columns' and parameters' schemas**, in its scripts and its DACPAC:
+  [name a column's or parameter's schema in the SQL](configuration.md#naming-a-columns-schema-in-the-sql).
 - **The team knows what the database can't prove**, or wants other names for a procedure's types and result sets:
   [overrides](configuration.md#overrides), and [naming](configuration.md#naming) for every name.
 - **The database keeps descriptions under a name of its own:** [descriptions](configuration.md#descriptions-descriptions).

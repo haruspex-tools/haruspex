@@ -42,4 +42,8 @@ internal static class IrDocumentOrder
     /// <summary>Endpoint declarations by endpoint: method, then URL.</summary>
     public static IEnumerable<IrEndpointDeclaration> Endpoints(IrDocument document) =>
         document.Endpoints.OrderBy(e => e.Endpoint, StringComparer.Ordinal);
+
+    /// <summary>Parameter declarations by parameter.</summary>
+    public static IEnumerable<IrParameterDeclaration> Parameters(IrDocument document) =>
+        document.Parameters.OrderBy(p => p.Parameter, StringComparer.Ordinal);
 }

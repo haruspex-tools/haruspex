@@ -65,11 +65,16 @@ public sealed class IrTypeGraph
         foreach (var target in results.SelectMany(r => IrTypeTree.References(r.Type)).Where(t => !document.Types.ContainsKey(t)))
             throw new ArgumentException($"A result refers to {target}, which names no type in the document.", nameof(document));
 
+        // A parameter declared to hold JSON (0.37) refers to the types of what it parses to, which are JSON, as it is sent.
+        var contents = IrDocumentOrder.Objects(document).SelectMany(o => o.Parameters).Select(p => p.Content).OfType<IrType>().ToList();
+        foreach (var target in contents.SelectMany(IrTypeTree.References).Where(t => !document.Types.ContainsKey(t)))
+            throw new ArgumentException($"A parameter's declared JSON refers to {target}, which names no type in the document.", nameof(document));
+
         var search = new Search(references);
-        foreach (var root in results.SelectMany(r => IrTypeTree.References(r.Type)).Concat(names))
+        foreach (var root in results.SelectMany(r => IrTypeTree.References(r.Type)).Concat(contents.SelectMany(IrTypeTree.References)).Concat(names))
             search.Visit(root);
 
-        return new IrTypeGraph(references, search.Finished, search.Component, search.Cycles, Encodings(document, results));
+        return new IrTypeGraph(references, search.Finished, search.Component, search.Cycles, Encodings(document, results, contents));
     }
 
     /// <summary>The named types <paramref name="name"/>'s fields refer to directly, in the order its fields meet them, each once.</summary>
@@ -109,11 +114,14 @@ public sealed class IrTypeGraph
     /// </summary>
     public IReadOnlySet<IrEncoding> EncodingsOf(string name) => encodings.TryGetValue(name, out var found) ? found : new HashSet<IrEncoding>();
 
-    /// <summary>The encodings each named type arrives in, following each result's encoding down, and JSON inside JSON text.</summary>
-    private static Dictionary<string, IReadOnlySet<IrEncoding>> Encodings(IrDocument document, IReadOnlyList<IrResult> results)
+    /// <summary>
+    /// The encodings each named type arrives in, following each result's encoding down, and JSON inside JSON text; and JSON for what
+    /// a parameter declared to hold JSON parses to, which is sent as JSON text.
+    /// </summary>
+    private static Dictionary<string, IReadOnlySet<IrEncoding>> Encodings(IrDocument document, IReadOnlyList<IrResult> results, IReadOnlyList<IrType> contents)
     {
         var found = new Dictionary<string, HashSet<IrEncoding>>(StringComparer.Ordinal);
-        var pending = new Stack<(IrType Type, IrEncoding Encoding)>(results.Select(r => (r.Type, r.Encoding)));
+        var pending = new Stack<(IrType Type, IrEncoding Encoding)>(results.Select(r => (r.Type, r.Encoding)).Concat(contents.Select(c => (c, IrEncoding.Json))));
         while (pending.TryPop(out var next))
         {
             if (next.Type is IrRef reference)

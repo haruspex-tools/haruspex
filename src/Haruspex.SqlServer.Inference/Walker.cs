@@ -166,6 +166,18 @@ internal sealed partial class Walker
             // (CallContext.Arguments); otherwise any value of its type, or NULL.
             var passed = context.Arguments.GetValueOrDefault(name);
             var because = passed is { MayBeNull: false } ? [] : Because(IrNullRule.Parameter, name, variableShapes[name]);
+
+            // A parameter declared to hold JSON of a schema holds it, as every caller is claimed to send it, until it is assigned: a
+            // json one live JSON, any other a string of its type holding the JSON, as a declared column's
+            // (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). NULL stays possible: no declaration rules it out.
+            if (undecided?.ContainsKey(name) != true && summaries.DeclaredParameters.Content(parameter, source) is { } content)
+            {
+                start.Add(new(name, live
+                    ? new Value(content, [.. because], IsLiveJson: true)
+                    : Value.Computed(new JsonTextShape(content) { Text = variableShapes[name] as ScalarShape }, because)));
+                continue;
+            }
+
             start.Add(new(name, Value.Computed(variableShapes[name], because, live) with { Pieces = passed?.Pieces }));
         }
 

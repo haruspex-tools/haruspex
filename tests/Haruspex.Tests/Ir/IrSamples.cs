@@ -453,6 +453,26 @@ internal static class IrSamples
         Overrides = [.. SchemaFacts.Overrides, new IrOverride("sales.get_order", "results", IrOverrideSetting.EndpointJson, null) { Via = "GET https://billing.example/plans/{id}" }],
     };
 
+    /// <summary>
+    /// <see cref="Endpoints"/> with a parameter declared to hold JSON (0.37): <c>sales.get_order</c>'s first parameter given what it
+    /// parses to, its declaration, and the claim that <c>sales.get_order</c> reads it, so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Parameters { get; } = Endpoints with
+    {
+        Objects = [.. Endpoints.Objects.Select(o => o.Id == "sales.get_order" && o.Parameters.Count > 0
+            ? o with { Parameters = [o.Parameters[0] with { Content = new IrScalar(IrScalarKind.String, null, null, null) }, .. o.Parameters.Skip(1)] }
+            : o)],
+        Parameters =
+        [
+            new IrParameterDeclaration(
+                "sales.get_order.@order_id",
+                "schemas/order.schema.json",
+                "/$defs/order",
+                new Dictionary<string, string> { ["schemas/order.schema.json"] = Hash('e'), ["schemas/customer.schema.json"] = Hash('f') }.ToEquatableMap(f => f.Key, f => f.Value)),
+        ],
+        Overrides = [.. Endpoints.Overrides, new IrOverride("sales.get_order", "results", IrOverrideSetting.ParameterJson, null) { Via = "sales.get_order.@order_id" }],
+    };
+
     /// <summary>A SHA-256 as the IR writes one, made of one digit: a sample needs its form, not a real file's.</summary>
     private static string Hash(char digit) => new(digit, 64);
 }

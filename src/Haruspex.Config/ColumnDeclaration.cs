@@ -16,7 +16,7 @@ namespace Haruspex.Config;
 /// <param name="Content">What a non-null value of the column parses to.</param>
 /// <param name="Types">The object types <paramref name="Content"/> refers to.</param>
 /// <param name="Record">The declaration as the IR records it: the column, the schema file and pointer, and every file's hash.</param>
-/// <param name="At">Where the declaration is written: in the config file, or in the SQL (<see cref="ColumnAnnotations"/>).</param>
+/// <param name="At">Where the declaration is written: in the config file, or in the SQL (<see cref="JsonSchemaAnnotations"/>).</param>
 public sealed record ColumnDeclaration(ObjectName Table, string Column, IrType Content, EquatableMap<string, IrObjectType> Types, IrColumnDeclaration Record, DiagnosticLocation At)
 {
     /// <summary>

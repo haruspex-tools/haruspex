@@ -225,17 +225,23 @@ public static class ConfigCodes
     /// </summary>
     public static DiagnosticCode ColumnNotDeclarable { get; } = new(4113, Error, "A column that can't hold declared JSON");
 
-    /// <summary>The SQL names a column's JSON Schema (<c>haruspex.jsonSchema</c>) other than the one the config file declares it with.</summary>
+    /// <summary>The SQL names a column's or parameter's JSON Schema (<c>haruspex.jsonSchema</c>) other than the one the config file declares it with.</summary>
     public static DiagnosticCode AnnotationDisagrees { get; } = new(4114, Error, "A JSON Schema named in the SQL that disagrees with the config");
 
     /// <summary>
-    /// A column's JSON Schema named in the SQL can't be read: its value isn't text, it is named twice, updated or dropped, or it
+    /// A column's or parameter's JSON Schema named in the SQL can't be read: its value isn't text, it is named twice, updated or dropped, or it
     /// is on something the source doesn't define.
     /// </summary>
     public static DiagnosticCode AnnotationNotRead { get; } = new(4115, Error, "A JSON Schema named in the SQL that can't be read");
 
-    /// <summary>A JSON Schema named in the SQL on something other than a table's or view's column, such as a parameter, which haruspex doesn't read.</summary>
+    /// <summary>A JSON Schema named in the SQL on something other than a column or a parameter, such as an object, which haruspex doesn't read.</summary>
     public static DiagnosticCode AnnotationNotDeclarable { get; } = new(4116, Warning, "A JSON Schema named in the SQL where haruspex doesn't read one");
+
+    /// <summary>
+    /// A parameter declared to hold JSON that can't: not a parameter of a procedure or function the project defines, a numbered
+    /// procedure's, an <c>OUTPUT</c> one, or not of a string type; declared in the config file or in the SQL.
+    /// </summary>
+    public static DiagnosticCode ParameterNotDeclarable { get; } = new(4117, Error, "A parameter that can't hold declared JSON");
 
     /// <summary>Declared results that disagree with what haruspex infers.</summary>
     public static DiagnosticCode DeclarationDisagrees { get; } = new(4201, Error, "Declared results disagree with the inference");

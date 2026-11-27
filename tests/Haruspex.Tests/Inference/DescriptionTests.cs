@@ -155,7 +155,7 @@ public class DescriptionTests
         var document = Infer("SELECT UPPER(d.name) AS name FROM kennel.dog AS d;");
 
         Assert.Null(IrDocumentDescribed(document));
-        Assert.Equal(IrDocument.FoldersVersion, IrDocument.ReadableVersions[4]);
+        Assert.Equal(IrDocument.FoldersVersion, IrDocument.ReadableVersions[5]);
         Assert.NotEqual(IrDocument.DescribedVersion, document.Version);
     }
 

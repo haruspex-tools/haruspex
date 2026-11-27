@@ -20,4 +20,11 @@ public sealed record IrParameter(string Name, IrType Type, bool HasDefault, bool
     /// <see cref="IrComparison"/> reports no change in it. Why: docs/decisions/0128-a-column-s-description-reaches-the-fields-that-are-that-column.md.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// For a parameter declared to hold JSON of a schema (0.37, <see cref="IrDocument.Parameters"/>), what a non-null value of it
+    /// parses to, as declared: the JSON a caller is to send, which <see cref="Type"/>, the text it is sent as, still bounds. Null
+    /// for every other parameter. Why: docs/decisions/0143-a-parameter-s-json-may-be-declared.md.
+    /// </summary>
+    public IrType? Content { get; init; }
 }

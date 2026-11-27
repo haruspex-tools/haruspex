@@ -8,7 +8,7 @@ namespace Haruspex.Config;
 /// <summary>
 /// A column's JSON Schema, named as <c>file#pointer</c> relative to the config file's folder, read and translated into a
 /// <see cref="ColumnDeclaration"/>: the same for a declaration in the config file (<c>columns</c>) and for one in the SQL (an
-/// extended property, <see cref="ColumnAnnotations"/>), so that the two declare a column alike
+/// extended property, <see cref="JsonSchemaAnnotations"/>), so that the two declare a column alike
 /// (docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md,
 /// docs/decisions/0141-a-column-s-json-schema-may-be-named-in-the-sql.md).
 /// </summary>
@@ -24,21 +24,38 @@ internal static class ColumnSchema
     /// <param name="at">Where the reference is written: a problem with it, rather than inside the schema, is reported there.</param>
     /// <param name="problems">Where every problem is reported.</param>
     public static ColumnDeclaration? Declare(SchemaFiles files, string directory, string key, ObjectName table, string column, string reference, DiagnosticLocation at, List<Diagnostic> problems) =>
-        Read(files, directory, key, reference, at, problems, response: false) is var (content, types, schema, pointer, hashes)
+        Read(files, directory, key, reference, at, problems, DeclaredJson.Column) is var (content, types, schema, pointer, hashes)
             ? new ColumnDeclaration(table, column, content, types, new IrColumnDeclaration(key, schema, pointer, hashes), at)
             : null;
+
+    /// <summary>The declaration of a parameter's JSON <paramref name="reference"/> makes; null when it has a problem, reported at <paramref name="at"/>.</summary>
+    /// <param name="files">The schema files read so far, which reports a file it can't read.</param>
+    /// <param name="directory">The config file's folder, which the reference is relative to.</param>
+    /// <param name="owner">The procedure or function.</param>
+    /// <param name="parameter">The parameter's name, with its <c>@</c>.</param>
+    /// <param name="reference">The schema's file, relative to <paramref name="directory"/>, then <c>#</c> and a JSON Pointer inside it when it isn't the whole file.</param>
+    /// <param name="at">Where the reference is written: a problem with it, rather than inside the schema, is reported there.</param>
+    /// <param name="problems">Where every problem is reported.</param>
+    public static ParameterDeclaration? DeclareParameter(SchemaFiles files, string directory, ObjectName owner, string parameter, string reference, DiagnosticLocation at, List<Diagnostic> problems)
+    {
+        var key = ParameterDeclaration.Key(owner, parameter);
+        return Read(files, directory, key, reference, at, problems, DeclaredJson.Parameter) is var (content, types, schema, pointer, hashes)
+            ? new ParameterDeclaration(owner, parameter, content, types, new IrParameterDeclaration(key, schema, pointer, hashes), at)
+            : null;
+    }
 
     /// <summary>
     /// The JSON a schema named by <paramref name="reference"/> describes, read as a column's JSON is, whose writer isn't the database:
     /// an object may hold keys it doesn't list, and a key it doesn't require may be left out. Shared with the response declared for
     /// an external REST endpoint (<c>endpoints</c>, docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md),
-    /// whose top may allow <c>null</c>, which never arrives; a column's may not. Null when it has a problem, reported at <paramref name="at"/>.
+    /// whose top may allow <c>null</c>, which never arrives; a column's may not, nor a parameter's
+    /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). Null when it has a problem, reported at <paramref name="at"/>.
     /// </summary>
     /// <param name="key">What is declared, which names the object types the schema defines.</param>
-    /// <param name="response">Whether it is an endpoint's response rather than a column's JSON.</param>
+    /// <param name="what">What holds the JSON: a column, a parameter or an endpoint's response, whose tops differ.</param>
     /// <returns>The JSON's type, the object types it refers to, the schema file as recorded, the pointer, and every file's hash.</returns>
     public static (IrType Content, EquatableMap<string, IrObjectType> Types, string Schema, string? Pointer, EquatableMap<string, string> Files)? Read(
-        SchemaFiles files, string directory, string key, string reference, DiagnosticLocation at, List<Diagnostic> problems, bool response)
+        SchemaFiles files, string directory, string key, string reference, DiagnosticLocation at, List<Diagnostic> problems, DeclaredJson what)
     {
         var hash = reference.IndexOf('#', StringComparison.Ordinal);
         var schemaPath = hash < 0 ? reference : reference[..hash];
@@ -61,7 +78,12 @@ internal static class ColumnSchema
 
         var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
         var translator = DeclaredSchema.ForColumn(document, (root, rootPath), problems, files, key, types);
-        var content = response ? translator.Response() : translator.Column();
+        var content = what switch
+        {
+            DeclaredJson.Response => translator.Response(),
+            DeclaredJson.Parameter => translator.Parameter(),
+            _ => translator.Column(),
+        };
         if (content is null || problems.Count(p => p.IsError) != errors)
             return null;
         return (

@@ -24,7 +24,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.Endpoints);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Parameters);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
@@ -85,12 +85,13 @@ public class IrReaderSchemaAgreementTests
             return;
         }
 
-        // What ties a claim to the declared column or endpoint it rests on, and a declaration to the hash of its own file (0.28, 0.36),
-        // which the schema can't follow from one place to another: the claim's column or endpoint, the columns as a whole (a 0.36
-        // document always lists its endpoints, which its label requires), and the file's own hash.
-        if ((key == "via" && target["setting"]?.GetValue<string>() is "column-json" or "endpoint-json")
-            || (location.Length == 0 && key == "columns")
-            || ((location.StartsWith("/columns/", StringComparison.Ordinal) || location.StartsWith("/endpoints/", StringComparison.Ordinal))
+        // What ties a claim to the declared column, endpoint or parameter it rests on, and a declaration to the hash of its own file
+        // (0.28, 0.36, 0.37), which the schema can't follow from one place to another: the claim's column, endpoint or parameter, the
+        // columns and endpoints as a whole (a 0.37 document always lists its parameters, which its label requires, but not its
+        // endpoints), and the file's own hash.
+        if ((key == "via" && target["setting"]?.GetValue<string>() is "column-json" or "endpoint-json" or "parameter-json")
+            || (location.Length == 0 && key is "columns" or "endpoints")
+            || ((location.StartsWith("/columns/", StringComparison.Ordinal) || location.StartsWith("/endpoints/", StringComparison.Ordinal) || location.StartsWith("/parameters/", StringComparison.Ordinal))
                 && location.EndsWith("/files", StringComparison.Ordinal) && At(JsonNode.Parse(File)!, location[..^"/files".Length])["schema"]?.GetValue<string>() == key))
         {
             Assert.Empty(schemaErrors);
@@ -306,6 +307,14 @@ public class IrReaderSchemaAgreementTests
         ["an empty list of endpoints"] = (Endpoints, json => json["endpoints"] = new JsonArray(), null),
         ["a declared endpoint's file hash in capitals"] = (Endpoints, json => FirstFile(json["endpoints"]![0]!["files"]!).ReplaceWith(new string('C', 64)), null),
 
+        // A declared parameter (0.37): only in 0.37, where a document declares one, each once, with its file's hash; and a parameter's
+        // content only there.
+        ["0.37: no parameter declared"] = (Endpoints, json => json["irVersion"] = "0.37", null),
+        ["0.36, said of a document that declares a parameter"] = (Parameters, json => json["irVersion"] = "0.36", null),
+        ["an empty list of parameters"] = (Parameters, json => json["parameters"] = new JsonArray(), null),
+        ["a declared parameter's file hash in capitals"] = (Parameters, json => FirstFile(json["parameters"]![0]!["files"]!).ReplaceWith(new string('C', 64)), null),
+        ["a parameter's content in 0.36"] = (Endpoints, json => json["objects"]![0]!["parameters"]![0]!["content"] = JsonNode.Parse("""{ "kind": "string" }"""), null),
+
         // A binary value says only its length, in bytes.
         ["a binary value's length in code units"] = (Binary, json => Signature(json)["length"]!["unit"] = "utf16", null),
         ["a binary value's length with an encoding"] = (Binary, json => Signature(json)["length"]!["encoding"] = "single-byte", null),
@@ -431,6 +440,8 @@ public class IrReaderSchemaAgreementTests
     private static string SchemaFacts() => IrJsonWriter.Write(IrSamples.SchemaFacts);
 
     private static string Endpoints() => IrJsonWriter.Write(IrSamples.Endpoints);
+
+    private static string Parameters() => IrJsonWriter.Write(IrSamples.Parameters);
 
     /// <summary>The type of the XML sample's field <c>spec</c>, an <c>xml(sales.spec_schema)</c>.</summary>
     private static JsonObject Spec(JsonObject json) => json["types"]!["FindOrdersRow"]!["fields"]!.AsArray().Single(f => (string?)f!["name"] == "spec")!["type"]!.AsObject();

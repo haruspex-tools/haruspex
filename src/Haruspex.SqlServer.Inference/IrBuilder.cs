@@ -58,6 +58,7 @@ internal sealed class IrBuilder(IReadOnlyDictionary<ObjectName, ObjectShape> nod
                 {
                     TableType = p.TableType?.Key,
                     Description = name is { } procedure ? descriptions.Of(procedure, p.Name) : null,
+                    Content = p.Content is { } content ? Convert(content, owner, id, $"parameters.{p.Name}<json>") : null,
                 })
                 .ToList();
             foreach (var (key, definition) in analysis.Parameters.Select(p => p.TableType).OfType<(string, IrTableType)>())
