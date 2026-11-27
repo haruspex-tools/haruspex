@@ -18,7 +18,7 @@ internal sealed class SchemaFiles(string directory, List<Diagnostic> problems)
     /// The file at <paramref name="fullPath"/>, read and parsed, or null when it can't be (reported once, at
     /// <paramref name="location"/>, the place that named it first).
     /// </summary>
-    public SchemaDocument? Load(string fullPath, JsonLocation location, string named)
+    public SchemaDocument? Load(string fullPath, DiagnosticLocation location, string named)
     {
         if (read.TryGetValue(fullPath, out var known))
             return known.Document;

@@ -667,6 +667,33 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
 - **A declaration is checked at runtime**, like everything else: the generated validator rejects a value that doesn't fit it, so
   a wrong schema fails loudly, on real data. It is a claim about every writer there ever was, which only the team can make.
 
+### Naming a column's schema in the SQL
+
+**For a team whose database should carry its columns' schemas**, so that they travel with its scripts and its DACPAC rather
+than with one application's `haruspex.json`.
+
+The extended property `haruspex.jsonSchema` on a table's column names its schema, written as `json` is above (a path relative
+to the config file's folder, with a JSON Pointer after `#`), and declares exactly what that `columns` entry would
+([decision 0141](decisions/0141-a-column-s-json-schema-may-be-named-in-the-sql.md)):
+
+```sql
+EXEC sp_addextendedproperty N'haruspex.jsonSchema', N'schemas/order-lines.schema.json',
+    N'SCHEMA', N'shop', N'TABLE', N'orders', N'COLUMN', N'lines_json';
+```
+
+- **It is read from scripts and from a DACPAC alike**, wherever haruspex reads the database, and recorded in the IR as a
+  `columns` entry is: a declaration, checked at runtime, never a proof. So `check` reports a changed schema file, and a changed,
+  added or removed annotation, as it reports the same change in `haruspex.json`.
+- **Where both declare a column, they must name the same schema** (the same file and pointer); naming two is HAR4114, and
+  haruspex chooses neither.
+- **Only a table's column takes one.** One on a view's or a table function's column is HAR4113, as `columns` would be, naming
+  the table column to declare instead. One on a procedure's or function's parameter, or on an object, is HAR4116, a warning: it
+  declares nothing there. SQL Server takes none on a numbered procedure (`get_order;2`) or a scalar function's result.
+- **What can't be read is an error** (HAR4115): a value that isn't literal text, a property named twice, updated or dropped
+  (which stands depends on the order the scripts run), or one on something the source doesn't define. A URL is refused
+  (HAR3112): haruspex never fetches a schema, so keep a copy in the repository and name that.
+- **The name is compared ignoring case**, as SQL Server compares it in a database that ignores case.
+
 ## The JSON Schemas a declaration reads
 
 **For whoever writes the JSON Schema** of declared results or of a column's JSON.

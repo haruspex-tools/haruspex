@@ -4,7 +4,7 @@
     "dialect": "tsql",
     "files": {
       "procedures/routes.sql": "59f64fe392532f0631de2b7780fe8b4808729fb5b6fef1b086e4631aaa47b8f1",
-      "tables/parcel.sql": "496c541fc3779bd5f6adc23e71f5a06c7861d5ea8058f493313bbf0db577b999"
+      "tables/parcel.sql": "e3cca638de072556e20927d57d122dab1ebb428214ac2dc34b02de5fd7e5dfdf"
     }
   },
   "objects": [

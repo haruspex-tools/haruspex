@@ -754,8 +754,9 @@ when the claims change. Another writer need not write the same bytes, but must w
 
 ## Column declarations
 
-`columns` (0.28) lists the columns the config file declares to hold JSON of a schema, sorted by `column`; it is left out when none
-is, and must not be written empty. Each is `{ "column", "schema", "pointer"?, "files" }`: the column as `schema.table.column`; the
+`columns` (0.28) lists the columns declared to hold JSON of a schema, by the config file or by the extended property
+`haruspex.jsonSchema` in the SQL, which the document doesn't tell apart (decision 0141), sorted by `column`; it is left out when
+none is, and must not be written empty. Each is `{ "column", "schema", "pointer"?, "files" }`: the column as `schema.table.column`; the
 schema file, relative to the folder of the config file and `/`-separated; the JSON Pointer to the schema used inside the file,
 left out for the whole file; and `files`, the SHA-256 of every file the declaration read (the schema file itself, which it must
 list, and every file a `$ref` reached), by path, as 64 lower-case hexadecimal digits: of the file's text, without a UTF-8 byte

@@ -1114,39 +1114,11 @@ public static class ConfigReader
         }
 
         /// <summary>One column's declaration, its schema read and translated; null when it has a problem (reported).</summary>
-        private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at)
-        {
-            var hash = json.Value.IndexOf('#', StringComparison.Ordinal);
-            var schemaPath = hash < 0 ? json.Value : json.Value[..hash];
-            var pointer = hash < 0 ? null : json.Value[(hash + 1)..];
-            var errors = Problems.Count(p => p.IsError);
-            var full = Path.GetFullPath(Path.Combine(directory, schemaPath));
-            if (DeclaredSchema.IsRemote(schemaPath))
-            {
-                Report(ConfigCodes.ForeignReference, json, jsonPath, DeclaredSchema.Remote(schemaPath));
-                return null;
-            }
-
-            if (SchemaFiles.Load(full, At(json, jsonPath), schemaPath) is not { } document)
-                return null;
-            if (JsonPointer.Resolve(document.Root, "", pointer ?? "") is not var (root, rootPath))
-            {
-                Report(ConfigCodes.MissingReference, json, jsonPath, $"points at \"{pointer}\" in {schemaPath}, which names nothing: a pointer is a JSON Pointer, such as #/$defs/person.");
-                return null;
-            }
-
-            var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
-            var translator = DeclaredSchema.ForColumn(document, (root, rootPath), Problems, SchemaFiles, key, types);
-            var content = translator.Column();
-            if (content is null || Problems.Count(p => p.IsError) != errors)
-                return null;
-            var record = new IrColumnDeclaration(
-                key,
-                SchemaFiles.Relative(full),
-                string.IsNullOrEmpty(pointer) ? null : pointer,
-                translator.Files.ToEquatableMap(SchemaFiles.Relative, SchemaFiles.Sha256));
-            return new ColumnDeclaration(table, column, content, types.ToEquatableMap(t => t.Key, t => t.Value), record, at);
-        }
+        /// <remarks>A problem with the reference is reported at it; the declaration is at its key, <paramref name="at"/>.</remarks>
+        private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at) =>
+            ColumnSchema.Declare(SchemaFiles, directory, key, table, column, json.Value, At(json, jsonPath), Problems) is { } declared
+                ? declared with { At = at }
+                : null;
 
         private PathOverride? PathOverride(JsonMember entry, string path)
         {

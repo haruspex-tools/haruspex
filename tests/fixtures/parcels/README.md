@@ -1,14 +1,16 @@
 # Fixture: parcels
 
-An invented courier's parcels, for columns declared in `haruspex.json` to hold JSON of a schema
-([decision 0093](../../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)): read plainly,
+An invented courier's parcels, for columns declared to hold JSON of a schema
+([decision 0093](../../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)), two in
+`haruspex.json` and one in the SQL, by the extended property `haruspex.jsonSchema` on the column
+([decision 0141](../../../docs/decisions/0141-a-column-s-json-schema-may-be-named-in-the-sql.md)), which its package holds too: read plainly,
 through `json_query`, nested by `FOR JSON`, and through a temporary table, a view, a variable, a scalar function and
 `INSERT … EXEC` and `OUTPUT … INTO`. No part of it comes from a real system.
 
 | Column | Declared as |
 |---|---|
 | `parcels.parcel.options` | [`options.schema.json`](schemas/options.schema.json): an object with two required keys and three that may be left out, one of them nullable, an `enum`, `minLength` and `maxLength` |
-| `parcels.parcel.route` | [`stops.schema.json`](schemas/stops.schema.json), its definition `route`: an array of at least one stop, each of two kinds (`oneOf`, read as a union), each kind a `const` |
+| `parcels.parcel.route` | named in [`parcel.sql`](database/tables/parcel.sql): [`stops.schema.json`](schemas/stops.schema.json), its definition `route`: an array of at least one stop, each of two kinds (`oneOf`, read as a union), each kind a `const` |
 | `parcels.parcel.extra` | [`extra.schema.json`](schemas/extra.schema.json), which says nothing: any JSON ([decision 0094](../../../docs/decisions/0094-any-json-is-a-type-of-its-own.md)) |
 
 | Procedure | Covers |

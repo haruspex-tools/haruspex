@@ -256,11 +256,14 @@ internal sealed class SqlProject
         }
 
         // A column declared to hold JSON is part of the column's type, so inference reads it wherever the column is read; a
-        // declaration the project can't hold stops the run, before anything is inferred from it.
-        var columnProblems = ColumnDeclarationCheck.Check(config.Columns, model, (view, column) => IrInference.ViewColumnSources(model, view, column));
-        if (columnProblems.Count > 0)
-            return new Failed<IrDocument>([.. columnProblems]);
-        List<DeclaredColumn> columns = [.. config.Columns.Select(c => new DeclaredColumn(c.Table, c.Column, c.Content, c.Types, c.Record))];
+        // declaration the project can't hold stops the run, before anything is inferred from it. The SQL may name a column's
+        // schema too (haruspex.jsonSchema), declaring it as the config file does; where both do, they must agree (decision 0141).
+        IReadOnlyList<string> ViewSources(ObjectName view, string column) => IrInference.ViewColumnSources(model, view, column);
+        var (declaredColumns, annotationProblems) = ColumnAnnotations.Merge(config, model, ViewSources);
+        var columnProblems = ColumnDeclarationCheck.Check(config.Columns, model, ViewSources);
+        if (columnProblems.Count > 0 || annotationProblems.Any(d => d.IsError))
+            return new Failed<IrDocument>([.. columnProblems, .. annotationProblems]);
+        List<DeclaredColumn> columns = [.. declaredColumns.Select(c => new DeclaredColumn(c.Table, c.Column, c.Content, c.Types, c.Record))];
 
         var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
@@ -273,7 +276,8 @@ internal sealed class SqlProject
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
         var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns).Value;
         // Each script the locations point into is recorded with its hash, for explain to match a file against before it shows a line.
-        return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries))
+        var applied = inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries))
             .Select(document => document with { Source = document.Source with { Files = ScriptFiles.Of(document, folderOf) } });
+        return annotationProblems.Count == 0 ? applied : Outcome.Combine(new Succeeded<int>(0, [.. annotationProblems]), applied).Select(both => both.Second);
     }
 }

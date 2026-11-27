@@ -25,15 +25,20 @@ public static class ColumnDeclarationCheck
         var problems = new List<Diagnostic>();
         foreach (var declared in columns)
         {
-            if (Problem(declared, model, viewSources) is { } problem)
+            if (Problem(declared.Table, declared.Column, model, viewSources) is { } problem)
                 problems.Add(ConfigCodes.ColumnNotDeclarable.At(declared.At, problem));
         }
 
         return problems;
     }
 
-    private static string? Problem(ColumnDeclaration declared, DatabaseModel model, Func<ObjectName, string, IReadOnlyList<string>> viewSources)
+    /// <summary>
+    /// Why the project can't hold a declaration of <paramref name="column"/> of the table <paramref name="name"/>, as a clause; null when it
+    /// can. A declaration in the config file and one in the SQL (<see cref="ColumnAnnotations"/>) are held to the same rules.
+    /// </summary>
+    internal static string? Problem(ObjectName name, string column, DatabaseModel model, Func<ObjectName, string, IReadOnlyList<string>> viewSources)
     {
+        var declared = (Table: name, Column: column);
         switch ((SchemaObject?)model.FindTable(declared.Table) ?? model.FindReadable(declared.Table))
         {
             case View view:

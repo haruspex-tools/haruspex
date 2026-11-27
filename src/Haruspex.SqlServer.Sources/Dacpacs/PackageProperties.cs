@@ -19,9 +19,15 @@ internal static class PackageProperties
     /// </summary>
     /// <param name="element">The <c>SqlExtendedProperty</c> element.</param>
     /// <param name="package">The package's file name, for its location.</param>
-    /// <param name="views">The views the package defines: a column's host is a view's or else a table's.</param>
+    /// <param name="tables">The tables the package defines.</param>
+    /// <param name="views">The views it defines.</param>
+    /// <param name="tableFunctions">
+    /// The table functions it defines. A package names a table's, a view's and a table function's column alike
+    /// (<c>[SqlColumn].[shop].[f_lines].[doc].[…]</c>, observed with Microsoft.Build.Sql 2.3.0), so the owner says which, and a
+    /// column of an owner that is none of the three is passed over rather than taken as a table's.
+    /// </param>
     /// <param name="procedures">The procedures it defines: a parameter's host is a procedure's or else a function's.</param>
-    public static ExtendedProperty? Read(XElement element, string package, IReadOnlySet<ObjectName> views, IReadOnlySet<ObjectName> procedures)
+    public static ExtendedProperty? Read(XElement element, string package, IReadOnlySet<ObjectName> tables, IReadOnlySet<ObjectName> views, IReadOnlySet<ObjectName> tableFunctions, IReadOnlySet<ObjectName> procedures)
     {
         var parts = ElementName.Parts(ModelXml.Named(element));
         if (parts.Count < 4)
@@ -33,7 +39,7 @@ internal static class PackageProperties
             ("SqlTableBase", 4) => [new("SCHEMA", owner.Schema), new("TABLE", owner.Name)],
             ("SqlView", 4) => [new("SCHEMA", owner.Schema), new("VIEW", owner.Name)],
             ("SqlProcedure", 4) => [new("SCHEMA", owner.Schema), new("PROCEDURE", owner.Name)],
-            ("SqlColumn", 5) => [new("SCHEMA", owner.Schema), new(views.Contains(owner) ? "VIEW" : "TABLE", owner.Name), new("COLUMN", parts[3])],
+            ("SqlColumn", 5) when ColumnOwner(owner, tables, views, tableFunctions) is { } level => [new("SCHEMA", owner.Schema), new(level, owner.Name), new("COLUMN", parts[3])],
             ("SqlSubroutineParameter", 5) => [new("SCHEMA", owner.Schema), new(procedures.Contains(owner) ? "PROCEDURE" : "FUNCTION", owner.Name), new("PARAMETER", parts[3])],
             _ => null,
         };
@@ -44,6 +50,10 @@ internal static class PackageProperties
         var (read, text, why) = Value(ModelXml.Property(element, "Value"));
         return new ExtendedProperty(name, read ? text : null, [.. levels], at) { Unread = why };
     }
+
+    /// <summary>The level type of a column's owner: a table, a view or a table function; null for any other.</summary>
+    private static string? ColumnOwner(ObjectName owner, IReadOnlySet<ObjectName> tables, IReadOnlySet<ObjectName> views, IReadOnlySet<ObjectName> tableFunctions) =>
+        tables.Contains(owner) ? "TABLE" : views.Contains(owner) ? "VIEW" : tableFunctions.Contains(owner) ? "FUNCTION" : null;
 
     /// <summary>
     /// The value's text, from the literal the package holds; not read, saying why, when it isn't a string or NULL. An XML schema

@@ -390,6 +390,7 @@ each is for.
 - **The callers' session:** more claims when connections set `ANSI_WARNINGS` or hold `UNMASK` ([`session`](docs/configuration.md#the-callers-session-session)).
 - **Dynamic SQL:** results declared where the project can't show them ([declared results](docs/configuration.md#declared-results-results)).
 - **JSON columns:** JSON stored in a column, typed by a JSON Schema ([`columns`](docs/configuration.md#json-stored-in-a-column-columns)).
+- **JSON Schemas in the database:** a column's schema named in its scripts and DACPAC ([`haruspex.jsonSchema`](docs/configuration.md#naming-a-columns-schema-in-the-sql)).
 - **Overrides:** what the team knows and the database can't prove, and other names ([overrides](docs/configuration.md#overrides)).
 - **Descriptions:** the database's descriptions under a name of its own ([`descriptions`](docs/configuration.md#descriptions-descriptions)).
 - **A DACPAC built by another tool:** its key constraints, on your word ([`builds`](docs/configuration.md#a-package-built-by-another-tool-builds)).

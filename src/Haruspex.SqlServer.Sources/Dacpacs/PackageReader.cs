@@ -56,8 +56,10 @@ internal static class PackageReader
         var tables = new TableReader(package.Name, package.Origin, declaredBuild || package.Origin == PackageOrigin.Built, into.Diagnostics);
         var modules = new List<XElement>();
         var notModelled = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        var packageTables = Named(elements, ModelXml.SqlTable);
         var views = Named(elements, ModelXml.SqlView);
         var procedures = Named(elements, ModelXml.SqlProcedure);
+        HashSet<ObjectName> tableFunctions = [.. Named(elements, ModelXml.SqlInlineTableValuedFunction), .. Named(elements, ModelXml.SqlMultiStatementTableValuedFunction)];
         foreach (var element in elements)
         {
             var type = ModelXml.TypeOf(element);
@@ -84,7 +86,7 @@ internal static class PackageReader
                     into.Define(into.XmlSchemaCollections, collection.Name, collection, collection.Span.Start);
                     break;
                 case ModelXml.SqlExtendedProperty:
-                    if (PackageProperties.Read(element, package.Name, views, procedures) is { } property)
+                    if (PackageProperties.Read(element, package.Name, packageTables, views, tableFunctions, procedures) is { } property)
                         into.ExtendedProperties.Add(property);
                     break;
                 case var module when Modules.Contains(module):

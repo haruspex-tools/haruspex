@@ -219,8 +219,23 @@ public static class ConfigCodes
     /// </summary>
     public static DiagnosticCode SetsMiscounted { get; } = new(4112, Error, "Set names that don't match the result sets");
 
-    /// <summary>A column declared to hold JSON that can't: not a table's, computed, not of a string type, or not in the project.</summary>
+    /// <summary>
+    /// A column declared to hold JSON that can't: not a table's (a view's or a table function's), computed, not of a string type, or
+    /// not in the project; declared in the config file or in the SQL.
+    /// </summary>
     public static DiagnosticCode ColumnNotDeclarable { get; } = new(4113, Error, "A column that can't hold declared JSON");
+
+    /// <summary>The SQL names a column's JSON Schema (<c>haruspex.jsonSchema</c>) other than the one the config file declares it with.</summary>
+    public static DiagnosticCode AnnotationDisagrees { get; } = new(4114, Error, "A JSON Schema named in the SQL that disagrees with the config");
+
+    /// <summary>
+    /// A column's JSON Schema named in the SQL can't be read: its value isn't text, it is named twice, updated or dropped, or it
+    /// is on something the source doesn't define.
+    /// </summary>
+    public static DiagnosticCode AnnotationNotRead { get; } = new(4115, Error, "A JSON Schema named in the SQL that can't be read");
+
+    /// <summary>A JSON Schema named in the SQL on something other than a table's or view's column, such as a parameter, which haruspex doesn't read.</summary>
+    public static DiagnosticCode AnnotationNotDeclarable { get; } = new(4116, Warning, "A JSON Schema named in the SQL where haruspex doesn't read one");
 
     /// <summary>Declared results that disagree with what haruspex infers.</summary>
     public static DiagnosticCode DeclarationDisagrees { get; } = new(4201, Error, "Declared results disagree with the inference");
