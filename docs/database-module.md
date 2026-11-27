@@ -267,7 +267,7 @@ then it depends on the caller's session.
 What to know:
 
 - **A conversion is between the procedure's column and yours.** A value too long for a declared string is cut short, and an
-  integer too long is written `*`, so declare types that hold what the procedure returns. Where haruspex reads the procedure,
+  `int` too long for a `varchar` is written `*` (any other number too long fails the call), so declare types that hold what the procedure returns. Where haruspex reads the procedure,
   it warns of a declared column narrower than the procedure's ([HAR2104](diagnostics/HAR2104.md)) and of a declaration the
   procedure never matches, which fails every call ([HAR2105](diagnostics/HAR2105.md)).
 - **It renames top-level columns only.** Declaring a `FOR JSON` result as a column gives its text in pieces, a row for each,

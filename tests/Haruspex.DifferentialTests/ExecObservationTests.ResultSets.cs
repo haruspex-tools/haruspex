@@ -59,6 +59,35 @@ public partial class ExecObservationTests
         Assert.Equal(" ! 8114", (await Run(Declarable, "SET ANSI_WARNINGS OFF; SET ARITHABORT OFF; EXEC dbo.obs_one WITH RESULT SETS ((i tinyint NULL, n nvarchar(20)))")).ToString());
     }
 
+    [Theory]
+    [InlineData("tinyint", "200", "varchar(2)", "v: *")]
+    [InlineData("smallint", "1000", "char(3)", "v: *  ")]
+    [InlineData("int", "1000", "varchar(3)", "v: *")]
+    [InlineData("int", "1000", "nvarchar(3)", " ! 8114")]
+    [InlineData("smallint", "1000", "nchar(3)", " ! 8114")]
+    [InlineData("bigint", "1000", "varchar(3)", " ! 8114")]
+    [InlineData("decimal(5,0)", "1000", "varchar(3)", " ! 8114")]
+    public async Task Only_tinyint_smallint_and_int_too_long_for_char_or_varchar_are_written_as_a_star(string from, string value, string to, string outcome)
+    {
+        // Padded in a char, as any string is. Any other number too long for a string, and any number too long for nchar or
+        // nvarchar, fails the call (8114).
+        string[] setup = [$"CREATE PROCEDURE dbo.obs_number AS SELECT CAST({value} AS {from}) AS v;"];
+
+        Assert.Equal(outcome, (await Run(setup, $"EXEC dbo.obs_number WITH RESULT SETS ((v {to}))")).ToString());
+    }
+
+    [Fact]
+    public async Task A_binary_value_longer_than_its_declared_column_is_cut_short()
+    {
+        // Silently, without an error: the declared call's own rows, captured by INSERT … EXEC of a procedure that makes it.
+        string[] setup = [
+            "CREATE PROCEDURE dbo.obs_bytes AS SELECT 0x0102030405 AS v;",
+            "CREATE PROCEDURE dbo.obs_bytes_declared AS EXEC dbo.obs_bytes WITH RESULT SETS ((v varbinary(2)));",
+        ];
+
+        Assert.Equal("n,hex: 2,0x0102", (await Run(setup, "CREATE TABLE #obs_b (v varbinary(max)); INSERT INTO #obs_b EXEC dbo.obs_bytes_declared; SELECT DATALENGTH(b.v) AS n, CONVERT(varchar(20), b.v, 1) AS hex FROM #obs_b AS b;")).ToString());
+    }
+
     [Fact]
     public async Task A_column_declared_not_null_fails_the_call_on_a_null_after_the_rows_before_it()
     {

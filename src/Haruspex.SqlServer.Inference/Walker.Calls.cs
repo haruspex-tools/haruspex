@@ -242,7 +242,7 @@ internal sealed partial class Walker
         declaredUsed = Walked.Union(declaredUsed, walked.Declared);
         var own = target is ProcedureCall call ? Created(call.Procedure) : [];
         if (declared is not null)
-            return Declared(walked, declared, state, own, inserting, needEscapes, Text(execute), name?.ToString() ?? Text(execute), at);
+            return CallDeclared(walked, declared, state, own, inserting, needEscapes, Text(execute), name?.ToString() ?? Text(execute), at);
         if (needEscapes)
         {
             Escaped([.. walked.Escapes.Select(e =>

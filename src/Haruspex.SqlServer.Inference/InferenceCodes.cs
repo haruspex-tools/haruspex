@@ -28,7 +28,7 @@ public static class InferenceCodes
 
     /// <summary>
     /// A column <c>EXEC … WITH RESULT SETS</c> declares that doesn't hold every value of the callee's column it converts: a string
-    /// cut short, a number written <c>*</c> or failing the call, a type the callee's never converts to, or <c>NOT NULL</c> over a
+    /// cut short, an <c>int</c> written <c>*</c>, a number failing the call, a type the callee's never converts to, or <c>NOT NULL</c> over a
     /// column that may be null. A lint: the declaration still types the call, since the server enforces it.
     /// </summary>
     public static DiagnosticCode NarrowerDeclaredColumn { get; } = new(2104, DiagnosticSeverity.Warning, "A declared result column narrower than the callee's");

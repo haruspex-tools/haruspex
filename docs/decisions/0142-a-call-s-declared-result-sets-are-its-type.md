@@ -18,7 +18,7 @@ is reported (HAR2105). A declared column narrower than the callee's is a lint, r
 (HAR2104). Nothing about where a shape came from is recorded in the IR, so it needs no new version.
 
 The rules are observed on SQL Server 2025 in `ExecObservationTests.ResultSets.cs`: the count (11535, 11536), the width and a
-type with no conversion (11537, 11538, before any row), conversion as `CAST` converts (a string cut short, an int written `*`, an
+type with no conversion (11537, 11538, before any row), conversion as `CAST` converts (a string cut short, a `tinyint`, `smallint` or `int` too long for `char` or `varchar` written `*`, an
 error otherwise even under `ANSI_WARNINGS` off), `NOT NULL` (11553, after the rows before it), the default under
 `ANSI_NULL_DFLT_OFF`, the collation, dynamic SQL, errors caught by a caller's `CATCH`, the forms, and `INSERT … EXEC … WITH
 RESULT SETS`, a syntax error.

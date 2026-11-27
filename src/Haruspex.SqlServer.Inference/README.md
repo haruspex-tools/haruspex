@@ -574,9 +574,12 @@ is observed in `tests/Haruspex.DifferentialTests/ExecObservationTests.ResultSets
   fails, and on the others nothing arrives.
 - **So is each set's width**, and a type the callee's value can't convert to fails it too, both before any row (11537,
   11538: `A_set_of_another_width_or_of_a_type_with_no_conversion_fails_the_call_even_with_no_rows`).
-- **Each value is converted to its declared column as `CAST` converts it**: a string cut short and a `char` padded, an int
-  too long for a string written `*`, and anything that doesn't fit an error (8114), even under the caller's `ANSI_WARNINGS`
-  and `ARITHABORT` off (`A_declared_column_holds_each_value_converted_to_its_type`). So a column claims its type's facets, as
+- **Each value is converted to its declared column as `CAST` converts it**: a string or binary value cut short and a `char`
+  padded, a `tinyint`, `smallint` or `int` too long for a `char` or `varchar` written `*`, and anything else that doesn't fit
+  an error (8114), a `bigint` or a decimal too long for a string and any number too long for an `nchar` or `nvarchar` among
+  them, even under the caller's `ANSI_WARNINGS` and `ARITHABORT` off (`A_declared_column_holds_each_value_converted_to_its_type`,
+  `Only_tinyint_smallint_and_int_too_long_for_char_or_varchar_are_written_as_a_star`,
+  `A_binary_value_longer_than_its_declared_column_is_cut_short`). So a column claims its type's facets, as
   a value converted to it does (`SqlTypes.ToConvertedShape`), and nothing of the callee's value: not its value set, its
   bounds or its length.
 - **A `FOR JSON` result declared as a column arrives in pieces**, a row of at most 2,033 characters each, since a client joins
@@ -615,7 +618,7 @@ is observed in `tests/Haruspex.DifferentialTests/ExecObservationTests.ResultSets
 path of the callee returns as many sets, or every set it may return at a position is of another width, fails every time: no
 path continues past it, and it is reported (`HAR2105`, a warning). A declared column narrower than the callee's is a lint
 (`HAR2104`, a warning; the declaration still types the call): a string or binary value cut short, a number that may not fit
-(written `*` in a string, otherwise an error), a type the callee's never converts to, and `NOT NULL` over a column that may be
+(written `*` where the rule above says so, otherwise an error), a type the callee's never converts to, and `NOT NULL` over a column that may be
 null. A decimal rounded to fewer places, a date or time to fewer fractional digits, and national text into a code page that
 lacks some of its characters are not reported: each value still arrives, close to the callee's.
 

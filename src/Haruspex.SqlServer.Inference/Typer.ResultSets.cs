@@ -15,7 +15,7 @@ internal sealed partial class Typer
     /// <summary>
     /// The result set one definition of <c>WITH RESULT SETS</c> declares: a rowset of the declared columns, present whenever the
     /// call succeeds. Each value arrives converted to its column's type as <c>CAST</c> converts (a string cut short, an int too
-    /// long for a string written <c>*</c>, anything that doesn't convert an error), so a column claims its type's facts and
+    /// long for a <c>char</c> or <c>varchar</c> written <c>*</c>, anything that doesn't convert an error), so a column claims its type's facts and
     /// nothing of the callee's value. Only <c>NOT NULL</c> written in the declaration makes a column non-null: without either, a
     /// column follows the caller's <c>ANSI_NULL_DFLT</c>, and an alias type's <c>NOT NULL</c> is not applied.
     /// </summary>

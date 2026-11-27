@@ -38,7 +38,7 @@ internal sealed partial class Walker
     /// or the declaration's, leaves after any number of the declared sets, so each path the callee leaves or returns from
     /// reaches a CATCH that way.
     /// </summary>
-    private Called Declared(Walked walked, ResultTrack declared, FlowState state, ImmutableHashSet<LocalName> own, bool inserting, bool needEscapes, string call, string callee, SourceLocation at)
+    private Called CallDeclared(Walked walked, ResultTrack declared, FlowState state, ImmutableHashSet<LocalName> own, bool inserting, bool needEscapes, string call, string callee, SourceLocation at)
     {
         var end = walked.End;
         if (needEscapes)
@@ -103,13 +103,21 @@ internal sealed partial class Walker
         static string Columns(int n) => n == 1 ? "1 column" : $"{n} columns";
     }
 
+    /// <summary>
+    /// Whether a number too long for <paramref name="to"/> arrives as <c>*</c> rather than failing the call: a <c>tinyint</c>,
+    /// <c>smallint</c> or <c>int</c> into <c>char</c> or <c>varchar</c>, and nothing else (observed:
+    /// <c>Only_tinyint_smallint_and_int_too_long_for_char_or_varchar_are_written_as_a_star</c>).
+    /// </summary>
+    private static bool WrittenAsStar(ScalarType from, ScalarType to) =>
+        (from.Type == BuiltInType.TinyInt || from.Type == BuiltInType.SmallInt || from.Type == BuiltInType.Int) && to.IsString && !to.IsNational;
+
     /// <summary>The fields of each row of a rowset, of one shape; null for any other.</summary>
     private static Collections.EquatableArray<FieldShape>? Fields(Shape shape) => shape is ArrayShape { Items: ObjectShape row } ? row.Fields : null;
 
     /// <summary>
     /// Warns of a declared column that doesn't hold every value of the callee's it converts
     /// (<see cref="InferenceCodes.NarrowerDeclaredColumn"/>): a string or binary value cut short; a number that may not fit, so it
-    /// is written <c>*</c> in a string (observed) or fails the call; a type the callee's never converts to (11538); and
+    /// is written <c>*</c> (<see cref="WrittenAsStar"/>) or fails the call; a type the callee's never converts to (11538); and
     /// <c>NOT NULL</c> over a column that may be null (11553). A date or time rounded to fewer fractional digits, a decimal to
     /// fewer places, and national text into a code page that lacks some of its characters are not warned of: each value still
     /// arrives, close to the callee's.
@@ -132,7 +140,7 @@ internal sealed partial class Walker
             else if ((from.IsString || from.IsBinary) && (to.IsString || to.IsBinary))
                 why = !to.IsMax && (from.IsMax || to.Length < from.Length) ? $"a value of {from.Text} is cut short" : null;
             else if (!Conversions.Converts(Operand.OfType(from), to))
-                why = $"a value of {from.Text} may not fit, so {(from.IsInteger && to.IsString ? "it is written *" : "the call fails (8114)")}";
+                why = $"a value of {from.Text} may not fit, so {(WrittenAsStar(from, to) ? "it is written *" : "the call fails (8114)")}";
         }
 
         if (why is null && declared.NullableBecause.Count == 0 && returned.NullableBecause.Count > 0)

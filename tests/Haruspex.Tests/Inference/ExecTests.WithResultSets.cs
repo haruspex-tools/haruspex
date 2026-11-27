@@ -209,6 +209,25 @@ public partial class ExecTests
         Assert.True(results[1].MayBeAbsent);
     }
 
+    [Theory]
+    [InlineData("dbo.q2")]
+    [InlineData("dbo.nowhere")]
+    public void An_error_after_the_first_of_two_declared_sets_reaches_catch_with_that_set_sent(string callee)
+    {
+        // Observed: An_error_with_result_sets_raises_is_caught_by_the_callers_catch_after_the_sets_already_sent (11536 after one
+        // set). So CATCH's set may arrive first, second or third.
+        var doc = Infer(
+            ("q2", "CREATE PROCEDURE dbo.q2 AS SELECT t.id FROM dbo.t AS t; SELECT t.code FROM dbo.t AS t;"),
+            ("p", $"CREATE PROCEDURE dbo.p AS BEGIN TRY EXEC {callee} WITH RESULT SETS ((a int NOT NULL), (b int NOT NULL)); END TRY BEGIN CATCH SELECT t.id AS c FROM dbo.t AS t; END CATCH"));
+
+        var results = Results(doc);
+        Assert.Equal(3, results.Count);
+        string[] Variants(IrResult result) => result.Type is IrUnion union ? [.. union.Variants.SelectMany(v => Names(doc, v)).Order(StringComparer.Ordinal)] : Names(doc, result.Type);
+        Assert.Equal(["a", "c"], Variants(results[0]));
+        Assert.Equal(["b", "c"], Variants(results[1]));
+        Assert.Equal(["c"], Variants(results[2]));
+    }
+
     [Fact]
     public void As_object_and_as_type_take_a_table_s_and_a_table_type_s_columns_and_their_not_null()
     {
@@ -278,6 +297,9 @@ public partial class ExecTests
     [InlineData("n tinyint", "SELECT t.id AS n FROM dbo.t AS t", "the call fails (8114)")]
     [InlineData("n int NOT NULL", "SELECT t.qty AS n FROM dbo.item AS t", "11553")]
     [InlineData("n date", "SELECT t.id AS n FROM dbo.t AS t", "never converts")]
+    [InlineData("n varbinary(2)", "SELECT CONVERT(varbinary(5), t.id) AS n FROM dbo.t AS t", "cut short")]
+    [InlineData("n nvarchar(3)", "SELECT t.id AS n FROM dbo.t AS t", "the call fails (8114)")]
+    [InlineData("n varchar(3)", "SELECT CONVERT(bigint, t.id) AS n FROM dbo.t AS t", "the call fails (8114)")]
     public void A_declared_column_narrower_than_the_callee_s_is_warned_of(string column, string query, string consequence)
     {
         var run = Run(
