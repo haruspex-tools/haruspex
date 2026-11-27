@@ -2060,19 +2060,28 @@ that calls an endpoint of the tests' own (the differential tests' `Server/Rest`)
 envelope of the server's own. The procedure is in the catalogue of system procedures ("Calls", above): it returns no result set,
 and its return code is 0 for a 2xx status and the status otherwise. What it writes was observed:
 
-- **A response of any status is written**, an error's too, so after a call that returns `@response` is never NULL. A call that
-  fails (no endpoint, a timeout, a body it can't parse, an argument it refuses) raises an error and leaves `@response` and the
-  return code as they were, so a `CATCH` reads them as they were before the call.
+- **A response of any status is written**, an error's too. A call that fails (no endpoint, a timeout, a body it can't parse, an
+  argument it refuses) raises an error that ends the batch and leaves `@response` as it was, so a `CATCH` reads it as it was
+  before the call. One doesn't end the batch: `@headers` text that isn't JSON returns 1 before anything is sent, and the caller
+  goes on with `@response` as it was. So the call surely sets `@response`, never NULL, only where every text `@headers` may be
+  is JSON (`RestCalls.IsJson`); elsewhere the assignment may not happen, as a `SELECT` over no rows may not.
+- **No header proves the reply is JSON.** Read plainly, `@response` is a string of its declared type. It holds the envelope only
+  as JSON text (`JsonPiece`, as "JSON assembled as text" reads it), which only a JSON function reads, and each raises 13609 on the
+  XML form (`Every_json_function_over_the_xml_form_is_an_error`); so what a JSON function finds there holds of every call that
+  returns a value, though another build may answer a JSON request in XML.
 - **`@headers` chooses the format** by its Accept key, of any case, and its value, of any case: none, or `application/json`,
   gives JSON whose `result` is the body parsed, always an object or an array (any other body fails the call, 11558);
   `text/plain`, `text/xml`, `text/html` and `text/csv` give JSON whose `result` is the body as a string; `application/xml` gives
   XML. `@headers` is read from the text the SQL builds (`SentText`, from the pieces "JSON assembled as text" describes): literals,
   `CASE`, `COALESCE`, variables. Where its text isn't known, or its Accept is of a form not observed, the format isn't, and
-  `@response` is read as its declared string, saying why.
+  `@response` holds no JSON a function reads, saying why. Text `json_object` builds isn't read: it writes `/` as `\/`, which the
+  service receives as written, though the Accept that chooses the form is read decoded.
 - **The envelope**, as JSON: `{"response":{"status":{"http":{"code","description"}},"headers":{…}},"result":…}`. `code` is an
   integer; `description` a string, empty when the reply gives no reason phrase; `headers` an object whose keys are data and whose
   values are strings, perhaps none, perhaps a key twice; `result` the body, left out when the body is empty (a 204, a `HEAD`, a
-  200 with no body). So `JSON_VALUE(@response, '$.response.status.http.code')` is never NULL, and anything under `$.result` may be.
+  200 with no body). So `JSON_VALUE(@response, '$.response.status.http.code')` is never NULL where `@response` is surely set,
+  and anything under `$.result` may be. The procedure writes the envelope with `JSON_MODIFY`, which leaves out a key whose value is
+  NULL; every reply observed had a code, a description and headers.
 - **Only `nvarchar(max)` holds it whole.** A shorter variable holds the text cut short without an error, so its JSON isn't read.
 - **`result` is the service's.** Nothing in the project proves what a service returns, so `result` is unknown, saying why,
   unless the config file declares the endpoint's response (`endpoints`, `DeclaredEndpoints`). `JSON_VALUE` over an unknown

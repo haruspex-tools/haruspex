@@ -176,4 +176,89 @@ public class RestEndpointObservationTests
     [InlineData("nvarchar(max)", "1")]
     public async Task A_variable_shorter_than_max_holds_the_response_cut_short_without_an_error(string type, string json) =>
         Assert.Equal($"rc,r: 0,{json}", (await RestServer.RunAsync(Call($"@url = N'{Endpoint}/plans/1', @method = N'GET'", "ISJSON(@r)", type))).ToString());
+
+    [Theory]
+    [InlineData("N'not json'")]
+    [InlineData("N''")]
+    [InlineData("N'1'")]
+    public async Task Headers_that_are_not_json_return_1_and_the_caller_goes_on_with_response_as_it_was(string headers) =>
+        // ISJSON(@headers) = 0 raises 11558 and returns 1 before the procedure's TRY, so outside a TRY the batch goes on. Every
+        // other failure ends it.
+        Assert.Equal(
+            "rc,r: 1,before ~ 11558",
+            (await RestServer.RunAsync($"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max) = N'before', @rc int = -1;
+                EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = N'{Endpoint}/plans/1', @method = N'GET', @headers = {headers}, @response = @r OUTPUT;
+                SELECT @rc AS rc, @r AS r;
+                """, errorsAsMessages: true)).ToString());
+
+    [Theory]
+    [InlineData("@method = N'GET', @headers = N'[1]'", 31620)]
+    [InlineData("@method = N'FETCH'", 31605)]
+    [InlineData("@method = N'POST', @payload = N'not json'", 11558)]
+    [InlineData("@method = N'GET', @timeout = 0", 31604)]
+    public async Task Any_other_failure_ends_the_batch(string arguments, int error) =>
+        Assert.Equal(
+            $" ! {error}",
+            (await RestServer.RunAsync($"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max) = N'before', @rc int = -1;
+                EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = N'{Endpoint}/plans/1', {arguments}, @response = @r OUTPUT;
+                SELECT @rc AS rc, @r AS r;
+                """)).ToString());
+
+    [Fact]
+    public async Task Every_json_function_over_the_xml_form_is_an_error() =>
+        // 13609 from JSON_VALUE, lax or strict, json_query with or without a path, and OPENJSON with or without WITH; ISJSON is 0.
+        // Each failing SELECT sends its columns, and no row, before the error.
+        Assert.Equal(
+            "isj: 0 | v:  | e: 13609 | v:  | e: 13609 | v:  | e: 13609 | v:  | e: 13609 | key:  | e: 13609 | c:  | e: 13609",
+            (await RestServer.RunAsync($$"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max);
+                EXEC sys.sp_invoke_external_rest_endpoint @url = N'{{Endpoint}}/plans/1', @method = N'GET', @headers = N'{"Accept":"application/xml"}', @response = @r OUTPUT;
+                SELECT ISJSON(@r) AS isj;
+                BEGIN TRY SELECT JSON_VALUE(@r, '$.response.status.http.code') AS v; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                BEGIN TRY SELECT JSON_VALUE(@r, 'strict $.response') AS v; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                BEGIN TRY SELECT JSON_QUERY(@r, '$.result') AS v; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                BEGIN TRY SELECT JSON_QUERY(@r) AS v; END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                BEGIN TRY SELECT [key] FROM OPENJSON(@r); END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                BEGIN TRY SELECT c FROM OPENJSON(@r) WITH (c int '$.response.status.http.code'); END TRY BEGIN CATCH SELECT ERROR_NUMBER() AS e; END CATCH
+                """)).ToString());
+
+    [Fact]
+    public async Task A_header_is_sent_as_the_text_json_object_writes_and_accept_is_read_decoded() =>
+        // json_object writes / as \/ and " as \": the service receives that text. The Accept that chooses the form is decoded, so
+        // json_object's application\/xml still asks for XML.
+        Assert.Equal(
+            "path,quote: \\/a\\/b,say \\\"hi\\\" | form: xml",
+            (await RestServer.RunAsync($$"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max), @h nvarchar(4000) = JSON_OBJECT('X-Path': '/a/b', 'X-Quote': 'say "hi"');
+                EXEC sys.sp_invoke_external_rest_endpoint @url = N'{{Endpoint}}/echo', @method = N'GET', @headers = @h, @response = @r OUTPUT;
+                SELECT JSON_VALUE(@r, '$.result.headers."x-path"') AS path, JSON_VALUE(@r, '$.result.headers."x-quote"') AS quote;
+                SET @h = JSON_OBJECT('Accept': 'application/xml');
+                EXEC sys.sp_invoke_external_rest_endpoint @url = N'{{Endpoint}}/plans/1', @method = N'GET', @headers = @h, @response = @r OUTPUT;
+                SELECT IIF(@r LIKE N'<output>%', 'xml', 'json') AS form;
+                """)).ToString());
+
+    [Fact]
+    public async Task On_this_build_an_xml_answer_to_a_json_request_fails_or_leaves_result_out() =>
+        // SQL Server 2025 RTM-CU10: only Accept application/xml gives the XML form. Another build has given it for an XML answer to
+        // a JSON request, so no request header is read as proof the reply is JSON (decision 0140).
+        Assert.Equal(
+            "error: 11558 | rc,keys: 500,response",
+            (await RestServer.RunAsync($"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max), @rc int;
+                BEGIN TRY
+                    EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = N'{Endpoint}/xml', @method = N'GET', @response = @r OUTPUT;
+                END TRY
+                BEGIN CATCH
+                    SELECT ERROR_NUMBER() AS error;
+                END CATCH
+                EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = N'{Endpoint}/xml500', @method = N'GET', @response = @r OUTPUT;
+                SELECT @rc AS rc, (SELECT STRING_AGG([key], ',') FROM OPENJSON(@r)) AS keys;
+                """)).ToString());
 }

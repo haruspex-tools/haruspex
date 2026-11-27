@@ -9,7 +9,10 @@ config file declares for the endpoint (`endpoints`), recorded as declared, never
 - **What the server decides, observed.** The procedure returns no result set. Its return code is 0 for a 2xx status and the status
   otherwise (302, 404, 500 and 599 observed); a redirect is not followed. A response of any status sets `@response`; a call that
   fails raises an error (a body that is a scalar or not JSON 11558, no endpoint 31608, a timeout 31629, plain HTTP 31610, an unknown
-  method 31605, an Accept it refuses 31638) and leaves `@response` and the return code as they were.
+  method 31605, an Accept it refuses 31638, headers that are JSON but not an object 31620) and ends the batch, leaving
+  `@response` as it was for a `CATCH`. One failure lets the caller go on: `@headers` text that isn't JSON (`ISJSON(@headers) = 0`,
+  checked before the procedure's own `TRY`) raises 11558 and returns 1, sending nothing and leaving `@response` as it was. So a
+  call surely sets `@response` only where every text `@headers` may be is JSON; elsewhere `@response` may keep its earlier value.
 - **`@response`'s envelope.** With JSON accepted (no `@headers`, NULL, an object without Accept, or Accept of
   `application/json`, its key and value compared without case), `@response` is the object
   `{"response":{"status":{"http":{"code","description"}},"headers":{…}},"result":…}`: `code` an integer, `description` a string
@@ -17,7 +20,18 @@ config file declares for the endpoint (`endpoints`), recorded as declared, never
   the body, left out when the body is empty (204, HEAD, and a 200 with no body). With JSON accepted, `result` is always an object
   or an array. `Accept: application/xml` gives XML instead, and `text/plain`, `text/xml`, `text/html` and `text/csv` give the body
   as a JSON string. The text is cut short without an error when the caller's variable is shorter than `nvarchar(max)`, so only a
-  variable of `nvarchar(max)` holds the envelope as JSON.
+  variable of `nvarchar(max)` holds the envelope as JSON. The procedure builds the envelope with `JSON_MODIFY`, which leaves a key
+  out where its value is NULL; every reply observed gave `code`, `description` and `headers`, and only `result` was left out.
+- **No request header proves the reply is JSON.** On SQL Server 2025 CU10 only `Accept: application/xml` gives the XML form
+  (`<output><response><status><http code=… description=…/>…</response><result>…</result></output>`), and an XML answer to a request
+  that accepts JSON fails (11558) or leaves `result` out. But another build has given the XML form for a service's XML answer to a
+  request with `Accept: application/json`, so the headers are read only for what a JSON reader finds. `@response` stays a string of
+  its declared type wherever it is read as one, and holds the envelope only as JSON text (`JsonPiece`), which only a JSON function
+  reads: `JSON_VALUE` (lax or strict), `json_query` and `OPENJSON` each raise 13609 on the XML form (observed), so a claim made
+  through them, the envelope's nulls and a declared response alike, holds of every call that returns a value, and is wrong of none.
+  `ISJSON` stays 0 or 1. The Accept that chooses the form is read decoded, as the server reads it (`application\/xml`, which
+  `json_object` writes, asks for XML), while a header's value is sent as the text it is: `json_object` writes `/` as `\/`, and
+  the service receives `\/`. No header's value is claimed, and `@headers` built by `json_object` is not read.
 - **The declaration.** `"endpoints": [{ "url": "https://billing.example/plans/{id}", "method": "GET", "response":
   "schemas/plan.json" }]`. The response's schema describes `result` for every status, since an error's body is there too; a
   service whose error bodies differ declares a union.

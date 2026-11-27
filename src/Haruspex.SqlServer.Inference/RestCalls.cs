@@ -44,7 +44,10 @@ internal static class RestCalls
     /// JSON, <c>application/xml</c> XML, <c>text/plain</c>, <c>text/xml</c>, <c>text/html</c> or <c>text/csv</c> the body as a
     /// string (observed: Accept_decides_whether_the_response_is_json_and_whether_result_is_the_body_parsed_or_a_string). No
     /// <c>Accept</c> is JSON; two are not read. Any other value either fails the call (31638) or was not observed. Text that isn't
-    /// a JSON object fails the call (11558), so it describes no response.
+    /// a JSON object writes no response (<see cref="IsJson"/>), so it adds no format. The value is read decoded, as the server
+    /// reads it, so <c>application\/xml</c>, which <c>json_object</c> writes, is XML (observed:
+    /// A_header_is_sent_as_the_text_json_object_writes_and_accept_is_read_decoded). No format is proof the reply is JSON: it
+    /// says only what a JSON function over <c>@response</c> finds where the text is JSON.
     /// </summary>
     public static (Format? Format, string Why) Accepted(IReadOnlyList<string>? headers)
     {
@@ -64,6 +67,26 @@ internal static class RestCalls
         return (chosen ?? Format.Json, "");
     }
 
+    /// <summary>
+    /// Whether <c>@headers</c> of <paramref name="headers"/> passes the procedure's first check, <c>ISJSON(@headers)</c>, cut to the
+    /// 4,000 characters the parameter holds: any JSON text. Text that isn't JSON returns 1 and leaves <c>@response</c> as it was.
+    /// .NET's parser stands in for the server's here: where the two may differ, on text SQL Server accepts and .NET doesn't, the call
+    /// is read as one that may not set <c>@response</c>, which claims less.
+    /// </summary>
+    public static bool IsJson(string headers)
+    {
+        ArgumentNullException.ThrowIfNull(headers);
+        try
+        {
+            using var document = JsonDocument.Parse(headers.Length > ArgumentLength ? headers[..ArgumentLength] : headers);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     private static Format? AcceptedBy(string headers, out string why)
     {
         why = "";
@@ -71,7 +94,7 @@ internal static class RestCalls
         {
             using var document = JsonDocument.Parse(headers);
             if (document.RootElement.ValueKind != JsonValueKind.Object)
-                return Format.Json; // Not an object: the call fails, so the format is any.
+                return Format.Json; // JSON but not an object: the call fails (31620), so the format is any.
             var accepts = document.RootElement.EnumerateObject().Where(p => p.Name.Equals("Accept", StringComparison.OrdinalIgnoreCase)).ToList();
             if (accepts.Count == 0)
                 return Format.Json;
@@ -96,7 +119,7 @@ internal static class RestCalls
         }
         catch (JsonException)
         {
-            return Format.Json; // Not JSON: the call fails (11558), so the format is any.
+            return Format.Json; // Not JSON: the call returns 1 before writing @response (IsJson), so the format is any.
         }
     }
 

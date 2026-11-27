@@ -709,9 +709,13 @@ SELECT JSON_VALUE(@response, '$.result.name') AS name, JSON_QUERY(@response, '$.
   at run time (a parameter the application passes, a column), text that may match no declaration or more than one, or a
   variable that may cut the URL short. A NULL that `+` treats as empty (unless [the callers' session](#the-callers-session-session)
   sets `CONCAT_NULL_YIELDS_NULL` on) or that `CONCAT` drops is a URL too: `…/plans/` matches nothing above.
-- **The envelope is typed either way**: `JSON_VALUE(@response, '$.response.status.http.code')` is never NULL after a call that
-  returns, and anything under `$.result` may be, since a reply with no body leaves it out. Only a `@response` of
-  `nvarchar(max)` holds it whole, and `@headers` must accept JSON: no Accept, or `application/json`.
+- **The envelope is typed either way**, where a JSON function reads `@response`: `JSON_VALUE(@response,
+  '$.response.status.http.code')` is never NULL after a call that surely sets it, and anything under `$.result` may be, since a reply
+  with no body leaves it out. Only a `@response` of `nvarchar(max)` holds it whole, and `@headers` must accept JSON: no Accept, or
+  `application/json`, written as literal text. Read plainly, `@response` stays a string: no request header proves the reply is
+  JSON, and a JSON function raises an error on the XML form, which is how every claim made through one stays true.
+- **`@headers` that may not be JSON text** (a parameter, text built at run time) may leave `@response` as it was: such a call
+  returns 1 without sending anything, and the procedure goes on.
 - **The IR records each declaration** with the SHA-256 of every schema file it read, so a changed declaration or schema file is a
   change `check` reports, and each object whose results may hold a declared response lists the claim (`endpoint-json`, its
   `via` the method and URL). A declaration is a claim about someone else's service, which the generated validator checks on every

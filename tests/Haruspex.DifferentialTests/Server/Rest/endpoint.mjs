@@ -26,6 +26,7 @@ https.createServer(certificate, (request, response) => {
     switch (path) {
       case '/text': return text(200, 'text/plain', 'plain words');
       case '/xml': return text(200, 'application/xml', '<a><b>1</b></a>');
+      case '/xml500': return text(500, 'application/xml', '<error>down</error>');
       case '/empty': return text(204, null, '');
       case '/empty200': return text(200, 'application/json', '');
       case '/broken': return text(200, 'application/json', '{not json');
@@ -33,7 +34,7 @@ https.createServer(certificate, (request, response) => {
       case '/null': return text(200, 'application/json', 'null');
       case '/number': return text(200, 'application/json', '42');
       case '/slow': return setTimeout(() => json(200, { slow: true }), 10000);
-      case '/echo': return json(200, { method: request.method, target: request.url, body });
+      case '/echo': return json(200, { method: request.method, target: request.url, headers: request.headers, body });
       default: return json(200, { name: 'plan', target: request.url });
     }
   });

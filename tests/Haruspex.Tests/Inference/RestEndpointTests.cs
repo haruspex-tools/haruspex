@@ -23,14 +23,50 @@ public partial class RestEndpointTests
     private const string Plans = "@url = N'https://billing.example/plans', @method = N'GET'";
 
     [Fact]
-    public void Response_is_json_text_of_the_envelope_never_null_and_its_result_may_be_left_out()
+    public void Response_read_plainly_is_its_declared_string_never_null()
     {
+        // No request header proves the reply is JSON: another build answers XML whatever was accepted, so the text is a string.
         var doc = Call(Plans, "SELECT @response AS response;");
 
-        var envelope = Assert.IsType<IrJsonText>(Field(doc, "response").Type).Content!;
+        Assert.Equal(IrScalarKind.String, Assert.IsType<IrScalar>(Field(doc, "response").Type).Kind);
         Assert.False(Field(doc, "response").Nullable);
+    }
+
+    [Fact]
+    public void A_json_function_reads_the_envelope_whose_result_may_be_left_out()
+    {
+        // Each JSON function raises 13609 on the XML form, so what it reads holds wherever it returns.
+        var doc = Call(Plans, "SELECT JSON_QUERY(@response) AS envelope;");
+
+        var envelope = Assert.IsType<IrJsonText>(Field(doc, "envelope").Type).Content!;
         Assert.Equal(["response", "result"], Fields(doc, envelope).Select(f => f.Name));
         Assert.Equal(IrPresence.Optional, Fields(doc, envelope)[1].Presence);
+    }
+
+    [Theory]
+    [InlineData("", false)]
+    [InlineData(", @headers = NULL", false)]
+    [InlineData(", @headers = N'{}'", false)]
+    [InlineData(", @headers = N'[1]'", false)]
+    [InlineData(", @headers = N'not json'", true)]
+    [InlineData(", @headers = N''", true)]
+    [InlineData(", @headers = @headers", true)]
+    [InlineData(", @headers = @chosen", true, "JSON_OBJECT('Accept':'application/json')")]
+    public void Headers_that_may_not_be_json_may_leave_response_as_it_was(string headers, bool nullable, string chosen = "N'{}'")
+    {
+        // ISJSON(@headers) = 0 returns 1 before the call, and the caller goes on; JSON that isn't an object fails the call (31620).
+        var doc = Call(Plans + headers, "SELECT @response AS response;", chosen: chosen);
+
+        Assert.Equal(nullable, Field(doc, "response").Nullable);
+    }
+
+    [Fact]
+    public void A_header_built_by_json_object_is_not_read()
+    {
+        // json_object writes / as \/, and the procedure sends a header's value as that text, so its text is not followed.
+        var doc = Call(Plans + ", @headers = @chosen", "SELECT JSON_QUERY(@response, '$.response') AS response;", chosen: "JSON_OBJECT('Accept':'application/json')");
+
+        Assert.Contains("whether the response is JSON or XML is not known", Assert.Single(doc.Unknowns).Detail, StringComparison.Ordinal);
     }
 
     [Fact]

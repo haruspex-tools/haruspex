@@ -415,10 +415,10 @@ internal sealed partial class Walker
             {
                 // The reason names the callee's parameter as the call writes it (@p = @v OUTPUT), or the call.
                 var variable = Resolved(output).Name;
-                var value = rest is not null && ReferenceEquals(parameter, response)
+                var (value, surely) = rest is not null && ReferenceEquals(parameter, response)
                     ? RestResponse(execute, rest, variable, before)
-                    : Nulls(variable, [new IrNullReason(IrNullRule.Parameter, FragmentText.OneLine((TSqlFragment?)parameter.Variable ?? execute))]);
-                state = Assign(state, variable, value, definitely: true, at);
+                    : (Nulls(variable, [new IrNullReason(IrNullRule.Parameter, FragmentText.OneLine((TSqlFragment?)parameter.Variable ?? execute))]), true);
+                state = Assign(state, variable, value, definitely: surely, at);
             }
         }
 

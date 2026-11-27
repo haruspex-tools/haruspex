@@ -14,43 +14,60 @@ namespace Haruspex.SqlServer.Inference;
 internal sealed partial class Walker
 {
     /// <summary>
-    /// What a call of the REST procedure that returns sets <paramref name="variable"/>, passed as its <c>@response</c>, to: never
-    /// NULL, since a response of any status is written there (observed:
-    /// Response_holds_the_status_the_headers_and_the_body_as_result), and a call that fails leaves it as it was, on a path that
-    /// doesn't come here. JSON text of the envelope when the call accepts JSON and the variable holds the whole text; otherwise its
-    /// declared type, carrying why its JSON is not known.
+    /// What a call of the REST procedure that returns sets <paramref name="variable"/>, passed as its <c>@response</c>, to, and
+    /// whether it surely sets it. A response of any status is written there (observed:
+    /// Response_holds_the_status_the_headers_and_the_body_as_result), so it is never NULL where it is set; a call that fails
+    /// raises an error and leaves it as it was. One failure lets the caller go on: <c>@headers</c> text that isn't JSON raises
+    /// 11558 and returns 1 before anything is sent, leaving <c>@response</c> as it was (observed:
+    /// Headers_that_are_not_json_return_1_and_the_caller_goes_on_with_response_as_it_was), so the call surely sets it only where
+    /// every text <c>@headers</c> may be is JSON.
     /// </summary>
-    private Value RestResponse(ExecuteSpecification execute, SystemProcedure procedure, LocalName variable, FlowState state)
+    /// <remarks>
+    /// The variable stays a string of its declared type wherever it is read as one: no request header proves the reply is JSON
+    /// (on another build a service's XML answer gives the XML form whatever the request accepted). Where the call accepts JSON
+    /// and the variable holds the whole text, it holds the envelope as JSON text (<see cref="JsonPiece"/>), which only a JSON
+    /// function reads; each of them raises 13609 on the XML form (observed:
+    /// Every_json_function_over_the_xml_form_is_an_error), so what it claims holds of every call that returns a value.
+    /// </remarks>
+    private (Value Value, bool Surely) RestResponse(ExecuteSpecification execute, SystemProcedure procedure, LocalName variable, FlowState state)
     {
         var at = At(execute);
         var declared = variableShapes.TryGetValue(variable, out var shape) ? shape : new NeverShape(at);
         var arguments = procedure.Arguments(execute);
         var scope = Reading(state);
 
+        var headers = arguments.GetValueOrDefault("@headers")?.ParameterValue;
+        (RestCalls.Format? Format, string Why) accepted;
+        bool surely;
+        if (headers is null || Strip(headers) is NullLiteral)
+        {
+            (accepted, surely) = (RestCalls.Accepted(null), true);
+        }
+        else if (Texts(headers, scope, out var unread) is { } sent)
+        {
+            (accepted, surely) = (RestCalls.Accepted(sent), sent.All(RestCalls.IsJson));
+        }
+        else
+        {
+            (accepted, surely) = ((null, unread), false);
+        }
+
         // A variable shorter than max holds the text cut short, without an error (observed:
         // A_variable_shorter_than_max_holds_the_response_cut_short_without_an_error).
         if (declared is not ScalarShape { BuiltIn: { IsMax: true } type } || type.Type != BuiltInType.NVarChar)
-            return NotJson($"{variable} is not nvarchar(max), so the response is cut short when it is longer");
+            return (NotJson($"{variable} is not nvarchar(max), so the response is cut short when it is longer"), surely);
 
-        var headers = arguments.GetValueOrDefault("@headers")?.ParameterValue;
-        (RestCalls.Format? Format, string Why) accepted;
-        if (headers is null || Strip(headers) is NullLiteral)
-            accepted = RestCalls.Accepted(null);
-        else if (Texts(headers, scope, out var unread) is { } sent)
-            accepted = RestCalls.Accepted(sent);
-        else
-            accepted = (null, unread);
         var (format, why) = accepted;
-        return format switch
+        return (format switch
         {
             null => NotJson($"whether the response is JSON or XML is not known: {why}"),
             RestCalls.Format.Xml => NotJson("its @headers accept application/xml, so the response is XML"),
             RestCalls.Format.Text => Json(RestCalls.AnyString),
             _ => Json(Response(execute, arguments, scope, at)),
-        };
+        }, surely);
 
         Value Json(Shape result) =>
-            Value.Computed(new JsonTextShape(RestCalls.Envelope(result, at)) { Text = (ScalarShape)declared }, []);
+            Value.Computed(declared, []) with { Pieces = [new JsonPiece(RestCalls.Envelope(result, at))] };
 
         Value NotJson(string reason) =>
             Value.Computed(declared, []) with { JsonWhy = Unsupported(IrUnknownReason.JsonShapeUnknown, $"{variable} holds the response of {Text(execute)}, which is not read as JSON: {reason}.", at) };
