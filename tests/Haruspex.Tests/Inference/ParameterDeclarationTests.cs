@@ -328,6 +328,23 @@ public class ParameterDeclarationTests
     }
 
     [Fact]
+    public void A_scalar_function_s_default_is_read_beside_its_declaration()
+    {
+        // shop.p calls it with DEFAULT, so the body reads {"mode":"warp"}, which the schema's enum doesn't allow.
+        var doc = Run(
+            """
+            CREATE FUNCTION shop.mode_doc(@doc nvarchar(max) = N'{"mode":"warp"}') RETURNS nvarchar(max) WITH RETURNS NULL ON NULL INPUT
+            AS BEGIN RETURN json_query(@doc); END;
+            GO
+            CREATE PROCEDURE shop.p AS SELECT json_value(shop.mode_doc(DEFAULT), '$.mode') AS mode;
+            """,
+            parameters: """ "shop.mode_doc.@doc": { "json": "schemas/order.schema.json" } """,
+            selected: "shop.p").Expected();
+
+        Assert.Contains("warp", Values(FieldOf(doc, "shop.p", "mode")));
+    }
+
+    [Fact]
     public void An_inline_function_called_with_default_reads_the_default_not_the_declaration()
     {
         var doc = Run(
