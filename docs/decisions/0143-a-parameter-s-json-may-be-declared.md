@@ -28,6 +28,12 @@ every caller, not a fact, and is recorded as declared, never as proven.
   `null` (HAR3115): SQL Server's JSON functions refuse the text `null`, and a caller with no value sends NULL.
 - **Agreement.** Where the config file and the SQL both declare a parameter, they must name the same file and pointer; otherwise
   the run stops (HAR4114) and neither is taken.
+- **The generated function takes the value** (the maintainer's choice, 27 Nov 2026): the parameters' Zod schema checks it against
+  the declared schema, serialises it with `JSON.stringify`, and checks the text as the parameter's type checks any text sent to it
+  (its length; for `varchar`, what its collation says of the code page), so the function sends the text. The parameters' exported
+  type is `z.input` of the schema where a parameter is declared, the value a caller passes, and `z.infer` elsewhere, where the two
+  are the same. The schema of the declared JSON is the module's schema of that type, as a result's JSON is read, so a closed
+  object's unlisted key is removed (or refused under `"objects": "strict"`) and an open one's kept.
 - **IR 0.37.** The document's `parameters` lists each declaration its objects take or rest on, with the hash of every schema file
   it read, so `check` reports a changed schema file, a changed, added or removed annotation, or a changed config entry. A
   parameter's `content` is what a non-null value of it parses to; its `type` stays its SQL type, which still bounds the text sent.
@@ -47,6 +53,8 @@ in the SQL and left a parameter's annotation as a warning (HAR4116) until the in
   reads may come later and be checked against it.
 - *Under `procedures`, by parameter name.* `procedures` keys a procedure only, and a function's parameter needs declaring too. A
   top-level `parameters` keyed `schema.object.@name` serves both, and mirrors `columns`.
+- *The generated function takes the text*, checked against the schema by parsing it. The caller keeps its bytes, but writes and
+  reads the JSON itself, and the function's type says only `string`.
 - *Record every declaration in every document*, as `columns` does. A declaration of another procedure's parameter says nothing of
   a document's objects, and would move every document to 0.37 for nothing.
 - *Record only the bodies that read the parameter.* Which value a result holds is not followed back to the parameter, so a body is
@@ -60,8 +68,8 @@ where nothing proves it absent, keeps the claim to what the declaration says.
 check is the guard, and callers outside the application have none. A procedure that takes a declared parameter lists the claim
 even when its results don't read it.
 
-**In the code:** `ParameterDeclaration`, `ParameterDeclarationCheck`, `JsonSchemaAnnotations` and `ColumnSchema.DeclareParameter`
+**In the code:** `ParameterLowering.Sent` and `ZodExpression.JsonSent` in the Zod emitter; `ParameterDeclaration`, `ParameterDeclarationCheck`, `JsonSchemaAnnotations` and `ColumnSchema.DeclareParameter`
 in the config layer; `DeclaredParameter`, `DeclaredParameters`, `Walker.Walk`, `FunctionSummaries.Parameter` and
 `Typer.Argument` in the inference; `IrParameterDeclaration`, `IrParameter.Content` and `IrOverrideSetting.ParameterJson` in the
-IR; `ParameterDeclarationTests` and `ParameterJsonObservationTests`; the fixture `parcels`, whose `quote_options` names its
+IR; `ParameterDeclarationTests`, `ParameterJsonObservationTests` and `MssqlFunctionTests` (through the generated function); the fixture `parcels`, whose `quote_options` names its
 parameter's schema in its script.

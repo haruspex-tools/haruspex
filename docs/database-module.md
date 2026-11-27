@@ -93,6 +93,11 @@ The schema checks:
 - **`bigint`**, as a safe integer, a JavaScript `bigint`, or the string of digits a rowset hands over;
 - **binary values**, as a Node `Buffer` of at most the type's bytes, which is what a rowset hands over; the driver refuses a plain
   `Uint8Array` ([decision 0082](decisions/0082-a-binary-value-is-a-buffer-in-a-rowset-and-base64-in-json.md)).
+- **JSON a parameter is declared to hold** ([`parameters`](configuration.md#json-a-parameter-takes-parameters)), as the value
+  itself, an object rather than its text: checked against the declared schema, then serialised with `JSON.stringify`, and the text
+  checked as any text sent to that type is, since a text longer than `nvarchar(n)` would arrive cut short, and cut JSON is no JSON.
+  The parameters' type is then what the schema takes (`z.input`), the value, while the function sends the text
+  ([decision 0143](decisions/0143-a-parameter-s-json-may-be-declared.md)).
 
 Each value is then sent with the driver's type for the declared one: `nvarchar(40)` as `sql.NVarChar(40)`, a decimal with its
 precision and scale, `binary(32)` as `sql.VarBinary(32)`, which the server pads to its length. Every parameter accepts `null`, since a procedure can't declare one `NOT NULL`. One with a default may be

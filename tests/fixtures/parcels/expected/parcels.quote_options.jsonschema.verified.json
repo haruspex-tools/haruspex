@@ -43,7 +43,7 @@
           "type": "boolean"
         },
         "note": {
-          "description": "Facts: maxLength and minLength from the declaration of parcels.quote_options.@options. May be null: declared (parcels.quote_options.@options). May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions note",
+          "description": "Facts: maxLength and minLength from the declaration of parcels.quote_options.@options. May be null: declared (parcels.quote_options.@options). May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions note",
           "type": [
             "string",
             "null"
@@ -53,10 +53,10 @@
         },
         "window": {
           "$ref": "#/$defs/QuoteOptionsOptionsWindow",
-          "description": "May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions window"
+          "description": "May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions window"
         },
         "attempts": {
-          "description": "May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions attempts",
+          "description": "May be left out whatever its value. May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key. Why: haruspex explain QuoteOptionsOptions attempts",
           "type": "integer",
           "minimum": -2147483648,
           "maximum": 2147483647

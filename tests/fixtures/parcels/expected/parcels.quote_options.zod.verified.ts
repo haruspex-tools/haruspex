@@ -16,10 +16,13 @@ const jsonText = (content: () => z.ZodType): z.ZodString => {
   }, { error: 'Expected JSON text holding a value of its content type' })
 }
 
-export const QuoteOptionsDeliveryWindowSchema = z.object({
+/** A shape several types share, declared once; each is exported under its own name. */
+const shapecdcf5c = z.object({
   from: z.string(),
   to: z.string(),
 })
+
+export const QuoteOptionsDeliveryWindowSchema = shapecdcf5c
 export type QuoteOptionsDeliveryWindow = z.infer<typeof QuoteOptionsDeliveryWindowSchema>
 
 export const QuoteOptionsRowSchema = z.object({
@@ -38,11 +41,36 @@ export const QuoteOptionsRowSchema = z.object({
 })
 export type QuoteOptionsRow = z.infer<typeof QuoteOptionsRowSchema>
 
+export const QuoteOptionsOptionsWindowSchema = shapecdcf5c
+export type QuoteOptionsOptionsWindow = z.infer<typeof QuoteOptionsOptionsWindowSchema>
+
+export const QuoteOptionsOptionsSchema = z.object({
+  speed: z.enum(["standard", "express"]),
+  signature: z.boolean(),
+  /**
+   * May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key.
+   * Why: haruspex explain QuoteOptionsOptions note
+   */
+  note: z.string().min(1).max(200).nullable().optional(),
+  /**
+   * May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key.
+   * Why: haruspex explain QuoteOptionsOptions window
+   */
+  window: QuoteOptionsOptionsWindowSchema.optional(),
+  /**
+   * May be left out: the schema a column is declared to hold doesn't require the key; or the schema a parameter is declared to hold doesn't require the key.
+   * Why: haruspex explain QuoteOptionsOptions attempts
+   */
+  attempts: z.int32().optional(),
+})
+export type QuoteOptionsOptions = z.infer<typeof QuoteOptionsOptionsSchema>
+
 /** parcels.quote_options: its parameters, checked before anything is sent. */
 export const QuoteOptionsParamsSchema = z.strictObject({
-  options: z.string().nullable(),
+  /** JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, which must fit the parameter's type. */
+  options: QuoteOptionsOptionsSchema.transform((value) => JSON.stringify(value)).pipe(z.string()).nullable(),
 })
-export type QuoteOptionsParams = z.infer<typeof QuoteOptionsParamsSchema>
+export type QuoteOptionsParams = z.input<typeof QuoteOptionsParamsSchema>
 
 /** parcels.quote_options: returns rows. */
 export const QuoteOptionsSchema = z.array(QuoteOptionsRowSchema).length(1, { error: "Expected exactly one row" })

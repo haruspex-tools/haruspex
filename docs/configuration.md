@@ -725,6 +725,9 @@ for the parameter, with a JSON Schema file:
   isn't (`IF @order IS NULL RETURN`); a key the schema doesn't require may be left out, so a lax path to it is nullable. Text that
   isn't JSON fails the call (13609), in lax mode too. JSON of another shape gives NULL where the types say otherwise: that is the
   claim the declaration makes about every caller.
+- **The generated function takes the value**, an object of the schema's type rather than its text: it checks it against the
+  schema, serialises it with `JSON.stringify` and checks the text against the parameter's type before it sends anything
+  ([the database module](database-module.md#how-the-parameters-are-checked)).
 - **The IR records each declaration** its objects take or rest on, with the SHA-256 of every schema file it read, so `check`
   reports a changed schema file or declaration, and gives the parameter the declared `content`. Each object that takes the
   parameter, or calls a function or procedure that does, lists the claim (an override with `via`).
