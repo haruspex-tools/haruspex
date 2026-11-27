@@ -721,6 +721,9 @@ for the parameter, with a JSON Schema file:
 - **The body's reads take it as given** until the parameter is assigned: `JSON_VALUE(@order, '$.mode')`, `json_query`, `OPENJSON`
   with or without `WITH`, and a variable assigned the parameter, walk the schema's type as for a declared column. A read after the
   parameter is assigned has no declaration.
+- **A default other than NULL** is what a caller that leaves the parameter out sends, so the body reads it beside the declared JSON.
+  A `varchar` or `char` parameter's text is in the database's code page, so its reads keep a string's value set only when every
+  value is ASCII.
 - **NULL stays wherever the server can give it.** A caller may send NULL, so a read is nullable unless the body proves the parameter
   isn't (`IF @order IS NULL RETURN`); a key the schema doesn't require may be left out, so a lax path to it is nullable. Text that
   isn't JSON fails the call (13609), in lax mode too. JSON of another shape gives NULL where the types say otherwise: that is the

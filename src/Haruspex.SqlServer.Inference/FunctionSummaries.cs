@@ -330,9 +330,9 @@ internal sealed class FunctionSummaries
         var json = SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json;
         if (content is not null)
         {
-            return json
+            return Typer.WithDefault(parameter, json
                 ? new Value(content, because, IsLiveJson: true)
-                : Value.Computed(new JsonTextShape(content) { Text = SqlTypes.ToConvertedShape(model, type, at) as ScalarShape }, because);
+                : Value.Computed(new JsonTextShape(content) { Text = SqlTypes.ToConvertedShape(model, type, at) as ScalarShape }, because));
         }
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.

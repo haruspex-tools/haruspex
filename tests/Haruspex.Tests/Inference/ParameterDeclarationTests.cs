@@ -27,6 +27,15 @@ public class ParameterDeclarationTests
         GO
         CREATE FUNCTION shop.modes(@doc nvarchar(max)) RETURNS TABLE AS RETURN SELECT json_value(@doc, '$.mode') AS mode;
         GO
+        CREATE FUNCTION shop.modes_or_none(@doc nvarchar(max) = N'{}') RETURNS TABLE AS RETURN SELECT json_value(@doc, '$.mode') AS mode;
+        GO
+        CREATE FUNCTION shop.line_docs(@doc nvarchar(max)) RETURNS @t TABLE (lines nvarchar(max) NULL) AS
+        BEGIN
+            IF @doc IS NULL RETURN;
+            INSERT @t (lines) SELECT json_query(@doc, '$.lines');
+            RETURN;
+        END;
+        GO
         """;
 
     private const string Order = """
@@ -244,6 +253,90 @@ public class ParameterDeclarationTests
         Assert.False(given.Nullable);
         Assert.True(missing.Nullable);
         Assert.Contains(doc.Overrides, o => o.Setting == IrOverrideSetting.ParameterJson && o.Via == "shop.modes.@doc");
+    }
+
+    [Fact]
+    public void A_multi_statement_function_s_declared_parameter_types_its_reads_and_its_caller_lists_the_claim()
+    {
+        var doc = Run(
+            "CREATE PROCEDURE shop.p @order nvarchar(max) AS SELECT json_query(d.lines) AS lines FROM shop.line_docs(@order) AS d FOR JSON PATH;",
+            parameters: """ "shop.line_docs.@doc": { "json": "schemas/order.schema.json" } """,
+            selected: "shop.p").Expected();
+
+        var lines = FieldOf(doc, "shop.p", "lines");
+        Assert.Equal(["sku"], Fields(doc, Assert.IsType<IrArray>(lines.Type).Items).Select(f => f.Name));
+        var claim = Assert.Single(doc.Overrides, o => o.Setting == IrOverrideSetting.ParameterJson);
+        Assert.Equal(("shop.p", "shop.line_docs.@doc"), (claim.Object, claim.Via));
+    }
+
+    // ---- a varchar parameter's code page ------------------------------------------------------------------------
+
+    [Fact]
+    public void A_varchar_parameter_s_reads_keep_a_value_set_only_when_it_is_ascii_and_what_a_caller_sends_keeps_all()
+    {
+        using var dir = new TempDirectory();
+        dir.File("db/objects.sql", """
+            CREATE SCHEMA shop;
+            GO
+            CREATE PROCEDURE shop.grade @doc varchar(max) AS
+            IF @doc IS NULL RETURN;
+            SELECT json_value(@doc, '$.grade') AS grade, json_value(@doc, '$.mode') AS mode;
+            """);
+        dir.File("schemas/grade.schema.json", """
+            { "type": "object", "required": ["grade", "mode"], "properties": {
+                "grade": { "enum": ["Ω", "alpha"] }, "mode": { "enum": ["fast", "slow"] } } }
+            """);
+        var project = SqlProject.Load(Path.Combine(dir.Path, "db"));
+        var config = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "parameters": { "shop.grade.@doc": { "json": "schemas/grade.schema.json" } } }"""), Path.Combine(dir.Path, "haruspex.json"), dir.Path).Expected();
+        var doc = project.Infer(project.Procedures, config).Expected();
+
+        // Read through the code page, Ω may come back as O (observed in ParameterJsonObservationTests).
+        Assert.Empty(Values(FieldOf(doc, "shop.grade", "grade")));
+        Assert.Equal(["fast", "slow"], Values(FieldOf(doc, "shop.grade", "mode")));
+        var sent = Fields(doc, Assert.IsType<IrRef>(Assert.Single(Object(doc, "shop.grade").Parameters).Content));
+        Assert.Equal(["alpha", "Ω"], Assert.IsType<IrScalar>(Assert.Single(sent, f => f.Name == "grade").Type).Facets?.Values?.Items.Select(v => v.Text).Order(StringComparer.Ordinal));
+    }
+
+    // ---- defaults ------------------------------------------------------------------------------------------------
+
+    [Fact]
+    public void A_default_not_of_the_declared_shape_is_what_a_caller_that_leaves_the_parameter_out_sends()
+    {
+        // The generated function lets a caller leave @order out, and the server then sends N'{}', which has no mode: NULL, though
+        // the schema requires it (observed by ann2-review: EXEC with no argument returns NULL).
+        var doc = Run(
+            "CREATE PROCEDURE shop.p @order nvarchar(max) = N'{}' AS IF @order IS NULL RETURN; SELECT json_value(@order, '$.mode') AS mode;",
+            parameters: """ "shop.p.@order": { "json": "schemas/order.schema.json" } """).Expected();
+
+        Assert.True(FieldOf(doc, "shop.p", "mode").Nullable);
+    }
+
+    [Fact]
+    public void A_default_of_the_declared_shape_keeps_the_declaration_and_a_null_default_adds_nothing()
+    {
+        var doc = Run(
+            """
+            CREATE PROCEDURE shop.p @order nvarchar(max) = N'{"mode":"fast"}', @other nvarchar(max) = NULL AS
+            IF @order IS NULL OR @other IS NULL RETURN;
+            SELECT json_value(@order, '$.mode') AS mode, json_value(@other, '$.mode') AS other_mode;
+            """,
+            parameters: """ "shop.p.@order": { "json": "schemas/order.schema.json" }, "shop.p.@other": { "json": "schemas/order.schema.json" } """).Expected();
+
+        Assert.False(FieldOf(doc, "shop.p", "mode").Nullable);
+        Assert.Equal(["fast", "slow"], Values(FieldOf(doc, "shop.p", "mode")));
+        Assert.False(FieldOf(doc, "shop.p", "other_mode").Nullable);
+    }
+
+    [Fact]
+    public void An_inline_function_called_with_default_reads_the_default_not_the_declaration()
+    {
+        var doc = Run(
+            "CREATE PROCEDURE shop.p AS SELECT m.mode FROM shop.modes_or_none(DEFAULT) AS m;",
+            parameters: """ "shop.modes_or_none.@doc": { "json": "schemas/order.schema.json" } """).Expected();
+
+        var mode = FieldOf(doc, "shop.p", "mode");
+        Assert.Empty(Values(mode));
+        Assert.True(mode.Nullable);
     }
 
     // ---- which parameter --------------------------------------------------------------------------------------

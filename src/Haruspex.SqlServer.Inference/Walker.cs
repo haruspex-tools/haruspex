@@ -172,9 +172,9 @@ internal sealed partial class Walker
             // (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). NULL stays possible: no declaration rules it out.
             if (undecided?.ContainsKey(name) != true && summaries.DeclaredParameters.Content(parameter, source) is { } content)
             {
-                start.Add(new(name, live
+                start.Add(new(name, WithDefault(parameter, live
                     ? new Value(content, [.. because], IsLiveJson: true)
-                    : Value.Computed(new JsonTextShape(content) { Text = variableShapes[name] as ScalarShape }, because)));
+                    : Value.Computed(new JsonTextShape(content) { Text = variableShapes[name] as ScalarShape }, because))));
                 continue;
             }
 

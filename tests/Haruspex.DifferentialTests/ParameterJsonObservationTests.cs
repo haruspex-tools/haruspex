@@ -52,4 +52,21 @@ public class ParameterJsonObservationTests(SqlServerFixture server)
     [Fact]
     public async Task Null_gives_null() =>
         Assert.Equal("mode,lines,line_count: null,null,0", (await Read("NULL")).Sets);
+
+    /// <summary>
+    /// A varchar parameter's text is in the database's code page, so a character the code page lacks, sent as itself, arrives as
+    /// another (Ω as O), and a declared value set of such characters can't be claimed for what the body reads (decision 0143). Sent
+    /// as a JSON escape (<c>\u03a9</c>), the text is ASCII and the JSON functions give the character back.
+    /// </summary>
+    [Fact]
+    public async Task A_varchar_parameter_s_json_loses_a_character_its_code_page_lacks_unless_it_is_escaped()
+    {
+        string[] procedure = ["CREATE PROCEDURE dbo.obs_read_grade @doc varchar(max) AS SELECT UNICODE(json_value(@doc, '$.k')) AS k;"];
+
+        var escaped = await ObservedCall.Run(server, procedure, "EXEC dbo.obs_read_grade @doc = '{\"k\":\"\\u03a9\"}';");
+        var sent = await ObservedCall.Run(server, procedure, "EXEC dbo.obs_read_grade @doc = N'{\"k\":\"\u03a9\"}';");
+
+        Assert.Equal("k: 937", string.Join(" | ", escaped.Sets));
+        Assert.Equal("k: 79", string.Join(" | ", sent.Sets));
+    }
 }

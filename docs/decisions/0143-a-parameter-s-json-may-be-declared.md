@@ -21,6 +21,13 @@ every caller, not a fact, and is recorded as declared, never as proven.
   lax path as under a strict one, not NULL, and the IR describes calls that succeed; JSON
   of another shape gives NULL under a lax path. That last case is the assumption the declaration makes, the same one a declared
   column makes about every writer: a required key under a parameter proved not NULL is claimed not null, as declared.
+- **A `varchar` or `char` parameter's code page.** Its text is in the database's code page, so a character the code page lacks,
+  sent as itself, arrives as another (`Ω` as `O`; through the driver, as `?`), though sent as a JSON escape (`\u03a9`) it is kept
+  (`ParameterJsonObservationTests`). A caller may send either, so the body's reads keep a string's value set, and its lengths, only
+  when every value is ASCII, as `OPENJSON … WITH` keeps a `varchar` value set; what a caller sends keeps all the schema says.
+- **A default other than NULL** is what a caller that leaves the parameter out sends, which no declaration covers, so the body
+  starts from the declared JSON joined with the default's: a literal's JSON, or unknown for anything else. An inline function
+  called with `DEFAULT` reads the default as it is.
 - **What can be declared.** A parameter of a procedure or function the project defines, not `OUTPUT`, of a string type (`char`,
   `varchar`, `nchar`, `nvarchar`, an alias type of one) or `json`. Anything else is HAR4117. A numbered procedure's parameter
   (`shop.get_order;2.@order`) can't be declared: haruspex reads no numbered procedure (HAR1002), and SQL Server takes no extended

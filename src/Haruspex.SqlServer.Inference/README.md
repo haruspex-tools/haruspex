@@ -2123,6 +2123,10 @@ claimed to send it, until it is assigned ([decision 0143](../../docs/decisions/0
   A scalar function's body takes it the same way, once for every call; an inline function's, for each call, null exactly when the
   call's argument may be. From there it goes where any value goes: an assignment to another variable carries it, and an assignment
   to the parameter replaces it, so a read after one has no declaration.
+- **A default** other than NULL is joined in where the body starts (`Typer.WithDefault`): a caller that leaves the parameter out
+  sends it, and no declaration covers it. An inline function called with `DEFAULT` reads the default as it is.
+- **A `varchar` or `char` parameter** is read through the database's code page, so its reads keep a string's value set and lengths
+  only when every value is ASCII (`DeclaredParameters`); the content a caller sends keeps them.
 - **NULL.** The parameter keeps its `parameter` reason, which only a test that proves it not NULL removes. Text that isn't JSON fails
   the call (13609, in lax mode too), so it needs no reason; JSON of another shape gives NULL under a lax path, which is what the
   declaration claims doesn't happen, as a column's declaration claims of its writers.
