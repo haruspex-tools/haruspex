@@ -30,8 +30,10 @@ internal static class ContainerStart
     internal const int Attempts = 2;
 
     /// <summary>
-    /// How long one attempt may take, including pulling the image (about 1.5 GB) when it isn't there yet. SQL Server's own
-    /// start takes under a minute on CI's runners, so a container still not ready after this long won't become ready.
+    /// How long a container Docker has made may take to become ready. SQL Server's own start takes under a minute on CI's
+    /// runners, so one still not ready after this long won't become ready. What comes before the container exists, pulling
+    /// the image (about 1.5 GB) and starting Testcontainers' own clean-up container, isn't timed: a slow line or a busy Docker
+    /// isn't a start that went wrong, and no retry would help it.
     /// </summary>
     internal static readonly TimeSpan Patience = TimeSpan.FromMinutes(5);
 
@@ -61,8 +63,8 @@ internal static class ContainerStart
             var container = build(attempt);
             try
             {
-                using var timeout = new CancellationTokenSource(patience);
-                await container.StartAsync(timeout.Token).ConfigureAwait(false);
+                await StartWithinAsync(container, patience).ConfigureAwait(false);
+
                 if (accounts.Count > 0)
                     report($"SQL Server's container started at attempt {attempt} of {Attempts}, after this:{Environment.NewLine}{string.Join(Environment.NewLine, accounts)}");
                 return container;
@@ -84,22 +86,94 @@ internal static class ContainerStart
         }
     }
 
+    /// <summary>Starts the container, giving up once it has existed for <paramref name="patience"/> without becoming ready.</summary>
+    private static async Task StartWithinAsync(IContainer container, TimeSpan patience)
+    {
+        var giveUp = new CancellationTokenSource();
+        try
+        {
+            var start = container.StartAsync(giveUp.Token);
+            var watch = GiveUpIfNotReadyAsync(container, start, patience, giveUp);
+            try
+            {
+                await start.ConfigureAwait(false);
+            }
+            finally
+            {
+                await watch.ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            giveUp.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Cancels <paramref name="start"/> once Docker has made the container and it has then had <paramref name="patience"/> to
+    /// become ready. Until the container exists (<see cref="TestcontainersStates.Undefined"/>) nothing is timed, so the pull
+    /// and Testcontainers' clean-up container, which every start in the process waits for, can't use up the patience.
+    /// </summary>
+    private static async Task GiveUpIfNotReadyAsync(IContainer container, Task start, TimeSpan patience, CancellationTokenSource giveUp)
+    {
+        while (!start.IsCompleted && container.State == TestcontainersStates.Undefined)
+            await Task.WhenAny(start, Task.Delay(TimeSpan.FromMilliseconds(200))).ConfigureAwait(false);
+        if (start.IsCompleted)
+            return;
+        await Task.WhenAny(start, Task.Delay(patience)).ConfigureAwait(false);
+        if (!start.IsCompleted)
+            await giveUp.CancelAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The account of a container that started and has since exited (<see cref="DescribeAsync(IContainer, string, TimeSpan)"/>),
+    /// or null while it is still running: for a server that stopped after its start, during the setup or the tests.
+    /// </summary>
+    internal static async Task<string?> DescribeIfStoppedAsync(IContainer container, string what)
+    {
+        ArgumentNullException.ThrowIfNull(container);
+        using (var wait = new CancellationTokenSource(TimeSpan.FromSeconds(1)))
+        {
+            try
+            {
+                _ = await container.GetExitCodeAsync(wait.Token).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // Still running, or Docker can't say: either way there is no stop to describe.
+            catch (Exception)
+#pragma warning restore CA1031
+            {
+                return null;
+            }
+        }
+
+        return await DescribeAsync(container, $"Container {container.Name.TrimStart('/')} {what}.", TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+    }
+
+    private const string StillRunning = "It was still running.";
+
     /// <summary>
     /// What a failed attempt left to see: the exception, whether the container had exited and with what code, and the end of
     /// each of its streams. Reading any of them can fail too (Docker itself may be what went wrong), and then says so.
     /// </summary>
-    private static async Task<string> DescribeAsync(IContainer container, int attempt, Exception failure)
+    private static Task<string> DescribeAsync(IContainer container, int attempt, Exception failure)
     {
-        var text = new StringBuilder();
         // The message's first line only: Testcontainers puts the container's log in its own exception when it sees the
         // container exit (ContainerNotRunningException), though not when Docker refuses the readiness check first (a
         // DockerApiException, "container … is not running", as on CI), so the log is read below either way.
         var message = failure.Message.Split('\n', 2)[0].TrimEnd('\r');
-        text.AppendLine(CultureInfo.InvariantCulture, $"Attempt {attempt} of {Attempts}: container {container.Name.TrimStart('/')} did not start ({failure.GetType().Name}: {message})");
+        return DescribeAsync(container, $"Attempt {attempt} of {Attempts}: container {container.Name.TrimStart('/')} did not start ({failure.GetType().Name}: {message})", TimeSpan.FromSeconds(5));
+    }
 
-        // Docker's wait for the exit code returns at once for a container that has exited, and waits for one still running,
-        // so a short wait tells the two apart.
-        using (var wait = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+    /// <summary>
+    /// <paramref name="heading"/>, then whether the container had exited and with what code, and each of its streams. Docker's
+    /// wait for the exit code returns at once for a container that has exited, and waits for one still running, so a wait of
+    /// <paramref name="exitWait"/> tells the two apart.
+    /// </summary>
+    private static async Task<string> DescribeAsync(IContainer container, string heading, TimeSpan exitWait)
+    {
+        var text = new StringBuilder();
+        text.AppendLine(heading);
+        using (var wait = new CancellationTokenSource(exitWait))
         {
             try
             {
@@ -110,7 +184,7 @@ internal static class ContainerStart
             catch (Exception) when (wait.IsCancellationRequested)
 #pragma warning restore CA1031
             {
-                text.AppendLine("It was still running.");
+                text.AppendLine(StillRunning);
             }
 #pragma warning disable CA1031 // Reported, not thrown: the account is still worth having without the exit code.
             catch (Exception e)

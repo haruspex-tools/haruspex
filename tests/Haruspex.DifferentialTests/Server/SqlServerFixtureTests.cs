@@ -93,7 +93,7 @@ public class SqlServerFixtureTests
     public async Task The_first_test_to_need_the_server_is_given_the_log_of_a_start_that_failed()
     {
         RequireDocker();
-        await using var fixture = new SqlServerFixture(Exiting, ContainerStart.Patience, _ => throw new InvalidOperationException("Never started."), required: true);
+        await using var fixture = new SqlServerFixture(Exiting, ContainerStart.Patience, _ => throw new InvalidOperationException("Never started."), required: true, Ignore);
 
         var first = await Record.ExceptionAsync(fixture.RequireAsync);
         var second = await Record.ExceptionAsync(fixture.RequireAsync);
@@ -114,7 +114,7 @@ public class SqlServerFixtureTests
     public async Task A_failure_after_the_container_started_does_not_start_it_again()
     {
         RequireDocker();
-        await using var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Unreachable, required: true);
+        await using var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, Ignore);
 
         var first = await Record.ExceptionAsync(fixture.RequireAsync);
         var second = await Record.ExceptionAsync(fixture.RequireAsync);
@@ -124,12 +124,74 @@ public class SqlServerFixtureTests
         Assert.Contains("Setting up the test database failed", second!.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A container that started and then stopped while the test database was set up isn't started again, but its log reaches
+    /// the first test to need the server, and later tests are told where it is.
+    /// </summary>
+    [Fact]
+    public async Task A_container_that_stops_during_the_setup_is_described_to_the_first_test()
+    {
+        RequireDocker();
+        var reports = new List<string>();
+        await using var fixture = new SqlServerFixture(
+            Stopping,
+            ContainerStart.Patience,
+            async c =>
+            {
+                await c.GetExitCodeAsync(TestContext.Current.CancellationToken);
+                return Unreachable;
+            },
+            required: true,
+            reports.Add);
+
+        var first = await Record.ExceptionAsync(fixture.RequireAsync);
+        var second = await Record.ExceptionAsync(fixture.RequireAsync);
+
+        Assert.Equal(1, builds);
+        Assert.Contains("Setting up the test database failed", first!.Message, StringComparison.Ordinal);
+        Assert.Contains("had stopped while the test database was set up", first.Message, StringComparison.Ordinal);
+        Assert.Contains("It had exited, with code 7.", first.Message, StringComparison.Ordinal);
+        Assert.Contains(StoppingLine, first.Message, StringComparison.Ordinal);
+        Assert.Contains("printed with the first test to report this", second!.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(StoppingLine, second.Message, StringComparison.Ordinal);
+        Assert.Single(reports);
+    }
+
+    /// <summary>
+    /// A container that stops after the setup, during the tests, fails them with connection errors that don't say why; when the
+    /// fixture is disposed its log is reported.
+    /// </summary>
+    [Fact]
+    public async Task A_container_that_stops_during_the_tests_is_described_when_the_fixture_is_disposed()
+    {
+        RequireDocker();
+        var reports = new List<string>();
+        IContainer? made = null;
+        var fixture = new SqlServerFixture(a => made = Stopping(a), ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
+        try
+        {
+            await Record.ExceptionAsync(fixture.RequireAsync);
+            Assert.Empty(reports);
+            await made!.GetExitCodeAsync(TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            await fixture.DisposeAsync();
+        }
+
+        var report = Assert.Single(reports);
+        Assert.Contains("had stopped by the end of the run", report, StringComparison.Ordinal);
+        Assert.Contains("It had exited, with code 7.", report, StringComparison.Ordinal);
+        Assert.Contains(StoppingLine, report, StringComparison.Ordinal);
+    }
+
     /// <summary>The fixture's container is removed when the fixture is disposed, not left for Docker to clean up after the run.</summary>
     [Fact]
     public async Task Disposing_the_fixture_removes_its_container()
     {
         RequireDocker();
-        var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Unreachable, required: true);
+        var reports = new List<string>();
+        var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
         IReadOnlyList<string> before;
         try
         {
@@ -143,6 +205,7 @@ public class SqlServerFixtureTests
 
         Assert.Single(before);
         Assert.Empty(await LeftAsync());
+        Assert.Empty(reports);
     }
 
     // A server nothing listens for (port 1), given up on quickly.
@@ -158,6 +221,13 @@ public class SqlServerFixtureTests
     /// <summary>A container of the same image that starts at once and does nothing, since it waits for nothing.</summary>
     private IContainer Sleeping(int attempt) =>
         Count(new ContainerBuilder(SqlServerFixture.Image).WithName($"{prefix}sleeps-{attempt}").WithEntrypoint("sleep").WithCommand("600").Build());
+
+    // What the stopping container prints before it exits.
+    private const string StoppingLine = "the server in this container has stopped";
+
+    /// <summary>A container that starts at once, since it waits for nothing, says it has stopped two seconds later and exits with code 7.</summary>
+    private IContainer Stopping(int attempt) =>
+        Count(new ContainerBuilder(SqlServerFixture.Image).WithName($"{prefix}stops-{attempt}").WithEntrypoint("sh").WithCommand("-c", $"sleep 2; echo {StoppingLine}; exit 7").Build());
 
     /// <summary>A container that runs but waits for a file nothing makes, so it is never ready.</summary>
     private IContainer NeverReady(int attempt) =>
@@ -180,6 +250,10 @@ public class SqlServerFixtureTests
 
         Assert.NotNull(failure);
         return failure;
+    }
+
+    private static void Ignore(string report)
+    {
     }
 
     private T Count<T>(T container)
@@ -223,7 +297,9 @@ public class SqlServerFixtureTests
         {
             _ = new ContainerBuilder(SqlServerFixture.Image).Build();
         }
-        catch (DockerUnavailableException e)
+#pragma warning disable CA1031 // As the fixture: whatever stops Testcontainers (no Docker; a Docker host over SSH, which throws from a type initialiser) is a reason to skip.
+        catch (Exception e)
+#pragma warning restore CA1031
         {
             if (Environment.GetEnvironmentVariable(SqlServerFixture.RequireVariable) == "1")
                 Assert.Fail($"{SqlServerFixture.RequireVariable}=1, but Docker isn't available: {e.Message}");
