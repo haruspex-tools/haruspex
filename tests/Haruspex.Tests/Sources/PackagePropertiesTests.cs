@@ -5,44 +5,64 @@ using Haruspex.SqlServer.Sources.Dacpacs;
 namespace Haruspex.Tests.Sources;
 
 /// <summary>
-/// A package's <c>SqlExtendedProperty</c> read as the levels a script's <c>sp_addextendedproperty</c> gives. A package names a
-/// table's, a view's and a table function's column alike, <c>[SqlColumn].[schema].[owner].[column].[name]</c> (observed with
-/// Microsoft.Build.Sql 2.3.0), so the owner is looked up among what the package defines, and is never taken as a table's by default
+/// A package's <c>SqlExtendedProperty</c> read as the levels a script's <c>sp_addextendedproperty</c> gives, from each element
+/// form a build writes (observed with Microsoft.Build.Sql 2.3.0). A package names a table's, a view's and a table function's
+/// column alike, and a procedure's and a function's parameter alike, so the owner is looked up among what the package defines,
+/// and one it doesn't define is settled once the whole database is read: another package of it may define it
 /// (docs/decisions/0141-a-column-s-json-schema-may-be-named-in-the-sql.md).
 /// </summary>
 public class PackagePropertiesTests
 {
-    private static readonly HashSet<ObjectName> Tables = [new("shop", "orders")];
-    private static readonly HashSet<ObjectName> Views = [new("shop", "order_view")];
-    private static readonly HashSet<ObjectName> TableFunctions = [new("shop", "order_settings")];
-    private static readonly HashSet<ObjectName> Procedures = [new("shop", "save_settings")];
+    private static readonly PackageObjects Defined = new(
+        new HashSet<ObjectName> { new("shop", "orders") },
+        new HashSet<ObjectName> { new("shop", "order_view") },
+        new HashSet<ObjectName> { new("shop", "order_settings") },
+        new HashSet<ObjectName> { new("shop", "order_settings"), new("shop", "settings_of") },
+        new HashSet<ObjectName> { new("shop", "save_settings") });
 
-    /// <summary>The element a package holds for the property <c>haruspex.jsonSchema</c> on <paramref name="host"/>, as observed.</summary>
-    private static XElement Element(string host, string owner, string part) =>
+    /// <summary>The element a package holds for the property <c>haruspex.jsonSchema</c>, named <paramref name="name"/> before the property's own name.</summary>
+    private static XElement Element(string name) =>
         new(
             ModelXml.Name("Element"),
             new XAttribute("Type", "SqlExtendedProperty"),
-            new XAttribute("Name", $"[{host}].[shop].[{owner}].[{part}].[haruspex.jsonSchema]"),
+            new XAttribute("Name", $"{name}.[haruspex.jsonSchema]"),
             new XElement(ModelXml.Name("Property"), new XAttribute("Name", "Value"), new XElement(ModelXml.Name("Value"), new XCData("N'a.json'"))));
 
-    [Theory]
-    [InlineData("SqlColumn", "orders", "settings", "TABLE", "COLUMN")]
-    [InlineData("SqlColumn", "order_view", "settings", "VIEW", "COLUMN")]
-    [InlineData("SqlColumn", "order_settings", "settings", "FUNCTION", "COLUMN")]
-    [InlineData("SqlSubroutineParameter", "save_settings", "@settings", "PROCEDURE", "PARAMETER")]
-    [InlineData("SqlSubroutineParameter", "settings_of", "@doc", "FUNCTION", "PARAMETER")]
-    public void A_column_s_or_parameter_s_owner_is_the_kind_of_object_the_package_defines(string host, string owner, string part, string ownerLevel, string partLevel)
-    {
-        var property = PackageProperties.Read(Element(host, owner, part), "shop.dacpac", Tables, Views, TableFunctions, Procedures);
+    private static string Levels(string name) =>
+        string.Join(" ", Assert.IsType<ExtendedProperty>(PackageProperties.Read(Element(name), "shop.dacpac", Defined)).Levels.Select(l => $"{l.Type}:{l.Name}"));
 
-        Assert.NotNull(property);
-        Assert.Equal(
-            [("SCHEMA", "shop"), (ownerLevel, owner), (partLevel, part)],
-            property.Levels.Select(l => (l.Type, l.Name)));
-        Assert.Equal(("haruspex.jsonSchema", "a.json"), (property.Name, property.Value));
-    }
+    [Theory]
+    [InlineData("[SqlColumn].[shop].[orders].[settings]", "SCHEMA:shop TABLE:orders COLUMN:settings")]
+    [InlineData("[SqlColumn].[shop].[order_view].[settings]", "SCHEMA:shop VIEW:order_view COLUMN:settings")]
+    [InlineData("[SqlColumn].[shop].[order_settings].[settings]", "SCHEMA:shop FUNCTION:order_settings COLUMN:settings")]
+    [InlineData("[SqlSubroutineParameter].[shop].[save_settings].[@settings]", "SCHEMA:shop PROCEDURE:save_settings PARAMETER:@settings")]
+    [InlineData("[SqlSubroutineParameter].[shop].[settings_of].[@doc]", "SCHEMA:shop FUNCTION:settings_of PARAMETER:@doc")]
+    [InlineData("[SqlIndexBase].[shop].[orders].[ix_orders_id]", "SCHEMA:shop TABLE:orders INDEX:ix_orders_id")]
+    [InlineData("[SqlTableTypeColumn].[shop].[line_list].[doc]", "SCHEMA:shop TYPE:line_list COLUMN:doc")]
+    [InlineData("[SqlType].[shop].[line_list]", "SCHEMA:shop TYPE:line_list")]
+    [InlineData("[SqlFunction].[shop].[settings_of]", "SCHEMA:shop FUNCTION:settings_of")]
+    [InlineData("[SqlTableBase].[shop].[orders]", "SCHEMA:shop TABLE:orders")]
+    [InlineData("[SqlSchema].[shop]", "SCHEMA:shop")]
+    public void Each_host_a_build_writes_is_read_as_the_levels_a_script_names(string name, string levels) =>
+        Assert.Equal(levels, Levels(name));
 
     [Fact]
-    public void A_column_whose_owner_is_no_table_view_or_table_function_of_the_package_is_passed_over() =>
-        Assert.Null(PackageProperties.Read(Element("SqlColumn", "elsewhere", "settings"), "shop.dacpac", Tables, Views, TableFunctions, Procedures));
+    public void A_host_with_no_level_keeps_its_element_type_so_that_a_reader_can_say_it_is_there() =>
+        Assert.Equal("SCHEMA:shop SqlSomethingNew:orders SqlSomethingNew:part", Levels("[SqlSomethingNew].[shop].[orders].[part]"));
+
+    [Theory]
+    [InlineData("[SqlColumn].[shop].[base_orders].[settings]", "TABLE", "SCHEMA:shop TABLE:base_orders COLUMN:settings")]
+    [InlineData("[SqlColumn].[shop].[base_view].[settings]", "VIEW", "SCHEMA:shop VIEW:base_view COLUMN:settings")]
+    [InlineData("[SqlColumn].[shop].[nowhere].[settings]", null, "SCHEMA:shop TABLE:nowhere COLUMN:settings")]
+    [InlineData("[SqlSubroutineParameter].[shop].[base_function].[@doc]", "FUNCTION", "SCHEMA:shop FUNCTION:base_function PARAMETER:@doc")]
+    [InlineData("[SqlSubroutineParameter].[shop].[nowhere].[@doc]", null, "SCHEMA:shop PROCEDURE:nowhere PARAMETER:@doc")]
+    public void An_owner_outside_the_package_is_settled_by_the_whole_database_and_one_nothing_defines_is_found_missing(string name, string? settled, string levels)
+    {
+        var read = Assert.IsType<ExtendedProperty>(PackageProperties.Read(Element(name), "app.dacpac", Defined));
+        Assert.Equal(PackageProperties.UnsettledOwner, read.Levels[1].Type);
+
+        var property = PackageProperties.Settle(read, _ => settled, _ => settled);
+
+        Assert.Equal(levels, string.Join(" ", property.Levels.Select(l => $"{l.Type}:{l.Name}")));
+    }
 }

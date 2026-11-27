@@ -22,9 +22,12 @@ Microsoft.Build.Sql 2.3.0):
 | A numbered procedure's parameter (`get_order;2`) | no (15135; a build refuses it, SQL71501) | HAR4115: the source doesn't define it |
 | A scalar function's result | no level exists | |
 
-A package names a table's, a view's and a table function's column alike (`[SqlColumn].[shop].[f].[col].[…]`), so the reader
-looks the owner up among the package's tables, views and table functions, and passes over a column of any other owner rather than
-taking it as a table's.
+A package names a table's, a view's and a table function's column alike (`[SqlColumn].[shop].[f].[col].[…]`), and a procedure's
+and a function's parameter alike, so the reader looks the owner up among what the package defines. A package may set a property
+on what another package of the same database defines, so an owner the package doesn't define is settled once every package is
+read; one nothing defines is then found missing and said (HAR4115 here, HAR1024 for a description), never passed over. Every
+other host a build writes (a table type's column, a function, a type, an index, a schema) is read with the levels a script's call
+would give, so that a folder and its package say the same.
 
 **Context.** `columns` keeps a column's schema in one application's `haruspex.json`. A team whose database is shared, or shipped as
 a DACPAC, wants the schema with the column, where every application that reads it will find it. The design anticipated this

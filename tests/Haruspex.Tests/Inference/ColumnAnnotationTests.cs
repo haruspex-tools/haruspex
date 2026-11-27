@@ -25,6 +25,12 @@ public class ColumnAnnotationTests
             total int NOT NULL,
             doubled AS total * 2);
         GO
+        CREATE TABLE shop.returns (return_id int NOT NULL PRIMARY KEY, settings nvarchar(max) NULL);
+        GO
+        CREATE SCHEMA archive;
+        GO
+        CREATE TABLE archive.orders (order_id int NOT NULL PRIMARY KEY, settings nvarchar(max) NULL);
+        GO
         CREATE VIEW shop.order_view AS SELECT o.order_id, o.settings FROM shop.orders AS o;
         GO
         CREATE FUNCTION shop.order_settings() RETURNS TABLE AS RETURN SELECT o.settings FROM shop.orders AS o;
@@ -134,6 +140,46 @@ public class ColumnAnnotationTests
         Assert.Contains(doc.Overrides, o => o.Setting == IrOverrideSetting.ColumnJson && o.Via == "parcels.parcel.route");
     }
 
+    /// <summary>
+    /// A package <c>app</c> that sets properties on a column a package of the same database it refers to, <c>base</c>, defines:
+    /// <paramref name="annotated"/> is the table the properties name. Inferred with the schema beside the config file.
+    /// </summary>
+    private static Outcome<IrDocument> TwoPackages(string annotated)
+    {
+        using var dir = new TempDirectory();
+        dir.File("schemas/settings.schema.json", Settings);
+        TestPackage.Write(Path.Combine(dir.Path, "base.dacpac"), TestPackage.Table("shop", "orders", "order_id int", "settings nvarchar(4000)?"));
+        TestPackage.Write(
+            Path.Combine(dir.Path, "app.dacpac"),
+            TestPackage.Procedure("shop", "p", "SELECT o.settings FROM shop.orders AS o;")
+                + $"""<Element Type="SqlExtendedProperty" Name="[SqlColumn].[shop].[{annotated}].[settings].[haruspex.jsonSchema]"><Property Name="Value"><Value><![CDATA[N'schemas/settings.schema.json']]></Value></Property></Element>"""
+                + $"""<Element Type="SqlExtendedProperty" Name="[SqlColumn].[shop].[{annotated}].[settings].[MS_Description]"><Property Name="Value"><Value><![CDATA[N'The settings of the order.']]></Value></Property></Element>""",
+            references: new TestPackage.Reference("base.dacpac"));
+        var package = SqlProject.LoadPackage(Path.Combine(dir.Path, "app.dacpac"), []);
+        var config = ConfigReader.Read(Encoding.UTF8.GetBytes("{}"), Path.Combine(dir.Path, "haruspex.json"), dir.Path).Expected();
+        return Outcome.Combine(new Succeeded<int>(0, [.. package.Diagnostics]), package.Infer([new("shop", "p")], config)).Select(both => both.Second);
+    }
+
+    [Fact]
+    public void A_package_s_annotation_on_a_column_another_package_of_the_database_defines_is_read_as_a_table_s()
+    {
+        var doc = TwoPackages("orders").Expected();
+
+        Assert.Equal("shop.orders.settings", Assert.Single(doc.Columns).Column);
+        Assert.IsType<IrJsonText>(Field(doc, "settings").Type);
+        Assert.Equal("The settings of the order.", Field(doc, "settings").Description);
+    }
+
+    [Fact]
+    public void A_package_s_annotation_on_a_column_no_package_defines_is_an_error_and_its_description_a_note()
+    {
+        var run = TwoPackages("nowhere");
+
+        Assert.IsType<Failed<IrDocument>>(run);
+        Assert.Contains(run.Diagnostics, d => d.Code.ToString() == "HAR4115" && d.Message.Contains("the source doesn't define shop.nowhere", StringComparison.Ordinal));
+        Assert.Contains(run.Diagnostics, d => d.Code.ToString() == "HAR1024" && d.Message.Contains("shop.nowhere", StringComparison.Ordinal));
+    }
+
     // ---- agreement with the config file ------------------------------------------------------------------------
 
     [Fact]
@@ -163,6 +209,26 @@ public class ColumnAnnotationTests
         var run = Run(Procedure, Annotation("schemas/copy.schema.json"), """ "SHOP.ORDERS.Settings": { "json": "schemas/settings.schema.json" } """);
 
         Assert.Equal("HAR4114", Only(Assert.IsType<Failed<IrDocument>>(run)).Code);
+    }
+
+    [Fact]
+    public void An_annotation_and_a_config_declaration_of_another_table_s_column_of_the_same_name_are_two_declarations()
+    {
+        var doc = Run(Procedure, Annotation(), """ "shop.returns.settings": { "json": "schemas/copy.schema.json" } """).Expected();
+
+        Assert.Equal(
+            [("shop.orders.settings", "schemas/settings.schema.json"), ("shop.returns.settings", "schemas/copy.schema.json")],
+            doc.Columns.Select(c => (c.Column, c.Schema)).Order());
+    }
+
+    [Fact]
+    public void An_annotation_on_a_table_of_one_schema_declares_nothing_of_the_same_table_in_another()
+    {
+        var doc = Run(Procedure, "EXEC sp_addextendedproperty N'haruspex.jsonSchema', N'schemas/settings.schema.json', N'SCHEMA', N'archive', N'TABLE', N'orders', N'COLUMN', N'settings';").Expected();
+
+        Assert.Equal("archive.orders.settings", Assert.Single(doc.Columns).Column);
+        Assert.DoesNotContain(doc.Overrides, o => o.Setting == IrOverrideSetting.ColumnJson);
+        Assert.IsNotType<IrJsonText>(Field(doc, "settings").Type);
     }
 
     // ---- where it can't be declared ----------------------------------------------------------------------------
