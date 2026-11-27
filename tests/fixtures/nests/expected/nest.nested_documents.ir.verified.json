@@ -1,0 +1,382 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/nested_documents.sql": "a49a14b943fe52aadbde17d2f1a281371626a3b80728601e47bab3286ddc9d1e",
+      "tables/order_lines.sql": "4ffa984c43c5c4afd39973d3f1e3cf83edabe0be7c0e5d0181fc0200e4f898b5",
+      "tables/orders.sql": "1dba9d3f9474d86ae267fba8a389d118690fd12f4e727251a457988d24fffe48"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.nested_documents",
+      "name": "NestedDocuments",
+      "kind": "procedure",
+      "at": "procedures/nested_documents.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "NestedDocumentsRow"
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "NestedDocumentsFirstLineText": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].first_line_text<json>"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "l",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NestedDocumentsFirstLineTextLItem"
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "NestedDocumentsFirstLineTextLItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].first_line_text<json>.l[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        }
+      ]
+    },
+    "NestedDocumentsRooted": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].rooted"
+      },
+      "fields": [
+        {
+          "name": "orders",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NestedDocumentsRootedOrder"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "NestedDocumentsRootedOrder": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].rooted.orders[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        }
+      ]
+    },
+    "NestedDocumentsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "tree",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NestedDocumentsTreeItem"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/nested_documents.sql:7:8"
+            }
+          ]
+        },
+        {
+          "name": "first_line_text",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "NestedDocumentsFirstLineText"
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/nested_documents.sql:12:8"
+            }
+          ]
+        },
+        {
+          "name": "rooted",
+          "type": {
+            "ref": "NestedDocumentsRooted"
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/nested_documents.sql:17:8"
+            }
+          ]
+        },
+        {
+          "name": "unrooted",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NestedDocumentsUnrootedItem"
+            },
+            "minItems": 1
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-subquery",
+              "at": "procedures/nested_documents.sql:18:19"
+            }
+          ]
+        }
+      ]
+    },
+    "NestedDocumentsTreeItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].tree[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "l",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NestedDocumentsTreeItemLItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "NestedDocumentsTreeItemLItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].tree[].l[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        }
+      ]
+    },
+    "NestedDocumentsUnrootedItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.nested_documents",
+        "path": "results[0].unrooted[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

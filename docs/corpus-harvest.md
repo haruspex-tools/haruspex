@@ -25,7 +25,6 @@ the rows at the top are where work types the most. **Places** adds the four colu
 | `procedure-variable` | 0 | 0 | 12 | 0 | 12 | 3 |
 | `unsupported-sql-type` | 3 | 0 | 0 | 9 | 12 | 4 |
 | `system-procedure` | 0 | 0 | 5 | 0 | 5 | 1 |
-| `unsupported-query` | 0 | 5 | 0 | 0 | 5 | 1 |
 | `varying-results` | 0 | 0 | 4 | 0 | 4 | 1 |
 | `unresolved-table` | 3 | 0 | 0 | 0 | 3 | 1 |
 | `unsupported-expression` | 2 | 0 | 0 | 0 | 2 | 1 |

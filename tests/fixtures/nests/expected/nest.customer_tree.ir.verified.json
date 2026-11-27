@@ -1,0 +1,237 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/customer_tree.sql": "cf49c98b035ebbbd830ecc1c2b1829fc990b13dad54c1ff856fe92c997123323",
+      "tables/customers.sql": "31d927c0b0bd0b472d6d8cda1ffdbb9a41d929544fa05776a1d4ecb42fb8a817",
+      "tables/order_lines.sql": "4ffa984c43c5c4afd39973d3f1e3cf83edabe0be7c0e5d0181fc0200e4f898b5",
+      "tables/orders.sql": "1dba9d3f9474d86ae267fba8a389d118690fd12f4e727251a457988d24fffe48"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.customer_tree",
+      "name": "CustomerTree",
+      "kind": "procedure",
+      "at": "procedures/customer_tree.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerTreeRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/customer_tree.sql:7:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CustomerTreeOItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.customer_tree",
+        "path": "results[0][].o[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "placed_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.placed_on",
+              "sql": "date",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "l",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerTreeOItemLItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CustomerTreeOItemLItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.customer_tree",
+        "path": "results[0][].o[].l[]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "kind",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4)",
+            "maxLength": {
+              "value": 4,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "CustomerTreeRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.customer_tree",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.customers.name",
+              "sql": "nvarchar(20)",
+              "at": "tables/customers.sql:4:5"
+            }
+          ]
+        },
+        {
+          "name": "customer_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.customers.customer_id",
+              "sql": "int",
+              "at": "tables/customers.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "o",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CustomerTreeOItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

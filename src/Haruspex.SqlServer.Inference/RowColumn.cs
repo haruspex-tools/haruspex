@@ -31,4 +31,11 @@ internal sealed record RowColumn(string? Name, Value Value, SourceLocation At, T
     /// text in every row.
     /// </summary>
     public bool JsonNeverFolded { get; init; }
+
+    /// <summary>
+    /// What it reads when it is a bare column reference (in parentheses or not, without <c>COLLATE</c>) or a column of a star, as
+    /// binding resolves it; null for any other expression. <c>FOR JSON AUTO</c> nests a bare column under the source it reads,
+    /// and any other column where it stands (<c>Typer.ForJsonAuto.cs</c>).
+    /// </summary>
+    public Resolution? Bare { get; init; }
 }

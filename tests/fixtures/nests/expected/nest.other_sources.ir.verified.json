@@ -1,0 +1,247 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/other_sources.sql": "4e0b5f086351d359d61846248419ba7598c6382733241216d1299f0ab6bdd9f9",
+      "tables/order_lines.sql": "4ffa984c43c5c4afd39973d3f1e3cf83edabe0be7c0e5d0181fc0200e4f898b5",
+      "tables/orders.sql": "1dba9d3f9474d86ae267fba8a389d118690fd12f4e727251a457988d24fffe48"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.other_sources",
+      "name": "OtherSources",
+      "kind": "procedure",
+      "at": "procedures/other_sources.sql:4:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OtherSourcesRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/other_sources.sql:8:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OtherSourcesCItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.other_sources",
+        "path": "results[0][].c[]"
+      },
+      "fields": [
+        {
+          "name": "line_count",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/other_sources.sql:8:37"
+            },
+            {
+              "rule": "unmatched-lateral-row",
+              "at": "procedures/other_sources.sql:11:13"
+            }
+          ]
+        },
+        {
+          "name": "d",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OtherSourcesCItemDItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OtherSourcesCItemDItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.other_sources",
+        "path": "results[0][].c[].d[]"
+      },
+      "fields": [
+        {
+          "name": "first_sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "empty-aggregate",
+              "at": "procedures/other_sources.sql:12:21"
+            }
+          ],
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "tag",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(5)",
+            "maxLength": {
+              "value": 5,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(5)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "t"
+              ],
+              "from": [
+                {
+                  "expression": "procedures/other_sources.sql:13:22"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "v",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OtherSourcesCItemDItemVItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OtherSourcesCItemDItemVItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.other_sources",
+        "path": "results[0][].c[].d[].v[]"
+      },
+      "fields": [
+        {
+          "name": "flag",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OtherSourcesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.other_sources",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "c",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OtherSourcesCItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

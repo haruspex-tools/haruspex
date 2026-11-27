@@ -117,6 +117,7 @@ gaps today, from 0049 to 0136, and no record was deleted to make them.
 | [0139](0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md) | 26 Nov 2026 | XML is typed from its schema collection where the schema proves it |
 | [0141](0141-a-column-s-json-schema-may-be-named-in-the-sql.md) | 27 Nov 2026 | A column's JSON Schema may be named in the SQL |
 | [0142](0142-a-call-s-declared-result-sets-are-its-type.md) | 27 Nov 2026 | A call's declared result sets are its type |
+| [0144](0144-for-json-auto-is-typed-from-observed-nesting.md) | 27 Nov 2026 | FOR JSON AUTO is typed from observed nesting |
 
 ## Writing a record
 

@@ -8,7 +8,7 @@ namespace Haruspex.DifferentialTests;
 /// the first source; here the engine settles them, and the inferencer and the IR's README follow what these
 /// say. If a SQL Server version changes any of them, this is where it shows.
 /// </summary>
-public class ForJsonObservationTests(SqlServerFixture server)
+public partial class ForJsonObservationTests(SqlServerFixture server)
 {
     /// <summary>Runs one query and returns each result set's rows, the JSON chunks joined.</summary>
     private async Task<IReadOnlyList<IReadOnlyList<string?>>> Query(string sql)

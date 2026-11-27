@@ -1,0 +1,166 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/named_sources.sql": "df1a39089c6f9ace028e24b7313117f9c2b585900666d9192ae97da3597d3bc5",
+      "tables/order_lines.sql": "4ffa984c43c5c4afd39973d3f1e3cf83edabe0be7c0e5d0181fc0200e4f898b5",
+      "tables/orders.sql": "1dba9d3f9474d86ae267fba8a389d118690fd12f4e727251a457988d24fffe48"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.named_sources",
+      "name": "NamedSources",
+      "kind": "procedure",
+      "at": "procedures/named_sources.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NamedSourcesRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/named_sources.sql:7:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "NamedSourcesNestOrderDate": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.named_sources",
+        "path": "results[0][][\"nest.order_dates\"][]"
+      },
+      "fields": [
+        {
+          "name": "placed_on",
+          "type": {
+            "kind": "date",
+            "sql": "date"
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.placed_on",
+              "sql": "date",
+              "at": "tables/orders.sql:5:5"
+            }
+          ]
+        },
+        {
+          "name": "nest.lines_of",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NamedSourcesNestOrderDateNestLinesOfItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "NamedSourcesNestOrderDateNestLinesOfItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.named_sources",
+        "path": "results[0][][\"nest.order_dates\"][][\"nest.lines_of\"][]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        }
+      ]
+    },
+    "NamedSourcesRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.named_sources",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "nest.order_dates",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "NamedSourcesNestOrderDate"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

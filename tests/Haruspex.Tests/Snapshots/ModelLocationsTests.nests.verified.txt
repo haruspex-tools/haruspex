@@ -1,0 +1,41 @@
+column nest.customers.customer_id int at tables/customers.sql:3:5
+column nest.customers.name nvarchar(20) at tables/customers.sql:4:5
+column nest.notes.body nvarchar(20) at tables/notes.sql:5:5
+column nest.notes.note_id int at tables/notes.sql:3:5
+column nest.notes.order_id int at tables/notes.sql:4:5
+column nest.order_lines.line_id int at tables/order_lines.sql:4:5
+column nest.order_lines.order_id int at tables/order_lines.sql:5:5
+column nest.order_lines.qty int at tables/order_lines.sql:7:5
+column nest.order_lines.sku varchar(8) at tables/order_lines.sql:6:5
+column nest.orders.customer_id int at tables/orders.sql:4:5
+column nest.orders.note nvarchar(20) at tables/orders.sql:6:5
+column nest.orders.order_id int at tables/orders.sql:3:5
+column nest.orders.placed_on date at tables/orders.sql:5:5
+function nest.lines_of at functions/lines_of.sql:1:1
+key nest.customers unnamed (customer_id) at tables/customers.sql:3:39
+key nest.notes unnamed (note_id) at tables/notes.sql:3:36
+key nest.order_lines unnamed (line_id) at tables/order_lines.sql:4:34
+key nest.orders unnamed (order_id) at tables/orders.sql:3:39
+named function nest.lines_of
+parameter nest.lines_of @order_id at functions/lines_of.sql:1:32
+parameter nest.one_order @order_id at procedures/one_order.sql:2:33
+procedure nest.customer_tree at procedures/customer_tree.sql:3:1
+procedure nest.dotted_keys at procedures/dotted_keys.sql:2:1
+procedure nest.lines_first at procedures/lines_first.sql:3:1
+procedure nest.named_sources at procedures/named_sources.sql:3:1
+procedure nest.nested_documents at procedures/nested_documents.sql:3:1
+procedure nest.one_order at procedures/one_order.sql:2:1
+procedure nest.order_count at procedures/order_count.sql:2:1
+procedure nest.orders_and_lines at procedures/orders_and_lines.sql:3:1
+procedure nest.orders_and_lines_with_nulls at procedures/orders_and_lines_with_nulls.sql:2:1
+procedure nest.orders_with_lines at procedures/orders_with_lines.sql:2:1
+procedure nest.other_sources at procedures/other_sources.sql:4:1
+procedure nest.rooted_orders at procedures/rooted_orders.sql:2:1
+procedure nest.rooted_tree at procedures/rooted_tree.sql:2:1
+procedure nest.scattered_orders at procedures/scattered_orders.sql:3:1
+procedure nest.unmatched_orders at procedures/unmatched_orders.sql:2:1
+table nest.customers at tables/customers.sql:1:1
+table nest.notes at tables/notes.sql:1:1
+table nest.order_lines at tables/order_lines.sql:2:1
+table nest.orders at tables/orders.sql:1:1
+view nest.order_dates at views/order_dates.sql:1:1

@@ -1,0 +1,95 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/order_count.sql": "3bde815d81586f4ee40769e315e8ffa194418b3f9e3cacd05ba6fc73285f07c7"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.order_count",
+      "name": "OrderCount",
+      "kind": "procedure",
+      "at": "procedures/order_count.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "ref": "OrderCountRow"
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "OrderCountRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.order_count",
+        "path": "results[0]"
+      },
+      "fields": [
+        {
+          "name": "summary",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "OrderCountSummaryItem"
+            },
+            "minItems": 1,
+            "maxItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "OrderCountSummaryItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.order_count",
+        "path": "results[0].summary[]"
+      },
+      "fields": [
+        {
+          "name": "orders",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "count-overflow",
+              "at": "procedures/order_count.sql:6:8"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

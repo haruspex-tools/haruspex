@@ -1,0 +1,41 @@
+// The runs of the nests fixture against SQL Server, found by the differential tests. tests/fixtures/README.md says what each
+// key means.
+{
+  "setups": {
+    "no orders": "DELETE FROM nest.notes; DELETE FROM nest.orders;",
+    "no lines": "DELETE FROM nest.order_lines;"
+  },
+
+  "runs": [
+    { "name": "orders_with_lines", "procedure": "nest.orders_with_lines" },
+    { "name": "orders_with_lines, no orders", "procedure": "nest.orders_with_lines", "setup": "no orders" },
+    { "name": "orders_and_lines", "procedure": "nest.orders_and_lines" },
+    { "name": "orders_and_lines, no orders", "procedure": "nest.orders_and_lines", "setup": "no orders" },
+    { "name": "orders_and_lines_with_nulls", "procedure": "nest.orders_and_lines_with_nulls" },
+    { "name": "orders_and_lines_with_nulls, no orders", "procedure": "nest.orders_and_lines_with_nulls", "setup": "no orders" },
+    { "name": "customer_tree", "procedure": "nest.customer_tree" },
+    { "name": "customer_tree, no lines", "procedure": "nest.customer_tree", "setup": "no lines" },
+    { "name": "lines_first", "procedure": "nest.lines_first" },
+    { "name": "lines_first, no lines", "procedure": "nest.lines_first", "setup": "no lines" },
+    { "name": "scattered_orders", "procedure": "nest.scattered_orders" },
+    { "name": "scattered_orders, no lines", "procedure": "nest.scattered_orders", "setup": "no lines" },
+    { "name": "unmatched_orders", "procedure": "nest.unmatched_orders" },
+    { "name": "unmatched_orders, no lines", "procedure": "nest.unmatched_orders", "setup": "no lines" },
+    { "name": "named_sources", "procedure": "nest.named_sources" },
+    { "name": "named_sources, no lines", "procedure": "nest.named_sources", "setup": "no lines" },
+    { "name": "other_sources", "procedure": "nest.other_sources" },
+    { "name": "other_sources, no orders", "procedure": "nest.other_sources", "setup": "no orders" },
+    { "name": "dotted_keys", "procedure": "nest.dotted_keys" },
+    { "name": "dotted_keys, no lines", "procedure": "nest.dotted_keys", "setup": "no lines" },
+    { "name": "one_order, two lines", "procedure": "nest.one_order", "parameters": { "@order_id": 10 } },
+    { "name": "one_order, no lines", "procedure": "nest.one_order", "parameters": { "@order_id": 12 } },
+    { "name": "rooted_orders", "procedure": "nest.rooted_orders" },
+    { "name": "rooted_orders, no orders", "procedure": "nest.rooted_orders", "setup": "no orders" },
+    { "name": "rooted_tree", "procedure": "nest.rooted_tree" },
+    { "name": "rooted_tree, no lines", "procedure": "nest.rooted_tree", "setup": "no lines" },
+    { "name": "order_count", "procedure": "nest.order_count" },
+    { "name": "order_count, no orders", "procedure": "nest.order_count", "setup": "no orders" },
+    { "name": "nested_documents", "procedure": "nest.nested_documents" },
+    { "name": "nested_documents, no orders", "procedure": "nest.nested_documents", "setup": "no orders" }
+  ]
+}

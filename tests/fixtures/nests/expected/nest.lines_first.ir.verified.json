@@ -1,0 +1,180 @@
+{
+  "irVersion": "0.25",
+  "source": {
+    "dialect": "tsql",
+    "files": {
+      "procedures/lines_first.sql": "711b90cef043a81a4b63e6f766de4ed4bb8963d876c429f6d7a3739cd2c5a3ad",
+      "tables/notes.sql": "0cb09d1c3898944055a851fda322e4b063231fbbcb14f835751fefc8bb125d61",
+      "tables/order_lines.sql": "4ffa984c43c5c4afd39973d3f1e3cf83edabe0be7c0e5d0181fc0200e4f898b5",
+      "tables/orders.sql": "1dba9d3f9474d86ae267fba8a389d118690fd12f4e727251a457988d24fffe48"
+    }
+  },
+  "objects": [
+    {
+      "id": "nest.lines_first",
+      "name": "LinesFirst",
+      "kind": "procedure",
+      "at": "procedures/lines_first.sql:3:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "json",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LinesFirstRow"
+            }
+          },
+          "mayBeAbsent": true,
+          "absentBecause": [
+            {
+              "rule": "no-rows",
+              "at": "procedures/lines_first.sql:7:1"
+            }
+          ],
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "LinesFirstOItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.lines_first",
+        "path": "results[0][].o[]"
+      },
+      "fields": [
+        {
+          "name": "order_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.orders.order_id",
+              "sql": "int",
+              "at": "tables/orders.sql:3:5"
+            }
+          ]
+        },
+        {
+          "name": "n",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LinesFirstOItemNItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "LinesFirstOItemNItem": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.lines_first",
+        "path": "results[0][].o[].n[]"
+      },
+      "fields": [
+        {
+          "name": "body",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(20)",
+            "maxLength": {
+              "value": 20,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(20)"
+              }
+            }
+          },
+          "presence": "omittedWhenNull",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "nullable-column",
+              "at": "nest.notes.body"
+            }
+          ],
+          "from": [
+            {
+              "column": "nest.notes.body",
+              "sql": "nvarchar(20)",
+              "at": "tables/notes.sql:5:5"
+            }
+          ]
+        }
+      ]
+    },
+    "LinesFirstRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "nest.lines_first",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "sku",
+          "type": {
+            "kind": "string",
+            "sql": "varchar(8)",
+            "maxLength": {
+              "value": 8,
+              "unit": "bytes",
+              "from": {
+                "type": "varchar(8)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "nest.order_lines.sku",
+              "sql": "varchar(8)",
+              "at": "tables/order_lines.sql:6:5"
+            }
+          ]
+        },
+        {
+          "name": "o",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LinesFirstOItem"
+            },
+            "minItems": 1
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

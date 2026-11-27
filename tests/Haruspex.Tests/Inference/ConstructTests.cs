@@ -42,8 +42,6 @@ public partial class ConstructTests
 
     [Theory]
     [InlineData("SELECT t.id FROM dbo.t AS t FOR XML PATH;")]
-    [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON AUTO;")]
-    [InlineData("SELECT t.id FROM dbo.t AS t FOR JSON PATH, ROOT('items');")]
     public void A_query_form_not_modelled_makes_the_result_unknown(string body) =>
         AssertUnknown(Procedure(body), "results[0]", IrUnknownReason.UnsupportedQuery);
 

@@ -184,6 +184,7 @@ internal sealed partial class Typer(
                         From = Reads(scalar.Expression, row),
                         Description = Described(scalar.Expression, row),
                         JsonNeverFolded = value.IsLiveJson && NeverFoldedAsJson(scalar.Expression, row),
+                        Bare = Bare(scalar.Expression, scope),
                     });
                     break;
                 case SelectStarExpression all:
@@ -207,6 +208,17 @@ internal sealed partial class Typer(
         expression is ColumnReferenceExpression { Collation: null, ColumnType: ColumnType.Regular } column && binder.Resolve(column, scope.Bound) is TableColumn bound
             ? bound
             : null;
+
+    /// <summary>
+    /// What a select-list expression reads when it is a bare column reference, in parentheses or not and without <c>COLLATE</c>,
+    /// as binding resolves it; null for any other expression (see <see cref="RowColumn.Bare"/>).
+    /// </summary>
+    private Resolution? Bare(ScalarExpression expression, ReadScope scope) => expression switch
+    {
+        ParenthesisExpression { Collation: null } parenthesis => Bare(parenthesis.Expression, scope),
+        ColumnReferenceExpression { Collation: null } column => binder.Resolve(column, scope.Bound),
+        _ => null,
+    };
 
     /// <summary>The name SQL Server gives the one column of top-level FOR JSON output.</summary>
     private const string JsonOutputColumn = "JSON_F52E2B61-18A1-11d1-B105-00805F49916B";
@@ -272,8 +284,9 @@ internal sealed partial class Typer(
     }
 
     /// <summary>
-    /// The shape <c>FOR JSON PATH</c> builds from a row: one object per row, with a dotted alias such as
-    /// <c>customer.name</c> nesting a key inside an object.
+    /// The shape a <c>FOR JSON</c> query builds from a row: an object per row, by <c>PATH</c>'s rules (<see cref="PathObject"/>) or
+    /// <c>AUTO</c>'s (<see cref="AutoObject"/>), in an array unless <c>WITHOUT_ARRAY_WRAPPER</c> leaves it out, and under one key
+    /// with <c>ROOT</c>.
     /// </summary>
     /// <param name="subquery">
     /// Whether it is a subquery's value, which is NULL over no rows (observed), so that an array it builds has at least one
@@ -283,14 +296,50 @@ internal sealed partial class Typer(
     /// </param>
     private Shape ForJson(Row row, JsonForClause clause, bool subquery)
     {
-        var options = clause.Options.Select(o => o.OptionKind).ToHashSet();
-        if (options.Contains(JsonForClauseOptions.Auto))
-            return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON AUTO is not modelled yet.", At(clause));
-        if (options.Contains(JsonForClauseOptions.Root))
-            return Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON ... ROOT is not modelled yet.", At(clause));
+        // ROOT and WITHOUT_ARRAY_WRAPPER together are a syntax error to the parser, as to SQL Server (13620, observed:
+        // Root_with_without_array_wrapper_is_refused), so a clause here has at most one of them.
+        var options = clause.Options.ToDictionary(o => o.OptionKind);
+        var unwrapped = options.ContainsKey(JsonForClauseOptions.WithoutArrayWrapper);
+        var root = options.GetValueOrDefault(JsonForClauseOptions.Root);
         if (row.Unlisted is { } unlisted)
             return unlisted;
 
+        var includeNulls = options.ContainsKey(JsonForClauseOptions.IncludeNullValues);
+        var shape = options.ContainsKey(JsonForClauseOptions.Auto) ? AutoObject(row, includeNulls, At(clause)) : PathObject(row, includeNulls);
+        if (shape is UnknownShape)
+            return shape;
+
+        // WITHOUT_ARRAY_WRAPPER is claimed as one object even where the query is not proven to return at most one row
+        // (Row.Rows is Many). The claim is accepted because it cannot be silently wrong: several rows produce
+        // "{...},{...}", which is not valid JSON, so the caller's parse fails loudly before any schema sees it. Where the
+        // query is proven to return at most one row, the result's cardinality says so and the caveat does not apply. No
+        // rows are covered by AbsentBecause.
+        if (unwrapped)
+            return shape;
+
+        // ROOT puts the array under one key of an object, named as written or "root", and taken as it is: a dot nests
+        // nothing (observed: Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given). The object is
+        // written only over a row, as the array is: over none a result has no row and a subquery is NULL (observed:
+        // A_top_level_for_json_auto_query_with_no_rows_returns_a_result_set_with_no_row,
+        // A_root_subquery_nests_as_json_and_is_null_over_no_rows). So the array inside has a row's item at least, here, where
+        // a result's cardinality can't bound it.
+        if (root is not null)
+            return new ObjectShape([new FieldShape((root.Value as StringLiteral)?.Value ?? "root", Rows(shape, row), IrPresence.Always, [])]);
+        return subquery ? Rows(shape, row) : new ArrayShape(shape, []);
+    }
+
+    /// <summary>
+    /// An array of an object for each row of a query that returns some: at least one item, and exactly one when the query returns
+    /// at most one row.
+    /// </summary>
+    private static ArrayShape Rows(Shape item, Row row) => new(item, [], MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1);
+
+    /// <summary>
+    /// The object <c>FOR JSON PATH</c> builds from a row, with a dotted alias such as <c>customer.name</c> nesting a key inside
+    /// an object.
+    /// </summary>
+    private static Shape PathObject(Row row, bool includeNulls)
+    {
         var root = new JsonNode();
         foreach (var column in row.Columns)
         {
@@ -330,17 +379,7 @@ internal sealed partial class Typer(
             node.Entries.Add((path[^1], null, column, column.At));
         }
 
-        var includeNulls = options.Contains(JsonForClauseOptions.IncludeNullValues);
-        var shape = JsonObject(root, includeNulls);
-
-        // WITHOUT_ARRAY_WRAPPER is claimed as one object even where the query is not proven to return at most one row
-        // (Row.Rows is Many). The claim is accepted because it cannot be silently wrong: several rows produce
-        // "{...},{...}", which is not valid JSON, so the caller's parse fails loudly before any schema sees it. Where the
-        // query is proven to return at most one row, the result's cardinality says so and the caveat does not apply. No
-        // rows are covered by AbsentBecause.
-        if (options.Contains(JsonForClauseOptions.WithoutArrayWrapper))
-            return shape;
-        return subquery ? new ArrayShape(shape, [], MinItems: 1, MaxItems: row.Rows == IrCardinality.Many ? null : 1) : new ArrayShape(shape, []);
+        return JsonObject(root, includeNulls);
     }
 
     /// <summary>
@@ -363,12 +402,7 @@ internal sealed partial class Typer(
         {
             if (leaf is not null)
             {
-                var value = leaf.Value;
-
-                // FOR JSON leaves out a key whose value is null, unless INCLUDE_NULL_VALUES keeps it as null.
-                // Live JSON keeps its shape; JSON text (JsonTextShape) is escaped into a string.
-                var presence = value.NullableBecause.Count > 0 && !includeNulls ? IrPresence.OmittedWhenNull : IrPresence.Always;
-                fields.Add(new FieldShape(key, value.Shape, presence, value.NullableBecause) { From = leaf.From, Description = leaf.Description });
+                fields.Add(JsonLeaf(key, leaf, includeNulls));
                 continue;
             }
 
@@ -385,6 +419,18 @@ internal sealed partial class Typer(
         }
 
         return new ObjectShape([.. fields]);
+    }
+
+    /// <summary>
+    /// The key a column's value is written under in <c>FOR JSON</c>, in either mode. A key whose value is null is left out, unless
+    /// <c>INCLUDE_NULL_VALUES</c> keeps it as null. Live JSON keeps its shape; JSON text (<see cref="JsonTextShape"/>) is escaped
+    /// into a string.
+    /// </summary>
+    private static FieldShape JsonLeaf(string key, RowColumn leaf, bool includeNulls)
+    {
+        var value = leaf.Value;
+        var presence = value.NullableBecause.Count > 0 && !includeNulls ? IrPresence.OmittedWhenNull : IrPresence.Always;
+        return new FieldShape(key, value.Shape, presence, value.NullableBecause) { From = leaf.From, Description = leaf.Description };
     }
 
     /// <summary>

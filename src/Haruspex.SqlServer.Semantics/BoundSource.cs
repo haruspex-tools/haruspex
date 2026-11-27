@@ -29,4 +29,22 @@ public sealed record BoundSource(string? Alias, SourceTarget Target, OptionalSid
     /// other relations a body makes, and for a name whose schema can't be told.
     /// </summary>
     public ExposedName? Exposed { get; init; }
+
+    /// <summary>
+    /// The name the FROM writes it by: its alias, or else its name's parts as written, joined by dots, without brackets and in
+    /// the FROM's case (<c>dbo.Orders</c>, <c>#t</c>, <c>@t</c>); what <c>FOR JSON AUTO</c> keys a table's array by (observed:
+    /// A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it). Null for a source that writes none, and for a
+    /// name with an empty part (<c>db..t</c>).
+    /// </summary>
+    public string? WrittenName => Syntax switch
+    {
+        TableReferenceWithAlias { Alias: { } alias } => alias.Value,
+        NamedTableReference named => Joined(named.SchemaObject),
+        SchemaObjectFunctionTableReference function => Joined(function.SchemaObject),
+        VariableTableReference variable => variable.Variable.Name,
+        _ => null,
+    };
+
+    private static string? Joined(SchemaObjectName name) =>
+        name.Identifiers.Any(i => string.IsNullOrEmpty(i?.Value)) ? null : string.Join('.', name.Identifiers.Select(i => i.Value));
 }

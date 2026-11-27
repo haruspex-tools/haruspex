@@ -20,7 +20,7 @@ testing (Barr and others, 2015). Here there is a perfect oracle to hand, which i
 haruspex predicts. The obvious alternative is to take the rules from SQL Server's documentation and check haruspex with snapshot
 tests alone. A snapshot records what haruspex says; it can't say whether SQL Server agrees, so a wrong rule passes for ever,
 and the documentation leaves much unsaid (what `FOR JSON` writes for a query with no rows, which result set arrives where
-after a branch not taken). The first differential run corrected one of haruspex's own rules, about nested objects under
+after a branch not taken, which sources `FOR JSON AUTO` counts as tables: `OPENXML` but not `OPENJSON`). The first differential run corrected one of haruspex's own rules, about nested objects under
 `INCLUDE_NULL_VALUES`. The decision is recorded in [decision 0007](../decisions/0007-every-engine-rule-is-observed.md).
 
 ## Two kinds of test

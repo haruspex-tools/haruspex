@@ -73,7 +73,7 @@ it, claim by claim.
 The rest of this page is the reference: how a procedure's statements are read in order, and what each construct inside
 them gives: calls ("Calls" below), what filters and single-row queries prove ("Refinement"), writes, triggers and cursors ("DML", "Triggers", "Cursors"), `APPLY`,
 `VALUES` lists and views ("APPLY", "Views"), `SELECT *` ("`SELECT *`"), expressions ("Expressions", "Precision lost", "CASE, IIF, CHOOSE and NULLIF",
-"Built-in functions", "Window functions"), table-valued functions, full-text table functions, set operations and the other joins, `OPENJSON`, JSON built in
+"Built-in functions", "Window functions"), table-valued functions, full-text table functions, set operations and the other joins, `OPENJSON`, `FOR JSON AUTO` and `ROOT`, JSON built in
 the project and traced to where it is read, and JSON assembled as text. The walk is `Walker.cs`, with `FlowState.cs` (the state and
 its join); what an expression or a query gives is `Typer.cs` and its parts, read in a `ReadScope.cs` (what each source a
 query binds holds, the state it is read in, what the conditions around it prove and the construct it is inside), and never
@@ -1984,6 +1984,52 @@ outer join's ON proves its columns as it proves an aliased one's
   shape is in the data, so it is live JSON of unknown shape (`json-shape-unknown`), as a `json` column is: JSON text in a
   rowset, unknown where it nests.
 
+## FOR JSON AUTO and ROOT
+
+The code is `Typer.ForJsonAuto.cs` and `Typer.ForJson`, with the key from `BoundSource.WrittenName`; the reasons are in
+[decision 0144](../../docs/decisions/0144-for-json-auto-is-typed-from-observed-nesting.md). `FOR JSON AUTO` nests a row's
+columns by the sources they read. Microsoft's page describes the nesting only loosely, so each rule below is observed in
+`ForJsonObservationTests.Auto.cs`, unit-tested in `ForJsonAutoTests` and run through the `nests` fixture; a form not observed is
+`unsupported-query`, naming the form.
+
+- **Which sources are tables.** A table, a view (a system view too), a derived table, `VALUES`, a CTE, a function of the project
+  (inline or not), a temporary table, a table variable, `OPENXML` and `nodes()` are tables to `AUTO`; `OPENJSON`, `STRING_SPLIT`
+  and `GENERATE_SERIES` are not
+  (`Derived_tables_and_values_are_tables_to_for_json_auto_and_built_in_rowset_functions_are_not`,
+  `Openxml_and_a_system_view_are_tables_to_for_json_auto`). A `FROM` with no table is refused (13600,
+  `For_json_auto_refuses_a_query_whose_from_has_no_table`), though a table no column reads is enough.
+- **One object per table, in a chain.** A table whose bare column (in parentheses or not, without `COLLATE`) the select list
+  holds gets an object, nested inside the object of the table whose first column stands before its own, whatever the `FROM`'s
+  order or joins (`For_json_auto_nests_tables_in_a_chain_in_the_order_their_first_columns_are_selected`). A table's columns all
+  go in its object, wherever they stand, and the array of the object inside comes last
+  (`For_json_auto_gathers_a_tables_columns_wherever_they_stand_and_writes_the_nested_array_last`). Two aliases of one table are
+  two tables.
+- **Columns of no table.** An expression, a function, conversion or `CASE` of a column, a column under `COLLATE`, an enclosing
+  query's column, and a column of a source that is no table go in the deepest object opened before them, or the outermost
+  (`A_column_of_no_table_joins_the_deepest_object_opened_before_it`, `A_column_of_the_enclosing_query_is_a_column_of_no_table`).
+- **Keys.** A column's key is its name; a dotted alias is one key, never a path
+  (`For_json_auto_writes_a_dotted_alias_as_one_key`). An inner array's key is its table's alias, or else the name the `FROM`
+  writes, its parts joined by dots, without brackets and in the `FROM`'s case: `dbo.Orders`, `#t`, `@t`
+  (`A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it`). A key written twice in one object, which
+  `AUTO` does where `PATH` refuses it, is `duplicate-column` (`For_json_auto_writes_a_repeated_key_twice`).
+- **How many items.** Adjacent rows whose outer values repeat are merged into one object, so a parent whose rows are apart is
+  written once for each run of them (`For_json_auto_starts_a_new_object_for_a_parent_whose_rows_are_not_adjacent`). Every row
+  writes an object at every level, an outer join's unmatched side included, as an object of no keys, or of null keys with
+  `INCLUDE_NULL_VALUES` (`An_unmatched_child_is_one_object_with_its_keys_left_out_or_with_include_null_values_null`,
+  `An_unmatched_parent_is_an_object_with_its_keys_left_out`). So an inner array has at least one item, and exactly one when
+  the query returns at most one row; nothing more is claimed. An object is never left out, as a `PATH` object whose values are
+  all null is; a key is left out when null by the rule both modes share, so the optional side's keys are `omittedWhenNull`.
+- **The outermost array.** As `PATH`'s: absent over no rows (`no-rows`), left out with `WITHOUT_ARRAY_WRAPPER`, and a subquery
+  is JSON with its wrapper and text without (`A_for_json_auto_subquery_nests_as_json_with_its_wrapper_and_as_text_without`).
+- **`ROOT`**, under `PATH` or `AUTO`, puts the array under one key: the name given, taken as written (a dot nests nothing, `''`
+  is a key), or `root` (`Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given`). The document is written
+  only over a row, so its array has at least one item, and exactly one when the query returns at most one row; a result is
+  absent over no rows and a subquery NULL, and a query of exactly one row is always written
+  (`A_root_over_one_aggregate_row_is_always_written`). A `ROOT` subquery nests as JSON, and `json_query` reads into it. With
+  `WITHOUT_ARRAY_WRAPPER` it is a syntax error (13620, `Root_with_without_array_wrapper_is_refused`).
+- **Not modelled:** `AUTO` over a set operation, a pseudo-column such as `$IDENTITY`, a column binding can't resolve, and a column
+  of a full-text function or of `inserted` or `deleted`, none of them observed.
+
 ## JSON built here, traced
 
 The code is `Typer.Json.cs and Walker.Json.cs`, `Typer.JsonReads.cs`, `JsonSlot.cs` and `JsonLiterals.cs`. JSON built
@@ -2921,7 +2967,8 @@ README):
   severity 11 or more, observed to fail the call even where the procedure goes on) describes no call that returns,
   and is left out: `IF @x IS NULL THROW …` is a guard, after which the results always run.
 - **A result says how many rows it returns** (`cardinality`): `one`, `atMostOne` or `many`, counting a rowset's
-  rows, or a `FOR JSON` result's objects (its array's items, or its one object without the array wrapper). It is how many
+  rows, or a `FOR JSON` result's objects (its array's items, the items of the array under its key with `ROOT`, or its one
+  object without the array wrapper). It is how many
   the query returns when it runs; whether the result set may be missing is `absentBecause`. `one` is an aggregate query
   without `GROUP BY` or `HAVING`, or a query with no `FROM` and no filter; `atMostOne` adds `TOP (1)`, `FETCH NEXT 1`, and
   a filter that fixes every column of a primary key or unique constraint with `=` in the key's own type (or `IS NULL`: a

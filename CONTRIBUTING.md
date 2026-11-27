@@ -249,6 +249,7 @@ split into parts along the constructs it covers. The families today:
 | Combining types | `SetTypeTests` | `SetTypeObservationTests`, `SetTypeGridTests` | `tests/fixtures/bazaar` | "Combining types" |
 | JSON traced | `JsonTracingTests` | `JsonTracingObservationTests` | `tests/fixtures/kits` | "JSON built here, traced", "OPENJSON" |
 | JSON assembled as text | `JsonAssembledTests` | `JsonAssembledObservationTests` | `tests/fixtures/beads` | "JSON assembled as text" |
+| `FOR JSON AUTO` and `ROOT` | `ForJsonAutoTests` | `ForJsonObservationTests` (`ForJsonObservationTests.Auto.cs`) | `tests/fixtures/nests` | "FOR JSON AUTO and ROOT", [decision 0144](docs/decisions/0144-for-json-auto-is-typed-from-observed-nesting.md) |
 | JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | JSON declared for a column | `DeclaredColumnTests` | `DeclaredColumnObservationTests` | `tests/fixtures/parcels` | "JSON declared for a column", [decision 0093](docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md) |
