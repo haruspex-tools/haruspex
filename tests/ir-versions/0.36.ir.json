@@ -1,0 +1,184 @@
+{
+  "irVersion": "0.36",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-preview-54172aab",
+      "commit": "54172aab61ea88cd984b807ff0d016244aaf270a"
+    },
+    "path": "database",
+    "files": {
+      "procedures/call_api.sql": "9dc7608e99ec7c4cb9a5f89b62895a638d5987204df83bdc19e98faa5bafc2b7",
+      "procedures/get_plan.sql": "49af34bf8a5ffd45a36d90d074ccb7dc206b52930b087da0a9435f829c2f817b"
+    }
+  },
+  "objects": [
+    {
+      "id": "billing.get_plan",
+      "name": "GetPlan",
+      "kind": "procedure",
+      "at": "procedures/get_plan.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@plan_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetPlanRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "GetPlanBody": {
+      "kind": "object",
+      "open": true,
+      "identity": {
+        "procedure": "billing.get_plan",
+        "path": "results[0][].body<json>"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "maxLength": {
+              "value": 40,
+              "unit": "code-points",
+              "from": {
+                "declared": "GET https://billing.example/plans/{id}"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "basic",
+                "plus"
+              ],
+              "from": [
+                {
+                  "declared": "GET https://billing.example/plans/{id}"
+                }
+              ]
+            }
+          },
+          "presence": "optional",
+          "nullable": false
+        }
+      ]
+    },
+    "GetPlanRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.get_plan",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "body",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "GetPlanBody"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/call_api.sql:6:8",
+              "detail": "`$.result` may be left out, as it is when the reply has no body"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans",
+      "schema": "schemas/plans.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97",
+        "schemas/plans.schema.json": "3cb4c06021ba214a46bd8c7ce3b8e8e0b9142533fb66899c44877b1c80136d75"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans/{id}",
+      "schema": "schemas/plan.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans?tier={tier}",
+      "schema": "schemas/plans.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97",
+        "schemas/plans.schema.json": "3cb4c06021ba214a46bd8c7ce3b8e8e0b9142533fb66899c44877b1c80136d75"
+      }
+    }
+  ],
+  "unknowns": [],
+  "overrides": [
+    {
+      "object": "billing.get_plan",
+      "path": "results",
+      "setting": "endpoint-json",
+      "via": "GET https://billing.example/plans/{id}"
+    }
+  ],
+  "folds": {}
+}

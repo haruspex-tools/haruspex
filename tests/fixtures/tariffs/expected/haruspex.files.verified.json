@@ -1,0 +1,8 @@
+{
+  "about": "The files haruspex generate wrote to this folder, which a later run removes when it no longer writes them. Generated: do not edit.",
+  "files": [
+    "haruspex.ir.json",
+    "haruspex.jsonschema.json",
+    "haruspex.zod.ts"
+  ]
+}

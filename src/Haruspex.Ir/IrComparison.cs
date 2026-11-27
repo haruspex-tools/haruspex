@@ -36,6 +36,7 @@ public static class IrComparison
         Source(before, after, changes);
         Folds(before, after, changes);
         Columns(before, after, changes);
+        Endpoints(before, after, changes);
 
         var earlier = before.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
         var later = after.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
@@ -138,6 +139,23 @@ public static class IrComparison
             var now = later.GetValueOrDefault(column);
             if (was != now)
                 changes.Add(new IrChange(IrChangeKind.ColumnDeclarationChanged, "", "columns" + IrPath.Key(column), IrClaimText.Declaration(was), IrClaimText.Declaration(now)));
+        }
+    }
+
+    /// <summary>
+    /// The endpoints declared to send a response of a schema (0.36), compared as the columns are (<see cref="Columns"/>): a schema
+    /// file whose text changed is a change, since the next reply read is held to the new text.
+    /// </summary>
+    private static void Endpoints(IrDocument before, IrDocument after, List<IrChange> changes)
+    {
+        var earlier = before.Endpoints.ToDictionary(e => e.Endpoint, StringComparer.Ordinal);
+        var later = after.Endpoints.ToDictionary(e => e.Endpoint, StringComparer.Ordinal);
+        foreach (var endpoint in earlier.Keys.Union(later.Keys).Order(StringComparer.Ordinal))
+        {
+            var was = earlier.GetValueOrDefault(endpoint);
+            var now = later.GetValueOrDefault(endpoint);
+            if (was != now)
+                changes.Add(new IrChange(IrChangeKind.EndpointDeclarationChanged, "", "endpoints" + IrPath.Key(endpoint), IrClaimText.Declaration(was), IrClaimText.Declaration(now)));
         }
     }
 

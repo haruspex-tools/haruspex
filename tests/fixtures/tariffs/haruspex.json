@@ -1,0 +1,16 @@
+// The config file of an invented billing database that calls an invented REST service: a project, so that it is not deployed with
+// the fixtures the differential tests share, whose server can't call a REST endpoint. Each endpoint's response is declared.
+{
+  "$schema": "../../../schemas/haruspex.schema.json",
+  "source": "database",
+  "out": "generated",
+  "emit": ["zod", "json-schema"],
+  "schemas": {
+    "billing": { "include": ["*"] },
+  },
+  "endpoints": [
+    { "url": "https://billing.example/plans/{id}", "method": "GET", "response": "schemas/plan.schema.json" },
+    { "url": "https://billing.example/plans", "method": "GET", "response": "schemas/plans.schema.json" },
+    { "url": "https://billing.example/plans?tier={tier}", "method": "GET", "response": "schemas/plans.schema.json" },
+  ],
+}

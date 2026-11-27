@@ -19,19 +19,22 @@ public static class IrFieldText
     /// <summary>
     /// Why a key may be left out whatever its value (<see cref="IrPresence.Optional"/>), in <paramref name="document"/>: one of the
     /// two databases a combined document holds against doesn't return it, or leaves it out when null where the other sends null;
-    /// or (0.28) the schema a column is declared with doesn't require it. In the words every emitter and <c>haruspex explain</c> use.
+    /// or (0.28) the schema a column is declared with doesn't require it; or (0.36) a REST endpoint's reply had no body, or the schema its
+    /// response is declared with doesn't require it. In the words every emitter and <c>haruspex explain</c> use.
     /// </summary>
     public static string LeftOutWhateverItsValue(IrDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
         const string Combined = "one of the two databases doesn't return the key, or leaves it out when null where the other sends null";
         const string Declared = "the schema a column is declared to hold doesn't require the key";
-        return (document.Source.Baseline is null, document.Columns.Count > 0) switch
-        {
-            (true, _) => Declared,
-            (false, true) => Combined + "; or " + Declared,
-            (false, false) => Combined,
-        };
+
+        // A REST endpoint's envelope leaves result out when the reply has no body, declared or not (0.36), so a document of one
+        // database that declares no column's JSON may still hold an optional key.
+        const string Rest = "the reply of a REST endpoint had no body, or the schema its response is declared with doesn't require the key";
+        var combined = document.Source.Baseline is not null;
+        var columns = document.Columns.Count > 0;
+        string[] why = [.. combined ? [Combined] : (string[])[], .. columns ? [Declared] : (string[])[], .. document.Endpoints.Count > 0 || (!combined && !columns) ? [Rest] : (string[])[]];
+        return string.Join("; or ", why);
     }
 
     /// <summary>

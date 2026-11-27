@@ -13,7 +13,7 @@ changing ([decision 0121](../docs/decisions/0121-every-address-haruspex-writes-i
 | `/` | A page that leads to the repository. |
 | `/schemas/main/haruspex.schema.json`, `/schemas/main/haruspex.output.schema.json` | `schemas/*.json` on `main`: what a preview build names. |
 | `/schemas/v1.2.3/haruspex.schema.json`, and the report's | The same files as the tag `v1.2.3` holds them: what that release names. |
-| `/schemas/ir/0.35.schema.json` | Each IR schema in `schemas/ir` on `main`, and any a release tag holds that `main` no longer does (the newest such tag's). |
+| `/schemas/ir/0.36.schema.json` | Each IR schema in `schemas/ir` on `main`, and any a release tag holds that `main` no longer does (the newest such tag's). |
 | `/diagnostics/`, `/diagnostics/HAR2009` | A page that leads to `docs/diagnostics/README.md` or `docs/diagnostics/HAR2009.md` on `main`, on GitHub. |
 | `/reasons/`, `/reasons/count-overflow` | A page that leads to `docs/reasons/README.md` or `docs/reasons/count-overflow.md` on `main`. |
 | `/docs/`, `/docs/configuration` | A page that leads to `docs/README.md` or `docs/configuration.md` on `main`. |

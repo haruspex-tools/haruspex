@@ -98,6 +98,12 @@ public sealed record HaruspexConfig
     /// </summary>
     public EquatableArray<ColumnDeclaration> Columns { get; init; } = [];
 
+    /// <summary>
+    /// The external REST endpoints declared to send a response of a schema (<c>endpoints</c>), each translated into the IR, in the
+    /// order written; empty when the file declares none.
+    /// </summary>
+    public EquatableArray<EndpointDeclaration> Endpoints { get; init; } = [];
+
     /// <summary>The warnings the file acknowledges (<c>acknowledge</c>), each by its code and subject, in the order written.</summary>
     public EquatableArray<Acknowledgement> Acknowledged { get; init; } = [];
 

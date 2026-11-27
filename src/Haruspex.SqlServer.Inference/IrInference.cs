@@ -34,6 +34,11 @@ public static class IrInference
     /// The columns declared to hold JSON of a schema, part of each column's type, read wherever the column is; none when null. The
     /// document records each, and lists a claim on each object whose results may rest on one.
     /// </param>
+    /// <param name="endpoints">
+    /// The external REST endpoints declared to send a response of a schema, read where a call of
+    /// <c>sys.sp_invoke_external_rest_endpoint</c> matches one; none when null. The document records each, and lists a claim on each
+    /// object whose results may rest on one.
+    /// </param>
     /// <exception cref="ArgumentException">A name is not a procedure of the model: a fault of the caller, which selected it.</exception>
     public static Succeeded<IrDocument> Infer(
         DatabaseModel model,
@@ -41,7 +46,8 @@ public static class IrInference
         IReadOnlyDictionary<ObjectName, DeclaredResults>? declarations = null,
         SessionOptions? session = null,
         IReadOnlyList<QueryFile>? queries = null,
-        IReadOnlyList<DeclaredColumn>? columns = null)
+        IReadOnlyList<DeclaredColumn>? columns = null,
+        IReadOnlyList<DeclaredEndpoint>? endpoints = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
@@ -49,8 +55,9 @@ public static class IrInference
         declarations ??= new Dictionary<ObjectName, DeclaredResults>();
         session ??= SessionOptions.NotKnown;
         columns ??= [];
+        endpoints ??= [];
         var warnings = new List<Diagnostic>();
-        var summaries = new Summaries(model, declarations, warnings, session, columns);
+        var summaries = new Summaries(model, declarations, warnings, session, columns, endpoints);
 
         // UNMASK declared, but a module runs as another user, whose permissions decide what it reads: every mask is kept.
         if (session.MasksAreLifted && summaries.RunsAsAnother is { } another)
@@ -77,12 +84,13 @@ public static class IrInference
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
 
-        // Results that may hold a declared column's JSON rest on its declaration: listed for each object whose body, or a body
-        // it reaches, reads the column. Results that can't be listed claim nothing to rest on.
+        // Results that may hold a declared column's JSON, or a declared endpoint's response, rest on its declaration: listed for
+        // each object whose body, or a body it reaches, reads it. Results that can't be listed claim nothing to rest on.
         claims.AddRange(analysed.Select(a => (Object: a.procedure.Name.ToString(), a.procedure.Span, Analysis: a.Item2))
             .Concat(queried.Select(q => (Object: q.query.Path, q.query.Span, Analysis: q.Item2)))
             .Where(a => a.Analysis.Results is not null)
-            .SelectMany(a => summaries.DeclaredColumns.ReadFrom(a.Span).Select(column => new IrOverride(a.Object, "results", IrOverrideSetting.ColumnJson, null) { Via = column })));
+            .SelectMany(a => ((IrOverrideSetting[])[IrOverrideSetting.ColumnJson, IrOverrideSetting.EndpointJson]).SelectMany(setting =>
+                summaries.Reads.ReadFrom(a.Span, setting).Select(name => new IrOverride(a.Object, "results", setting, null) { Via = name }))));
         var folds = IrDocumentFolds.Named(document).ToEquatableMap(name => name, name => SqlTypes.Fold(CollationFold.Named(name)));
 
         // JSON built as text, wherever the project writes it, whether or not anything reads it as JSON
@@ -91,7 +99,7 @@ public static class IrInference
 
         // A result set returned as FOR XML, which FOR JSON would build typed (docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md).
         warnings.AddRange(XmlResultNotes.In(model, queries));
-        return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds, Columns = [.. columns.Select(c => c.Record)] }, [.. warnings]);
+        return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds, Columns = [.. columns.Select(c => c.Record)], Endpoints = [.. endpoints.Select(e => e.Record)] }, [.. warnings]);
     }
 
     /// <summary>
@@ -107,7 +115,7 @@ public static class IrInference
         ArgumentNullException.ThrowIfNull(column);
         if (model.FindReadable(view) is not View found)
             return [];
-        var read = new Summaries(model, new Dictionary<ObjectName, DeclaredResults>(), [], SessionOptions.NotKnown, []).View(found, uncommitted: false, found.Span);
+        var read = new Summaries(model, new Dictionary<ObjectName, DeclaredResults>(), [], SessionOptions.NotKnown, [], []).View(found, uncommitted: false, found.Span);
         var index = read.Names?.ToList().FindIndex(n => n.Equals(column, StringComparison.OrdinalIgnoreCase)) ?? -1;
         return index >= 0 && read.From is { } from && index < from.Count ? [.. from[index].Select(c => c.Column).Distinct(StringComparer.Ordinal)] : [];
     }

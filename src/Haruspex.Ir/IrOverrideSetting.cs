@@ -25,4 +25,11 @@ public enum IrOverrideSetting
     /// (<see cref="IrDocument.Columns"/>).
     /// </summary>
     ColumnJson,
+
+    /// <summary>
+    /// The object reads the response the config file declares an external REST endpoint to send (0.36), named by
+    /// <see cref="IrOverride.Via"/> as <see cref="IrEndpointDeclaration.Endpoint"/> gives it, so what it returns of that response
+    /// rests on the declaration, not on the database (<see cref="IrDocument.Endpoints"/>).
+    /// </summary>
+    EndpointJson,
 }

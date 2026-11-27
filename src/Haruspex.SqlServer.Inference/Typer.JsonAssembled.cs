@@ -27,6 +27,9 @@ internal sealed partial class Typer
         return [new OpaquePiece(Text(expression), At(expression))];
     }
 
+    /// <summary>The pieces of <paramref name="expression"/>'s text when it is not NULL, read in <paramref name="scope"/>.</summary>
+    internal EquatableArray<TextPiece> TextOf(ScalarExpression expression, ReadScope scope) => PiecesOf(Expression(expression, scope), expression);
+
     /// <summary>Whether a character needs no escape in a JSON string: not a quotation mark, a backslash or a control character.</summary>
     private static bool NeedsNoEscape(char c) => c is not ('"' or '\\') and >= ' ';
 

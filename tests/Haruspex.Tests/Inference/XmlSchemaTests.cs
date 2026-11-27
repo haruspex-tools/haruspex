@@ -375,7 +375,7 @@ public class XmlSchemaTests
         var doc = Faceted("(/r/@size)[1]", "nvarchar(5)");
 
         Assert.Equal(new IrValueSet([new IrValue("S", true), new IrValue("M", true), new IrValue("XL", true)], IrValueMatch.Exact, [Size]), FacetsOf(doc)!.Values);
-        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+        Assert.Equal(IrDocument.SchemaFactsVersion, doc.Version);
     }
 
     [Fact]
@@ -457,7 +457,7 @@ public class XmlSchemaTests
     {
         var doc = Faceted(path, type);
 
-        Assert.NotEqual(IrDocument.CurrentVersion, doc.Version);
+        Assert.NotEqual(IrDocument.SchemaFactsVersion, doc.Version);
     }
 
     [Fact]

@@ -1,0 +1,729 @@
+{
+  "irVersion": "0.36",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-test",
+      "commit": "0000000000000000000000000000000000000000"
+    },
+    "path": "database",
+    "files": {
+      "procedures/call_api.sql": "9dc7608e99ec7c4cb9a5f89b62895a638d5987204df83bdc19e98faa5bafc2b7",
+      "procedures/get_plan.sql": "49af34bf8a5ffd45a36d90d074ccb7dc206b52930b087da0a9435f829c2f817b",
+      "procedures/linked_page.sql": "1fa204d7e5f5c260731de9f362e42d4821bf9ccacf62221147eda68d2c5adfdd",
+      "procedures/list_plans.sql": "496069a693342dab9d2fb54dff1ea9d6237c05f1d05484e64c16edd316bf768b",
+      "procedures/plan_summary.sql": "c4b79d0fef7914b7a0be8a76cd3db5b3d2464741bb68efed8575b2a3f06c6452",
+      "procedures/plans_by_tier.sql": "21eef18ca617d37ec2c95be5b89e970cf7f745aea5d16cb925c1318b4b8db340"
+    }
+  },
+  "objects": [
+    {
+      "id": "billing.call_api",
+      "name": "CallApi",
+      "kind": "procedure",
+      "at": "procedures/call_api.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@path",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(200)",
+            "maxLength": {
+              "value": 200,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(200)"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        },
+        {
+          "name": "@method",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(6)",
+            "maxLength": {
+              "value": 6,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(6)"
+              }
+            }
+          },
+          "hasDefault": true,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "CallApiRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "billing.get_plan",
+      "name": "GetPlan",
+      "kind": "procedure",
+      "at": "procedures/get_plan.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@plan_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "GetPlanRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "billing.linked_page",
+      "name": "LinkedPage",
+      "kind": "procedure",
+      "at": "procedures/linked_page.sql:2:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@plan_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "LinkedPageRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "billing.list_plans",
+      "name": "ListPlans",
+      "kind": "procedure",
+      "at": "procedures/list_plans.sql:2:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "ListPlansRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "billing.plan_summary",
+      "name": "PlanSummary",
+      "kind": "procedure",
+      "at": "procedures/plan_summary.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@plan_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PlanSummaryRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    },
+    {
+      "id": "billing.plans_by_tier",
+      "name": "PlansByTier",
+      "kind": "procedure",
+      "at": "procedures/plans_by_tier.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@plus",
+          "type": {
+            "kind": "boolean",
+            "sql": "bit"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "PlansByTierRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "CallApiRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.call_api",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "body",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/call_api.sql:5:1"
+            }
+          ]
+        }
+      ]
+    },
+    "GetPlanBody": {
+      "kind": "object",
+      "open": true,
+      "identity": {
+        "procedure": "billing.get_plan",
+        "path": "results[0][].body<json>"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "maxLength": {
+              "value": 40,
+              "unit": "code-points",
+              "from": {
+                "declared": "GET https://billing.example/plans/{id}"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "basic",
+                "plus"
+              ],
+              "from": [
+                {
+                  "declared": "GET https://billing.example/plans/{id}"
+                }
+              ]
+            }
+          },
+          "presence": "optional",
+          "nullable": false
+        }
+      ]
+    },
+    "GetPlanRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.get_plan",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "body",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "GetPlanBody"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/call_api.sql:6:8",
+              "detail": "`$.result` may be left out, as it is when the reply has no body"
+            }
+          ]
+        }
+      ]
+    },
+    "LinkedPageRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.linked_page",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "http_code",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "body",
+          "type": {
+            "kind": "unknown",
+            "reason": "json-shape-unknown"
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "unknown",
+              "at": "procedures/linked_page.sql:4:1"
+            }
+          ]
+        }
+      ]
+    },
+    "ListPlansBody": {
+      "kind": "object",
+      "open": true,
+      "identity": {
+        "procedure": "billing.list_plans",
+        "path": "results[0][].body<json>[]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "maxLength": {
+              "value": 40,
+              "unit": "code-points",
+              "from": {
+                "declared": "GET https://billing.example/plans"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "basic",
+                "plus"
+              ],
+              "from": [
+                {
+                  "declared": "GET https://billing.example/plans"
+                }
+              ]
+            }
+          },
+          "presence": "optional",
+          "nullable": false
+        }
+      ]
+    },
+    "ListPlansRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.list_plans",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "body",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "kind": "array",
+              "items": {
+                "ref": "ListPlansBody"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/call_api.sql:6:8",
+              "detail": "`$.result` may be left out, as it is when the reply has no body"
+            }
+          ]
+        }
+      ]
+    },
+    "PlanSummaryRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.plan_summary",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "status",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "http_code",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 40,
+              "unit": "code-points",
+              "from": {
+                "declared": "GET https://billing.example/plans/{id}"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/plan_summary.sql:9:5",
+              "detail": "`$.result` may be left out, as it is when the reply has no body"
+            }
+          ]
+        },
+        {
+          "name": "tier",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "basic",
+                "plus"
+              ],
+              "from": [
+                {
+                  "declared": "GET https://billing.example/plans/{id}"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/plan_summary.sql:10:5",
+              "detail": "`$.result` may be left out, as it is when the reply has no body; `$.result.tier` may be left out, as the schema doesn't require it"
+            }
+          ]
+        }
+      ]
+    },
+    "PlansByTierRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "billing.plans_by_tier",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "arithmetic-overflow",
+              "at": "procedures/plans_by_tier.sql:8:44"
+            }
+          ]
+        },
+        {
+          "name": "name",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(40)",
+            "maxLength": {
+              "value": 40,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(40)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans",
+      "schema": "schemas/plans.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97",
+        "schemas/plans.schema.json": "3cb4c06021ba214a46bd8c7ce3b8e8e0b9142533fb66899c44877b1c80136d75"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans/{id}",
+      "schema": "schemas/plan.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97"
+      }
+    },
+    {
+      "method": "GET",
+      "url": "https://billing.example/plans?tier={tier}",
+      "schema": "schemas/plans.schema.json",
+      "files": {
+        "schemas/plan.schema.json": "16b43e502f3ca993944870590409ae175265757f008ef52786eccbc249c34b97",
+        "schemas/plans.schema.json": "3cb4c06021ba214a46bd8c7ce3b8e8e0b9142533fb66899c44877b1c80136d75"
+      }
+    }
+  ],
+  "unknowns": [
+    {
+      "object": "billing.call_api",
+      "path": "results[0][].body",
+      "reason": "json-shape-unknown",
+      "detail": "The body of the reply to EXEC sys.sp_invoke_external_rest_endpoint @url = @url, @method = @method, @re... is the service's, and is not known: its @url is built at run time: @url at procedures/call_api.sql:5:50 may be any text.",
+      "at": "procedures/call_api.sql:5:1"
+    },
+    {
+      "object": "billing.linked_page",
+      "path": "results[0][].body",
+      "reason": "json-shape-unknown",
+      "detail": "The body of the reply to EXEC sys.sp_invoke_external_rest_endpoint @url = @url, @method = N'GET', @res... is the service's, and is not known: its @url is built at run time: @url at procedures/linked_page.sql:4:50 may be any text.",
+      "at": "procedures/linked_page.sql:4:1"
+    }
+  ],
+  "overrides": [
+    {
+      "object": "billing.get_plan",
+      "path": "results",
+      "setting": "endpoint-json",
+      "via": "GET https://billing.example/plans/{id}"
+    },
+    {
+      "object": "billing.list_plans",
+      "path": "results",
+      "setting": "endpoint-json",
+      "via": "GET https://billing.example/plans"
+    },
+    {
+      "object": "billing.plan_summary",
+      "path": "results",
+      "setting": "endpoint-json",
+      "via": "GET https://billing.example/plans/{id}"
+    },
+    {
+      "object": "billing.plans_by_tier",
+      "path": "results",
+      "setting": "endpoint-json",
+      "via": "GET https://billing.example/plans?tier={tier}"
+    }
+  ],
+  "folds": {}
+}

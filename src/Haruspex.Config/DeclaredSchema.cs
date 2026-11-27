@@ -205,6 +205,16 @@ internal sealed class DeclaredSchema
         return type;
     }
 
+    /// <summary>
+    /// The type of the body of an external REST endpoint's response, read as a column's JSON is (<see cref="Column"/>) but for its
+    /// top: a body that is JSON <c>null</c> fails the call (11558), so <c>null</c> allowed there never arrives, and is left out.
+    /// </summary>
+    public IrType? Response()
+    {
+        var (root, rootPath) = top;
+        return Node(root, rootPath, "<json>") is var (type, _) ? type : null;
+    }
+
     /// <summary>A schema's type, and whether it may be null; null when it cannot be translated (the problem is reported).</summary>
     private (IrType Type, bool Nullable)? Node(JsonValue value, string at, string irPath)
     {

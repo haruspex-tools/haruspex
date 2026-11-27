@@ -288,10 +288,9 @@ public partial class ExecObservationTests(SqlServerFixture server)
     }
 
     [Fact]
-    public async Task Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server() =>
-        // 'external rest endpoint enabled' is 0, its default on SQL Server 2025, so a call fails (31643) and what one returns
-        // can't be observed here: the catalogue leaves its result sets unknown. When this fails, the server allows it, and the
-        // entry can be observed.
+    public async Task Sp_invoke_external_rest_endpoint_is_disabled_by_default() =>
+        // 'external rest endpoint enabled' is 0, its default on SQL Server 2025, so a call fails (31643) before it sends anything.
+        // What a call does where it is on is observed on a server of its own (RestEndpointObservationTests).
         Assert.Equal(" ! 31643", (await Run([], """
             DECLARE @response nvarchar(max);
             EXEC sys.sp_invoke_external_rest_endpoint @url = N'https://example.invalid/shop', @method = N'GET', @response = @response OUTPUT;

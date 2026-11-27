@@ -120,6 +120,28 @@ public static class IrJsonWriter
                 json.WriteEndArray();
             }
 
+            // Left out when no endpoint is declared, so that such a document reads as it did in 0.35.
+            if (document.Endpoints.Count > 0)
+            {
+                json.WriteStartArray("endpoints");
+                foreach (var endpoint in IrDocumentOrder.Endpoints(document))
+                {
+                    json.WriteStartObject();
+                    json.WriteString("method", endpoint.Method);
+                    json.WriteString("url", endpoint.Address);
+                    json.WriteString("schema", endpoint.Schema);
+                    if (endpoint.Pointer is not null)
+                        json.WriteString("pointer", endpoint.Pointer);
+                    json.WriteStartObject("files");
+                    foreach (var (file, sha256) in endpoint.Files.OrderBy(f => f.Key, StringComparer.Ordinal))
+                        json.WriteString(file, sha256);
+                    json.WriteEndObject();
+                    json.WriteEndObject();
+                }
+
+                json.WriteEndArray();
+            }
+
             json.WriteStartArray("unknowns");
             foreach (var unknown in IrDocumentOrder.Unknowns(document))
             {

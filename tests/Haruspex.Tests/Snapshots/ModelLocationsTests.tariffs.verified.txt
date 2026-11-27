@@ -1,0 +1,16 @@
+column billing.plan_link.href nvarchar(400) at tables/plan_link.sql:4:5
+column billing.plan_link.plan_id int at tables/plan_link.sql:3:5
+key billing.plan_link unnamed (plan_id) at tables/plan_link.sql:3:26
+parameter billing.call_api @method at procedures/call_api.sql:3:56
+parameter billing.call_api @path at procedures/call_api.sql:3:35
+parameter billing.get_plan @plan_id at procedures/get_plan.sql:2:35
+parameter billing.linked_page @plan_id at procedures/linked_page.sql:2:38
+parameter billing.plan_summary @plan_id at procedures/plan_summary.sql:3:39
+parameter billing.plans_by_tier @plus at procedures/plans_by_tier.sql:3:40
+procedure billing.call_api at procedures/call_api.sql:3:1
+procedure billing.get_plan at procedures/get_plan.sql:2:1
+procedure billing.linked_page at procedures/linked_page.sql:2:1
+procedure billing.list_plans at procedures/list_plans.sql:2:1
+procedure billing.plan_summary at procedures/plan_summary.sql:3:1
+procedure billing.plans_by_tier at procedures/plans_by_tier.sql:3:1
+table billing.plan_link at tables/plan_link.sql:2:1

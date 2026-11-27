@@ -50,6 +50,10 @@ internal sealed partial class Walker
     /// Where a query file's walk with its parameters undeclared keeps what their uses say of their types: each statement and each
     /// query read is handed to it, in its scope. Null for every other walk.
     /// </param>
+    /// <param name="keepsText">
+    /// Whether a variable shorter than <c>max</c> keeps the text it is assigned (<see cref="Kept"/>): in a procedure that calls a
+    /// REST endpoint, itself or through others, whose URL may be built in one; no other walk changes.
+    /// </param>
     public Walker(
         DatabaseModel model,
         SourceSpan source,
@@ -59,8 +63,10 @@ internal sealed partial class Walker
         CallContext? context = null,
         bool ansiNullsOff = false,
         bool uncommittedReads = false,
-        ParameterUses? uses = null)
+        ParameterUses? uses = null,
+        bool keepsText = false)
     {
+        this.keepsText = keepsText;
         binder = summaries.Bindings.For(source, search);
         this.source = source;
         this.uses = uses;
@@ -112,6 +118,9 @@ internal sealed partial class Walker
     /// <summary>How many result sets have been added to any state, so that a loop can tell whether its body returns any.</summary>
     private int appended;
 
+    /// <summary>Whether a variable shorter than <c>max</c> keeps the text it is assigned (<see cref="Kept"/>).</summary>
+    private readonly bool keepsText;
+
     /// <summary>Each scalar variable's declared type, from every DECLARE in the body.</summary>
     private readonly Dictionary<LocalName, Shape> variableShapes = [];
 
@@ -152,7 +161,12 @@ internal sealed partial class Walker
             var name = new LocalName(parameter.Name);
             var live = false;
             variableShapes[name] = undecided?.GetValueOrDefault(name) ?? typer.DeclaredShape(parameter.Type, parameter.At, name, out live);
-            start.Add(new(name, Value.Computed(variableShapes[name], Because(IrNullRule.Parameter, name, variableShapes[name]), live)));
+
+            // Its text, and whether it may be NULL, when the call passed known text to a procedure that calls a REST endpoint
+            // (CallContext.Arguments); otherwise any value of its type, or NULL.
+            var passed = context.Arguments.GetValueOrDefault(name);
+            var because = passed is { MayBeNull: false } ? [] : Because(IrNullRule.Parameter, name, variableShapes[name]);
+            start.Add(new(name, Value.Computed(variableShapes[name], because, live) with { Pieces = passed?.Pieces }));
         }
 
         body = statements;
@@ -529,7 +543,7 @@ internal sealed partial class Walker
             return state;
         state = state.Assigned(name);
         var because = shape is UnknownShape unknown ? NullReasons.Join(value.NullableBecause, [new IrNullReason(IrNullRule.Unknown, unknown.At.ToString())]) : Converting(value, shape, at, summaries.Session, expression);
-        var assigned = Value.Computed(shape, because, old.IsLiveJson);
+        var assigned = Value.Computed(shape, because, old.IsLiveJson) with { Pieces = keepsText ? Kept(value, shape) : null };
         state = state.WithVariable(name, definitely ? assigned : Value.Join(old, assigned, at, name.Text));
         if (state.Json.TryGetValue(new VariableSlot(name), out var slot))
         {
@@ -539,6 +553,21 @@ internal sealed partial class Walker
 
         return state;
     }
+
+    /// <summary>
+    /// What a variable of a string type shorter than <c>max</c> keeps of the pieces of a value assigned to it: all of them when every
+    /// text they may be is literal text and numbers that always fit in its length, which it then holds unchanged; none otherwise,
+    /// since a longer text is cut short without an error. A variable of <c>nvarchar(max)</c> keeps its pieces where it keeps its
+    /// JSON (<see cref="JsonSlot.Pieces"/>). A <c>char</c> pads its text, and a <c>varchar</c> converts a character that isn't ASCII
+    /// to its code page, so neither keeps such text. Only a procedure that calls a REST endpoint keeps it (<see cref="keepsText"/>),
+    /// so that what any other reads as JSON assembled as text is unchanged.
+    /// </summary>
+    private static EquatableArray<TextPiece>? Kept(Value value, Shape shape) =>
+        value.Pieces is { } pieces && shape is ScalarShape { BuiltIn: { IsString: true, IsVarying: true, IsMax: false } type }
+        && SentText.Expand(pieces, out _) is { } texts
+        && texts.All(t => t.MostLength <= type.Length && (type.IsNational || t.Parts.All(p => p is not SentText.Literal literal || literal.Text.All(char.IsAscii))))
+            ? pieces
+            : null;
 
     // ---- SELECT ---------------------------------------------------------------------------------------------------
 

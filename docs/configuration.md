@@ -328,12 +328,13 @@ Schema, or depend on the files beside the config file, so an editor shows these 
 - **A key written twice in one object**, which a JSON parser keeps the last of.
 - **A procedure named in other than two parts**, `schema.name`, in `procedures`.
 - **A pattern, a path or a regular expression that is not well formed**: a pattern or a path with a bracket left open, a
-  naming rule's expression that doesn't compile.
+  naming rule's expression that doesn't compile, an endpoint's URL with a `{` left open.
 - **A name that is a reserved word** in the generated code: a type's, or a set's.
 - **Two names that differ only in case**: two schemas' blocks, or two modules, since a file system that ignores case would
   hold one file for both.
 - **A schema in two modules**, compared ignoring case, as SQL Server compares schema names.
 - **A warning acknowledged twice**: one code and subject with two reasons.
+- **An endpoint declared twice**: one method and URL with two responses.
 - **A collation SQL Server does not have**, or one no database can have.
 - **A file or folder that is not there**: a folder of `references`, a JSON Schema file, or a `$ref` in one.
 - **A declared JSON Schema haruspex can't type** ([what a declaration reads](#the-json-schemas-a-declaration-reads)).
@@ -667,11 +668,60 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
 - **A declaration is checked at runtime**, like everything else: the generated validator rejects a value that doesn't fit it, so
   a wrong schema fails loudly, on real data. It is a claim about every writer there ever was, which only the team can make.
 
+## Calls to REST endpoints: `endpoints`
+
+**For a procedure that calls a REST service** with `sys.sp_invoke_external_rest_endpoint` (SQL Server 2025) and returns what
+it read.
+
+What SQL Server writes into `@response` is its own, and haruspex types it from what the server was observed to do: an envelope
+holding the status, the headers and the reply's body as `result`. The body is the service's, and nothing in the project shows
+what a service sends, so `result` is unknown until the config file declares it, for each endpoint, with a JSON Schema
+([decision 0140](decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md)):
+
+```jsonc
+"endpoints": [
+  { "url": "https://billing.example/plans/{id}", "method": "GET", "response": "schemas/plan.schema.json" },
+  { "url": "https://billing.example/plans?tier={tier}", "method": "GET", "response": "schemas/plans.schema.json" }
+]
+```
+
+```sql
+CREATE PROCEDURE billing.get_plan @plan_id int AS
+DECLARE @response nvarchar(max), @url nvarchar(200) = N'https://billing.example/plans/' + CAST(@plan_id AS nvarchar(11));
+EXEC sys.sp_invoke_external_rest_endpoint @url = @url, @method = N'GET', @response = @response OUTPUT;
+SELECT JSON_VALUE(@response, '$.result.name') AS name, JSON_QUERY(@response, '$.result') AS plan_body;
+```
+
+- **`url`** is the endpoint's `https` URL. Its scheme and host compare without case, as the server reads them; everything after
+  them compares exactly, the query and a fragment included, which the server sends as written. A `{name}` stands for one
+  segment of the path, or one value of the query: text that is never empty and never holds `/`, `?`, `#`, `&` or `=`.
+- **`method`** is `GET`, `POST`, `PUT`, `PATCH` or `DELETE`, compared with the call's without case. A call that gives no
+  `@method` sends `POST`.
+- **`response`** is the JSON Schema file of the reply's body, relative to this file, with a JSON Pointer after `#` when it isn't
+  the whole file, read as [a column's JSON is](#the-json-schemas-a-declaration-reads): an object may hold keys the schema
+  doesn't list, and a key it doesn't require may be left out. It describes the body of **every** status, since an error's body is
+  written into `result` too: a service whose errors send another shape is declared with `anyOf`. A body that isn't an object or
+  an array fails the call, so only those parts of the schema are read.
+- **Which calls take it.** `@url` and `@method` are read from the text the SQL builds: literals, `+` and `CONCAT`, a number
+  converted to text (which stands for a `{name}`), `CASE`, `IIF`, `COALESCE`, a variable long enough to hold every text, and a
+  wrapper procedure's parameter, read at each call of the wrapper with the text the call passes. Where every URL and method a
+  call may send match one declaration, `result` is its response. Anything else leaves `result` unknown, saying why: text built
+  at run time (a parameter the application passes, a column), text that may match no declaration or more than one, or a
+  variable that may cut the URL short. A NULL that `+` treats as empty (unless [the callers' session](#the-callers-session-session)
+  sets `CONCAT_NULL_YIELDS_NULL` on) or that `CONCAT` drops is a URL too: `…/plans/` matches nothing above.
+- **The envelope is typed either way**: `JSON_VALUE(@response, '$.response.status.http.code')` is never NULL after a call that
+  returns, and anything under `$.result` may be, since a reply with no body leaves it out. Only a `@response` of
+  `nvarchar(max)` holds it whole, and `@headers` must accept JSON: no Accept, or `application/json`.
+- **The IR records each declaration** with the SHA-256 of every schema file it read, so a changed declaration or schema file is a
+  change `check` reports, and each object whose results may hold a declared response lists the claim (`endpoint-json`, its
+  `via` the method and URL). A declaration is a claim about someone else's service, which the generated validator checks on every
+  reply.
+
 ## The JSON Schemas a declaration reads
 
-**For whoever writes the JSON Schema** of declared results or of a column's JSON.
+**For whoever writes the JSON Schema** of declared results, of a column's JSON or of an endpoint's response.
 
-Declared results and declared columns read a JSON Schema (draft 2020-12), and translate it into haruspex's own types. The subset
+Declared results, declared columns and declared endpoints read a JSON Schema (draft 2020-12), and translate it into haruspex's own types. The subset
 read:
 
 | Keyword | How it is read |

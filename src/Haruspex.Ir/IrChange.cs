@@ -74,7 +74,7 @@ public readonly record struct IrChange(IrChangeKind Kind, string Object, string 
         IrChangeKind.ValueMatchChanged => $"value set's match changed from {Before} to {After}",
         IrChangeKind.BuildsChanged => After == "true" ? "now declared a build" : "no longer declared a build",
         IrChangeKind.FoldersChanged => After == "true" ? "now read" : "no longer read",
-        IrChangeKind.DialectChanged or IrChangeKind.SessionChanged or IrChangeKind.FoldChanged or IrChangeKind.ColumnDeclarationChanged => $"changed from {Before} to {After}",
+        IrChangeKind.DialectChanged or IrChangeKind.SessionChanged or IrChangeKind.FoldChanged or IrChangeKind.ColumnDeclarationChanged or IrChangeKind.EndpointDeclarationChanged => $"changed from {Before} to {After}",
     };
 
     /// <summary>The change as one line: the object, the path and the description, such as <c>shop.list_orders results[0][].note: became nullable</c>.</summary>

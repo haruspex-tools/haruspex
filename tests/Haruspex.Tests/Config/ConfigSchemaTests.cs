@@ -110,6 +110,7 @@ public class ConfigSchemaTests
         ["a collation SQL Server lacks"] = ("""{ "collation": "Latin1_General_100_CI_XX" }""", "HAR3005", "A collation SQL Server does not have"),
         ["a folder that isn't there"] = ("""{ "references": ["no-such-folder"] }""", "HAR3021", "A file or folder that is not there"),
         ["a schema file that isn't there"] = ("""{ "columns": { "shop.orders.settings": { "json": "no-such.schema.json" } } }""", "HAR3001", "A file or folder that is not there"),
+        ["an endpoint declared twice"] = ("""{ "endpoints": [{ "url": "https://billing.example/plans", "method": "GET", "response": "a.json" }, { "url": "https://billing.example/plans", "method": "GET", "response": "b.json" }] }""", "HAR3003", "An endpoint declared twice"),
         ["a rowset that isn't an object"] = ("""{ "procedures": { "sales.search": { "results": { "rowset": { "type": "string" } }, "why": "dynamic SQL" } } }""", "HAR3101", "A declared JSON Schema haruspex can't type"),
     };
 

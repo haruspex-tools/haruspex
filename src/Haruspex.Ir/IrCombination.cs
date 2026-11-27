@@ -133,6 +133,7 @@ public static partial class IrCombination
 
                 // Both documents are read with one config file, so the candidate's declarations are the application's.
                 Columns = candidate.Columns,
+                Endpoints = candidate.Endpoints,
             };
             document = document with { Folds = Folds(document) };
             return new IrCombined(document, [.. findings.Distinct().OrderBy(f => f.Object, StringComparer.Ordinal)]);

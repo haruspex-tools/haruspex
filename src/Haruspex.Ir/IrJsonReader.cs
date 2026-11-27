@@ -190,6 +190,7 @@ public static class IrJsonReader
             Folds = Folds(json.Object("folds")),
             TableTypes = tableTypes is null ? [] : TableTypes(tableTypes),
             Columns = Columns(json),
+            Endpoints = Endpoints(json),
         };
         source.End();
         json.End();
@@ -208,6 +209,7 @@ public static class IrJsonReader
         DescribesAsLabelled(document, version);
         HoldsXmlAsLabelled(document, version);
         HoldsSchemaFactsAsLabelled(document, version);
+        DeclaresEndpointsAsLabelled(document, version);
         return document;
     }
 
@@ -235,6 +237,53 @@ public static class IrJsonReader
         }
 
         return columns.Count > 0 ? [.. columns] : throw new IrFormatException(json.PathOf("columns"), "is empty: a document that declares no column leaves it out.");
+    }
+
+    /// <summary>
+    /// The external REST endpoints declared to send a response of a schema (0.36); none when the file leaves <c>endpoints</c> out. An
+    /// empty array is refused: the writer leaves it out, so there is one way to say "none". Each endpoint is declared once.
+    /// </summary>
+    private static EquatableArray<IrEndpointDeclaration> Endpoints(IrJsonObject json)
+    {
+        if (json.Optional("endpoints") is null)
+            return [];
+        var endpoints = new List<IrEndpointDeclaration>();
+        foreach (var (item, path) in json.Array("endpoints"))
+        {
+            var entry = IrJsonObject.At(item, path);
+            var files = entry.Object("files");
+            var endpoint = new IrEndpointDeclaration(entry.String("method"), entry.String("url"), entry.String("schema"), entry.OptionalString("pointer"), files.Names.ToList().ToEquatableMap(name => name, files.Sha256));
+            files.End();
+            entry.End();
+            if (!endpoint.Files.ContainsKey(endpoint.Schema))
+                throw new IrFormatException(entry.PathOf("files"), $"has no hash of \"{endpoint.Schema}\", the schema file itself: it lists every file the declaration read.");
+            if (endpoints.Any(e => e.Endpoint == endpoint.Endpoint))
+                throw new IrFormatException(entry.PathOf("url"), $"declares {endpoint.Endpoint} twice: an endpoint is declared once.");
+            endpoints.Add(endpoint);
+        }
+
+        return endpoints.Count > 0 ? [.. endpoints] : throw new IrFormatException(json.PathOf("endpoints"), "is empty: a document that declares no endpoint leaves it out.");
+    }
+
+    /// <summary>
+    /// Refuses a declared endpoint (0.36), or a claim that an object reads one, in a document labelled earlier, by its path, and a
+    /// document labelled 0.36 that declares none, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>). A
+    /// claim that an object reads an endpoint's response must name one the document declares.
+    /// </summary>
+    private static void DeclaresEndpointsAsLabelled(IrDocument document, string version)
+    {
+        if (version == IrDocument.CurrentVersion && document.Endpoints.Count == 0 && document.DeclaresEndpoints)
+            throw new IrFormatException("$.endpoints", $"is missing: a document of IR {version} that claims an object reads an endpoint's response lists the endpoints it declares.");
+        foreach (var (claim, i) in IrDocumentOrder.Overrides(document).Select((o, i) => (o, i)))
+        {
+            if (claim.Setting == IrOverrideSetting.EndpointJson && !document.Endpoints.Any(e => e.Endpoint == claim.Via))
+                throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but an \"endpoint-json\" claim names an endpoint the document declares in $.endpoints.");
+        }
+
+        if (version == IrDocument.CurrentVersion && !document.DeclaresEndpoints)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares an endpoint's response, and this one declares none. One that declares none is labelled {IrDocument.SchemaFactsVersion} or earlier, by what else it says.");
+        if (version != IrDocument.CurrentVersion && document.Endpoints.Count > 0)
+            throw new IrFormatException("$.endpoints", $"is given in a document of IR {version}: a document that declares an endpoint's response is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>
@@ -476,10 +525,10 @@ public static class IrJsonReader
     private static void HoldsSchemaFactsAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentXmlSchema.First(document);
-        if (version == IrDocument.CurrentVersion && first is null)
+        if (version == IrDocument.SchemaFactsVersion && first is null)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a fact an XML schema collection proves, and this one holds none. One that holds none is labelled {IrDocument.XmlVersion} or earlier, by what else it says.");
-        if (version != IrDocument.CurrentVersion && first is { } path)
-            throw new IrFormatException(path, $"is given in a document of IR {version}: a fact an XML schema collection proves (from \"xml-schema\") is IR {IrDocument.CurrentVersion}.");
+        if (!IrDocument.IsSince(version, IrDocument.SchemaFactsVersion) && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a fact an XML schema collection proves (from \"xml-schema\") is IR {IrDocument.SchemaFactsVersion} or later.");
     }
 
     /// <summary>A description (0.33): left out when there is none, and never empty.</summary>

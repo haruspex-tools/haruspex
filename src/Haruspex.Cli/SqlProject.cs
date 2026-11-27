@@ -262,7 +262,16 @@ internal sealed class SqlProject
             return new Failed<IrDocument>([.. columnProblems]);
         List<DeclaredColumn> columns = [.. config.Columns.Select(c => new DeclaredColumn(c.Table, c.Column, c.Content, c.Types, c.Record))];
 
-        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns).Select(d => d with { Source = recorded(d.Source) });
+        // An endpoint's URL is a template the inference matches calls against; one it can't read stops the run.
+        var endpointProblems = config.Endpoints
+            .Select(e => DeclaredEndpoint.Problem(e.Record.Address) is { } problem ? ConfigCodes.BadPattern.At(e.UrlAt, problem) : null)
+            .OfType<Diagnostic>()
+            .ToList();
+        if (endpointProblems.Count > 0)
+            return new Failed<IrDocument>([.. endpointProblems]);
+        List<DeclaredEndpoint> endpoints = [.. config.Endpoints.Select(e => new DeclaredEndpoint(e.Content, e.Types, e.Record))];
+
+        var inferred = IrInference.Infer(model, selected, declarations, config.Session, Queries, columns, endpoints).Select(d => d with { Source = recorded(d.Source) });
         var others = declarations.Keys
             .Select(name => model.FindProcedure(name)?.Name)
             .OfType<ObjectName>()
@@ -271,7 +280,7 @@ internal sealed class SqlProject
             .ToList();
 
         // Inferred only to check their declarations against: what inference couldn't check of them is not this run's to report.
-        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns).Value;
+        var declaredDocument = others.Count == 0 ? null : IrInference.Infer(model, others, declarations, config.Session, columns: columns, endpoints: endpoints).Value;
         // Each script the locations point into is recorded with its hash, for explain to match a file against before it shows a line.
         return inferred.Then(document => ConfigApplication.Apply(document, config, Procedures, selectedByFile, outputDirectory, declaredDocument, Queries))
             .Select(document => document with { Source = document.Source with { Files = ScriptFiles.Of(document, folderOf) } });

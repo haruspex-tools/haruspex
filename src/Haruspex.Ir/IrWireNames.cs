@@ -154,6 +154,7 @@ public static class IrWireNames
         IrOverrideSetting.ExactValues => "exact-values",
         IrOverrideSetting.Results => "results",
         IrOverrideSetting.ColumnJson => "column-json",
+        IrOverrideSetting.EndpointJson => "endpoint-json",
     };
 
     /// <summary>Where a fact came from (the key in <c>from</c>).</summary>

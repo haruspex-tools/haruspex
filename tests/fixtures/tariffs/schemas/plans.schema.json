@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A list of plans.",
+  "type": "array",
+  "items": { "$ref": "plan.schema.json" }
+}

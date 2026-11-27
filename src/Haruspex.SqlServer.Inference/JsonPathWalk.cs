@@ -78,7 +78,7 @@ internal static class JsonPathWalk
                 var missing = field.Presence == IrPresence.Optional || (field.Presence == IrPresence.OmittedWhenNull && nullable);
                 var nullHere = nullable && field.Presence != IrPresence.OmittedWhenNull;
                 if (field.Presence == IrPresence.Optional)
-                    notes.Add($"`{here}` may be left out, as the schema doesn't require it");
+                    notes.Add($"`{here}` may be left out, {field.LeftOutBecause ?? "as the schema doesn't require it"}");
                 else if (missing)
                     notes.Add($"`{here}` is left out when it is null");
                 if (nullHere)

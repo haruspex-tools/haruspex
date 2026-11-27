@@ -18,13 +18,16 @@ internal sealed partial class Typer
 {
     /// <summary>
     /// The JSON a document argument holds when its shape is known (built here, or declared for a column): live JSON its shape, JSON
-    /// text its content, a literal that is a JSON document its parsed shape; and why it may be NULL. Null when not known.
+    /// text its content, a literal that is a JSON document its parsed shape; and why it may be NULL. Null when not known, and then
+    /// <paramref name="notJson"/> is why, when the value says.
     /// </summary>
-    private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, ReadScope scope)
+    private (Shape Shape, EquatableArray<IrNullReason> NullableBecause)? DocumentOf(ScalarExpression document, ReadScope scope, out UnknownShape? notJson)
     {
+        notJson = null;
         if (LiteralOf(document) is ({ } literal and StringLiteral, false))
             return JsonLiterals.Parse(literal.Value, literal is StringLiteral { IsNational: true }, At(literal)) is var parsed and not UnknownShape ? (parsed, []) : null;
         var value = Expression(document, scope);
+        notJson = value.JsonWhy;
         var shape = value.IsLiveJson ? value.Shape : value.Shape is JsonTextShape { Content: var content } ? content : Assembled(value, document);
         return shape is null or UnknownShape or RecursiveShape ? null : (shape, value.NullableBecause);
     }
@@ -223,7 +226,7 @@ internal sealed partial class Typer
     /// </summary>
     private List<Value>? TracedOpenJson(OpenJsonTableReference reference, ReadScope scope, SourceLocation at)
     {
-        if (DocumentOf(reference.Variable, scope) is not ({ } document, _))
+        if (DocumentOf(reference.Variable, scope, out _) is not ({ } document, _))
             return null;
         if (reference.RowPattern is { } pattern)
         {
@@ -445,7 +448,7 @@ internal sealed partial class Typer
     /// </summary>
     private Value? TracedJsonValue(FunctionCall call, ReadScope scope)
     {
-        if (call.Parameters.Count != 2 || DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull)
+        if (call.Parameters.Count != 2 || DocumentOf(call.Parameters[0], scope, out _) is not ({ } document, var documentNull)
             || Walk(document, call.Parameters[1], call) is not ({ } path, { } found))
         {
             return null;
@@ -508,10 +511,14 @@ internal sealed partial class Typer
             return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON at a path that is not a literal, so what it finds is not known.", at));
         if (JsonPath.Parse(literal.Value, out var why) is null)
             return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON at a path that is not read: {why}.", at));
-        if (DocumentOf(call.Parameters[0], scope) is not ({ } document, var documentNull))
-            return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here or declared, so its shape is unknown.", at));
+        if (DocumentOf(call.Parameters[0], scope, out var notJson) is not ({ } document, var documentNull))
+            return Value.Unknown(notJson ?? Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON that is not built here or declared, so its shape is unknown.", at));
         if (Walk(document, call.Parameters[1], call) is not ({ } path, { } found))
             return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, $"{Text(call)} reads JSON whose shape at that path is not known.", at));
+
+        // A path that ends at a value whose shape is unknown gives that unknown, with its own reason.
+        if (found.Shape is UnknownShape unknown)
+            return Value.Unknown(unknown);
         if (found.Shape is not { } shape || ObjectsAndArrays(shape) is not { } given)
         {
             return Value.Unknown(Unsupported(IrUnknownReason.JsonShapeUnknown, path.Strict

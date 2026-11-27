@@ -23,7 +23,8 @@ namespace Haruspex.SqlServer.Inference;
 /// <param name="warnings">Where this run of inference adds what could not be checked, once each (<see cref="DmlTriggers"/>); the run returns them.</param>
 /// <param name="session">The options the callers' connections are declared to set.</param>
 /// <param name="columns">The columns declared to hold JSON of a schema.</param>
-internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session, IReadOnlyList<DeclaredColumn> columns)
+/// <param name="endpoints">The external REST endpoints declared to send a response of a schema.</param>
+internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectName, DeclaredResults> declarations, List<Diagnostic> warnings, SessionOptions session, IReadOnlyList<DeclaredColumn> columns, IReadOnlyList<DeclaredEndpoint> endpoints)
 {
     /// <summary>
     /// The options the callers' connections are declared to set, which every body runs under: a procedure, the procedures it
@@ -58,8 +59,14 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     private readonly ViewSummaries views = new(model);
     private readonly ProcedureCalls procedures = new(model, declarations);
 
-    /// <summary>The columns declared to hold JSON of a schema, and which bodies read them, directly or through others.</summary>
-    public DeclaredColumns DeclaredColumns { get; } = new(model, columns);
+    /// <summary>Which declarations of the config file each body reads, and which bodies each reaches.</summary>
+    public DeclarationReads Reads { get; } = new();
+
+    /// <summary>The columns declared to hold JSON of a schema.</summary>
+    public DeclaredColumns DeclaredColumns => field ??= new(model, columns, Reads);
+
+    /// <summary>The responses declared for external REST endpoints.</summary>
+    public DeclaredEndpoints DeclaredEndpoints => field ??= new(endpoints, Reads);
 
     /// <summary>What every body of the model binds to, shared by every body read, so each query is bound once.</summary>
     public Bindings Bindings { get; } = new(model);
@@ -105,7 +112,7 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     public FunctionSummaries.OneOf Function(ObjectName name, SourceLocation at, bool uncommitted, SourceSpan reader)
     {
         if (model.FindFunction(name) is { } function)
-            DeclaredColumns.Reached(reader, function.Span);
+            Reads.Reached(reader, function.Span);
         return (uncommitted ? uncommittedFunctions : functions).Find(name, at, this);
     }
 
@@ -113,7 +120,7 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// <param name="reader">The body that reads it, which reaches the view's.</param>
     public LocalRelationValues View(View view, bool uncommitted, SourceSpan reader)
     {
-        DeclaredColumns.Reached(reader, view.Span);
+        Reads.Reached(reader, view.Span);
         return views.Read(view, uncommitted, this);
     }
 
@@ -121,7 +128,7 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
     /// <param name="reader">The body that calls it, which reaches the function's.</param>
     public LocalRelationValues TableFunction(Function function, EquatableMap<LocalName, Value> arguments, bool uncommitted, SourceSpan reader)
     {
-        DeclaredColumns.Reached(reader, function.Span);
+        Reads.Reached(reader, function.Span);
         return views.Function(function, arguments, uncommitted, this);
     }
 
@@ -130,11 +137,15 @@ internal sealed class Summaries(DatabaseModel model, IReadOnlyDictionary<ObjectN
 
     /// <summary>What a call of <paramref name="callee"/> from a caller in <paramref name="context"/> does.</summary>
     /// <param name="reader">The body that calls it, which reaches the callee's.</param>
-    public Walked Follow(Procedure callee, CallContext context, SourceLocation at, SourceSpan reader)
+    /// <param name="arguments">The text the caller's own walk was passed, which tells it apart (<see cref="DeclarationReads.Walk"/>).</param>
+    public Walked Follow(Procedure callee, CallContext context, SourceLocation at, SourceSpan reader, EquatableMap<LocalName, CallContext.Passed> arguments)
     {
-        DeclaredColumns.Reached(reader, callee.Span);
+        Reads.Reached(new DeclarationReads.Walk(reader, arguments), new DeclarationReads.Walk(callee.Span, context.Arguments));
         return procedures.Follow(callee, context, at, this);
     }
+
+    /// <summary>Whether a procedure calls a REST endpoint, itself or through others (<see cref="ProcedureCalls.CallsRest"/>).</summary>
+    public bool CallsRest(ObjectName name) => procedures.CallsRest(name);
 
     /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
     public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) => procedures.Declared(name);

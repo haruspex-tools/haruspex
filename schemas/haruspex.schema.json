@@ -258,9 +258,38 @@
         "description": "A three-part name: schema.table.column.",
         "pattern": "^(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+$"
       }
+    },
+    "endpoints": {
+      "description": "External REST endpoints declared to send a response of a JSON Schema: a call of sys.sp_invoke_external_rest_endpoint whose every URL and method match one declaration reads its body as that schema, a claim the generated code checks.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/endpoint"
+      }
     }
   },
   "$defs": {
+    "endpoint": {
+      "description": "An external REST endpoint and the response it sends.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "The endpoint's https URL. The scheme and host compare without case, the rest exactly, its query and fragment included; a {name} stands for one segment of the path or one value of the query, built from a number or literal text, as in /plans/{id}.",
+          "type": "string",
+          "pattern": "^[Hh][Tt][Tt][Pp][Ss]://[^/?#{}]+"
+        },
+        "method": {
+          "description": "The HTTP method. A call that gives none sends POST.",
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "response": {
+          "description": "The JSON Schema file of the response's body, for every status, relative to this file, with a JSON Pointer after # to a schema inside it when it isn't the whole file: schemas/plan.schema.json.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["url", "method", "response"],
+      "additionalProperties": false
+    },
     "column": {
       "description": "What a column holds.",
       "type": "object",

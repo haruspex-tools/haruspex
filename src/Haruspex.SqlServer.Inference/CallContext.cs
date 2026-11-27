@@ -12,5 +12,19 @@ namespace Haruspex.SqlServer.Inference;
 /// </param>
 internal sealed record CallContext(EquatableMap<LocalName, TempTable> Temps, bool Escapes, bool Inserting, bool ReadUncommitted = false)
 {
+    /// <summary>
+    /// The text of each argument the call passes a string parameter (or the default it takes), where every text it may be is known
+    /// and fits the parameter. Passed only into a procedure that calls a REST endpoint (<see cref="ProcedureCalls.CallsRest"/>),
+    /// whose URL may be built from it, so that a wrapper is typed at each call of it
+    /// (docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md); empty otherwise, so that no other
+    /// walk is told apart by its arguments.
+    /// </summary>
+    public EquatableMap<LocalName, Passed> Arguments { get; init; } = [];
+
+    /// <summary>The text a call passes a parameter.</summary>
+    /// <param name="Pieces">What its text is made of when it is not NULL.</param>
+    /// <param name="MayBeNull">Whether it may be NULL: a parameter's value is the argument's, so it is NULL only where the argument may be.</param>
+    internal sealed record Passed(EquatableArray<TextPiece> Pieces, bool MayBeNull);
+
     public static CallContext Top { get; } = new([], false, false);
 }

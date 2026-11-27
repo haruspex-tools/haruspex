@@ -1,10 +1,10 @@
-using Haruspex.Ir;
 using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Inference;
 
 // SQL Server's own procedures the catalogue lists (SystemProcedures). Observed:
-// Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int, Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server.
+// Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int,
+// It_returns_no_result_set_and_its_return_code_is_0_for_a_2xx_status_and_the_status_otherwise (RestEndpointObservationTests).
 public partial class ExecTests
 {
     [Theory]
@@ -53,16 +53,18 @@ public partial class ExecTests
     }
 
     [Fact]
-    public void A_rest_endpoint_call_has_results_not_known_saying_why()
+    public void A_rest_endpoint_call_returns_no_result_set_and_sets_its_return_code()
     {
-        var why = ResultsUnknown(Infer(("p", """
+        // 0 for a 2xx status, the status otherwise: an int, never null once the call returns. RestEndpointTests types @response.
+        var doc = Infer(("p", """
             CREATE PROCEDURE dbo.p AS
-            DECLARE @response nvarchar(max);
-            EXEC sys.sp_invoke_external_rest_endpoint @url = N'https://example.invalid/shop', @method = N'GET', @response = @response OUTPUT;
-            SELECT @response AS response;
-            """)));
+            DECLARE @response nvarchar(max), @status int;
+            EXEC @status = sys.sp_invoke_external_rest_endpoint @url = N'https://example.invalid/shop', @method = N'GET', @response = @response OUTPUT;
+            SELECT t.id, @status AS status FROM dbo.t AS t;
+            """));
 
-        Assert.Equal(IrUnknownReason.SystemProcedure, why.Reason);
-        Assert.Contains("not observed", why.Detail, StringComparison.Ordinal);
+        Assert.Single(Results(doc));
+        Assert.False(Field(doc, "status").Nullable);
+        Assert.Empty(doc.Unknowns);
     }
 }

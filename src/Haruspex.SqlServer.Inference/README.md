@@ -633,10 +633,10 @@ return code and its parameters, which `Each_system_procedure_of_the_catalogue_ha
 `sys.all_parameters`. `sp_getapplock` and `sp_releaseapplock` return no result set and an `int`
 (`Sp_getapplock_and_sp_releaseapplock_return_no_result_set_and_an_int`), so a call of either adds nothing to the caller's results
 and changes none of its tables; its return code is never null, as any procedure's. `sp_invoke_external_rest_endpoint` (SQL
-Server 2025) is disabled on the server haruspex is tested against (`Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server`),
-so what a call returns isn't observed: its documentation lists no result set, but its results stay `system-procedure`, saying
-why, until a server shows them; a declaration in the config file stands in for them, as for any call. An argument passed
-`OUTPUT` (its `@response`) holds its variable's declared type, as for any callee.
+Server 2025) is off by default (`Sp_invoke_external_rest_endpoint_is_disabled_by_default`), so it is observed on a server of
+its own that calls an HTTPS endpoint of the tests' own (`RestEndpointObservationTests`): it returns no result set, and its return
+code is 0 for a 2xx status and the status otherwise. An argument passed `OUTPUT` holds its variable's declared type, as for any
+callee.
 
 Under `INSERT … EXEC` such a call's result sets go into the table, so only the temporary tables become unknown: dynamic SQL
 can create, write, alter or drop any of them (`Dynamic_sql_can_change_its_callers_temporary_tables`), and so can anything
@@ -2050,6 +2050,49 @@ variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EX
   it. The document lists every declaration (`columns`), used or not, with its files' hashes.
 - **A view's column can't be declared**: it holds what it reads, and gets the declaration from the table column; declaring one
   is HAR4113, naming the table column it reads (`IrInference.ViewColumnSources`).
+
+## Calls to REST endpoints
+
+The code is `RestCalls.cs`, `Walker.Rest.cs` and `SentText.cs`; observed in `RestEndpointObservationTests`, on a server of its own
+that calls an endpoint of the tests' own (the differential tests' `Server/Rest`), and tested in `RestEndpointTests`. Why:
+[decision 0140](../../docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md).
+`sys.sp_invoke_external_rest_endpoint` (SQL Server 2025) calls an HTTPS endpoint and writes the reply into `@response`, inside an
+envelope of the server's own. The procedure is in the catalogue of system procedures ("Calls", above): it returns no result set,
+and its return code is 0 for a 2xx status and the status otherwise. What it writes was observed:
+
+- **A response of any status is written**, an error's too, so after a call that returns `@response` is never NULL. A call that
+  fails (no endpoint, a timeout, a body it can't parse, an argument it refuses) raises an error and leaves `@response` and the
+  return code as they were, so a `CATCH` reads them as they were before the call.
+- **`@headers` chooses the format** by its Accept key, of any case, and its value, of any case: none, or `application/json`,
+  gives JSON whose `result` is the body parsed, always an object or an array (any other body fails the call, 11558);
+  `text/plain`, `text/xml`, `text/html` and `text/csv` give JSON whose `result` is the body as a string; `application/xml` gives
+  XML. `@headers` is read from the text the SQL builds (`SentText`, from the pieces "JSON assembled as text" describes): literals,
+  `CASE`, `COALESCE`, variables. Where its text isn't known, or its Accept is of a form not observed, the format isn't, and
+  `@response` is read as its declared string, saying why.
+- **The envelope**, as JSON: `{"response":{"status":{"http":{"code","description"}},"headers":{…}},"result":…}`. `code` is an
+  integer; `description` a string, empty when the reply gives no reason phrase; `headers` an object whose keys are data and whose
+  values are strings, perhaps none, perhaps a key twice; `result` the body, left out when the body is empty (a 204, a `HEAD`, a
+  200 with no body). So `JSON_VALUE(@response, '$.response.status.http.code')` is never NULL, and anything under `$.result` may be.
+- **Only `nvarchar(max)` holds it whole.** A shorter variable holds the text cut short without an error, so its JSON isn't read.
+- **`result` is the service's.** Nothing in the project proves what a service returns, so `result` is unknown, saying why,
+  unless the config file declares the endpoint's response (`endpoints`, `DeclaredEndpoints`). `JSON_VALUE` over an unknown
+  `result` is typed as over any JSON.
+
+**Which declaration a call reads.** `@url` and `@method` are read as the text the SQL builds (`SentText.Expand`): every text the
+pieces may make, a `CASE` or a `COALESCE` making several and a NULL that counts as empty one of them, each of literal text and
+numbers converted to text, whose digits aren't known. A declared URL is a template (`UrlTemplate`): its scheme and host compare
+without case, the rest exactly, and a `{name}` stands for text that is never empty and never holds `/`, `?`, `#`, `&` or `=`, which
+a number always is. A call reads a declaration only where every URL and method it may send match that one declaration and no
+other; otherwise `result` is unknown, saying which text is not known, or what it matches. A text longer than `@url`'s 4,000
+characters would be cut short, so it matches nothing.
+
+**Variables and wrappers.** In a procedure that calls the REST procedure, itself or through others (`ProcedureCalls.CallsRest`),
+a variable shorter than `max` keeps the text it is assigned when every text it may be is known and fits, since it then holds it
+unchanged; elsewhere no walk changes. A call of such a procedure passes the text of each string argument that is known and fits
+the parameter, or of the constant default it takes (`CallContext.Arguments`), and the parameter starts as that text, NULL only
+where the argument may be. So a wrapper is walked again for each call with the text that call passes, as it is for each set of
+temporary tables, and its own results, which an application may call with any text, stay unknown. What a walk of it read is
+recorded for that walk (`DeclarationReads.Walk`), so a caller lists only the endpoints its own calls reach.
 
 ## Paths into JSON
 

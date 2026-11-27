@@ -84,7 +84,7 @@ public partial class IrJsonReaderTests
     public void A_document_labelled_0_34_that_holds_no_xml_value_is_refused()
     {
         var json = JsonNode.Parse(IrJsonWriter.Write(IrSamples.Described))!.AsObject();
-        json["irVersion"] = IrDocument.CurrentVersion;
+        json["irVersion"] = IrDocument.XmlVersion;
 
         var e = Assert.Throws<IrFormatException>(() => IrJsonReader.Read(json.ToJsonString()));
 

@@ -38,4 +38,8 @@ internal static class IrDocumentOrder
     /// <summary>Column declarations by column.</summary>
     public static IEnumerable<IrColumnDeclaration> Columns(IrDocument document) =>
         document.Columns.OrderBy(c => c.Column, StringComparer.Ordinal);
+
+    /// <summary>Endpoint declarations by endpoint: method, then URL.</summary>
+    public static IEnumerable<IrEndpointDeclaration> Endpoints(IrDocument document) =>
+        document.Endpoints.OrderBy(e => e.Endpoint, StringComparer.Ordinal);
 }

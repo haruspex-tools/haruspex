@@ -435,6 +435,24 @@ internal static class IrSamples
             .Concat(document.Types.Values.SelectMany(t => t.Fields.Select(f => f.Type)))
             .SelectMany(IrTypeTree.Within);
 
+    /// <summary>
+    /// <see cref="SchemaFacts"/> with a REST endpoint's response declared (0.36), and the claim that <c>sales.get_order</c> reads it,
+    /// so that it holds every property the format has.
+    /// </summary>
+    public static IrDocument Endpoints { get; } = SchemaFacts with
+    {
+        Endpoints =
+        [
+            new IrEndpointDeclaration(
+                "GET",
+                "https://billing.example/plans/{id}",
+                "schemas/plan.schema.json",
+                "/$defs/plan",
+                new Dictionary<string, string> { ["schemas/plan.schema.json"] = Hash('c'), ["schemas/tier.schema.json"] = Hash('d') }.ToEquatableMap(f => f.Key, f => f.Value)),
+        ],
+        Overrides = [.. SchemaFacts.Overrides, new IrOverride("sales.get_order", "results", IrOverrideSetting.EndpointJson, null) { Via = "GET https://billing.example/plans/{id}" }],
+    };
+
     /// <summary>A SHA-256 as the IR writes one, made of one digit: a sample needs its form, not a real file's.</summary>
     private static string Hash(char digit) => new(digit, 64);
 }

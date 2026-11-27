@@ -217,7 +217,7 @@ internal sealed partial class Walker
         var (walked, name) = target switch
         {
             ProcedureCall { Procedure: var callee } when CaseVariantTemps(callee, state, at) is { } variants => (new Walked(null, [], variants, []), (ObjectName?)callee.Name),
-            ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted), at, source), (ObjectName?)callee.Name),
+            ProcedureCall { Procedure: var callee } => (summaries.Follow(callee, new CallContext(temps, needEscapes, inserting, state.ReadUncommitted) { Arguments = Passed(execute, callee, state) }, at, source, context.Arguments), (ObjectName?)callee.Name),
             UnknowableCall unknowable => (new Walked(null, [], new UnknownShape(Reason(unknowable.Kind), unknowable.Detail, at), []), unknowable.Name),
             SystemProcedureCall { Procedure: var system } => (SystemCalled(system, state, needEscapes, Text(execute), at), (ObjectName?)system.Name),
         };
@@ -404,13 +404,21 @@ internal sealed partial class Walker
         var at = At(execute);
         if (execute.Variable is { } returned)
             state = Assign(state, Resolved(returned).Name, Nulls(Resolved(returned).Name, []), definitely: true, at);
+
+        // The REST procedure's @response is what it writes there (Walker.Rest.cs), read in the state its arguments were.
+        var before = state;
+        var rest = binder.BindCall(execute) is SystemProcedureCall { Procedure: var system } && RestCalls.Is(system) ? system : null;
+        var response = rest?.Arguments(execute).GetValueOrDefault("@response");
         foreach (var parameter in execute.ExecutableEntity?.Parameters ?? [])
         {
             if (parameter.IsOutput && parameter.ParameterValue is VariableReference output)
             {
                 // The reason names the callee's parameter as the call writes it (@p = @v OUTPUT), or the call.
                 var variable = Resolved(output).Name;
-                state = Assign(state, variable, Nulls(variable, [new IrNullReason(IrNullRule.Parameter, FragmentText.OneLine((TSqlFragment?)parameter.Variable ?? execute))]), definitely: true, at);
+                var value = rest is not null && ReferenceEquals(parameter, response)
+                    ? RestResponse(execute, rest, variable, before)
+                    : Nulls(variable, [new IrNullReason(IrNullRule.Parameter, FragmentText.OneLine((TSqlFragment?)parameter.Variable ?? execute))]);
+                state = Assign(state, variable, value, definitely: true, at);
             }
         }
 

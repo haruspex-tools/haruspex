@@ -33,6 +33,13 @@ public class IrJsonSchemaTests
         (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Schema), "columnDeclaration", "schema"),
         (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Pointer), "columnDeclaration", "pointer"),
         (typeof(IrColumnDeclaration), nameof(IrColumnDeclaration.Files), "columnDeclaration", "files"),
+        (typeof(IrDocument), nameof(IrDocument.Endpoints), "", "endpoints"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Method), "endpointDeclaration", "method"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Address), "endpointDeclaration", "url"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Schema), "endpointDeclaration", "schema"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Pointer), "endpointDeclaration", "pointer"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Files), "endpointDeclaration", "files"),
+        (typeof(IrEndpointDeclaration), nameof(IrEndpointDeclaration.Endpoint), "endpointDeclaration", null), // derived from its method and URL; not written
         (typeof(IrTableType), nameof(IrTableType.Schema), "tableType", "schema"),
         (typeof(IrTableType), nameof(IrTableType.Name), "tableType", "name"),
         (typeof(IrTableType), nameof(IrTableType.Columns), "tableType", "columns"),
@@ -299,11 +306,11 @@ public class IrJsonSchemaTests
         Assert.All(Corpus.Corpus.Runs, r => AssertValid(IrJsonWriter.Write(r.Document)));
 
     [Fact]
-    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.SchemaFacts));
+    public void The_sample_with_every_node_passes_the_schema() => AssertValid(IrJsonWriter.Write(IrSamples.Endpoints));
 
     [Fact]
     public void The_samples_of_each_version_the_reader_reads_pass_the_schema() =>
-        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders, IrSamples.Described, IrSamples.Xml, IrSamples.SchemaFacts], d => AssertValid(IrJsonWriter.Write(d)));
+        Assert.All([IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders, IrSamples.Described, IrSamples.Xml, IrSamples.SchemaFacts, IrSamples.Endpoints], d => AssertValid(IrJsonWriter.Write(d)));
 
     /// <summary>
     /// Every file haruspex writes passes the schema in Ajv too, a validator a consumer would use, compiled strictly: what the tests
@@ -320,7 +327,7 @@ public class IrJsonSchemaTests
             documents[$"{fixture.Name}, inferred"] = IrJsonWriter.Write(fixture.Ir);
         foreach (var run in Corpus.Corpus.Runs)
             documents[$"{run.Corpus.Name}, inferred"] = IrJsonWriter.Write(run.Document);
-        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders, IrSamples.Described, IrSamples.Xml, IrSamples.SchemaFacts]).Select((d, i) => (d, i)))
+        foreach (var (sample, i) in ((IrDocument[])[IrSamples.Everything, IrSamples.Combined, IrSamples.Derived, IrSamples.Whole, IrSamples.Binary, IrSamples.Declared, IrSamples.Stamped, IrSamples.Built, IrSamples.Folders, IrSamples.Described, IrSamples.Xml, IrSamples.SchemaFacts, IrSamples.Endpoints]).Select((d, i) => (d, i)))
             documents[$"sample {i}"] = IrJsonWriter.Write(sample);
 
         var verdicts = AjvVerdicts.Of(SchemaPath, documents);

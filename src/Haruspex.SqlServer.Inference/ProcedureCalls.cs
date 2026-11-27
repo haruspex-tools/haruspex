@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
@@ -73,6 +74,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
     /// </summary>
     private readonly Dictionary<(ObjectName Procedure, CallContext Context), Walked> cache = [];
     private readonly Dictionary<ObjectName, ImmutableHashSet<LocalName>> writes = [];
+    private readonly Dictionary<ObjectName, bool> callsRest = [];
 
     /// <summary>The declaration of a procedure's results, if there is one, with the name it is declared by.</summary>
     public (ObjectName Name, DeclaredResults Results)? Declared(ObjectName name) =>
@@ -130,7 +132,12 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
         }
 
         var joined = FlowState.Join(FlowState.Start([]).WithTemps(frame.Context.Temps), FlowState.Start([]).WithTemps(context.Temps), at).Temps;
-        var wider = frame.Context with { Temps = joined, ReadUncommitted = frame.Context.ReadUncommitted || context.ReadUncommitted };
+        var wider = frame.Context with
+        {
+            Temps = joined,
+            ReadUncommitted = frame.Context.ReadUncommitted || context.ReadUncommitted,
+            Arguments = frame.Context.Arguments.Where(a => context.Arguments.TryGetValue(a.Key, out var other) && other == a.Value).ToEquatableMap(a => a.Key, a => a.Value),
+        };
         if (!wider.Equals(frame.Context))
         {
             frame.Context = wider;
@@ -185,7 +192,7 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
                     frame.Context = assumption.Context;
                     frame.Recursive = false;
                     frame.Widened = false;
-                    walked = new Walker(model, procedure.Span, SchemaSearch.Within(procedure), summaries, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff).Walk(procedure.Parameters, statements);
+                    walked = new Walker(model, procedure.Span, SchemaSearch.Within(procedure), summaries, context: frame.Context, ansiNullsOff: procedure.AnsiNullsOff, keepsText: CallsRest(procedure.Name)).Walk(procedure.Parameters, statements);
                     if (!frame.Recursive || walked.Blocker is not null)
                         return Pass<Assumption>.Stop();
 
@@ -263,6 +270,34 @@ internal sealed class ProcedureCalls(DatabaseModel model, IReadOnlyDictionary<Ob
         }
 
         return all;
+    }
+
+    /// <summary>
+    /// Whether the procedure <paramref name="name"/> calls <c>sys.sp_invoke_external_rest_endpoint</c>, itself or through a procedure
+    /// it calls, at any depth: whether its walk may read its parameters' text as a URL, a method or headers, so that a call of it
+    /// passes the text of its arguments (<see cref="CallContext.Arguments"/>).
+    /// </summary>
+    public bool CallsRest(ObjectName name)
+    {
+        if (callsRest.TryGetValue(name, out var known))
+            return known;
+        callsRest[name] = false;
+        var calls = false;
+        if (model.FindProcedure(name) is { Body: SqlBody { Statements: var body } } procedure)
+        {
+            var finder = new WriteFinder();
+            body.Accept(finder);
+            var binder = new Binder(model, procedure.Span, SchemaSearch.Within(procedure));
+            calls = finder.Calls.Any(call => binder.BindCall(call) switch
+            {
+                SystemProcedureCall { Procedure: var system } => RestCalls.Is(system),
+                ProcedureCall { Procedure: var callee } => CallsRest(callee.Name),
+                _ => false,
+            });
+        }
+
+        callsRest[name] = calls;
+        return calls;
     }
 
     /// <inheritdoc cref="TempWrites(ObjectName)"/>

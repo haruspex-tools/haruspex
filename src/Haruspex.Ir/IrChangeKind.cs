@@ -171,4 +171,10 @@ public enum IrChangeKind
     /// changed, which may change what every value read from the column is claimed to hold.
     /// </summary>
     ColumnDeclarationChanged,
+
+    /// <summary>
+    /// An endpoint's declared response (0.36) was added, removed, or reads another schema: another file or pointer, or a file whose
+    /// text changed, which may change what every reply read from the endpoint is claimed to hold.
+    /// </summary>
+    EndpointDeclarationChanged,
 }

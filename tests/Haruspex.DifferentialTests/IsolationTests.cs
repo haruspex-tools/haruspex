@@ -145,6 +145,9 @@ public class IsolationTests(SqlServerFixture server)
 
             // A server of its own, with full-text search, on which each test has a database of its own.
             Path.Combine("Server", "FullTextServer.cs"),
+
+            // A server of its own, which may call a REST endpoint; its tests create nothing there.
+            Path.Combine("Server", "RestServer.cs"),
         ];
 
         var offenders = Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)

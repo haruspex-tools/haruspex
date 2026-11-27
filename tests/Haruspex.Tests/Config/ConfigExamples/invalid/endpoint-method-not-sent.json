@@ -1,0 +1,1 @@
+{ "$schema": "../../../../schemas/haruspex.schema.json", "endpoints": [{ "url": "https://billing.example/plans", "method": "FETCH", "response": "plans.json" }] }

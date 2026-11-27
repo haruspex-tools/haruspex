@@ -24,7 +24,7 @@ public class IrReaderSchemaAgreementTests
     /// <summary>A key no object of the format has.</summary>
     private const string Stranger = "notInTheFormat";
 
-    private static readonly string File = IrJsonWriter.Write(IrSamples.SchemaFacts);
+    private static readonly string File = IrJsonWriter.Write(IrSamples.Endpoints);
 
     /// <summary>Every property of every object in the sample's file, as the JSON Pointer of the object and the key.</summary>
     public static TheoryData<string, string> Properties { get; } = [.. PropertyLocations()];
@@ -85,11 +85,13 @@ public class IrReaderSchemaAgreementTests
             return;
         }
 
-        // What ties a claim to the declared column it rests on, and a declaration to the hash of its own file (0.28), which the schema
-        // can't follow from one place to another: the claim's column, the declarations as a whole, and the file's own hash.
-        if ((key == "via" && target["setting"]?.GetValue<string>() == "column-json")
+        // What ties a claim to the declared column or endpoint it rests on, and a declaration to the hash of its own file (0.28, 0.36),
+        // which the schema can't follow from one place to another: the claim's column or endpoint, the columns as a whole (a 0.36
+        // document always lists its endpoints, which its label requires), and the file's own hash.
+        if ((key == "via" && target["setting"]?.GetValue<string>() is "column-json" or "endpoint-json")
             || (location.Length == 0 && key == "columns")
-            || (location.StartsWith("/columns/", StringComparison.Ordinal) && location.EndsWith("/files", StringComparison.Ordinal) && At(JsonNode.Parse(File)!, location[..^"/files".Length])["schema"]?.GetValue<string>() == key))
+            || ((location.StartsWith("/columns/", StringComparison.Ordinal) || location.StartsWith("/endpoints/", StringComparison.Ordinal))
+                && location.EndsWith("/files", StringComparison.Ordinal) && At(JsonNode.Parse(File)!, location[..^"/files".Length])["schema"]?.GetValue<string>() == key))
         {
             Assert.Empty(schemaErrors);
             Assert.NotNull(refusal);
@@ -297,6 +299,13 @@ public class IrReaderSchemaAgreementTests
         ["0.35: no fact of a schema held"] = (Xml, json => json["irVersion"] = "0.35", Label),
         ["0.34, said of a document that holds a fact of a schema"] = (SchemaFacts, json => json["irVersion"] = "0.34", Label),
 
+        // A declared endpoint's response (0.36): only in 0.36, where a document declares one, each once, with its file's hash.
+        ["0.36: no endpoint declared"] = (SchemaFacts, json => json["irVersion"] = "0.36", null),
+        ["0.35, said of a document that declares an endpoint"] = (Endpoints, json => json["irVersion"] = "0.35", null),
+        ["an endpoint of a method no reply has a body for"] = (Endpoints, json => json["endpoints"]![0]!["method"] = "HEAD", null),
+        ["an empty list of endpoints"] = (Endpoints, json => json["endpoints"] = new JsonArray(), null),
+        ["a declared endpoint's file hash in capitals"] = (Endpoints, json => FirstFile(json["endpoints"]![0]!["files"]!).ReplaceWith(new string('C', 64)), null),
+
         // A binary value says only its length, in bytes.
         ["a binary value's length in code units"] = (Binary, json => Signature(json)["length"]!["unit"] = "utf16", null),
         ["a binary value's length with an encoding"] = (Binary, json => Signature(json)["length"]!["encoding"] = "single-byte", null),
@@ -420,6 +429,8 @@ public class IrReaderSchemaAgreementTests
     private static string Xml() => IrJsonWriter.Write(IrSamples.Xml);
 
     private static string SchemaFacts() => IrJsonWriter.Write(IrSamples.SchemaFacts);
+
+    private static string Endpoints() => IrJsonWriter.Write(IrSamples.Endpoints);
 
     /// <summary>The type of the XML sample's field <c>spec</c>, an <c>xml(sales.spec_schema)</c>.</summary>
     private static JsonObject Spec(JsonObject json) => json["types"]!["FindOrdersRow"]!["fields"]!.AsArray().Single(f => (string?)f!["name"] == "spec")!["type"]!.AsObject();

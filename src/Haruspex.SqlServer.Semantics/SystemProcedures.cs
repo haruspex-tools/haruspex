@@ -7,7 +7,8 @@ namespace Haruspex.SqlServer.Semantics;
 /// parameters, as data. A call of any other <c>sp_</c> or <c>xp_</c> name stays unknown (<see cref="UnknowableCallKind.SystemProcedure"/>),
 /// and <c>sp_executesql</c> is dynamic SQL. Each entry is observed on SQL Server 2025 (ExecObservationTests,
 /// <c>Each_system_procedure_of_the_catalogue_has_the_parameters_it_lists</c> and the test the entry names); one the test server
-/// can't run is typed from Microsoft's documentation and leaves unknown what it doesn't observe. Every entry's return code is an
+/// can't run is typed from Microsoft's documentation and leaves unknown what it doesn't observe; one only a server of another
+/// configuration runs is observed there (<c>sp_invoke_external_rest_endpoint</c>, RestEndpointObservationTests). Every entry's return code is an
 /// <c>int</c>, never NULL once the call returns, which is true of every procedure's.
 /// </summary>
 public static class SystemProcedures
@@ -56,18 +57,19 @@ public static class SystemProcedures
             "int: 0 freed, 1 when no document has the handle",
             ["Sp_xml_preparedocument_and_sp_xml_removedocument_return_no_result_set"]),
 
-        // SQL Server 2025. Disabled on the test server ('external rest endpoint enabled' is 0, error 31643), so what a call
-        // returns is not observed. Microsoft's page documents no result set, the response in @response OUTPUT as JSON (or
-        // XML) and a return code of 0 or the HTTP status; until a server observes it, its result sets stay unknown.
+        // SQL Server 2025, with 'external rest endpoint enabled' on (it is off by default: 31643). Calls an HTTPS endpoint and
+        // returns no result set (observed); a response of any status is written into @response, whose envelope RestCalls types.
+        // A redirect is not followed. A call that fails raises an error and leaves its arguments as they were
+        // (docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md).
         new(
             new ObjectName("sys", "sp_invoke_external_rest_endpoint"),
             [
                 new("@url", "nvarchar(4000)"), new("@payload", "nvarchar(max)"), new("@headers", "nvarchar(4000)"), new("@method", "nvarchar(6)"),
                 new("@timeout", "smallint"), new("@credential", "sysname"), new("@response", "nvarchar(max)", IsOutput: true), new("@retry_count", "tinyint"),
             ],
-            ResultsUnknownBecause: "it is disabled on the server haruspex is tested against, so what it returns is not observed; its documentation lists no result set",
+            ResultsUnknownBecause: null,
             "int: 0 for an HTTP 2xx status, else the status received",
-            ["Sp_invoke_external_rest_endpoint_is_disabled_on_the_test_server"]),
+            ["It_returns_no_result_set_and_its_return_code_is_0_for_a_2xx_status_and_the_status_otherwise"]),
     ];
 
     /// <summary>The entry for a procedure named <paramref name="name"/> (its last part), or null.</summary>

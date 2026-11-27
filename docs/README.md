@@ -41,6 +41,8 @@ links to is the one place that describes it.
   [declared results](configuration.md#declared-results-results).
 - **A column stores JSON:** [declare its JSON Schema](configuration.md#json-stored-in-a-column-columns), and see
   [what a declaration reads](configuration.md#the-json-schemas-a-declaration-reads).
+- **A procedure calls a REST service** with `sp_invoke_external_rest_endpoint`:
+  [declare each endpoint's response](configuration.md#calls-to-rest-endpoints-endpoints).
 - **The team knows what the database can't prove**, or wants other names for a procedure's types and result sets:
   [overrides](configuration.md#overrides), and [naming](configuration.md#naming) for every name.
 - **The database keeps descriptions under a name of its own:** [descriptions](configuration.md#descriptions-descriptions).

@@ -1,7 +1,7 @@
 # IR files, one per version
 
 One IR file from each version of the format, kept so that the reader is tested against what each version really wrote. The
-current version's file must be read, and round trip to the same bytes; so must 0.33's, 0.32's, 0.31's, 0.30's, 0.29's, 0.28's, 0.27's, 0.26's, 0.25's, 0.24's and 0.23's, the
+current version's file must be read, and round trip to the same bytes; so must 0.35's, 0.34's, 0.33's, 0.32's, 0.31's, 0.30's, 0.29's, 0.28's, 0.27's, 0.26's, 0.25's, 0.24's and 0.23's, the
 older versions the reader still reads, since a document that says less is still labelled with the oldest version that says all it says
 ([decision 0072](../../docs/decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md),
 [decision 0078](../../docs/decisions/0078-the-ir-says-where-each-field-came-from.md)); every other must be refused, naming its version and the versions the reader
@@ -48,6 +48,7 @@ Each file is named for its version (`0.15.ir.json`) and holds the IR of the inve
 | 0.33 | `2bd6ac0c`; a document that records no description is still written as before, so this file is `sales.get_order` read from a copy of the `orders` fixture's `database` with one more script, which sets three descriptions (`sales.get_order`'s, its `@order_id`'s and the column `sales.order.reference`'s) by `sp_addextendedproperty`, written by `haruspex generate database --include sales.get_order` with the build of that change before it was committed, so its `source.writtenBy` names `9b5b678b`, the commit it was made on |
 | 0.34 | the commit that set it; a document that holds no XML value is still written as before, so this file is `loom.get_pattern`, whose `draft` and `notes` are `xml` columns, written by `haruspex generate database --include loom.get_pattern` in the `loom` fixture with the build of that change before it was committed, so its `source.writtenBy` names `215a5bd3`, the commit it was made on |
 | 0.35 | the commit that set it; a document that holds no fact of an XML schema collection is still written as before, so this file is `loom.frame_shafts`, read from a copy of the `loom` fixture's `database` with two more scripts, a collection `loom.frame_schema` whose `frame` requires a `shafts` of `xs:int` from 2 to 32 with a table `loom.frame` typed by it, and the procedure reading `shafts` by `value()`, written by `haruspex generate database --include loom.frame_shafts` with the build of that change before it was committed, so its `source.writtenBy` names `0e0e5b89`, the commit it was made on |
+| 0.36 | the commit that set it; a document that declares no endpoint is still written as before, so this file is `billing.get_plan` from the `tariffs` fixture, which calls the wrapper `billing.call_api` with a path that matches a declared endpoint, written by `haruspex generate --include billing.get_plan` in a copy of the fixture with the build of that change before it was committed, so its `source.writtenBy` names `54172aab`, the commit it was made on |
 
 **When the version changes**, add the new version's file here, written by the new version, and a row for it. The test fails
 until there is one, so that every version the format has ever had is kept. The previous current file then becomes one the

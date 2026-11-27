@@ -175,6 +175,9 @@ public static class ConfigReader
                     case "columns":
                         config = config with { Columns = [.. Columns(member.Value, path)] };
                         break;
+                    case "endpoints":
+                        config = config with { Endpoints = [.. Endpoints(member.Value, path)] };
+                        break;
                     case "session":
                         config = config with { Session = Session(member.Value, path) };
                         break;
@@ -197,7 +200,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, endpoints, session, check, acknowledge");
                         break;
                 }
             }
@@ -1114,7 +1117,18 @@ public static class ConfigReader
         }
 
         /// <summary>One column's declaration, its schema read and translated; null when it has a problem (reported).</summary>
-        private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at)
+        private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at) =>
+            Schema(key, json, jsonPath, response: false) is var (content, types, schema, pointer, files)
+                ? new ColumnDeclaration(table, column, content, types, new IrColumnDeclaration(key, schema, pointer, files), at)
+                : null;
+
+        /// <summary>
+        /// The JSON a declaration's schema file describes (<c>"file#pointer"</c>), read and translated as a column's JSON is, whose
+        /// writer is not the database: an object may hold keys it doesn't list, and a key it doesn't require may be left out. A
+        /// response's top may allow <c>null</c>, which never arrives; a column's may not. Null when it has a problem (reported).
+        /// </summary>
+        /// <param name="key">What is declared, which names the object types the schema defines.</param>
+        private (IrType Content, EquatableMap<string, IrObjectType> Types, string Schema, string? Pointer, EquatableMap<string, string> Files)? Schema(string key, JsonStringValue json, string jsonPath, bool response)
         {
             var hash = json.Value.IndexOf('#', StringComparison.Ordinal);
             var schemaPath = hash < 0 ? json.Value : json.Value[..hash];
@@ -1137,15 +1151,85 @@ public static class ConfigReader
 
             var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
             var translator = DeclaredSchema.ForColumn(document, (root, rootPath), Problems, SchemaFiles, key, types);
-            var content = translator.Column();
+            var content = response ? translator.Response() : translator.Column();
             if (content is null || Problems.Count(p => p.IsError) != errors)
                 return null;
-            var record = new IrColumnDeclaration(
-                key,
+            return (
+                content,
+                types.ToEquatableMap(t => t.Key, t => t.Value),
                 SchemaFiles.Relative(full),
                 string.IsNullOrEmpty(pointer) ? null : pointer,
                 translator.Files.ToEquatableMap(SchemaFiles.Relative, SchemaFiles.Sha256));
-            return new ColumnDeclaration(table, column, content, types.ToEquatableMap(t => t.Key, t => t.Value), record, at);
+        }
+
+        /// <summary>
+        /// <c>endpoints</c>: each <c>{ "url", "method", "response" }</c>, the response the schema file <c>response</c> describes
+        /// (<c>"file#pointer"</c>, relative to this file) for the endpoint the method and URL name; each method and URL once. The
+        /// method is one SQL Server sends whose reply may have a body (<see cref="EndpointDeclaration.Methods"/>). Whether the URL
+        /// is a template the inference reads is checked where the inference is.
+        /// </summary>
+        private List<EndpointDeclaration> Endpoints(JsonValue value, string path)
+        {
+            var endpoints = new List<EndpointDeclaration>();
+            var declared = new HashSet<(string Method, string Url)>();
+            if (value is not JsonArrayValue array)
+            {
+                Report(ConfigCodes.WrongKind, value, path, "must be an array of endpoints, each { \"url\", \"method\", \"response\" }.");
+                return endpoints;
+            }
+
+            for (var i = 0; i < array.Items.Count; i++)
+            {
+                var itemPath = Index(path, i);
+                if (Object(array.Items[i], itemPath) is not { } entry)
+                    continue;
+                string? url = null, method = null;
+                JsonStringValue? response = null;
+                JsonLocation? urlAt = null;
+                foreach (var member in entry.Members)
+                {
+                    var memberPath = Child(itemPath, member.Name);
+                    switch (member.Name)
+                    {
+                        case "url":
+                            url = NonEmpty(member.Value, memberPath);
+                            urlAt = new JsonLocation(file, memberPath, member.Value.Line, member.Value.Column);
+                            break;
+                        case "method":
+                            method = Choice(member.Value, memberPath, [.. EndpointDeclaration.Methods]);
+                            break;
+                        case "response":
+                            response = NonEmpty(member.Value, memberPath) is not null ? (JsonStringValue)member.Value : null;
+                            break;
+                        default:
+                            Unknown(member, memberPath, "url, method, response");
+                            break;
+                    }
+                }
+
+                var at = new JsonLocation(file, itemPath, array.Items[i].Line, array.Items[i].Column);
+                var missing = new[] { ("url", url is null), ("method", method is null), ("response", response is null) }
+                    .Where(m => m.Item2 && !entry.Members.Any(e => e.Name == m.Item1)).Select(m => $"\"{m.Item1}\"").ToList();
+                if (missing.Count > 0)
+                {
+                    Problems.Add(ConfigCodes.NeedsAnother.At(at, $"an endpoint needs {string.Join(" and ", missing)}: its URL, its method, and the JSON Schema of its response, relative to this file."));
+                    continue;
+                }
+
+                if (url is null || method is null || response is null || urlAt is null)
+                    continue;
+                if (!declared.Add((method, url)))
+                {
+                    Problems.Add(ConfigCodes.KeyTwice.At(at, $"declares {method} {url} again: an endpoint is declared once."));
+                    continue;
+                }
+
+                var key = $"{method} {url}";
+                if (Schema(key, response, Child(itemPath, "response"), response: true) is var (content, types, schema, pointer, files))
+                    endpoints.Add(new EndpointDeclaration(content, types, new IrEndpointDeclaration(method, url, schema, pointer, files), at, urlAt));
+            }
+
+            return endpoints;
         }
 
         private PathOverride? PathOverride(JsonMember entry, string path)

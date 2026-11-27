@@ -32,6 +32,14 @@ public static class IrClaimText
         ? "none"
         : $"{declaration.Schema}{(declaration.Pointer is { } pointer ? "#" + pointer : "")} ({string.Join(", ", declaration.Files.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => $"{f.Key} {f.Value[..Math.Min(12, f.Value.Length)]}"))})";
 
+    /// <summary>
+    /// An endpoint's declared response (0.36): its schema, with the pointer, and the hash of each file it read, abridged; or
+    /// <c>none</c>.
+    /// </summary>
+    public static string Declaration(IrEndpointDeclaration? declaration) => declaration is null
+        ? "none"
+        : Declaration(new IrColumnDeclaration(declaration.Endpoint, declaration.Schema, declaration.Pointer, declaration.Files));
+
     /// <summary>A type node, without what lies behind a reference: <c>string</c>, <c>number (int32)</c>, <c>an array of the object OrderRow</c>.</summary>
     public static string Type(IrType type) => type switch
     {

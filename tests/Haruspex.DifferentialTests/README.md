@@ -222,6 +222,13 @@ dropped when the test ends. Without one, or on a server without full-text search
 `HARUSPEX_REQUIRE_FULLTEXT=1` makes the skip a failure. Testcontainers doesn't start it: the image is built from a Dockerfile in
 the repository, which a run shouldn't do each time.
 
+### A server that calls a REST endpoint
+
+`RestEndpointObservationTests` needs a server with `external rest endpoint enabled` on, which is off by default, and an HTTPS
+endpoint it trusts. It runs on a server `HARUSPEX_TEST_SQLSERVER_REST` names, such as the one [`Server/Rest`](Server/Rest/README.md)
+starts beside its endpoint, and creates nothing there. Without one, its tests are skipped, saying why;
+`HARUSPEX_REQUIRE_REST=1` makes the skip a failure.
+
 ## Why the database is dropped in a `finally`
 
 A developer's server is long-running and every run creates databases on it: the test database and its rooms. If a

@@ -20,6 +20,13 @@ internal sealed record FieldShape(string Name, Shape Type, IrPresence Presence, 
     /// </summary>
     public string? Description { get; init; }
 
+    /// <summary>
+    /// Why the key may be left out whatever its value (<see cref="IrPresence.Optional"/>), for a path's note, when it is not that
+    /// a declared schema doesn't require it: <c>result</c> in a REST endpoint's envelope, which a reply with no body leaves out.
+    /// Like <see cref="Description"/>, no claim, so left out of equality.
+    /// </summary>
+    public string? LeftOutBecause { get; init; }
+
     /// <summary>Whether the two claim the same, whatever columns they read.</summary>
     public bool Equals(FieldShape? other) =>
         other is not null && Name == other.Name && Type == other.Type && Presence == other.Presence && NullableBecause == other.NullableBecause;

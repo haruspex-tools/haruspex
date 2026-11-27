@@ -205,12 +205,13 @@ in it, so it can't state:
   and a facet's number as plain decimal text (`-12.5`, never `1e5`);
 - **a key given twice** in one object, which a parser keeps one of;
 - **a name that names nothing**: a `ref` must name a type in `types`, a value set's `fold` a fold in `folds`, a parameter's
-  `tableType` a table type in `tableTypes`, a `column-json` claim's `via` a declared column, and a source's `builds` its `package`
+  `tableType` a table type in `tableTypes`, a `column-json` claim's `via` a declared column, an `endpoint-json` claim's `via` a
+  declared endpoint, and a source's `builds` its `package`
   or a reference with a `sha256`; a declaration's `files` must hold
   its own `schema`; a table type must be one a parameter takes, a parameter may refer to a named type only as the rows of its table
   type, a table type's row has scalar fields, and a key's columns are the table type's;
 - **a name given twice**: two objects of one `id`, two fields of one name in a type, two parameters of one name in an object, two
-  result sets of one name, a column declared twice, and two columns of a table type whose names differ only in case;
+  result sets of one name, a column or an endpoint declared twice, and two columns of a table type whose names differ only in case;
 - **what a label says of the whole document**: a document labelled 0.25 must say where something came from, one labelled 0.27
   hold a binary value, one labelled 0.28 declare something, one labelled 0.29 explain something, one labelled 0.33 record a
   description, one labelled 0.34 hold an XML value and one labelled 0.35 a fact from `xml-schema`, each anywhere in it; and a
@@ -226,8 +227,10 @@ in it, so it can't state:
 ```jsonc
 {
   "irVersion": "0.33",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
-                                      // (0.35 when it holds a fact from an XML schema collection:
-                                      // "Facets", below; 0.34 when it holds an XML value: "Logical kinds";
+                                      // (0.36 when it declares an endpoint's response:
+                                      // "Endpoint declarations", below; 0.35 when it holds a fact from an
+                                      // XML schema collection: "Facets", below; 0.34 when it holds an XML
+                                      // value: "Logical kinds";
                                       // 0.33 when it records a description; 0.32 when a source was read
                                       // from several folders; 0.31 when it records
                                       // packages declared builds; else 0.30 when it names the build
@@ -587,7 +590,9 @@ that what the database proves and what a person asserts stay apart. `setting` is
 (declared an imported schema), `exact-values` (a `collation` value set declared exact), `results` (the results declared,
 not inferred; with `via`, a caller's results include a declared callee's, named by `via`) or (0.28) `column-json` (the object
 reads a column declared to hold JSON of a schema, named by `via` as `schema.table.column`, which `columns` must declare; its
-`path` is `results`). `why` is the reason the config
+`path` is `results`) or (0.36) `endpoint-json` (the object reads the response declared for an external REST endpoint, named by
+`via` as its method and URL, `GET https://billing.example/plans/{id}`, which `endpoints` must declare; its `path` is `results`).
+`why` is the reason the config
 file gives, when it needs one. An emitter needs neither: the types already carry the result.
 
 ## Paths
@@ -764,6 +769,17 @@ every value read from the column holds JSON of the schema, as a claim a person m
 hash makes a change to its text a change to the document, which `haruspex check` reports
 ([decision 0093](../../docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md)).
 
+## Endpoint declarations
+
+`endpoints` (0.36) lists the external REST endpoints the config file declares a response for, sorted by method and then `url`;
+it is left out when none is, and must not be written empty. Each is `{ "method", "url", "schema", "pointer"?, "files" }`: the HTTP
+method, one of `GET`, `POST`, `PUT`, `PATCH` and `DELETE`; the URL as the declaration writes it, each `{name}` standing for one
+segment of its path or one value of its query; and the schema, pointer and `files` as a column declaration has them. A
+declaration types the body of the reply that a call of `sys.sp_invoke_external_rest_endpoint` reads into its envelope's
+`result`, where every URL and method the call may send match it, as a claim a person makes about someone else's service, which
+the generated code checks. The envelope around it is the server's, observed, and claimed without a declaration
+([decision 0140](../../docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md)).
+
 ## Changelog
 
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
@@ -773,6 +789,12 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 A version says which properties a document uses, not whose rules made its claims: a fix to a rule may change a claim without
 changing the format. From 0.30 a document names the build that wrote it (`source.writtenBy`), which says that; a document labelled
 before 0.30 names none, and its label says only which properties it uses.
+
+**0.36** (27 Nov 2026, declared endpoints; provisional until the maintainer settles it at the merge). The document's
+`endpoints`, and the override setting `endpoint-json` ("Endpoint declarations" and "Unknowns and overrides", above;
+[decision 0140](../../docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md)). Only a document
+that declares an endpoint's response is labelled 0.36: a document that declares none is written as before, labelled 0.35 or
+earlier by what else it says, and means what it meant: this reader reads it.
 
 **0.35** (27 Nov 2026, facts of an XML schema collection). The fact source `xml-schema`: a facet of a value read from XML by
 `value()` that the instance's schema collection proves ("Facets", above;

@@ -252,6 +252,7 @@ split into parts along the constructs it covers. The families today:
 | JSON constructors | `JsonConstructorTests` | `JsonConstructorObservationTests` | `tests/fixtures/payloads` | "JSON constructors" |
 | Functions that return JSON | `JsonFunctionTests` | `JsonFunctionObservationTests` | `tests/fixtures/trees` | the guide's [Summaries and recursion](docs/internals/07-summaries-and-recursion.md) |
 | JSON declared for a column | `DeclaredColumnTests` | `DeclaredColumnObservationTests` | `tests/fixtures/parcels` | "JSON declared for a column", [decision 0093](docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md) |
+| Calls to REST endpoints | `RestEndpointTests` | `RestEndpointObservationTests` | `tests/fixtures/tariffs` | "Calls to REST endpoints", [decision 0140](docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md) |
 | Read uncommitted | `ReadUncommittedTests` | `ReadUncommittedObservationTests` | `tests/fixtures/tabs` | [decision 0016](docs/decisions/0016-visible-read-uncommitted-drops-key-claims.md) |
 | The callers' session | `SessionTests` | `SessionObservationTests` | `tests/fixtures/meters` | "The callers' session" |
 | Masked columns | `MaskingTests` | `MaskingObservationTests` | `tests/fixtures/fittings` | "Masked columns", [decision 0118](docs/decisions/0118-a-masked-column-claims-only-its-type-nullability-and-greatest-length.md) |
