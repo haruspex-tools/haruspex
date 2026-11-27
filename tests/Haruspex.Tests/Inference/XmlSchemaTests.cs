@@ -469,4 +469,70 @@ public class XmlSchemaTests
         Assert.Equal([IrNullRule.XmlValue], Rules(doc, "v"));
         Assert.Equal("0.34", doc.Version);
     }
+
+    // ---- occurrences, rounding, other numbers and namespaces -------------------------------------------------------------
+
+    private static IrDocument ShapedAs(string schema, string path, string type, string targetNamespace = "", string? nodes = null)
+    {
+        var target = targetNamespace.Length == 0 ? "" : $" targetNamespace=\"{targetNamespace}\" elementFormDefault=\"qualified\"";
+        var tables = $"""
+            CREATE XML SCHEMA COLLECTION shop.s AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"{target}>{schema}</xs:schema>';
+            GO
+            CREATE TABLE shop.t (id int NOT NULL PRIMARY KEY, doc xml(DOCUMENT shop.s) NOT NULL);
+            GO
+            """;
+        var read = nodes is null ? "" : $"\nDECLARE @x xml(DOCUMENT shop.s) = (SELECT TOP (1) t.doc FROM shop.t AS t);\nSELECT n.c.value('.', 'int') AS v FROM @x.nodes('{nodes}') AS n (c);";
+        return Procedure($"SELECT t.doc.value('{path}', '{type}') AS v FROM shop.t AS t;{read}", tables);
+    }
+
+    [Fact]
+    public void A_group_s_own_occurrences_scale_what_it_holds()
+    {
+        // A_group_s_own_occurrences_scale_what_it_holds: a required a inside an optional sequence may be missing, and a d inside a
+        // sequence that may repeat may be there twice.
+        var optional = ShapedAs("""<xs:element name="r"><xs:complexType><xs:sequence minOccurs="0"><xs:element name="a" type="xs:int"/></xs:sequence></xs:complexType></xs:element>""", "(/r/a)[1]", "int");
+        var repeated = ShapedAs("""<xs:element name="r"><xs:complexType><xs:sequence maxOccurs="2"><xs:element name="d" type="xs:int"/></xs:sequence></xs:complexType></xs:element>""", "(/r/d)[1]", "int", nodes: "/r/d");
+
+        Assert.Equal([IrNullRule.XmlValue], Rules(optional, "v"));
+        Assert.Empty(Field(repeated, "v").NullableBecause);
+        Assert.Equal(IrCardinality.Many, repeated.Objects[0].Results![1].Cardinality);
+    }
+
+    [Theory]
+    [InlineData("<xs:maxInclusive value=\"99.995\"/>", "max", "100", true)]
+    [InlineData("<xs:minInclusive value=\"-0.005\"/>", "min", "-0.01", true)]
+    public void An_inclusive_bound_with_more_places_than_the_decimal_is_rounded_outward(string facet, string side, string value, bool inclusive)
+    {
+        // A_decimal_is_rounded_half_away_from_zero: 99.995 as decimal(5,2) is 100.00, and -0.005 as decimal(4,2) is -0.01.
+        var doc = ShapedAs($"""<xs:element name="r"><xs:complexType><xs:attribute name="p" use="required"><xs:simpleType><xs:restriction base="xs:decimal">{facet}</xs:restriction></xs:simpleType></xs:attribute></xs:complexType></xs:element>""", "(/r/@p)[1]", side == "max" ? "decimal(5,2)" : "decimal(4,2)");
+        var facets = Assert.IsType<IrScalar>(Field(doc, "v").Type).Facets!;
+        var bound = side == "max" ? facets.Max! : facets.Min!;
+
+        Assert.Equal((value, inclusive, IrFactSourceKind.XmlSchema), (bound.Value, bound.Inclusive, bound.From.Kind));
+    }
+
+    [Theory]
+    [InlineData("bit")]
+    [InlineData("money")]
+    [InlineData("float")]
+    [InlineData("real")]
+    public void A_number_read_as_another_kind_of_number_carries_no_facet_of_the_schema(string type)
+    {
+        // xs:int from 1 up, read as bit, is 1 whatever the number; money and floats aren't read.
+        var facets = FacetsOf(Faceted("(/r/@n)[1]", type));
+
+        Assert.True(facets is null || new[] { facets.Min?.From, facets.Max?.From }.All(f => f?.Kind != IrFactSourceKind.XmlSchema));
+    }
+
+    [Fact]
+    public void A_child_is_matched_by_its_namespace_and_its_local_name_together()
+    {
+        // Two children named c, the unqualified one required and the qualified one optional.
+        const string Schema = """<xs:element name="r"><xs:complexType><xs:sequence><xs:element name="c" form="unqualified" type="xs:int"/><xs:element name="c" type="xs:int" minOccurs="0"/></xs:sequence></xs:complexType></xs:element>""";
+        var qualified = ShapedAs(Schema, "declare default element namespace \"urn:r\"; (/r/c)[1]", "int", "urn:r");
+        var unqualified = ShapedAs(Schema, "declare namespace n=\"urn:r\"; (/n:r/c)[1]", "int", "urn:r");
+
+        Assert.Equal([IrNullRule.XmlValue], Rules(qualified, "v"));
+        Assert.Empty(Field(unqualified, "v").NullableBecause);
+    }
 }

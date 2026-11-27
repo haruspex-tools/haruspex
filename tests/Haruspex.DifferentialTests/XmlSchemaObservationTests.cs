@@ -236,4 +236,26 @@ public class XmlSchemaObservationTests(SqlServerFixture server)
         Assert.Equal(6926, (await Run("DECLARE @x xml(DOCUMENT dbo.obs_values) = N'<n dec=\"1\" big=\"1\" pos=\"1\" tok=\"a\" str=\"&#x1F600;&#x1F600;a\" b=\"1\"/>';", Values)).Error);
         Assert.Equal(6926, (await Run("DECLARE @x xml(DOCUMENT dbo.obs_values) = N'<n dec=\"1\" big=\"1\" pos=\"1\" tok=\"a\" str=\"&#xE9;&#xE9;&#xE9;&#xE9;&#xE9;\" b=\"1\"/>';", Values)).Error);
     }
+
+    [Fact]
+    public async Task A_group_s_own_occurrences_scale_what_it_holds()
+    {
+        // A required a in an optional sequence may be missing; a sequence that may repeat holds its d twice.
+        Assert.Equal(
+            "a,ds: null,2",
+            (await Run(
+                "DECLARE @x xml(DOCUMENT dbo.obs_groups) = N'<r><d>1</d><d>2</d></r>'; SELECT @x.value('(/r/a)[1]', 'int') AS a, (SELECT COUNT(*) FROM @x.nodes('/r/d') AS t(c)) AS ds;",
+                """CREATE XML SCHEMA COLLECTION dbo.obs_groups AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="r"><xs:complexType><xs:sequence><xs:sequence minOccurs="0"><xs:element name="a" type="xs:int"/></xs:sequence><xs:sequence maxOccurs="2"><xs:element name="d" type="xs:int"/></xs:sequence></xs:sequence></xs:complexType></xs:element></xs:schema>';""")).ToString());
+    }
+
+    [Fact]
+    public async Task A_decimal_is_rounded_half_away_from_zero()
+    {
+        // So an inclusive bound with more places than the target is crossed: 99.995 is 100.00, and -0.005 is -0.01.
+        Assert.Equal(
+            "hi,lo: 100.00,-0.01",
+            (await Run(
+                "DECLARE @x xml(DOCUMENT dbo.obs_round) = N'<r hi=\"99.995\" lo=\"-0.005\"/>'; SELECT @x.value('(/r/@hi)[1]', 'decimal(5,2)') AS hi, @x.value('(/r/@lo)[1]', 'decimal(4,2)') AS lo;",
+                """CREATE XML SCHEMA COLLECTION dbo.obs_round AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"><xs:element name="r"><xs:complexType><xs:attribute name="hi" use="required"><xs:simpleType><xs:restriction base="xs:decimal"><xs:maxInclusive value="99.995"/></xs:restriction></xs:simpleType></xs:attribute><xs:attribute name="lo" use="required"><xs:simpleType><xs:restriction base="xs:decimal"><xs:minInclusive value="-0.005"/></xs:restriction></xs:simpleType></xs:attribute></xs:complexType></xs:element></xs:schema>';""")).ToString());
+    }
 }
