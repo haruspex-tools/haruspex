@@ -210,4 +210,20 @@ public partial class RestEndpointTests
         Assert.Equal("endpoints[\"GET https://billing.example/plans/{id}\"]", change.Path);
         Assert.Contains("schemas/plan.json 000000000000", change.ToString(), StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("nvarchar(4000)")]
+    [InlineData("varchar(max)")]
+    public void A_variable_that_isn_t_nvarchar_max_lists_no_endpoint_claim(string type)
+    {
+        // It holds the text cut short or converted, so no JSON of it is read, and no result rests on the declaration.
+        var doc = Declared($"""
+            CREATE PROCEDURE dbo.p AS
+            DECLARE @response {type};
+            EXEC sys.sp_invoke_external_rest_endpoint @url = N'https://billing.example/plans/7', @method = N'GET', @response = @response OUTPUT;
+            SELECT JSON_VALUE(@response, '$.result.name') AS name;
+            """).Expected();
+
+        Assert.DoesNotContain(doc.Overrides, o => o.Setting == IrOverrideSetting.EndpointJson);
+    }
 }
