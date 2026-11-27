@@ -167,12 +167,14 @@ public class SqlServerFixtureTests
         RequireDocker();
         var reports = new List<string>();
         IContainer? made = null;
-        var fixture = new SqlServerFixture(a => made = Stopping(a), ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
+        var fixture = new SqlServerFixture(a => made = StoppingWhenTold(a), ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
         try
         {
             await Record.ExceptionAsync(fixture.RequireAsync);
             Assert.Empty(reports);
-            await made!.GetExitCodeAsync(TestContext.Current.CancellationToken);
+            var told = await made!.ExecAsync(["touch", StopFile], TestContext.Current.CancellationToken);
+            Assert.Equal(0, told.ExitCode);
+            await made.GetExitCodeAsync(TestContext.Current.CancellationToken);
         }
         finally
         {
@@ -228,6 +230,17 @@ public class SqlServerFixtureTests
     /// <summary>A container that starts at once, since it waits for nothing, says it has stopped two seconds later and exits with code 7.</summary>
     private IContainer Stopping(int attempt) =>
         Count(new ContainerBuilder(SqlServerFixture.Image).WithName($"{prefix}stops-{attempt}").WithEntrypoint("sh").WithCommand("-c", $"sleep 2; echo {StoppingLine}; exit 7").Build());
+
+    // The file a test makes in a StoppingWhenTold container to stop it.
+    private const string StopFile = "/tmp/stop";
+
+    /// <summary>
+    /// A container that starts at once and runs until the test makes <see cref="StopFile"/> in it, then says it has stopped and
+    /// exits with code 7: so it is running for as long as the test needs, however slow the machine, and stopped after.
+    /// </summary>
+    private IContainer StoppingWhenTold(int attempt) =>
+        Count(new ContainerBuilder(SqlServerFixture.Image).WithName($"{prefix}stops-when-told-{attempt}").WithEntrypoint("sh")
+            .WithCommand("-c", $"while [ ! -e {StopFile} ]; do sleep 0.2; done; echo {StoppingLine}; exit 7").Build());
 
     /// <summary>A container that runs but waits for a file nothing makes, so it is never ready.</summary>
     private IContainer NeverReady(int attempt) =>
