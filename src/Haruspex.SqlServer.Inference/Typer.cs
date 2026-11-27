@@ -317,14 +317,26 @@ internal sealed partial class Typer(
         if (unwrapped)
             return shape;
 
-        // ROOT puts the array under one key of an object, named as written or "root", and taken as it is: a dot nests
-        // nothing (observed: Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given). The object is
-        // written only over a row, as the array is: over none a result has no row and a subquery is NULL (observed:
-        // A_top_level_for_json_auto_query_with_no_rows_returns_a_result_set_with_no_row,
+        // ROOT puts the array under one key of an object, named as written, and taken as it is: a dot nests nothing (observed:
+        // Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given). Without a name the key is "root" under
+        // PATH, but under AUTO a source's name: the FROM's first, or an APPLY's (Root_without_a_name_under_auto_is_keyed_by_a_source),
+        // which is not modelled. The object is written only over a row, as the array is: over none a result has no row and a
+        // subquery is NULL (observed: A_top_level_for_json_auto_query_with_no_rows_returns_a_result_set_with_no_row,
         // A_root_subquery_nests_as_json_and_is_null_over_no_rows). So the array inside has a row's item at least, here, where
         // a result's cardinality can't bound it.
         if (root is not null)
-            return new ObjectShape([new FieldShape((root.Value as StringLiteral)?.Value ?? "root", Rows(shape, row), IrPresence.Always, [])]);
+        {
+            var key = root.Value switch
+            {
+                StringLiteral named => named.Value,
+                null when !options.ContainsKey(JsonForClauseOptions.Auto) => "root",
+                _ => null,
+            };
+            return key is null
+                ? Unsupported(IrUnknownReason.UnsupportedQuery, "FOR JSON AUTO, ROOT without a name keys the document by one of the FROM's sources, which is not modelled; name it, ROOT('name').", At(clause))
+                : new ObjectShape([new FieldShape(key, Rows(shape, row), IrPresence.Always, [])]);
+        }
+
         return subquery ? Rows(shape, row) : new ArrayShape(shape, []);
     }
 

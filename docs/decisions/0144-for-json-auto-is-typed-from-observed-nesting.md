@@ -15,12 +15,15 @@ the object around it.
 An inner array has at least one item, and exactly one when the query returns at most one row: each object comes from a row,
 and each row writes an object at every level, one of no keys for an outer join's unmatched side. Nothing more is claimed of how
 many items there are, since rows merge into one object only while they are adjacent. A key is left out when null by the rule
-`PATH` follows; an object is never left out. `ROOT` puts the array under its name, or `root`, and its array has a row's item at
-least, since over no rows there is no document. The IR needs nothing new: these are the objects, arrays and bounds `PATH`
+`PATH` follows; an object is never left out. `ROOT('name')` puts the array under that name, in either mode, and its array has a
+row's item at least, since over no rows there is no document. `ROOT` without a name is `root` under `PATH`, but under `AUTO` a
+source's name (the `FROM`'s first, even one that gives no column, or an `APPLY`'s), so it stays unknown. The IR needs nothing new: these are the objects, arrays and bounds `PATH`
 already gives, so its version stays.
 
 What was not observed stays unknown (`unsupported-query`), saying which form: `AUTO` over a set operation, a pseudo-column, a
-column binding can't resolve, a full-text function's or `inserted`'s column, and a name with an empty part. A query whose `FROM`
+column binding can't resolve, a full-text function's or `inserted`'s column, a function call binding can't resolve, a name
+with an empty part, a synonym without an alias (keyed by its target as `CREATE SYNONYM` wrote it), and `ROOT` without a name
+under `AUTO`. A query whose `FROM`
 has no table is refused by the server (13600), and two keys of one name, which `AUTO` writes where `PATH` refuses them, are
 `duplicate-column`.
 

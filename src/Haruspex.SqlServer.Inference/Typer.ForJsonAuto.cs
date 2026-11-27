@@ -193,16 +193,19 @@ internal sealed partial class Typer
     /// A_cte_and_a_table_variable_are_tables_to_for_json_auto, Openxml_and_a_system_view_are_tables_to_for_json_auto,
     /// An_xml_nodes_source_is_a_table_to_for_json_auto_whose_column_is_never_bare,
     /// A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it); <c>OPENJSON</c>, <c>STRING_SPLIT</c> and
-    /// <c>GENERATE_SERIES</c> are not. The full-text functions, <c>inserted</c> and <c>deleted</c>, and a source binding can't
-    /// resolve were not observed.
+    /// <c>GENERATE_SERIES</c> are not. The full-text functions, <c>inserted</c> and <c>deleted</c>, and a source or function
+    /// binding can't resolve were not observed.
     /// </summary>
     private static AutoSource SourceKind(BoundSource source) => source.Target switch
     {
         TableTarget => AutoSource.Table,
         RelationTarget { Relation: var relation } => relation switch
         {
-            CommonTable or DerivedTable or ValuesTable or ViewRelation or TableFunctionCall or TableVariable or TemporaryTable
-                or OpenXmlCall or XmlNodesCall => AutoSource.Table,
+            CommonTable or DerivedTable or ValuesTable or ViewRelation or TableFunctionCall { Callee: KnownCallee } or TableVariable
+                or TemporaryTable or OpenXmlCall or XmlNodesCall => AutoSource.Table,
+
+            // A call binding can't resolve (a synonym for a function among them) was not observed.
+            TableFunctionCall => AutoSource.NotObserved,
             OpenJsonCall or SplitCall or SeriesCall => AutoSource.NotTable,
             FullTextCall or PseudoTable => AutoSource.NotObserved,
         },

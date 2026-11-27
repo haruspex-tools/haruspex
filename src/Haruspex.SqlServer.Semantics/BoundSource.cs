@@ -31,14 +31,23 @@ public sealed record BoundSource(string? Alias, SourceTarget Target, OptionalSid
     public ExposedName? Exposed { get; init; }
 
     /// <summary>
+    /// Whether it names a synonym without an alias, so that what it is known by outside its query (the key <c>FOR JSON AUTO</c>
+    /// gives its array) is the synonym's target as <c>CREATE SYNONYM</c> wrote it, not the name the FROM writes (observed:
+    /// A_synonym_without_an_alias_is_keyed_by_its_target_as_the_synonym_writes_it).
+    /// </summary>
+    public bool NamesSynonym { get; init; }
+
+    /// <summary>
     /// The name the FROM writes it by: its alias, or else its name's parts as written, joined by dots, without brackets and in
     /// the FROM's case (<c>dbo.Orders</c>, <c>#t</c>, <c>@t</c>); what <c>FOR JSON AUTO</c> keys a table's array by (observed:
-    /// A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it). Null for a source that writes none, and for a
-    /// name with an empty part (<c>db..t</c>).
+    /// A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it). Null for a source that writes none, for a
+    /// name with an empty part (<c>db..t</c>), and for a synonym without an alias (<see cref="NamesSynonym"/>), none of which
+    /// was observed to key by the name written.
     /// </summary>
     public string? WrittenName => Syntax switch
     {
         TableReferenceWithAlias { Alias: { } alias } => alias.Value,
+        _ when NamesSynonym => null,
         NamedTableReference named => Joined(named.SchemaObject),
         SchemaObjectFunctionTableReference function => Joined(function.SchemaObject),
         VariableTableReference variable => variable.Variable.Name,

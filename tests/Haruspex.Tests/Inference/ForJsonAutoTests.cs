@@ -25,6 +25,10 @@ public class ForJsonAutoTests
         GO
         CREATE FUNCTION dbo.lines_of (@o int) RETURNS TABLE AS RETURN SELECT l.sku FROM dbo.lines AS l WHERE l.order_id = @o;
         GO
+        CREATE SYNONYM dbo.line_synonym FOR dbo.lines;
+        GO
+        CREATE SYNONYM dbo.lines_of_synonym FOR dbo.lines_of;
+        GO
         """;
 
     private const string Joined = "FROM dbo.orders AS o JOIN dbo.lines AS l ON l.order_id = o.id";
@@ -174,6 +178,24 @@ public class ForJsonAutoTests
         Assert.Equal(["id", key], Names(doc, Results(doc)[0].Type));
     }
 
+    [Fact]
+    public void A_synonym_without_an_alias_is_keyed_by_its_target_so_the_result_is_unknown() =>
+        AssertUnknown(
+            Procedure("SELECT o.id, line_synonym.sku FROM dbo.orders AS o JOIN dbo.line_synonym ON line_synonym.order_id = o.id FOR JSON AUTO;"),
+            "results[0]",
+            IrUnknownReason.UnsupportedQuery);
+
+    [Fact]
+    public void A_function_call_binding_cannot_resolve_makes_the_result_unknown() =>
+        AssertUnknown(
+            Procedure("SELECT o.id, f.sku FROM dbo.orders AS o CROSS APPLY dbo.lines_of_synonym(o.id) AS f FOR JSON AUTO;"),
+            "results[0]",
+            IrUnknownReason.UnsupportedQuery);
+
+    [Fact]
+    public void A_synonym_with_an_alias_is_keyed_by_its_alias() =>
+        Assert.Equal("[{id, s:[{sku}]1..}]", Shape("SELECT o.id, s.sku FROM dbo.orders AS o JOIN dbo.line_synonym AS s ON s.order_id = o.id FOR JSON AUTO;"));
+
     // ---- keys -----------------------------------------------------------------------------------------------------------
 
     [Fact]
@@ -255,8 +277,15 @@ public class ForJsonAutoTests
     [InlineData("FOR JSON PATH, ROOT('orders')", "{orders:[{id}]1..}")]
     [InlineData("FOR JSON PATH, ROOT(N'a.b')", "{a.b:[{id}]1..}")]
     [InlineData("FOR JSON AUTO, ROOT('orders')", "{orders:[{id}]1..}")]
+    [InlineData("FOR JSON AUTO, ROOT(N'')", "{:[{id}]1..}")]
     public void Root_wraps_an_array_of_at_least_one_object_in_an_object_whose_one_key_is_root_or_the_name_given(string clause, string expected) =>
         Assert.Equal(expected, Shape($"SELECT o.id FROM dbo.orders AS o {clause};"));
+
+    [Theory]
+    [InlineData("SELECT o.id FROM dbo.orders AS o FOR JSON AUTO, ROOT;")]
+    [InlineData("SELECT o.id, x.n FROM dbo.orders AS o CROSS APPLY (SELECT 1 AS n) AS x FOR JSON AUTO, ROOT;")]
+    public void Root_without_a_name_under_auto_is_keyed_by_a_source_so_the_result_is_unknown(string body) =>
+        AssertUnknown(Procedure(body), "results[0]", IrUnknownReason.UnsupportedQuery);
 
     [Fact]
     public void A_root_document_over_at_most_one_row_has_exactly_one_object() =>

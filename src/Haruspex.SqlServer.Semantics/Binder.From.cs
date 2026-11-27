@@ -64,6 +64,7 @@ public sealed partial class Binder
                     History = named.TemporalClause is { TemporalClauseType: not TemporalClauseType.AsOf },
                     Uncommitted = Uncommitted(named),
                     Exposed = named.Alias is null ? ExposedNameOf(named.SchemaObject, adding.Names) : null,
+                    NamesSynonym = named.Alias is null && IsSynonym(named.SchemaObject, adding.Names),
                 });
                 break;
             case VariableTableReference variable:
@@ -309,6 +310,32 @@ public sealed partial class Binder
             NoObject none => new ExposedName(none.InDbo.Schema, none.InDbo.Name),
             SeveralObjects => null,
         };
+    }
+
+    /// <summary>
+    /// Whether a name in FROM names a synonym, of this database or of another one the source holds, by the rules
+    /// <see cref="Named"/> reads it by; never a temporary table or a CTE.
+    /// </summary>
+    private bool IsSynonym(SchemaObjectName name, NameEnvironment names)
+    {
+        if (Temporary(name) is not null || (IsOnePart(name) && names.Find(name.BaseIdentifier.Value) is not null) || name.ServerIdentifier is not null)
+            return false;
+        if (name.DatabaseIdentifier is { Value: var database })
+        {
+            return Model.Databases.TryGetValue(database, out var other)
+                && name.SchemaIdentifier is { Value: { Length: > 0 } schema }
+                && other.FindReadable(new ObjectName(schema, name.BaseIdentifier.Value)) is Synonym;
+        }
+
+        ObjectName? objectName = name.SchemaIdentifier is not null
+            ? SyntaxReader.Name(name)
+            : SchemaNames.Resolve(Readable(), name.BaseIdentifier.Value, search) switch
+            {
+                OneObject one => one.Named.Name,
+                NoObject none => none.InDbo,
+                SeveralObjects => null,
+            };
+        return objectName is { } found && Model.FindReadable(found) is Synonym;
     }
 
     /// <summary>What a name in FROM reads.</summary>

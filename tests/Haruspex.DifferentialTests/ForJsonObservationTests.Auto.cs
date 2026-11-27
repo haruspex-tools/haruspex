@@ -207,6 +207,39 @@ public partial class ForJsonObservationTests
         Assert.Equal("""[{"id":2,"#l":[{"sku":"C"}]}]""", await Run("SELECT o.id, #l.sku FROM #o AS o JOIN #l ON #l.order_id = o.id WHERE o.id = 2 FOR JSON AUTO;"));
     }
 
+    [Fact]
+    public async Task A_synonym_without_an_alias_is_keyed_by_its_target_as_the_synonym_writes_it()
+    {
+        await server.RequireAsync();
+        var token = TestContext.Current.CancellationToken;
+        await using var session = await server.WriteAsync(token);
+        foreach (var create in new[]
+        {
+            Orders,
+            "CREATE TABLE dbo.obs_auto_lines (order_id int NOT NULL, sku varchar(5) NOT NULL); INSERT INTO dbo.obs_auto_lines VALUES (2, 'C');",
+            "CREATE SYNONYM dbo.obs_auto_qualified FOR dbo.obs_auto_lines;",
+            "CREATE SYNONYM dbo.obs_auto_bare FOR [OBS_AUTO_LINES];",
+        })
+        {
+            await using var command = session.Command(create);
+            await command.ExecuteNonQueryAsync(token);
+        }
+
+        async Task<string> Run(string sql)
+        {
+            await using var command = session.Command(sql);
+            await using var reader = await command.ExecuteReaderAsync(token);
+            var text = new System.Text.StringBuilder();
+            while (await reader.ReadAsync(token))
+                text.Append(reader.GetString(0));
+            return text.ToString();
+        }
+
+        Assert.Equal("""[{"id":2,"dbo.obs_auto_lines":[{"sku":"C"}]}]""", await Run("SELECT o.id, obs_auto_qualified.sku FROM #o AS o JOIN dbo.obs_auto_qualified ON obs_auto_qualified.order_id = o.id FOR JSON AUTO;"));
+        Assert.Equal("""[{"id":2,"OBS_AUTO_LINES":[{"sku":"C"}]}]""", await Run("SELECT o.id, obs_auto_bare.sku FROM #o AS o JOIN dbo.obs_auto_bare ON obs_auto_bare.order_id = o.id FOR JSON AUTO;"));
+        Assert.Equal("""[{"id":2,"s":[{"sku":"C"}]}]""", await Run("SELECT o.id, s.sku FROM #o AS o JOIN dbo.obs_auto_qualified AS s ON s.order_id = o.id FOR JSON AUTO;"));
+    }
+
     // ---- keys -----------------------------------------------------------------------------------------------------------
 
     [Fact]
@@ -256,6 +289,15 @@ public partial class ForJsonObservationTests
     [InlineData("FOR JSON PATH, ROOT('r'), INCLUDE_NULL_VALUES", """{"r":[{"id":1},{"id":2}]}""")]
     public async Task Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given(string clause, string expected) =>
         Assert.Equal(expected, await Auto($"SELECT o.id FROM #o AS o WHERE o.id < 3 ORDER BY o.id {clause};"));
+
+    [Theory]
+    // Under AUTO, ROOT without a name is keyed by a source, not "root" as under PATH: the FROM's first, though it gives no
+    // column, or the source an APPLY applies.
+    [InlineData("SELECT o.id FROM #o AS o WHERE o.id = 2", """{"o":[{"id":2}]}""")]
+    [InlineData("SELECT o.id FROM #l AS l JOIN #o AS o ON o.id = l.order_id WHERE o.id = 2", """{"l":[{"id":2}]}""")]
+    [InlineData("SELECT o.id, x.n FROM #o AS o CROSS APPLY (SELECT 1 AS n) AS x WHERE o.id = 2", """{"x":[{"id":2,"x":[{"n":1}]}]}""")]
+    public async Task Root_without_a_name_under_auto_is_keyed_by_a_source(string query, string expected) =>
+        Assert.Equal(expected, await Auto($"{query} FOR JSON AUTO, ROOT;"));
 
     [Fact]
     public async Task A_root_over_one_aggregate_row_is_always_written() =>

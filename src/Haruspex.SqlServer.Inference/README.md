@@ -2010,7 +2010,9 @@ columns by the sources they read. Microsoft's page describes the nesting only lo
 - **Keys.** A column's key is its name; a dotted alias is one key, never a path
   (`For_json_auto_writes_a_dotted_alias_as_one_key`). An inner array's key is its table's alias, or else the name the `FROM`
   writes, its parts joined by dots, without brackets and in the `FROM`'s case: `dbo.Orders`, `#t`, `@t`
-  (`A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it`). A key written twice in one object, which
+  (`A_source_without_an_alias_is_keyed_by_its_name_as_the_from_clause_writes_it`). A synonym without an alias is keyed by its
+  target as `CREATE SYNONYM` wrote it (`A_synonym_without_an_alias_is_keyed_by_its_target_as_the_synonym_writes_it`), which is
+  not modelled. A key written twice in one object, which
   `AUTO` does where `PATH` refuses it, is `duplicate-column` (`For_json_auto_writes_a_repeated_key_twice`).
 - **How many items.** Adjacent rows whose outer values repeat are merged into one object, so a parent whose rows are apart is
   written once for each run of them (`For_json_auto_starts_a_new_object_for_a_parent_whose_rows_are_not_adjacent`). Every row
@@ -2022,13 +2024,16 @@ columns by the sources they read. Microsoft's page describes the nesting only lo
 - **The outermost array.** As `PATH`'s: absent over no rows (`no-rows`), left out with `WITHOUT_ARRAY_WRAPPER`, and a subquery
   is JSON with its wrapper and text without (`A_for_json_auto_subquery_nests_as_json_with_its_wrapper_and_as_text_without`).
 - **`ROOT`**, under `PATH` or `AUTO`, puts the array under one key: the name given, taken as written (a dot nests nothing, `''`
-  is a key), or `root` (`Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given`). The document is written
+  is a key), or without one `root` under `PATH` (`Root_wraps_the_array_in_an_object_whose_one_key_is_root_or_the_name_given`).
+  Under `AUTO`, `ROOT` without a name is keyed by a source, the `FROM`'s first or an `APPLY`'s
+  (`Root_without_a_name_under_auto_is_keyed_by_a_source`), which is not modelled. The document is written
   only over a row, so its array has at least one item, and exactly one when the query returns at most one row; a result is
   absent over no rows and a subquery NULL, and a query of exactly one row is always written
   (`A_root_over_one_aggregate_row_is_always_written`). A `ROOT` subquery nests as JSON, and `json_query` reads into it. With
   `WITHOUT_ARRAY_WRAPPER` it is a syntax error (13620, `Root_with_without_array_wrapper_is_refused`).
-- **Not modelled:** `AUTO` over a set operation, a pseudo-column such as `$IDENTITY`, a column binding can't resolve, and a column
-  of a full-text function or of `inserted` or `deleted`, none of them observed.
+- **Not modelled:** `AUTO` over a set operation, a pseudo-column such as `$IDENTITY`, a column binding can't resolve, a function
+  call binding can't resolve (a synonym for a function among them), and a column of a full-text function or of `inserted` or
+  `deleted`, none of them observed; a synonym without an alias, and `ROOT` without a name under `AUTO`, as above.
 
 ## JSON built here, traced
 
