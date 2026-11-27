@@ -2,7 +2,8 @@
 
 What `"emit": ["zod", "mssql"]` writes, and how an application uses it: calling a procedure, what a call returns, how its
 parameters are checked, how it fails, where it runs, and the functions of the application's own query files. Those are the
-essentials. The [advanced features](#advanced-features) follow, for some applications: table-valued parameters, a module
+essentials. The [advanced features](#advanced-features) follow, for some applications: table-valued parameters, results
+named by `WITH RESULT SETS`, a module
 that works against two databases, several modules, a test double, and calling the [mssql](https://www.npmjs.com/package/mssql) driver itself,
 with the schemas alone. [The configuration](configuration.md#what-is-written-emit)
 says how to ask for each file, and the [example application](../examples/greenhouse/README.md) uses both, compiled in CI. What a
@@ -235,6 +236,47 @@ key's 2627 and then 8061, are in its `precedingErrors`. A type with an identity,
 all, not even with no rows, so its parameter is unknown and can only be left out. `haruspex check --baseline` compares a table
 type's definition in the two IR files: a type changed so that a row the running application sends may be refused, or land in
 another column, fails the check.
+
+## Naming a call's results with `WITH RESULT SETS`
+
+**For naming a procedure's results in the application's own words without a naming rule, or typing a call whose results
+haruspex can't see, such as dynamic SQL.**
+A query file can be a single call of a procedure that declares the result sets it wants with `WITH RESULT SETS`. The file's
+name names the function, its variables name the parameters, and the declaration names and types the fields. For a library's
+loans, `sql/getLoanCard.sql`:
+
+```sql
+exec lending.loan_card @loan_id = @loanId
+with result sets ((loanId int not null, title nvarchar(200) not null, renewals tinyint not null, shelfMark varchar(12) null));
+```
+
+gives a function `getLoanCard` whose parameter is `loanId`, an `int` because the procedure's `@loan_id` is one, and whose rows
+are `{ loanId: number; title: string; renewals: number; shelfMark: string | null }`, with each column's range or length:
+
+```ts
+const card = await getLoanCard(pool, { loanId: 7 })
+```
+
+The declaration is the type, because SQL Server holds the call to it: it converts each value to the declared column, and fails
+the call when the procedure returns another number of result sets, a set of another number of columns, or a NULL in a column
+declared `not null`. So the types are exact whatever the procedure does on the way, and a call of dynamic SQL
+(`exec sp_executesql @sql, … with result sets (…)`) is typed the same way, in a query file or a procedure, with nothing
+declared in the config file. Write `not null` where a column is never null: a column declared without it may be null, since
+then it depends on the caller's session.
+
+What to know:
+
+- **A conversion is between the procedure's column and yours.** A value too long for a declared string is cut short, and an
+  integer too long is written `*`, so declare types that hold what the procedure returns. Where haruspex reads the procedure,
+  it warns of a declared column narrower than the procedure's ([HAR2104](diagnostics/HAR2104.md)) and of a declaration the
+  procedure never matches, which fails every call ([HAR2105](diagnostics/HAR2105.md)).
+- **It renames top-level columns only.** Declaring a `FOR JSON` result as a column gives its text in pieces, a row for each,
+  rather than one document, so leave a JSON result's call without the clause and name its keys in the procedure.
+- **The procedure keeps its own function** if the config file selects it; the query file's is another, and a name both would
+  take is an error naming both. Exclude the procedure in the config file to keep only the file's.
+
+The rules, each observed on SQL Server, are in
+[the inference reference](../src/Haruspex.SqlServer.Inference/README.md#result-sets-a-call-declares).
 
 ## Working against two databases
 

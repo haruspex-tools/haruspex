@@ -536,10 +536,8 @@ walks the callee and solves recursion. Every engine rule here is observed and ke
   caller's track at every position the caller's paths are at (`ResultTrack.Then`), exactly as a `SELECT` would be, and a
   call inside a branch or after a `RETURN` gets `not-run` like any result. `EXEC`, `EXECUTE`, `EXEC @rc = …`, named and
   positional arguments are all the same.
-- **`WITH RESULT SETS` changes them.** Its declared columns rename the callee's and convert its values (1000 into
-  `varchar(3)` is `*`), and `NONE` refuses a callee that returns a result set (11535)
-  (`With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them`). Neither is modelled yet, so a call with
-  either makes the results after it unknown (`unsupported-statement`); `UNDEFINED` is as no clause.
+- **`WITH RESULT SETS` replaces them** with the sets it declares, whatever runs (below, "Result sets a call declares");
+  `UNDEFINED` is as no clause.
 - **The callee is walked again at each call**, from the caller's temporary tables at that point (`CallContext`), so what it
   reads of them is the caller's (a callee read alone gives `caller-temp-table`), and its writes stay: `INSERT` and `UPDATE`
   widen a column as in the caller, `ALTER TABLE … ADD` adds one, a key it adds or drops is added or dropped, `DROP TABLE` drops it
@@ -561,6 +559,65 @@ walks the callee and solves recursion. Every engine rule here is observed and ke
 - **Errors.** A path of the callee that fails is a failed call, as in the caller. Inside a caller's `TRY`, an error anywhere
   in the callee (at any depth of calls) reaches the caller's `CATCH`: the callee is walked keeping each state an error may
   leave it from (`CallContext.Escapes`), and each becomes a state `CATCH` can start from, with the result sets sent so far.
+
+### Result sets a call declares
+
+`EXEC … WITH RESULT SETS` declares the result sets a call returns, and the server holds the call to it: a call that succeeds
+returned exactly the sets declared, each column of the type declared. So the declaration types the call, whatever it runs,
+and the declared sets replace the callee's (`Walker.ResultSets.cs`, the columns typed in `Typer.ResultSets.cs`). Every rule
+is observed in `tests/Haruspex.DifferentialTests/ExecObservationTests.ResultSets.cs`:
+
+- **The number of sets is exact.** One set more than declared fails the call as the callee sends it (11535), one fewer once
+  the callee ends (11536), whatever path the callee took, an early `RETURN` included
+  (`With_result_sets_fixes_how_many_result_sets_arrive_and_any_other_number_fails_the_call`). So every declared set is
+  present, though a callee's own set may not run. `NONE` is a count of 0: on a path where the callee sends a set the call
+  fails, and on the others nothing arrives.
+- **So is each set's width**, and a type the callee's value can't convert to fails it too, both before any row (11537,
+  11538: `A_set_of_another_width_or_of_a_type_with_no_conversion_fails_the_call_even_with_no_rows`).
+- **Each value is converted to its declared column as `CAST` converts it**: a string cut short and a `char` padded, an int
+  too long for a string written `*`, and anything that doesn't fit an error (8114), even under the caller's `ANSI_WARNINGS`
+  and `ARITHABORT` off (`A_declared_column_holds_each_value_converted_to_its_type`). So a column claims its type's facets, as
+  a value converted to it does (`SqlTypes.ToConvertedShape`), and nothing of the callee's value: not its value set, its
+  bounds or its length.
+- **A `FOR JSON` result declared as a column arrives in pieces**, a row of at most 2,033 characters each, since a client joins
+  them only under the column name SQL Server gives that output
+  (`A_for_json_result_declared_as_a_column_arrives_as_its_pieces_one_row_each`). Typed by the declaration, each row is a
+  string of the declared type, which is what arrives; none is traced as JSON.
+- **Only `NOT NULL` makes a column non-null.** A NULL in one fails the call, after the rows before it
+  (`A_column_declared_not_null_fails_the_call_on_a_null_after_the_rows_before_it`). A column declared neither `NULL` nor
+  `NOT NULL` follows the caller's `ANSI_NULL_DFLT`, read when the batch is compiled, and an alias type's `NOT NULL` adds
+  nothing (`A_column_declared_neither_null_nor_not_null_follows_the_sessions_null_default`), so both are nullable, with
+  the reason `nullable-column`. The callee's own column proves nothing of the declared one: a conversion is between them.
+- **A string column takes the database's collation**, or its own `COLLATE`
+  (`A_declared_string_column_takes_the_databases_collation_unless_it_says_another`). It changes no value's type, so the IR
+  doesn't record it.
+- **`AS OBJECT` and `AS TYPE`** declare a table's or a table type's columns: their names, types and `NOT NULL`, as the
+  server's metadata gives them; a CHECK constraint is not enforced on what arrives, so it gives no facet
+  (`As_object_and_as_type_take_the_columns_of_a_table_or_a_table_type_and_as_for_xml_one_ntext_column`). A view's or a
+  function's columns are as the server describes them, which may claim more than inference proves, and a computed or hidden
+  column's nullability is the server's, so those sets are unknown (`unsupported-query`), and so is a name without its
+  schema. `AS FOR XML` is one `ntext` column named as `FOR XML` output is, whose rows the mssql driver joins, so it is unknown
+  too. An unknown set leaves the others typed: the count is still exact.
+- **Dynamic SQL is typed by it**, as any callee is: `sp_executesql` and `EXEC` of a string take the clause and convert alike
+  (`With_result_sets_types_dynamic_sql_as_it_types_a_procedure`). So is a procedure the project doesn't have, or one whose
+  results can't be known. What such a call does to the caller's temporary tables is still not known, so they are forgotten,
+  as without the clause. A declaration of the callee's results in the config file gives way to the call's own, which the
+  server enforces.
+- **Errors.** The declaration's errors are raised at the set or the row, after the sets before it have reached the client,
+  and a caller's `CATCH` catches them
+  (`An_error_with_result_sets_raises_is_caught_by_the_callers_catch_after_the_sets_already_sent`). So each state the callee
+  leaves or returns from reaches a `CATCH` with any number of the declared sets (`ResultTrack.Prefixes`).
+- **`INSERT … EXEC … WITH RESULT SETS` is a syntax error** (102), which the parser reports too; a procedure that declares its
+  call's sets inserts the converted rows when it is itself called by `INSERT … EXEC`
+  (`Insert_exec_refuses_with_result_sets_but_a_callee_may_use_it`).
+
+**When the callee is known**, its results are checked against the declaration. A call that can never match it, because no
+path of the callee returns as many sets, or every set it may return at a position is of another width, fails every time: no
+path continues past it, and it is reported (`HAR2105`, a warning). A declared column narrower than the callee's is a lint
+(`HAR2104`, a warning; the declaration still types the call): a string or binary value cut short, a number that may not fit
+(written `*` in a string, otherwise an error), a type the callee's never converts to, and `NOT NULL` over a column that may be
+null. A decimal rounded to fewer places, a date or time to fewer fractional digits, and national text into a code page that
+lacks some of its characters are not reported: each value still arrives, close to the callee's.
 
 ### `INSERT … EXEC`
 
@@ -614,7 +671,7 @@ Into a permanent table the callee is followed the same way, and the insert is a 
 ### What stays unknown
 
 `Binder.BindCall` (Semantics) says what an `EXEC` runs. Results that cannot be known make the caller's unknown, each with a
-reason of its own, unless the config file declares them (below):
+reason of its own, unless the call declares them (`WITH RESULT SETS`, above) or the config file does (below):
 
 | Call | Reason |
 |---|---|

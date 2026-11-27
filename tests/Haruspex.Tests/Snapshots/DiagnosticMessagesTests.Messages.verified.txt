@@ -133,6 +133,12 @@ db/p1.sql:1:34: warning HAR2102: json_value(N'{"shelf": 3}', '$.room') reads `$.
 HAR2103
 db/p1.sql:1:1: warning HAR2103: The session declares that the callers hold UNMASK, but lib.p runs as another user, by WITH EXECUTE AS or an EXECUTE AS statement, whose permissions decide what it and whatever it calls read, so masked columns are still read as masked everywhere.
 
+HAR2104
+db/p2.sql:1:27: warning HAR2104: EXEC lib.q WITH RESULT SETS declares id varchar(3), column 1 of result set 1, over lib.q's id: a value of int may not fit, so it is written *. Declare a type that holds every value, or convert it in lib.q.
+
+HAR2105
+db/p2.sql:1:27: warning HAR2105: EXEC lib.q WITH RESULT SETS declares 2 result sets, but lib.q returns 1, so every call fails (11536). Declare the sets it returns.
+
 HAR3001
 haruspex.json:1:134: error HAR3001: procedures["lib.get_book"].results.rowset: cannot read the schema schemas: …
 

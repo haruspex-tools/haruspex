@@ -43,23 +43,6 @@ public partial class ExecTests
         Assert.Equal(["id"], Names(doc, Assert.Single(Results(doc)).Type));
     }
 
-    [Theory]
-    [InlineData("EXEC dbo.q WITH RESULT SETS ((renamed varchar(3) NULL));")]
-    [InlineData("EXEC dbo.q WITH RESULT SETS (AS OBJECT dbo.t);")]
-    [InlineData("EXEC dbo.q WITH RESULT SETS NONE;")]
-    public void A_call_with_result_sets_declared_or_none_leaves_the_results_unknown(string call)
-    {
-        // Observed: With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them. The declared columns rename and
-        // convert the callee's, and NONE refuses them; neither is modelled, so the callee's own columns are not what arrives.
-        var doc = Infer(
-            ("q", "CREATE PROCEDURE dbo.q AS SELECT t.id FROM dbo.t AS t;"),
-            ("p", $"CREATE PROCEDURE dbo.p AS {call} SELECT 1 AS a;"));
-
-        var unknown = ResultsUnknown(doc);
-        Assert.Equal(IrUnknownReason.UnsupportedStatement, unknown.Reason);
-        Assert.Contains("WITH RESULT SETS", unknown.Detail, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void A_call_with_result_sets_undefined_contributes_the_callees_results()
     {

@@ -29,6 +29,20 @@ public sealed partial class Binder
     }
 
     /// <summary>
+    /// The object a name means when it is written with its schema, in this database: <c>dbo.box</c>. Null for a name without
+    /// its schema, whose meaning depends on where it is written and who runs it, and for one in another database or on a linked
+    /// server. For a reference whose resolution without a schema isn't modelled, such as <c>WITH RESULT SETS (AS OBJECT …)</c>.
+    /// </summary>
+    /// <param name="name">The name as written.</param>
+    public static ObjectName? Qualified(SchemaObjectName name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return name is { ServerIdentifier: null, DatabaseIdentifier: null, SchemaIdentifier.Value: var schema, BaseIdentifier.Value: var own }
+            ? new ObjectName(schema, own)
+            : null;
+    }
+
+    /// <summary>
     /// The objects a name written as the target of a write may mean, by the rule <see cref="Bind"/> resolves table names
     /// with: a schema-qualified name means itself; an unqualified one, what <see cref="SchemaNames.Resolve"/> finds among the
     /// tables, views and synonyms (every one of them where it finds several, since which is written depends on the caller's

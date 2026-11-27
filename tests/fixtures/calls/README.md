@@ -21,3 +21,10 @@ temporary tables, `INSERT … EXEC`, branches and recursion, and one that runs d
 | `calls.maybe_then_batches`, `calls.maybe_ovens` | a callee whose only result set is on one branch, then a result of the caller's, which arrives first when the callee returns none |
 | `calls.search_batches` | dynamic SQL (`sp_executesql`), whose results are declared in `haruspex.json`. `DeclarationAcceptanceTests` shows the generated Zod accepting the real output under the right declaration and rejecting it under two wrong ones |
 | `calls.search_with_ovens` | a caller of `search_batches`, whose declared results flow into its own, listed as an override `via` it |
+| `calls.oven_cards` | `WITH RESULT SETS` over `oven_list`: its columns renamed and converted, a label longer than the declared `nvarchar(6)` cut to six characters, which haruspex warns of (HAR2104) |
+| `calls.search_declared` | dynamic SQL (`sp_executesql`) whose call declares its results with `WITH RESULT SETS`, so they are typed with no declaration in `haruspex.json` |
+| `calls.quiet_then_ovens` | `WITH RESULT SETS NONE` over a callee that returns no set on the path taken, then a result of its own |
+
+Its `sql` folder holds one query file, `sql/getBakeSheet.sql`: a thin file that calls `batch_rows` with `WITH RESULT SETS`,
+so the file names its function, its `@ovenId` the parameter (an `int`, from `batch_rows`' `@oven`), and the declaration both
+sets' fields. The differential tests call it through its generated function, as they call the procedures.

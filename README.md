@@ -389,6 +389,7 @@ each is for.
 - **Separate deployments:** types that work against both databases, and a check of the running application ([a baseline](docs/command-line.md#checking-against-a-baseline)).
 - **The callers' session:** more claims when connections set `ANSI_WARNINGS` or hold `UNMASK` ([`session`](docs/configuration.md#the-callers-session-session)).
 - **Dynamic SQL:** results declared where the project can't show them ([declared results](docs/configuration.md#declared-results-results)).
+- **Names of your own:** a call's results named and typed where it is made, dynamic SQL included ([`WITH RESULT SETS`](docs/database-module.md#naming-a-calls-results-with-with-result-sets)).
 - **JSON columns:** JSON stored in a column, typed by a JSON Schema ([`columns`](docs/configuration.md#json-stored-in-a-column-columns)).
 - **JSON Schemas in the database:** a column's schema named in its scripts and DACPAC ([`haruspex.jsonSchema`](docs/configuration.md#naming-a-columns-schema-in-the-sql)).
 - **REST services:** what a procedure reads from a service's reply, typed by a JSON Schema declared for its endpoint ([`endpoints`](docs/configuration.md#calls-to-rest-endpoints-endpoints)).

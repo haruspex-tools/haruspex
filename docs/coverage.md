@@ -19,9 +19,9 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | Not in it, and unknown where they are called | 206 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 175 |
+| Modelled, wholly or in part | 177 |
 | Read, changing no result | 30 |
-| Unknown | 300 |
+| Unknown | 298 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -616,7 +616,7 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `SET c = x in UPDATE` | `AssignmentSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column, in a temporary table or variable, takes the value's type too. |
 | `SET c.WRITE( … ) in UPDATE` | `FunctionCallSetClause` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dml) | The column keeps its type and its nulls, but only its type's facets and no JSON it held; on a permanent table it changes no column's type. |
 | `TRUNCATE TABLE` | `TruncateTableStatement` | read, changing no result | Removes every row and fires no trigger. |
-| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below), and one of SQL Server's own the catalogue lists what it lists; a string of dynamic SQL can't be read, so the results after it can't be listed. |
+| `EXECUTE` | `ExecuteStatement` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, `dynamic-sql` | A call of a procedure in the project returns what it returns, unless WITH RESULT SETS changes it (below), and one of SQL Server's own the catalogue lists what it lists; a string of dynamic SQL can't be read, so the results after it can't be listed unless the call declares them (WITH RESULT SETS, below). |
 | `BULK INSERT` | `BulkInsertStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `INSERT BULK` | `InsertBulkStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
 | `READTEXT` | `ReadTextStatement` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled. |
@@ -632,10 +632,10 @@ Each construct as ScriptDom names it. What a modelled construct gives is explain
 | `EXEC procedure` | `ExecutableProcedureReference` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) | The procedure called, whose result sets arrive where it is called. |
 | `EXEC ( 'string' )` | `ExecutableStringList` | unknown, `dynamic-sql` | Dynamic SQL, which can't be read, so the results after it can't be listed. |
 | `EXEC … WITH RECOMPILE` | `ExecuteOption` | read, changing no result | Changes no result. |
-| `EXEC … WITH RESULT SETS` | `ResultSetsExecuteOption` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#calls) in part; otherwise unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | UNDEFINED is as no clause; declared result sets or NONE aren't modelled, so the results after the call are unknown. |
-| `RESULT SETS (( columns ))` | `InlineResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet: the declared columns rename the callee's and convert its values. |
-| `RESULT SETS ( AS OBJECT … )` | `SchemaObjectResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet. |
-| `RESULT SETS ( AS FOR XML )` | `ResultSetDefinition` | unknown, [`unsupported-statement`](diagnostics/HAR2001.md) | Not modelled yet. |
+| `EXEC … WITH RESULT SETS` | `ResultSetsExecuteOption` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#result-sets-a-call-declares) | The declared result sets type the call whatever runs, dynamic SQL included, since the server enforces them: any other number of sets fails the call. NONE is no result set, and UNDEFINED is as no clause. |
+| `RESULT SETS (( columns ))` | `InlineResultSetDefinition` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#result-sets-a-call-declares) | The declared columns rename the callee's and type each value as converted to them; only NOT NULL makes one non-null. |
+| `RESULT SETS ( AS OBJECT … )` | `SchemaObjectResultSetDefinition` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#result-sets-a-call-declares) in part; otherwise unknown, [`unsupported-query`](diagnostics/HAR2004.md) | AS OBJECT a table and AS TYPE a table type, named with its schema, give its columns; a view's or a function's, a computed or hidden column, or a name without its schema aren't modelled. |
+| `RESULT SETS ( AS FOR XML )` | `ResultSetDefinition` | unknown, [`unsupported-query`](diagnostics/HAR2004.md) | One ntext column named as FOR XML output is, whose rows the mssql driver joins: that set is unknown, the others are typed. |
 
 ### Statements that steer the flow
 

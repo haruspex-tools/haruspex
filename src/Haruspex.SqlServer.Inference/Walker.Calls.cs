@@ -38,11 +38,12 @@ internal sealed partial class Walker
     /// <summary>
     /// <c>EXEC</c>: the callee's result sets arrive where it is called, in order (observed), and its writes to the caller's
     /// temporary tables stay. A call whose results cannot be known makes the procedure's unknown, unless its results are
-    /// declared; under <c>INSERT … EXEC</c> its results go into the table instead, so only the tables become unknown.
+    /// declared, by <c>WITH RESULT SETS</c> or the config file; under <c>INSERT … EXEC</c> its results go into the table instead,
+    /// so only the tables become unknown.
     /// </summary>
     private Outcome Execute(ExecuteStatement execute, FlowState state)
     {
-        var called = Call(execute.ExecuteSpecification, state);
+        var called = Call(execute.ExecuteSpecification, state, declared: DeclaredSets(execute));
         if (called.Unknowable is { } why)
         {
             if (!context.Inserting)
@@ -52,18 +53,6 @@ internal sealed partial class Walker
             }
 
             return Continue(Assigned(execute.ExecuteSpecification, Forgotten(state, why, At(execute))));
-        }
-
-        // WITH RESULT SETS (…) renames the callee's columns and converts its values, and NONE refuses a callee that returns a
-        // result set (observed: With_result_sets_renames_and_converts_the_callees_columns_or_refuses_them). Neither is
-        // modelled; UNDEFINED is as no clause.
-        if (execute.Options.OfType<ResultSetsExecuteOption>().Any(o => o.ResultSetsOptionKind != ResultSetsOptionKind.Undefined))
-        {
-            blocker ??= new UnknownShape(
-                IrUnknownReason.UnsupportedStatement,
-                "EXEC … WITH RESULT SETS is not modelled yet, so the procedure's result sets cannot be listed.",
-                At(execute));
-            return Outcome.Ends;
         }
 
         if (called.After is not { } after)
@@ -196,9 +185,11 @@ internal sealed partial class Walker
     /// <summary>
     /// Follows the call <paramref name="execute"/> makes from <paramref name="state"/>. A procedure of the project is walked
     /// from the caller's temporary tables; a procedure whose results are declared gives those; anything else is unknowable.
+    /// Result sets the call itself declares (<c>WITH RESULT SETS</c>) are what it gives, whatever the callee.
     /// </summary>
     /// <param name="inserting">Whether its results go into a table (<c>INSERT … EXEC</c>), here or in a caller.</param>
-    private Called Call(ExecuteSpecification execute, FlowState state, bool inserting = false)
+    /// <param name="declared">The result sets the call declares (<see cref="DeclaredSets"/>), or null.</param>
+    private Called Call(ExecuteSpecification execute, FlowState state, bool inserting = false, ResultTrack? declared = null)
     {
         inserting |= context.Inserting;
         var target = binder.BindCall(execute);
@@ -224,8 +215,16 @@ internal sealed partial class Walker
 
         if (walked.Blocker is { } why)
         {
-            // Its results cannot be known; a declaration of them stands in for them. What it did to the caller's tables is not
-            // known either way: the declaration says nothing of them.
+            // Its results cannot be known; a declaration of them stands in for them, the call's own first, which the server
+            // enforces. What it did to the caller's tables is not known either way: the declaration says nothing of them.
+            if (declared is not null)
+            {
+                var forgotten = Forgotten(state, new UnknownShape(why.Reason, $"the call declares its result sets, but what it does to temporary tables is not known: {why.Detail}", why.At), at);
+                if (needEscapes)
+                    Escaped([forgotten.WithResults(inserting ? state.Results : state.Results.Then(declared.Prefixes()))]);
+                return new Called(forgotten, declared, null);
+            }
+
             if (name is { } calledName && summaries.Declared(calledName) is var (declaredName, declaration))
             {
                 declaredUsed = Walked.Union(declaredUsed, [declaredName]);
@@ -242,6 +241,8 @@ internal sealed partial class Walker
 
         declaredUsed = Walked.Union(declaredUsed, walked.Declared);
         var own = target is ProcedureCall call ? Created(call.Procedure) : [];
+        if (declared is not null)
+            return Declared(walked, declared, state, own, inserting, needEscapes, Text(execute), name?.ToString() ?? Text(execute), at);
         if (needEscapes)
         {
             Escaped([.. walked.Escapes.Select(e =>

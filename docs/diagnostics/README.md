@@ -72,6 +72,8 @@ reason.
 | [HAR2101](HAR2101.md) | warning | A write to an object the project doesn't define |
 | [HAR2102](HAR2102.md) | warning | A JSON path that never finds a value |
 | [HAR2103](HAR2103.md) | warning | The callers' UNMASK isn't applied |
+| [HAR2104](HAR2104.md) | warning | A declared result column narrower than the callee's |
+| [HAR2105](HAR2105.md) | warning | Declared result sets the callee never returns |
 
 ## Reading the config file
 

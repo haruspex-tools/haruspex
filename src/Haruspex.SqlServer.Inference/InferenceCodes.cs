@@ -26,6 +26,19 @@ public static class InferenceCodes
     /// </summary>
     public static DiagnosticCode UnmaskNotApplied { get; } = new(2103, DiagnosticSeverity.Warning, "The callers' UNMASK isn't applied");
 
+    /// <summary>
+    /// A column <c>EXEC … WITH RESULT SETS</c> declares that doesn't hold every value of the callee's column it converts: a string
+    /// cut short, a number written <c>*</c> or failing the call, a type the callee's never converts to, or <c>NOT NULL</c> over a
+    /// column that may be null. A lint: the declaration still types the call, since the server enforces it.
+    /// </summary>
+    public static DiagnosticCode NarrowerDeclaredColumn { get; } = new(2104, DiagnosticSeverity.Warning, "A declared result column narrower than the callee's");
+
+    /// <summary>
+    /// <c>EXEC … WITH RESULT SETS</c> that the callee's result sets never match: another number of sets, or a set of another
+    /// number of columns. Every call fails, so no path continues past it.
+    /// </summary>
+    public static DiagnosticCode DeclaredSetsNeverMatch { get; } = new(2105, DiagnosticSeverity.Warning, "Declared result sets the callee never returns");
+
     /// <summary>An unknown for <see cref="IrUnknownReason.UnsupportedStatement"/>.</summary>
     public static DiagnosticCode UnsupportedStatement { get; } = Unknown(2001, "A statement that isn't modelled yet");
 

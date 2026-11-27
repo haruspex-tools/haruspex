@@ -103,6 +103,22 @@ public partial class QueryFileTests
         Assert.Equal(["@c int", "@w nvarchar(20)"], Parameters("EXEC shop.touch @c, @w;"));
 
     [Fact]
+    public void A_thin_file_takes_its_parameter_from_its_variable_and_its_fields_from_with_result_sets()
+    {
+        // The advanced mode for naming: the file's variable names the parameter, passed on to the procedure's, and the
+        // declaration names and types the fields, which the server enforces (ExecObservationTests.ResultSets.cs).
+        var document = InferQuery.Infer(Shop, "EXEC shop.touch @customer_id = @customerId WITH RESULT SETS ((done int NOT NULL));");
+
+        Assert.Equal(["@customerId int"], document.Parameters());
+        var result = Assert.Single(document.Query().Results!);
+        Assert.False(result.MayBeAbsent);
+        var done = Assert.Single(IrNavigation.Fields(document, result.Type));
+        Assert.Equal("done", done.Name);
+        Assert.False(done.Nullable);
+        Assert.Empty(document.Unknowns);
+    }
+
+    [Fact]
     public void A_value_inserted_into_or_set_on_a_column_takes_the_column_s_type() =>
         Assert.Equal(
             ["@o int", "@c int", "@p datetime2(0)", "@t decimal(12,2)", "@q smallint", "@total decimal(12,2)", "@id int"],

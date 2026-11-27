@@ -39,6 +39,9 @@ links to is the one place that describes it.
   [the callers' session](configuration.md#the-callers-session-session), and haruspex claims more.
 - **A procedure's results can't be known from the project**, such as one that runs dynamic SQL:
   [declared results](configuration.md#declared-results-results).
+- **The application wants its own names for a procedure's results without a naming rule**, or a call of dynamic SQL typed
+  where it is made: a query file that declares them with
+  [`WITH RESULT SETS`](database-module.md#naming-a-calls-results-with-with-result-sets).
 - **A column stores JSON:** [declare its JSON Schema](configuration.md#json-stored-in-a-column-columns), and see
   [what a declaration reads](configuration.md#the-json-schemas-a-declaration-reads).
 - **A procedure calls a REST service** with `sp_invoke_external_rest_endpoint`:

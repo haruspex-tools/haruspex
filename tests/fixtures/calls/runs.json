@@ -35,7 +35,15 @@
     { "name": "maybe_ovens, not shown", "procedure": "calls.maybe_ovens", "parameters": { "@show": false } },
     { "name": "maybe_then_batches, ovens first", "procedure": "calls.maybe_then_batches", "parameters": { "@show": true } },
     { "name": "maybe_then_batches, no ovens", "procedure": "calls.maybe_then_batches", "parameters": { "@show": false } },
-    { "name": "search_with_ovens", "procedure": "calls.search_with_ovens", "parameters": { "@product": "%e%" } }
+    { "name": "search_with_ovens", "procedure": "calls.search_with_ovens", "parameters": { "@product": "%e%" } },
+    { "name": "oven_cards", "procedure": "calls.oven_cards" },
+    { "name": "oven_cards, no ovens", "procedure": "calls.oven_cards", "setup": "nothing baked" },
+    { "name": "search_declared", "procedure": "calls.search_declared", "parameters": { "@product": "%r%" } },
+    { "name": "search_declared, no match", "procedure": "calls.search_declared", "parameters": { "@product": "zzz" } },
+    { "name": "quiet_then_ovens", "procedure": "calls.quiet_then_ovens" },
+    { "name": "getBakeSheet, an oven with racks", "query": "sql/getBakeSheet.sql", "parameters": { "@ovenId": 1 } },
+    { "name": "getBakeSheet, an oven without racks", "query": "sql/getBakeSheet.sql", "parameters": { "@ovenId": 2 } },
+    { "name": "getBakeSheet, no such oven", "query": "sql/getBakeSheet.sql", "parameters": { "@ovenId": 9 } }
   ],
 
   "notRun": {

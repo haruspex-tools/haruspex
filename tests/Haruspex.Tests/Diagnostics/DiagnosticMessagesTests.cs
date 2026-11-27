@@ -280,6 +280,8 @@ public class DiagnosticMessagesTests
         (2101, () => Cli(["CREATE PROCEDURE lib.p AS INSERT INTO audit.trail (id) VALUES (1);"])),
         (2102, () => Cli(["CREATE PROCEDURE lib.p AS SELECT json_value(N'{\"shelf\": 3}', '$.room') AS room;"])),
         (2103, () => Cli(["CREATE PROCEDURE lib.p WITH EXECUTE AS OWNER AS SELECT 1 AS one;"], $"{{ {Plain}, \"session\": {{ \"unmask\": true }} }}")),
+        (2104, () => Cli(["CREATE PROCEDURE lib.q AS SELECT b.id FROM lib.book AS b;", "CREATE PROCEDURE lib.p AS EXEC lib.q WITH RESULT SETS ((id varchar(3) NOT NULL));"])),
+        (2105, () => Cli(["CREATE PROCEDURE lib.q AS SELECT b.id FROM lib.book AS b;", "CREATE PROCEDURE lib.p AS EXEC lib.q WITH RESULT SETS ((id int), (more int));"])),
 
         (3001, () => Cli([GetBook], $"{{ {Plain}, \"procedures\": {{ \"lib.get_book\": {{ \"results\": {{ \"rowset\": \"schemas\" }}, \"why\": \"w\" }} }} }}", arrange: f => Directory.CreateDirectory(Path.Combine(f.Path, "schemas")))),
         (3002, () => Cli([GetBook], "{ \"source\": ")),
