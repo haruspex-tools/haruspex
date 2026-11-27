@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DotNet.Testcontainers.Containers;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.SqlServer.Model;
@@ -67,14 +68,41 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private readonly Lazy<Task> drop;
     private bool stopping;
 
-    private MsSqlContainer? container;
+    // How the container is made (given the attempt's number), how long an attempt may take and how to reach the server in it:
+    // the pinned SQL Server, unless a test of the fixture's own start gives others (SqlServerFixtureTests).
+    private readonly Func<int, IContainer> build;
+    private readonly TimeSpan patience;
+    private readonly Func<IContainer, Task<string>> connect;
+    private readonly Action<string> report;
+
+    // HARUSPEX_REQUIRE_SQLSERVER=1: no server fails a test rather than skipping it.
+    private readonly bool required;
+
+    private IContainer? container;
     private string? server;
     private string? unavailable;
+
+    // The account of a container that didn't start, or stopped while the test database was set up (ContainerStart), until the
+    // first test to report it takes it, so its log is printed once rather than with each of a thousand failures.
+    private string? startLog;
+
+    // Whether the container has been described already, so its stop isn't described again when the fixture is disposed.
+    private bool described;
     private Exception? failure;
     private PosixSignalRegistration? terminate;
 
     public SqlServerFixture()
+        : this(_ => new MsSqlBuilder(Image).Build(), ContainerStart.Patience, c => Task.FromResult(((MsSqlContainer)c).GetConnectionString()), Environment.GetEnvironmentVariable(RequireVariable) == "1", Report)
     {
+    }
+
+    internal SqlServerFixture(Func<int, IContainer> build, TimeSpan patience, Func<IContainer, Task<string>> connect, bool required, Action<string> report)
+    {
+        this.build = build;
+        this.patience = patience;
+        this.connect = connect;
+        this.required = required;
+        this.report = report;
         ready = new(StartAsync, LazyThreadSafetyMode.ExecutionAndPublication);
         drop = new(DropAllAsync, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -151,7 +179,12 @@ public sealed class SqlServerFixture : IAsyncLifetime
         {
             rooms.Dispose();
             if (container is not null)
+            {
+                // A server that stopped during the tests fails them with connection errors that don't say why; its log does.
+                if (!described && await ContainerStart.DescribeIfStoppedAsync(container, "had stopped by the end of the run").ConfigureAwait(false) is { } account)
+                    report(account);
                 await container.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
@@ -165,13 +198,18 @@ public sealed class SqlServerFixture : IAsyncLifetime
         await ready.Value.ConfigureAwait(false);
         if (unavailable is not null)
         {
-            if (Environment.GetEnvironmentVariable(RequireVariable) == "1")
-                Assert.Fail($"{RequireVariable}=1, but there is no SQL Server: {unavailable}");
-            Assert.Skip($"No SQL Server, so the differential tests did not run: {unavailable} Set {ServerVariable} or start Docker; CONTRIBUTING.md says how.");
+            var log = Interlocked.Exchange(ref startLog, null);
+            var reason = log is null ? unavailable : unavailable + Environment.NewLine + log;
+            if (required)
+                Assert.Fail($"{RequireVariable}=1, but there is no SQL Server: {reason}");
+            Assert.Skip($"No SQL Server, so the differential tests did not run: {reason} Set {ServerVariable} or start Docker; CONTRIBUTING.md says how.");
         }
 
         if (failure is not null)
-            Assert.Fail($"Setting up the test database failed: {failure}");
+        {
+            var log = Interlocked.Exchange(ref startLog, null);
+            Assert.Fail($"Setting up the test database failed: {failure}{(described ? Environment.NewLine + StoppedNote : string.Empty)}{(log is null ? string.Empty : Environment.NewLine + log)}");
+        }
     }
 
     /// <summary>Runs a procedure once per test run; later calls reuse what it returned.</summary>
@@ -336,9 +374,16 @@ public sealed class SqlServerFixture : IAsyncLifetime
         {
             try
             {
-                container = new MsSqlBuilder(Image).Build();
-                await container.StartAsync().ConfigureAwait(false);
-                server = container.GetConnectionString();
+                container = await ContainerStart.StartAsync(build, patience, report).ConfigureAwait(false);
+                server = await connect(container).ConfigureAwait(false);
+            }
+            catch (ContainerStartException e)
+            {
+                unavailable = $"{ServerVariable} is not set, and SQL Server's container did not start at any of {ContainerStart.Attempts} attempts ({Innermost(e).GetType().Name}: {Innermost(e).Message}). Its log is printed with the first test to report this, and in the run's error output.";
+                startLog = e.Message;
+                report(e.Message);
+                server = null;
+                return;
             }
 #pragma warning disable CA1031 // Any reason Docker cannot be used is a reason to skip; HARUSPEX_REQUIRE_SQLSERVER turns it into a failure.
             catch (Exception e)
@@ -385,6 +430,15 @@ public sealed class SqlServerFixture : IAsyncLifetime
 #pragma warning restore CA1031
         {
             failure = e;
+
+            // A container that stopped after its start is not started again (ContainerStart says why), but its log says why the
+            // setup failed.
+            if (container is not null && await ContainerStart.DescribeIfStoppedAsync(container, "had stopped while the test database was set up").ConfigureAwait(false) is { } account)
+            {
+                described = true;
+                startLog = account;
+                report(account);
+            }
         }
     }
 
@@ -586,6 +640,18 @@ public sealed class SqlServerFixture : IAsyncLifetime
         await using var command = new SqlCommand(sql, connection);
 #pragma warning restore CA2100
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    private const string StoppedNote = "SQL Server's container had stopped. Its log is printed with the first test to report this, and in the run's error output.";
+
+    /// <summary>
+    /// Writes an account of the container's start to the run's error output, which the runner prints when the run fails, and
+    /// to the output of the test that started the server, printed when that test fails or with <c>--output detailed</c>.
+    /// </summary>
+    private static void Report(string text)
+    {
+        Console.Error.WriteLine(text);
+        TestContext.Current.TestOutputHelper?.WriteLine(text);
     }
 
     private static Exception Innermost(Exception e) => e.InnerException is null ? e : Innermost(e.InnerException);
