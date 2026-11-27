@@ -207,6 +207,7 @@ public static class IrJsonReader
         ReadsFoldersAsLabelled(document, version);
         DescribesAsLabelled(document, version);
         HoldsXmlAsLabelled(document, version);
+        HoldsSchemaFactsAsLabelled(document, version);
         return document;
     }
 
@@ -462,10 +463,23 @@ public static class IrJsonReader
     private static void HoldsXmlAsLabelled(IrDocument document, string version)
     {
         var first = IrDocumentXml.First(document);
-        if (version == IrDocument.CurrentVersion && first is null)
+        if (version == IrDocument.XmlVersion && first is null)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds an XML value, and this one holds none. One that holds none is labelled {IrDocument.DescribedVersion} or earlier, by what else it says.");
+        if (!IrDocument.IsSince(version, IrDocument.XmlVersion) && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: an XML value (kind \"xml\", or a value read from XML by the rule \"xml-value\") is IR {IrDocument.XmlVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses a fact an XML schema collection proves (0.35) in a document labelled earlier, by its path, and a document labelled
+    /// 0.35 that holds none, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void HoldsSchemaFactsAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentXmlSchema.First(document);
+        if (version == IrDocument.CurrentVersion && first is null)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a fact an XML schema collection proves, and this one holds none. One that holds none is labelled {IrDocument.XmlVersion} or earlier, by what else it says.");
         if (version != IrDocument.CurrentVersion && first is { } path)
-            throw new IrFormatException(path, $"is given in a document of IR {version}: an XML value (kind \"xml\", or a value read from XML by the rule \"xml-value\") is IR {IrDocument.CurrentVersion}.");
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a fact an XML schema collection proves (from \"xml-schema\") is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>A description (0.33): left out when there is none, and never empty.</summary>

@@ -1,7 +1,7 @@
-# Haruspex.Ir: the IR format, version 0.34
+# Haruspex.Ir: the IR format, version 0.35
 
 This is the specification of haruspex's intermediate representation (the IR) in its file form, `haruspex.ir.json`, at
-version 0.34, whose documents that say less are labelled 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
+version 0.35, whose documents that say less are labelled 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 or 0.23 ("Changelog", below): what a document holds, what each part
 claims, and what a program that writes or reads one must do. *Must*,
 *must not* and *may* have their usual meanings. The format's JSON Schema, generated from the model, is
 [`schemas/ir`](../../schemas/ir/README.md), a file per version, each at an address that names it; the reasons behind the format are in the
@@ -116,7 +116,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.34"` when it holds an XML value (a scalar
+- must write `irVersion` as the oldest version that says all the document says: `"0.35"` when it holds a fact an XML schema
+  collection proves (a facet from `xml-schema`, anywhere); else `"0.34"` when it holds an XML value (a scalar
   of kind `xml`, or a reason whose rule is `xml-value`, anywhere); else `"0.33"` when an object, a parameter or a
   field has a `description`; else `"0.32"` when a source, its own or its
   baseline's, was read from several folders (`paths`); else `"0.31"` when a source records packages declared builds (`builds`); else `"0.30"` when its source names the build that wrote it
@@ -144,7 +145,7 @@ of program handle one.
 - may leave out any property this page marks optional, which then means what this page says its absence means.
 
 **A reader**:
-- must read `irVersion` first and must refuse a document of any version but 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
+- must read `irVersion` first and must refuse a document of any version but 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, older or newer, without
   reading further; must refuse a document labelled 0.24 whose `source` names no `baseline`, and one labelled 0.23 that names
   one; must refuse, in a document whose `source` names no `baseline`, a key whose presence is `optional` (but in a document labelled
   0.28 or later), a reason whose rule
@@ -159,7 +160,8 @@ of program handle one.
   `paths`, the source's or its baseline's, in a document labelled before 0.32, and a document labelled 0.32 in which neither has
   them; and must refuse a `description` in a document labelled before 0.33, and a document labelled 0.33 that has none; and must refuse an
   XML value (a scalar of kind `xml`, or a reason whose rule is `xml-value`) in a document labelled before 0.34, and a document
-  labelled 0.34 that holds none;
+  labelled 0.34 that holds none; and must refuse a fact from `xml-schema` in a document labelled before 0.35, and a document
+  labelled 0.35 that holds none;
 - must refuse an empty `description`;
 - must refuse a source's `paths` with fewer than two folders, a folder twice or an empty one, and `paths` beside `path`;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
@@ -211,8 +213,9 @@ in it, so it can't state:
   result sets of one name, a column declared twice, and two columns of a table type whose names differ only in case;
 - **what a label says of the whole document**: a document labelled 0.25 must say where something came from, one labelled 0.27
   hold a binary value, one labelled 0.28 declare something, one labelled 0.29 explain something, one labelled 0.33 record a
-  description and one labelled 0.34 hold an XML value, each anywhere in it; and a binary value before 0.27, any JSON or a fact
-  from a declaration before 0.28, a reason's `detail` or a minimum in code points before 0.29, and an XML value before 0.34, are
+  description, one labelled 0.34 hold an XML value and one labelled 0.35 a fact from `xml-schema`, each anywhere in it; and a
+  binary value before 0.27, any JSON or a fact from a declaration before 0.28, a reason's `detail` or a minimum in code points
+  before 0.29, an XML value before 0.34, and a fact from `xml-schema` before 0.35, are
   refused wherever they are. JSON Schema can require or refuse a property at a fixed place, which the schema does
   for the rest of each label's rules, but not a kind of node at any depth.
 
@@ -223,7 +226,8 @@ in it, so it can't state:
 ```jsonc
 {
   "irVersion": "0.33",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
-                                      // (0.34 when it holds an XML value: "Logical kinds", below;
+                                      // (0.35 when it holds a fact from an XML schema collection:
+                                      // "Facets", below; 0.34 when it holds an XML value: "Logical kinds";
                                       // 0.33 when it records a description; 0.32 when a source was read
                                       // from several folders; 0.31 when it records
                                       // packages declared builds; else 0.30 when it names the build
@@ -633,7 +637,10 @@ when it has no name), or `{ "engine": "<what>" }` for a closed set the engine it
 0 to 255), or `{ "expression":
 "<location>" }` for the literals an expression gives, or (0.28) `{ "declared": "<what>" }` for a value set or a minimum length a
 declaration in the config file states (`<what>` is the column declared, `schema.table.column`, or the procedure whose results are
-declared), for the origins graph. A facet that is not proved is left out:
+declared), or (0.35) `{ "xml-schema": "<collection> <declaration>" }` for a facet of the simple type of the node XML's
+`value()` reads, in an instance typed by the collection, carried where the conversion to the value's type keeps it
+(`shop.order_schema {urn:shop}order/@id`;
+[decision 0139](../../docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md)), for the origins graph. A facet that is not proved is left out:
 absence claims nothing. None says anything about null, which is the field's `nullable`: a CHECK constraint passes when
 its condition is UNKNOWN, as it is for null, so a constraint never makes a value non-null and a value set never excludes
 null.
@@ -766,6 +773,12 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 A version says which properties a document uses, not whose rules made its claims: a fix to a rule may change a claim without
 changing the format. From 0.30 a document names the build that wrote it (`source.writtenBy`), which says that; a document labelled
 before 0.30 names none, and its label says only which properties it uses.
+
+**0.35** (27 Nov 2026, facts of an XML schema collection). The fact source `xml-schema`: a facet of a value read from XML by
+`value()` that the instance's schema collection proves ("Facets", above;
+[decision 0139](../../docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md)). Only a
+document that holds one is labelled 0.35: a document that holds none is written as before, labelled 0.34 or earlier by what else
+it says, and means what it meant: this reader reads it.
 
 **0.34** (26 Nov 2026, XML values). The scalar kind `xml`, XML text with no format and no facets, and the null rule `xml-value`,
 of a value read from XML ("Logical kinds" and "Null reasons", above;

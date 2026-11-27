@@ -62,6 +62,13 @@ internal static class SqlTypes
     }
 
     /// <summary>
+    /// A value converted to a type the server's rules computed, with what else is proved of it (<paramref name="facts"/>, whose type
+    /// is that one): XML's <c>value()</c> of a node whose schema gives facets that survive the conversion.
+    /// </summary>
+    public static Shape ToConvertedShape(ColumnFacts facts, SourceLocation at) =>
+        facts.Type is { } resolved ? Converted(ToShape(facts, resolved, at, withFacets: true)) : Unsupported(null, at);
+
+    /// <summary>
     /// A value converted to <c>nchar(n)</c> rather than stored as one: at most n UTF-16 code units and at least n - 1, not exactly n.
     /// Under a supplementary-character (<c>_SC</c>) collation, the value's or the database's, a conversion cuts a value before a
     /// surrogate pair that doesn't fit and doesn't pad it, so <c>nchar(3)</c> of two emoji is one, and <c>nchar(1)</c> of one is
@@ -207,7 +214,8 @@ internal static class SqlTypes
     };
 
     /// <summary>
-    /// A type by its name; a check by its schema-qualified name, or its location when it has none. A temporary table's or
+    /// A type by its name; a check by its schema-qualified name, or its location when it has none; an XML schema collection by its
+    /// name and the node's declaration (<c>shop.order_schema {urn:shop}order/@id</c>). A temporary table's or
     /// table variable's check is named by its table (<c>#totals.ck_amount</c>), since it belongs to no schema of the project.
     /// </summary>
     private static IrFactSource Source(FactSource from) => from switch
@@ -216,5 +224,6 @@ internal static class SqlTypes
         CheckSource { Check.Name: { } name, Table: DeclaredTable table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name}.{name}"),
         CheckSource { Check.Name: { } name, Table: Table table } => new IrFactSource(IrFactSourceKind.Check, $"{table.Name.DatabasePrefix}{table.Name.Schema}.{name}"),
         CheckSource check => new IrFactSource(IrFactSourceKind.Check, check.Check.At.ToString()),
+        XmlSchemaSource xml => new IrFactSource(IrFactSourceKind.XmlSchema, $"{xml.Collection} {xml.Declaration}"),
     };
 }

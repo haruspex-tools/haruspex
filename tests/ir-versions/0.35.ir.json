@@ -1,0 +1,107 @@
+{
+  "irVersion": "0.35",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-preview-0e0e5b89",
+      "commit": "0e0e5b893bdb309da94c5fa6b58d73d94a1f6c36"
+    },
+    "path": "database",
+    "files": {
+      "procedures/frame_shafts.sql": "eee4f372e9bacef991b1f37af57c3e8b3feea3620740daca87dd27e94008ec9c",
+      "tables/frame.sql": "36a3ae0fd6eb8021b62ccd88fc79092de2008337e5aa54fc19236a8238029dc2"
+    }
+  },
+  "objects": [
+    {
+      "id": "loom.frame_shafts",
+      "name": "FrameShafts",
+      "kind": "procedure",
+      "at": "procedures/frame_shafts.sql:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "FrameShaftsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "many"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "FrameShaftsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "loom.frame_shafts",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "frame_id",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false,
+          "from": [
+            {
+              "column": "loom.frame.frame_id",
+              "sql": "int",
+              "at": "tables/frame.sql:4:26"
+            }
+          ]
+        },
+        {
+          "name": "shafts",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": 2,
+              "inclusive": true,
+              "from": {
+                "xml-schema": "loom.frame_schema frame/@shafts"
+              }
+            },
+            "max": {
+              "value": 32,
+              "inclusive": true,
+              "from": {
+                "xml-schema": "loom.frame_schema frame/@shafts"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

@@ -44,7 +44,7 @@ public class XmlTests
         Assert.Null(Assert.IsType<IrScalar>(Field(doc, "spec").Type).Facets);
         Assert.Empty(Field(doc, "spec").NullableBecause);
         Assert.Equal([IrNullRule.NullableColumn], Rules(doc, "notes"));
-        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+        Assert.Equal(IrDocument.XmlVersion, doc.Version);
     }
 
     [Fact]

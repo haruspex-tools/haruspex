@@ -332,4 +332,141 @@ public class XmlSchemaTests
 
         Assert.Equal([IrNullRule.UnmatchedLateralRow], Rules(doc, "v"));
     }
+
+    // ---- the value's facets ----------------------------------------------------------------------------------------------
+
+    private const string Facets = """
+        <xs:simpleType name="size"><xs:restriction base="xs:string"><xs:enumeration value="S"/><xs:enumeration value="M"/><xs:enumeration value="XL"/></xs:restriction></xs:simpleType>
+        <xs:simpleType name="code"><xs:restriction base="xs:token"><xs:minLength value="2"/><xs:maxLength value="4"/></xs:restriction></xs:simpleType>
+        <xs:simpleType name="positive"><xs:restriction base="xs:int"><xs:minInclusive value="1"/></xs:restriction></xs:simpleType>
+        <xs:simpleType name="share"><xs:restriction base="xs:decimal"><xs:minExclusive value="0"/><xs:maxExclusive value="1"/></xs:restriction></xs:simpleType>
+        <xs:simpleType name="tenth"><xs:restriction base="share"><xs:fractionDigits value="1"/></xs:restriction></xs:simpleType>
+        <xs:simpleType name="step"><xs:restriction base="xs:decimal"><xs:enumeration value="1"/><xs:enumeration value="2.5"/><xs:enumeration value="4"/></xs:restriction></xs:simpleType>
+        <xs:element name="r"><xs:complexType>
+         <xs:attribute name="size" type="size" use="required"/>
+         <xs:attribute name="code" type="code" use="required"/>
+         <xs:attribute name="n" type="positive" use="required"/>
+         <xs:attribute name="byte" type="xs:unsignedByte"/>
+         <xs:attribute name="share" type="share" use="required"/>
+         <xs:attribute name="tenth" type="tenth" use="required"/>
+         <xs:attribute name="step" type="step" use="required"/>
+         <xs:attribute name="when" type="xs:date" use="required"/>
+        </xs:complexType></xs:element>
+        """;
+
+    private static IrDocument Faceted(string path, string type)
+    {
+        var tables = $"""
+            CREATE XML SCHEMA COLLECTION shop.s AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">{Facets}</xs:schema>';
+            GO
+            CREATE TABLE shop.t (id int NOT NULL PRIMARY KEY, doc xml(DOCUMENT shop.s) NOT NULL);
+            GO
+            """;
+        return Procedure($"SELECT t.doc.value('{path}', '{type}') AS v FROM shop.t AS t;", tables);
+    }
+
+    private static IrFacets? FacetsOf(IrDocument doc) => Assert.IsType<IrScalar>(Field(doc, "v").Type).Facets;
+
+    private static readonly IrFactSource Size = new(IrFactSourceKind.XmlSchema, "shop.s r/@size");
+
+    [Fact]
+    public void A_string_enumeration_is_the_value_s_set_where_the_type_holds_each_item()
+    {
+        var doc = Faceted("(/r/@size)[1]", "nvarchar(5)");
+
+        Assert.Equal(new IrValueSet([new IrValue("S", true), new IrValue("M", true), new IrValue("XL", true)], IrValueMatch.Exact, [Size]), FacetsOf(doc)!.Values);
+        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+    }
+
+    [Fact]
+    public void A_string_enumeration_the_type_cuts_is_no_set() =>
+        // XL as nvarchar(1) is X: the set would be wrong, so none is claimed.
+        Assert.Null(FacetsOf(Faceted("(/r/@size)[1]", "nvarchar(1)"))!.Values);
+
+    [Fact]
+    public void String_lengths_hold_in_utf_16_code_units_cut_to_the_type()
+    {
+        // A_length_facet_counts_utf_16_code_units: as nvarchar counts, so the length is the same kind of fact as the type's.
+        var wide = FacetsOf(Faceted("(/r/@code)[1]", "nvarchar(10)"))!;
+        Assert.Equal(new IrLength(4, IsFixed: false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.XmlSchema, "shop.s r/@code")), wide.Length);
+        Assert.Equal(new IrMinLength(2, new IrFactSource(IrFactSourceKind.XmlSchema, "shop.s r/@code")), wide.MinLength);
+
+        var narrow = FacetsOf(Faceted("(/r/@code)[1]", "nvarchar(1)"))!;
+        Assert.Equal(new IrFactSource(IrFactSourceKind.Type, "nvarchar(1)"), narrow.Length!.From);
+        Assert.Equal(1, narrow.MinLength!.Value);
+    }
+
+    [Theory]
+    [InlineData("varchar(10)")]
+    [InlineData("nchar(4)")]
+    public void Strings_of_other_types_carry_no_facet_of_the_schema(string type)
+    {
+        // A varchar may change a character to its code page's best fit, and an nchar pads.
+        var facets = FacetsOf(Faceted("(/r/@code)[1]", type));
+
+        Assert.True(facets is null || (facets.MinLength?.From.Kind != IrFactSourceKind.XmlSchema && facets.Length?.From.Kind != IrFactSourceKind.XmlSchema));
+    }
+
+    [Fact]
+    public void A_whole_number_s_bounds_hold_as_an_integer()
+    {
+        var n = FacetsOf(Faceted("(/r/@n)[1]", "int"))!;
+        Assert.Equal(new IrBound("1", true, new IrFactSource(IrFactSourceKind.XmlSchema, "shop.s r/@n")), n.Min);
+        Assert.Equal(IrFactSourceKind.Type, n.Max!.From.Kind);
+
+        // The built-in type's range is the schema's too, and holds where the node may be missing.
+        var b = Faceted("(/r/@byte)[1]", "int");
+        Assert.Equal(["0", "255"], [FacetsOf(b)!.Min!.Value, FacetsOf(b)!.Max!.Value]);
+        Assert.Equal([IrNullRule.XmlValue], Rules(b, "v"));
+    }
+
+    [Theory]
+    [InlineData("(/r/@share)[1]", "decimal(5,1)", "0", true, "1", true)]
+    [InlineData("(/r/@share)[1]", "decimal(3,0)", "0", true, "1", true)]
+    [InlineData("(/r/@tenth)[1]", "decimal(5,1)", "0", false, "1", false)]
+    public void A_decimal_s_bounds_are_widened_where_the_conversion_rounds(string path, string type, string min, bool minInclusive, string max, bool maxInclusive)
+    {
+        // Value_converts_the_canonical_text_as_cast_converts_nvarchar: 0.004 as decimal(5,2) is 0.00, past an exclusive 0. With
+        // fractionDigits no more than the type's places, nothing is rounded.
+        var facets = FacetsOf(Faceted(path, type))!;
+
+        Assert.Equal((min, minInclusive, max, maxInclusive), (facets.Min!.Value, facets.Min.Inclusive, facets.Max!.Value, facets.Max.Inclusive));
+        Assert.Equal(IrFactSourceKind.XmlSchema, facets.Min.From.Kind);
+    }
+
+    [Theory]
+    [InlineData("int", new[] { "1", "4" })]
+    [InlineData("decimal(5,1)", new[] { "1", "2.5", "4" })]
+    public void A_number_s_enumeration_keeps_what_the_type_takes_exactly(string type, string[] items) =>
+        // As int, text that isn't a whole number fails (245), so 2.5 is never a value.
+        Assert.Equal(items, FacetsOf(Faceted("(/r/@step)[1]", type))!.Values!.Items.Select(i => i.Text));
+
+    [Fact]
+    public void A_number_s_enumeration_the_type_rounds_is_no_set()
+    {
+        var facets = FacetsOf(Faceted("(/r/@step)[1]", "decimal(5,0)"));
+
+        Assert.True(facets?.Values is null || facets.Values.From.All(f => f.Kind != IrFactSourceKind.XmlSchema));
+    }
+
+    [Theory]
+    [InlineData("(/r/@n)[1]", "float")]
+    [InlineData("(/r/@n)[1]", "nvarchar(10)")]
+    [InlineData("(/r/@when)[1]", "date")]
+    public void Other_conversions_carry_no_facet_of_the_schema(string path, string type)
+    {
+        var doc = Faceted(path, type);
+
+        Assert.NotEqual(IrDocument.CurrentVersion, doc.Version);
+    }
+
+    [Fact]
+    public void A_document_with_no_fact_of_a_schema_is_labelled_0_34()
+    {
+        // The label holds: a value() read from XML, with no facet of the schema, adds nothing 0.35 says.
+        var doc = Value("(/order/note)[1]", "nvarchar(max)");
+
+        Assert.Equal([IrNullRule.XmlValue], Rules(doc, "v"));
+        Assert.Equal("0.34", doc.Version);
+    }
 }

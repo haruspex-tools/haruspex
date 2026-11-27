@@ -48,6 +48,30 @@ public class ZodFacetsTests
 
     // ---- strings ------------------------------------------------------------------------------------
 
+    [Fact]
+    public void An_xml_schema_s_lengths_in_utf_16_code_units_are_lowered_as_nvarchar_s_are()
+    {
+        // XML Schema's lengths count UTF-16 code units in SQL Server (observed: A_length_facet_counts_utf_16_code_units), so they
+        // take the same path as nvarchar's (decision 0095): one emoji is two code units and one code point, so a minimum of 2
+        // code units is a minimum of 1 code point, and a maximum of 4 code units a maximum of 4 code points.
+        var schema = new IrFactSource(IrFactSourceKind.XmlSchema, "shop.s r/@code");
+        var facets = new IrFacets(Length: new IrLength(4, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, schema), MinLength: new IrMinLength(2, schema));
+        var nvarchar = new IrFacets(Length: new IrLength(4, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, Type), MinLength: new IrMinLength(2, Check));
+
+        Assert.Equal("z.string().min(1).max(4) // At least 2 UTF-16 code units, which is at least 1 code point.", Json(Text("nvarchar(10)", facets)));
+        Assert.Equal(Json(Text("nvarchar(10)", nvarchar)), Json(Text("nvarchar(10)", facets)));
+    }
+
+    [Fact]
+    public void An_xml_schema_s_bounds_on_a_bigint_are_kept_as_a_check_s_are()
+    {
+        var schema = new IrFactSource(IrFactSourceKind.XmlSchema, "shop.s r/@n");
+
+        Assert.Equal(
+            "z.number().min(1).max(9) // A bigint, exact only up to 2^53 once parsed.",
+            Json(Number(IrFormat.Int64, "bigint", new IrFacets(Min: new IrBound("1", true, schema), Max: new IrBound("9", true, schema)))));
+    }
+
     [Theory]
     [InlineData("nvarchar(40)", 40, false, IrLengthUnit.Utf16, IrByteEncoding.Unknown, "z.string().max(40)")]
     // Zod counts code points, and a pair of UTF-16 code units is one, so a stored nchar(5) holds 3 to 5 of them (observed:

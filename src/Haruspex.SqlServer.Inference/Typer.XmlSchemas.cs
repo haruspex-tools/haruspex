@@ -1,5 +1,4 @@
 using Haruspex.SqlServer.Model;
-using Haruspex.SqlServer.Model.XmlSchemas;
 using Haruspex.SqlServer.Semantics;
 using Haruspex.SqlServer.Semantics.XmlSchemas;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -19,13 +18,17 @@ internal sealed partial class Typer
     /// isn't a typed instance, or a node of one, its collection's schemas aren't known, or the path isn't one that is followed.
     /// </summary>
     private XmlReach? XmlPathReach(ScalarExpression target, IReadOnlyList<ScalarExpression> arguments, ReadScope scope) =>
-        arguments is [StringLiteral { Value: var text }, ..] && XmlPath.Parse(text) is { } path && XmlStartOf(target, scope) is var (schemas, start)
-            && !UsesXmlNamespaces(target)
-            ? XmlPaths.Reach(schemas, start, path)
+        XmlPathIn(target, arguments, scope)?.Reach;
+
+    /// <summary>What <see cref="XmlPathReach"/> gives, with the collection the instance is typed by.</summary>
+    private (XmlSchemaCollection Collection, XmlReach Reach)? XmlPathIn(ScalarExpression target, IReadOnlyList<ScalarExpression> arguments, ReadScope scope) =>
+        arguments is [StringLiteral { Value: var text }, ..] && XmlPath.Parse(text) is { } path && XmlStartOf(target, scope) is var (collection, start)
+            && collection.Declarations is { } schemas && !UsesXmlNamespaces(target)
+            ? (collection, XmlPaths.Reach(schemas, start, path))
             : null;
 
     /// <summary>The collection and the place a path in <paramref name="target"/> starts from, or null when it isn't a typed instance or a node of one.</summary>
-    private (XmlSchemaDeclarations Schemas, XmlStart Start)? XmlStartOf(ScalarExpression target, ReadScope scope)
+    private (XmlSchemaCollection Collection, XmlStart Start)? XmlStartOf(ScalarExpression target, ReadScope scope)
     {
         SqlType? Declared() => Strip(target) switch
         {
@@ -43,13 +46,13 @@ internal sealed partial class Typer
         if (Strip(target) is ColumnReferenceExpression node && binder.Resolve(node, scope.Bound) is RelationColumn { Relation: XmlNodesCall nodes })
         {
             var inner = scope.In(nodes.Arguments);
-            return XmlStartOf(nodes.Target, inner) is var (schemas, _) && XmlPathReach(nodes.Target, nodes.Path, inner) is { Node: { } reached }
-                ? (schemas, new XmlNodeStart(reached))
+            return XmlStartOf(nodes.Target, inner) is var (collection, _) && XmlPathReach(nodes.Target, nodes.Path, inner) is { Node: { } reached }
+                ? (collection, new XmlNodeStart(reached))
                 : null;
         }
 
-        return Declared() is { Collection: { } reference } declared && SchemaRules.ResolveXmlCollection(model, declared) is { Declarations: { } declarations }
-            ? (declarations, new XmlInstanceStart(reference.Document))
+        return Declared() is { Collection: { } reference } declared && SchemaRules.ResolveXmlCollection(model, declared) is { Declarations: not null } bound
+            ? (bound, new XmlInstanceStart(reference.Document))
             : null;
     }
 

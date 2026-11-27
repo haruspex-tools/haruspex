@@ -463,7 +463,7 @@ names, its scripts are read twice, and haruspex may not say so, so list each fol
 The IR records the folders read, each by its name on disk relative to this file's folder, in `source.paths` (so writing the list
 in another case, where the file system ignores case, changes nothing), and a location in it, such as an
 object's `at`, is relative to this file's folder too, so that it says which folder its script is in (`procedures/weigh.sql:1:1`).
-A document of a list is IR 0.32 (0.33 when it records a description too, 0.34 when it holds an XML value); one of one folder is written as before. `check` reports a folder added to the list or removed
+A document of a list is IR 0.32 (0.33 when it records a description too, 0.34 when it holds an XML value, 0.35 when it holds a fact an XML schema collection proves); one of one folder is written as before. `check` reports a folder added to the list or removed
 from it, even where no type changes, since what the database is made of is what every claim rests on
 ([decision 0127](decisions/0127-a-source-may-be-several-folders.md)).
 

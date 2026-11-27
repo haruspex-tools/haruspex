@@ -227,6 +227,27 @@ public static class SchemaRules
             Min: new BoundFact(min ?? max.Negate(), true, from),
             Max: new BoundFact(max, true, from));
 
+    /// <summary>
+    /// The facts true of every value of <paramref name="type"/> that satisfies both <paramref name="facts"/>, the type's, and
+    /// <paramref name="proved"/>: the tighter bound, the shorter maximum length, the longer minimum length, and the narrower set,
+    /// with the numbers the bounds rule out dropped from it. Of two bounds that say the same, the type's is kept, so that a fact
+    /// the type already states isn't given another source.
+    /// </summary>
+    public static ColumnFacts Narrowed(ColumnFacts facts, ColumnFacts proved, ResolvedType type)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(proved);
+        var narrowed = Narrow(facts, proved) with
+        {
+            Type = type,
+            Min = Bounds.Tighter(proved.Min, facts.Min, BoundSide.Lower, m => m.Bound),
+            Max = Bounds.Tighter(proved.Max, facts.Max, BoundSide.Upper, m => m.Bound),
+        };
+        if (proved.Length is { } length && (facts.Length is not { } own || (length.Value < own.Value && length.Unit == own.Unit)))
+            narrowed = narrowed with { Length = length };
+        return FilterValues(narrowed);
+    }
+
     /// <summary>The facts true of every value that satisfies both: the tighter bound, the longer minimum length, and the narrower set.</summary>
     private static ColumnFacts Narrow(ColumnFacts facts, ColumnFacts proved) => facts with
     {

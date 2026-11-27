@@ -28,4 +28,12 @@ public enum IrFactSourceKind
     /// (<c>schema.table.column</c>), or the procedure.
     /// </summary>
     Declared,
+
+    /// <summary>
+    /// An XML schema collection (0.35): a facet of the simple type of the node a value is read from by XML's <c>value()</c>, which
+    /// SQL Server validates on every write of an instance typed by the collection, carried where the conversion to the value's
+    /// type keeps it. The ref names the collection and the node's declaration, by the path to it
+    /// (<c>shop.order_schema {urn:shop}order/@id</c>). Why: docs/decisions/0139-xml-is-typed-from-its-schema-collection-where-the-schema-proves-it.md.
+    /// </summary>
+    XmlSchema,
 }

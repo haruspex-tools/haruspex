@@ -33,7 +33,7 @@ flowchart LR
     reader --> jsonSchema["emitter: JSON Schema"]
     reader --> mssql["emitter: mssql functions"]
     reader -.-> other["emitter: a lint, a CI check"]
-    schema["schemas/ir/0.34.schema.json"] -.->|checks| file
+    schema["schemas/ir/0.35.schema.json"] -.->|checks| file
 ```
 
 Two rules keep the IR honest. **Emitters see only the IR**: if an emitter needs a fact, the IR must carry it, so no emitter
@@ -166,7 +166,7 @@ The version is read first, before anything else in the file. A file of a version
 a message that names the file's version, the versions the reader reads and where:
 
 ```text
-$.irVersion is "0.15", and this reader reads IR 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
+$.irVersion is "0.15", and this reader reads IR 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23 only. Run haruspex generate again to write the file in this version.
 ```
 
 The alternative was to migrate: to read an older file by mapping its differences onto the current version. It was rejected
@@ -205,9 +205,9 @@ The version moves when the format does: a property or a value added, or what one
 
 The other half of the rule is on the writer's side: **a document is labelled with the oldest version that says all it says**
 ([decision 0072](../decisions/0072-a-document-written-with-a-baseline-is-the-combined-one-and-says-so.md)). Each version from
-0.24 to 0.34 added only something a document either has or lacks: a baseline, where a value came from, table types, binary
+0.24 to 0.35 added only something a document either has or lacks: a baseline, where a value came from, table types, binary
 values, a declaration of a column's JSON, a reason in words, the build that wrote it, the packages declared builds, a source's
-several folders, the database's descriptions, XML values. A document that has none of what a version added is written with
+several folders, the database's descriptions, XML values, facts an XML schema collection proves. A document that has none of what a version added is written with
 the earlier label, byte for byte as before, so a reader of that version, haruspex's own or another program's, still reads it, and
 only a document that needs the newer reader says so. The reader holds the label to the document: it refuses a label that says
 more than the document does, or less, by the path of what disagrees. Some of what a label promises can be anywhere in a document

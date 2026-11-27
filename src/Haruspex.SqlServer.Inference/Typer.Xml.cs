@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
+using Haruspex.Collections;
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
+using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Semantics;
 using Haruspex.SqlServer.Semantics.XmlSchemas;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -51,7 +53,7 @@ internal sealed partial class Typer
 
         return method switch
         {
-            XmlMethod.Value => XmlValue(call, receiver, XmlPathReach(target, [.. call.Parameters], scope)),
+            XmlMethod.Value => XmlValue(call, receiver, XmlPathIn(target, [.. call.Parameters], scope)),
             XmlMethod.Exist => XmlExist(call, receiver),
             XmlMethod.Query => XmlQuery(call, receiver),
             _ => NotModelled(call, "XML's nodes() is a source in FROM, not a value."),
@@ -125,21 +127,31 @@ internal sealed partial class Typer
     /// <c>json</c> and <c>vector(n)</c> into <c>varchar(max)</c>, and one inference doesn't model, stay unknown.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Where the instance's schema collection requires every node of the path (<see cref="XmlPathReach"/>), it finds one, and the
     /// value is NULL only where the instance is (observed: A_required_node_s_value_is_never_null_in_a_typed_instance). The server
     /// requires <c>ANSI_WARNINGS</c> for XML's methods (1934), so a value the type can't hold is an error, never NULL.
+    /// </para>
+    /// <para>
+    /// Whatever node the path reaches, its simple type's facets hold of a value read from it, where the conversion to the type keeps
+    /// them (<see cref="XmlValueFacts"/>).
+    /// </para>
     /// </remarks>
-    private Value XmlValue(FunctionCall call, Value receiver, XmlReach? reach)
+    private Value XmlValue(FunctionCall call, Value receiver, (XmlSchemaCollection Collection, XmlReach Reach)? schema)
     {
         if (call.Parameters is not [StringLiteral, StringLiteral { Value: var written }])
             return NotModelled(call, "XML's value() takes a literal path and a literal type, which the server requires.");
         if (XmlValueType(written) is not { } type)
             return NotModelled(call, $"XML's value() of the type '{written}' is not modelled.");
 
-        return reach is { Required: true, Node.HasValue: true }
-            ? Typed(type, receiver.NullableBecause, call)
-            : Typed(type, [new IrNullReason(IrNullRule.XmlValue, At(call).ToString())], call);
+        var because = schema?.Reach is { Required: true, Node.HasValue: true } ? receiver.NullableBecause : NoNodeFound(call);
+        return schema is ({ } collection, { Node: { } node })
+            ? Value.Computed(SqlTypes.ToConvertedShape(XmlValueFacts.Of(node, ResolvedType.Of(type), collection.Name), At(call)), because)
+            : Typed(type, because, call);
     }
+
+    /// <summary>The reason a value read from XML is NULL where its path finds no node: <c>xml-value</c>, at the call.</summary>
+    private EquatableArray<IrNullReason> NoNodeFound(FunctionCall call) => [new IrNullReason(IrNullRule.XmlValue, At(call).ToString())];
 
     /// <summary>
     /// <c>x.exist('path')</c>: a <c>bit</c>, 1 where the path finds a node and 0 where it finds none, an empty instance included,

@@ -440,6 +440,15 @@ public partial class JsonSchemaEmitterTests
     }
 
     [Fact]
+    public void A_fact_an_xml_schema_collection_proves_names_the_collection_and_the_declaration()
+    {
+        var schema = new IrFactSource(IrFactSourceKind.XmlSchema, "shop.order_schema order/@id");
+        var value = Value(new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets(Min: new IrBound("1", true, schema))));
+
+        Assert.Equal("SQL type int. Facts: min from the XML schema collection shop.order_schema order/@id.", Description(value));
+    }
+
+    [Fact]
     public void A_claim_the_config_file_made_rather_than_inference_says_so_with_its_reason()
     {
         var document = OneResult(IrEncoding.Rowset, Field("customer", new IrScalar(IrScalarKind.String, null, null)));

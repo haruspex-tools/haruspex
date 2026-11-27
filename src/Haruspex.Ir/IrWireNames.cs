@@ -164,6 +164,7 @@ public static class IrWireNames
         IrFactSourceKind.Engine => "engine",
         IrFactSourceKind.Expression => "expression",
         IrFactSourceKind.Declared => "declared",
+        IrFactSourceKind.XmlSchema => "xml-schema",
     };
 
     /// <summary>What a length counts (<c>unit</c>).</summary>

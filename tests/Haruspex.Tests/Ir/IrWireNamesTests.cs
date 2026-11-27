@@ -75,7 +75,7 @@ public class IrWireNamesTests
 
     [Fact]
     public void Fact_source_kinds_keep_their_names() => Assert.Equal(
-        ["type", "check", "engine", "expression", "declared"],
+        ["type", "check", "engine", "expression", "declared", "xml-schema"],
         Names<IrFactSourceKind>(IrWireNames.Of));
 
     [Fact]

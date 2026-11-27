@@ -381,6 +381,50 @@ internal static class IrSamples
             StringComparer.Ordinal),
     };
 
+    /// <summary>
+    /// <see cref="Xml"/> with facts an XML schema collection proves (0.35): the number <c>weight</c> read from XML is bounded below
+    /// and above by its node's simple type, and so is <c>OrderRow</c>'s <c>grams</c>, so that it holds every property and kind the
+    /// format has, and still holds such a fact with any one property, or either type, taken away.
+    /// </summary>
+    public static IrDocument SchemaFacts { get; } = Xml with
+    {
+        Types = Xml.Types.ToDictionary(
+            t => t.Key,
+            t => t.Key == "OrderRow"
+                ? t.Value with
+                {
+                    Fields =
+                    [
+                        .. t.Value.Fields,
+                        new IrField(
+                            "grams",
+                            new IrScalar(IrScalarKind.Number, IrFormat.Int32, "int", new IrFacets(Min: new IrBound("1", true, new IrFactSource(IrFactSourceKind.XmlSchema, "sales.spec_schema spec/@grams")))),
+                            IrPresence.Always,
+                            [new IrNullReason(IrNullRule.XmlValue, "procedures/list_orders.sql:4:10")]),
+                    ],
+                }
+                : t.Key == "FindOrdersRow"
+                ? t.Value with
+                {
+                    Fields =
+                    [
+                        .. t.Value.Fields.Select(f => f.Name == "weight"
+                            ? f with
+                            {
+                                Type = ((IrScalar)f.Type) with
+                                {
+                                    Facets = new IrFacets(
+                                        Min: new IrBound("0", false, new IrFactSource(IrFactSourceKind.XmlSchema, "sales.spec_schema spec/@weight")),
+                                        Max: new IrBound("500", true, new IrFactSource(IrFactSourceKind.XmlSchema, "sales.spec_schema spec/@weight"))),
+                                },
+                            }
+                            : f),
+                    ],
+                }
+                : t.Value,
+            StringComparer.Ordinal),
+    };
+
     /// <summary>A binary value of a length its type gives.</summary>
     public static IrScalar Bytes(string sql, int length, bool isFixed) =>
         new(IrScalarKind.Bytes, null, sql, new IrFacets(Length: new IrLength(length, isFixed, IrLengthUnit.Bytes, IrByteEncoding.Unknown, new IrFactSource(IrFactSourceKind.Type, sql))));

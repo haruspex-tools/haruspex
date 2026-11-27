@@ -2367,8 +2367,14 @@ unit tests are `XmlTests`, `XmlExpressionTests` and `XmlSchemaTests`, and the fi
   or is abstract (`A_substitution_group_s_member_stands_where_its_head_is_declared`), an element of a complex type an instance may
   replace with `xsi:type` (`An_instance_may_name_a_derived_type_in_xsi_type`), or content with an element wildcard
   (`A_wildcard_may_take_an_element_of_a_declared_name_before_it`); an attribute wildcard doesn't stop a declared attribute
-  (`A_declared_attribute_is_validated_beside_an_attribute_wildcard`). Observed in `XmlSchemaObservationTests`; the unit tests are
-  `XmlSchemaTests`.
+  (`A_declared_attribute_is_validated_beside_an_attribute_wildcard`). A nillable element's children are never required
+  (`A_nil_element_has_no_children_but_keeps_its_attributes`). Whatever node a followed path reaches, its simple type's facets are
+  given to `value()`'s result where the conversion keeps them (Semantics' `XmlValueFacts`, the IR's fact source `xml-schema`, IR
+  0.35): the server converts the canonical text as `CAST` converts `nvarchar` and refuses XML's methods without `ANSI_WARNINGS`
+  (1934), so a number's bounds hold to a whole-number type, widened to the target's places for a `decimal` that rounds, and a
+  string's lengths, in UTF-16 code units, and its enumeration hold to `nvarchar(n)`
+  (`Value_converts_the_canonical_text_as_cast_converts_nvarchar`, `Xml_s_methods_require_ansi_warnings`,
+  `A_length_facet_counts_utf_16_code_units`). Observed in `XmlSchemaObservationTests`; the unit tests are `XmlSchemaTests`.
 - **`FOR XML`.** A subquery is a value: `xml` with `TYPE` and `nvarchar(max)` without, in every mode and with any other option,
   NULL exactly when its query returns no rows (`empty-subquery`), a `ROOT` included, and never over a row, even one whose every
   column is NULL; so never NULL when its query always returns one row, as an aggregate without `GROUP BY` does

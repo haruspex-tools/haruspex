@@ -176,10 +176,11 @@ internal static partial class Facets
                 if (ExactNumbers(facets) is { } values)
                     return new Noted(values, precision);
 
-                // The type's own range is left out (keeping the bare number this mapping always had); a CHECK's is kept.
+                // The type's own range is left out (keeping the bare number this mapping always had); a CHECK's or an XML schema
+                // collection's is kept.
                 var code = Z("number");
-                code = Lower(code, facets?.Min is { From.Kind: IrFactSourceKind.Check } lower ? lower : null, 0, exclusiveAllowed: false);
-                code = Upper(code, facets?.Max is { From.Kind: IrFactSourceKind.Check } upper ? upper : null, 0, exclusiveAllowed: false);
+                code = Lower(code, facets?.Min is { From.Kind: IrFactSourceKind.Check or IrFactSourceKind.XmlSchema } lower ? lower : null, 0, exclusiveAllowed: false);
+                code = Upper(code, facets?.Max is { From.Kind: IrFactSourceKind.Check or IrFactSourceKind.XmlSchema } upper ? upper : null, 0, exclusiveAllowed: false);
                 return new Noted(code, precision);
             }
 
