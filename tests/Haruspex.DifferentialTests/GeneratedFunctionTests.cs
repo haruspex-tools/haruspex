@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.Emit.Mssql;
 using Haruspex.Ir;
@@ -14,7 +15,7 @@ namespace Haruspex.DifferentialTests;
 /// <remarks>
 /// A run's arguments are written for SqlClient (<c>runs.json</c>, read by <c>RunFile</c>); here each is turned into the form the
 /// parameters' schema takes: a date or time as the ISO 8601 string of its type's form, a <c>bigint</c> past 2^53 as a
-/// JavaScript bigint. Runs without a setup only read, so a fixture's are made in one transaction; a run with a setup writes,
+/// JavaScript bigint, a parameter declared to hold JSON as the value its text holds. Runs without a setup only read, so a fixture's are made in one transaction; a run with a setup writes,
 /// so it has its own.
 /// </remarks>
 public class GeneratedFunctionTests(SqlServerFixture server)
@@ -83,7 +84,14 @@ public class GeneratedFunctionTests(SqlServerFixture server)
         new(
             run.Name,
             MssqlEmitter.FunctionName(procedure.Name),
-            procedure.Parameters.Count == 0 ? null : run.Parameters.ToDictionary(p => p.Key.TrimStart('@'), p => Argument(procedure.Parameters.Single(d => d.Name.Equals(p.Key, StringComparison.OrdinalIgnoreCase)).Type, p.Value.Value)));
+            procedure.Parameters.Count == 0 ? null : run.Parameters.ToDictionary(p => p.Key.TrimStart('@'), p => Argument(procedure.Parameters.Single(d => d.Name.Equals(p.Key, StringComparison.OrdinalIgnoreCase)), p.Value.Value)));
+
+    /// <summary>
+    /// A run's argument in the form the parameters' schema takes for <paramref name="parameter"/>: for one declared to hold JSON, the
+    /// value its text holds, which the function serialises again (docs/decisions/0143-a-parameter-s-json-may-be-declared.md).
+    /// </summary>
+    private static object? Argument(IrParameter parameter, object? value) =>
+        parameter.Content is not null && value is string text ? JsonDocument.Parse(text).RootElement.Clone() : Argument(parameter.Type, value);
 
     /// <summary>A run's argument in the form the parameters' schema takes for <paramref name="type"/>.</summary>
     private static object? Argument(IrType type, object? value) => value switch
