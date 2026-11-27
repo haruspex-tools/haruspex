@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DotNet.Testcontainers.Containers;
 using Haruspex.DifferentialTests.Server;
 using Haruspex.DifferentialTests.Validation;
 using Haruspex.SqlServer.Model;
@@ -67,14 +68,36 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private readonly Lazy<Task> drop;
     private bool stopping;
 
-    private MsSqlContainer? container;
+    // How the container is made (given the attempt's number), how long an attempt may take and how to reach the server in it:
+    // the pinned SQL Server, unless a test of the fixture's own start gives others (SqlServerFixtureTests).
+    private readonly Func<int, IContainer> build;
+    private readonly TimeSpan patience;
+    private readonly Func<IContainer, string> connect;
+
+    // HARUSPEX_REQUIRE_SQLSERVER=1: no server fails a test rather than skipping it.
+    private readonly bool required;
+
+    private IContainer? container;
     private string? server;
     private string? unavailable;
+
+    // The account of a container that didn't start (ContainerStart), until the first test to report it takes it, so its log
+    // is printed once rather than with each of a thousand failures.
+    private string? startLog;
     private Exception? failure;
     private PosixSignalRegistration? terminate;
 
     public SqlServerFixture()
+        : this(_ => new MsSqlBuilder(Image).Build(), ContainerStart.Patience, c => ((MsSqlContainer)c).GetConnectionString(), Environment.GetEnvironmentVariable(RequireVariable) == "1")
     {
+    }
+
+    internal SqlServerFixture(Func<int, IContainer> build, TimeSpan patience, Func<IContainer, string> connect, bool required)
+    {
+        this.build = build;
+        this.patience = patience;
+        this.connect = connect;
+        this.required = required;
         ready = new(StartAsync, LazyThreadSafetyMode.ExecutionAndPublication);
         drop = new(DropAllAsync, LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -165,9 +188,11 @@ public sealed class SqlServerFixture : IAsyncLifetime
         await ready.Value.ConfigureAwait(false);
         if (unavailable is not null)
         {
-            if (Environment.GetEnvironmentVariable(RequireVariable) == "1")
-                Assert.Fail($"{RequireVariable}=1, but there is no SQL Server: {unavailable}");
-            Assert.Skip($"No SQL Server, so the differential tests did not run: {unavailable} Set {ServerVariable} or start Docker; CONTRIBUTING.md says how.");
+            var log = Interlocked.Exchange(ref startLog, null);
+            var reason = log is null ? unavailable : unavailable + Environment.NewLine + log;
+            if (required)
+                Assert.Fail($"{RequireVariable}=1, but there is no SQL Server: {reason}");
+            Assert.Skip($"No SQL Server, so the differential tests did not run: {reason} Set {ServerVariable} or start Docker; CONTRIBUTING.md says how.");
         }
 
         if (failure is not null)
@@ -336,9 +361,16 @@ public sealed class SqlServerFixture : IAsyncLifetime
         {
             try
             {
-                container = new MsSqlBuilder(Image).Build();
-                await container.StartAsync().ConfigureAwait(false);
-                server = container.GetConnectionString();
+                container = await ContainerStart.StartAsync(build, patience, Report).ConfigureAwait(false);
+                server = connect(container);
+            }
+            catch (ContainerStartException e)
+            {
+                unavailable = $"{ServerVariable} is not set, and SQL Server's container did not start at any of {ContainerStart.Attempts} attempts ({Innermost(e).GetType().Name}: {Innermost(e).Message}). Its log is printed with the first test to report this, and in the run's error output.";
+                startLog = e.Message;
+                Report(e.Message);
+                server = null;
+                return;
             }
 #pragma warning disable CA1031 // Any reason Docker cannot be used is a reason to skip; HARUSPEX_REQUIRE_SQLSERVER turns it into a failure.
             catch (Exception e)
@@ -586,6 +618,16 @@ public sealed class SqlServerFixture : IAsyncLifetime
         await using var command = new SqlCommand(sql, connection);
 #pragma warning restore CA2100
         await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Writes an account of the container's start to the run's error output, which the runner prints when the run fails, and
+    /// to the output of the test that started the server, printed when that test fails or with <c>--output detailed</c>.
+    /// </summary>
+    private static void Report(string text)
+    {
+        Console.Error.WriteLine(text);
+        TestContext.Current.TestOutputHelper?.WriteLine(text);
     }
 
     private static Exception Innermost(Exception e) => e.InnerException is null ? e : Innermost(e.InnerException);

@@ -204,6 +204,10 @@ In order:
    server of your own; never a shared server holding anyone's data.
 2. **Testcontainers**, which starts `mcr.microsoft.com/mssql/server` at the version pinned (by tag and digest)
    in `SqlServerFixture.Image`, when Docker is reachable through a local socket, a named pipe or TCP.
+   If the container stops or isn't ready within five minutes, a new one is started, once (`ContainerStart` says why
+   once). Each failed attempt's exit code and log are printed: with the first test that reports the failure, in the
+   run's error output, and, when the retry succeeds, in the output of the test that started the server (shown with
+   `--output detailed`).
 3. **Neither**: every test that needs a server is skipped, and the skip says why. With
    `HARUSPEX_REQUIRE_SQLSERVER=1`, as CI sets it, the skip becomes a failure.
 
