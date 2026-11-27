@@ -7,7 +7,9 @@ namespace Haruspex.SqlServer.Inference;
 /// scheme and the host compare without case, as the server reads them (observed: The_scheme_and_the_host_are_read_without_case);
 /// everything after them compares exactly, the query and a fragment included, which the server sends as written (observed:
 /// The_path_the_query_and_a_fragment_are_sent_as_written). A <c>{name}</c> stands for text that is never empty and never holds
-/// <c>/</c>, <c>?</c>, <c>#</c>, <c>&amp;</c> or <c>=</c>: a segment of the path, or a value of the query. Why:
+/// <c>/</c>, <c>?</c>, <c>#</c>, <c>&amp;</c> or <c>=</c>: a segment of the path, or a value of the query; and is never <c>.</c> or
+/// <c>..</c>, a dot segment, which the server removes from a path before sending it (observed:
+/// Dot_segments_are_removed_from_the_path_before_it_is_sent), so that <c>/plans/.</c> reaches <c>/plans/</c>. Why:
 /// docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md.
 /// </summary>
 internal sealed class UrlTemplate
@@ -139,13 +141,17 @@ internal sealed class UrlTemplate
                 {
                     if (text[end - 1] is { } at && Ends.Contains(at, StringComparison.Ordinal))
                         break;
-                    matched = From(t + 1, end);
+                    matched = !IsDotSegment(s, end) && From(t + 1, end);
                 }
             }
 
             memo[(t, s)] = matched;
             return matched;
         }
+
+        // Whether the text from start to end is exactly . or .., which a {name} never stands for.
+        bool IsDotSegment(int start, int end) =>
+            end - start is 1 or 2 && Enumerable.Range(start, end - start).All(i => text[i] == '.');
     }
 
     /// <summary>Where a URL's scheme and host end: at the first <c>/</c>, <c>?</c> or <c>#</c> after <c>://</c>, or its end.</summary>

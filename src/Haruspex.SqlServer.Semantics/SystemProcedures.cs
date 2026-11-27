@@ -68,7 +68,7 @@ public static class SystemProcedures
                 new("@timeout", "smallint"), new("@credential", "sysname"), new("@response", "nvarchar(max)", IsOutput: true), new("@retry_count", "tinyint"),
             ],
             ResultsUnknownBecause: null,
-            "int: 0 for an HTTP 2xx status, else the status received",
+            "int: 0 for an HTTP 2xx status, else the status received; 1 when @headers isn't a JSON object or array, and nothing is sent",
             ["It_returns_no_result_set_and_its_return_code_is_0_for_a_2xx_status_and_the_status_otherwise"]),
     ];
 

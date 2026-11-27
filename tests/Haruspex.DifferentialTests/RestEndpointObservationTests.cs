@@ -181,6 +181,9 @@ public class RestEndpointObservationTests
     [InlineData("N'not json'")]
     [InlineData("N''")]
     [InlineData("N'1'")]
+    [InlineData("N'null'")]
+    [InlineData("N'\"x\"'")]
+    [InlineData("N'true'")]
     public async Task Headers_that_are_not_json_return_1_and_the_caller_goes_on_with_response_as_it_was(string headers) =>
         // ISJSON(@headers) = 0 raises 11558 and returns 1 before the procedure's TRY, so outside a TRY the batch goes on. Every
         // other failure ends it.
@@ -260,5 +263,34 @@ public class RestEndpointObservationTests
                 END CATCH
                 EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = N'{Endpoint}/xml500', @method = N'GET', @response = @r OUTPUT;
                 SELECT @rc AS rc, (SELECT STRING_AGG([key], ',') FROM OPENJSON(@r)) AS keys;
+                """)).ToString());
+
+    [Theory]
+    [InlineData("/echo/x/..", "/echo/")]
+    [InlineData("/x/../echo", "/echo")]
+    [InlineData("/echo/.", "/echo/")]
+    [InlineData("/echo/./y", "/echo/y")]
+    [InlineData("/echo/x/..?a=1", "/echo/?a=1")]
+    [InlineData("/echo/%2e%2e", "/echo/%2e%2e")]
+    [InlineData("/echo/.x", "/echo/.x")]
+    [InlineData("/echo?a=..", "/echo?a=..")]
+    public async Task Dot_segments_are_removed_from_the_path_before_it_is_sent(string path, string target) =>
+        // Only a segment of the path that is . or .., written as such: an encoded one, a longer one or a query's value is sent as
+        // written.
+        Assert.Equal($"rc,r: 0,{target}", (await RestServer.RunAsync(Call($"@url = N'{Endpoint}{path}', @method = N'GET'", "JSON_VALUE(@r, '$.result.target')"))).ToString());
+
+    [Theory]
+    [InlineData("ア", "/echo/?")]
+    [InlineData("ł", "/echo/l")]
+    public async Task A_url_held_in_varchar_is_sent_in_its_code_page(string character, string target) =>
+        // The server's default collation's code page, 1252 here: ア has no character there and becomes ?, which ends the path and
+        // starts an empty query; ł becomes l. In nvarchar it is sent percent-encoded.
+        Assert.Equal(
+            $"rc,r: 0,{target}",
+            (await RestServer.RunAsync($"""
+                SET NOCOUNT ON;
+                DECLARE @r nvarchar(max), @rc int, @u varchar(200) = N'{Endpoint}/echo/{character}';
+                EXEC @rc = sys.sp_invoke_external_rest_endpoint @url = @u, @method = N'GET', @response = @r OUTPUT;
+                SELECT @rc AS rc, JSON_VALUE(@r, '$.result.target') AS r;
                 """)).ToString());
 }

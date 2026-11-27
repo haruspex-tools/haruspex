@@ -53,7 +53,8 @@ internal sealed partial class Walker
         }
 
         // A variable shorter than max holds the text cut short, without an error (observed:
-        // A_variable_shorter_than_max_holds_the_response_cut_short_without_an_error).
+        // A_variable_shorter_than_max_holds_the_response_cut_short_without_an_error). Assign drops the JSON text's pieces on such
+        // a variable anyway, which keeps only nvarchar(max)'s; this says so here, where the reason is the response's, and names it.
         if (declared is not ScalarShape { BuiltIn: { IsMax: true } type } || type.Type != BuiltInType.NVarChar)
             return (NotJson($"{variable} is not nvarchar(max), so the response is cut short when it is longer"), surely);
 

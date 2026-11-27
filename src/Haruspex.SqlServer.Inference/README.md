@@ -2090,8 +2090,9 @@ and its return code is 0 for a 2xx status and the status otherwise. What it writ
 **Which declaration a call reads.** `@url` and `@method` are read as the text the SQL builds (`SentText.Expand`): every text the
 pieces may make, a `CASE` or a `COALESCE` making several and a NULL that counts as empty one of them, each of literal text and
 numbers converted to text, whose digits aren't known. A declared URL is a template (`UrlTemplate`): its scheme and host compare
-without case, the rest exactly, and a `{name}` stands for text that is never empty and never holds `/`, `?`, `#`, `&` or `=`, which
-a number always is. A call reads a declaration only where every URL and method it may send match that one declaration and no
+without case, the rest exactly, and a `{name}` stands for text that is never empty, never holds `/`, `?`, `#`, `&` or `=`, and is
+never `.` or `..`, which the server removes from a path before sending it (`Dot_segments_are_removed_from_the_path_before_it_is_sent`);
+a number always is such text. A call reads a declaration only where every URL and method it may send match that one declaration and no
 other; otherwise `result` is unknown, saying which text is not known, or what it matches. A text longer than `@url`'s 4,000
 characters would be cut short, so it matches nothing.
 

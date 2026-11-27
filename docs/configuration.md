@@ -694,7 +694,10 @@ SELECT JSON_VALUE(@response, '$.result.name') AS name, JSON_QUERY(@response, '$.
 
 - **`url`** is the endpoint's `https` URL. Its scheme and host compare without case, as the server reads them; everything after
   them compares exactly, the query and a fragment included, which the server sends as written. A `{name}` stands for one
-  segment of the path, or one value of the query: text that is never empty and never holds `/`, `?`, `#`, `&` or `=`.
+  segment of the path, or one value of the query: text that is never empty, never holds `/`, `?`, `#`, `&` or `=`, and is never
+  `.` or `..`, which the server removes from a path before sending it (`/plans/.` reaches `/plans/`). A URL held in a `varchar`
+  is converted to its code page first, so a character outside it is sent as another (`?`, or `l` for `ł`); such text matches no
+  declaration.
 - **`method`** is `GET`, `POST`, `PUT`, `PATCH` or `DELETE`, compared with the call's without case. A call that gives no
   `@method` sends `POST`.
 - **`response`** is the JSON Schema file of the reply's body, relative to this file, with a JSON Pointer after `#` when it isn't

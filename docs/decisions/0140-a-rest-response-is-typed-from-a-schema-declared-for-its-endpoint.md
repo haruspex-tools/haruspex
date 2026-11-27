@@ -11,7 +11,8 @@ config file declares for the endpoint (`endpoints`), recorded as declared, never
   fails raises an error (a body that is a scalar or not JSON 11558, no endpoint 31608, a timeout 31629, plain HTTP 31610, an unknown
   method 31605, an Accept it refuses 31638, headers that are JSON but not an object 31620) and ends the batch, leaving
   `@response` as it was for a `CATCH`. One failure lets the caller go on: `@headers` text that isn't JSON (`ISJSON(@headers) = 0`,
-  checked before the procedure's own `TRY`) raises 11558 and returns 1, sending nothing and leaving `@response` as it was. So a
+  which a JSON scalar such as `42`, `null`, `"x"` or `true` is too, checked before the procedure's own `TRY`) raises 11558 and
+  returns 1, sending nothing and leaving `@response` as it was. So a
   call surely sets `@response` only where every text `@headers` may be is JSON; elsewhere `@response` may keep its earlier value.
 - **`@response`'s envelope.** With JSON accepted (no `@headers`, NULL, an object without Accept, or Accept of
   `application/json`, its key and value compared without case), `@response` is the object
@@ -45,7 +46,10 @@ config file declares for the endpoint (`endpoints`), recorded as declared, never
   fragment included, since the server sends the fragment as part of the path (observed). A `{name}` in the declared URL stands
   for one segment, or one value of the query: text that is never empty and never holds `/`, `?`, `#`, `&` or `=`, which the SQL
   writes as literal text or builds from a number. `method` compares without case, and a call that gives none sends `POST`
-  (observed).
+  (observed). A `{name}` is never `.` or `..`: the server removes such a dot segment
+  from a path before sending it (`/plans/.` reaches `/plans/`), while `%2e%2e`, `.x` and a query's `..` are sent as written
+  (observed). A URL held in a `varchar` is converted to the database's code page first (1252 here sends `ア` as `?`, which ends the
+  path, and `ł` as `l`), so only text that is ASCII is kept in a `varchar` (observed).
 - **One declaration or none.** Where every text the call may send matches one and the same declaration, `result` is its
   schema; otherwise `result` is unknown, saying why: text built at run time, no declaration that matches, or more than one. The
   envelope stays typed either way.

@@ -69,7 +69,8 @@ internal static class RestCalls
 
     /// <summary>
     /// Whether <c>@headers</c> of <paramref name="headers"/> passes the procedure's first check, <c>ISJSON(@headers)</c>, cut to the
-    /// 4,000 characters the parameter holds: any JSON text. Text that isn't JSON returns 1 and leaves <c>@response</c> as it was.
+    /// 4,000 characters the parameter holds: an object or an array. Anything else, a JSON scalar included, returns 1 and leaves
+    /// <c>@response</c> as it was.
     /// .NET's parser stands in for the server's here: where the two may differ, on text SQL Server accepts and .NET doesn't, the call
     /// is read as one that may not set <c>@response</c>, which claims less.
     /// </summary>
@@ -78,8 +79,10 @@ internal static class RestCalls
         ArgumentNullException.ThrowIfNull(headers);
         try
         {
+            // ISJSON is 0 for a scalar, 42, null, "x" or true, as for text that isn't JSON (observed by rest1-review, and
+            // Headers_that_are_not_json_return_1_and_the_caller_goes_on_with_response_as_it_was for 1).
             using var document = JsonDocument.Parse(headers.Length > ArgumentLength ? headers[..ArgumentLength] : headers);
-            return true;
+            return document.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array;
         }
         catch (JsonException)
         {

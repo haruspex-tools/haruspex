@@ -93,9 +93,13 @@ public partial class RestEndpointTests
     [InlineData("@url = N'https://billing.example/plans/7?full=1', @method = N'GET'", "", "no endpoint declared in the config file matches")]
     [InlineData("@url = N'https://billing.example/plans/7#top', @method = N'GET'", "", "no endpoint declared in the config file matches")]
     [InlineData("@url = N'https://billing.example/Plans/7', @method = N'GET'", "", "no endpoint declared in the config file matches")]
+    [InlineData("@url = N'https://billing.example/plans/.', @method = N'GET'", "", "no endpoint declared in the config file matches")]
+    [InlineData("@url = N'https://billing.example/plans/..', @method = N'GET'", "", "no endpoint declared in the config file matches")]
+    [InlineData("@url = @url, @method = N'GET'", ", @url varchar(200) = N'https://billing.example/plans/ア'", "@url")]
     public void A_url_or_method_built_at_run_time_or_matching_no_declaration_leaves_result_unknown(string arguments, string declare, string why)
     {
-        // A NULL @plan_id is empty in CONCAT, and in + unless the callers' sessions are declared to set CONCAT_NULL_YIELDS_NULL on,
+        // A {name} never stands for . or .., which the server removes from a path before sending it; a varchar URL is converted to
+        // its code page, so text that isn't ASCII isn't kept (ア is sent as ?). A NULL @plan_id is empty in CONCAT, and in + unless the callers' sessions are declared to set CONCAT_NULL_YIELDS_NULL on,
         // so those calls may send .../plans/ too, which no declaration matches.
         var doc = Named(arguments, declare);
 
