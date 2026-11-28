@@ -232,7 +232,7 @@ in it, so it can't state:
 {
   "irVersion": "0.33",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
                                       // (0.38 when it holds a value of the session's state:
-                                      // "Null rules", below; 0.37 when it declares a parameter's JSON:
+                                      // "Null reasons", below; 0.37 when it declares a parameter's JSON:
                                       // "Parameter declarations", below; 0.36 when it declares an
                                       // endpoint's response: "Endpoint declarations", below; 0.35 when it holds a fact from an
                                       // XML schema collection: "Facets", below; 0.34 when it holds an XML
@@ -820,7 +820,7 @@ changing the format. From 0.30 a document names the build that wrote it (`source
 before 0.30 names none, and its label says only which properties it uses.
 
 **0.38** (28 Nov 2026, values of the session's state; provisional until the maintainer settles it at the merge). The null rule
-`session-state` ("Null rules", above; [decision
+`session-state` ("Null reasons", above; [decision
 0146](../../docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md)). Only a document that holds
 a reason of that rule is labelled 0.38: a document that holds none is written as before, labelled 0.37 or earlier by what else it
 says, and means what it meant: this reader reads it.
