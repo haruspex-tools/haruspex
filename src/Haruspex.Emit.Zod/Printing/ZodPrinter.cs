@@ -138,7 +138,7 @@ internal static class ZodPrinter
 
             var schema = ZodModule.SchemaOf(declaration.Name);
             output.Append("export const ").Append(schema).Append(" = ").Append(Expression(declaration.Schema)).Append('\n')
-                .Append("export type ").Append(declaration.Name).Append(" = " + ZodModule.ZodName + ".infer<typeof ").Append(schema).Append(">\n");
+                .Append("export type ").Append(declaration.Name).Append(" = " + ZodModule.ZodName + (declaration.Input ? ".input" : ".infer") + "<typeof ").Append(schema).Append(">\n");
         }
 
         return output.ToString();
@@ -156,6 +156,7 @@ internal static class ZodPrinter
             ZodExpression.Union union => ZodModule.ZodName + ".union([" + List(union.Variants) + "])",
             ZodExpression.ObjectSchema obj => ObjectSchema(obj),
             ZodExpression.JsonText text => ZodModule.JsonTextHelperName + "(() => " + Expression(text.Content) + ")",
+            ZodExpression.JsonSent sent => Expression(sent.Content) + ".transform((value) => JSON.stringify(value)).pipe(" + Expression(sent.Fits) + ")",
             ZodExpression.Noted noted => Expression(noted.Expression),
             ZodExpression.Number number => JavaScriptNumbers.Literal(number.Value),
             ZodExpression.Text text => DoubleQuoted(text.Value),

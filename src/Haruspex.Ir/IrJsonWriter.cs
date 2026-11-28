@@ -142,6 +142,27 @@ public static class IrJsonWriter
                 json.WriteEndArray();
             }
 
+            // Left out when no parameter is declared, so that such a document reads as it did in 0.36.
+            if (document.Parameters.Count > 0)
+            {
+                json.WriteStartArray("parameters");
+                foreach (var parameter in IrDocumentOrder.Parameters(document))
+                {
+                    json.WriteStartObject();
+                    json.WriteString("parameter", parameter.Parameter);
+                    json.WriteString("schema", parameter.Schema);
+                    if (parameter.Pointer is not null)
+                        json.WriteString("pointer", parameter.Pointer);
+                    json.WriteStartObject("files");
+                    foreach (var (file, sha256) in parameter.Files.OrderBy(f => f.Key, StringComparer.Ordinal))
+                        json.WriteString(file, sha256);
+                    json.WriteEndObject();
+                    json.WriteEndObject();
+                }
+
+                json.WriteEndArray();
+            }
+
             json.WriteStartArray("unknowns");
             foreach (var unknown in IrDocumentOrder.Unknowns(document))
             {
@@ -378,6 +399,12 @@ public static class IrJsonWriter
             WriteType(json, parameter.Type);
             if (parameter.TableType is { } tableType)
                 json.WriteString("tableType", tableType);
+            if (parameter.Content is { } content)
+            {
+                json.WritePropertyName("content");
+                WriteType(json, content);
+            }
+
             json.WriteBoolean("hasDefault", parameter.HasDefault);
             json.WriteBoolean("output", parameter.IsOutput);
             json.WriteEndObject();

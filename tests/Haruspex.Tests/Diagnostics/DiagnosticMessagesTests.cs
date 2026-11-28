@@ -331,7 +331,8 @@ public class DiagnosticMessagesTests
                 f.File("schemas/extra-v2.schema.json", "{}");
             })),
         (4115, () => Cli([GetBook, Annotated("schemas/extra.schema.json", "N'TABLE', N'book', N'COLUMN', N'extras'")], $"{{ {Plain} }}", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
-        (4116, () => Cli([GetBook, Annotated("schemas/extra.schema.json", "N'PROCEDURE', N'save_book', N'PARAMETER', N'@extra'"), "CREATE PROCEDURE lib.save_book @extra nvarchar(max) AS SELECT 1 AS one;"], $"{{ {Plain} }}", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
+        (4116, () => Cli([GetBook, Annotated("schemas/extra.schema.json", "N'PROCEDURE', N'save_book'"), "CREATE PROCEDURE lib.save_book @extra nvarchar(max) AS SELECT 1 AS one;"], $"{{ {Plain} }}", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
+        (4117, () => Cli([GetBook, "CREATE PROCEDURE lib.save_book @copies int AS SELECT 1 AS one;"], $$"""{ {{Plain}}, "parameters": { "lib.save_book.@copies": { "json": "schemas/extra.schema.json" } } }""", arrange: f => f.File("schemas/extra.schema.json", "{}"))),
         (3150, () => Declares("{ \"json\": { \"type\": \"string\", \"format\": \"ipv4\" } }")),
         (3151, () => Declares("{ \"json\": { \"type\": \"string\", \"pattern\": \"^a\" } }")),
         (3152, () => Declares("{ \"json\": { \"$ref\": \"#/$defs/a\", \"type\": \"string\", \"$defs\": { \"a\": { \"type\": \"string\" } } } }")),

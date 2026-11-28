@@ -67,4 +67,25 @@ public static class IrTypeTree
             IrJsonText text => text.Content is { } content ? new IrJsonText(Renamed(content)) : type,
         };
     }
+
+    /// <summary>
+    /// A copy of <paramref name="type"/> whose every scalar is <paramref name="map"/>'s for it, and which is otherwise the same; the
+    /// object types a reference names are not followed, so a caller maps those itself.
+    /// </summary>
+    public static IrType MapScalars(IrType type, Func<IrScalar, IrScalar> map)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        ArgumentNullException.ThrowIfNull(map);
+        IrType Mapped(IrType inner) => MapScalars(inner, map);
+        return type switch
+        {
+            IrScalar scalar => map(scalar),
+            IrRef or IrImport or IrUnknownType or IrAnyJson => type,
+            IrArray array => array with { Items = Mapped(array.Items) },
+            IrTuple tuple => new IrTuple([.. tuple.Items.Select(e => e with { Type = Mapped(e.Type) })]),
+            IrRecord record => record with { Values = Mapped(record.Values) },
+            IrUnion union => new IrUnion([.. union.Variants.Select(Mapped)]),
+            IrJsonText text => text.Content is { } content ? new IrJsonText(Mapped(content)) : type,
+        };
+    }
 }

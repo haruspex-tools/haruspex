@@ -175,6 +175,9 @@ public static class ConfigReader
                     case "columns":
                         config = config with { Columns = [.. Columns(member.Value, path)] };
                         break;
+                    case "parameters":
+                        config = config with { Parameters = [.. Parameters(member.Value, path)] };
+                        break;
                     case "endpoints":
                         config = config with { Endpoints = [.. Endpoints(member.Value, path)] };
                         break;
@@ -200,7 +203,7 @@ public static class ConfigReader
 
                         break;
                     default:
-                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, endpoints, session, check, acknowledge");
+                        Unknown(member, path, "$schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, parameters, endpoints, session, check, acknowledge");
                         break;
                 }
             }
@@ -1116,6 +1119,57 @@ public static class ConfigReader
             return columns;
         }
 
+        /// <summary>
+        /// <c>parameters</c>: each a procedure's or function's parameter, <c>schema.object.@name</c>, and what it holds,
+        /// <c>{ "json": "file#pointer" }</c>, as <c>columns</c> takes it. Whether the project has the parameter, and whether it can
+        /// hold text, is checked against the project (<see cref="ParameterDeclarationCheck"/>).
+        /// </summary>
+        private List<ParameterDeclaration> Parameters(JsonValue value, string path)
+        {
+            var parameters = new List<ParameterDeclaration>();
+            if (Object(value, path) is not { } block)
+                return parameters;
+            foreach (var entry in block.Members)
+            {
+                var entryPath = Child(path, entry.Name);
+                var at = new JsonLocation(file, entryPath, entry.Line, entry.Column);
+                if (!ParameterDeclaration.TryParseKey(entry.Name, out var owner, out var parameter, out var problem))
+                {
+                    Problems.Add(ConfigCodes.BadPattern.At(at, problem));
+                    continue;
+                }
+
+                if (parameters.Any(p => p.Owner == owner && string.Equals(p.Parameter, parameter, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Problems.Add(ConfigCodes.KeyTwice.At(at, "names a parameter declared above under another spelling: a parameter is declared once."));
+                    continue;
+                }
+
+                if (Object(entry.Value, entryPath) is not { } body)
+                    continue;
+                JsonStringValue? json = null;
+                foreach (var member in body.Members)
+                {
+                    if (member.Name == "json")
+                        json = NonEmpty(member.Value, Child(entryPath, "json")) is not null ? (JsonStringValue)member.Value : null;
+                    else
+                        Unknown(member, Child(entryPath, member.Name), "json");
+                }
+
+                if (json is null)
+                {
+                    if (!body.Members.Any(m => m.Name == "json"))
+                        Report(ConfigCodes.NeedsAnother, body, entryPath, "needs \"json\": the path of the JSON Schema of what the parameter holds, relative to this file.");
+                    continue;
+                }
+
+                if (ColumnSchema.DeclareParameter(SchemaFiles, directory, owner, parameter, json.Value, At(json, Child(entryPath, "json")), Problems) is { } declared)
+                    parameters.Add(declared with { At = at });
+            }
+
+            return parameters;
+        }
+
         /// <summary>One column's declaration, its schema read and translated; null when it has a problem (reported).</summary>
         /// <remarks>A problem with the reference is reported at it; the declaration is at its key, <paramref name="at"/>.</remarks>
         private ColumnDeclaration? Column(string key, ObjectName table, string column, JsonStringValue json, string jsonPath, JsonLocation at) =>
@@ -1186,7 +1240,7 @@ public static class ConfigReader
                 }
 
                 var key = $"{method} {url}";
-                if (ColumnSchema.Read(SchemaFiles, directory, key, response.Value, At(response, Child(itemPath, "response")), Problems, response: true) is var (content, types, schema, pointer, files))
+                if (ColumnSchema.Read(SchemaFiles, directory, key, response.Value, At(response, Child(itemPath, "response")), Problems, DeclaredJson.Response) is var (content, types, schema, pointer, files))
                     endpoints.Add(new EndpointDeclaration(content, types, new IrEndpointDeclaration(method, url, schema, pointer, files), at, urlAt));
             }
 

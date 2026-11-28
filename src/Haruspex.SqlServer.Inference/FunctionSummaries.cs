@@ -299,7 +299,7 @@ internal sealed class FunctionSummaries
         if (header)
             return HoldsAnyJson(resolved) ? declaredOnly with { Content = new NeverShape(at) } : declaredOnly;
 
-        var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull));
+        var parameters = function.Parameters.ToEquatableMap(p => new LocalName(p.Name), p => Parameter(p, nullOnNull, summaries.DeclaredParameters.Content(p, function.Span)));
         var value = new Typer(model, function.Span, SchemaSearch.Within(function), summaries, parameters, function.AnsiNullsOff, uncommitted).Return(expression, function.Parameters);
 
         var content = !HoldsAnyJson(resolved) ? null : value switch
@@ -315,16 +315,28 @@ internal sealed class FunctionSummaries
 
     /// <summary>
     /// A parameter inside the body: its declared type, with the type's facts (the argument has been converted to it: a
-    /// string cut short, a decimal rounded, observed), nullable unless the body never runs with a null argument.
+    /// string cut short, a decimal rounded, observed), nullable unless the body never runs with a null argument. One declared to
+    /// hold JSON of a schema holds that JSON, as every caller is claimed to send it
+    /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md).
     /// </summary>
-    private Value Parameter(Parameter parameter, bool nullOnNull)
+    /// <param name="parameter">The parameter.</param>
+    /// <param name="nullOnNull">Whether the body never runs with a null argument (<c>RETURNS NULL ON NULL INPUT</c>).</param>
+    /// <param name="content">What the parameter is declared to hold as JSON; null when it isn't declared.</param>
+    private Value Parameter(Parameter parameter, bool nullOnNull, Shape? content)
     {
         var at = parameter.At;
         EquatableArray<IrNullReason> because = nullOnNull ? [] : [new IrNullReason(IrNullRule.Parameter, parameter.Name)];
         var type = parameter.Type;
+        var json = SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json;
+        if (content is not null)
+        {
+            return Typer.WithDefault(parameter, json
+                ? new Value(content, because, IsLiveJson: true)
+                : Value.Computed(new JsonTextShape(content) { Text = SqlTypes.ToConvertedShape(model, type, at) as ScalarShape }, because));
+        }
 
         // A json value nests as JSON (observed for variables and columns), and its shape is in the data.
-        return SchemaRules.ResolveType(model, type)?.Type == BuiltInType.Json
+        return json
             ? new Value(new UnknownShape(IrUnknownReason.JsonShapeUnknown, $"{parameter.Name} is a json parameter: its shape is in the data.", at), because, IsLiveJson: true)
             : Value.Computed(SqlTypes.ToConvertedShape(model, type, at), because);
     }

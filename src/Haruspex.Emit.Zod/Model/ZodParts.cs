@@ -18,6 +18,7 @@ internal static class ZodParts
         ZodExpression.Union union => union.Variants,
         ZodExpression.ObjectSchema obj => obj.Properties.Select(p => p.Value),
         ZodExpression.JsonText text => [text.Content],
+        ZodExpression.JsonSent sent => [sent.Content, sent.Fits],
         ZodExpression.Branded branded => [branded.Target],
         ZodExpression.Noted noted => [noted.Expression],
         ZodExpression.ArrayLiteral array => array.Items,

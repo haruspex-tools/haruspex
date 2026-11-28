@@ -53,7 +53,7 @@ public sealed class IrModules
         var reaching = document.Types.Keys.ToDictionary(name => name, _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
         foreach (var obj in document.Objects)
         {
-            var types = obj.Parameters.Select(p => p.Type).Concat(obj.Results?.Select(r => r.Type) ?? []);
+            var types = obj.Parameters.Select(p => p.Type).Concat(obj.Parameters.Select(p => p.Content).OfType<IrType>()).Concat(obj.Results?.Select(r => r.Type) ?? []);
             foreach (var name in graph.ReachableFrom(types))
                 reaching[name].Add(modules[obj.Id]);
         }

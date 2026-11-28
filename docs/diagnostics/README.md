@@ -152,6 +152,7 @@ reason.
 | [HAR4114](HAR4114.md) | error | A JSON Schema named in the SQL that disagrees with the config |
 | [HAR4115](HAR4115.md) | error | A JSON Schema named in the SQL that can't be read |
 | [HAR4116](HAR4116.md) | warning | A JSON Schema named in the SQL where haruspex doesn't read one |
+| [HAR4117](HAR4117.md) | error | A parameter that can't hold declared JSON |
 | [HAR4201](HAR4201.md) | error | Declared results disagree with the inference |
 | [HAR4202](HAR4202.md) | warning | Declared results the inference already gives |
 | [HAR4203](HAR4203.md) | warning | Declared results nothing uses |

@@ -22,6 +22,9 @@
   "columns": {
     "parcels.parcel.route": { "json": "../../../../fixtures/parcels/schemas/stops.schema.json#/$defs/route" },
   },
+  "parameters": {
+    "parcels.quote_options.@stops": { "json": "../../../../fixtures/parcels/schemas/stops.schema.json#/$defs/route" },
+  },
   "endpoints": [
     { "url": "https://billing.example/plans/{id}", "method": "GET", "response": "../../../../fixtures/parcels/schemas/stops.schema.json#/$defs/route" },
   ],

@@ -37,6 +37,7 @@ public static class IrComparison
         Folds(before, after, changes);
         Columns(before, after, changes);
         Endpoints(before, after, changes);
+        Parameters(before, after, changes);
 
         var earlier = before.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
         var later = after.Objects.ToDictionary(o => o.Id, StringComparer.Ordinal);
@@ -156,6 +157,23 @@ public static class IrComparison
             var now = later.GetValueOrDefault(endpoint);
             if (was != now)
                 changes.Add(new IrChange(IrChangeKind.EndpointDeclarationChanged, "", "endpoints" + IrPath.Key(endpoint), IrClaimText.Declaration(was), IrClaimText.Declaration(now)));
+        }
+    }
+
+    /// <summary>
+    /// The parameters declared to hold JSON of a schema (0.37), compared as the columns are (<see cref="Columns"/>): a schema file
+    /// whose text changed is a change, since the body's reads of the parameter, and what a caller may send, are held to the new text.
+    /// </summary>
+    private static void Parameters(IrDocument before, IrDocument after, List<IrChange> changes)
+    {
+        var earlier = before.Parameters.ToDictionary(p => p.Parameter, StringComparer.Ordinal);
+        var later = after.Parameters.ToDictionary(p => p.Parameter, StringComparer.Ordinal);
+        foreach (var parameter in earlier.Keys.Union(later.Keys).Order(StringComparer.Ordinal))
+        {
+            var was = earlier.GetValueOrDefault(parameter);
+            var now = later.GetValueOrDefault(parameter);
+            if (was != now)
+                changes.Add(new IrChange(IrChangeKind.ParameterDeclarationChanged, "", "parameters" + IrPath.Key(parameter), IrClaimText.Declaration(was), IrClaimText.Declaration(now)));
         }
     }
 

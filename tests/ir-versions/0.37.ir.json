@@ -1,0 +1,326 @@
+{
+  "irVersion": "0.37",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-preview-f8c3d6a2",
+      "commit": "f8c3d6a2463346e6877120029e2f62d2513afa47"
+    },
+    "path": "database",
+    "files": {
+      "procedures/quote_options.sql": "edc170247d736db6d4594d6dfbd2ab197f9d123af19597aa1252e025f016eca8"
+    }
+  },
+  "objects": [
+    {
+      "id": "parcels.quote_options",
+      "name": "QuoteOptions",
+      "kind": "procedure",
+      "at": "procedures/quote_options.sql:3:1",
+      "returnsCode": false,
+      "parameters": [
+        {
+          "name": "@options",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(max)"
+          },
+          "content": {
+            "ref": "QuoteOptionsOptions"
+          },
+          "hasDefault": false,
+          "output": false
+        }
+      ],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "QuoteOptionsRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "QuoteOptionsDeliveryWindow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.quote_options",
+        "path": "results[0][].delivery_window<json>"
+      },
+      "fields": [
+        {
+          "name": "from",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "to",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "QuoteOptionsOptions": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.quote_options",
+        "path": "parameters.@options<json>"
+      },
+      "fields": [
+        {
+          "name": "speed",
+          "type": {
+            "kind": "string",
+            "values": {
+              "match": "exact",
+              "items": [
+                "standard",
+                "express"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.quote_options.@options"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "signature",
+          "type": {
+            "kind": "boolean"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "maxLength": {
+              "value": 200,
+              "unit": "code-points",
+              "from": {
+                "declared": "parcels.quote_options.@options"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "unit": "code-points",
+              "from": {
+                "declared": "parcels.quote_options.@options"
+              }
+            }
+          },
+          "presence": "optional",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "declared",
+              "at": "parcels.quote_options.@options"
+            }
+          ]
+        },
+        {
+          "name": "window",
+          "type": {
+            "ref": "QuoteOptionsOptionsWindow"
+          },
+          "presence": "optional",
+          "nullable": false
+        },
+        {
+          "name": "attempts",
+          "type": {
+            "kind": "number",
+            "format": "int32"
+          },
+          "presence": "optional",
+          "nullable": false
+        }
+      ]
+    },
+    "QuoteOptionsOptionsWindow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.quote_options",
+        "path": "parameters.@options<json>.window"
+      },
+      "fields": [
+        {
+          "name": "from",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "to",
+          "type": {
+            "kind": "string"
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    },
+    "QuoteOptionsRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "parcels.quote_options",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "speed",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 4000,
+              "unit": "utf16",
+              "from": {
+                "type": "nvarchar(4000)"
+              }
+            },
+            "values": {
+              "match": "exact",
+              "items": [
+                "standard",
+                "express"
+              ],
+              "from": [
+                {
+                  "declared": "parcels.quote_options.@options"
+                }
+              ]
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@options"
+            }
+          ]
+        },
+        {
+          "name": "note",
+          "type": {
+            "kind": "string",
+            "sql": "nvarchar(4000)",
+            "maxLength": {
+              "value": 200,
+              "unit": "code-points",
+              "from": {
+                "declared": "parcels.quote_options.@options"
+              }
+            },
+            "minLength": {
+              "value": 1,
+              "unit": "code-points",
+              "from": {
+                "declared": "parcels.quote_options.@options"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/quote_options.sql:5:50",
+              "detail": "`$.note` may be left out, as the schema doesn't require it; `$.note` may be null"
+            }
+          ]
+        },
+        {
+          "name": "delivery_window",
+          "type": {
+            "kind": "json-text",
+            "content": {
+              "ref": "QuoteOptionsDeliveryWindow"
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "parameter",
+              "at": "@options"
+            },
+            {
+              "rule": "json-null-or-absent",
+              "at": "procedures/quote_options.sql:5:90",
+              "detail": "`$.window` may be left out, as the schema doesn't require it"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "columns": [
+    {
+      "column": "parcels.parcel.extra",
+      "schema": "schemas/extra.schema.json",
+      "files": {
+        "schemas/extra.schema.json": "472291066421206dc5fcd304132d9fdfb046a84a78d70445db2c42c82932b661"
+      }
+    },
+    {
+      "column": "parcels.parcel.options",
+      "schema": "schemas/options.schema.json",
+      "files": {
+        "schemas/options.schema.json": "53f54affcc1662009b8a064da5b0b4c1b72e33ef9db4292c353b69460e8c92d3"
+      }
+    },
+    {
+      "column": "parcels.parcel.route",
+      "schema": "schemas/stops.schema.json",
+      "pointer": "/$defs/route",
+      "files": {
+        "schemas/stops.schema.json": "c5bae5bc1f32a26e87711e8b18dcdfdd3bc05719672aecc6cd7d4f9e3acebd7f"
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "parameter": "parcels.quote_options.@options",
+      "schema": "schemas/options.schema.json",
+      "files": {
+        "schemas/options.schema.json": "53f54affcc1662009b8a064da5b0b4c1b72e33ef9db4292c353b69460e8c92d3"
+      }
+    }
+  ],
+  "unknowns": [],
+  "overrides": [
+    {
+      "object": "parcels.quote_options",
+      "path": "results",
+      "setting": "parameter-json",
+      "via": "parcels.quote_options.@options"
+    }
+  ],
+  "folds": {}
+}

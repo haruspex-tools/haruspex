@@ -11,4 +11,10 @@ internal sealed record ParameterShape(string Name, Shape Type, bool HasDefault, 
 {
     /// <summary>For a table-valued parameter of a table type the model defines, the type's name and definition; null otherwise.</summary>
     public (string Key, IrTableType Definition)? TableType { get; init; }
+
+    /// <summary>
+    /// For a parameter declared to hold JSON of a schema, what a non-null value of it parses to, which a caller is to send; null
+    /// otherwise (docs/decisions/0143-a-parameter-s-json-may-be-declared.md).
+    /// </summary>
+    public Shape? Content { get; init; }
 }

@@ -391,7 +391,8 @@ each is for.
 - **Dynamic SQL:** results declared where the project can't show them ([declared results](docs/configuration.md#declared-results-results)).
 - **Names of your own:** a call's results named and typed where it is made, dynamic SQL included ([`WITH RESULT SETS`](docs/database-module.md#naming-a-calls-results-with-with-result-sets)).
 - **JSON columns:** JSON stored in a column, typed by a JSON Schema ([`columns`](docs/configuration.md#json-stored-in-a-column-columns)).
-- **JSON Schemas in the database:** a column's schema named in its scripts and DACPAC ([`haruspex.jsonSchema`](docs/configuration.md#naming-a-columns-schema-in-the-sql)).
+- **JSON parameters:** a document a procedure takes, typed by a JSON Schema ([`parameters`](docs/configuration.md#json-a-parameter-takes-parameters)).
+- **JSON Schemas in the database:** a column's or parameter's schema named in its scripts and DACPAC ([`haruspex.jsonSchema`](docs/configuration.md#naming-a-columns-schema-in-the-sql)).
 - **REST services:** what a procedure reads from a service's reply, typed by a JSON Schema declared for its endpoint ([`endpoints`](docs/configuration.md#calls-to-rest-endpoints-endpoints)).
 - **Overrides:** what the team knows and the database can't prove, and other names ([overrides](docs/configuration.md#overrides)).
 - **Descriptions:** the database's descriptions under a name of its own ([`descriptions`](docs/configuration.md#descriptions-descriptions)).

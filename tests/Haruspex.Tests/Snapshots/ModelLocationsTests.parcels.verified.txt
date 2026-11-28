@@ -9,6 +9,7 @@ named function parcels.options_of
 parameter parcels.get_parcel @parcel_id at procedures/get_parcel.sql:2:37
 parameter parcels.options_of @parcel_id at functions/options_of.sql:1:36
 parameter parcels.options_of_one @parcel_id at procedures/options_of_one.sql:2:41
+parameter parcels.quote_options @options at procedures/quote_options.sql:3:40
 procedure parcels.claimed_options at procedures/claimed_options.sql:2:1
 procedure parcels.get_parcel at procedures/get_parcel.sql:2:1
 procedure parcels.options_by_view at procedures/options_by_view.sql:2:1
@@ -16,6 +17,7 @@ procedure parcels.options_of_one at procedures/options_of_one.sql:2:1
 procedure parcels.options_text at procedures/options_text.sql:2:1
 procedure parcels.parcel_feed at procedures/parcel_feed.sql:2:1
 procedure parcels.parcel_paths at procedures/parcel_paths.sql:6:1
+procedure parcels.quote_options at procedures/quote_options.sql:3:1
 procedure parcels.routes at procedures/routes.sql:2:1
 procedure parcels.staged_options at procedures/staged_options.sql:2:1
 procedure parcels.staged_routes at procedures/staged_routes.sql:2:1

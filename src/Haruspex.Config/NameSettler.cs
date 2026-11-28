@@ -113,13 +113,19 @@ internal sealed class NameSettler(
             }
 
             // A table-valued parameter's rows are a type of the table type's, named after it, once for every parameter of it.
+            // What a parameter declared to hold JSON parses to is named after the object and the parameter, as a result's row is
+            // after the object: PlaceOrderOrder for shop.place_order's @order.
             foreach (var parameter in obj.Parameters)
+            {
                 Walk(parameter.Type, name, $"parameters.{parameter.Name}", obj.Id);
+                if (parameter.Content is { } content)
+                    Walk(content, name + NamingRules.Part(parameter.Name.TrimStart('@')), $"parameters.{parameter.Name}<json>", obj.Id);
+            }
 
             objects.Add(obj with
             {
                 Name = name,
-                Parameters = [.. obj.Parameters.Select(p => p with { Type = Rename(p.Type) })],
+                Parameters = [.. obj.Parameters.Select(p => p with { Type = Rename(p.Type), Content = p.Content is { } content ? Rename(content) : null })],
                 Results = objectResults is null ? null : [.. objectResults.Select(r => r with { Type = Rename(r.Type) })],
             });
         }

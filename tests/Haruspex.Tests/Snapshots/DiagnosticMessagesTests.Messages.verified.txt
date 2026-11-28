@@ -149,7 +149,7 @@ HAR3003
 haruspex.json:1:97: error HAR3003: objects: The key "objects" is written twice in one object.
 
 HAR3004
-haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, endpoints, session, check, acknowledge.
+haruspex.json:1:77: error HAR3004: colour: unknown setting "colour". The settings here are $schema, source, baseline, references, builds, collation, descriptions, queries, out, split, schemas, objects, comments, emit, serverOnly, naming, procedures, columns, parameters, endpoints, session, check, acknowledge.
 
 HAR3005
 haruspex.json:1:88: error HAR3005: objects: must be "strip" or "strict", not "loose".
@@ -332,7 +332,10 @@ HAR4115
 db/p2.sql:1:1: error HAR4115: The JSON Schema of lib.book.extras is passed over: the table lib.book has no column extras.
 
 HAR4116
-db/p2.sql:1:1: warning HAR4116: The JSON Schema of the parameter lib.save_book.@extra isn't read: haruspex reads one on a table's column only, so it declares nothing here.
+db/p2.sql:1:1: warning HAR4116: The JSON Schema named on lib.save_book isn't read: haruspex reads one on a table's column or a procedure's or function's parameter only.
+
+HAR4117
+haruspex.json:1:93: error HAR4117: parameters["lib.save_book.@copies"]: lib.save_book.@copies is of the type int, which can't hold JSON text: only a string type (char, varchar, nchar, nvarchar) or json can.
 
 HAR4201
 haruspex.json:1:93: error HAR4201: procedures["lib.get_book"]: haruspex infers the results of lib.get_book, and the declaration disagrees at results: the inference says 1 result set, the declaration 0. A declaration is for results that can't be inferred; to correct inferred results, override a path under "paths".
@@ -497,7 +500,7 @@ HAR6029
 haruspex: error HAR6029: the baseline release/Library.dacpac isn't there. haruspex never fetches it: put it there first (in CI, a step before this one), or correct --baseline or "baseline".
 
 HAR6030
-haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.36, 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
+haruspex: error HAR6030: the baseline release.ir.json is IR 0.9, and this haruspex reads IR 0.37, 0.36, 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23, so the two can't be compared claim by claim. Give the baseline as the source it was inferred from (a .dacpac, a .sqlproj or a folder), which this version reads.
 
 HAR6031
 sql/titles.sql:1:1: warning HAR6031: sql/titles.sql: the baseline is a source, so this query file is checked with its text as it is now; the application already running sends the text it was built with, which may differ. Give the baseline as the IR file it was built with to check that text.

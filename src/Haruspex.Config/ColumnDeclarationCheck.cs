@@ -34,7 +34,7 @@ public static class ColumnDeclarationCheck
 
     /// <summary>
     /// Why the project can't hold a declaration of <paramref name="column"/> of the table <paramref name="name"/>, as a clause; null when it
-    /// can. A declaration in the config file and one in the SQL (<see cref="ColumnAnnotations"/>) are held to the same rules.
+    /// can. A declaration in the config file and one in the SQL (<see cref="JsonSchemaAnnotations"/>) are held to the same rules.
     /// </summary>
     internal static string? Problem(ObjectName name, string column, DatabaseModel model, Func<ObjectName, string, IReadOnlyList<string>> viewSources)
     {
@@ -60,7 +60,7 @@ public static class ColumnDeclarationCheck
     }
 
     /// <summary>Whether a type holds text: a string type or json, or an alias type of one.</summary>
-    private static bool IsString(SqlType type, DatabaseModel model) => type.Kind switch
+    internal static bool IsString(SqlType type, DatabaseModel model) => type.Kind switch
     {
         SqlTypeKind.Named when Strings.Contains(type.Name) && type.Schema is null => true,
         SqlTypeKind.Named => model.FindUserType(new ObjectName(type.Schema ?? "dbo", type.Name)) is AliasType alias && IsString(alias.BaseType, model),

@@ -78,6 +78,16 @@ internal abstract record ZodExpression
     public sealed record JsonText(ZodExpression Content) : ZodExpression;
 
     /// <summary>
+    /// JSON a parameter is declared to hold, as a caller sends it: the value, checked by <paramref name="Content"/>, then serialised
+    /// with <c>JSON.stringify</c> and the text checked by <paramref name="Fits"/>, the parameter's own type, which is what the
+    /// driver sends: <c>Content.transform((value) =&gt; JSON.stringify(value)).pipe(Fits)</c>. Its input type is the content's,
+    /// its output a string (docs/decisions/0143-a-parameter-s-json-may-be-declared.md).
+    /// </summary>
+    /// <param name="Content">The schema of the JSON the parameter is declared to hold.</param>
+    /// <param name="Fits">The schema of the parameter's own type, which the serialised text must fit.</param>
+    public sealed record JsonSent(ZodExpression Content, ZodExpression Fits) : ZodExpression;
+
+    /// <summary>
     /// An expression with a note for the reader of the generated file, such as why a check the IR states was left out. The
     /// note is not code: the printer writes it above the property that holds the expression.
     /// </summary>

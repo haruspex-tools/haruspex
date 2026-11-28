@@ -34,6 +34,7 @@ internal static class ParameterLowering
         return new ZodDeclaration(ZodModule.ParametersOf(obj.Name), $"{obj.Id}: its parameters, checked before anything is sent.", new ObjectSchema([.. properties], Strict: true))
         {
             Description = obj.Description,
+            Input = obj.Parameters.Any(p => p.Content is not null),
         };
     }
 
@@ -74,7 +75,7 @@ internal static class ParameterLowering
     {
         if (parameter is { TableType: { } tableType, Type: IrArray { Items: IrRef row } })
             return TableValued(tableType, row);
-        var value = Value(parameter.Type, types);
+        var value = parameter.Content is { } content ? Sent(content, parameter.Type, types) : Value(parameter.Type, types);
         if (parameter.Type is not IrUnknownType)
             value = value.Then("nullable");
         if (parameter.HasDefault || parameter.IsOutput)
@@ -82,6 +83,20 @@ internal static class ParameterLowering
         return parameter.IsOutput
             ? new Noted(value, new ZodNote("An OUTPUT parameter: it may be left out, and what it holds when the procedure ends comes back with the results."))
             : value;
+    }
+
+    /// <summary>
+    /// A parameter declared to hold JSON of a schema: the caller passes the value, which is checked against the declared schema,
+    /// serialised with <c>JSON.stringify</c>, and the text checked as the parameter's type checks any text it is sent (its length, and
+    /// for <c>varchar</c> the code page), since the server would cut a longer one short, and cut JSON is no JSON
+    /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). A <c>json</c> parameter's text is checked as any string.
+    /// </summary>
+    private static Noted Sent(IrType content, IrType type, TypeLowering types)
+    {
+        var text = type is IrScalar { Kind: IrScalarKind.String } scalar ? Text(scalar, inTable: false) : Z("string");
+        return new Noted(
+            new JsonSent(types.Type(content, IrEncoding.Json), text),
+            new ZodNote("JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, which must fit the parameter's type."));
     }
 
     /// <summary>

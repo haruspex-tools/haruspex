@@ -40,6 +40,11 @@ public static class IrClaimText
         ? "none"
         : Declaration(new IrColumnDeclaration(declaration.Endpoint, declaration.Schema, declaration.Pointer, declaration.Files));
 
+    /// <summary>A parameter's declared JSON (0.37): its schema, with the pointer, and the hash of each file it read, abridged; or <c>none</c>.</summary>
+    public static string Declaration(IrParameterDeclaration? declaration) => declaration is null
+        ? "none"
+        : Declaration(new IrColumnDeclaration(declaration.Parameter, declaration.Schema, declaration.Pointer, declaration.Files));
+
     /// <summary>A type node, without what lies behind a reference: <c>string</c>, <c>number (int32)</c>, <c>an array of the object OrderRow</c>.</summary>
     public static string Type(IrType type) => type switch
     {

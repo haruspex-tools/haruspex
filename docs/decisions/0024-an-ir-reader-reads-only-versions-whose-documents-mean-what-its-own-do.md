@@ -1,6 +1,6 @@
 # An IR reader reads only versions whose documents mean what its own do
 
-**Date:** 12 Nov 2026; restated 23 Nov 2026 as the rule stands at IR 0.30, 25 Nov 2026 for 0.31, and 26 Nov 2026 for 0.32, 0.33 and 0.34, and 27 Nov 2026 for 0.35 and 0.36.
+**Date:** 12 Nov 2026; restated 23 Nov 2026 as the rule stands at IR 0.30, 25 Nov 2026 for 0.31, and 26 Nov 2026 for 0.32, 0.33 and 0.34, and 27 Nov 2026 for 0.35, 0.36 and 0.37.
 
 **Decision.** `IrJsonReader` reads a file's `irVersion` before anything else. It reads the current version, and an older one only
 when every document of that version is a document of the current version that means the same (`IrDocument.ReadableVersions`).
@@ -32,9 +32,9 @@ the build that wrote a document records it ([decision 0117](0117-an-ir-document-
 version moves when the format does, a property or a value added or what one means changed, and this test decides which older
 versions are read.
 
-Every version from 0.24 to 0.36 added only what a document either has or lacks (a baseline, where a value came from, table types,
+Every version from 0.24 to 0.37 added only what a document either has or lacks (a baseline, where a value came from, table types,
 binary values, declarations of a column's JSON, a reason in words, the build that wrote it, the packages declared builds, a
-source's several folders, descriptions, XML values, facts of an XML schema collection, declared endpoints), so the 0.36 reader reads each of them
+source's several folders, descriptions, XML values, facts of an XML schema collection, declared endpoints, declared parameters), so the 0.37 reader reads each of them
 and 0.23. No 0.22
 document says whether the config file named a type, which 0.23 added and which decides the name a shared shape is given, so 0.22
 is refused. [`tests/ir-versions`](../../tests/ir-versions/README.md) keeps a file of every version and says which are read.

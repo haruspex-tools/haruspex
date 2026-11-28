@@ -2162,6 +2162,31 @@ variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EX
 - **A view's column can't be declared**: it holds what it reads, and gets the declaration from the table column; declaring one
   is HAR4113, naming the table column it reads (`IrInference.ViewColumnSources`).
 
+## JSON declared for a parameter
+
+The code is `DeclaredParameters.cs`, `DeclaredParameter.cs`, `Walker.Walk`, `FunctionSummaries.Parameter` and `Typer.Argument`; the
+input is read by Haruspex.Config (`parameters`, or the extended property `haruspex.jsonSchema` on the parameter), and observed in
+`ParameterJsonObservationTests`. A procedure's or function's parameter declared to hold JSON of a schema holds it, as every caller is
+claimed to send it, until it is assigned ([decision 0143](../../docs/decisions/0143-a-parameter-s-json-may-be-declared.md)):
+
+- **Where it starts.** A walk of a procedure or a multi-statement function starts the parameter as JSON text of the schema's type,
+  a string of its own type (`JsonTextShape`, with `Text`), or live JSON for a `json` parameter, as a declared column is read (above).
+  A scalar function's body takes it the same way, once for every call; an inline function's, for each call, null exactly when the
+  call's argument may be. From there it goes where any value goes: an assignment to another variable carries it, and an assignment
+  to the parameter replaces it, so a read after one has no declaration.
+- **A default** other than NULL is joined in where the body starts (`Typer.WithDefault`): a caller that leaves the parameter out
+  sends it, and no declaration covers it. An inline function called with `DEFAULT` reads the default as it is.
+- **A `varchar` or `char` parameter** is read through the database's code page, so its reads keep a string's value set and lengths
+  only when every value is ASCII (`DeclaredParameters`); the content a caller sends keeps them.
+- **NULL.** The parameter keeps its `parameter` reason, which only a test that proves it not NULL removes. Text that isn't JSON fails
+  the call (13609, in lax mode too), so it needs no reason; JSON of another shape gives NULL under a lax path, which is what the
+  declaration claims doesn't happen, as a column's declaration claims of its writers.
+- **What a caller sends.** `ParameterShape.Content`, written as the IR parameter's `content`, whatever the body does with it.
+- **Claims.** Each body that takes a declared parameter is recorded as reading it (`DeclarationReads`), so each object that takes
+  one, or reaches a body that does, lists a `parameter-json` override naming it in `via`. Which value a result holds is not followed
+  back to the parameter, so the claim is listed whether or not the results read it, which says no less than they rest on. The
+  document lists only the declarations its objects take or rest on (`parameters`).
+
 ## Calls to REST endpoints
 
 The code is `RestCalls.cs`, `Walker.Rest.cs` and `SentText.cs`; observed in `RestEndpointObservationTests`, on a server of its own

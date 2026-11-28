@@ -28,6 +28,8 @@ internal static class IrDocumentScalars
             {
                 foreach (var node in Within(parameter.Type, $"$.objects[{i}].parameters[{j}].type"))
                     yield return node;
+                foreach (var node in parameter.Content is { } content ? Within(content, $"$.objects[{i}].parameters[{j}].content") : [])
+                    yield return node;
             }
 
             foreach (var (result, k) in (obj.Results ?? []).Select((r, k) => (r, k)))

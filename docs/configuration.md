@@ -687,13 +687,61 @@ EXEC sp_addextendedproperty N'haruspex.jsonSchema', N'schemas/order-lines.schema
   added or removed annotation, as it reports the same change in `haruspex.json`.
 - **Where both declare a column, they must name the same schema** (the same file and pointer); naming two is HAR4114, and
   haruspex chooses neither.
-- **Only a table's column takes one.** One on a view's or a table function's column is HAR4113, as `columns` would be, naming
-  the table column to declare instead. One on a procedure's or function's parameter, or on an object, is HAR4116, a warning: it
-  declares nothing there. SQL Server takes none on a numbered procedure (`get_order;2`) or a scalar function's result.
+- **Only a table's column takes one**, of the columns. One on a view's or a table function's column is HAR4113, as `columns` would
+  be, naming the table column to declare instead. One on a procedure's or function's parameter declares the parameter's JSON, as
+  `parameters` does ([JSON a parameter takes](#json-a-parameter-takes-parameters), below). One on an object is HAR4116, a warning:
+  it declares nothing there. SQL Server takes none on a numbered procedure (`get_order;2`) or a scalar function's result.
 - **What can't be read is an error** (HAR4115): a value that isn't literal text, a property named twice, updated or dropped
   (which stands depends on the order the scripts run), or one on something the source doesn't define. A URL is refused
   (HAR3112): haruspex never fetches a schema, so keep a copy in the repository and name that.
 - **The name is compared ignoring case**, as SQL Server compares it in a database that ignores case.
+
+## JSON a parameter takes: `parameters`
+
+**For a procedure or function that takes a JSON document** (`@order nvarchar(max)`) and reads it with `OPENJSON` or `JSON_VALUE`.
+
+Any caller may send a parameter any text, so what it holds is the callers' and not the database's to say, and haruspex types it
+only when it is declared ([decision 0143](decisions/0143-a-parameter-s-json-may-be-declared.md)). `parameters` declares it, once
+for the parameter, with a JSON Schema file:
+
+```jsonc
+"parameters": {
+  "shop.place_order.@order": { "json": "schemas/order.schema.json" },
+  "shop.lines_of.@doc": { "json": "schemas/order.schema.json#/$defs/lines" }   // a function's parameter
+}
+```
+
+- **The key** is the parameter, `schema.object.@name`, its `@` included, a part that holds a dot in brackets. It must be a
+  parameter of a procedure or function in the project, not `OUTPUT`, of a string type (`char`, `varchar`, `nchar`, `nvarchar`,
+  directly or through an alias type) or `json`; anything else is HAR4117. A numbered procedure's parameter
+  (`shop.get_order;2.@order`) can't be declared: haruspex reads no numbered procedure.
+- **`json`** is the schema file, as for [`columns`](#json-stored-in-a-column-columns), and is read as
+  [the JSON Schemas a declaration reads](#the-json-schemas-a-declaration-reads) says. Its top can't allow `null` (HAR3115): SQL
+  Server's JSON functions refuse the text `null`, and a caller with no value sends NULL, which the parameter's own nullability says.
+- **The body's reads take it as given** until the parameter is assigned: `JSON_VALUE(@order, '$.mode')`, `json_query`, `OPENJSON`
+  with or without `WITH`, and a variable assigned the parameter, walk the schema's type as for a declared column. A read after the
+  parameter is assigned has no declaration.
+- **A default other than NULL** is what a caller that leaves the parameter out sends, so the body reads it beside the declared JSON.
+  A `varchar` or `char` parameter's text is in the database's code page, so its reads keep a string's value set only when every
+  value is ASCII.
+- **NULL stays wherever the server can give it.** A caller may send NULL, so a read is nullable unless the body proves the parameter
+  isn't (`IF @order IS NULL RETURN`); a key the schema doesn't require may be left out, so a lax path to it is nullable. Text that
+  isn't JSON fails the call (13609), in lax mode too. JSON of another shape gives NULL where the types say otherwise: that is the
+  claim the declaration makes about every caller.
+- **The generated function takes the value**, an object of the schema's type rather than its text: it checks it against the
+  schema, serialises it with `JSON.stringify` and checks the text against the parameter's type before it sends anything
+  ([the database module](database-module.md#how-the-parameters-are-checked)).
+- **The IR records each declaration** its objects take or rest on, with the SHA-256 of every schema file it read, so `check`
+  reports a changed schema file or declaration, and gives the parameter the declared `content`. Each object that takes the
+  parameter, or calls a function or procedure that does, lists the claim (an override with `via`).
+- **In the SQL**, the extended property `haruspex.jsonSchema` on the parameter declares the same, read from scripts and from a
+  DACPAC as on a column ([Naming a column's schema in the SQL](#naming-a-columns-schema-in-the-sql)), and the two must agree
+  (HAR4114):
+
+  ```sql
+  EXEC sp_addextendedproperty N'haruspex.jsonSchema', N'schemas/order.schema.json',
+      N'SCHEMA', N'shop', N'PROCEDURE', N'place_order', N'PARAMETER', N'@order';
+  ```
 
 ## Calls to REST endpoints: `endpoints`
 

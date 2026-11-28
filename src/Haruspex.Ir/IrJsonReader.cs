@@ -191,6 +191,7 @@ public static class IrJsonReader
             TableTypes = tableTypes is null ? [] : TableTypes(tableTypes),
             Columns = Columns(json),
             Endpoints = Endpoints(json),
+            Parameters = Parameters(json),
         };
         source.End();
         json.End();
@@ -210,6 +211,7 @@ public static class IrJsonReader
         HoldsXmlAsLabelled(document, version);
         HoldsSchemaFactsAsLabelled(document, version);
         DeclaresEndpointsAsLabelled(document, version);
+        DeclaresParametersAsLabelled(document, version);
         return document;
     }
 
@@ -272,7 +274,7 @@ public static class IrJsonReader
     /// </summary>
     private static void DeclaresEndpointsAsLabelled(IrDocument document, string version)
     {
-        if (version == IrDocument.CurrentVersion && document.Endpoints.Count == 0 && document.DeclaresEndpoints)
+        if (IrDocument.IsSince(version, IrDocument.EndpointsVersion) && document.Endpoints.Count == 0 && document.DeclaresEndpoints)
             throw new IrFormatException("$.endpoints", $"is missing: a document of IR {version} that claims an object reads an endpoint's response lists the endpoints it declares.");
         foreach (var (claim, i) in IrDocumentOrder.Overrides(document).Select((o, i) => (o, i)))
         {
@@ -280,10 +282,59 @@ public static class IrJsonReader
                 throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but an \"endpoint-json\" claim names an endpoint the document declares in $.endpoints.");
         }
 
-        if (version == IrDocument.CurrentVersion && !document.DeclaresEndpoints)
+        if (version == IrDocument.EndpointsVersion && !document.DeclaresEndpoints)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares an endpoint's response, and this one declares none. One that declares none is labelled {IrDocument.SchemaFactsVersion} or earlier, by what else it says.");
-        if (version != IrDocument.CurrentVersion && document.Endpoints.Count > 0)
-            throw new IrFormatException("$.endpoints", $"is given in a document of IR {version}: a document that declares an endpoint's response is IR {IrDocument.CurrentVersion}.");
+        if (!IrDocument.IsSince(version, IrDocument.EndpointsVersion) && document.DeclaresEndpoints)
+            throw new IrFormatException("$.endpoints", $"is given in a document of IR {version}: a document that declares an endpoint's response is IR {IrDocument.EndpointsVersion} or later.");
+    }
+
+    /// <summary>
+    /// The procedures' and functions' parameters declared to hold JSON of a schema (0.37); none when the file leaves
+    /// <c>parameters</c> out. An empty array is refused: the writer leaves it out, so there is one way to say "none". Each parameter
+    /// is declared once.
+    /// </summary>
+    private static EquatableArray<IrParameterDeclaration> Parameters(IrJsonObject json)
+    {
+        if (json.Optional("parameters") is null)
+            return [];
+        var parameters = new List<IrParameterDeclaration>();
+        foreach (var (item, path) in json.Array("parameters"))
+        {
+            var entry = IrJsonObject.At(item, path);
+            var files = entry.Object("files");
+            var parameter = new IrParameterDeclaration(entry.String("parameter"), entry.String("schema"), entry.OptionalString("pointer"), files.Names.ToList().ToEquatableMap(name => name, files.Sha256));
+            files.End();
+            entry.End();
+            if (!parameter.Files.ContainsKey(parameter.Schema))
+                throw new IrFormatException(entry.PathOf("files"), $"has no hash of \"{parameter.Schema}\", the schema file itself: it lists every file the declaration read.");
+            if (parameters.Any(p => p.Parameter == parameter.Parameter))
+                throw new IrFormatException(entry.PathOf("parameter"), $"declares {parameter.Parameter} twice: a parameter is declared once.");
+            parameters.Add(parameter);
+        }
+
+        return parameters.Count > 0 ? [.. parameters] : throw new IrFormatException(json.PathOf("parameters"), "is empty: a document that declares no parameter leaves it out.");
+    }
+
+    /// <summary>
+    /// Refuses a declared parameter (0.37), a parameter's declared content or a claim that an object reads one, in a document labelled
+    /// earlier, by its path, and a document labelled 0.37 that declares none, which is labelled by the rest of what it says
+    /// (<see cref="IrDocument.Version"/>). A claim that an object reads a declared parameter must name one the document declares, and a
+    /// parameter's content is there only where a parameter is declared.
+    /// </summary>
+    private static void DeclaresParametersAsLabelled(IrDocument document, string version)
+    {
+        if (document.Parameters.Count == 0 && document.DeclaresParameters)
+            throw new IrFormatException("$.parameters", $"is missing: a document that gives a parameter's declared content, or claims an object reads a declared parameter, lists the parameters it declares.");
+        foreach (var (claim, i) in IrDocumentOrder.Overrides(document).Select((o, i) => (o, i)))
+        {
+            if (claim.Setting == IrOverrideSetting.ParameterJson && !document.Parameters.Any(p => p.Parameter == claim.Via))
+                throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but a \"parameter-json\" claim names a parameter the document declares in $.parameters.");
+        }
+
+        if (version == IrDocument.CurrentVersion && !document.DeclaresParameters)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a parameter's JSON, and this one declares none. One that declares none is labelled {IrDocument.EndpointsVersion} or earlier, by what else it says.");
+        if (version != IrDocument.CurrentVersion && document.DeclaresParameters)
+            throw new IrFormatException("$.parameters", $"is given in a document of IR {version}: a document that declares a parameter's JSON is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>
@@ -674,6 +725,7 @@ public static class IrJsonReader
         {
             TableType = json.OptionalString("tableType"),
             Description = Description(json),
+            Content = json.Optional("content") is null ? null : Type(json.Object("content")),
         };
         json.End();
         return parameter;

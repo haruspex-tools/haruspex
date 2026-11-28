@@ -259,6 +259,17 @@
         "pattern": "^(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+$"
       }
     },
+    "parameters": {
+      "description": "Procedures' and functions' parameters declared to hold JSON of a schema, keyed by the parameter's three-part name (schema.object.@name, with T-SQL brackets around a part that holds a dot). A claim about every caller: the body's reads of the parameter take the schema as given until the parameter is assigned, and the generated code checks what a caller sends.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameter"
+      },
+      "propertyNames": {
+        "description": "A three-part name: schema.object.@name.",
+        "pattern": "^(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+\\.(?:@(?:[^\\[.]|\\[(?:[^\\]]|\\]\\])*\\])+|\\[@(?:[^\\]]|\\]\\])*\\])$"
+      }
+    },
     "endpoints": {
       "description": "External REST endpoints declared to send a response of a JSON Schema: a call of sys.sp_invoke_external_rest_endpoint whose every URL and method match one declaration reads its body as that schema, a claim the generated code checks.",
       "type": "array",
@@ -296,6 +307,19 @@
       "properties": {
         "json": {
           "description": "The JSON Schema file of the JSON the column holds, relative to this file, with a JSON Pointer after # to a schema inside it when it isn't the whole file: schemas/party.schema.json#/$defs/person.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["json"],
+      "additionalProperties": false
+    },
+    "parameter": {
+      "description": "What a parameter holds.",
+      "type": "object",
+      "properties": {
+        "json": {
+          "description": "The JSON Schema file of the JSON a caller sends, relative to this file, with a JSON Pointer after # to a schema inside it when it isn't the whole file: schemas/order.schema.json#/$defs/order.",
           "type": "string",
           "minLength": 1
         }

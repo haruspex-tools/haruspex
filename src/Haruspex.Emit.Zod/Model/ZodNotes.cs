@@ -20,6 +20,7 @@ internal static class ZodNotes
         ZodExpression.Call call => [call.Target, .. call.Arguments],
         ZodExpression.Union union => union.Variants,
         ZodExpression.JsonText text => [text.Content],
+        ZodExpression.JsonSent sent => [sent.Content, sent.Fits],
         ZodExpression.Branded branded => [branded.Target],
         ZodExpression.ArrayLiteral array => array.Items,
         ZodExpression.ObjectLiteral obj => obj.Properties.Select(p => p.Value),

@@ -160,7 +160,7 @@ public static partial class IrCombination
         {
             var types = new Dictionary<string, IrObjectType>(StringComparer.Ordinal);
             var widenedBy = new Dictionary<string, int>(StringComparer.Ordinal);
-            var roots = objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Results?.Select(r => r.Type) ?? [])).ToList();
+            var roots = objects.SelectMany(o => o.Parameters.Select(p => p.Type).Concat(o.Parameters.Select(p => p.Content).OfType<IrType>()).Concat(o.Results?.Select(r => r.Type) ?? [])).ToList();
             var pending = new Queue<string>(roots.SelectMany(IrTypeTree.References).Distinct(StringComparer.Ordinal));
             while (pending.Count > 0 || Stale().FirstOrDefault() is not null)
             {

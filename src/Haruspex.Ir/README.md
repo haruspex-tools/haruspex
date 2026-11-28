@@ -116,7 +116,9 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.35"` when it holds a fact an XML schema
+- must write `irVersion` as the oldest version that says all the document says: `"0.37"` when it declares a parameter's JSON
+  (it has `parameters`, a parameter's `content`, or a `parameter-json` claim); else `"0.36"` when it declares an endpoint's
+  response (it has `endpoints`, or an `endpoint-json` claim); else `"0.35"` when it holds a fact an XML schema
   collection proves (a facet from `xml-schema`, anywhere); else `"0.34"` when it holds an XML value (a scalar
   of kind `xml`, or a reason whose rule is `xml-value`, anywhere); else `"0.33"` when an object, a parameter or a
   field has a `description`; else `"0.32"` when a source, its own or its
@@ -206,12 +208,12 @@ in it, so it can't state:
 - **a key given twice** in one object, which a parser keeps one of;
 - **a name that names nothing**: a `ref` must name a type in `types`, a value set's `fold` a fold in `folds`, a parameter's
   `tableType` a table type in `tableTypes`, a `column-json` claim's `via` a declared column, an `endpoint-json` claim's `via` a
-  declared endpoint, and a source's `builds` its `package`
+  declared endpoint, a `parameter-json` claim's `via` a declared parameter, and a source's `builds` its `package`
   or a reference with a `sha256`; a declaration's `files` must hold
   its own `schema`; a table type must be one a parameter takes, a parameter may refer to a named type only as the rows of its table
   type, a table type's row has scalar fields, and a key's columns are the table type's;
 - **a name given twice**: two objects of one `id`, two fields of one name in a type, two parameters of one name in an object, two
-  result sets of one name, a column or an endpoint declared twice, and two columns of a table type whose names differ only in case;
+  result sets of one name, a column, an endpoint or a parameter declared twice, and two columns of a table type whose names differ only in case;
 - **what a label says of the whole document**: a document labelled 0.25 must say where something came from, one labelled 0.27
   hold a binary value, one labelled 0.28 declare something, one labelled 0.29 explain something, one labelled 0.33 record a
   description, one labelled 0.34 hold an XML value and one labelled 0.35 a fact from `xml-schema`, each anywhere in it; and a
@@ -227,8 +229,9 @@ in it, so it can't state:
 ```jsonc
 {
   "irVersion": "0.33",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
-                                      // (0.36 when it declares an endpoint's response:
-                                      // "Endpoint declarations", below; 0.35 when it holds a fact from an
+                                      // (0.37 when it declares a parameter's JSON:
+                                      // "Parameter declarations", below; 0.36 when it declares an
+                                      // endpoint's response: "Endpoint declarations", below; 0.35 when it holds a fact from an
                                       // XML schema collection: "Facets", below; 0.34 when it holds an XML
                                       // value: "Logical kinds";
                                       // 0.33 when it records a description; 0.32 when a source was read
@@ -591,7 +594,9 @@ that what the database proves and what a person asserts stay apart. `setting` is
 not inferred; with `via`, a caller's results include a declared callee's, named by `via`) or (0.28) `column-json` (the object
 reads a column declared to hold JSON of a schema, named by `via` as `schema.table.column`, which `columns` must declare; its
 `path` is `results`) or (0.36) `endpoint-json` (the object reads the response declared for an external REST endpoint, named by
-`via` as its method and URL, `GET https://billing.example/plans/{id}`, which `endpoints` must declare; its `path` is `results`).
+`via` as its method and URL, `GET https://billing.example/plans/{id}`, which `endpoints` must declare; its `path` is `results`)
+or (0.37) `parameter-json` (the object takes a parameter declared to hold JSON of a schema, or reaches a body that does, named by
+`via` as `schema.object.@name`, which `parameters` must declare; its `path` is `results`).
 `why` is the reason the config
 file gives, when it needs one. An emitter needs neither: the types already carry the result.
 
@@ -781,6 +786,25 @@ declaration types the body of the reply that a call of `sys.sp_invoke_external_r
 the generated code checks. The envelope around it is the server's, observed, and claimed without a declaration
 ([decision 0140](../../docs/decisions/0140-a-rest-response-is-typed-from-a-schema-declared-for-its-endpoint.md)).
 
+## Parameter declarations
+
+`parameters` (0.37) lists the procedures' and functions' parameters declared to hold JSON of a schema that the document's objects
+take or rest on, sorted by `parameter`; it is left out when there is none, and must not be written empty. Each is
+`{ "parameter", "schema", "pointer"?, "files" }`: the parameter as `schema.object.@name`, each part as the source names it, in
+brackets when it holds a dot or a bracket; and the schema, pointer and `files` as a column declaration has them. A parameter so
+declared has `content` beside its `type`: what a non-null value of it parses to, as declared, the JSON a caller is to send, which
+its `type`, the SQL type it is sent as, still bounds. A declaration is a claim about every caller, which the body's reads of the
+parameter take as given until it is assigned, and which the generated code checks before it sends a value
+([decision 0143](../../docs/decisions/0143-a-parameter-s-json-may-be-declared.md)).
+
+```jsonc
+"parameters": [{ "name": "@order", "type": { "kind": "string", "sql": "nvarchar(max)" },
+  "content": { "ref": "PlaceOrderOrder" }, "hasDefault": false, "output": false }],
+// …
+"parameters": [{ "parameter": "shop.place_order.@order", "schema": "schemas/order.schema.json",
+  "files": { "schemas/order.schema.json": "…" } }]
+```
+
 ## Changelog
 
 The format's versions, newest first. While the version is 0.x, every change a reader would notice moves it, and a reader
@@ -790,6 +814,12 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 A version says which properties a document uses, not whose rules made its claims: a fix to a rule may change a claim without
 changing the format. From 0.30 a document names the build that wrote it (`source.writtenBy`), which says that; a document labelled
 before 0.30 names none, and its label says only which properties it uses.
+
+**0.37** (27 Nov 2026, declared parameters; provisional until the maintainer settles it at the merge). The document's
+`parameters`, a parameter's `content`, and the override setting `parameter-json` ("Parameter declarations" and "Unknowns and
+overrides", above; [decision 0143](../../docs/decisions/0143-a-parameter-s-json-may-be-declared.md)). Only a document that
+declares a parameter's JSON is labelled 0.37: a document that declares none is written as before, labelled 0.36 or earlier by
+what else it says, and means what it meant: this reader reads it.
 
 **0.36** (27 Nov 2026, declared endpoints; provisional until the maintainer settles it at the merge). The document's
 `endpoints`, and the override setting `endpoint-json` ("Endpoint declarations" and "Unknowns and overrides", above;

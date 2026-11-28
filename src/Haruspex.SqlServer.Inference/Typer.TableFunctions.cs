@@ -48,7 +48,7 @@ internal sealed partial class Typer
             if (call.Parameters.Count != parameters.Count)
                 return Fails(IrUnknownReason.UnsupportedSource, $"{function.Name} takes {parameters.Count} arguments.");
 
-            var arguments = parameters.Select((p, i) => KeyValuePair.Create(new LocalName(p.Name), Argument(p, call.Parameters[i], scope)));
+            var arguments = parameters.Select((p, i) => KeyValuePair.Create(new LocalName(p.Name), Argument(function, p, call.Parameters[i], scope)));
             return summaries.TableFunction(function, [.. arguments], ReadUncommitted(scope), source);
         }
     }
@@ -61,12 +61,21 @@ internal sealed partial class Typer
     /// An argument of the parameter's own type keeps its facts. One not modelled is any value of the type, or null
     /// (<c>parameter</c>), as a scalar function's parameter is.
     /// </summary>
-    private Value Argument(Parameter parameter, ScalarExpression argument, ReadScope scope)
+    private Value Argument(Function function, Parameter parameter, ScalarExpression argument, ReadScope scope)
     {
         var declared = SqlTypes.ToConvertedShape(model, parameter.Type, parameter.At);
         var any = Value.Computed(declared, [new IrNullReason(IrNullRule.Parameter, parameter.Name)]);
         if (declared is UnknownShape unknown)
             return Value.Unknown(unknown);
+
+        // A parameter declared to hold JSON of a schema holds it, as every caller is claimed to send it, null exactly when the
+        // argument may be (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). The function's body takes it, so the
+        // declaration is recorded as read there. DEFAULT sends the default, which no declaration covers, so it is read as it is below.
+        if (Strip(argument) is not DefaultLiteral && summaries.DeclaredParameters.Content(parameter, function.Span) is { } content)
+        {
+            var passed = Expression(argument, scope);
+            return Value.Computed(new JsonTextShape(content) { Text = declared as ScalarShape }, passed.Shape is UnknownShape ? any.NullableBecause : passed.NullableBecause);
+        }
 
         Value value;
         if (Strip(argument) is DefaultLiteral)

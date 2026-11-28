@@ -28,4 +28,11 @@ internal sealed record ZodDeclaration(string Name, string? Summary, ZodExpressio
 
     /// <summary>The database's description of the procedure the declaration is of (<see cref="Ir.IrObject.Description"/>), the comment's first lines; null for none.</summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Whether its type is what the schema takes (<c>z.input</c>) rather than what it gives (<c>z.infer</c>): a procedure's parameters
+    /// where one is declared to hold JSON, which a caller passes as the value and the schema turns into the text sent
+    /// (<see cref="ZodExpression.JsonSent"/>). Elsewhere the two are the same type, and <c>z.infer</c> is kept.
+    /// </summary>
+    public bool Input { get; init; }
 }

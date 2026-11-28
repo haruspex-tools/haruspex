@@ -39,6 +39,11 @@ public static class IrInference
     /// <c>sys.sp_invoke_external_rest_endpoint</c> matches one; none when null. The document records each, and lists a claim on each
     /// object whose results may rest on one.
     /// </param>
+    /// <param name="parameters">
+    /// The procedures' and functions' parameters declared to hold JSON of a schema, what each body takes the parameter to hold until
+    /// it is assigned, and what a caller is to send; none when null. The document records each, gives each parameter its content,
+    /// and lists a claim on each object whose results may rest on one.
+    /// </param>
     /// <exception cref="ArgumentException">A name is not a procedure of the model: a fault of the caller, which selected it.</exception>
     public static Succeeded<IrDocument> Infer(
         DatabaseModel model,
@@ -47,7 +52,8 @@ public static class IrInference
         SessionOptions? session = null,
         IReadOnlyList<QueryFile>? queries = null,
         IReadOnlyList<DeclaredColumn>? columns = null,
-        IReadOnlyList<DeclaredEndpoint>? endpoints = null)
+        IReadOnlyList<DeclaredEndpoint>? endpoints = null,
+        IReadOnlyList<DeclaredParameter>? parameters = null)
     {
         ArgumentNullException.ThrowIfNull(model);
         ArgumentNullException.ThrowIfNull(procedures);
@@ -56,8 +62,9 @@ public static class IrInference
         session ??= SessionOptions.NotKnown;
         columns ??= [];
         endpoints ??= [];
+        parameters ??= [];
         var warnings = new List<Diagnostic>();
-        var summaries = new Summaries(model, declarations, warnings, session, columns, endpoints);
+        var summaries = new Summaries(model, declarations, warnings, session, columns, endpoints, parameters);
 
         // UNMASK declared, but a module runs as another user, whose permissions decide what it reads: every mask is kept.
         if (session.MasksAreLifted && summaries.RunsAsAnother is { } another)
@@ -84,12 +91,13 @@ public static class IrInference
             .Select(c => new IrOverride(c.Object, "results", IrOverrideSetting.Results, declarations[c.Callee].Why) { Via = c.Callee.ToString() })
             .ToList();
 
-        // Results that may hold a declared column's JSON, or a declared endpoint's response, rest on its declaration: listed for
-        // each object whose body, or a body it reaches, reads it. Results that can't be listed claim nothing to rest on.
+        // Results that may hold a declared column's JSON, a declared endpoint's response or a declared parameter's JSON rest on its
+        // declaration: listed for each object whose body, or a body it reaches, reads it (a parameter's: takes it). Results that can't
+        // be listed claim nothing to rest on.
         claims.AddRange(analysed.Select(a => (Object: a.procedure.Name.ToString(), a.procedure.Span, Analysis: a.Item2))
             .Concat(queried.Select(q => (Object: q.query.Path, q.query.Span, Analysis: q.Item2)))
             .Where(a => a.Analysis.Results is not null)
-            .SelectMany(a => ((IrOverrideSetting[])[IrOverrideSetting.ColumnJson, IrOverrideSetting.EndpointJson]).SelectMany(setting =>
+            .SelectMany(a => ((IrOverrideSetting[])[IrOverrideSetting.ColumnJson, IrOverrideSetting.EndpointJson, IrOverrideSetting.ParameterJson]).SelectMany(setting =>
                 summaries.Reads.ReadFrom(a.Span, setting).Select(name => new IrOverride(a.Object, "results", setting, null) { Via = name }))));
         var folds = IrDocumentFolds.Named(document).ToEquatableMap(name => name, name => SqlTypes.Fold(CollationFold.Named(name)));
 
@@ -99,7 +107,15 @@ public static class IrInference
 
         // A result set returned as FOR XML, which FOR JSON would build typed (docs/decisions/0133-an-xml-value-is-a-kind-of-its-own-a-branded-string.md).
         warnings.AddRange(XmlResultNotes.In(model, queries));
-        return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds, Columns = [.. columns.Select(c => c.Record)], Endpoints = [.. endpoints.Select(e => e.Record)] }, [.. warnings]);
+        // A parameter's declaration is recorded where the document says something it rests on: a parameter of one of its objects,
+        // which a caller is to send JSON of, or a claim that one of its objects reads it. One of another procedure says nothing of
+        // these objects, and would only move the document's version.
+        var taken = analysed.SelectMany(a => a.procedure.Parameters.Select(p => (Owner: a.procedure.Name, p.Name))).ToList();
+        var recorded = parameters
+            .Where(p => taken.Any(t => t.Owner == p.Owner && t.Name.Equals(p.Parameter, StringComparison.OrdinalIgnoreCase))
+                || claims.Any(c => c.Setting == IrOverrideSetting.ParameterJson && c.Via == p.Record.Parameter))
+            .Select(p => p.Record);
+        return new Succeeded<IrDocument>(document with { Overrides = [.. claims], Folds = folds, Columns = [.. columns.Select(c => c.Record)], Endpoints = [.. endpoints.Select(e => e.Record)], Parameters = [.. recorded] }, [.. warnings]);
     }
 
     /// <summary>
@@ -115,7 +131,7 @@ public static class IrInference
         ArgumentNullException.ThrowIfNull(column);
         if (model.FindReadable(view) is not View found)
             return [];
-        var read = new Summaries(model, new Dictionary<ObjectName, DeclaredResults>(), [], SessionOptions.NotKnown, [], []).View(found, uncommitted: false, found.Span);
+        var read = new Summaries(model, new Dictionary<ObjectName, DeclaredResults>(), [], SessionOptions.NotKnown, [], [], []).View(found, uncommitted: false, found.Span);
         var index = read.Names?.ToList().FindIndex(n => n.Equals(column, StringComparison.OrdinalIgnoreCase)) ?? -1;
         return index >= 0 && read.From is { } from && index < from.Count ? [.. from[index].Select(c => c.Column).Distinct(StringComparer.Ordinal)] : [];
     }

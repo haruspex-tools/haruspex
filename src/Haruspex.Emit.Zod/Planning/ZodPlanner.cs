@@ -57,14 +57,17 @@ internal static class ZodPlanner
                 declared.Add(row);
             }
 
-            var reached = graph.ReachableFrom(obj.Results?.Select(r => r.Type) ?? [])
+            // What a parameter is declared to hold as JSON is checked before it is sent, as JSON, so its types are declared too.
+            var returned = graph.ReachableFrom(obj.Results?.Select(r => r.Type) ?? []);
+            var reached = returned.Concat(graph.ReachableFrom(obj.Parameters.Select(p => p.Content).OfType<IrType>()))
+                .Distinct(StringComparer.Ordinal)
                 .Where(name => !declared.Contains(name))
                 .OrderBy(name => position[name])
                 .ToList();
             foreach (var name in reached)
             {
                 RequireIdentifier(name, refusals);
-                RequireUsableKeys(name, document.Types[name], $"which {obj.Id} returns", refusals);
+                RequireUsableKeys(name, document.Types[name], $"which {obj.Id} {(returned.Contains(name) ? "returns" : "takes")}", refusals);
 
                 // Scalars map differently by encoding (a date is a string in JSON, a Date in a row), so a type shared between
                 // encodings would need two schemas. haruspex's front end never shares one so, but an IR is a file anything can
