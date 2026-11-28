@@ -4,9 +4,10 @@ namespace Haruspex.DifferentialTests.Server;
 
 /// <summary>
 /// Where the fixture's server comes from: the public constructor, which the differential tests share, reads
-/// <see cref="SqlServerFixture.ServerVariable"/>; a fixture made for a test of its own start reads nothing, so it builds its own
-/// container even on a developer's machine where the variable is set. Each test sets the variable in the process, so the
-/// class runs alone (<see cref="EnvironmentChanging"/>); nothing else reads it once the shared fixture is made. None needs Docker or a server.
+/// <see cref="SqlServerFixture.ServerVariable"/>; a fixture made for a test of its own start reads nothing, so it builds its
+/// own container even on a developer's machine where the variable is set. Each test sets the variable in the process, so the
+/// class runs alone (<see cref="EnvironmentChanging"/>); nothing else reads it once the shared fixture is made. None needs
+/// Docker or a server.
 /// </summary>
 [Collection(typeof(EnvironmentChanging))]
 public class SqlServerFixtureServerTests
