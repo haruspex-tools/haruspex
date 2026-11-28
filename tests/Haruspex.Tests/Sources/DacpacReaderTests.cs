@@ -8,6 +8,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
+using Haruspex.SqlServer.Sources.Projects;
 using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Sources;
@@ -598,16 +599,19 @@ public partial class DacpacReaderTests
     }
 
     [Fact]
-    public void A_project_and_its_package_give_each_sequence_the_same_type()
+    public void A_folder_its_project_file_and_its_package_give_each_sequence_the_same_type()
     {
         // A folder keeps what was written (numeric(5)), a package what DacFx resolved (numeric(5,0)): the same type once resolved.
+        // The project file reads the same scripts as the folder does, through its Build items.
         var folder = SqlScriptFolder.Read(Path.Combine(Packages, "projects", "turnstile")).Model;
+        var project = SqlProjectReader.Read(Path.Combine(Packages, "projects", "turnstile", "turnstile.sqlproj")).Model;
         var package = DacpacReader.Read(Path.Combine(Packages, "turnstile", "turnstile.dacpac")).Model;
         static string?[] Types(DatabaseModel model) =>
-            [.. model.Sequences.Select(s => $"{s.Name} {SqlServer.Semantics.SchemaRules.ResolveType(model, s.Type)?.Scalar?.Declaration}")];
+            [.. model.Sequences.Select(s => $"{s.Name} {SqlServer.Semantics.SchemaRules.ResolveType(model, s.Type)?.Scalar?.Declaration}").Order(StringComparer.Ordinal)];
 
         Assert.Equal(6, folder.Sequences.Count);
-        Assert.Equal(Types(folder).Order(StringComparer.Ordinal), Types(package).Order(StringComparer.Ordinal));
+        Assert.Equal(Types(folder), Types(package));
+        Assert.Equal(Types(folder), Types(project));
     }
 
     [Fact]
