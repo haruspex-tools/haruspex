@@ -82,8 +82,8 @@ public partial class FunctionTests
     [Fact]
     public void A_node_type_the_typer_does_not_list_is_unknown()
     {
-        // AcceptedNodes is the gate: @@ROWCOUNT's node is not in it, so no arm may type it.
-        var doc = Procedure("SELECT @@ROWCOUNT AS a, n AS b FROM dbo.t;");
+        // AcceptedNodes is the gate: $PARTITION's node is not in it, so no arm may type it.
+        var doc = Procedure("SELECT $PARTITION.by_id(n) AS a, n AS b FROM dbo.t;");
         Assert.Contains("is not modelled", Why(doc, "a"), StringComparison.Ordinal);
         Assert.Equal("int", Typed(doc, "b"));
     }

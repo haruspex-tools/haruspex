@@ -342,6 +342,9 @@ internal sealed partial class Typer
 
         public override void Visit(FunctionCall node) =>
             Found |= !(node.CallTarget is null && node.OverClause is null && (IsAggregate(node) || TypingOf(node) is { ReadsOnlyItsArguments: true }));
+
+        // A value of the session (@@IDENTITY) reads more than its arguments, so it counts as a call does.
+        public override void Visit(GlobalVariableExpression node) => Found |= TypingOf(node) is not { ReadsOnlyItsArguments: true };
     }
 
     /// <summary>

@@ -511,7 +511,7 @@ IIfCall | IIF | modelled | CASE, IIF, CHOOSE and NULLIF | As CASE. | SELECT IIF(
 LeftFunctionCall | LEFT | modelled | Strings | The string varying, as long as a literal length allows. | SELECT LEFT(name, 2) AS a FROM dbo.toy;
 RightFunctionCall | RIGHT | modelled | Strings | As LEFT. | SELECT RIGHT(name, 2) AS a FROM dbo.toy;
 ParameterlessCall | CURRENT_TIMESTAMP, CURRENT_USER, … | partly unsupported-expression | Built-in functions | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. | SELECT CURRENT_TIMESTAMP AS a; && SELECT CURRENT_USER AS a;
-GlobalVariableExpression | @@ROWCOUNT, … | unknown unsupported-expression | | Not modelled yet. | SELECT @@ROWCOUNT AS a;
+GlobalVariableExpression | @@ROWCOUNT, … | partly unsupported-expression | Session values | @@ROWCOUNT, @@TRANCOUNT and @@ERROR are int, never NULL; the others aren't modelled. | SELECT @@ROWCOUNT AS a; && SELECT @@SPID AS a;
 AtTimeZoneCall | AT TIME ZONE | modelled | Dates | datetimeoffset of the date's fractional digits; NULL only when the date or the zone is. | SELECT made AT TIME ZONE 'UTC' AS a FROM dbo.toy;
 NextValueForExpression | NEXT VALUE FOR | unknown unsupported-expression | | Not modelled yet. | SELECT NEXT VALUE FOR dbo.ticket AS a;
 IdentityFunctionCall | IDENTITY( … ) in SELECT INTO | unknown unsupported-expression | | Not modelled yet. | SELECT IDENTITY(int, 1, 1) AS n INTO #t FROM dbo.toy; SELECT n FROM #t;

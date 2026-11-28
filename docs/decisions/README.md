@@ -119,6 +119,7 @@ gaps today, from 0049 to 0136, and no record was deleted to make them.
 | [0142](0142-a-call-s-declared-result-sets-are-its-type.md) | 27 Nov 2026 | A call's declared result sets are its type |
 | [0143](0143-a-parameter-s-json-may-be-declared.md) | 27 Nov 2026 | A parameter's JSON may be declared |
 | [0144](0144-for-json-auto-is-typed-from-observed-nesting.md) | 27 Nov 2026 | FOR JSON AUTO is typed from observed nesting |
+| [0146](0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md) | 19 Nov 2026 | A session value is nullable unless it is never NULL in any state |
 
 ## Writing a record
 

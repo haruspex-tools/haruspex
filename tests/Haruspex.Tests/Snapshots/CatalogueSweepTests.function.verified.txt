@@ -4007,6 +4007,10 @@ DB_NAME('ab') -> unknown unsupported-expression: DB_NAME('ab'): DB_NAME of a val
 DB_NAME(N'ab') -> unknown unsupported-expression: DB_NAME(N'ab'): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME(1e0) -> unknown unsupported-expression: DB_NAME(1e0): DB_NAME of a value that is not an integer is not modelled.
 DB_NAME($1) -> unknown unsupported-expression: DB_NAME($1): DB_NAME of a value that is not an integer is not modelled.
+@@ROWCOUNT -> int number/int32 {[-2147483648 2147483647]}
+ROWCOUNT_BIG() -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
+@@TRANCOUNT -> int number/int32 {[-2147483648 2147483647]}
+@@ERROR -> int number/int32 {[-2147483648 2147483647]}
 HASHBYTES('SHA2_256', bt) -> unknown unsupported-expression: HASHBYTES('SHA2_256', bt): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', ti) -> unknown unsupported-expression: HASHBYTES('SHA2_256', ti): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', si) -> unknown unsupported-expression: HASHBYTES('SHA2_256', si): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.

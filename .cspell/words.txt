@@ -58,6 +58,8 @@ keyset
 listextendedproperty
 localname
 ltrim
+maxvalue
+minvalue
 msoledbsql
 namespaceuri
 nchar

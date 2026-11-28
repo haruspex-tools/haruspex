@@ -92,6 +92,8 @@ internal sealed partial class Typer
 
     private const string Refusals = "Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read";
 
+    private const string Counters = "Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null";
+
     private const string OtherAggregates = "Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row";
 
     private static FunctionTyping Typing(
@@ -279,6 +281,12 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues), reads: Clause.WithinGroup),
         WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues), reads: Clause.WithinGroup),
 
+        // ---- the session and the database ----
+        Typing(ScalarFunctions.RowCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.RowCountBig, (0, 0), "bigint, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.BigInt), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.TranCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.Error, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
         Typing(RowsetFunctions.StringSplit, (2, 3), "value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1", [], ["String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked", "String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there"], null, readsOnlyItsArguments: false),
@@ -303,6 +311,7 @@ internal sealed partial class Typer
             LeftFunctionCall => ScalarFunctions.Left,
             RightFunctionCall => ScalarFunctions.Right,
             ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } => ScalarFunctions.CurrentTimestamp,
+            GlobalVariableExpression global => F.Named(global.Name, FunctionForm.Scalar),
             AtTimeZoneCall => ScalarFunctions.AtTimeZone,
             CastCall => ScalarFunctions.Cast,
             ConvertCall => ScalarFunctions.Convert,

@@ -130,6 +130,7 @@ internal static class AcceptedNodes
         [typeof(LeftFunctionCall)] = [Parameters, Collate],
         [typeof(RightFunctionCall)] = [Parameters, Collate],
         [typeof(ParameterlessCall)] = [Read(nameof(ParameterlessCall.ParameterlessCallType), "Which function: only CURRENT_TIMESTAMP has a row."), Collate],
+        [typeof(GlobalVariableExpression)] = [Read(nameof(GlobalVariableExpression.Name), "Which value, by which its row is found: only those in the catalogue have one."), Collate],
         [typeof(AtTimeZoneCall)] = [Read(nameof(AtTimeZoneCall.DateValue), "The date."), Read(nameof(AtTimeZoneCall.TimeZone), "The time zone."), Collate],
         [typeof(CastCall)] = [Read(nameof(CastCall.DataType), "The target type."), Read(nameof(CastCall.Parameter), "The value converted."), Collate],
         [typeof(ConvertCall)] =

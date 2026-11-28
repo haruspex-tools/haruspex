@@ -130,6 +130,8 @@ public partial class FunctionTableTests
     {
         if (function == ScalarFunctions.CurrentTimestamp || function == ScalarFunctions.AtTimeZone || function == RowsetFunctions.OpenJson)
             return Regex.IsMatch(body, $@"\b{function.Name}\b", RegexOptions.IgnoreCase);
+        if (function.Name.StartsWith("@@", StringComparison.Ordinal))
+            return Regex.IsMatch(body, $@"(?<![\w@]){function.Name}(?!\w)", RegexOptions.IgnoreCase);
         return Regex.Matches(body, $@"\b{function.Name}\s*\(", RegexOptions.IgnoreCase)
             .Any(m => Windowed(body, m.Index + m.Length - 1) == (function.Form == FunctionForm.Window));
     }
@@ -166,6 +168,8 @@ public partial class FunctionTableTests
     {
         if (expression == "CURRENT_TIMESTAMP")
             return ScalarFunctions.CurrentTimestamp;
+        if (expression.StartsWith("@@", StringComparison.Ordinal))
+            return BuiltInFunctions.Named(expression, FunctionForm.Scalar);
         if (Regex.IsMatch(expression, @"^\w+ AT TIME ZONE [\w']+$"))
             return ScalarFunctions.AtTimeZone;
         var open = expression.IndexOf('(', StringComparison.Ordinal);

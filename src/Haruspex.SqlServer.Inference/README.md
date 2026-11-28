@@ -2779,8 +2779,20 @@ Observed in `FunctionObservationTests.Names.cs`.
   msdb, to a user granted nothing), which depends on the server and the caller, not the project. The id is converted to
   `int`, so a wider one may overflow
   (`Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see`). The other
-  functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, `USER_NAME`, …) are not modelled: whether
+  functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, …) are not modelled: whether
   each can be NULL depends on the caller's login and rights.
+
+### Session values
+
+The values a call reads from its session or its database have the type the server fixes, and are nullable unless they are
+never NULL in any state: where the statement stands narrows nothing, so a value that is NULL outside a `CATCH` is nullable
+inside one too ([decision 0146](../../docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md)).
+Observed in `FunctionObservationTests.Session.cs`.
+
+- **`@@ROWCOUNT`**, **`@@TRANCOUNT`** and **`@@ERROR`** are `int`, and **`ROWCOUNT_BIG()`** is `bigint`, never null: at the
+  start of a batch, after a query of no rows, in a `CATCH`, and inside a scalar function
+  (`Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null`). The other global variables
+  (`@@SPID`, `@@VERSION`, …) are not modelled.
 
 ### Regular expressions
 

@@ -98,6 +98,10 @@ scalar.compress
 scalar.decompress
 scalar.parsename
 scalar.db_name
+scalar.@@rowcount
+scalar.rowcount_big
+scalar.@@trancount
+scalar.@@error
 scalar.regexp_replace
 scalar.regexp_substr
 scalar.regexp_instr
