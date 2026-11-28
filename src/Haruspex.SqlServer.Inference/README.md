@@ -2605,7 +2605,7 @@ unit tests are `XmlTests`, `XmlExpressionTests` and `XmlSchemaTests`, and the fi
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs`, `Typer.RegularExpressions.cs` and `Typer.Extremes.cs` hold their typing
+says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs`, `Typer.Session.cs`, `Typer.RegularExpressions.cs` and `Typer.Extremes.cs` hold their typing
 methods, with the numeric ones in `Typer.Numeric.cs`. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
@@ -2793,6 +2793,12 @@ Observed in `FunctionObservationTests.Session.cs`.
   start of a batch, after a query of no rows, in a `CATCH`, and inside a scalar function
   (`Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null`). The other global variables
   (`@@SPID`, `@@VERSION`, …) are not modelled.
+- **`IDENT_CURRENT(name)`** of a string is `numeric(38,0)`, the type of every identity the server reports, and always
+  `out-of-range`: NULL for a name that names no table, a table without an identity, and a table the caller isn't allowed to
+  see, which depends on the caller, not the project, so a table the project defines with an identity is no exception
+  (`Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see`).
+- **`USER_NAME(id)`** of an integer is `nvarchar(128)`, `out-of-range`: NULL for an id that names no user of the database. The
+  id is converted to `int`, so a wider one may overflow (`User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user`).
 
 ### Regular expressions
 

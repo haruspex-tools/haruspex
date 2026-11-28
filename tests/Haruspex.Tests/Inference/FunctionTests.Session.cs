@@ -31,4 +31,30 @@ public partial class FunctionTests
         Unknown(doc, "a");
         Unknown(doc, "b");
     }
+
+    [Fact]
+    public void Ident_current_is_numeric_38_0_and_always_out_of_range()
+    {
+        // Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see:
+        // NULL for a name the project defines too, since the caller may not be allowed to see it.
+        var doc = Procedure("SELECT IDENT_CURRENT('dbo.t') AS a, IDENT_CURRENT(ns) AS b, IDENT_CURRENT(vm) AS c, IDENT_CURRENT(n) AS d, IDENT_CURRENT() AS e FROM dbo.t;");
+        Assert.Equal("numeric(38,0) out-of-range", Typed(doc, "a"));
+        Assert.Equal("numeric(38,0) nullable-column out-of-range", Typed(doc, "b"));
+        Assert.Equal("numeric(38,0) nullable-column out-of-range", Typed(doc, "c"));
+        Unknown(doc, "d");
+        Unknown(doc, "e");
+    }
+
+    [Fact]
+    public void User_name_of_an_id_is_nvarchar_128_out_of_range_and_overflows_from_a_bigint()
+    {
+        // User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user. USER_NAME() without an id is not modelled.
+        var doc = Procedure("SELECT USER_NAME(n) AS a, USER_NAME(ti) AS b, USER_NAME(bi) AS c, USER_NAME(1) AS d, USER_NAME(s) AS e, USER_NAME() AS f FROM dbo.t;");
+        Assert.Equal("nvarchar(128) out-of-range", Typed(doc, "a"));
+        Assert.Equal("nvarchar(128) out-of-range", Typed(doc, "b"));
+        Assert.Equal("nvarchar(128) nullable-column out-of-range arithmetic-overflow", Typed(doc, "c"));
+        Assert.Equal("nvarchar(128) out-of-range", Typed(doc, "d"));
+        Unknown(doc, "e");
+        Unknown(doc, "f");
+    }
 }

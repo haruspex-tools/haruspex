@@ -4011,6 +4011,86 @@ DB_NAME($1) -> unknown unsupported-expression: DB_NAME($1): DB_NAME of a value t
 ROWCOUNT_BIG() -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 @@TRANCOUNT -> int number/int32 {[-2147483648 2147483647]}
 @@ERROR -> int number/int32 {[-2147483648 2147483647]}
+IDENT_CURRENT(bt) -> unknown unsupported-expression: IDENT_CURRENT(bt): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(ti) -> unknown unsupported-expression: IDENT_CURRENT(ti): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(si) -> unknown unsupported-expression: IDENT_CURRENT(si): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(i) -> unknown unsupported-expression: IDENT_CURRENT(i): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(bi) -> unknown unsupported-expression: IDENT_CURRENT(bi): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(d52) -> unknown unsupported-expression: IDENT_CURRENT(d52): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(d380) -> unknown unsupported-expression: IDENT_CURRENT(d380): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(d3838) -> unknown unsupported-expression: IDENT_CURRENT(d3838): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(n102) -> unknown unsupported-expression: IDENT_CURRENT(n102): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(m) -> unknown unsupported-expression: IDENT_CURRENT(m): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(sm) -> unknown unsupported-expression: IDENT_CURRENT(sm): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(f) -> unknown unsupported-expression: IDENT_CURRENT(f): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(r) -> unknown unsupported-expression: IDENT_CURRENT(r): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(f24) -> unknown unsupported-expression: IDENT_CURRENT(f24): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(f25) -> unknown unsupported-expression: IDENT_CURRENT(f25): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(c3) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(v10) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(vx) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(nc3) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(nv10) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(nvx) -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(dt) -> unknown unsupported-expression: IDENT_CURRENT(dt): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(tm3) -> unknown unsupported-expression: IDENT_CURRENT(tm3): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(dtm) -> unknown unsupported-expression: IDENT_CURRENT(dtm): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(dt23) -> unknown unsupported-expression: IDENT_CURRENT(dt23): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(sdt) -> unknown unsupported-expression: IDENT_CURRENT(sdt): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(dto3) -> unknown unsupported-expression: IDENT_CURRENT(dto3): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(u) -> unknown unsupported-expression: IDENT_CURRENT(u): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(bin4) -> unknown unsupported-expression: IDENT_CURRENT(bin4): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(vb10) -> unknown unsupported-expression: IDENT_CURRENT(vb10): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(x) -> unknown unsupported-expression: IDENT_CURRENT(x): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+IDENT_CURRENT(j) -> unknown (no unknown recorded)
+IDENT_CURRENT(1) -> unknown unsupported-expression: IDENT_CURRENT(1): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(12345) -> unknown unsupported-expression: IDENT_CURRENT(12345): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT(2.50) -> unknown unsupported-expression: IDENT_CURRENT(2.50): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT('ab') -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(N'ab') -> numeric(38,0) number/decimal null:out-of-range {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+IDENT_CURRENT(1e0) -> unknown unsupported-expression: IDENT_CURRENT(1e0): IDENT_CURRENT of a value that is not a string is not modelled.
+IDENT_CURRENT($1) -> unknown unsupported-expression: IDENT_CURRENT($1): IDENT_CURRENT of a value that is not a string is not modelled.
+USER_NAME(bt) -> unknown unsupported-expression: USER_NAME(bt): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(ti) -> nvarchar(128) string null:out-of-range {length<=128}
+USER_NAME(si) -> nvarchar(128) string null:out-of-range {length<=128}
+USER_NAME(i) -> nvarchar(128) string null:out-of-range {length<=128}
+USER_NAME(bi) -> nvarchar(128) string null:out-of-range,arithmetic-overflow {length<=128}
+USER_NAME(d52) -> unknown unsupported-expression: USER_NAME(d52): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(d380) -> unknown unsupported-expression: USER_NAME(d380): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(d3838) -> unknown unsupported-expression: USER_NAME(d3838): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(n102) -> unknown unsupported-expression: USER_NAME(n102): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(m) -> unknown unsupported-expression: USER_NAME(m): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(sm) -> unknown unsupported-expression: USER_NAME(sm): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(f) -> unknown unsupported-expression: USER_NAME(f): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(r) -> unknown unsupported-expression: USER_NAME(r): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(f24) -> unknown unsupported-expression: USER_NAME(f24): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(f25) -> unknown unsupported-expression: USER_NAME(f25): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(c3) -> unknown unsupported-expression: USER_NAME(c3): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(v10) -> unknown unsupported-expression: USER_NAME(v10): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(vx) -> unknown unsupported-expression: USER_NAME(vx): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(nc3) -> unknown unsupported-expression: USER_NAME(nc3): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(nv10) -> unknown unsupported-expression: USER_NAME(nv10): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(nvx) -> unknown unsupported-expression: USER_NAME(nvx): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(dt) -> unknown unsupported-expression: USER_NAME(dt): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(tm3) -> unknown unsupported-expression: USER_NAME(tm3): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(dtm) -> unknown unsupported-expression: USER_NAME(dtm): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(dt23) -> unknown unsupported-expression: USER_NAME(dt23): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(sdt) -> unknown unsupported-expression: USER_NAME(sdt): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(dto3) -> unknown unsupported-expression: USER_NAME(dto3): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(u) -> unknown unsupported-expression: USER_NAME(u): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(bin4) -> unknown unsupported-expression: USER_NAME(bin4): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(vb10) -> unknown unsupported-expression: USER_NAME(vb10): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(x) -> unknown unsupported-expression: USER_NAME(x): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(sv) -> unknown unsupported-sql-type: The type sql_variant is not modelled yet.
+USER_NAME(j) -> unknown (no unknown recorded)
+USER_NAME(1) -> nvarchar(128) string null:out-of-range {length<=128}
+USER_NAME(12345) -> nvarchar(128) string null:out-of-range {length<=128}
+USER_NAME(2.50) -> unknown unsupported-expression: USER_NAME(2.50): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME('ab') -> unknown unsupported-expression: USER_NAME('ab'): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(N'ab') -> unknown unsupported-expression: USER_NAME(N'ab'): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME(1e0) -> unknown unsupported-expression: USER_NAME(1e0): USER_NAME of a value that is not an integer is not modelled.
+USER_NAME($1) -> unknown unsupported-expression: USER_NAME($1): USER_NAME of a value that is not an integer is not modelled.
 HASHBYTES('SHA2_256', bt) -> unknown unsupported-expression: HASHBYTES('SHA2_256', bt): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', ti) -> unknown unsupported-expression: HASHBYTES('SHA2_256', ti): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.
 HASHBYTES('SHA2_256', si) -> unknown unsupported-expression: HASHBYTES('SHA2_256', si): HASHBYTES of a value that is neither text nor binary, or by an algorithm that is not text, is not modelled.

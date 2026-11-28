@@ -281,11 +281,13 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues), reads: Clause.WithinGroup),
         WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues), reads: Clause.WithinGroup),
 
-        // ---- the session and the database ----
+        // ---- the session and the database (Typer.Session.cs) ----
         Typing(ScalarFunctions.RowCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.RowCountBig, (0, 0), "bigint, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.BigInt), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.TranCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.Error, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.IdentCurrent, (1, 1), "numeric(38,0)", [OutOfRange], ["Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see"], (a, e, s) => a.IdentCurrent(Call(e), s), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.UserName, (1, 1), "nvarchar(128)", [OutOfRange, ArithmeticOverflow], ["User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user"], (a, e, s) => a.UserName(Call(e), s), readsOnlyItsArguments: false),
 
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),

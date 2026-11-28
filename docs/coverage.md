@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 136 |
-| Not in it, and unknown where they are called | 202 |
+| In the catalogue | 138 |
+| Not in it, and unknown where they are called | 200 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 178 |
@@ -195,13 +195,13 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Data type functions
 
-1 of 6 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/data-type-functions-transact-sql?view=sql-server-ver17).
+2 of 6 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/data-type-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `DATALENGTH` | `scalar.datalength` | int, bigint over max |  | [Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `IDENT_SEED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `IDENT_CURRENT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `IDENT_CURRENT` | `scalar.ident_current` | numeric(38,0) | `out-of-range` | [Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `IDENT_INCR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SQL_VARIANT_PROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -425,7 +425,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Security functions
 
-0 of 29 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/security-functions-transact-sql?view=sql-server-ver17).
+1 of 29 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/security-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -452,7 +452,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `IS_SRVROLEMEMBER` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `USER_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `LOGINPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `USER_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `USER_NAME` | `scalar.user_name` | nvarchar(128) | `out-of-range`, `arithmetic-overflow` | [User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `ORIGINAL_LOGIN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `PERMISSIONS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `HAS_DBACCESS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |

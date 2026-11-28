@@ -318,6 +318,12 @@ public static class ScalarFunctions
     /// <summary><c>@@ERROR</c>.</summary>
     public static readonly BuiltInFunction Error = new("@@error", FunctionForm.Scalar);
 
+    /// <summary><c>IDENT_CURRENT</c>.</summary>
+    public static readonly BuiltInFunction IdentCurrent = new("ident_current", FunctionForm.Scalar);
+
+    /// <summary><c>USER_NAME</c>.</summary>
+    public static readonly BuiltInFunction UserName = new("user_name", FunctionForm.Scalar);
+
     /// <summary><c>REGEXP_REPLACE</c>.</summary>
     public static readonly BuiltInFunction RegexpReplace = new("regexp_replace", FunctionForm.Scalar);
 
@@ -331,5 +337,5 @@ public static class ScalarFunctions
     public static readonly BuiltInFunction RegexpCount = new("regexp_count", FunctionForm.Scalar);
 
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, AtTimeZone, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Sin, Cos, Tan, Cot, Asin, Acos, Atan, Atn2, Degrees, Radians, Pi, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, Greatest, Least, JsonValue, JsonQuery, JsonObject, JsonArray, IsJson, NewId, HashBytes, Compress, Decompress, ParseName, DbName, RowCount, RowCountBig, TranCount, Error, RegexpReplace, RegexpSubstr, RegexpInstr, RegexpCount];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, AtTimeZone, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Sin, Cos, Tan, Cot, Asin, Acos, Atan, Atn2, Degrees, Radians, Pi, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, Greatest, Least, JsonValue, JsonQuery, JsonObject, JsonArray, IsJson, NewId, HashBytes, Compress, Decompress, ParseName, DbName, RowCount, RowCountBig, TranCount, Error, IdentCurrent, UserName, RegexpReplace, RegexpSubstr, RegexpInstr, RegexpCount];
 }
