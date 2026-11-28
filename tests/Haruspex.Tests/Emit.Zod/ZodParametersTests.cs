@@ -207,4 +207,33 @@ public class ZodParametersTests
         var refusal = Assert.Single(ZodEmitter.Emit(document).Diagnostics);
         Assert.Equal(ZodCodes.ParametersNameTaken, refusal.Code);
     }
+
+    // ---- declared JSON --------------------------------------------------------------------------------------------
+
+    /// <summary>The JSON a parameter of <paramref name="sql"/> is declared to hold, as the generated schema serialises it.</summary>
+    private static string Serialised(string sql)
+    {
+        var parameter = Parameter(new IrScalar(IrScalarKind.String, null, sql)) with { Content = new IrScalar(IrScalarKind.String, null, null) };
+        var match = Regex.Match(Emitted(parameter), @"\.transform\(\(value\) => (.*)\)\.pipe\(");
+        Assert.True(match.Success);
+        return match.Groups[1].Value;
+    }
+
+    [Theory]
+    [InlineData("varchar(max)")]
+    [InlineData("VARCHAR(60)")]
+    [InlineData("char(100)")]
+    public void A_char_or_varchar_parameter_s_json_is_sent_with_every_character_past_ascii_escaped(string sql) =>
+        // Each UTF-16 unit, so an emoji is its two surrogates' escapes: a code page keeps an escape, and the server reads it back as
+        // the character (CodePageObservationTests; through the driver, MssqlFunctionTests).
+        Assert.Equal(
+            """JSON.stringify(value).replace(/[^ -\x7f]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))""",
+            Serialised(sql));
+
+    [Theory]
+    [InlineData("nvarchar(max)")]
+    [InlineData("nchar(10)")]
+    [InlineData("json")]
+    public void An_nvarchar_or_json_parameter_s_json_is_sent_as_json_stringify_writes_it(string sql) =>
+        Assert.Equal("JSON.stringify(value)", Serialised(sql));
 }

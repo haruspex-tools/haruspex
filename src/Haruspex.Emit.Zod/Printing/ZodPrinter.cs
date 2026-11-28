@@ -20,6 +20,13 @@ namespace Haruspex.Emit.Zod.Printing;
 internal static class ZodPrinter
 {
     /// <summary>
+    /// JSON text with every UTF-16 code unit past U+007F written as a JSON escape: <c>JSON.stringify</c> leaves no unit below U+0020,
+    /// so the class of every unit but U+0020 to U+007F is those, and a regular expression without the <c>u</c> flag matches each unit, so a character outside the Basic Multilingual Plane becomes the escapes of its two surrogates, which the
+    /// server's JSON functions read back as the character (observed: <c>CodePageObservationTests</c>).
+    /// </summary>
+    private const string EscapedJson = "JSON.stringify(value).replace(/[^ -\\x7f]/g, (c) => \"\\\\u\" + c.charCodeAt(0).toString(16).padStart(4, \"0\"))";
+
+    /// <summary>
     /// JSON text whose content the IR knows: a string that must parse to a value of the content's schema. The type stays
     /// <c>string</c>, since that is what arrives (the consumer parses it); the check only rejects text that does not hold
     /// what the IR claims. The content is a function so that it may name a schema written later, such as a recursive one.
@@ -156,7 +163,7 @@ internal static class ZodPrinter
             ZodExpression.Union union => ZodModule.ZodName + ".union([" + List(union.Variants) + "])",
             ZodExpression.ObjectSchema obj => ObjectSchema(obj),
             ZodExpression.JsonText text => ZodModule.JsonTextHelperName + "(() => " + Expression(text.Content) + ")",
-            ZodExpression.JsonSent sent => Expression(sent.Content) + ".transform((value) => JSON.stringify(value)).pipe(" + Expression(sent.Fits) + ")",
+            ZodExpression.JsonSent sent => Expression(sent.Content) + ".transform((value) => " + (sent.Escaped ? EscapedJson : "JSON.stringify(value)") + ").pipe(" + Expression(sent.Fits) + ")",
             ZodExpression.Noted noted => Expression(noted.Expression),
             ZodExpression.Number number => JavaScriptNumbers.Literal(number.Value),
             ZodExpression.Text text => DoubleQuoted(text.Value),

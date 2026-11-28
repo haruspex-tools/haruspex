@@ -9,7 +9,7 @@ namespace Haruspex.SqlServer.Inference;
 /// <summary>
 /// What a string gives back once it has been text of a <c>varchar</c> or <c>char</c> type: the one rule for every read of JSON held
 /// in such text, a declared column's (<see cref="DeclaredColumns"/>), a declared parameter's (<see cref="DeclaredParameters"/>) and
-/// <c>OPENJSON … WITH</c>'s <c>varchar</c> columns (<c>Typer.Converted</c>)
+/// <c>OPENJSON … WITH</c>'s <c>varchar</c> columns (<c>Typer.Converted</c>) and a literal without <c>N</c> (<c>JsonLiterals</c>)
 /// (docs/decisions/0145-varchar-json-is-read-through-its-code-page.md).
 /// </summary>
 /// <remarks>

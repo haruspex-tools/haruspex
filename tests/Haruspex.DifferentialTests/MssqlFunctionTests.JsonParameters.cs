@@ -8,8 +8,9 @@ namespace Haruspex.DifferentialTests;
 
 /// <summary>
 /// A parameter declared to hold JSON of a schema, through the generated function: the caller passes the value, which is checked
-/// against the schema, serialised with <c>JSON.stringify</c>, and the text checked against the parameter's type before anything
-/// is sent (docs/decisions/0143-a-parameter-s-json-may-be-declared.md).
+/// against the schema, serialised with <c>JSON.stringify</c> (for <c>varchar</c>, every character past ASCII escaped), and the text
+/// checked against the parameter's type before anything is sent (docs/decisions/0143-a-parameter-s-json-may-be-declared.md,
+/// docs/decisions/0145-varchar-json-is-read-through-its-code-page.md).
 /// </summary>
 public partial class MssqlFunctionTests
 {
@@ -80,14 +81,29 @@ public partial class MssqlFunctionTests
     }
 
     [Fact]
-    public async Task A_varchar_parameter_s_json_text_is_checked_as_any_text_it_is_sent()
+    public async Task A_varchar_parameter_s_json_escapes_what_its_code_page_lacks_so_it_arrives_intact()
     {
-        // The varchar check is the one any text sent there gets: its length, and a character the code page lacks is replaced, as
-        // the generated schema's note says when the collation isn't declared: ā through the driver into code page 1252 is ?
-        // (observed). A replaced character inside a JSON string leaves JSON.
-        var response = Assert.Single(await Run(Declared(), [ReadOrder], new GeneratedFunctions.Call("code page", "readOrder", Params(("order", null), ("label", Params(("mode", "fast"), ("note", "ā")))))));
+        // Sent as itself, ā through the driver into code page 1252 is ? (observed by ANN2), and an emoji ??. Escaped, each UTF-16
+        // unit is ASCII, which every code page keeps, and json_value reads the escapes back as the characters
+        // (docs/decisions/0145-varchar-json-is-read-through-its-code-page.md).
+        var response = Assert.Single(await Run(Declared(), [ReadOrder], new GeneratedFunctions.Call("code page", "readOrder", Params(("order", null), ("label", Params(("mode", "fast"), ("note", "ā😀")))))));
 
         Assert.Null(response.Error);
-        Assert.Equal("?", response.Value!.Value[0].GetProperty("label").GetString());
+        Assert.Equal("ā😀", response.Value!.Value[0].GetProperty("label").GetString());
+    }
+
+    [Fact]
+    public async Task A_varchar_parameter_s_length_is_checked_on_the_escaped_text()
+    {
+        // {"mode":"fast","note":"…"} is 25 characters and each ā escaped is 6: six of them make 61, one more than varchar(60)
+        // keeps, though unescaped they would make 31.
+        var response = Assert.Single(await Run(Declared(), [ReadOrder], new GeneratedFunctions.Call("escaped", "readOrder", Params(("order", null), ("label", Params(("mode", "fast"), ("note", new string('ā', 6))))), Db: "untouchable")));
+        var fits = Assert.Single(await Run(Declared(), [ReadOrder], new GeneratedFunctions.Call("fits", "readOrder", Params(("order", null), ("label", Params(("mode", "fast"), ("note", new string('ā', 5))))))));
+
+        var error = response.Error!;
+        Assert.True(error.Name == "HaruspexParameterError", error.Message);
+        Assert.Equal(["label"], error.Issues.Select(i => string.Join(".", i.Path)));
+        Assert.Null(fits.Error);
+        Assert.Equal(new string('ā', 5), fits.Value!.Value[0].GetProperty("label").GetString());
     }
 }

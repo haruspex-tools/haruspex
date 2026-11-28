@@ -89,14 +89,20 @@ internal static class ParameterLowering
     /// A parameter declared to hold JSON of a schema: the caller passes the value, which is checked against the declared schema,
     /// serialised with <c>JSON.stringify</c>, and the text checked as the parameter's type checks any text it is sent (its length, and
     /// for <c>varchar</c> the code page), since the server would cut a longer one short, and cut JSON is no JSON
-    /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). A <c>json</c> parameter's text is checked as any string.
+    /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). A <c>json</c> parameter's text is checked as any string. A
+    /// <c>char</c> or <c>varchar</c> parameter's text escapes every character past ASCII, which its code page would otherwise change,
+    /// and the escaped text is what is checked (the maintainer's choice, 28 Nov 2026; docs/decisions/0145-varchar-json-is-read-through-its-code-page.md).
+    /// The IR's <c>Sql</c> is the base type, an alias type's too, so it says which.
     /// </summary>
     private static Noted Sent(IrType content, IrType type, TypeLowering types)
     {
         var text = type is IrScalar { Kind: IrScalarKind.String } scalar ? Text(scalar, inTable: false) : Z("string");
+        var escaped = type is IrScalar { Sql: { } sql } && (sql.StartsWith("varchar", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("char", StringComparison.OrdinalIgnoreCase));
         return new Noted(
-            new JsonSent(types.Type(content, IrEncoding.Json), text),
-            new ZodNote("JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, which must fit the parameter's type."));
+            new JsonSent(types.Type(content, IrEncoding.Json), text, escaped),
+            new ZodNote(escaped
+                ? "JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, every character past ASCII escaped so that the code page keeps it, and that text must fit the parameter's type."
+                : "JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, which must fit the parameter's type."));
     }
 
     /// <summary>

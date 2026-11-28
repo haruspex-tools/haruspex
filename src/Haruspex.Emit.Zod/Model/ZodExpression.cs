@@ -85,7 +85,12 @@ internal abstract record ZodExpression
     /// </summary>
     /// <param name="Content">The schema of the JSON the parameter is declared to hold.</param>
     /// <param name="Fits">The schema of the parameter's own type, which the serialised text must fit.</param>
-    public sealed record JsonSent(ZodExpression Content, ZodExpression Fits) : ZodExpression;
+    /// <param name="Escaped">
+    /// Whether every UTF-16 code unit past U+007F is written as a JSON escape, so that the text is ASCII: for a <c>char</c> or
+    /// <c>varchar</c> parameter, whose code page would change a character it lacks, where an escape is kept and read as the character
+    /// (docs/decisions/0145-varchar-json-is-read-through-its-code-page.md). <paramref name="Fits"/> checks the escaped text.
+    /// </param>
+    public sealed record JsonSent(ZodExpression Content, ZodExpression Fits, bool Escaped = false) : ZodExpression;
 
     /// <summary>
     /// An expression with a note for the reader of the generated file, such as why a check the IR states was left out. The

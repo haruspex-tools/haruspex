@@ -11,6 +11,11 @@ everything declared stands. The code page is
 the column's collation's, or the database's for a column without `COLLATE` and for a parameter; where neither is known, ASCII is
 the floor. What a caller sends keeps all the schema says.
 
+The generated function sends a `char` or `varchar` parameter's declared JSON with every UTF-16 code unit past U+007F written as a
+JSON escape, so an emoji is its two surrogates' escapes, and checks the escaped text against the parameter's type (the
+maintainer's choice, 28 Nov 2026: "I think escaping is better"). Every collation's parameter is escaped, `_UTF8` among them: it
+does no harm there, and the collation isn't always known.
+
 **Context.** `varchar` text is in its collation's code page, and a character the code page lacks, written as itself, comes back
 as another: a best fit (`Ω` as `O` under 1252, `é` as `e` under 1251) or `?`, and a character outside the Basic Multilingual
 Plane as `??`. A JSON escape (`\u03a9`) is ASCII, so it is kept, and the JSON functions give the character back. A declared
@@ -29,7 +34,12 @@ database's collation. A key folds as a value does (observed by the slice's revie
 `{"O":"x","O":1}`, so a path to `Ω` finds nothing, a path to `O` the first of the two, and `JSON.parse` the last. A path never finds
 a key written as an escape either, so a key the code page lacks is never found by a path, whichever form was written.
 
+Through the generated function and the driver (`MssqlFunctionTests`), `ā😀` sent escaped into a `varchar(60)` parameter of a 1252
+database reads back as `ā😀`, where sent as itself `ā` arrives as `?`.
+
 **Alternatives.**
+- *Refuse a `varchar` parameter's value that holds a character past ASCII*, or one the declared collation's code page lacks. It
+  loses values that escaping keeps, and the collation isn't always known.
 - *ASCII only, whatever the collation*, as decision 0143 had it. Sound, but it drops `café` under 1252 and `Ж` under 1251, which
   the code page holds. The observation shows .NET's tables agree with the server for every character, so the code page can decide.
 - *Drop every length of a string whose values aren't held*, as decision 0143 had it. A greatest length of 2n is true, and without
@@ -42,7 +52,10 @@ a key written as an escape either, so a key the code page lacks is never found b
 **Reason.** A declaration is a claim about what was written; what the reads claim must still hold after the server has stored it.
 
 **What it costs.** A `varchar` column's enum of characters its code page lacks is read as a string, so the generated types say
-less of it, though a writer that escapes them keeps them. A greatest length read through a code page is twice the declared.
+less of it, though a writer that escapes them keeps them. A greatest length read through a code page is twice the declared. An
+escaped character takes six characters of a `varchar(n)` parameter's text, or twelve for one outside the Basic Multilingual Plane,
+so a value fits fewer of them; the check refuses it before it is sent, rather than letting the server cut it short.
 
-**In the code:** `CodePageText` in the inference, used by `DeclaredColumns`, `DeclaredParameters` and `Typer.Converted`;
-`CodePageTextTests`, `CodePageReadTests` and `CodePageObservationTests`.
+**In the code:** `CodePageText` in the inference, used by `DeclaredColumns`, `DeclaredParameters`, `Typer.Converted` and
+`JsonLiterals`; `ParameterLowering.Sent` and `ZodExpression.JsonSent` in the Zod emitter; `CodePageTextTests`,
+`CodePageReadTests`, `ZodParametersTests`, `CodePageObservationTests` and `MssqlFunctionTests`.
