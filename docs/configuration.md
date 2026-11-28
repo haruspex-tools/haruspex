@@ -657,6 +657,14 @@ haruspex types it only when it is declared ([decision 0017](decisions/0017-store
   as a key a closed object doesn't list, is warned of (HAR2102)
   ([decision 0097](decisions/0097-a-path-into-json-of-known-shape-is-walked-step-by-step.md)). A declaration also claims that no
   key is written twice in one object: SQL Server's paths read the first of two, and `JSON.parse` the last.
+- **A `varchar` or `char` column's text is in its code page**, its collation's or else the database's (the `collation` setting,
+  for a folder of scripts), and a character the code page lacks, written as itself, comes back as another: `Ω` as `O` under a
+  Latin1 collation, an emoji as `??`. A JSON escape (`\u03a9`) is kept. So a string's value set is kept only when the code page
+  holds every character of every value (where the collation isn't known, only ASCII), and a greatest length of n code points is
+  read as 2n. A key the code page lacks comes back as another of its length, so it may be missing, the object may hold a key it
+  doesn't list, and a key of the same length may hold either value. Under a `_UTF8` collation, or in `nchar` and `nvarchar`,
+  everything declared stands
+  ([decision 0145](decisions/0145-varchar-json-is-read-through-its-code-page.md)).
 - **A key the schema doesn't require** may be left out, and may be null only where its schema allows `null`: an application may
   write it either way, unlike `FOR JSON`. An object its schema doesn't close (with `false` for its other keys) may hold other keys,
   which the generated code keeps (`z.looseObject` in Zod), whatever `objects` says. The top of the schema can't allow `null` (HAR3115): a column
@@ -722,8 +730,8 @@ for the parameter, with a JSON Schema file:
   with or without `WITH`, and a variable assigned the parameter, walk the schema's type as for a declared column. A read after the
   parameter is assigned has no declaration.
 - **A default other than NULL** is what a caller that leaves the parameter out sends, so the body reads it beside the declared JSON.
-  A `varchar` or `char` parameter's text is in the database's code page, so its reads keep a string's value set only when every
-  value is ASCII.
+  A `varchar` or `char` parameter's text is in the database's code page, so its reads are typed as that code page gives them back,
+  as a declared `varchar` column's are (above).
 - **NULL stays wherever the server can give it.** A caller may send NULL, so a read is nullable unless the body proves the parameter
   isn't (`IF @order IS NULL RETURN`); a key the schema doesn't require may be left out, so a lax path to it is nullable. Text that
   isn't JSON fails the call (13609), in lax mode too. JSON of another shape gives NULL where the types say otherwise: that is the

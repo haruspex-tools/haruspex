@@ -130,8 +130,9 @@ internal sealed partial class Typer
         {
             // A varchar or char value converted to the database's code page and back may change a character that is not ASCII
             // (observed: Openjson_with_converts_a_varchar_to_the_databases_code_page), so its set holds only when every value is
-            // ASCII. Which code page the source column has is not followed.
-            var codePage = from.Type.IsAnyOf(BuiltInType.VarChar, BuiltInType.Char) && sourceType.Facets?.Values is { } items && items.Items.Any(v => v.Text.Any(c => c > '\u007f'));
+            // held (CodePageText). Which code page the source column has is not followed, and a character another code page holds
+            // may take more bytes in this one and be cut, so the floor: ASCII, as of a collation not known.
+            var codePage = from.Type.IsAnyOf(BuiltInType.VarChar, BuiltInType.Char) && sourceType.Facets?.Values is { } items && !CodePageText.Keeps(items, collation: null);
             return Value.Computed(codePage && sourceType.Facets is { } facets ? source.WithFacets(facets with { Values = null }) : source, []);
         }
 
@@ -139,7 +140,9 @@ internal sealed partial class Typer
         if (sourceType.Kind == IrScalarKind.String && into.IsString && (from is null ? sourceType.Format is null : from.IsString))
         {
             var longest = MostUtf16Units(source);
-            var ascii = sourceType.Facets?.Values is { } values && values.Items.All(v => v.Text.All(c => c <= '\u007f'));
+            // Into varchar, the database's code page: a set holds when every value is held (CodePageText), and fits when its bytes
+            // do. Its lengths are counted in UTF-16 units, which are bytes only for ASCII, so the floor: ASCII, as of a collation not known.
+            var ascii = CodePageText.Keeps(sourceType.Facets?.Values, collation: null);
             var fits = into.IsMax || (longest is { } n && n <= into.Length);
             var keeps = fits && (into.Type.IsAnyOf(BuiltInType.NVarChar) || (into.Type.IsAnyOf(BuiltInType.VarChar) && from is null && ascii));
             return Value.Computed(keeps ? toShape.WithFacets(Kept(to.Facets, sourceType.Facets)) : toShape, []);

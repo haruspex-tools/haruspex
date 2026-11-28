@@ -2159,6 +2159,15 @@ variable, a temporary table or table variable of `nvarchar(max)`, `INSERT … EX
   `via`: its body reads the column, or a body it reaches does (a view, a function, a procedure it calls), which `DeclaredColumns`
   finds from what each body read and reached, since a summary is worked out once. A trigger a write fires is not followed for
   it. The document lists every declaration (`columns`), used or not, with its files' hashes.
+- **A `varchar` or `char` column is read through its code page** (`CodePageText`,
+  [decision 0145](../../docs/decisions/0145-varchar-json-is-read-through-its-code-page.md)): its collation's, or the database's
+  without `COLLATE`; a parameter's is the database's. A character the code page lacks, written as itself, comes back as another,
+  and a JSON escape is kept, so a string of the declared JSON keeps its value set only when the code page holds every character of
+  every value (ASCII where the collation isn't known; observed for every character of every code page against .NET's encodings in
+  `CodePageObservationTests`). Every UTF-16 unit comes back as one character, so otherwise a least length stands and a greatest
+  one of n code points becomes 2n. A key folds too, into another of as many units: one the code page lacks is optional, its object
+  open, and a key of the same length the join of both values. Under UTF-8 everything stands. `OPENJSON … WITH`'s `varchar` columns take the same rule at the
+  ASCII floor, since their length is in bytes.
 - **A view's column can't be declared**: it holds what it reads, and gets the declaration from the table column; declaring one
   is HAR4113, naming the table column it reads (`IrInference.ViewColumnSources`).
 
@@ -2176,8 +2185,8 @@ claimed to send it, until it is assigned ([decision 0143](../../docs/decisions/0
   to the parameter replaces it, so a read after one has no declaration.
 - **A default** other than NULL is joined in where the body starts (`Typer.WithDefault`): a caller that leaves the parameter out
   sends it, and no declaration covers it. An inline function called with `DEFAULT` reads the default as it is.
-- **A `varchar` or `char` parameter** is read through the database's code page, so its reads keep a string's value set and lengths
-  only when every value is ASCII (`DeclaredParameters`); the content a caller sends keeps them.
+- **A `varchar` or `char` parameter** is read through the database's code page, as a declared `varchar` column is (above); the
+  content a caller sends keeps all the schema says.
 - **NULL.** The parameter keeps its `parameter` reason, which only a test that proves it not NULL removes. Text that isn't JSON fails
   the call (13609, in lax mode too), so it needs no reason; JSON of another shape gives NULL under a lax path, which is what the
   declaration claims doesn't happen, as a column's declaration claims of its writers.

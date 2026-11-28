@@ -23,8 +23,9 @@ every caller, not a fact, and is recorded as declared, never as proven.
   column makes about every writer: a required key under a parameter proved not NULL is claimed not null, as declared.
 - **A `varchar` or `char` parameter's code page.** Its text is in the database's code page, so a character the code page lacks,
   sent as itself, arrives as another (`Ω` as `O`; through the driver, as `?`), though sent as a JSON escape (`\u03a9`) it is kept
-  (`ParameterJsonObservationTests`). A caller may send either, so the body's reads keep a string's value set, and its lengths, only
-  when every value is ASCII, as `OPENJSON … WITH` keeps a `varchar` value set; what a caller sends keeps all the schema says.
+  (`ParameterJsonObservationTests`). A caller may send either, so the body reads it as the database's code page gives it back, as a
+  declared `varchar` column is read ([decision 0145](0145-varchar-json-is-read-through-its-code-page.md)); what a caller sends
+  keeps all the schema says.
 - **A default other than NULL** is what a caller that leaves the parameter out sends, which no declaration covers, so the body
   starts from the declared JSON joined with the default's: a literal's JSON, or unknown for anything else. An inline function
   called with `DEFAULT` reads the default as it is.

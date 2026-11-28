@@ -1,6 +1,7 @@
 using Haruspex.Diagnostics;
 using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
+using Haruspex.SqlServer.Semantics;
 
 namespace Haruspex.SqlServer.Inference;
 
@@ -9,9 +10,14 @@ namespace Haruspex.SqlServer.Inference;
 /// that an object's claims list every declaration its results may rest on
 /// (docs/decisions/0093-a-column-s-json-is-part-of-its-type-completed-by-the-config.md).
 /// </summary>
+/// <remarks>
+/// A <c>varchar</c> or <c>char</c> column's text is in its collation's code page, so a character the code page lacks, written as
+/// itself, comes back as another: its JSON is read as <see cref="CodePageText"/> says that collation gives it back
+/// (docs/decisions/0145-varchar-json-is-read-through-its-code-page.md). Only the reads change; the declaration recorded is the schema's.
+/// </remarks>
 internal sealed class DeclaredColumns
 {
-    private readonly Dictionary<Column, (DeclaredColumn Declared, Shape? Content)> byColumn = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Column, (DeclaredColumn Declared, string? Collation, bool CodePage, Shape? Content)> byColumn = new(ReferenceEqualityComparer.Instance);
     private readonly DeclarationReads reads;
 
     /// <param name="model">The model the columns are looked up in: a declaration of a column it doesn't have is never read.</param>
@@ -22,8 +28,11 @@ internal sealed class DeclaredColumns
         this.reads = reads;
         foreach (var declared in columns)
         {
-            if (model.FindTable(declared.Table)?.Column(declared.Column) is { } column)
-                byColumn.TryAdd(column, (declared, null));
+            if (model.FindTable(declared.Table) is { } table && table.Column(declared.Column) is { } column)
+            {
+                var codePage = SchemaRules.ResolveType(model, column.Type)?.Type is { } type && type.IsAnyOf(BuiltInType.VarChar, BuiltInType.Char);
+                byColumn.TryAdd(column, (declared, SchemaRules.EffectiveCollation(model, table, column), codePage, null));
+            }
         }
     }
 
@@ -39,7 +48,8 @@ internal sealed class DeclaredColumns
         reads.Read(reader, IrOverrideSetting.ColumnJson, name);
         if (found.Content is null)
         {
-            found = found with { Content = IrShapes.ToShape(found.Declared.Content, found.Declared.Types, $"The JSON {name} is declared to hold", column.At) };
+            var (content, types) = found.CodePage ? CodePageText.Read(found.Declared.Content, found.Declared.Types, found.Collation) : (found.Declared.Content, found.Declared.Types);
+            found = found with { Content = IrShapes.ToShape(content, types, $"The JSON {name} is declared to hold", column.At) };
             byColumn[column] = found;
         }
 
