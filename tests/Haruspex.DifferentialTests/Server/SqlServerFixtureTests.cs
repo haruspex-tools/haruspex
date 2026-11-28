@@ -35,6 +35,22 @@ public class SqlServerFixtureTests
     }
 
     /// <summary>
+    /// A server given to the fixture is the one it sets up, and no container is built: here one nothing listens for, so the setup
+    /// fails on it, connecting. Needs no Docker.
+    /// </summary>
+    [Fact]
+    public async Task A_server_given_to_the_fixture_is_used_and_no_container_is_built()
+    {
+        await using var fixture = new SqlServerFixture(Unreachable, NoContainer, ContainerStart.Patience, _ => throw new InvalidOperationException("No container, so nothing to connect to."), required: true, Ignore);
+
+        var e = await Record.ExceptionAsync(fixture.RequireAsync);
+
+        Assert.Equal(0, builds);
+        Assert.Contains("Setting up the test database failed", e!.Message, StringComparison.Ordinal);
+        Assert.Contains("SqlException", e.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// SQL Server exits during its start, as on CI, when its administrator's password is too short, and says why. Both
     /// attempts' accounts say that it had exited, with its code and its log, and neither container is left behind.
     /// </summary>
@@ -93,7 +109,7 @@ public class SqlServerFixtureTests
     public async Task The_first_test_to_need_the_server_is_given_the_log_of_a_start_that_failed()
     {
         RequireDocker();
-        await using var fixture = new SqlServerFixture(Exiting, ContainerStart.Patience, _ => throw new InvalidOperationException("Never started."), required: true, Ignore);
+        await using var fixture = new SqlServerFixture(given: null, Exiting, ContainerStart.Patience, _ => throw new InvalidOperationException("Never started."), required: true, Ignore);
 
         var first = await Record.ExceptionAsync(fixture.RequireAsync);
         var second = await Record.ExceptionAsync(fixture.RequireAsync);
@@ -114,7 +130,7 @@ public class SqlServerFixtureTests
     public async Task A_failure_after_the_container_started_does_not_start_it_again()
     {
         RequireDocker();
-        await using var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, Ignore);
+        await using var fixture = new SqlServerFixture(given: null, Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, Ignore);
 
         var first = await Record.ExceptionAsync(fixture.RequireAsync);
         var second = await Record.ExceptionAsync(fixture.RequireAsync);
@@ -134,6 +150,7 @@ public class SqlServerFixtureTests
         RequireDocker();
         var reports = new List<string>();
         await using var fixture = new SqlServerFixture(
+            given: null,
             Stopping,
             ContainerStart.Patience,
             async c =>
@@ -167,7 +184,7 @@ public class SqlServerFixtureTests
         RequireDocker();
         var reports = new List<string>();
         IContainer? made = null;
-        var fixture = new SqlServerFixture(a => made = StoppingWhenTold(a), ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
+        var fixture = new SqlServerFixture(given: null, a => made = StoppingWhenTold(a), ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
         try
         {
             await Record.ExceptionAsync(fixture.RequireAsync);
@@ -193,7 +210,7 @@ public class SqlServerFixtureTests
     {
         RequireDocker();
         var reports = new List<string>();
-        var fixture = new SqlServerFixture(Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
+        var fixture = new SqlServerFixture(given: null, Sleeping, ContainerStart.Patience, _ => Task.FromResult(Unreachable), required: true, reports.Add);
         IReadOnlyList<string> before;
         try
         {
@@ -211,7 +228,7 @@ public class SqlServerFixtureTests
     }
 
     // A server nothing listens for (port 1), given up on quickly.
-    private const string Unreachable = "Server=tcp:127.0.0.1,1;User Id=sa;Password=unused;Connect Timeout=2;TrustServerCertificate=True";
+    internal const string Unreachable = "Server=tcp:127.0.0.1,1;User Id=sa;Password=unused;Connect Timeout=2;TrustServerCertificate=True";
 
     /// <summary>
     /// SQL Server given an administrator's password too short for its policy: it says so and exits with code 255, about ten
@@ -247,6 +264,13 @@ public class SqlServerFixtureTests
         Count(new ContainerBuilder(SqlServerFixture.Image).WithName($"{prefix}waits-{attempt}").WithEntrypoint("sleep").WithCommand("600")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilFileExists("/never", FileSystem.Container)).Build());
 
+    /// <summary>Counted as built, but throws rather than make a container, so a test that should build none needs no Docker.</summary>
+    private IContainer NoContainer(int attempt)
+    {
+        builds++;
+        throw new InvalidOperationException($"Attempt {attempt} built a container, but this test gives the fixture none to build.");
+    }
+
     /// <summary>The exception from a start expected to fail; a container that started after all is disposed, not left running.</summary>
     private static async Task<ContainerStartException> FailToStartAsync(Func<int, IContainer> build, TimeSpan patience)
     {
@@ -265,7 +289,7 @@ public class SqlServerFixtureTests
         return failure;
     }
 
-    private static void Ignore(string report)
+    internal static void Ignore(string report)
     {
     }
 

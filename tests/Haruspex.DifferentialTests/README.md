@@ -213,6 +213,9 @@ In order:
 3. **Neither**: every test that needs a server is skipped, and the skip says why. With
    `HARUSPEX_REQUIRE_SQLSERVER=1`, as CI sets it, the skip becomes a failure.
 
+Only the fixture the tests share reads `HARUSPEX_TEST_SQLSERVER`. The fixture's own tests of how it starts its container
+(`SqlServerFixtureTests`) make fixtures that are given no server, so they build their own containers whether it's set or not.
+
 **Testcontainers cannot use a Docker host reached over SSH** (a Docker context such as `ssh://host`).
 Checked on 9 Nov 2026 with Testcontainers 4.16.0 and `DOCKER_HOST=ssh://…`: Docker.DotNet throws
 `SshDockerEndpointNotSupportedException` ("Docker endpoints using SSH are not supported"). Testcontainers

@@ -92,12 +92,24 @@ public sealed class SqlServerFixture : IAsyncLifetime
     private PosixSignalRegistration? terminate;
 
     public SqlServerFixture()
-        : this(_ => new MsSqlBuilder(Image).Build(), ContainerStart.Patience, c => Task.FromResult(((MsSqlContainer)c).GetConnectionString()), Environment.GetEnvironmentVariable(RequireVariable) == "1", Report)
+        : this(
+            Environment.GetEnvironmentVariable(ServerVariable) is { } given && !string.IsNullOrWhiteSpace(given) ? given : null,
+            _ => new MsSqlBuilder(Image).Build(),
+            ContainerStart.Patience,
+            c => Task.FromResult(((MsSqlContainer)c).GetConnectionString()),
+            Environment.GetEnvironmentVariable(RequireVariable) == "1",
+            Report)
     {
     }
 
-    internal SqlServerFixture(Func<int, IContainer> build, TimeSpan patience, Func<IContainer, Task<string>> connect, bool required, Action<string> report)
+    /// <param name="given">
+    /// The developer's own server, or null for a container made by <paramref name="build"/>. Only the public constructor reads
+    /// <see cref="ServerVariable"/>, so a test of the fixture's own start that gives none always gets its own container, whatever
+    /// the developer has set.
+    /// </param>
+    internal SqlServerFixture(string? given, Func<int, IContainer> build, TimeSpan patience, Func<IContainer, Task<string>> connect, bool required, Action<string> report)
     {
+        Given = given;
         this.build = build;
         this.patience = patience;
         this.connect = connect;
@@ -113,6 +125,9 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     /// <summary>Databases of earlier runs found at the start and less than a day old, so not dropped (see <see cref="DropLeftoversAsync"/>).</summary>
     public IReadOnlyList<string> RecentLeftovers { get; private set; } = [];
+
+    /// <summary>The developer's own server the fixture was given, or null when it starts a container.</summary>
+    internal string? Given { get; }
 
     /// <summary>The database created for this run.</summary>
     public string Database { get; } = DatabasePrefix + Guid.NewGuid().ToString("N");
@@ -369,8 +384,8 @@ public sealed class SqlServerFixture : IAsyncLifetime
     /// </summary>
     private async Task StartAsync()
     {
-        server = Environment.GetEnvironmentVariable(ServerVariable);
-        if (string.IsNullOrWhiteSpace(server))
+        server = Given;
+        if (server is null)
         {
             try
             {
