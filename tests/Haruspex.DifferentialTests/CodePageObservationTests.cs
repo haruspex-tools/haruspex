@@ -142,6 +142,26 @@ public class CodePageObservationTests(SqlServerFixture server)
     }
 
     /// <summary>
+    /// A path never finds a key written as an escape, in <c>nvarchar</c> as in <c>varchar</c>, though <c>OPENJSON</c> gives the key
+    /// decoded and <c>json_value</c> reads an escaped value (observed first by the slice's reviewer). So the generated function sends
+    /// keys as written, and a literal with an escaped key is not read as JSON (<c>JsonLiterals</c>). The escapes are built with
+    /// <c>NCHAR(92)</c>, a backslash.
+    /// </summary>
+    [Fact]
+    public async Task A_path_never_finds_a_key_written_as_an_escape()
+    {
+        var outcome = await ObservedCall.Run(server, [], """
+            DECLARE @wide nvarchar(100) = REPLACE(N'{"#u0041":"x","b":"#u0041","#u00e9":"y"}', N'#', NCHAR(92));
+            DECLARE @narrow varchar(100) = @wide;
+            SELECT json_value(@wide, '$.A') AS wide_a, json_value(@wide, '$.b') AS wide_b, json_value(@wide, N'$."é"') AS wide_e,
+                json_value(@narrow, '$.A') AS narrow_a, json_value(@narrow, N'$."é"') AS narrow_e,
+                (SELECT COUNT(*) FROM OPENJSON(@wide) WHERE [key] IN (N'A', N'é')) AS keys;
+            """);
+
+        Assert.Equal("wide_a,wide_b,wide_e,narrow_a,narrow_e,keys: null,A,null,null,null,2", outcome.ToString());
+    }
+
+    /// <summary>
     /// In a database of a Cyrillic collation (code page 1251), a column with no <c>COLLATE</c>, a <c>varchar</c> parameter and an
     /// <c>OPENJSON … WITH</c> column of <c>varchar</c> all take the database's: é comes back as <c>e</c> and Ж is kept.
     /// </summary>

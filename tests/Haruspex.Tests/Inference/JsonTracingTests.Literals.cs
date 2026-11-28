@@ -45,6 +45,10 @@ public partial class JsonTracingTests
     [InlineData("'{\"a\":1,\"a\":2}'", "key written twice")]
     [InlineData("'[\"ā\"]'", "not an N'' literal")]
     [InlineData("'{\"ā\": 1}'", "not an N'' literal")]
+    [InlineData("'{\"\\u00e9\": 1}'", "key written with an escape")]
+    [InlineData("N'{\"\\u00e9\": 1}'", "key written with an escape")]
+    [InlineData("'{\"\\u0061\": 1}'", "key written with an escape")]
+    [InlineData("'[{\"a\": {\"\\u0062\": 1}}]'", "key written with an escape")]
     [InlineData("N'[1e400]'", "Infinity")]
     public void A_literal_that_is_not_a_json_document_is_unknown_saying_why(string literal, string why)
     {
@@ -57,10 +61,10 @@ public partial class JsonTracingTests
     {
         // Observed: A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json. The escape is six ASCII
         // characters, which every code page holds, and the JSON functions read it as the character.
-        var doc = Infer("""SELECT json_query('["\u0101", {"k\u00e9": 1}]') AS x FOR JSON PATH;""");
+        var doc = Infer("""SELECT json_query('["\u0101", {"k": "\u00e9"}]') AS x FOR JSON PATH;""");
         var items = Assert.IsType<IrTuple>(Field(doc, "x").Type).Items;
         Assert.Equal(["ā"], Assert.IsType<IrScalar>(items[0].Type).Facets!.Values!.Items.Select(v => v.Text));
-        Assert.Equal(["ké"], Fields(doc, items[1].Type).Select(f => f.Name));
+        Assert.Equal(["é"], Assert.IsType<IrScalar>(Assert.Single(Fields(doc, items[1].Type)).Type).Facets!.Values!.Items.Select(v => v.Text));
     }
 
     [Fact]

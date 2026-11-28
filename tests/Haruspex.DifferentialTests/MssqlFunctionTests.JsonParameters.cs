@@ -106,4 +106,37 @@ public partial class MssqlFunctionTests
         Assert.Null(fits.Error);
         Assert.Equal(new string('ā', 5), fits.Value!.Value[0].GetProperty("label").GetString());
     }
+
+    private const string ReadBadge = """
+        CREATE PROCEDURE outlet.read_badge @badge varchar(200) AS
+        IF @badge IS NULL RETURN;
+        SELECT json_value(@badge, N'$."café"') AS cafe, json_value(@badge, N'$.o."Ω"') AS omega;
+        """;
+
+    [Fact]
+    public async Task A_varchar_parameter_s_keys_are_sent_as_written_so_a_path_finds_one_its_code_page_holds()
+    {
+        // A path never finds a key written as an escape (observed by ann3-review), so keys are sent as themselves: café, which code
+        // page 1252 holds, arrives intact and is found; Ω, which it lacks, arrives as O, and the read side types it as optional. A
+        // greatest length lets json_value claim it fits in its 4,000 characters, so the guarded read is non-null.
+        using var dir = new TempDirectory();
+        dir.File("db/schema.sql", "CREATE SCHEMA outlet;");
+        dir.File("db/read_badge.sql", ReadBadge);
+        dir.File("schemas/badge.schema.json", """
+            { "type": "object", "required": ["café", "o"], "properties": {
+                "café": { "type": "string", "maxLength": 10 },
+                "o": { "type": "object", "required": ["Ω"], "properties": { "Ω": { "type": "string" } } } } }
+            """);
+        var project = SqlProject.Load(Path.Combine(dir.Path, "db"), "SQL_Latin1_General_CP1_CI_AS");
+        var config = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "parameters": { "outlet.read_badge.@badge": { "json": "schemas/badge.schema.json" } } }"""), Path.Combine(dir.Path, "haruspex.json"), dir.Path).Expected();
+        var doc = project.Infer(project.Procedures, config).Expected();
+
+        var response = Assert.Single(await Run(doc, [ReadBadge], new GeneratedFunctions.Call("keys", "readBadge", Params(("badge", Params(("café", "ā"), ("o", Params(("Ω", "p")))))))));
+
+        Assert.Null(response.Error);
+        Assert.Equal("ā", response.Value!.Value[0].GetProperty("cafe").GetString());
+        Assert.Equal(JsonValueKind.Null, response.Value!.Value[0].GetProperty("omega").ValueKind);
+        Assert.False(IrNavigation.Field(doc, "cafe").Nullable);
+        Assert.True(IrNavigation.Field(doc, "omega").Nullable);
+    }
 }

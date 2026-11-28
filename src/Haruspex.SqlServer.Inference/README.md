@@ -2082,6 +2082,8 @@ Every rule is observed in `JsonTracingObservationTests`.
   under a Latin1 collation, a key too: `A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json`), and which
   characters that code page has is not known here, so such a literal whose text is not ASCII is unknown. A JSON escape is ASCII,
   so it is kept and read as the character (`'["\u0101"]'` gives `["ā"]`, `CodePageText`). An `N'…'` literal is read as it is.
+  A literal with a key written as an escape (`'{"\u0061": 1}'`), `N'…'` or not, is unknown: a path never finds such a key,
+  though `OPENJSON` gives it (`A_path_never_finds_a_key_written_as_an_escape`).
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).

@@ -20,11 +20,15 @@ namespace Haruspex.Emit.Zod.Printing;
 internal static class ZodPrinter
 {
     /// <summary>
-    /// JSON text with every UTF-16 code unit past U+007F written as a JSON escape: <c>JSON.stringify</c> leaves no unit below U+0020,
-    /// so the class of every unit but U+0020 to U+007F is those, and a regular expression without the <c>u</c> flag matches each unit, so a character outside the Basic Multilingual Plane becomes the escapes of its two surrogates, which the
-    /// server's JSON functions read back as the character (observed: <c>CodePageObservationTests</c>).
+    /// JSON text with every UTF-16 code unit past U+007F in a string value written as a JSON escape, and keys as written: a path never
+    /// finds a key written as an escape (observed by ann3-review), so a key the code page holds must arrive as itself, and one it
+    /// lacks folds, which the reads allow for (<c>CodePageText</c>). Every string token is matched from the left, so each match starts at a real
+    /// opening quote, and in <c>JSON.stringify</c>'s output one followed by <c>:</c> is a key and any other a value. It leaves no unit below U+0020, so the class of every unit but U+0020 to U+007F is
+    /// those past U+007F, and a regular expression without the <c>u</c> flag matches each unit: a character outside the Basic
+    /// Multilingual Plane becomes the escapes of its two surrogates, which the server reads back as the character (observed:
+    /// <c>CodePageObservationTests</c>, <c>MssqlFunctionTests</c>).
     /// </summary>
-    private const string EscapedJson = "JSON.stringify(value).replace(/[^ -\\x7f]/g, (c) => \"\\\\u\" + c.charCodeAt(0).toString(16).padStart(4, \"0\"))";
+    private const string EscapedJson = "JSON.stringify(value).replace(/\"(?:[^\"\\\\]|\\\\.)*\"(:?)/g, (s: string, key: string) => key === \":\" ? s : s.replace(/[^ -\\x7f]/g, (c) => \"\\\\u\" + c.charCodeAt(0).toString(16).padStart(4, \"0\")))";
 
     /// <summary>
     /// JSON text whose content the IR knows: a string that must parse to a value of the content's schema. The type stays

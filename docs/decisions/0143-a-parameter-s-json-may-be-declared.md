@@ -39,7 +39,7 @@ every caller, not a fact, and is recorded as declared, never as proven.
 - **The generated function takes the value** (the maintainer's choice, 27 Nov 2026): the parameters' Zod schema checks it against
   the declared schema, serialises it with `JSON.stringify`, and checks the text as the parameter's type checks any text sent to it
   (its length; for `varchar`, what its collation says of the code page), so the function sends the text. A `char` or `varchar`
-  parameter's text has every character past ASCII escaped first
+  parameter's string values have every character past ASCII escaped first
   ([decision 0145](0145-varchar-json-is-read-through-its-code-page.md)). The parameters' exported
   type is `z.input` of the schema where a parameter is declared, the value a caller passes, and `z.infer` elsewhere, where the two
   are the same. The schema of the declared JSON is the module's schema of that type, as a result's JSON is read, so a closed

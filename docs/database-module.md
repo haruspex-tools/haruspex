@@ -96,9 +96,9 @@ The schema checks:
 - **JSON a parameter is declared to hold** ([`parameters`](configuration.md#json-a-parameter-takes-parameters)), as the value
   itself, an object rather than its text: checked against the declared schema, then serialised with `JSON.stringify`, and the text
   checked as any text sent to that type is, since a text longer than `nvarchar(n)` would arrive cut short, and cut JSON is no JSON.
-  For a `char` or `varchar` parameter every character past ASCII is written as a JSON escape (`ā` as `\u0101`, an emoji as
-  its two surrogates' escapes), which the code page keeps and the server reads back as the character, and the escaped text is what
-  is checked ([decision 0145](decisions/0145-varchar-json-is-read-through-its-code-page.md)). The parameters' type is then what the schema takes (`z.input`), the value, while the function sends the text
+  For a `char` or `varchar` parameter every character past ASCII in a string value is written as a JSON escape (`ā` as `\u0101`,
+  an emoji as its two surrogates' escapes), which the code page keeps and the server reads back as the character, and the escaped
+  text is what is checked. Keys are sent as written, since a path never finds a key written as an escape ([decision 0145](decisions/0145-varchar-json-is-read-through-its-code-page.md)). The parameters' type is then what the schema takes (`z.input`), the value, while the function sends the text
   ([decision 0143](decisions/0143-a-parameter-s-json-may-be-declared.md)).
 
 Each value is then sent with the driver's type for the declared one: `nvarchar(40)` as `sql.NVarChar(40)`, a decimal with its

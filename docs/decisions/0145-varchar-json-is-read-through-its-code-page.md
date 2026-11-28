@@ -11,10 +11,12 @@ everything declared stands. The code page is
 the column's collation's, or the database's for a column without `COLLATE` and for a parameter; where neither is known, ASCII is
 the floor. What a caller sends keeps all the schema says.
 
-The generated function sends a `char` or `varchar` parameter's declared JSON with every UTF-16 code unit past U+007F written as a
-JSON escape, so an emoji is its two surrogates' escapes, and checks the escaped text against the parameter's type (the
-maintainer's choice, 28 Nov 2026: "I think escaping is better"). Every collation's parameter is escaped, `_UTF8` among them: it
-does no harm there, and the collation isn't always known.
+The generated function sends a `char` or `varchar` parameter's declared JSON with every UTF-16 code unit past U+007F in a string
+value written as a JSON escape, so an emoji is its two surrogates' escapes, and checks the escaped text against the parameter's type
+(the maintainer's choice, 28 Nov 2026: "I think escaping is better"). Keys are sent as written: a path never finds a key written as
+an escape (observed by the slice's reviewer, in `nvarchar` too), so an escaped key would be lost under every collation, where sent
+as itself a key the code page holds is found and one it lacks folds, which the reads allow for. Every collation's parameter has its
+values escaped, `_UTF8` among them: an escaped value is read back as the character there too, and the collation isn't always known.
 
 **Context.** `varchar` text is in its collation's code page, and a character the code page lacks, written as itself, comes back
 as another: a best fit (`Ω` as `O` under 1252, `é` as `e` under 1251) or `?`, and a character outside the Basic Multilingual

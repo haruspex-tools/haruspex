@@ -90,7 +90,8 @@ internal static class ParameterLowering
     /// serialised with <c>JSON.stringify</c>, and the text checked as the parameter's type checks any text it is sent (its length, and
     /// for <c>varchar</c> the code page), since the server would cut a longer one short, and cut JSON is no JSON
     /// (docs/decisions/0143-a-parameter-s-json-may-be-declared.md). A <c>json</c> parameter's text is checked as any string. A
-    /// <c>char</c> or <c>varchar</c> parameter's text escapes every character past ASCII, which its code page would otherwise change,
+    /// <c>char</c> or <c>varchar</c> parameter's text escapes every character past ASCII in a string value, which its code page would
+    /// otherwise change, keys as written, since a path never finds an escaped key,
     /// and the escaped text is what is checked (the maintainer's choice, 28 Nov 2026; docs/decisions/0145-varchar-json-is-read-through-its-code-page.md).
     /// The IR's <c>Sql</c> is the base type, an alias type's too, so it says which.
     /// </summary>
@@ -101,7 +102,7 @@ internal static class ParameterLowering
         return new Noted(
             new JsonSent(types.Type(content, IrEncoding.Json), text, escaped),
             new ZodNote(escaped
-                ? "JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, every character past ASCII escaped so that the code page keeps it, and that text must fit the parameter's type."
+                ? "JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, every character past ASCII in a string value escaped so that the code page keeps it, and that text must fit the parameter's type."
                 : "JSON the parameter is declared to hold: the value is checked against its schema, then sent as its JSON text, which must fit the parameter's type."));
     }
 

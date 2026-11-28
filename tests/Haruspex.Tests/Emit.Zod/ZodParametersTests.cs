@@ -224,10 +224,11 @@ public class ZodParametersTests
     [InlineData("VARCHAR(60)")]
     [InlineData("char(100)")]
     public void A_char_or_varchar_parameter_s_json_is_sent_with_every_character_past_ascii_escaped(string sql) =>
-        // Each UTF-16 unit, so an emoji is its two surrogates' escapes: a code page keeps an escape, and the server reads it back as
-        // the character (CodePageObservationTests; through the driver, MssqlFunctionTests).
+        // Each UTF-16 unit of a string value, so an emoji is its two surrogates' escapes: a code page keeps an escape, and the server
+        // reads it back as the character. Keys are left as written, since a path never finds an escaped key (CodePageObservationTests;
+        // through the driver, MssqlFunctionTests).
         Assert.Equal(
-            """JSON.stringify(value).replace(/[^ -\x7f]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"))""",
+            """JSON.stringify(value).replace(/"(?:[^"\\]|\\.)*"(:?)/g, (s: string, key: string) => key === ":" ? s : s.replace(/[^ -\x7f]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")))""",
             Serialised(sql));
 
     [Theory]

@@ -192,31 +192,39 @@ public class CodePageReadTests
             "Ω": { "enum": ["x"] }, "O": { "type": "integer" }, "long": { "type": "integer" } } }
         """;
 
-    /// <summary>The object type a plain read of the declared column holds, under <paramref name="collation"/>.</summary>
-    private static IrObjectType KeyedType(string collation)
+    /// <summary>The object type a plain read of the declared column or parameter holds, in a database of <paramref name="collation"/>.</summary>
+    private static IrObjectType KeyedType(bool column, string collation)
     {
         using var dir = new TempDirectory();
-        dir.File("db/objects.sql", """
-            CREATE SCHEMA shop;
-            GO
-            CREATE TABLE shop.badges (code varchar(40) NOT NULL, body varchar(max) NOT NULL);
-            GO
-            CREATE PROCEDURE shop.p AS SELECT b.body FROM shop.badges AS b;
-            """);
+        dir.File("db/objects.sql", column
+            ? """
+                CREATE SCHEMA shop;
+                GO
+                CREATE TABLE shop.badges (code varchar(40) NOT NULL, body varchar(max) NOT NULL);
+                GO
+                CREATE PROCEDURE shop.p AS SELECT b.body FROM shop.badges AS b;
+                """
+            : """
+                CREATE SCHEMA shop;
+                GO
+                CREATE PROCEDURE shop.p @body varchar(max) AS IF @body IS NULL RETURN; SELECT @body AS body;
+                """);
         dir.File("schemas/keyed.schema.json", Keyed);
         var project = SqlProject.Load(Path.Combine(dir.Path, "db"), collation);
-        var read = ConfigReader.Read(Encoding.UTF8.GetBytes("""{ "columns": { "shop.badges.body": { "json": "schemas/keyed.schema.json" } } }"""), Path.Combine(dir.Path, "haruspex.json"), dir.Path);
+        var setting = column ? """ "columns": { "shop.badges.body": { "json": "schemas/keyed.schema.json" } } """ : """ "parameters": { "shop.p.@body": { "json": "schemas/keyed.schema.json" } } """;
+        var read = ConfigReader.Read(Encoding.UTF8.GetBytes($"{{ {setting} }}"), Path.Combine(dir.Path, "haruspex.json"), dir.Path);
         var doc = project.Infer(project.Procedures, read.Expected()).Expected();
         var content = Assert.IsType<IrRef>(Assert.IsType<IrJsonText>(Field(doc, "body").Type).Content);
         return doc.Types[content.Name];
     }
 
-    [Fact]
-    public void A_key_the_code_page_lacks_may_be_missing_leaves_the_object_open_and_may_be_written_over_a_key_of_its_length()
+    [Theory]
+    [MemberData(nameof(ColumnOrParameter))]
+    public void A_key_the_code_page_lacks_may_be_missing_leaves_the_object_open_and_may_be_written_over_a_key_of_its_length(bool column)
     {
         // Under 1252, {"Ω":"x","O":1} is stored as {"O":"x","O":1}: "Ω" is never found by a path, "O" may be read as "x", and a
         // plain read holds a key the schema doesn't list. A key of another length ("long") can't be one Ω becomes.
-        var type = KeyedType("SQL_Latin1_General_CP1_CI_AS");
+        var type = KeyedType(column, "SQL_Latin1_General_CP1_CI_AS");
         var field = type.Fields.ToDictionary(f => f.Name);
 
         Assert.True(type.Open);
@@ -226,11 +234,12 @@ public class CodePageReadTests
         Assert.IsType<IrScalar>(field["long"].Type);
     }
 
-    [Fact]
-    public void A_key_the_code_page_holds_is_read_as_declared()
+    [Theory]
+    [MemberData(nameof(ColumnOrParameter))]
+    public void A_key_the_code_page_holds_is_read_as_declared(bool column)
     {
         // Code page 1253 (Greek) holds Ω (observed by ann3-review: under Greek_CI_AS, '$."Ω"' finds it).
-        var type = KeyedType("Greek_CI_AS");
+        var type = KeyedType(column, "Greek_CI_AS");
 
         Assert.False(type.Open);
         Assert.All(type.Fields, f => Assert.Equal(IrPresence.Always, f.Presence));

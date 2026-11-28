@@ -23,7 +23,8 @@ namespace Haruspex.SqlServer.Inference;
 /// The text is embedded as it is written (<c>[ 1 , "a" ]</c> keeps its spaces, <c>1.50</c> its zero, a duplicated key both
 /// times), so a consumer parses what the literal says. An object with a duplicated key is not modelled, since parsers differ
 /// on which value wins, and so is a number past a double's range, which a client reads as Infinity. A literal without N is read
-/// in the database's code page, so one whose text is not ASCII is not modelled, though its escapes are (<see cref="Parse"/>). Strings and
+/// in the database's code page, so one whose text is not ASCII is not modelled, though its escapes are (<see cref="Parse"/>). A key written as an escape is not
+/// modelled either, since a path never finds it (<see cref="HasEscapedKey"/>). Strings and
 /// numbers have value sets of exactly their values (fact source <c>expression</c>, the
 /// literal's location); a number whose value a JavaScript number cannot hold exactly has none. A JSON <c>null</c> is
 /// <c>null-literal</c>. An array is a tuple, each position its own type, so <c>'[]'</c> is the empty tuple, which joins with
@@ -58,10 +59,30 @@ internal static class JsonLiterals
                 return NotJson(text, at, "is a bare JSON scalar, which json_query, OPENJSON and JSON_VALUE refuse (13609)");
             if (!national && !CodePageText.Holds(collation: null, text))
                 return NotJson(text, at, "is not an N'' literal and has a character that is not ASCII, which the database's code page may change");
+            if (HasEscapedKey(text))
+                return NotJson(text, at, "has a key written with an escape, which a path never finds though OPENJSON gives it");
             var why = new string?[1];
             // Never null: Of gives null only after writing why.
             return Of(document.RootElement, at, why) ?? NotJson(text, at, why[0]!);
         }
+    }
+
+    /// <summary>
+    /// Whether a key of the JSON <paramref name="text"/> is written with an escape: a path never finds such a key, in <c>nvarchar</c>
+    /// as in <c>varchar</c>, though <c>OPENJSON</c> gives it decoded (observed:
+    /// <c>CodePageObservationTests.A_path_never_finds_a_key_written_as_an_escape</c>), so the literal's shape is not one shape for
+    /// every reader.
+    /// </summary>
+    private static bool HasEscapedKey(string text)
+    {
+        var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(text), new JsonReaderOptions { CommentHandling = JsonCommentHandling.Disallow, MaxDepth = 128 });
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.PropertyName && reader.ValueIsEscaped)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
