@@ -1,0 +1,11 @@
+CREATE SEQUENCE gate.ticket AS int START WITH 1;
+GO
+CREATE SEQUENCE gate.lane AS tinyint START WITH 1 MAXVALUE 12 CYCLE;
+GO
+CREATE SEQUENCE gate.visit AS decimal(10, 0) START WITH 1;
+GO
+CREATE SEQUENCE gate.token AS numeric(5) START WITH 1;
+GO
+CREATE SEQUENCE gate.pass START WITH 1;
+GO
+CREATE SEQUENCE gate.booth AS gate.small_count START WITH 1;

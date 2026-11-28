@@ -69,10 +69,10 @@ public static class IrJsonSchema
         ("$schema", "https://json-schema.org/draft/2020-12/schema"),
         ("$id", Id),
         ("title", "haruspex.ir.json"),
-        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.EndpointsVersion}, {IrDocument.SchemaFactsVersion}, {IrDocument.XmlVersion}, {IrDocument.DescribedVersion}, {IrDocument.FoldersVersion}, {IrDocument.BuildsVersion}, {IrDocument.StampedVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, (0.31) the packages the config file declared builds, (0.32) the folders of a source read from several, (0.33) the database's descriptions of objects, parameters and fields, (0.34) XML values, (0.35) facts an XML schema collection proves, (0.36) the responses the config file declares external REST endpoints to send, and (0.37) the parameters declared to hold JSON of a schema. The format is described in src/Haruspex.Ir/README.md."),
+        ("description", $"An IR file of version {IrDocument.CurrentVersion}, {IrDocument.ParametersVersion}, {IrDocument.EndpointsVersion}, {IrDocument.SchemaFactsVersion}, {IrDocument.XmlVersion}, {IrDocument.DescribedVersion}, {IrDocument.FoldersVersion}, {IrDocument.BuildsVersion}, {IrDocument.StampedVersion}, {IrDocument.ExplainedVersion}, {IrDocument.DeclaredVersion}, {IrDocument.BytesVersion}, {IrDocument.TableTypesVersion}, {IrDocument.SourcesVersion}, {IrDocument.CombinedVersion} or {IrDocument.OneDatabaseVersion}: the shapes haruspex inferred for a set of database objects, of one database or (0.24) combining two, (0.25) where each field's value came from, (0.26) the table types its parameters take, (0.27) binary values, (0.28) the columns the config file declares to hold JSON of a schema, (0.29) what makes a reason so, in words, and a minimum length in code points, (0.30) the build that wrote it, (0.31) the packages the config file declared builds, (0.32) the folders of a source read from several, (0.33) the database's descriptions of objects, parameters and fields, (0.34) XML values, (0.35) facts an XML schema collection proves, (0.36) the responses the config file declares external REST endpoints to send, (0.37) the parameters declared to hold JSON of a schema, and (0.38) values of the session's state. The format is described in src/Haruspex.Ir/README.md."),
         ("type", "object"),
         ("properties", Node(
-            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that declares a parameter's JSON (parameters), else {IrDocument.EndpointsVersion} for one that declares an endpoint's response (endpoints), else {IrDocument.SchemaFactsVersion} for one that holds a fact an XML schema collection proves (a fact from xml-schema, which this schema can't require), else {IrDocument.XmlVersion} for one that holds an XML value (a scalar of kind xml, or a reason of the rule xml-value, which this schema can't require), else {IrDocument.DescribedVersion} for one that records a description (of an object, a parameter or a field, which this schema can't require), else {IrDocument.FoldersVersion} for one whose source was read from several folders (source.paths, or its baseline's), else {IrDocument.BuildsVersion} for one that records packages declared builds (source.builds, or its baseline's), else {IrDocument.StampedVersion} for one that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.EndpointsVersion, IrDocument.SchemaFactsVersion, IrDocument.XmlVersion, IrDocument.DescribedVersion, IrDocument.FoldersVersion, IrDocument.BuildsVersion, IrDocument.StampedVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
+            ("irVersion", Node(("description", $"The IR's version, which a reader checks before anything else, the oldest that says all the document says: {IrDocument.CurrentVersion} for a document that holds a value of the session's state (a reason of the rule session-state, which this schema can't require), else {IrDocument.ParametersVersion} for one that declares a parameter's JSON (parameters), else {IrDocument.EndpointsVersion} for one that declares an endpoint's response (endpoints), else {IrDocument.SchemaFactsVersion} for one that holds a fact an XML schema collection proves (a fact from xml-schema, which this schema can't require), else {IrDocument.XmlVersion} for one that holds an XML value (a scalar of kind xml, or a reason of the rule xml-value, which this schema can't require), else {IrDocument.DescribedVersion} for one that records a description (of an object, a parameter or a field, which this schema can't require), else {IrDocument.FoldersVersion} for one whose source was read from several folders (source.paths, or its baseline's), else {IrDocument.BuildsVersion} for one that records packages declared builds (source.builds, or its baseline's), else {IrDocument.StampedVersion} for one that names the build that wrote it (source.writtenBy), else {IrDocument.ExplainedVersion} for one in which a reason says what makes it so or a minimum length is in code points (a detail or a minimum's unit, which this schema can't require), else {IrDocument.DeclaredVersion} for one that declares a column's JSON (columns, or what only a declaration gives: any JSON, a fact from a declaration or an open object, which this schema can't require), else {IrDocument.BytesVersion} for one that holds a binary value (a scalar of kind bytes, which this schema can't require), else {IrDocument.TableTypesVersion} for one that defines a table type, else {IrDocument.SourcesVersion} for one that says where a field's value came from, else {IrDocument.CombinedVersion} for one combining two databases, else {IrDocument.OneDatabaseVersion}."), ("enum", Names(IrDocument.CurrentVersion, IrDocument.ParametersVersion, IrDocument.EndpointsVersion, IrDocument.SchemaFactsVersion, IrDocument.XmlVersion, IrDocument.DescribedVersion, IrDocument.FoldersVersion, IrDocument.BuildsVersion, IrDocument.StampedVersion, IrDocument.ExplainedVersion, IrDocument.DeclaredVersion, IrDocument.BytesVersion, IrDocument.TableTypesVersion, IrDocument.SourcesVersion, IrDocument.CombinedVersion, IrDocument.OneDatabaseVersion)))),
             ("source", Source(
                 "Where the shapes were inferred from.",
                 ("baseline", Source("For a document combining two databases (0.24), where the other, the baseline, was read from. Always given when irVersion is 0.24, never when it is 0.23.")))),
@@ -125,7 +125,7 @@ public static class IrJsonSchema
     [
         Label(IrDocument.OneDatabaseVersion, combined: false),
         Label(IrDocument.CombinedVersion, combined: true),
-        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.StampedVersion, IrDocument.BuildsVersion, IrDocument.FoldersVersion, IrDocument.DescribedVersion, IrDocument.XmlVersion, IrDocument.SchemaFactsVersion, IrDocument.EndpointsVersion, IrDocument.CurrentVersion])
+        .. ((string[])[IrDocument.SourcesVersion, IrDocument.TableTypesVersion, IrDocument.BytesVersion, IrDocument.DeclaredVersion, IrDocument.ExplainedVersion, IrDocument.StampedVersion, IrDocument.BuildsVersion, IrDocument.FoldersVersion, IrDocument.DescribedVersion, IrDocument.XmlVersion, IrDocument.SchemaFactsVersion, IrDocument.EndpointsVersion, IrDocument.ParametersVersion, IrDocument.CurrentVersion])
             .SelectMany(version => (JsonNode[])[Label(version, combined: false), Label(version, combined: true)]),
     ];
 
@@ -223,7 +223,7 @@ public static class IrJsonSchema
         var obj = describes ? Node(("type", "object")) : Lacking("description");
         var objectProperties = Node();
         // Before 0.37 no parameter has declared content.
-        string[] notInParameter = [.. describes ? [] : (string[])["description"], .. version == IrDocument.CurrentVersion ? [] : (string[])["content"]];
+        string[] notInParameter = [.. describes ? [] : (string[])["description"], .. IrDocument.IsSince(version, IrDocument.ParametersVersion) ? [] : (string[])["content"]];
         if (notInParameter.Length > 0)
             objectProperties.Add("parameters", Node(("type", "array"), ("items", Lacking(notInParameter))));
         if (!combined)
@@ -242,7 +242,7 @@ public static class IrJsonSchema
         // Before 0.28 no claim reads a declared column, before 0.36 none reads a declared endpoint, and before 0.37 none a declared
         // parameter, whose content is not given either.
         var endpoints = IrDocument.IsSince(version, IrDocument.EndpointsVersion);
-        var parameters = version == IrDocument.CurrentVersion;
+        var parameters = IrDocument.IsSince(version, IrDocument.ParametersVersion);
         string[] claims =
         [
             .. declares ? [] : (string[])[IrWireNames.Of(IrOverrideSetting.ColumnJson)],
@@ -264,14 +264,15 @@ public static class IrJsonSchema
         }
 
         // A document of 0.36 declares an endpoint, and every claim that one is read names one it lists, so it lists them; one of 0.37
-        // declares a parameter, and lists it, as a parameter's content is there only where one is declared.
+        // declares a parameter, and lists it, as a parameter's content is there only where one is declared. One of 0.38 may declare
+        // either or neither, since it is labelled by a value of the session's state.
         if (version == IrDocument.EndpointsVersion)
         {
             properties.Add("endpoints", true);
             label.Add("required", Names("endpoints"));
         }
 
-        if (parameters)
+        if (version == IrDocument.ParametersVersion)
         {
             properties.Add("parameters", true);
             label.Add("required", Names("parameters"));

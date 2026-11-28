@@ -237,7 +237,7 @@ public class DiagnosticMessagesTests
         (1001, () => Cli(["CREATE PROCEDURE lib.p AS SELECT FROM;"])),
         (1002, () => Cli([GetBook, GetBook])),
         (1003, () => Package("harbour", "crane.dacpac", "dock.*")),
-        (1004, () => Package("corpus", "WideWorldImporters.dacpac", "Website.SearchForPeople")),
+        (1004, () => Package("versions", "kiln-clr-extract.dacpac", "studio.uses_clr")),
         (1005, () => Cli([GetBook], args: ["broken.dacpac", "--include", "*.*", "--out", "out"], arrange: f => f.File("broken.dacpac", "not a zip"))),
         (1007, () => Project("<ItemGroup><ProjectReference Include=\"..\\shelf\\shelf.sqlproj\" /></ItemGroup>")),
         (1008, () => Project("<PropertyGroup><DefaultCollation>$(LibraryCollation)</DefaultCollation></PropertyGroup>")),

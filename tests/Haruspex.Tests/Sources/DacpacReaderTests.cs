@@ -8,6 +8,7 @@ using Haruspex.Ir;
 using Haruspex.SqlServer.Model;
 using Haruspex.SqlServer.Sources;
 using Haruspex.SqlServer.Sources.Dacpacs;
+using Haruspex.SqlServer.Sources.Projects;
 using static Haruspex.TestSupport.IrNavigation;
 
 namespace Haruspex.Tests.Sources;
@@ -574,10 +575,57 @@ public partial class DacpacReaderTests
     [Fact]
     public void Elements_not_modelled_are_counted_in_one_note()
     {
-        var note = Assert.Single(WideWorldImporters.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
+        // The CLR extract's assembly is not modelled; WideWorldImporters' table types and sequences are, so it has no note.
+        var note = Assert.Single(Clr.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
 
-        Assert.Contains("SqlSequence", note.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain("SqlTableType", note.Message, StringComparison.Ordinal);
+        Assert.Contains("1 SqlAssembly", note.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(WideWorldImporters.Value.Diagnostics, d => d.Code == SourceCodes.NotModelled);
+    }
+
+    [Fact]
+    public void A_sequence_is_read_with_its_type_and_bigint_when_it_declares_none()
+    {
+        // A build writes no type for a sequence without AS, and an alias type by its name. Built from projects/turnstile.
+        var model = DacpacReader.Read(Path.Combine(Packages, "turnstile", "turnstile.dacpac")).Model;
+        string? Type(string name) => model.FindSequence(new ObjectName("gate", name))?.Type?.ToString();
+
+        Assert.Equal("int", Type("ticket"));
+        Assert.Equal("tinyint", Type("lane"));
+        Assert.Equal("decimal(10,0)", Type("visit"));
+        Assert.Equal("numeric(5,0)", Type("token"));
+        Assert.Equal("bigint", Type("pass"));
+        Assert.Equal("small_count", Type("booth"));
+        Assert.Equal(6, model.Sequences.Count);
+    }
+
+    [Fact]
+    public void A_folder_its_project_file_and_its_package_give_each_sequence_the_same_type()
+    {
+        // A folder keeps what was written (numeric(5)), a package what DacFx resolved (numeric(5,0)): the same type once resolved.
+        // The project file reads the same scripts as the folder does, through its Build items.
+        var folder = SqlScriptFolder.Read(Path.Combine(Packages, "projects", "turnstile")).Model;
+        var project = SqlProjectReader.Read(Path.Combine(Packages, "projects", "turnstile", "turnstile.sqlproj")).Model;
+        var package = DacpacReader.Read(Path.Combine(Packages, "turnstile", "turnstile.dacpac")).Model;
+        static string?[] Types(DatabaseModel model) =>
+            [.. model.Sequences.Select(s => $"{s.Name} {SqlServer.Semantics.SchemaRules.ResolveType(model, s.Type)?.Scalar?.Declaration}").Order(StringComparer.Ordinal)];
+
+        Assert.Equal(6, folder.Sequences.Count);
+        Assert.Equal(Types(folder), Types(package));
+        Assert.Equal(Types(folder), Types(project));
+    }
+
+    [Fact]
+    public void Next_value_for_a_packages_sequence_is_its_type()
+    {
+        var doc = SqlProject.LoadPackage(Path.Combine(Packages, "turnstile", "turnstile.dacpac"), []).Infer([new ObjectName("gate", "admit")]).Expected();
+        string Sql(string name) => Assert.IsType<IrScalar>(Field(doc, name).Type).Sql!;
+
+        Assert.Equal("tinyint", Sql("lane"));
+        Assert.Equal("smallint", Sql("booth"));
+        Assert.Equal("bigint", Sql("pass"));
+        Assert.Equal("decimal(10,0)", Sql("visit"));
+        Assert.Equal("numeric(5,0)", Sql("token"));
+        Assert.Empty(Field(doc, "booth").NullableBecause);
     }
 
     [Fact]

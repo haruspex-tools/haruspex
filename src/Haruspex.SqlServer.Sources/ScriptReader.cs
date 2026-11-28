@@ -124,6 +124,15 @@ internal sealed class ScriptReader(string file, SchemaDeclarations into, ScriptS
                     new XmlSchemaCollection(collectionName, SyntaxReader.Span(file, collection), collection.Expression is StringLiteral { Value: var schema } ? [schema] : []),
                     At(collection));
                 break;
+            case CreateSequenceStatement sequence:
+                var sequenceName = SyntaxReader.Name(sequence.Name);
+                var declared = sequence.SequenceOptions.OfType<DataTypeSequenceOption>().FirstOrDefault()?.DataType;
+                into.Define(
+                    into.Sequences,
+                    sequenceName,
+                    new Sequence(sequenceName, SyntaxReader.Span(file, sequence), declared is null ? Sequence.Undeclared : SyntaxReader.Type(declared)),
+                    At(sequence));
+                break;
             case AlterXmlSchemaCollectionStatement addition:
                 into.XmlSchemaAdditions.Add((SyntaxReader.Name(addition.Name), addition.Expression is StringLiteral { Value: var added } ? added : null));
                 break;

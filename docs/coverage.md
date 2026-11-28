@@ -15,13 +15,13 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 132 |
-| Not in it, and unknown where they are called | 206 |
+| In the catalogue | 147 |
+| Not in it, and unknown where they are called | 191 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 177 |
+| Modelled, wholly or in part | 179 |
 | Read, changing no result | 30 |
-| Unknown | 298 |
+| Unknown | 296 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -195,13 +195,13 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Data type functions
 
-1 of 6 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/data-type-functions-transact-sql?view=sql-server-ver17).
+2 of 6 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/data-type-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `DATALENGTH` | `scalar.datalength` | int, bigint over max |  | [Len_and_datalength_are_int_or_bigint_over_max_and_len_ignores_trailing_spaces](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `IDENT_SEED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `IDENT_CURRENT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `IDENT_CURRENT` | `scalar.ident_current` | numeric(38,0) | `out-of-range` | [Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `IDENT_INCR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SQL_VARIANT_PROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -329,7 +329,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Metadata functions
 
-2 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
+4 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -372,8 +372,8 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `FULLTEXTSERVICEPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APPLOCK_MODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APPLOCK_TEST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `SCOPE_IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `NEXT VALUE FOR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `SCOPE_IDENTITY` | `scalar.scope_identity` | numeric(38,0) | `session-state` | [Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `NEXT VALUE FOR` | `scalar.next value for` | the sequence's type, never null |  | [Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs), [An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 
 ### Ranking functions
 
@@ -425,7 +425,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Security functions
 
-0 of 29 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/security-functions-transact-sql?view=sql-server-ver17).
+1 of 29 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/security-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -452,7 +452,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `IS_SRVROLEMEMBER` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `USER_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `LOGINPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `USER_NAME` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `USER_NAME` | `scalar.user_name` | nvarchar(128) | `out-of-range`, `arithmetic-overflow` | [User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `ORIGINAL_LOGIN` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `PERMISSIONS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `HAS_DBACCESS` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -501,21 +501,21 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### System functions
 
-5 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
+16 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `$PARTITION` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_PROCEDURE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `@@ERROR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_SEVERITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `@@IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_STATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_PROCEDURE` | `scalar.error_procedure` | nvarchar(128) | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `@@ERROR` | `scalar.@@error` | int, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_SEVERITY` | `scalar.error_severity` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `@@IDENTITY` | `scalar.@@identity` | numeric(38,0) | `session-state` | [Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_STATE` | `scalar.error_state` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `@@PACK_RECEIVED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `FORMATMESSAGE` | `scalar.formatmessage` | nvarchar(4000) |  | [String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
-| `@@ROWCOUNT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `@@ROWCOUNT` | `scalar.@@rowcount` | int, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `GET_FILESTREAM_TRANSACTION_CONTEXT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `@@TRANCOUNT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `@@TRANCOUNT` | `scalar.@@trancount` | int, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `GETANSINULL` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `BINARY_CHECKSUM` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `HOST_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
@@ -532,11 +532,11 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `CURRENT_TRANSACTION_ID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `NEWSEQUENTIALID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `DECOMPRESS` | `scalar.decompress` | varbinary(max) |  | [Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error](../tests/Haruspex.DifferentialTests/BinaryObservationTests.cs) |
-| `ROWCOUNT_BIG` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_LINE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ROWCOUNT_BIG` | `scalar.rowcount_big` | bigint, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_LINE` | `scalar.error_line` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `SESSION_CONTEXT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_MESSAGE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_NUMBER` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_MESSAGE` | `scalar.error_message` | nvarchar(4000) | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_NUMBER` | `scalar.error_number` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `XACT_STATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 
 ### System statistical functions
@@ -878,9 +878,9 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `LEFT` | `LeftFunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#strings) | The string varying, as long as a literal length allows. |
 | `RIGHT` | `RightFunctionCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#strings) | As LEFT. |
 | `CURRENT_TIMESTAMP, CURRENT_USER, …` | `ParameterlessCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. |
-| `@@ROWCOUNT, …` | `GlobalVariableExpression` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `@@ROWCOUNT, …` | `GlobalVariableExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#session-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | @@ROWCOUNT, @@TRANCOUNT and @@ERROR are int, never NULL; the others aren't modelled. |
 | `AT TIME ZONE` | `AtTimeZoneCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dates) | datetimeoffset of the date's fractional digits; NULL only when the date or the zone is. |
-| `NEXT VALUE FOR` | `NextValueForExpression` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `NEXT VALUE FOR` | `NextValueForExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#session-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | The sequence's type, never NULL; a sequence the project doesn't define, and OVER, aren't modelled. |
 | `IDENTITY( … ) in SELECT INTO` | `IdentityFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `$PARTITION.f( … )` | `PartitionFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `EXTRACT( part FROM x )` | `ExtractFromExpression` | never parsed from a body | Fabric's form, which SQL Server's parser doesn't make. |

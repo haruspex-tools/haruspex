@@ -116,7 +116,8 @@ A **document** is a JSON text, UTF-8 without a byte order mark, whose root is an
 of program handle one.
 
 **A writer** (a front end, or a tool that transforms documents):
-- must write `irVersion` as the oldest version that says all the document says: `"0.37"` when it declares a parameter's JSON
+- must write `irVersion` as the oldest version that says all the document says: `"0.38"` when it holds a value of the session's
+  state (a reason whose rule is `session-state`, anywhere); else `"0.37"` when it declares a parameter's JSON
   (it has `parameters`, a parameter's `content`, or a `parameter-json` claim); else `"0.36"` when it declares an endpoint's
   response (it has `endpoints`, or an `endpoint-json` claim); else `"0.35"` when it holds a fact an XML schema
   collection proves (a facet from `xml-schema`, anywhere); else `"0.34"` when it holds an XML value (a scalar
@@ -163,7 +164,8 @@ of program handle one.
   them; and must refuse a `description` in a document labelled before 0.33, and a document labelled 0.33 that has none; and must refuse an
   XML value (a scalar of kind `xml`, or a reason whose rule is `xml-value`) in a document labelled before 0.34, and a document
   labelled 0.34 that holds none; and must refuse a fact from `xml-schema` in a document labelled before 0.35, and a document
-  labelled 0.35 that holds none;
+  labelled 0.35 that holds none; and must refuse a reason whose rule is `session-state` in a document labelled before 0.38, and
+  a document labelled 0.38 that holds none;
 - must refuse an empty `description`;
 - must refuse a source's `paths` with fewer than two folders, a folder twice or an empty one, and `paths` beside `path`;
 - must refuse a binary value with a `format`, or with any facet but `length` or `maxLength`, and a binary value's length in
@@ -229,7 +231,8 @@ in it, so it can't state:
 ```jsonc
 {
   "irVersion": "0.33",                // versioned separately from the tool; a reader checks it first; the oldest that says it all
-                                      // (0.37 when it declares a parameter's JSON:
+                                      // (0.38 when it holds a value of the session's state:
+                                      // "Null reasons", below; 0.37 when it declares a parameter's JSON:
                                       // "Parameter declarations", below; 0.36 when it declares an
                                       // endpoint's response: "Endpoint declarations", below; 0.35 when it holds a fact from an
                                       // XML schema collection: "Facets", below; 0.34 when it holds an XML
@@ -553,6 +556,7 @@ not a claim: a reader must not read meaning from its words. A reader must refuse
 | `declared` | the config file declares it may be null, or absent (in declared results); `at` is the procedure declared |
 | `not-in-both` | (0.24, of a result in a combined document) only one of the two databases returns it, so against the other it is missing; `at` is the object |
 | `xml-value` | (0.34) it is read from XML by `.value()`, or as an `OPENXML` column, which is null where its path finds no node, or the XML is null; `at` is the `.value()` or `OPENXML` call |
+| `session-state` | (0.38) it reads the session's state, which holds no value in some states: SQL Server's `SCOPE_IDENTITY()` and `@@IDENTITY` before an insert gives an identity, the error functions outside a `CATCH`; where it is read never removes it; `detail` says which states; `at` is the call |
 
 ## Unknowns and overrides
 
@@ -814,6 +818,12 @@ from each version is kept in [`tests/ir-versions`](../../tests/ir-versions/READM
 A version says which properties a document uses, not whose rules made its claims: a fix to a rule may change a claim without
 changing the format. From 0.30 a document names the build that wrote it (`source.writtenBy`), which says that; a document labelled
 before 0.30 names none, and its label says only which properties it uses.
+
+**0.38** (28 Nov 2026, values of the session's state; provisional until the maintainer settles it at the merge). The null rule
+`session-state` ("Null reasons", above; [decision
+0146](../../docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md)). Only a document that holds
+a reason of that rule is labelled 0.38: a document that holds none is written as before, labelled 0.37 or earlier by what else it
+says, and means what it meant: this reader reads it.
 
 **0.37** (27 Nov 2026, declared parameters; provisional until the maintainer settles it at the merge). The document's
 `parameters`, a parameter's `content`, and the override setting `parameter-json` ("Parameter declarations" and "Unknowns and

@@ -100,6 +100,9 @@ internal sealed class SchemaDeclarations
     /// <summary>The XML schema collections, each as its <c>CREATE XML SCHEMA COLLECTION</c> declares it.</summary>
     public Dictionary<ObjectName, XmlSchemaCollection> XmlSchemaCollections { get; } = [];
 
+    /// <summary>The sequences, each with the type its <c>CREATE SEQUENCE</c> declares.</summary>
+    public Dictionary<ObjectName, Sequence> Sequences { get; } = [];
+
     /// <summary>
     /// Every <c>ALTER XML SCHEMA COLLECTION … ADD</c>, in the order read: the collection it adds to and the schema's text, null when
     /// it is not a literal. Each must run after the collection is created, so each adds to it whatever order the scripts run in.
@@ -118,7 +121,7 @@ internal sealed class SchemaDeclarations
         && Views.Count == 0 && Synonyms.Count == 0 && ConditionalSynonyms.Count == 0 && Triggers.Count == 0
         && CascadingKeys.Count == 0 && Enforcement.Count == 0 && MaskChanges.Count == 0 && KeyDisables.Count == 0
         && Deployed.Count == 0 && UnreadDeployments.Count == 0 && ExtendedProperties.Count == 0
-        && XmlSchemaCollections.Count == 0 && XmlSchemaAdditions.Count == 0;
+        && XmlSchemaCollections.Count == 0 && XmlSchemaAdditions.Count == 0 && Sequences.Count == 0;
 
     /// <summary>Adds a definition, or reports a second one of the same name, keeping the first.</summary>
     public void Define<T>(Dictionary<ObjectName, T> into, ObjectName name, T definition, SourceLocation at)
@@ -303,6 +306,7 @@ internal sealed class SchemaDeclarations
             Databases = databases ?? new Dictionary<string, DatabaseModel>(),
             ExtendedProperties = [.. ExtendedProperties.Select(p => Dacpacs.PackageProperties.Settle(p, ColumnOwner, ParameterOwner))],
             XmlSchemaCollections = [.. XmlSchemaCollections.Values.Select(WithAdditions)],
+            Sequences = [.. Sequences.Values],
         };
     }
 

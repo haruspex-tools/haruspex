@@ -92,6 +92,14 @@ internal sealed partial class Typer
 
     private const string Refusals = "Json_value_eomonth_string_agg_and_percentiles_refuse_arguments_they_cannot_read";
 
+    private const string Counters = "Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null";
+
+    private const string Identities = "Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one";
+
+    private const string Errors = "Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module";
+
+    private const string OutsideCatch = "NULL outside a CATCH";
+
     private const string OtherAggregates = "Checksum_agg_grouping_id_and_approx_count_distinct_are_aggregates_that_make_one_row";
 
     private static FunctionTyping Typing(
@@ -279,6 +287,23 @@ internal sealed partial class Typer
         WindowRow(WindowFunctions.PercentileCont, (1, 1), "float", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileBetweenValues), reads: Clause.WithinGroup),
         WindowRow(WindowFunctions.PercentileDisc, (1, 1), "the argument, with its facets", [], [Ranking, Refusals], new WindowRule(WindowResult.PercentileOfValues), reads: Clause.WithinGroup),
 
+        // ---- the session and the database (Typer.Session.cs) ----
+        Typing(ScalarFunctions.RowCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.RowCountBig, (0, 0), "bigint, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.BigInt), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.TranCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.Error, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ScopeIdentity, (0, 0), "numeric(38,0)", [SessionState], [Identities], (a, e, s) => a.Typed(Identity, [a.SessionStateAt(e, "NULL before an insert gives an identity in this scope, and after an insert into a table without one")], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.Identity, null, "numeric(38,0)", [SessionState], [Identities], (a, e, s) => a.Typed(Identity, [a.SessionStateAt(e, "NULL before an insert gives an identity in this session, and after an insert into a table without one")], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorMessage, (0, 0), "nvarchar(4000)", [SessionState], [Errors], (a, e, s) => a.Typed(new ScalarType(BuiltInType.NVarChar, 4000), [a.SessionStateAt(e, OutsideCatch)], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorNumber, (0, 0), "int", [SessionState], [Errors], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [a.SessionStateAt(e, OutsideCatch)], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorSeverity, (0, 0), "int", [SessionState], [Errors], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [a.SessionStateAt(e, OutsideCatch)], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorState, (0, 0), "int", [SessionState], [Errors], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [a.SessionStateAt(e, OutsideCatch)], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorLine, (0, 0), "int", [SessionState], [Errors], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [a.SessionStateAt(e, OutsideCatch)], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.ErrorProcedure, (0, 0), "nvarchar(128)", [SessionState], [Errors], (a, e, s) => a.Typed(Sysname, [a.SessionStateAt(e, "NULL outside a CATCH, and inside one for an error raised outside a module")], e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.IdentCurrent, (1, 1), "numeric(38,0)", [OutOfRange], ["Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see"], (a, e, s) => a.IdentCurrent(Call(e), s), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.NextValueFor, null, "the sequence's type, never null", [], ["Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent", "An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo"], (a, e, s) => a.NextValueFor((NextValueForExpression)e), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.UserName, (1, 1), "nvarchar(128)", [OutOfRange, ArithmeticOverflow], ["User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user"], (a, e, s) => a.UserName(Call(e), s), readsOnlyItsArguments: false),
+
         // ---- rowsets, typed by the relation readers ----
         Typing(RowsetFunctions.GenerateSeries, (2, 3), "one column, value, of its arguments' type, never null", [], ["Generate_series_gives_value_of_its_arguments_type_never_null_and_no_rows_for_a_null_argument"], null, readsOnlyItsArguments: false),
         Typing(RowsetFunctions.StringSplit, (2, 3), "value, of the string's type varying, never null; ordinal, a bigint from 1, with the literal 1", [], ["String_split_gives_value_of_its_strings_type_varying_never_null_and_ordinal_only_when_asked", "String_split_needs_compatibility_level_130_and_has_its_ordinal_from_there"], null, readsOnlyItsArguments: false),
@@ -303,6 +328,8 @@ internal sealed partial class Typer
             LeftFunctionCall => ScalarFunctions.Left,
             RightFunctionCall => ScalarFunctions.Right,
             ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } => ScalarFunctions.CurrentTimestamp,
+            GlobalVariableExpression global => F.Named(global.Name, FunctionForm.Scalar),
+            NextValueForExpression => ScalarFunctions.NextValueFor,
             AtTimeZoneCall => ScalarFunctions.AtTimeZone,
             CastCall => ScalarFunctions.Cast,
             ConvertCall => ScalarFunctions.Convert,

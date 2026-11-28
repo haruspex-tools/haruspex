@@ -212,6 +212,7 @@ public static class IrJsonReader
         HoldsSchemaFactsAsLabelled(document, version);
         DeclaresEndpointsAsLabelled(document, version);
         DeclaresParametersAsLabelled(document, version);
+        HoldsSessionStateAsLabelled(document, version);
         return document;
     }
 
@@ -331,10 +332,23 @@ public static class IrJsonReader
                 throw new IrFormatException($"$.overrides[{i}].via", $"is {(claim.Via is null ? "missing" : $"\"{claim.Via}\"")}, but a \"parameter-json\" claim names a parameter the document declares in $.parameters.");
         }
 
-        if (version == IrDocument.CurrentVersion && !document.DeclaresParameters)
+        if (version == IrDocument.ParametersVersion && !document.DeclaresParameters)
             throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that declares a parameter's JSON, and this one declares none. One that declares none is labelled {IrDocument.EndpointsVersion} or earlier, by what else it says.");
-        if (version != IrDocument.CurrentVersion && document.DeclaresParameters)
-            throw new IrFormatException("$.parameters", $"is given in a document of IR {version}: a document that declares a parameter's JSON is IR {IrDocument.CurrentVersion}.");
+        if (!IrDocument.IsSince(version, IrDocument.ParametersVersion) && document.DeclaresParameters)
+            throw new IrFormatException("$.parameters", $"is given in a document of IR {version}: a document that declares a parameter's JSON is IR {IrDocument.ParametersVersion} or later.");
+    }
+
+    /// <summary>
+    /// Refuses a value of the session's state (0.38) in a document labelled earlier, by its path, and a document labelled 0.38 that
+    /// holds none, which is labelled by the rest of what it says (<see cref="IrDocument.Version"/>).
+    /// </summary>
+    private static void HoldsSessionStateAsLabelled(IrDocument document, string version)
+    {
+        var first = IrDocumentSessionState.First(document);
+        if (version == IrDocument.CurrentVersion && first is null)
+            throw new IrFormatException("$.irVersion", $"is \"{version}\", which labels a document that holds a value of the session's state, and this one holds none. One that holds none is labelled {IrDocument.ParametersVersion} or earlier, by what else it says.");
+        if (version != IrDocument.CurrentVersion && first is { } path)
+            throw new IrFormatException(path, $"is given in a document of IR {version}: a value of the session's state (the rule \"session-state\") is IR {IrDocument.CurrentVersion}.");
     }
 
     /// <summary>

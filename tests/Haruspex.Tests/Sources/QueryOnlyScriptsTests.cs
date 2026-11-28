@@ -63,6 +63,7 @@ public class QueryOnlyScriptsTests
         { "Functions", "CREATE FUNCTION garden.f() RETURNS int AS BEGIN RETURN 1; END;" },
         { "FunctionChanges", "ALTER FUNCTION garden.f() RETURNS int AS BEGIN RETURN 2; END;" },
         { "Views", "CREATE VIEW garden.v AS SELECT 1 AS one;" },
+        { "Sequences", "CREATE SEQUENCE garden.tag AS int;" },
         { "Synonyms", "CREATE SYNONYM garden.s FOR garden.plant;" },
         { "ConditionalSynonyms", "IF 1 = 1 CREATE SYNONYM garden.s FOR garden.plant;" },
         { "Triggers", "CREATE TRIGGER garden.t ON garden.plant AFTER INSERT AS SELECT 1 AS one;" },
@@ -130,7 +131,7 @@ public class QueryOnlyScriptsTests
         Assert.Equal(
             [
                 "AddedKeys", "CascadingKeys", "ConditionalSynonyms", "Deployed", "Diagnostics", "Enforcement", "ExtendedProperties", "FullTextKeys", "FunctionChanges", "Functions",
-                "KeyDisables", "MaskChanges", "PeriodDrops", "ProcedureChanges", "Procedures", "Synonyms", "TableChanges", "Tables", "Triggers",
+                "KeyDisables", "MaskChanges", "PeriodDrops", "ProcedureChanges", "Procedures", "Sequences", "Synonyms", "TableChanges", "Tables", "Triggers",
                 "UnreadDeployments", "UserTypes", "Views", "XmlSchemaAdditions", "XmlSchemaCollections",
             ],
             records);

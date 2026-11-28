@@ -2617,7 +2617,7 @@ unit tests are `XmlTests`, `XmlExpressionTests` and `XmlSchemaTests`, and the fi
 
 Each is a row of the function table, `Typer.FunctionTable.cs`, the one path a call is typed by, keyed by the
 catalogue of functions in Semantics (`BuiltInFunctions`); [the guide](../../docs/internals/08-the-sql-server-type-system-as-data.md#functions)
-says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs`, `Typer.RegularExpressions.cs` and `Typer.Extremes.cs` hold their typing
+says how. `Typer.Functions.cs`, `Typer.DateFunctions.cs`, `Typer.StringFunctions.cs`, `Typer.Names.cs`, `Typer.Session.cs`, `Typer.RegularExpressions.cs` and `Typer.Extremes.cs` hold their typing
 methods, with the numeric ones in `Typer.Numeric.cs`. Every rule is observed in `FunctionObservationTests`, and the `funcs` fixture's
 runs and `DescribedTypeTests` check them on data. Each is null when an argument it reads is (its reasons), unless said
 otherwise; a value it computes has its type's facets only (`LOWER` of a `CHECK`ed column has no set). An argument of a type
@@ -2791,8 +2791,43 @@ Observed in `FunctionObservationTests.Names.cs`.
   msdb, to a user granted nothing), which depends on the server and the caller, not the project. The id is converted to
   `int`, so a wider one may overflow
   (`Db_name_is_nvarchar_128_never_null_for_the_current_database_and_null_for_an_id_the_caller_cannot_see`). The other
-  functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, `USER_NAME`, …) are not modelled: whether
+  functions of the session and the database (`ORIGINAL_DB_NAME`, `SCHEMA_NAME`, …) are not modelled: whether
   each can be NULL depends on the caller's login and rights.
+
+### Session values
+
+The values a call reads from its session or its database have the type the server fixes, and are nullable unless they are
+never NULL in any state: where the statement stands narrows nothing, so a value that is NULL outside a `CATCH` is nullable
+inside one too ([decision 0146](../../docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md)).
+Observed in `FunctionObservationTests.Session.cs`.
+
+- **`@@ROWCOUNT`**, **`@@TRANCOUNT`** and **`@@ERROR`** are `int`, and **`ROWCOUNT_BIG()`** is `bigint`, never null: at the
+  start of a batch, after a query of no rows, in a `CATCH`, and inside a scalar function
+  (`Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null`). The other global variables
+  (`@@SPID`, `@@VERSION`, …) are not modelled.
+- **`SCOPE_IDENTITY()`** and **`@@IDENTITY`** are `numeric(38,0)`, `session-state`: NULL before an insert gives an identity, in
+  the scope or the session, and again after an insert into a table without one, even when an insert before it gave one. An
+  insert of no rows leaves either as it was. A procedure called after an insert sees `@@IDENTITY` but not `SCOPE_IDENTITY()`
+  (`Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one`). So neither is
+  non-null straight after an `INSERT`, whatever it inserts into.
+- **`ERROR_MESSAGE()`** is `nvarchar(4000)`, **`ERROR_PROCEDURE()`** `nvarchar(128)`, and **`ERROR_NUMBER()`**,
+  **`ERROR_SEVERITY()`**, **`ERROR_STATE()`** and **`ERROR_LINE()`** `int`, each `session-state`: NULL outside a `CATCH`, and
+  `ERROR_PROCEDURE()` inside one too, for an error raised outside a module
+  (`Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module`). Inside a `CATCH`
+  the others hold the error's values, but where a value is read narrows nothing, so they are nullable there as well.
+- **`IDENT_CURRENT(name)`** of a string is `numeric(38,0)`, the type of every identity the server reports, and always
+  `out-of-range`: NULL for a name that names no table, a table without an identity, and a table the caller isn't allowed to
+  see, which depends on the caller, not the project, so a table the project defines with an identity is no exception
+  (`Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see`).
+- **`USER_NAME(id)`** of an integer is `nvarchar(128)`, `out-of-range`: NULL for an id that names no user of the database. The
+  id is converted to `int`, so a wider one may overflow (`User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user`).
+- **`NEXT VALUE FOR sequence`** is the sequence's type, an alias type's base type, `bigint` for one that declares none, and never
+  null: a sequence without `CYCLE` that has given its last value fails (11728) rather than giving NULL, under any options
+  (`Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent`). A name without a
+  schema is the module's schema's sequence, or else `dbo`'s, whoever calls, as a table's name is
+  (`An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo`); in a query file the caller's
+  default schema decides, so it is the one sequence of that name if only one schema has it. A sequence the project doesn't
+  define, one in another database, and `NEXT VALUE FOR … OVER` are not modelled.
 
 ### Regular expressions
 

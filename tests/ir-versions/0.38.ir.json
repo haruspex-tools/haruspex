@@ -1,0 +1,246 @@
+{
+  "irVersion": "0.38",
+  "source": {
+    "dialect": "tsql",
+    "writtenBy": {
+      "version": "0.0.0-preview-8daa1172",
+      "commit": "8daa1172506c0b8a017eb461ab7cdcc1f7e3c473"
+    },
+    "path": "turnstile.dacpac",
+    "package": "turnstile.dacpac",
+    "sha256": "778456b28eb52a29bc2a16a09a1b51f3d3f0baa9f977cbe88d636b747542733d"
+  },
+  "objects": [
+    {
+      "id": "gate.admit",
+      "name": "Admit",
+      "kind": "procedure",
+      "at": "turnstile.dacpac/[gate].[admit]:1:1",
+      "returnsCode": false,
+      "parameters": [],
+      "results": [
+        {
+          "encoding": "rowset",
+          "type": {
+            "kind": "array",
+            "items": {
+              "ref": "AdmitRow"
+            }
+          },
+          "mayBeAbsent": false,
+          "cardinality": "one"
+        }
+      ]
+    }
+  ],
+  "types": {
+    "AdmitRow": {
+      "kind": "object",
+      "identity": {
+        "procedure": "gate.admit",
+        "path": "results[0][]"
+      },
+      "fields": [
+        {
+          "name": "entry_id",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(38,0)",
+            "digits": {
+              "precision": 38,
+              "scale": 0,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            },
+            "min": {
+              "value": -99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            },
+            "max": {
+              "value": 99999999999999999999999999999999999999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(38,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": true,
+          "nullableBecause": [
+            {
+              "rule": "session-state",
+              "at": "turnstile.dacpac/[gate].[admit]:4:8",
+              "detail": "NULL before an insert gives an identity in this scope, and after an insert into a table without one"
+            }
+          ]
+        },
+        {
+          "name": "written",
+          "type": {
+            "kind": "number",
+            "format": "int32",
+            "sql": "int",
+            "min": {
+              "value": -2147483648,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            },
+            "max": {
+              "value": 2147483647,
+              "inclusive": true,
+              "from": {
+                "type": "int"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "lane",
+          "type": {
+            "kind": "number",
+            "format": "uint8",
+            "sql": "tinyint",
+            "min": {
+              "value": 0,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            },
+            "max": {
+              "value": 255,
+              "inclusive": true,
+              "from": {
+                "type": "tinyint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "booth",
+          "type": {
+            "kind": "number",
+            "format": "int16",
+            "sql": "smallint",
+            "min": {
+              "value": -32768,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            },
+            "max": {
+              "value": 32767,
+              "inclusive": true,
+              "from": {
+                "type": "smallint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "pass",
+          "type": {
+            "kind": "number",
+            "format": "int64",
+            "sql": "bigint",
+            "min": {
+              "value": -9223372036854775808,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            },
+            "max": {
+              "value": 9223372036854775807,
+              "inclusive": true,
+              "from": {
+                "type": "bigint"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "visit",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "decimal(10,0)",
+            "digits": {
+              "precision": 10,
+              "scale": 0,
+              "from": {
+                "type": "decimal(10,0)"
+              }
+            },
+            "min": {
+              "value": -9999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,0)"
+              }
+            },
+            "max": {
+              "value": 9999999999,
+              "inclusive": true,
+              "from": {
+                "type": "decimal(10,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        },
+        {
+          "name": "token",
+          "type": {
+            "kind": "number",
+            "format": "decimal",
+            "sql": "numeric(5,0)",
+            "digits": {
+              "precision": 5,
+              "scale": 0,
+              "from": {
+                "type": "numeric(5,0)"
+              }
+            },
+            "min": {
+              "value": -99999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(5,0)"
+              }
+            },
+            "max": {
+              "value": 99999,
+              "inclusive": true,
+              "from": {
+                "type": "numeric(5,0)"
+              }
+            }
+          },
+          "presence": "always",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "unknowns": [],
+  "overrides": [],
+  "folds": {}
+}

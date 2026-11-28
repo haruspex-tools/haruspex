@@ -51,6 +51,8 @@ internal static class ModelXml
     public const string SqlDmlTrigger = nameof(SqlDmlTrigger);
     public const string SqlSynonym = nameof(SqlSynonym);
     public const string SqlXmlSchemaCollection = nameof(SqlXmlSchemaCollection);
+
+    public const string SqlSequence = nameof(SqlSequence);
     public const string SchemaExpression = nameof(SchemaExpression);
     public const string XmlSchemaCollection = nameof(XmlSchemaCollection);
     public const string XmlStyle = nameof(XmlStyle);

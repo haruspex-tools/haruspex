@@ -306,6 +306,51 @@ public static class ScalarFunctions
     /// <summary><c>DB_NAME</c>.</summary>
     public static readonly BuiltInFunction DbName = new("db_name", FunctionForm.Scalar);
 
+    /// <summary><c>@@ROWCOUNT</c>, a global variable, which ScriptDom parses as a node of its own.</summary>
+    public static readonly BuiltInFunction RowCount = new("@@rowcount", FunctionForm.Scalar);
+
+    /// <summary><c>ROWCOUNT_BIG</c>.</summary>
+    public static readonly BuiltInFunction RowCountBig = new("rowcount_big", FunctionForm.Scalar);
+
+    /// <summary><c>@@TRANCOUNT</c>.</summary>
+    public static readonly BuiltInFunction TranCount = new("@@trancount", FunctionForm.Scalar);
+
+    /// <summary><c>@@ERROR</c>.</summary>
+    public static readonly BuiltInFunction Error = new("@@error", FunctionForm.Scalar);
+
+    /// <summary><c>SCOPE_IDENTITY</c>.</summary>
+    public static readonly BuiltInFunction ScopeIdentity = new("scope_identity", FunctionForm.Scalar);
+
+    /// <summary><c>@@IDENTITY</c>.</summary>
+    public static readonly BuiltInFunction Identity = new("@@identity", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_MESSAGE</c>.</summary>
+    public static readonly BuiltInFunction ErrorMessage = new("error_message", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_NUMBER</c>.</summary>
+    public static readonly BuiltInFunction ErrorNumber = new("error_number", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_SEVERITY</c>.</summary>
+    public static readonly BuiltInFunction ErrorSeverity = new("error_severity", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_STATE</c>.</summary>
+    public static readonly BuiltInFunction ErrorState = new("error_state", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_LINE</c>.</summary>
+    public static readonly BuiltInFunction ErrorLine = new("error_line", FunctionForm.Scalar);
+
+    /// <summary><c>ERROR_PROCEDURE</c>.</summary>
+    public static readonly BuiltInFunction ErrorProcedure = new("error_procedure", FunctionForm.Scalar);
+
+    /// <summary><c>IDENT_CURRENT</c>.</summary>
+    public static readonly BuiltInFunction IdentCurrent = new("ident_current", FunctionForm.Scalar);
+
+    /// <summary><c>USER_NAME</c>.</summary>
+    public static readonly BuiltInFunction UserName = new("user_name", FunctionForm.Scalar);
+
+    /// <summary><c>NEXT VALUE FOR</c>, which ScriptDom parses as a node of its own.</summary>
+    public static readonly BuiltInFunction NextValueFor = new("next value for", FunctionForm.Scalar);
+
     /// <summary><c>REGEXP_REPLACE</c>.</summary>
     public static readonly BuiltInFunction RegexpReplace = new("regexp_replace", FunctionForm.Scalar);
 
@@ -319,5 +364,5 @@ public static class ScalarFunctions
     public static readonly BuiltInFunction RegexpCount = new("regexp_count", FunctionForm.Scalar);
 
     /// <summary>Every one, in the order above.</summary>
-    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, AtTimeZone, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Sin, Cos, Tan, Cot, Asin, Acos, Atan, Atn2, Degrees, Radians, Pi, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, Greatest, Least, JsonValue, JsonQuery, JsonObject, JsonArray, IsJson, NewId, HashBytes, Compress, Decompress, ParseName, DbName, RegexpReplace, RegexpSubstr, RegexpInstr, RegexpCount];
+    public static IReadOnlyList<BuiltInFunction> All { get; } = [DateDiff, DateDiffBig, DateAdd, DatePart, Year, Month, Day, DateName, EndOfMonth, DateFromParts, DateTimeFromParts, SmallDateTimeFromParts, DateTime2FromParts, TimeFromParts, DateTimeOffsetFromParts, DateTruncate, DateBucket, SwitchOffset, ToDateTimeOffset, AtTimeZone, IsDate, GetDate, GetUtcDate, SysDateTime, SysUtcDateTime, SysDateTimeOffset, CurrentTimestamp, LTrim, RTrim, Trim, Upper, Lower, Substring, Left, Right, Len, DataLength, Replace, StringEscape, FormatMessage, Concat, ConcatWithSeparator, Ascii, Unicode, CharOf, CharIndex, PatIndex, Replicate, Space, Reverse, Stuff, QuoteName, Str, Translate, Soundex, Difference, Round, Floor, Ceiling, Abs, Sign, Power, Square, Sqrt, Exp, Log, Log10, Sin, Cos, Tan, Cot, Asin, Acos, Atan, Atn2, Degrees, Radians, Pi, Cast, Convert, TryCast, TryConvert, IsNull, Coalesce, NullIf, Iif, Choose, Greatest, Least, JsonValue, JsonQuery, JsonObject, JsonArray, IsJson, NewId, HashBytes, Compress, Decompress, ParseName, DbName, RowCount, RowCountBig, TranCount, Error, ScopeIdentity, Identity, ErrorMessage, ErrorNumber, ErrorSeverity, ErrorState, ErrorLine, ErrorProcedure, IdentCurrent, UserName, NextValueFor, RegexpReplace, RegexpSubstr, RegexpInstr, RegexpCount];
 }

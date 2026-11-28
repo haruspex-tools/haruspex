@@ -76,6 +76,7 @@ Why a value may be null, or a result missing: the IR's `nullableBecause` and `ab
 | [`declared`](declared.md) | the config file declares it may be |
 | [`not-in-both`](not-in-both.md) | only one of the two databases returns it |
 | [`xml-value`](xml-value.md) | XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null |
+| [`session-state`](session-state.md) | it reads the session's state, which holds no value in some states |
 
 ## Unknown reasons
 
