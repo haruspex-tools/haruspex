@@ -4,9 +4,9 @@ using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Haruspex.SqlServer.Inference;
 
-// The values a call reads from its session or its database that take arguments: IDENT_CURRENT and USER_NAME of an id. Each
-// has the type the server fixes and is nullable unless it is never NULL in any state (decision 0146). README.md in this folder
-// ("Session values") gives the rules, observed in FunctionObservationTests.Session.cs.
+// The values a call reads from its session or its database that take arguments or a name: IDENT_CURRENT, USER_NAME of an id and
+// NEXT VALUE FOR. Each has the type the server fixes and is nullable unless it is never NULL in any state (decision 0146).
+// README.md in this folder ("Session values") gives the rules, observed in FunctionObservationTests.Session.cs.
 internal sealed partial class Typer
 {
     /// <summary>
@@ -40,6 +40,23 @@ internal sealed partial class Typer
         if (!FitsInt(value, call.Parameters[0]))
             because = NullReasons.Join(because, Overflow(call));
         return Typed(Sysname, because, call);
+    }
+
+    /// <summary>
+    /// <c>NEXT VALUE FOR sequence</c>: the sequence's type, an alias type's base type, never null, since a sequence that has
+    /// given its last value fails (11728) rather than giving NULL, under any options (observed:
+    /// Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent). A sequence the
+    /// model doesn't hold, or one whose type it can't resolve, is not modelled; so is <c>OVER</c>.
+    /// </summary>
+    private Value NextValueFor(NextValueForExpression next)
+    {
+        if (next.OverClause is not null)
+            return NotModelled(next, "NEXT VALUE FOR with OVER is not modelled.");
+        if (binder.ResolveSequence(next.SequenceName) is not { } sequence)
+            return NotModelled(next, $"{Text(next.SequenceName)} is not a sequence of the project, or which one it is depends on the caller.");
+        if (SchemaRules.ResolveType(model, sequence.Type)?.Scalar is not { } type)
+            return NotModelled(next, $"the type of {sequence.Name} is not known.");
+        return Typed(type, [], next);
     }
 
     /// <summary>The type of an identity the server reports, whatever the column's own type: numeric(38,0).</summary>

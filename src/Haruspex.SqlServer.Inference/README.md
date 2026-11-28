@@ -2799,6 +2799,13 @@ Observed in `FunctionObservationTests.Session.cs`.
   (`Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see`).
 - **`USER_NAME(id)`** of an integer is `nvarchar(128)`, `out-of-range`: NULL for an id that names no user of the database. The
   id is converted to `int`, so a wider one may overflow (`User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user`).
+- **`NEXT VALUE FOR sequence`** is the sequence's type, an alias type's base type, `bigint` for one that declares none, and never
+  null: a sequence without `CYCLE` that has given its last value fails (11728) rather than giving NULL, under any options
+  (`Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent`). A name without a
+  schema is the module's schema's sequence, or else `dbo`'s, whoever calls, as a table's name is
+  (`An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo`); in a query file the caller's
+  default schema decides, so it is the one sequence of that name if only one schema has it. A sequence the project doesn't
+  define, one in another database, and `NEXT VALUE FOR … OVER` are not modelled.
 
 ### Regular expressions
 

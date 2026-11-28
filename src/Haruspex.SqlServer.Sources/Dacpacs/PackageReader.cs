@@ -88,6 +88,10 @@ internal static class PackageReader
                     var collection = XmlSchemaCollection(element, package.Name);
                     into.Define(into.XmlSchemaCollections, collection.Name, collection, collection.Span.Start);
                     break;
+                case ModelXml.SqlSequence:
+                    var sequence = Sequence(element, package.Name);
+                    into.Define(into.Sequences, sequence.Name, sequence, sequence.Span.Start);
+                    break;
                 case ModelXml.SqlExtendedProperty:
                     if (PackageProperties.Read(element, package.Name, defined) is { } property)
                         into.ExtendedProperties.Add(property);
@@ -235,6 +239,18 @@ internal static class PackageReader
         var name = ElementName.Object(ModelXml.Named(element));
         var (read, text, _) = PackageProperties.Value(ModelXml.Property(element, ModelXml.SchemaExpression));
         return new XmlSchemaCollection(name, PackageLocation.Whole(PackageLocation.File(package, name), 1), read && text is not null ? [text] : []);
+    }
+
+    /// <summary>
+    /// A sequence, with its type from its specifier: a build writes none for a sequence that declares none, which the server
+    /// takes as <c>bigint</c> (observed: a sequence without <c>AS</c> built with Microsoft.Build.Sql 2.3.0, in
+    /// <c>tests/dacpacs/turnstile</c>), and an alias type by its name. A specifier it can't read leaves the type unknown.
+    /// </summary>
+    private static Sequence Sequence(XElement element, string package)
+    {
+        var name = ElementName.Object(ModelXml.Named(element));
+        var type = ModelXml.Elements(element, ModelXml.TypeSpecifier).FirstOrDefault() is { } specifier ? TypeSpecifier.Read(specifier) : Model.Sequence.Undeclared;
+        return new Sequence(name, PackageLocation.Whole(PackageLocation.File(package, name), 1), type);
     }
 
     /// <summary>A synonym, with the name it stands for parsed from its script as written; null, reported, when it doesn't parse.</summary>

@@ -107,6 +107,7 @@ public sealed class DatabaseModel
             ExtendedProperties = ExtendedProperties,
             Descriptions = Descriptions,
             XmlSchemaCollections = XmlSchemaCollections,
+            Sequences = Sequences,
         };
 
     /// <summary>The XML schema collections, in source order: what a typed <c>xml</c> column, variable or parameter is bound to.</summary>
@@ -125,6 +126,23 @@ public sealed class DatabaseModel
 
     /// <summary>The XML schema collection with this name, or null.</summary>
     public XmlSchemaCollection? FindXmlSchemaCollection(ObjectName name) => xmlSchemaCollections.GetValueOrDefault(name);
+
+    /// <summary>The sequences, in source order: what <c>NEXT VALUE FOR</c> names.</summary>
+    public IReadOnlyList<Sequence> Sequences
+    {
+        get;
+        init
+        {
+            var keyed = new Dictionary<ObjectName, Sequence>();
+            field = Keyed(value ?? throw new ArgumentNullException(nameof(value)), keyed);
+            sequences = keyed;
+        }
+    } = [];
+
+    private Dictionary<ObjectName, Sequence> sequences = [];
+
+    /// <summary>The sequence with this name, or null.</summary>
+    public Sequence? FindSequence(ObjectName name) => sequences.GetValueOrDefault(name);
 
     /// <summary>
     /// Every extended property the source sets, in the order read: what the descriptions are found in, once the config file

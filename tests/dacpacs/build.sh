@@ -108,6 +108,7 @@ projects() {
   build "$work/projects/options-off" options-off "$out/versions"
   build "$work/projects/orchard" orchard "$out/orchard"
   build "$work/projects/gauge" gauge "$out/gauge"
+  build "$work/projects/turnstile" turnstile "$out/turnstile"
 }
 
 # A legacy SSDT project builds with Visual Studio's SSDT on Windows. Here it builds with Microsoft.Build.Sql's own copy of the

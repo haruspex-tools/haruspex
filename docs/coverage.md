@@ -15,13 +15,13 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 138 |
-| Not in it, and unknown where they are called | 200 |
+| In the catalogue | 139 |
+| Not in it, and unknown where they are called | 199 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
-| Modelled, wholly or in part | 178 |
+| Modelled, wholly or in part | 179 |
 | Read, changing no result | 30 |
-| Unknown | 297 |
+| Unknown | 296 |
 | Not in a procedure's body, or never parsed from one | 40 |
 | Parts of another construct | 22 |
 
@@ -329,7 +329,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Metadata functions
 
-2 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
+3 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -373,7 +373,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `APPLOCK_MODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APPLOCK_TEST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `SCOPE_IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `NEXT VALUE FOR` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `NEXT VALUE FOR` | `scalar.next value for` | the sequence's type, never null |  | [Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs), [An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 
 ### Ranking functions
 
@@ -880,7 +880,7 @@ These 248 statements aren't modelled: each ends what haruspex can list, so the p
 | `CURRENT_TIMESTAMP, CURRENT_USER, …` | `ParameterlessCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#built-in-functions) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. |
 | `@@ROWCOUNT, …` | `GlobalVariableExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#session-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | @@ROWCOUNT, @@TRANCOUNT and @@ERROR are int, never NULL; the others aren't modelled. |
 | `AT TIME ZONE` | `AtTimeZoneCall` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#dates) | datetimeoffset of the date's fractional digits; NULL only when the date or the zone is. |
-| `NEXT VALUE FOR` | `NextValueForExpression` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
+| `NEXT VALUE FOR` | `NextValueForExpression` | [modelled](../src/Haruspex.SqlServer.Inference/README.md#session-values) in part; otherwise unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | The sequence's type, never NULL; a sequence the project doesn't define, and OVER, aren't modelled. |
 | `IDENTITY( … ) in SELECT INTO` | `IdentityFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `$PARTITION.f( … )` | `PartitionFunctionCall` | unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | Not modelled yet. |
 | `EXTRACT( part FROM x )` | `ExtractFromExpression` | never parsed from a body | Fabric's form, which SQL Server's parser doesn't make. |

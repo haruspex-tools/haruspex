@@ -513,7 +513,7 @@ RightFunctionCall | RIGHT | modelled | Strings | As LEFT. | SELECT RIGHT(name, 2
 ParameterlessCall | CURRENT_TIMESTAMP, CURRENT_USER, … | partly unsupported-expression | Built-in functions | CURRENT_TIMESTAMP is a datetime, never NULL; the others aren't modelled. | SELECT CURRENT_TIMESTAMP AS a; && SELECT CURRENT_USER AS a;
 GlobalVariableExpression | @@ROWCOUNT, … | partly unsupported-expression | Session values | @@ROWCOUNT, @@TRANCOUNT and @@ERROR are int, never NULL; the others aren't modelled. | SELECT @@ROWCOUNT AS a; && SELECT @@SPID AS a;
 AtTimeZoneCall | AT TIME ZONE | modelled | Dates | datetimeoffset of the date's fractional digits; NULL only when the date or the zone is. | SELECT made AT TIME ZONE 'UTC' AS a FROM dbo.toy;
-NextValueForExpression | NEXT VALUE FOR | unknown unsupported-expression | | Not modelled yet. | SELECT NEXT VALUE FOR dbo.ticket AS a;
+NextValueForExpression | NEXT VALUE FOR | partly unsupported-expression | Session values | The sequence's type, never NULL; a sequence the project doesn't define, and OVER, aren't modelled. | SELECT NEXT VALUE FOR dbo.ticket AS a; && SELECT NEXT VALUE FOR dbo.missing AS a;
 IdentityFunctionCall | IDENTITY( … ) in SELECT INTO | unknown unsupported-expression | | Not modelled yet. | SELECT IDENTITY(int, 1, 1) AS n INTO #t FROM dbo.toy; SELECT n FROM #t;
 PartitionFunctionCall | $PARTITION.f( … ) | unknown unsupported-expression | | Not modelled yet. | SELECT $PARTITION.by_id(id) AS a FROM dbo.toy;
 ExtractFromExpression | EXTRACT( part FROM x ) | not-parsed | | Fabric's form, which SQL Server's parser doesn't make. | SELECT EXTRACT(YEAR FROM made) AS a FROM dbo.toy;

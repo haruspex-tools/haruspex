@@ -287,6 +287,7 @@ internal sealed partial class Typer
         Typing(ScalarFunctions.TranCount, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.Error, null, "int, never null", [], [Counters], (a, e, s) => a.Typed(ScalarType.Of(BuiltInType.Int), [], e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.IdentCurrent, (1, 1), "numeric(38,0)", [OutOfRange], ["Ident_current_is_numeric_38_0_and_null_for_a_table_without_an_identity_a_missing_one_or_one_the_caller_cannot_see"], (a, e, s) => a.IdentCurrent(Call(e), s), readsOnlyItsArguments: false),
+        Typing(ScalarFunctions.NextValueFor, null, "the sequence's type, never null", [], ["Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent", "An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo"], (a, e, s) => a.NextValueFor((NextValueForExpression)e), readsOnlyItsArguments: false),
         Typing(ScalarFunctions.UserName, (1, 1), "nvarchar(128)", [OutOfRange, ArithmeticOverflow], ["User_name_of_an_id_is_nvarchar_128_and_null_for_an_id_that_names_no_user"], (a, e, s) => a.UserName(Call(e), s), readsOnlyItsArguments: false),
 
         // ---- rowsets, typed by the relation readers ----
@@ -314,6 +315,7 @@ internal sealed partial class Typer
             RightFunctionCall => ScalarFunctions.Right,
             ParameterlessCall { ParameterlessCallType: ParameterlessCallType.CurrentTimestamp } => ScalarFunctions.CurrentTimestamp,
             GlobalVariableExpression global => F.Named(global.Name, FunctionForm.Scalar),
+            NextValueForExpression => ScalarFunctions.NextValueFor,
             AtTimeZoneCall => ScalarFunctions.AtTimeZone,
             CastCall => ScalarFunctions.Cast,
             ConvertCall => ScalarFunctions.Convert,

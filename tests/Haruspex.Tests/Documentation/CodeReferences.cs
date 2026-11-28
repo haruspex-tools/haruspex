@@ -70,7 +70,7 @@ internal sealed partial class CodeReferences
 
         // Elements and annotations of a DACPAC's model.xml that the reader doesn't read, named where the documentation says
         // what it passes over or how an extract differs (the ones it reads are its own words, readerWords).
-        "SqlTableType", "SqlSequence",
+        "SqlTableType", "SqlAssembly",
 
         // Products named in the layers' diagrams.
         "ScriptDom", "TypeScript",

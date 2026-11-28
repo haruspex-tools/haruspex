@@ -97,9 +97,10 @@ public partial class FunctionTableTests
 
         Assert.True(problems.Count == 0, string.Join("\n", problems.Distinct()));
 
-        // The sweep reaches every function the table types, but GROUPING and GROUPING_ID, which need a GROUP BY.
+        // The sweep reaches every function the table types, but GROUPING and GROUPING_ID, which need a GROUP BY, and NEXT VALUE
+        // FOR, which needs a sequence (FunctionTests.Session.cs types it from each kind of sequence).
         Assert.Empty(Table.Where(t => t.Type is not null && !reached.Contains(t.Function))
-            .Select(t => t.Function.Code).Except(["aggregate.grouping", "aggregate.grouping_id"]));
+            .Select(t => t.Function.Code).Except(["aggregate.grouping", "aggregate.grouping_id", "scalar.next value for"]));
     }
 
     [Fact]
@@ -130,6 +131,8 @@ public partial class FunctionTableTests
     {
         if (function == ScalarFunctions.CurrentTimestamp || function == ScalarFunctions.AtTimeZone || function == RowsetFunctions.OpenJson)
             return Regex.IsMatch(body, $@"\b{function.Name}\b", RegexOptions.IgnoreCase);
+        if (function == ScalarFunctions.NextValueFor)
+            return Regex.IsMatch(body, @"\bNEXT\s+VALUE\s+FOR\b", RegexOptions.IgnoreCase);
         if (function.Name.StartsWith("@@", StringComparison.Ordinal))
             return Regex.IsMatch(body, $@"(?<![\w@]){function.Name}(?!\w)", RegexOptions.IgnoreCase);
         return Regex.Matches(body, $@"\b{function.Name}\s*\(", RegexOptions.IgnoreCase)

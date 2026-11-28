@@ -86,6 +86,23 @@ public sealed partial class Binder
         };
     }
 
+    /// <summary>
+    /// The sequence <c>NEXT VALUE FOR</c> names: by its schema when it names one, and otherwise as a table's name is found from
+    /// where it is written, in a module's schema and then <c>dbo</c> whoever calls (observed:
+    /// An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo). Null for a name the model has no
+    /// sequence of, one several schemas share where the caller decides, and one in another database or on a linked server.
+    /// </summary>
+    /// <param name="name">The name as written.</param>
+    public Sequence? ResolveSequence(SchemaObjectName name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (name.ServerIdentifier is not null || name.DatabaseIdentifier is not null)
+            return null;
+        if (name.SchemaIdentifier is not null)
+            return Model.FindSequence(SyntaxReader.Name(name));
+        return SchemaNames.Resolve(Model.Sequences, name.BaseIdentifier.Value, search) is OneObject { Named: Sequence one } ? one : null;
+    }
+
     /// <summary>Every object a FROM clause could read: the tables, and the views, synonyms and functions.</summary>
     private IEnumerable<SchemaObject> Readable() => Model.Tables.Cast<SchemaObject>().Concat(Model.Readable);
 

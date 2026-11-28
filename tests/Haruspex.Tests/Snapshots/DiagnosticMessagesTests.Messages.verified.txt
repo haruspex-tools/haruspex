@@ -8,7 +8,7 @@ HAR1003
 crane.dacpac: warning HAR1003: crane.dacpac refers to quay.dacpac, a package of the same database, which isn't found: looked for at quay.dacpac, /tmp/tmp.m6Q5SKYaDN/projects/quay/bin/Debug/quay.dacpac. Put it beside crane.dacpac, or name its folder in "references" in the config file.
 
 HAR1004
-WideWorldImporters.dacpac: note HAR1004: WideWorldImporters.dacpac holds elements haruspex doesn't model, which are passed over: 26 SqlSequence.
+kiln-clr-extract.dacpac: note HAR1004: kiln-clr-extract.dacpac holds elements haruspex doesn't model, which are passed over: 1 SqlAssembly.
 
 HAR1005
 broken.dacpac: error HAR1005: broken.dacpac can't be read as a DACPAC: Central Directory corrupt.

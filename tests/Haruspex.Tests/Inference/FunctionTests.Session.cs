@@ -1,3 +1,5 @@
+using Haruspex.Ir;
+
 namespace Haruspex.Tests.Inference;
 
 public partial class FunctionTests
@@ -56,5 +58,69 @@ public partial class FunctionTests
         Assert.Equal("nvarchar(128) out-of-range", Typed(doc, "d"));
         Unknown(doc, "e");
         Unknown(doc, "f");
+    }
+
+    private const string Sequences = """
+        CREATE SCHEMA sales;
+        GO
+        CREATE TYPE dbo.small FROM smallint NOT NULL;
+        GO
+        CREATE SEQUENCE dbo.counted AS int START WITH 1;
+        CREATE SEQUENCE dbo.tiny AS tinyint;
+        CREATE SEQUENCE dbo.exact AS decimal(10, 0);
+        CREATE SEQUENCE dbo.short AS numeric(5);
+        CREATE SEQUENCE dbo.plain START WITH 1;
+        CREATE SEQUENCE dbo.aliased AS dbo.small;
+        CREATE SEQUENCE dbo.shared AS int;
+        CREATE SEQUENCE sales.shared AS tinyint;
+        CREATE SEQUENCE sales.own AS smallint;
+        GO
+        """;
+
+    private static IrDocument InSchema(string procedure, string body) =>
+        InferProcedure.Infer(procedure, ("tables.sql", Tables), ("sequences.sql", Sequences), ("p.sql", $"CREATE PROCEDURE {procedure} AS\n{body}"));
+
+    [Fact]
+    public void Next_value_for_is_its_sequences_type_never_null()
+    {
+        // Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent.
+        var doc = InSchema("dbo.p", """
+            SELECT NEXT VALUE FOR dbo.counted AS a, NEXT VALUE FOR dbo.tiny AS b, NEXT VALUE FOR dbo.exact AS c, NEXT VALUE FOR dbo.short AS d,
+                   NEXT VALUE FOR dbo.plain AS e, NEXT VALUE FOR dbo.aliased AS f, NEXT VALUE FOR counted AS g;
+            """);
+        Assert.Equal("int", Typed(doc, "a"));
+        Assert.Equal("tinyint", Typed(doc, "b"));
+        Assert.Equal("decimal(10,0)", Typed(doc, "c"));
+        Assert.Equal("numeric(5,0)", Typed(doc, "d"));
+        Assert.Equal("bigint", Typed(doc, "e"));
+        Assert.Equal("smallint", Typed(doc, "f"));
+        Assert.Equal("int", Typed(doc, "g"));
+    }
+
+    [Fact]
+    public void An_unqualified_sequence_is_the_procedures_schemas_then_dbos()
+    {
+        // An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo: whoever calls.
+        var doc = InSchema("sales.p", "SELECT NEXT VALUE FOR shared AS a, NEXT VALUE FOR own AS b, NEXT VALUE FOR counted AS c, NEXT VALUE FOR dbo.shared AS d;");
+        Assert.Equal("tinyint", Typed(doc, "a"));
+        Assert.Equal("smallint", Typed(doc, "b"));
+        Assert.Equal("int", Typed(doc, "c"));
+        Assert.Equal("int", Typed(doc, "d"));
+    }
+
+    [Fact]
+    public void A_sequence_the_project_lacks_or_the_caller_chooses_is_unknown()
+    {
+        // A sequence the project doesn't define, one in another database, and NEXT VALUE FOR with OVER.
+        var doc = InSchema("dbo.p", """
+            SELECT NEXT VALUE FOR dbo.missing AS a, NEXT VALUE FOR sales.counted AS b, NEXT VALUE FOR other.dbo.counted AS c,
+                   NEXT VALUE FOR dbo.counted OVER (ORDER BY n) AS d, n AS e
+            FROM dbo.t;
+            """);
+        Unknown(doc, "a");
+        Unknown(doc, "b");
+        Unknown(doc, "c");
+        Unknown(doc, "d");
+        Assert.Equal("int", Typed(doc, "e"));
     }
 }

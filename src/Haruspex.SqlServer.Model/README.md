@@ -10,7 +10,7 @@ CHECK constraints and the key index of their full-text index (`FullTextKey`); al
 table has them; XML schema collections with the text of each schema and their declarations (`XmlSchemaDeclarations`: global elements, content models, attributes, simple types and their facets), and the collection a typed `xml` names; stored procedures, functions of each kind, views and DML triggers,
 with their parameters, return types and options as data and their bodies as
 [ScriptDom](https://www.nuget.org/packages/Microsoft.SqlServer.TransactSql.ScriptDom) statements and expressions; synonyms
-with the name each stands for; and foreign keys whose actions change the referencing table (`CascadingKey`). A column
+with the name each stands for; sequences with their type; and foreign keys whose actions change the referencing table (`CascadingKey`). A column
 records whether it is `HIDDEN`, `SPARSE` or the table's column set, and a table whether it is a graph table, since each changes
 what `SELECT *` returns. Every
 object knows where it was read (`SourceSpan`).

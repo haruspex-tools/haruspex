@@ -60,5 +60,6 @@ public static class SchemaNames
         Trigger => "trigger",
         UserType => "type",
         XmlSchemaCollection => "XML schema collection",
+        Sequence => "sequence",
     };
 }

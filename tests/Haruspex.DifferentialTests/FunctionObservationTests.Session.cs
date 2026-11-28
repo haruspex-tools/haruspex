@@ -175,4 +175,29 @@ public partial class FunctionObservationTests
             "a: 255 | b: 3",
             (await Run(ends, "SELECT NEXT VALUE FOR dbo.obs_cycle AS a; SELECT NEXT VALUE FOR dbo.obs_cycle AS b;")).ToString());
     }
+
+    [Fact]
+    public async Task An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo()
+    {
+        // As a table's name is: sales.obs_counter finds sales.obs_shared and dbo.obs_dbo_only, and never obs_seq.obs_dbo_only,
+        // though the caller's default schema is obs_seq. A name neither has is an error (208), whoever calls.
+        string[] setup =
+        [
+            "CREATE SCHEMA obs_sales;",
+            "CREATE SCHEMA obs_seq;",
+            "CREATE SEQUENCE obs_sales.obs_shared AS tinyint START WITH 1;",
+            "CREATE SEQUENCE dbo.obs_shared AS int START WITH 100;",
+            "CREATE SEQUENCE dbo.obs_dbo_only AS smallint START WITH 200;",
+            "CREATE SEQUENCE obs_seq.obs_dbo_only AS tinyint START WITH 7;",
+            "CREATE SEQUENCE obs_seq.obs_elsewhere AS tinyint START WITH 9;",
+            "CREATE PROCEDURE obs_sales.obs_counter AS SELECT NEXT VALUE FOR obs_shared AS a, NEXT VALUE FOR obs_dbo_only AS b;",
+            "CREATE PROCEDURE obs_sales.obs_lost AS SELECT NEXT VALUE FOR obs_elsewhere AS c;",
+            "CREATE USER obs_caller WITHOUT LOGIN WITH DEFAULT_SCHEMA = obs_seq;",
+            "GRANT EXECUTE TO obs_caller; GRANT UPDATE ON SCHEMA::obs_seq TO obs_caller;",
+        ];
+        Assert.Equal(
+            "a,b: 1,200 | a,b: 2,201",
+            (await Run(setup, "EXECUTE obs_sales.obs_counter; EXECUTE AS USER = 'obs_caller'; EXECUTE obs_sales.obs_counter; REVERT;")).ToString());
+        Assert.Equal(" ! 208", (await Run(setup, "EXECUTE AS USER = 'obs_caller'; EXECUTE obs_sales.obs_lost; REVERT;")).ToString());
+    }
 }
