@@ -60,6 +60,7 @@ public static class IrReasons
         IrNullRule.Declared => "the config file declares it may be",
         IrNullRule.NotInBoth => "only one of the two databases returns it",
         IrNullRule.XmlValue => "XML's value(), or an OPENXML column, is null where its path finds no node, or the XML is null",
+        IrNullRule.SessionState => "it reads the session's state, which holds no value in some states",
         _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, null),
     };
 

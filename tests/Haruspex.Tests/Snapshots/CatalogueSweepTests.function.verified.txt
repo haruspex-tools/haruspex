@@ -4011,6 +4011,14 @@ DB_NAME($1) -> unknown unsupported-expression: DB_NAME($1): DB_NAME of a value t
 ROWCOUNT_BIG() -> bigint number/int64 {[-9223372036854775808 9223372036854775807]}
 @@TRANCOUNT -> int number/int32 {[-2147483648 2147483647]}
 @@ERROR -> int number/int32 {[-2147483648 2147483647]}
+SCOPE_IDENTITY() -> numeric(38,0) number/decimal null:session-state {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+@@IDENTITY -> numeric(38,0) number/decimal null:session-state {digits=38,0 [-99999999999999999999999999999999999999 99999999999999999999999999999999999999]}
+ERROR_MESSAGE() -> nvarchar(4000) string null:session-state {length<=4000}
+ERROR_NUMBER() -> int number/int32 null:session-state {[-2147483648 2147483647]}
+ERROR_SEVERITY() -> int number/int32 null:session-state {[-2147483648 2147483647]}
+ERROR_STATE() -> int number/int32 null:session-state {[-2147483648 2147483647]}
+ERROR_LINE() -> int number/int32 null:session-state {[-2147483648 2147483647]}
+ERROR_PROCEDURE() -> nvarchar(128) string null:session-state {length<=128}
 IDENT_CURRENT(bt) -> unknown unsupported-expression: IDENT_CURRENT(bt): IDENT_CURRENT of a value that is not a string is not modelled.
 IDENT_CURRENT(ti) -> unknown unsupported-expression: IDENT_CURRENT(ti): IDENT_CURRENT of a value that is not a string is not modelled.
 IDENT_CURRENT(si) -> unknown unsupported-expression: IDENT_CURRENT(si): IDENT_CURRENT of a value that is not a string is not modelled.

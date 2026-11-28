@@ -190,7 +190,7 @@ public class BaselineCheckTests
         var (exitCode, _, error) = Run(folder, "check", "--baseline", "release/haruspex.ir.json");
 
         Assert.Equal(1, exitCode);
-        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.37, 0.36, 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23", error, StringComparison.Ordinal);
+        Assert.Contains($"error HAR6030: the baseline release/haruspex.ir.json is IR {version}, and this haruspex reads IR 0.38, 0.37, 0.36, 0.35, 0.34, 0.33, 0.32, 0.31, 0.30, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24 and 0.23", error, StringComparison.Ordinal);
         Assert.DoesNotContain("HAR6026", error, StringComparison.Ordinal);
     }
 

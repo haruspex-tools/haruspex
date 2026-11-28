@@ -1,3 +1,4 @@
+using Haruspex.Ir;
 using Haruspex.SqlServer.Inference.Lattice;
 using Haruspex.SqlServer.Semantics;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
@@ -58,6 +59,12 @@ internal sealed partial class Typer
             return NotModelled(next, $"the type of {sequence.Name} is not known.");
         return Typed(type, [], next);
     }
+
+    /// <summary>
+    /// The reason a value of the session's state may be NULL, at the call, saying in which states (decision 0146): never removed by
+    /// where it is read.
+    /// </summary>
+    private IrNullReason SessionStateAt(TSqlFragment call, string when) => new(IrNullRule.SessionState, At(call).ToString()) { Detail = when };
 
     /// <summary>The type of an identity the server reports, whatever the column's own type: numeric(38,0).</summary>
     private static ScalarType Identity => new(BuiltInType.Numeric, Precision: 38, Scale: 0);

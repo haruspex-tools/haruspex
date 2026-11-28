@@ -123,4 +123,50 @@ public partial class FunctionTests
         Unknown(doc, "d");
         Assert.Equal("int", Typed(doc, "e"));
     }
+
+    [Fact]
+    public void Scope_identity_and_the_last_identity_are_numeric_38_0_and_session_state_even_after_an_insert()
+    {
+        // Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one: straight after
+        // an insert that gives an identity too, since where it is read narrows nothing (decision 0146).
+        var doc = InSchema("dbo.p", """
+            CREATE TABLE #counted (id int IDENTITY(1, 1) NOT NULL, v int NULL);
+            INSERT INTO #counted (v) VALUES (1);
+            SELECT SCOPE_IDENTITY() AS a, @@IDENTITY AS b, ISNULL(SCOPE_IDENTITY(), 0) AS c;
+            """);
+        Assert.Equal("numeric(38,0) session-state", Typed(doc, "a"));
+        Assert.Equal("numeric(38,0) session-state", Typed(doc, "b"));
+        Assert.Equal("numeric(38,0)", Typed(doc, "c"));
+        Assert.Contains("insert", Assert.Single(Field(doc, "a").NullableBecause).Detail, StringComparison.Ordinal);
+        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+    }
+
+    [Fact]
+    public void The_error_functions_are_session_state_inside_a_catch_too()
+    {
+        // Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module.
+        var doc = Procedure("""
+            DECLARE @w int;
+            BEGIN TRY
+                SET @w = 1 / 0;
+            END TRY
+            BEGIN CATCH
+                SELECT ERROR_MESSAGE() AS a, ERROR_NUMBER() AS b, ERROR_SEVERITY() AS c, ERROR_STATE() AS d, ERROR_LINE() AS e, ERROR_PROCEDURE() AS f;
+            END CATCH;
+            """);
+        Assert.Equal("nvarchar(4000) session-state", Typed(doc, "a"));
+        Assert.Equal("int session-state", Typed(doc, "b"));
+        Assert.Equal("int session-state", Typed(doc, "c"));
+        Assert.Equal("int session-state", Typed(doc, "d"));
+        Assert.Equal("int session-state", Typed(doc, "e"));
+        Assert.Equal("nvarchar(128) session-state", Typed(doc, "f"));
+        Assert.Equal("NULL outside a CATCH", Assert.Single(Field(doc, "a").NullableBecause).Detail);
+    }
+
+    [Fact]
+    public void A_document_without_a_session_value_keeps_its_older_version()
+    {
+        var doc = Procedure("SELECT @@ROWCOUNT AS a;");
+        Assert.NotEqual(IrDocument.CurrentVersion, doc.Version);
+    }
 }

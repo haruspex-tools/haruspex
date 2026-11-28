@@ -116,7 +116,7 @@ public class ParameterDeclarationTests
     {
         var doc = Run("", parameters: Configured).Expected();
 
-        Assert.Equal(IrDocument.CurrentVersion, doc.Version);
+        Assert.Equal(IrDocument.ParametersVersion, doc.Version);
         var declared = Assert.Single(doc.Parameters);
         Assert.Equal(("shop.place_order.@order", "schemas/order.schema.json", null), (declared.Parameter, declared.Schema, declared.Pointer));
         Assert.Equal(["schemas/order.schema.json"], declared.Files.Keys);
@@ -133,7 +133,7 @@ public class ParameterDeclarationTests
     {
         var doc = Run("").Expected();
 
-        Assert.NotEqual(IrDocument.CurrentVersion, doc.Version);
+        Assert.NotEqual(IrDocument.ParametersVersion, doc.Version);
         Assert.Empty(doc.Parameters);
         Assert.All(doc.Objects.SelectMany(o => o.Parameters), p => Assert.Null(p.Content));
     }

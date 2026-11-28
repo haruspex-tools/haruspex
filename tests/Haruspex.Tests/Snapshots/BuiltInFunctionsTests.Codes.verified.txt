@@ -102,6 +102,14 @@ scalar.@@rowcount
 scalar.rowcount_big
 scalar.@@trancount
 scalar.@@error
+scalar.scope_identity
+scalar.@@identity
+scalar.error_message
+scalar.error_number
+scalar.error_severity
+scalar.error_state
+scalar.error_line
+scalar.error_procedure
 scalar.ident_current
 scalar.user_name
 scalar.next value for

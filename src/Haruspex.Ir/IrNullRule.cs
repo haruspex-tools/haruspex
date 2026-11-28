@@ -186,4 +186,13 @@ public enum IrNullRule
     /// docs/decisions/0137-xml-s-nodes-query-for-xml-and-openxml-are-typed-as-the-server-gives-them.md.
     /// </summary>
     XmlValue,
+
+    /// <summary>
+    /// It reads the state of the session or of the call, which may hold no value (0.38): in SQL Server, <c>SCOPE_IDENTITY()</c> and
+    /// <c>@@IDENTITY</c> before an insert gives an identity, and after one into a table without one; the error functions
+    /// (<c>ERROR_MESSAGE()</c> and the rest) outside a <c>CATCH</c>. Where it is read never removes it: a value that is NULL in some
+    /// state is nullable in every one. <see cref="IrNullReason.Detail"/> says which state. Why:
+    /// docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md.
+    /// </summary>
+    SessionState,
 }

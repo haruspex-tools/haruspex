@@ -19,12 +19,19 @@ public sealed record IrDocument(
     EquatableArray<IrUnknown> Unknowns)
 {
     /// <summary>
-    /// The newest IR format version, the one a document that declares a parameter's JSON is written in (0.37, a declaration in
-    /// <see cref="Parameters"/>, a parameter's <see cref="IrParameter.Content"/>, or a claim <see cref="IrOverrideSetting.ParameterJson"/>).
-    /// The IR is versioned separately from the tool, because it is a file that other programs read: a change that would break a reader
-    /// changes this. Why: docs/decisions/0143-a-parameter-s-json-may-be-declared.md.
+    /// The newest IR format version, the one a document that holds a value of the session's state is written in (0.38, a reason of
+    /// the rule <see cref="IrNullRule.SessionState"/>). The IR is versioned separately from the tool, because it is a file that other
+    /// programs read: a change that would break a reader changes this.
+    /// Why: docs/decisions/0146-a-session-value-is-nullable-unless-it-is-never-null-in-any-state.md.
     /// </summary>
-    public const string CurrentVersion = "0.37";
+    public const string CurrentVersion = "0.38";
+
+    /// <summary>
+    /// The version a document that holds no value of the session's state but declares a parameter's JSON is written in (0.37, a
+    /// declaration in <see cref="Parameters"/>, a parameter's <see cref="IrParameter.Content"/>, or a claim
+    /// <see cref="IrOverrideSetting.ParameterJson"/>). Why: docs/decisions/0143-a-parameter-s-json-may-be-declared.md.
+    /// </summary>
+    public const string ParametersVersion = "0.37";
 
     /// <summary>
     /// The version a document that declares no parameter's JSON but declares the response of an external REST endpoint is written in
@@ -128,7 +135,7 @@ public sealed record IrDocument(
     /// that means the same (0.30 back to 0.23, each a document that says nothing a later version added). Any other is refused.
     /// Why: docs/decisions/0024-an-ir-reader-reads-only-versions-whose-documents-mean-what-its-own-do.md, which says why 0.22 is not one.
     /// </summary>
-    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, EndpointsVersion, SchemaFactsVersion, XmlVersion, DescribedVersion, FoldersVersion, BuildsVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
+    public static IReadOnlyList<string> ReadableVersions { get; } = [CurrentVersion, ParametersVersion, EndpointsVersion, SchemaFactsVersion, XmlVersion, DescribedVersion, FoldersVersion, BuildsVersion, StampedVersion, ExplainedVersion, DeclaredVersion, BytesVersion, TableTypesVersion, SourcesVersion, CombinedVersion, OneDatabaseVersion];
 
     /// <summary>
     /// Whether <paramref name="version"/> is <paramref name="since"/> or later, both of <see cref="ReadableVersions"/>: by their order
@@ -141,7 +148,8 @@ public sealed record IrDocument(
 
     /// <summary>
     /// The version this document is written in, the oldest whose reader reads all it says (decision 0072's labelling by content):
-    /// <see cref="CurrentVersion"/> when it declares a parameter's JSON (<see cref="DeclaresParameters"/>); else
+    /// <see cref="CurrentVersion"/> when it holds a value of the session's state (<see cref="HoldsSessionState"/>); else
+    /// <see cref="ParametersVersion"/> when it declares a parameter's JSON (<see cref="DeclaresParameters"/>); else
     /// <see cref="EndpointsVersion"/> when it declares an endpoint's response (<see cref="DeclaresEndpoints"/>); else
     /// <see cref="SchemaFactsVersion"/> when it holds a fact an XML schema collection proves (<see cref="HoldsSchemaFacts"/>); else
     /// <see cref="XmlVersion"/> when it holds an XML value (<see cref="HoldsXml"/>); else
@@ -159,7 +167,8 @@ public sealed record IrDocument(
     /// docs/decisions/0077-the-ir-carries-a-table-type-s-definition.md.
     /// </summary>
     public string Version =>
-        DeclaresParameters ? CurrentVersion
+        HoldsSessionState ? CurrentVersion
+        : DeclaresParameters ? ParametersVersion
         : DeclaresEndpoints ? EndpointsVersion
         : HoldsSchemaFacts ? SchemaFactsVersion
         : HoldsXml ? XmlVersion
@@ -226,6 +235,12 @@ public sealed record IrDocument(
     /// </summary>
     internal bool DeclaresParameters =>
         Parameters.Count > 0 || Overrides.Any(o => o.Setting == IrOverrideSetting.ParameterJson) || Objects.Any(o => o.Parameters.Any(p => p.Content is not null));
+
+    /// <summary>
+    /// Whether it holds a value of the session's state (0.38): a value that is NULL by the rule <see cref="IrNullRule.SessionState"/>
+    /// anywhere.
+    /// </summary>
+    internal bool HoldsSessionState => IrDocumentSessionState.First(this) is not null;
 
     /// <summary>Whether it records a description (0.33): an object's, a parameter's or a field's.</summary>
     internal bool Describes => IrDocumentDescribed.First(this) is not null;

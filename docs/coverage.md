@@ -15,8 +15,8 @@ type something, it claims nothing about it, and the unknown's reason links to wh
 | What | Count |
 |---|---:|
 | Built-in functions the reference documents | 340 |
-| In the catalogue | 139 |
-| Not in it, and unknown where they are called | 199 |
+| In the catalogue | 147 |
+| Not in it, and unknown where they are called | 191 |
 | Not in it, and read without an unknown, as a condition that proves nothing | 2 |
 | Constructs ScriptDom parses | 567 |
 | Modelled, wholly or in part | 179 |
@@ -329,7 +329,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### Metadata functions
 
-3 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
+4 of 41 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/metadata-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
@@ -372,7 +372,7 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `FULLTEXTSERVICEPROPERTY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APPLOCK_MODE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `APPLOCK_TEST` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `SCOPE_IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `SCOPE_IDENTITY` | `scalar.scope_identity` | numeric(38,0) | `session-state` | [Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `NEXT VALUE FOR` | `scalar.next value for` | the sequence's type, never null |  | [Next_value_for_is_its_sequences_type_never_null_and_an_error_once_a_sequence_without_cycle_is_spent](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs), [An_unqualified_sequence_in_a_procedure_is_looked_for_in_the_procedures_schema_then_dbo](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 
 ### Ranking functions
@@ -501,16 +501,16 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 
 ### System functions
 
-9 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
+16 of 33 in the catalogue. Listed in [the reference](https://learn.microsoft.com/en-us/sql/t-sql/functions/system-functions-transact-sql?view=sql-server-ver17).
 
 | Function | Code | Gives | NULL besides its arguments | Observed in |
 |---|---|---|---|---|
 | `$PARTITION` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_PROCEDURE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_PROCEDURE` | `scalar.error_procedure` | nvarchar(128) | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `@@ERROR` | `scalar.@@error` | int, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
-| `ERROR_SEVERITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `@@IDENTITY` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_STATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_SEVERITY` | `scalar.error_severity` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `@@IDENTITY` | `scalar.@@identity` | numeric(38,0) | `session-state` | [Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_STATE` | `scalar.error_state` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `@@PACK_RECEIVED` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `FORMATMESSAGE` | `scalar.formatmessage` | nvarchar(4000) |  | [String_escape_is_nvarchar_max_and_formatmessage_nvarchar_4000_writing_a_null_argument_as_null_in_brackets](../tests/Haruspex.DifferentialTests/FunctionObservationTests.cs) |
 | `@@ROWCOUNT` | `scalar.@@rowcount` | int, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
@@ -533,10 +533,10 @@ and the tests that observed it on SQL Server. Any other is what haruspex gives f
 | `NEWSEQUENTIALID` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 | `DECOMPRESS` | `scalar.decompress` | varbinary(max) |  | [Compress_and_decompress_are_varbinary_max_null_only_for_null_and_decompress_of_other_bytes_is_an_error](../tests/Haruspex.DifferentialTests/BinaryObservationTests.cs) |
 | `ROWCOUNT_BIG` | `scalar.rowcount_big` | bigint, never null |  | [Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
-| `ERROR_LINE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_LINE` | `scalar.error_line` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `SESSION_CONTEXT` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_MESSAGE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
-| `ERROR_NUMBER` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
+| `ERROR_MESSAGE` | `scalar.error_message` | nvarchar(4000) | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
+| `ERROR_NUMBER` | `scalar.error_number` | int | `session-state` | [Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module](../tests/Haruspex.DifferentialTests/FunctionObservationTests.Session.cs) |
 | `XACT_STATE` | | not modelled: unknown, [`unsupported-expression`](diagnostics/HAR2005.md) | | |
 
 ### System statistical functions

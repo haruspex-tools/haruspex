@@ -2793,6 +2793,16 @@ Observed in `FunctionObservationTests.Session.cs`.
   start of a batch, after a query of no rows, in a `CATCH`, and inside a scalar function
   (`Rowcount_trancount_and_error_are_int_rowcount_big_a_bigint_and_none_is_ever_null`). The other global variables
   (`@@SPID`, `@@VERSION`, …) are not modelled.
+- **`SCOPE_IDENTITY()`** and **`@@IDENTITY`** are `numeric(38,0)`, `session-state`: NULL before an insert gives an identity, in
+  the scope or the session, and again after an insert into a table without one, even when an insert before it gave one. An
+  insert of no rows leaves either as it was. A procedure called after an insert sees `@@IDENTITY` but not `SCOPE_IDENTITY()`
+  (`Scope_identity_and_the_last_identity_are_numeric_38_0_and_null_after_an_insert_into_a_table_without_one`). So neither is
+  non-null straight after an `INSERT`, whatever it inserts into.
+- **`ERROR_MESSAGE()`** is `nvarchar(4000)`, **`ERROR_PROCEDURE()`** `nvarchar(128)`, and **`ERROR_NUMBER()`**,
+  **`ERROR_SEVERITY()`**, **`ERROR_STATE()`** and **`ERROR_LINE()`** `int`, each `session-state`: NULL outside a `CATCH`, and
+  `ERROR_PROCEDURE()` inside one too, for an error raised outside a module
+  (`Error_functions_are_null_outside_a_catch_and_error_procedure_inside_one_for_an_error_outside_a_module`). Inside a `CATCH`
+  the others hold the error's values, but where a value is read narrows nothing, so they are nullable there as well.
 - **`IDENT_CURRENT(name)`** of a string is `numeric(38,0)`, the type of every identity the server reports, and always
   `out-of-range`: NULL for a name that names no table, a table without an identity, and a table the caller isn't allowed to
   see, which depends on the caller, not the project, so a table the project defines with an identity is no exception

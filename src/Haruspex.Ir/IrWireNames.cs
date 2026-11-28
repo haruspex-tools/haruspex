@@ -114,6 +114,7 @@ public static class IrWireNames
         IrNullRule.Declared => "declared",
         IrNullRule.NotInBoth => "not-in-both",
         IrNullRule.XmlValue => "xml-value",
+        IrNullRule.SessionState => "session-state",
     };
 
     /// <summary>Why a value or a result is unknown (<c>reason</c>).</summary>
