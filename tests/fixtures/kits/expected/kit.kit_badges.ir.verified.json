@@ -485,7 +485,7 @@
       "object": "kit.kit_badges",
       "path": "results[0].accent",
       "reason": "json-shape-unknown",
-      "detail": "The literal '[\"ā\"]' is not an N'' literal and has a string that is not ASCII, which the database's code page may change, so it is not read as JSON here.",
+      "detail": "The literal '[\"ā\"]' is not an N'' literal and has a character that is not ASCII, which the database's code page may change, so it is not read as JSON here.",
       "at": "procedures/kit_badges.sql:41:19"
     },
     {

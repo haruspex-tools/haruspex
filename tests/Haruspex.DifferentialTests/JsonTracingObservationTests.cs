@@ -56,12 +56,15 @@ public class JsonTracingObservationTests(SqlServerFixture server)
     public async Task A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json()
     {
         // Under the test database's collation (Latin1, code page 1252): ā has no code point there and
-        // becomes a, a character outside the BMP two question marks, a key too; an escape is decoded first, then converted. An
-        // N'' literal is read as it is.
+        // becomes a, a character outside the BMP two question marks, a key too. A JSON escape is ASCII, so it is kept, and read as
+        // the character. An N'' literal is read as it is.
         Assert.Equal(
             """j: [{"a":["a"],"b":["a", "??"],"c":{"a": 1},"d":["ā"]}]""",
             await Select($$"""{{One}} SELECT (SELECT json_query('["ā"]') AS a, json_query('["ā", "😀"]') AS b, json_query('{"ā": 1}') AS c, json_query(N'["ā"]') AS d FROM @one FOR JSON PATH) AS j;"""));
         Assert.Equal("v: a", await Select($$"""{{One}} SELECT json_value('["ā"]', '$[0]') AS v FROM @one;"""));
+        Assert.Equal(
+            "v,k: 257,1",
+            await Select($$"""{{One}} SELECT UNICODE(json_value('["' + NCHAR(92) + 'u0101"]', '$[0]')) AS v, (SELECT COUNT(*) FROM OPENJSON('{"k' + NCHAR(92) + 'u00e9":1}') WHERE [key] = N'ké') AS k FROM @one;"""));
     }
 
     [Fact]

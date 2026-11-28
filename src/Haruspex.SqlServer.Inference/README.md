@@ -2078,9 +2078,10 @@ Every rule is observed in `JsonTracingObservationTests`.
   too; but only the first value is checked, so `'[1]x'` is read as `[1]`. Such a literal is not valid JSON, so it is unknown,
   which claims less; so is an object with a key written twice, which parsers read differently, and a number past a double's
   range, which a client reads as `Infinity`. Whitespace around the value is allowed. **A literal without `N` is converted to
-  the database's code page before it is read**, its escapes decoded first (`'["ā", "\u0101", "😀"]'` gives `["a", "a", "??"]`
+  the database's code page before it is read** (`'["ā", "😀"]'` gives `["a", "??"]`
   under a Latin1 collation, a key too: `A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json`), and which
-  characters that code page has is not known here, so such a literal with a string or key that is not ASCII is unknown. An `N'…'` literal is read as it is.
+  characters that code page has is not known here, so such a literal whose text is not ASCII is unknown. A JSON escape is ASCII,
+  so it is kept and read as the character (`'["\u0101"]'` gives `["ā"]`, `CodePageText`). An `N'…'` literal is read as it is.
 - **`json_query`** over a place or literal is live JSON of its content, nullable as the value is. Under `json_query` a
   `CASE`, `IIF`, `CHOOSE` or `COALESCE` holds JSON whether or not the server folds it to one result, so its results' JSON is
   joined, literals parsed (`Under_json_query_coalesce_case_and_isnull_with_a_json_literal_give_the_json_of_the_branch_taken`).

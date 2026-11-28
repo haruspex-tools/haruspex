@@ -23,7 +23,7 @@ namespace Haruspex.SqlServer.Inference;
 /// The text is embedded as it is written (<c>[ 1 , "a" ]</c> keeps its spaces, <c>1.50</c> its zero, a duplicated key both
 /// times), so a consumer parses what the literal says. An object with a duplicated key is not modelled, since parsers differ
 /// on which value wins, and so is a number past a double's range, which a client reads as Infinity. A literal without N is read
-/// in the database's code page, so one with a string or key that is not ASCII is not modelled (<see cref="Parse"/>). Strings and
+/// in the database's code page, so one whose text is not ASCII is not modelled, though its escapes are (<see cref="Parse"/>). Strings and
 /// numbers have value sets of exactly their values (fact source <c>expression</c>, the
 /// literal's location); a number whose value a JavaScript number cannot hold exactly has none. A JSON <c>null</c> is
 /// <c>null-literal</c>. An array is a tuple, each position its own type, so <c>'[]'</c> is the empty tuple, which joins with
@@ -34,10 +34,11 @@ internal static class JsonLiterals
 {
     /// <summary>The literal's shape, or why it has none (an unknown at <paramref name="at"/>).</summary>
     /// <param name="national">
-    /// Whether it is an <c>N'…'</c> literal. One without <c>N</c> is converted to the database's code page before it is read, its
-    /// escapes decoded first (observed: A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json), so a string
-    /// or key that is not ASCII may come out changed (<c>'["ā"]'</c> as <c>["a"]</c>): such a literal is not read. Which
-    /// characters the code page has is not known here.
+    /// Whether it is an <c>N'…'</c> literal. One without <c>N</c> is converted to the database's code page before it is read, so a
+    /// character the code page lacks comes out changed (<c>'["ā"]'</c> as <c>["a"]</c>), a key's too, but a JSON escape, which is
+    /// ASCII, is kept and read as the character (<c>'["\u0101"]'</c> as <c>["ā"]</c>; observed:
+    /// A_literal_without_n_is_converted_to_the_code_page_before_it_is_read_as_json). Which characters the code page has is not
+    /// known here, so such a literal is read only when its text is ASCII (<see cref="CodePageText.Holds"/>, the floor).
     /// </param>
     public static Shape Parse(string text, bool national, SourceLocation at)
     {
@@ -55,9 +56,11 @@ internal static class JsonLiterals
         {
             if (document.RootElement.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))
                 return NotJson(text, at, "is a bare JSON scalar, which json_query, OPENJSON and JSON_VALUE refuse (13609)");
+            if (!national && !CodePageText.Holds(collation: null, text))
+                return NotJson(text, at, "is not an N'' literal and has a character that is not ASCII, which the database's code page may change");
             var why = new string?[1];
             // Never null: Of gives null only after writing why.
-            return Of(document.RootElement, national, at, why) ?? NotJson(text, at, why[0]!);
+            return Of(document.RootElement, at, why) ?? NotJson(text, at, why[0]!);
         }
     }
 
@@ -88,9 +91,8 @@ internal static class JsonLiterals
     }
 
     /// <summary>A JSON value's shape; null when it is not read, <paramref name="why"/>[0] saying why.</summary>
-    private static Shape? Of(JsonElement element, bool national, SourceLocation at, string?[] why)
+    private static Shape? Of(JsonElement element, SourceLocation at, string?[] why)
     {
-        static bool Ascii(string s) => s.All(c => c <= '\u007f');
         switch (element.ValueKind)
         {
             case JsonValueKind.Object:
@@ -103,13 +105,7 @@ internal static class JsonLiterals
                         return null;
                     }
 
-                    if (!national && !Ascii(property.Name))
-                    {
-                        why[0] = "is not an N'' literal and has a key that is not ASCII, which the database's code page may change";
-                        return null;
-                    }
-
-                    if (Of(property.Value, national, at, why) is not { } type)
+                    if (Of(property.Value, at, why) is not { } type)
                         return null;
                     fields.Add(new FieldShape(property.Name, type, IrPresence.Always, Null(property.Value, at)));
                 }
@@ -119,7 +115,7 @@ internal static class JsonLiterals
                 var items = new List<ElementShape>();
                 foreach (var item in element.EnumerateArray())
                 {
-                    if (Of(item, national, at, why) is not { } type)
+                    if (Of(item, at, why) is not { } type)
                         return null;
                     items.Add(new ElementShape(type, Null(item, at)));
                 }
@@ -127,12 +123,6 @@ internal static class JsonLiterals
                 return new TupleShape([.. items]);
             case JsonValueKind.String:
                 var text = element.GetString()!; // Never null: the element is a string, not a JSON null.
-                if (!national && !Ascii(text))
-                {
-                    why[0] = "is not an N'' literal and has a string that is not ASCII, which the database's code page may change";
-                    return null;
-                }
-
                 return Scalar(IrScalarKind.String, new IrValue(text, IsString: true), at);
             case JsonValueKind.Number:
                 var raw = element.GetRawText();
